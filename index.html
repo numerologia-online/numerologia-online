@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#121421" />
+    <title>Нумерология.online</title>
+    <meta name="description" content="Персональные нумерологические разборы." />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="theme.css" />
+    <link rel="stylesheet" href="artwork.css" />
+    <link rel="stylesheet" href="hero-polish.css" />
+    <link rel="stylesheet" href="year-polish.css?v=20" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section id="home" class="screen is-active" aria-labelledby="home-title">
+        <header class="topbar home-topbar">
+          <div class="auth-actions">
+            <button class="auth-button" type="button" data-coming-soon>Регистрация</button>
+            <button class="auth-button" type="button" data-coming-soon>Войти</button>
+          </div>
+          <button class="round-button" type="button" aria-label="Открыть меню">☰</button>
+        </header>
+
+        <div class="hero">
+          <h1 id="home-title"><span>Персональная<br />нумерология</span><em>Для важных решений<br />и долгожданных<br />перемен</em></h1>
+          <div class="hero-symbols" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span></div>
+          <p class="hero-copy">Без эзотерической чуши и сладкой лжи.</p>
+        </div>
+
+        <section class="products" aria-label="Направления расчётов">
+          <button class="product-card calculation" type="button" data-coming-soon><span class="product-title">Полный расчёт</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card red-flag" type="button" data-coming-soon><span class="product-title">Мужчина или Ред Флаг</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card woman" type="button" data-coming-soon><span class="product-title">Женщина или тарелочница</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card code" type="button" data-coming-soon><span class="product-title">Мой код судьбы</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card day" type="button" data-coming-soon><span class="product-title">Расчёт на день</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card year-card" type="button" data-open-year><span class="product-title">Разбор года</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card child" type="button" data-coming-soon><span class="product-title">Расчёт для детей</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card money" type="button" data-coming-soon><span class="product-title">Деньги</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card compatibility" type="button" data-coming-soon><span class="product-title">Совместимость</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card horary" type="button" data-coming-soon><span class="product-title">Хорарная нумерология</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card appointment" type="button" data-coming-soon><span class="product-title">Записаться на личный расчёт</span><span class="product-arrow" aria-hidden="true">→</span></button>
+        </section>
+      </section>
+
+      <section id="year" class="screen" aria-labelledby="year-title">
+        <div class="year-paper">
+          <header class="year-panel-topbar">
+            <p class="eyebrow">Персональный прогноз</p>
+            <button id="back-home" class="year-close" type="button" aria-label="Вернуться ко всем расчётам">×</button>
+          </header>
+
+          <div class="year-intro">
+            <h1 id="year-title">Ваш год<br />по месяцам</h1>
+            <p>Введите дату рождения и выберите год. Вы увидите ориентиры для денег, любви, отношений, здоровья и своего направления. Разбор можно спокойно прочитать на сайте, а затем сохранить в PDF.</p>
+          </div>
+
+          <form id="year-form" class="calculation-form">
+            <label>
+              <span>Дата рождения</span>
+              <input id="birth-date" type="text" inputmode="tel" autocomplete="bday" placeholder="ДД.ММ.ГГГГ" pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}" maxlength="10" required />
+            </label>
+            <label>
+              <span>Год разбора</span>
+              <input id="report-year" type="text" inputmode="numeric" autocomplete="off" placeholder="Например, 2026" pattern="[0-9]{4}" maxlength="4" required />
+            </label>
+            <button class="primary-button" type="submit">Получить расчёт <span>→</span></button>
+          </form>
+
+          <section id="calculation-loader" class="calculation-loader" hidden aria-live="polite" aria-label="Подготавливаем ваш разбор">
+            <p class="loader-status">ДЕЛАЮ ВАШ ЛИЧНЫЙ РАСЧЁТ ГОДА<span class="loader-dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></p>
+            <div class="loader-matrix" aria-hidden="true">
+              <span class="matrix-line"></span>
+              <i class="matrix-digit" style="--x: 5%; --y: 16%; --delay: 1.2s; --duration: 4.7s">1</i>
+              <i class="matrix-digit" style="--x: 17%; --y: 66%; --delay: .15s; --duration: 5.3s">2</i>
+              <i class="matrix-digit" style="--x: 31%; --y: 27%; --delay: 2.65s; --duration: 4.4s">3</i>
+              <i class="matrix-digit" style="--x: 45%; --y: 72%; --delay: .8s; --duration: 5.6s">4</i>
+              <i class="matrix-digit" style="--x: 52%; --y: 12%; --delay: 3.1s; --duration: 4.9s">5</i>
+              <i class="matrix-digit" style="--x: 63%; --y: 62%; --delay: 1.85s; --duration: 4.2s">6</i>
+              <i class="matrix-digit" style="--x: 75%; --y: 25%; --delay: .42s; --duration: 5.1s">7</i>
+              <i class="matrix-digit" style="--x: 86%; --y: 70%; --delay: 2.28s; --duration: 4.6s">8</i>
+              <i class="matrix-digit" style="--x: 94%; --y: 15%; --delay: 1.52s; --duration: 5.4s">9</i>
+            </div>
+            <div class="loader-message-stack">
+              <p id="loader-message" class="loader-message is-visible">Соединяю месяцы в вашу личную историю.</p>
+            </div>
+          </section>
+
+          <section id="report" class="report" hidden aria-live="polite">
+            <div class="report-lead">
+              <p class="eyebrow" id="report-period">Ваш личный период</p>
+              <h2 id="report-title"></h2>
+              <p class="report-meta" id="report-meta"></p>
+              <p id="report-copy"></p>
+            </div>
+            <div id="year-transition" class="year-transition" aria-label="Периоды личного года"></div>
+            <div class="birthday-note" id="birthday-note"></div>
+            <div id="months" class="months" aria-label="Месяцы разбора"></div>
+            <button id="pdf-button" class="pdf-button" type="button">Посмотреть PDF <span>↓</span></button>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="coming-soon"><button class="dialog-close" type="button" aria-label="Закрыть">×</button><p class="eyebrow">Скоро</p><h2>Это направление уже есть в плане сайта.</h2><p>Сейчас мы сначала доводим до красоты и точности «Разбор года».</p></dialog>
+    <dialog id="pdf-preview" class="pdf-preview-dialog">
+      <div class="pdf-preview-topbar">
+        <p>ВАШ PDF-РАЗБОР</p>
+        <button id="pdf-preview-close" type="button" aria-label="Закрыть предпросмотр">×</button>
+      </div>
+      <div id="pdf-preview-pages" class="pdf-preview-pages" aria-label="Предпросмотр вашего разбора"></div>
+      <button id="pdf-download-button" class="pdf-download-button" type="button">Скачать PDF <span>↓</span></button>
+    </dialog>
+    <script type="module" src="app.js?v=19"></script>
+  </body>
+</html>

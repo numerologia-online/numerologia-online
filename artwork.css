@@ -1,0 +1,29 @@
+/* Оригинальные иллюстрации карточек из вашего прежнего дизайна.
+   Файлы сохранены внутри нового проекта. */
+.product-card {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.product-card::before {
+  background: none;
+}
+
+.product-card::after { content: none; }
+
+.calculation { background-image: url("full-calculation.webp"); }
+.red-flag { background-image: url("red-flag.webp"); color: #882f35; }
+.woman { background-image: url("woman.webp"); }
+.code { background-image: url("code.webp"); }
+.day { background-image: url("day.webp"); }
+.year-card { background-image: url("year.webp"); }
+.child { background-image: url("children.webp"); }
+.money { background-image: url("money.webp"); }
+.compatibility { background-image: url("compatibility.webp"); }
+.horary { background-image: url("horary.webp"); }
+
+.appointment {
+  background-image: url("appointment.jpg");
+  color: #104b3b;
+}
