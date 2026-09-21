@@ -92,3 +92,5 @@
 @media (min-width: 700px) {
   .hero { margin-right: 0; margin-left: 0; }
 }
+
+@media(max-width:699px){.products{gap:10px}.product-card,.appointment{min-height:104px;padding:16px 68px 16px 18px;border-radius:21px}.product-title{max-width:100%;margin:0;font-size:clamp(18px,5.1vw,23px);line-height:1.03}.product-arrow{top:50%;right:15px;width:38px;height:38px;transform:translateY(-50%);font-size:22px}}
