@@ -250,11 +250,31 @@
 .pdf-preview-topbar button { width: 40px; height: 40px; border: 0; border-radius: 50%; background: #edf2f6; color: #294b70; font-size: 30px; font-weight: 300; line-height: 1; }
 .pdf-preview-pages {
   height: calc(100% - 132px);
-  padding: 20px 12px 30px;
-  overflow-y: auto;
+  padding: 0;
+  overflow: hidden;
   background: #dce3ea;
-  scroll-behavior: smooth;
 }
+
+.pdf-preview-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #dce3ea;
+}
+
+.pdf-preview-loading {
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  height: 100%;
+  padding: 32px;
+  color: #294b70;
+  text-align: center;
+}
+
+.pdf-preview-loading strong { font-size: 20px; }
+.pdf-preview-loading span { color: #60758b; font-size: 14px; line-height: 1.45; }
 
 .pdf-live-page {
   position: relative;
