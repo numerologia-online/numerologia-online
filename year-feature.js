@@ -433,6 +433,7 @@ const renderMobilePdfPreview = () => {
   preview.classList.add("pdf-mobile-preview");
   preview.querySelectorAll("details").forEach((month) => { month.open = true; });
   preview.querySelectorAll(".draft-note").forEach((note) => note.remove());
+  preview.querySelectorAll("#pdf-button").forEach((button) => button.remove());
   pdfPreviewPages.replaceChildren(preview);
 };
 
@@ -477,4 +478,3 @@ pdfDownloadButton.addEventListener("click", downloadPdf);
 pdfPreviewDialog.addEventListener("close", () => {
   pdfPreviewPages.innerHTML = "";
 });
-
