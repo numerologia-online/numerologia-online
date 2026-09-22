@@ -337,19 +337,46 @@ const buildPdfDocument = (templates) => {
     return parts;
   });
   const sensitive = document.querySelector("#birthday-note")?.innerText || "";
-  const months = [...document.querySelectorAll("#months details")].flatMap((month) => {
+  const months = [...document.querySelectorAll("#months details")].map((month) => {
     const title = month.querySelector("summary")?.innerText.replace(/\+/g, "").trim() || "";
-    const content = month.querySelector(".month-content")?.innerText || "";
-    return [{ text: title, style: "monthTitle", pageBreak: "before" }, ...asParagraphs(content)];
+    const content = month.querySelector(".month-content");
+    const kicker = content?.querySelector(".month-kicker")?.textContent?.trim() || "";
+    const heading = content?.querySelector("h3")?.textContent?.trim() || "";
+    const intro = [...(content?.querySelectorAll(":scope > p") || [])]
+      .filter((paragraph) => !paragraph.classList.contains("month-kicker") && !paragraph.classList.contains("draft-note"))
+      .flatMap((paragraph) => asParagraphs(paragraph.textContent || ""));
+    const sections = [...(content?.querySelectorAll(".link-sections section") || [])].flatMap((section) => {
+      const sectionTitle = section.querySelector("h4")?.textContent?.trim() || "";
+      const sectionText = section.querySelector("p")?.textContent || "";
+      return [
+        ...(sectionTitle ? [{ text: sectionTitle, style: "subsectionTitle" }] : []),
+        ...asParagraphs(sectionText)
+      ];
+    });
+    // A closed <details> hides its children from innerText in mobile browsers.
+    // textContent keeps the monthly report available to the downloadable PDF.
+    const fallback = !intro.length && !sections.length ? asParagraphs(content?.textContent || "") : [];
+
+    return {
+      stack: [
+        { text: title, style: "monthTitle" },
+        ...(kicker ? [{ text: kicker, style: "monthKicker" }] : []),
+        ...(heading ? [{ text: heading, style: "sectionTitle" }] : []),
+        ...intro,
+        ...sections,
+        ...fallback
+      ],
+      pageBreak: "before"
+    };
   });
 
   return {
     info: { title: `${reportTitle} - ${birthInput.value}` },
     pageSize: "A4",
-    pageMargins: [62, 70, 62, 64],
+    pageMargins: [44, 54, 44, 52],
     images: { cover: templates.cover, inner: templates.inner },
     background: (page) => ({ image: page === 1 ? "cover" : "inner", width: 595.28, height: 841.89 }),
-    defaultStyle: { font: "Roboto", fontSize: 10.4, color: "#24384F", lineHeight: 1.42 },
+    defaultStyle: { font: "Roboto", fontSize: 13.2, color: "#24384F", lineHeight: 1.4 },
     styles: {
       coverKicker: { fontSize: 24, bold: true, color: "#1F3E5F", alignment: "center", lineHeight: 1.08 },
       coverCode: { fontSize: 17, color: "#9B7A3E", characterSpacing: 4, alignment: "center" },
@@ -357,14 +384,16 @@ const buildPdfDocument = (templates) => {
       coverYear: { fontSize: 72, bold: true, color: "#1D3654", alignment: "center" },
       coverSubtitle: { fontSize: 23, bold: true, color: "#665332", alignment: "center", lineHeight: 1.08 },
       coverDetails: { fontSize: 15, bold: true, color: "#24384F", alignment: "center", lineHeight: 1.45 },
-      innerKicker: { fontSize: 9, bold: true, color: "#8A6A32", characterSpacing: 1.25, alignment: "center", margin: [0, 0, 0, 9] },
-      title: { fontSize: 27, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 8] },
-      subtitle: { fontSize: 11.5, color: "#53677B", alignment: "center", margin: [0, 0, 0, 16] },
-      phase: { fontSize: 8.8, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 16, 0, 5] },
-      sectionTitle: { fontSize: 18, bold: true, color: "#1E405F", margin: [0, 0, 0, 8] },
-      noteTitle: { fontSize: 12, bold: true, color: "#715431", margin: [0, 14, 0, 5] },
-      paragraph: { margin: [0, 0, 0, 9] },
-      monthTitle: { fontSize: 20, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 14] }
+      innerKicker: { fontSize: 10.5, bold: true, color: "#8A6A32", characterSpacing: 1.25, alignment: "center", margin: [0, 0, 0, 10] },
+      title: { fontSize: 29, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 10] },
+      subtitle: { fontSize: 13, color: "#53677B", alignment: "center", margin: [0, 0, 0, 18] },
+      phase: { fontSize: 10.3, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 18, 0, 6] },
+      sectionTitle: { fontSize: 21, bold: true, color: "#1E405F", margin: [0, 0, 0, 10] },
+      subsectionTitle: { fontSize: 14.4, bold: true, color: "#715431", margin: [0, 14, 0, 5] },
+      monthKicker: { fontSize: 10.2, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 0, 0, 7] },
+      noteTitle: { fontSize: 14, bold: true, color: "#715431", margin: [0, 16, 0, 6] },
+      paragraph: { margin: [0, 0, 0, 11] },
+      monthTitle: { fontSize: 24, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 16] }
     },
     content: [
       {
