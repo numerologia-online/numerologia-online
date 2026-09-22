@@ -8,71 +8,40 @@ const report = document.querySelector("#report");
 const calculationLoader = document.querySelector("#calculation-loader");
 const loaderMessage = document.querySelector("#loader-message");
 const submitButton = form.querySelector(".primary-button");
-let loadingTimers = [];
-let loadingTimeout;
-let typingTimer;
-let typingVersion = 0;
 let reportRevealTimer;
 
-const loadingSteps = [
-  { at: 0, message: "Соединяю месяцы в вашу личную историю." },
-  { at: 3200, message: "Смотрю любовь, отношения, деньги и ресурс." },
-  { at: 6500, message: "Ваш разбор почти готов." }
-];
-
-const setLoadingStep = (step, isFirstStep = false) => {
-  const version = ++typingVersion;
-  window.clearTimeout(typingTimer);
-  loaderMessage.classList.add("is-fading");
-  typingTimer = window.setTimeout(() => {
-    if (version !== typingVersion) return;
-    loaderMessage.textContent = "";
-    loaderMessage.classList.remove("is-fading");
-    let letter = 0;
-    const typeNextLetter = () => {
-      if (version !== typingVersion) return;
-      loaderMessage.textContent = step.message.slice(0, letter);
-      letter += 1;
-      if (letter <= step.message.length) typingTimer = window.setTimeout(typeNextLetter, 38);
-    };
-    typeNextLetter();
-  }, isFirstStep ? 90 : 320);
-};
-
 const showCalculationLoading = () => {
-  loadingTimers.forEach((timer) => window.clearTimeout(timer));
-  loadingTimers = [];
-  window.clearTimeout(loadingTimeout);
-  window.clearTimeout(typingTimer);
-  typingVersion += 1;
   window.clearTimeout(reportRevealTimer);
   report.hidden = true;
   report.classList.remove("is-revealing", "is-visible");
   calculationLoader.hidden = false;
   calculationLoader.classList.remove("is-calculating");
-  setLoadingStep(loadingSteps[0], true);
+  loaderMessage.textContent = "Собираю ваш личный год...";
   submitButton.disabled = true;
   calculationLoader.scrollIntoView({ behavior: "smooth", block: "center" });
+};
 
-  loadingTimers = loadingSteps.slice(1).map((step) => window.setTimeout(() => setLoadingStep(step), step.at));
+const showCalculatedReport = () => {
+  calculationLoader.classList.add("is-leaving");
+  reportRevealTimer = window.setTimeout(() => {
+    calculationLoader.hidden = true;
+    calculationLoader.classList.remove("is-leaving");
+    submitButton.disabled = false;
+    report.hidden = false;
+    report.classList.add("is-revealing");
+    window.requestAnimationFrame(() => report.classList.add("is-visible"));
+    report.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 180);
+};
 
-  loadingTimeout = window.setTimeout(() => {
-    loadingTimers.forEach((timer) => window.clearTimeout(timer));
-    loadingTimers = [];
-    window.clearTimeout(typingTimer);
-    typingVersion += 1;
-    calculationLoader.classList.remove("is-calculating");
-    calculationLoader.classList.add("is-leaving");
-    reportRevealTimer = window.setTimeout(() => {
-      calculationLoader.hidden = true;
-      calculationLoader.classList.remove("is-leaving");
-      submitButton.disabled = false;
-      report.hidden = false;
-      report.classList.add("is-revealing");
-      window.requestAnimationFrame(() => report.classList.add("is-visible"));
-      report.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 700);
-  }, 10000);
+const showCalculationError = () => {
+  calculationLoader.hidden = true;
+  submitButton.disabled = false;
+};
+
+const showMonthProgress = async (monthName) => {
+  loaderMessage.textContent = `Собираю ${monthName.toLowerCase()}...`;
+  await new Promise((resolve) => window.setTimeout(resolve, 80));
 };
 
 const reduce = (value) => {
@@ -146,13 +115,14 @@ form.addEventListener("submit", async (event) => {
     yearInput.reportValidity();
     return;
   }
+  showCalculationLoading();
   const energyBeforeBirthday = personalYear(birthDate, reportYearValue - 1);
   const energyAfterBirthday = personalYear(birthDate, reportYearValue);
   let energyContent;
   try {
     energyContent = await loadEnergies([energyBeforeBirthday, energyAfterBirthday]);
   } catch (error) {
-    submitButton.disabled = false;
+    showCalculationError();
     yearInput.setCustomValidity("Не удалось открыть тексты года. Обновите страницу и попробуйте ещё раз.");
     yearInput.reportValidity();
     return;
@@ -205,7 +175,8 @@ form.addEventListener("submit", async (event) => {
 
   monthContainer.innerHTML = "";
   calculatedPdfMonths = [];
-  monthNames.forEach((monthName, index) => {
+  for (const [index, monthName] of monthNames.entries()) {
+    await showMonthProgress(monthName);
     const calendarMonth = index + 1;
     const isBirthdayMonth = index === birthDate.getUTCMonth();
     const isBeforeBirthdayMonth = index < birthDate.getUTCMonth();
@@ -236,9 +207,9 @@ form.addEventListener("submit", async (event) => {
       ]));
     }
     monthContainer.append(item);
-  });
+  }
 
-  showCalculationLoading();
+  showCalculatedReport();
   warmPdfInBackground();
 });
 
@@ -330,8 +301,8 @@ let pdfTemplatesLoading;
 const getPdfTemplates = () => {
   if (!pdfTemplatesLoading) {
     pdfTemplatesLoading = Promise.all([
-      imageAsDataUrl("year-report-cover.png"),
-      imageAsDataUrl("year-report-inner.png")
+      imageAsDataUrl("year-report-cover.jpg"),
+      imageAsDataUrl("year-report-inner.jpg")
     ]).then(([cover, inner]) => ({ cover, inner }));
   }
   return pdfTemplatesLoading;
