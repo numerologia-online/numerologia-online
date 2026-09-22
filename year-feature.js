@@ -370,10 +370,11 @@ const buildPdfDocument = (templates) => {
   return {
     info: { title: `${reportTitle} - ${birthInput.value}` },
     pageSize: "A4",
-    pageMargins: [44, 54, 44, 52],
+    // Wide inner margins keep large type safely inside the decorative frame.
+    pageMargins: [64, 80, 64, 76],
     images: { cover: templates.cover, inner: templates.inner },
     background: (page) => ({ image: page === 1 ? "cover" : "inner", width: 595.28, height: 841.89 }),
-    defaultStyle: { font: "Roboto", fontSize: 13.2, color: "#24384F", lineHeight: 1.4 },
+    defaultStyle: { font: "Roboto", fontSize: 22, color: "#24384F", lineHeight: 1.55 },
     styles: {
       coverKicker: { fontSize: 24, bold: true, color: "#1F3E5F", alignment: "center", lineHeight: 1.08 },
       coverCode: { fontSize: 17, color: "#9B7A3E", characterSpacing: 4, alignment: "center" },
@@ -381,16 +382,16 @@ const buildPdfDocument = (templates) => {
       coverYear: { fontSize: 72, bold: true, color: "#1D3654", alignment: "center" },
       coverSubtitle: { fontSize: 23, bold: true, color: "#665332", alignment: "center", lineHeight: 1.08 },
       coverDetails: { fontSize: 15, bold: true, color: "#24384F", alignment: "center", lineHeight: 1.45 },
-      innerKicker: { fontSize: 10.5, bold: true, color: "#8A6A32", characterSpacing: 1.25, alignment: "center", margin: [0, 0, 0, 10] },
-      title: { fontSize: 29, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 10] },
-      subtitle: { fontSize: 13, color: "#53677B", alignment: "center", margin: [0, 0, 0, 18] },
-      phase: { fontSize: 10.3, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 18, 0, 6] },
-      sectionTitle: { fontSize: 21, bold: true, color: "#1E405F", margin: [0, 0, 0, 10] },
-      subsectionTitle: { fontSize: 14.4, bold: true, color: "#715431", margin: [0, 14, 0, 5] },
-      monthKicker: { fontSize: 10.2, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 0, 0, 7] },
-      noteTitle: { fontSize: 14, bold: true, color: "#715431", margin: [0, 16, 0, 6] },
-      paragraph: { margin: [0, 0, 0, 11] },
-      monthTitle: { fontSize: 24, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 16] }
+      innerKicker: { fontSize: 13, bold: true, color: "#8A6A32", characterSpacing: 1.25, alignment: "center", margin: [0, 0, 0, 14] },
+      title: { fontSize: 32, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 16] },
+      subtitle: { fontSize: 18, color: "#53677B", alignment: "center", margin: [0, 0, 0, 24] },
+      phase: { fontSize: 13, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 24, 0, 10] },
+      sectionTitle: { fontSize: 28, bold: true, color: "#1E405F", margin: [0, 0, 0, 15] },
+      subsectionTitle: { fontSize: 19, bold: true, color: "#715431", margin: [0, 22, 0, 8] },
+      monthKicker: { fontSize: 13, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 0, 0, 11] },
+      noteTitle: { fontSize: 19, bold: true, color: "#715431", margin: [0, 24, 0, 9] },
+      paragraph: { margin: [0, 0, 0, 17] },
+      monthTitle: { fontSize: 32, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 22] }
     },
     content: [
       {
@@ -413,7 +414,7 @@ const buildPdfDocument = (templates) => {
       ...asParagraphs(sensitive),
       ...months
     ],
-    footer: (page, pages) => page === 1 ? null : ({ text: `${page - 1} / ${pages - 1}`, alignment: "center", color: "#9C7A42", fontSize: 8, margin: [0, 14, 0, 0] })
+    footer: (page, pages) => page === 1 ? null : ({ text: `${page - 1} / ${pages - 1}`, alignment: "center", color: "#9C7A42", fontSize: 10, margin: [0, 18, 0, 0] })
   };
 };
 
