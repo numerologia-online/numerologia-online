@@ -204,6 +204,7 @@ form.addEventListener("submit", async (event) => {
   birthdayNote.textContent = `Личный год меняется точно в день рождения - ${formatFullDate(birthdayInReportYear)}.`;
 
   monthContainer.innerHTML = "";
+  calculatedPdfMonths = [];
   monthNames.forEach((monthName, index) => {
     const calendarMonth = index + 1;
     const isBirthdayMonth = index === birthDate.getUTCMonth();
@@ -224,8 +225,15 @@ form.addEventListener("submit", async (event) => {
       const beforeContent = beforeFullLink ? fullLinkMarkup(beforeFullLink, energyBeforeBirthday, beforeMonthEnergy) : `<p class="month-kicker">До ${formatDate(birthdayInReportYear)} · связка ${energyBeforeBirthday} × ${beforeMonthEnergy}</p><h3>${beforeMonth.title}</h3><p>${beforeMonth.text}</p>`;
       const afterContent = afterFullLink ? fullLinkMarkup(afterFullLink, energyAfterBirthday, afterMonthEnergy) : `<p class="month-kicker">С ${formatDate(birthdayInReportYear)} · связка ${energyAfterBirthday} × ${afterMonthEnergy}</p><h3>${afterMonth.title}</h3><p>${afterMonth.text}</p>`;
       item.innerHTML = `<summary><span><small>Переход</small>${monthName}</span><strong>${beforeMonthEnergy}→${afterMonthEnergy}</strong><i>+</i></summary><div class="month-content"><div class="month-period">${beforeContent}</div><div class="month-period">${afterContent}</div></div>`;
+      calculatedPdfMonths.push(pdfMonthBlock(monthName, [
+        pdfLinkEntry(beforeFullLink, `До ${formatDate(birthdayInReportYear)} · связка ${energyBeforeBirthday} × ${beforeMonthEnergy}`, beforeMonth.title, beforeMonth.text),
+        pdfLinkEntry(afterFullLink, `С ${formatDate(birthdayInReportYear)} · связка ${energyAfterBirthday} × ${afterMonthEnergy}`, afterMonth.title, afterMonth.text)
+      ]));
     } else {
       item.innerHTML = `<summary><span>${monthName}</span><strong>${monthEnergy}</strong><i>+</i></summary><div class="month-content">${fullLink ? fullLinkMarkup(fullLink, monthYearEnergy, monthEnergy) : `<p class="month-kicker">Связка ${monthYearEnergy} × ${monthEnergy}</p><h3>${month.title}</h3><p>${month.text}</p><p class="draft-note">Это короткий черновик. Здесь появится отдельная авторская карточка для связки ${monthYearEnergy} × ${monthEnergy}: деньги, работа, отношения, ресурс, опасность и главный совет.</p>`}</div>`;
+      calculatedPdfMonths.push(pdfMonthBlock(monthName, [
+        pdfLinkEntry(fullLink, `Связка ${monthYearEnergy} × ${monthEnergy}`, month.title, month.text)
+      ]));
     }
     monthContainer.append(item);
   });
@@ -244,6 +252,7 @@ let currentPdfUrl = null;
 let currentPdfFilename = null;
 let pdfBuildLoading = null;
 let preparedPdfKey = null;
+let calculatedPdfMonths = [];
 
 const reduceNumber = (number) => {
   let result = Math.abs(Number(number) || 0);
@@ -287,6 +296,23 @@ const getPdfMake = () => {
 };
 
 const asParagraphs = (text, style = "paragraph") => text.split(/\n+/).map((line) => line.trim()).filter(Boolean).map((line) => ({ text: line, style }));
+
+const pdfLinkEntry = (link, kicker, fallbackTitle, fallbackText) => ({
+  kicker,
+  title: link?.title || fallbackTitle,
+  general: link?.general || fallbackText,
+  sections: link ? [["Деньги", link.money], ["Работа и дело", link.work], ["Отношения", link.relationships], ["Здоровье и ресурс", link.health], ["Опасность", link.danger], ["Что очень важно сделать", link.do], ["Чего категорически не делать", link.dont], ["Главный совет", link.advice]] : []
+});
+
+const pdfMonthBlock = (monthName, entries) => ({
+  stack: [{ text: monthName, style: "monthTitle" }, ...entries.flatMap((entry) => [
+    ...(entry.kicker ? [{ text: entry.kicker, style: "monthKicker" }] : []),
+    ...(entry.title ? [{ text: entry.title, style: "sectionTitle" }] : []),
+    ...asParagraphs(entry.general || ""),
+    ...(entry.sections || []).flatMap(([sectionTitle, sectionText]) => [{ text: sectionTitle, style: "subsectionTitle" }, ...asParagraphs(sectionText || "")])
+  ])],
+  pageBreak: "before"
+});
 
 const imageAsDataUrl = async (source) => {
   const response = await fetch(source);
@@ -337,7 +363,7 @@ const buildPdfDocument = (templates) => {
     return parts;
   });
   const sensitive = document.querySelector("#birthday-note")?.innerText || "";
-  const months = [...document.querySelectorAll("#months details")].map((month) => {
+  const months = calculatedPdfMonths.length ? calculatedPdfMonths : [...document.querySelectorAll("#months details")].map((month) => {
     const title = month.querySelector("summary")?.innerText.replace(/\+/g, "").trim() || "";
     const content = month.querySelector(".month-content");
     const kicker = content?.querySelector(".month-kicker")?.textContent?.trim() || "";
