@@ -250,9 +250,11 @@
 .pdf-preview-topbar button { width: 40px; height: 40px; border: 0; border-radius: 50%; background: #edf2f6; color: #294b70; font-size: 30px; font-weight: 300; line-height: 1; }
 .pdf-preview-pages {
   height: calc(100% - 132px);
-  padding: 0;
-  overflow: hidden;
-  background: #dce3ea;
+  padding: 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background: #e7edf3;
 }
 
 .pdf-preview-frame {
@@ -275,6 +277,48 @@
 
 .pdf-preview-loading strong { font-size: 20px; }
 .pdf-preview-loading span { color: #60758b; font-size: 14px; line-height: 1.45; }
+
+/* На телефоне это не встроенный лист A4, а живой адаптивный предпросмотр.
+   Настоящий PDF остаётся отдельной кнопкой скачивания. */
+.pdf-mobile-preview {
+  width: 100%;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid rgba(116, 144, 177, 0.27);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 22px rgba(42, 70, 104, 0.09);
+}
+
+.pdf-mobile-preview .report-lead { margin-bottom: 14px; }
+.pdf-mobile-preview .month-card { margin-top: 12px; }
+.pdf-mobile-preview .month-card summary { pointer-events: none; }
+.pdf-mobile-preview .month-card summary i { display: none; }
+.pdf-mobile-preview .month-content { padding-bottom: 2px; }
+.pdf-mobile-preview .link-sections { gap: 12px; }
+
+@media (max-width: 699px) {
+  .pdf-preview-dialog {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .pdf-preview-topbar {
+    min-height: 58px;
+    padding: 0 14px 0 16px;
+  }
+
+  .pdf-preview-pages {
+    height: calc(100% - 124px);
+    padding: 10px;
+  }
+
+  .pdf-mobile-preview { padding: 14px; border-radius: 16px; }
+}
 
 .pdf-live-page {
   position: relative;

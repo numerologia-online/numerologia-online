@@ -424,16 +424,27 @@ const setPdfPreviewLoading = (message) => {
   pdfPreviewPages.innerHTML = `<div class="pdf-preview-loading"><strong>${message}</strong><span>Подготавливаю точный макет для скачивания.</span></div>`;
 };
 
+const renderMobilePdfPreview = () => {
+  const report = document.querySelector("#report");
+  if (!report) return setPdfPreviewLoading("Сначала создайте расчёт");
+
+  const preview = report.cloneNode(true);
+  preview.removeAttribute("id");
+  preview.classList.add("pdf-mobile-preview");
+  preview.querySelectorAll("details").forEach((month) => { month.open = true; });
+  preview.querySelectorAll(".draft-note").forEach((note) => note.remove());
+  pdfPreviewPages.replaceChildren(preview);
+};
+
 const openPdfPreview = async () => {
   pdfPreviewDialog.showModal();
-  setPdfPreviewLoading("Собираю ваш PDF...");
+  renderMobilePdfPreview();
   pdfDownloadButton.disabled = true;
   pdfDownloadButton.textContent = "Готовлю PDF...";
   try {
-    const { url } = await preparePdf();
-    pdfPreviewPages.innerHTML = `<iframe class="pdf-preview-frame" title="Предпросмотр PDF" src="${url}#toolbar=0&navpanes=0"></iframe>`;
+    await preparePdf();
   } catch (error) {
-    setPdfPreviewLoading("Не удалось подготовить PDF");
+    // Предпросмотр остаётся доступен на сайте, даже если браузер не смог собрать файл.
   } finally {
     pdfDownloadButton.disabled = false;
     pdfDownloadButton.innerHTML = "Скачать PDF <span>↓</span>";
@@ -466,5 +477,4 @@ pdfDownloadButton.addEventListener("click", downloadPdf);
 pdfPreviewDialog.addEventListener("close", () => {
   pdfPreviewPages.innerHTML = "";
 });
-
 
