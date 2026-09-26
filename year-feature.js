@@ -277,10 +277,18 @@ const pdfLinkEntry = (link, kicker, fallbackTitle, fallbackText) => ({
 
 const pdfMonthBlock = (monthName, entries) => ({
   stack: [{ text: monthName, style: "monthTitle" }, ...entries.flatMap((entry) => [
-    ...(entry.kicker ? [{ text: entry.kicker, style: "monthKicker" }] : []),
-    ...(entry.title ? [{ text: entry.title, style: "sectionTitle" }] : []),
-    ...asParagraphs(entry.general || ""),
-    ...(entry.sections || []).flatMap(([sectionTitle, sectionText]) => [{ text: sectionTitle, style: "subsectionTitle" }, ...asParagraphs(sectionText || "")])
+    {
+      stack: [
+        ...(entry.kicker ? [{ text: entry.kicker, style: "monthKicker" }] : []),
+        ...(entry.title ? [{ text: entry.title, style: "sectionTitle" }] : []),
+        ...asParagraphs(entry.general || "")
+      ],
+      unbreakable: (entry.general || "").length < 850
+    },
+    ...(entry.sections || []).map(([sectionTitle, sectionText]) => ({
+      stack: [{ text: sectionTitle, style: "subsectionTitle" }, ...asParagraphs(sectionText || "")],
+      unbreakable: (sectionText || "").length < 800
+    }))
   ])],
   pageBreak: "before"
 });
@@ -371,36 +379,36 @@ const buildPdfDocument = (templates) => {
     info: { title: `${reportTitle} - ${birthInput.value}` },
     pageSize: "A4",
     // Wide inner margins keep large type safely inside the decorative frame.
-    pageMargins: [64, 80, 64, 76],
+    pageMargins: [72, 92, 72, 108],
     images: { cover: templates.cover, inner: templates.inner },
     background: (page) => ({ image: page === 1 ? "cover" : "inner", width: 595.28, height: 841.89 }),
-    defaultStyle: { font: "Roboto", fontSize: 22, color: "#24384F", lineHeight: 1.55 },
+    defaultStyle: { font: "Roboto", fontSize: 24, color: "#142C43", lineHeight: 1.52 },
     styles: {
-      coverKicker: { fontSize: 24, bold: true, color: "#1F3E5F", alignment: "center", lineHeight: 1.08 },
-      coverCode: { fontSize: 17, color: "#9B7A3E", characterSpacing: 4, alignment: "center" },
-      coverName: { fontSize: 10, bold: true, color: "#80642F", characterSpacing: 1.45, alignment: "center" },
-      coverYear: { fontSize: 72, bold: true, color: "#1D3654", alignment: "center" },
-      coverSubtitle: { fontSize: 23, bold: true, color: "#665332", alignment: "center", lineHeight: 1.08 },
-      coverDetails: { fontSize: 15, bold: true, color: "#24384F", alignment: "center", lineHeight: 1.45 },
-      innerKicker: { fontSize: 13, bold: true, color: "#8A6A32", characterSpacing: 1.25, alignment: "center", margin: [0, 0, 0, 14] },
-      title: { fontSize: 32, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 16] },
-      subtitle: { fontSize: 18, color: "#53677B", alignment: "center", margin: [0, 0, 0, 24] },
-      phase: { fontSize: 13, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 24, 0, 10] },
-      sectionTitle: { fontSize: 28, bold: true, color: "#1E405F", margin: [0, 0, 0, 15] },
-      subsectionTitle: { fontSize: 19, bold: true, color: "#715431", margin: [0, 22, 0, 8] },
-      monthKicker: { fontSize: 13, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 0, 0, 11] },
-      noteTitle: { fontSize: 19, bold: true, color: "#715431", margin: [0, 24, 0, 9] },
-      paragraph: { margin: [0, 0, 0, 17] },
-      monthTitle: { fontSize: 32, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 22] }
+      coverKicker: { fontSize: 38, bold: true, color: "#1F3E5F", alignment: "center", lineHeight: 1.08 },
+      coverCode: { fontSize: 24, color: "#9B7A3E", characterSpacing: 5, alignment: "center" },
+      coverName: { fontSize: 18, bold: true, color: "#80642F", characterSpacing: 1.8, alignment: "center" },
+      coverYear: { fontSize: 112, bold: true, color: "#1D3654", alignment: "center" },
+      coverSubtitle: { fontSize: 35, bold: true, color: "#665332", alignment: "center", lineHeight: 1.1 },
+      coverDetails: { fontSize: 24, bold: true, color: "#142C43", alignment: "center", lineHeight: 1.45 },
+      innerKicker: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 1.25, alignment: "center", margin: [0, 0, 0, 16] },
+      title: { fontSize: 36, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 18] },
+      subtitle: { fontSize: 20, color: "#334B62", alignment: "center", margin: [0, 0, 0, 28] },
+      phase: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 28, 0, 12] },
+      sectionTitle: { fontSize: 31, bold: true, color: "#1E405F", margin: [0, 0, 0, 18] },
+      subsectionTitle: { fontSize: 25, bold: true, color: "#60431D", margin: [0, 30, 0, 11] },
+      monthKicker: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 0, 0, 13] },
+      noteTitle: { fontSize: 22, bold: true, color: "#60431D", margin: [0, 28, 0, 10] },
+      paragraph: { fontSize: 24, bold: true, margin: [0, 0, 0, 22] },
+      monthTitle: { fontSize: 42, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 28] }
     },
     content: [
       {
         stack: [
-          { text: "ПЕРСОНАЛЬНЫЙ ПРОГНОЗ", style: "coverKicker", margin: [0, 58, 0, 24] },
-          { text: personalCode, style: "coverCode", margin: [0, 0, 0, 58] },
-          { text: "НУМЕРОЛОГИЯ МОМЕНТА", style: "coverName", margin: [0, 0, 0, 12] },
-          { text: String(reportYearValue), style: "coverYear", margin: [0, 0, 0, 64] },
-          { text: `ЛИЧНАЯ КАРТА ГОДА ${reportYearValue}`, style: "coverSubtitle", margin: [0, 0, 0, 86] },
+          { text: "ПЕРСОНАЛЬНЫЙ ПРОГНОЗ", style: "coverKicker", margin: [0, 38, 0, 30] },
+          { text: personalCode, style: "coverCode", margin: [0, 0, 0, 54] },
+          { text: "НУМЕРОЛОГИЯ МОМЕНТА", style: "coverName", margin: [0, 0, 0, 16] },
+          { text: String(reportYearValue), style: "coverYear", margin: [0, 0, 0, 54] },
+          { text: `ЛИЧНАЯ КАРТА ГОДА ${reportYearValue}`, style: "coverSubtitle", margin: [0, 0, 0, 72] },
           { text: `Дата рождения: ${birthInput.value}\nВ ${reportYearValue} вам исполняется: ${age} лет`, style: "coverDetails" }
         ],
         pageBreak: "after"
