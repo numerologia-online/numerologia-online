@@ -7,6 +7,8 @@ const birthInput = document.querySelector("#birth-date");
 const report = document.querySelector("#report");
 const calculationLoader = document.querySelector("#calculation-loader");
 const loaderMessage = document.querySelector("#loader-message");
+const loaderTrack = calculationLoader.querySelector(".loader-track");
+const loaderProgress = document.querySelector("#loader-progress");
 const submitButton = form.querySelector(".primary-button");
 let reportRevealTimer;
 
@@ -15,13 +17,18 @@ const showCalculationLoading = () => {
   report.hidden = true;
   report.classList.remove("is-revealing", "is-visible");
   calculationLoader.hidden = false;
-  calculationLoader.classList.remove("is-calculating");
-  loaderMessage.textContent = "Собираю ваш личный год...";
+  calculationLoader.classList.remove("is-leaving");
+  loaderProgress.style.width = "0%";
+  loaderTrack.setAttribute("aria-valuenow", "0");
+  loaderMessage.textContent = "Считаю ваш январь";
   submitButton.disabled = true;
   calculationLoader.scrollIntoView({ behavior: "smooth", block: "center" });
 };
 
 const showCalculatedReport = () => {
+  loaderProgress.style.width = "100%";
+  loaderTrack.setAttribute("aria-valuenow", "100");
+  loaderMessage.textContent = "Ваш расчёт года готов";
   calculationLoader.classList.add("is-leaving");
   reportRevealTimer = window.setTimeout(() => {
     calculationLoader.hidden = true;
@@ -31,7 +38,7 @@ const showCalculatedReport = () => {
     report.classList.add("is-revealing");
     window.requestAnimationFrame(() => report.classList.add("is-visible"));
     report.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, 180);
+  }, 680);
 };
 
 const showCalculationError = () => {
@@ -39,9 +46,12 @@ const showCalculationError = () => {
   submitButton.disabled = false;
 };
 
-const showMonthProgress = async (monthName) => {
-  loaderMessage.textContent = `Собираю ${monthName.toLowerCase()}...`;
-  await new Promise((resolve) => window.setTimeout(resolve, 80));
+const showMonthProgress = async (monthName, monthIndex) => {
+  const progress = Math.round(((monthIndex + 1) / monthNames.length) * 100);
+  loaderMessage.textContent = `Считаю ваш ${monthName.toLowerCase()}`;
+  loaderProgress.style.width = `${progress}%`;
+  loaderTrack.setAttribute("aria-valuenow", String(progress));
+  await new Promise((resolve) => window.setTimeout(resolve, 600));
 };
 
 const reduce = (value) => {
@@ -176,7 +186,7 @@ form.addEventListener("submit", async (event) => {
   monthContainer.innerHTML = "";
   calculatedPdfMonths = [];
   for (const [index, monthName] of monthNames.entries()) {
-    await showMonthProgress(monthName);
+    await showMonthProgress(monthName, index);
     const calendarMonth = index + 1;
     const isBirthdayMonth = index === birthDate.getUTCMonth();
     const isBeforeBirthdayMonth = index < birthDate.getUTCMonth();

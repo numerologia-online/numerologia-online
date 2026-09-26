@@ -69,22 +69,10 @@
           </form>
 
           <section id="calculation-loader" class="calculation-loader" hidden aria-live="polite" aria-label="Подготавливаем ваш разбор">
-            <p class="loader-status">ДЕЛАЮ ВАШ ЛИЧНЫЙ РАСЧЁТ ГОДА<span class="loader-dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></p>
-            <div class="loader-matrix" aria-hidden="true">
-              <span class="matrix-line"></span>
-              <i class="matrix-digit" style="--x: 5%; --y: 16%; --delay: 1.2s; --duration: 4.7s">1</i>
-              <i class="matrix-digit" style="--x: 17%; --y: 66%; --delay: .15s; --duration: 5.3s">2</i>
-              <i class="matrix-digit" style="--x: 31%; --y: 27%; --delay: 2.65s; --duration: 4.4s">3</i>
-              <i class="matrix-digit" style="--x: 45%; --y: 72%; --delay: .8s; --duration: 5.6s">4</i>
-              <i class="matrix-digit" style="--x: 52%; --y: 12%; --delay: 3.1s; --duration: 4.9s">5</i>
-              <i class="matrix-digit" style="--x: 63%; --y: 62%; --delay: 1.85s; --duration: 4.2s">6</i>
-              <i class="matrix-digit" style="--x: 75%; --y: 25%; --delay: .42s; --duration: 5.1s">7</i>
-              <i class="matrix-digit" style="--x: 86%; --y: 70%; --delay: 2.28s; --duration: 4.6s">8</i>
-              <i class="matrix-digit" style="--x: 94%; --y: 15%; --delay: 1.52s; --duration: 5.4s">9</i>
+            <div class="loader-track" role="progressbar" aria-label="Ход расчёта года" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <span id="loader-progress" class="loader-progress"></span>
             </div>
-            <div class="loader-message-stack">
-              <p id="loader-message" class="loader-message is-visible">Соединяю месяцы в вашу личную историю.</p>
-            </div>
+            <p id="loader-message" class="loader-message">Считаю ваш январь</p>
           </section>
 
           <section id="report" class="report" hidden aria-live="polite">
@@ -113,6 +101,6 @@
       <div id="pdf-preview-pages" class="pdf-preview-pages" aria-label="Предпросмотр вашего разбора"></div>
       <button id="pdf-download-button" class="pdf-download-button" type="button">Скачать PDF <span>↓</span></button>
     </dialog>
-  <script type="module" src="app.js?v=33"></script>
+  <script type="module" src="app.js?v=34"></script>
   </body>
 </html>

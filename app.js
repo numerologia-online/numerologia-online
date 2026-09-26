@@ -14,14 +14,14 @@ const loadStylesheet = (href) => new Promise((resolve, reject) => {
 });
 
 const getYearFeature = () => {
-  if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=12");
+  if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=13");
   return yearFeatureLoading;
 };
 
 const openYearFeature = async () => {
   const [feature] = await Promise.all([
     getYearFeature(),
-    yearStylesLoading ??= loadStylesheet("year-polish.css?v=24")
+    yearStylesLoading ??= loadStylesheet("year-polish.css?v=25")
   ]);
   feature.openYear();
 };
