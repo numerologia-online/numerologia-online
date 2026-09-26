@@ -309,8 +309,7 @@ const pdfMonthBlock = (monthName, entries) => ({
         stack: [{ text: sectionTitle, style: "subsectionTitle" }, ...asParagraphs(sectionText || "")]
       }))
     ];
-  }),
-  pageBreak: "before"
+  })
 });
 
 const imageAsDataUrl = async (source) => {
@@ -390,8 +389,7 @@ const buildPdfDocument = (templates) => {
         ...intro,
         ...sections,
         ...fallback
-      ],
-      pageBreak: "before"
+      ]
     };
   });
 
