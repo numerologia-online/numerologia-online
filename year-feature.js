@@ -294,8 +294,9 @@ const pdfMonthBlock = (monthName, entries) => ({
       { stack: lead, unbreakable: (entry.general || "").length < 420 },
       ...remainingParagraphs,
       ...(entry.sections || []).map(([sectionTitle, sectionText]) => ({
-        stack: [{ text: sectionTitle, style: "subsectionTitle" }, ...asParagraphs(sectionText || "")],
-        unbreakable: (sectionText || "").length < 800
+        // Sections must be allowed to continue on the next page. Locking a
+        // whole section here sent even short blocks to a new blank page.
+        stack: [{ text: sectionTitle, style: "subsectionTitle" }, ...asParagraphs(sectionText || "")]
       }))
     ];
   }),
