@@ -276,20 +276,28 @@ const pdfLinkEntry = (link, kicker, fallbackTitle, fallbackText) => ({
 });
 
 const pdfMonthBlock = (monthName, entries) => ({
-  stack: [{ text: monthName, style: "monthTitle" }, ...entries.flatMap((entry) => [
-    {
-      stack: [
-        ...(entry.kicker ? [{ text: entry.kicker, style: "monthKicker" }] : []),
-        ...(entry.title ? [{ text: entry.title, style: "sectionTitle" }] : []),
-        ...asParagraphs(entry.general || "")
-      ],
-      unbreakable: (entry.general || "").length < 850
-    },
-    ...(entry.sections || []).map(([sectionTitle, sectionText]) => ({
-      stack: [{ text: sectionTitle, style: "subsectionTitle" }, ...asParagraphs(sectionText || "")],
-      unbreakable: (sectionText || "").length < 800
-    }))
-  ])],
+  // Keep the month name with its first words, but never lock a whole long
+  // month into one block. The latter created title-only pages on mobile.
+  stack: entries.flatMap((entry, entryIndex) => {
+    const paragraphs = asParagraphs(entry.general || "");
+    const firstParagraph = paragraphs.slice(0, 1);
+    const remainingParagraphs = paragraphs.slice(1);
+    const lead = [
+      ...(entryIndex === 0 ? [{ text: monthName, style: "monthTitle" }] : []),
+      ...(entry.kicker ? [{ text: entry.kicker, style: "monthKicker" }] : []),
+      ...(entry.title ? [{ text: entry.title, style: "sectionTitle" }] : []),
+      ...firstParagraph
+    ];
+
+    return [
+      { stack: lead, unbreakable: (entry.general || "").length < 420 },
+      ...remainingParagraphs,
+      ...(entry.sections || []).map(([sectionTitle, sectionText]) => ({
+        stack: [{ text: sectionTitle, style: "subsectionTitle" }, ...asParagraphs(sectionText || "")],
+        unbreakable: (sectionText || "").length < 800
+      }))
+    ];
+  }),
   pageBreak: "before"
 });
 
@@ -404,12 +412,12 @@ const buildPdfDocument = (templates) => {
     content: [
       {
         stack: [
-          { text: "ПЕРСОНАЛЬНЫЙ ПРОГНОЗ", style: "coverKicker", margin: [0, 38, 0, 30] },
-          { text: personalCode, style: "coverCode", margin: [0, 0, 0, 54] },
-          { text: "НУМЕРОЛОГИЯ МОМЕНТА", style: "coverName", margin: [0, 0, 0, 16] },
-          { text: String(reportYearValue), style: "coverYear", margin: [0, 0, 0, 54] },
-          { text: `ЛИЧНАЯ КАРТА ГОДА ${reportYearValue}`, style: "coverSubtitle", margin: [0, 0, 0, 72] },
-          { text: `Дата рождения: ${birthInput.value}\nВ ${reportYearValue} вам исполняется: ${age} лет`, style: "coverDetails" }
+          { text: "ПЕРСОНАЛЬНЫЙ ПРОГНОЗ", style: "coverKicker", margin: [0, 22, 0, 18] },
+          { text: personalCode, style: "coverCode", margin: [0, 0, 0, 34] },
+          { text: "НУМЕРОЛОГИЯ МОМЕНТА", style: "coverName", margin: [0, 0, 0, 12] },
+          { text: String(reportYearValue), style: "coverYear", margin: [0, 0, 0, 24] },
+          { text: `ЛИЧНАЯ КАРТА ГОДА ${reportYearValue}`, style: "coverSubtitle", margin: [0, 0, 0, 22] },
+          { text: `Дата рождения: ${birthInput.value}\nВ ${reportYearValue} вам исполняется: ${age} лет`, style: "coverDetails", margin: [0, 0, 0, 12] }
         ],
         pageBreak: "after"
       },
