@@ -21,7 +21,7 @@ const getYearFeature = () => {
 const openYearFeature = async () => {
   const [feature] = await Promise.all([
     getYearFeature(),
-    yearStylesLoading ??= loadStylesheet("year-polish.css?v=22")
+    yearStylesLoading ??= loadStylesheet("year-polish.css?v=23")
   ]);
   feature.openYear();
 };

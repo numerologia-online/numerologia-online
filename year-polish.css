@@ -461,3 +461,36 @@
 .report.is-revealing.is-visible { opacity: 1; transform: translateY(0); }
 @media (prefers-reduced-motion: reduce) { .loader-dots i, .matrix-digit { animation: none; } }
 .primary-button:disabled { cursor: wait; opacity: 0.78; }
+
+/* На телефоне оставляем одну заметную рамку отчёта. Так текст не превращается
+   в узкую колонку между несколькими декоративными линиями. */
+@media (max-width: 699px) {
+  #year.screen {
+    padding-right: 10px;
+    padding-left: 10px;
+    background:
+      radial-gradient(circle at 13% 8%, rgba(255, 255, 255, 0.92), transparent 31%),
+      radial-gradient(circle at 93% 78%, rgba(160, 183, 211, 0.34), transparent 38%),
+      linear-gradient(145deg, #f1f4f8, #e1e8f1 58%, #f7f8fa);
+  }
+
+  .year-paper {
+    padding: 14px 8px 28px;
+    border: 0;
+  }
+
+  .report {
+    padding: 18px;
+    border: 2px solid rgba(184, 145, 72, 0.78);
+    border-radius: 25px;
+  }
+
+  .report::before { display: none; }
+
+  .year-cycle-story {
+    padding: 22px 4px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+}
