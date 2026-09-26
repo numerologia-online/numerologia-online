@@ -462,6 +462,11 @@
 @media (prefers-reduced-motion: reduce) { .loader-dots i, .matrix-digit { animation: none; } }
 .primary-button:disabled { cursor: wait; opacity: 0.78; }
 
+@media (max-width: 699px) {
+  .year-intro { padding: 7px 0 19px; }
+  .pdf-button-top { margin: 0 0 18px; }
+}
+
 /* На телефоне оставляем одну заметную рамку отчёта. Так текст не превращается
    в узкую колонку между несколькими декоративными линиями. */
 @media (max-width: 699px) {

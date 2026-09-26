@@ -214,6 +214,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 const pdfButton = document.querySelector("#pdf-button");
+const pdfButtonTop = document.querySelector("#pdf-button-top");
 const pdfPreviewDialog = document.querySelector("#pdf-preview");
 const pdfPreviewPages = document.querySelector("#pdf-preview-pages");
 const pdfPreviewClose = document.querySelector("#pdf-preview-close");
@@ -476,7 +477,7 @@ const renderMobilePdfPreview = () => {
   preview.classList.add("pdf-mobile-preview");
   preview.querySelectorAll("details").forEach((month) => { month.open = true; });
   preview.querySelectorAll(".draft-note").forEach((note) => note.remove());
-  preview.querySelectorAll("#pdf-button").forEach((button) => button.remove());
+  preview.querySelectorAll("#pdf-button, #pdf-button-top").forEach((button) => button.remove());
   pdfPreviewPages.replaceChildren(preview);
 };
 
@@ -516,6 +517,7 @@ const downloadPdf = async () => {
 };
 
 pdfButton.addEventListener("click", openPdfPreview);
+pdfButtonTop.addEventListener("click", openPdfPreview);
 pdfPreviewClose.addEventListener("click", () => pdfPreviewDialog.close());
 pdfDownloadButton.addEventListener("click", downloadPdf);
 pdfPreviewDialog.addEventListener("close", () => {
