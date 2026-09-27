@@ -1,5 +1,5 @@
 export const REDFLAG_CATEGORIES = [
-  { id: "money", kicker: "Деньги и щедрость", title: "Деньги и щедрость", description: "Подарки, вклад, ответственность и опора", load: () => import("./redflag-money.js?v=1") },
+  { id: "money", kicker: "Деньги и щедрость", title: "Деньги и щедрость", description: "Подарки, вклад, ответственность и опора", load: () => import("./redflag-money.js?v=2") },
   { id: "love", kicker: "Любовь и отношения", title: "Любовь и отношения", description: "Инициатива, зрелость, интерес и формат близости", load: () => import("./redflag-love.js?v=2") },
   { id: "flags", kicker: "Красные флаги", title: "Красные флаги", description: "Качели, контроль, давление и границы", load: () => import("./redflag-flags.js?v=1") },
   { id: "infidelity", kicker: "Измены и флирт", title: "Измены и флирт", description: "Верность, соблазны, честность и границы", load: () => import("./redflag-infidelity.js?v=1") },

@@ -1,4 +1,5 @@
 import { calculateMatrix, calculatePersonalYear } from "./numerology-core.js?v=1";
+import { buildClassicProfile } from "./redflag-classic.js?v=1";
 
 const includes = (values, value) => values.includes(value);
 
@@ -65,9 +66,11 @@ const periodNotes = {
 export const buildRelationshipProfile = (birthDate) => {
   const matrix = calculateMatrix(birthDate);
   const personalYear = calculatePersonalYear(birthDate);
+  const classic = buildClassicProfile(birthDate);
 
   return {
     matrix,
+    classic,
     personalYear,
     periodNote: periodNotes[personalYear],
     initiative: initiativeMode(matrix.left),

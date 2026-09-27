@@ -1,5 +1,5 @@
 import { parseBirthDate } from "./numerology-core.js?v=1";
-import { buildRelationshipProfile } from "./redflag-engine.js?v=2";
+import { buildRelationshipProfile } from "./redflag-engine.js?v=3";
 import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=1";
 
 const home = document.querySelector("#home");
@@ -48,9 +48,10 @@ const createQuestion = (question, state) => {
   const answer = document.createElement("div");
   answer.className = "redflag-answer";
   answer.hidden = !opened;
+  const paragraphs = response.paragraphs ?? [response.answer];
   answer.innerHTML = `
     <p class="redflag-verdict">${response.verdict}</p>
-    <p>${response.answer}</p>
+    ${paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")}
     <p class="redflag-observation"><strong>На что смотреть:</strong> ${response.observation}</p>`;
 
   button.addEventListener("click", () => {
