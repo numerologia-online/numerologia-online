@@ -30,18 +30,49 @@
         </div>
 
         <section class="products" aria-label="Направления расчётов">
-          <button class="product-card calculation" type="button" data-coming-soon data-artwork="full-calculation.webp"><span class="product-title">Полный расчёт</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <button class="product-card red-flag" type="button" data-coming-soon data-artwork="red-flag.webp"><span class="product-title">Мужчина или Ред Флаг</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <button class="product-card woman" type="button" data-coming-soon data-artwork="woman.webp"><span class="product-title">Женщина или тарелочница</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <button class="product-card code" type="button" data-coming-soon data-artwork="code.webp"><span class="product-title">Мой код судьбы</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <button class="product-card day" type="button" data-coming-soon data-artwork="day.webp"><span class="product-title">Расчёт на день</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <button class="product-card year-card" type="button" data-open-year data-artwork="year.webp"><span class="product-title">Разбор года</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <button class="product-card child" type="button" data-coming-soon data-artwork="children.webp"><span class="product-title">Расчёт для детей</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <button class="product-card money" type="button" data-coming-soon data-artwork="money.webp"><span class="product-title">Деньги</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <button class="product-card compatibility" type="button" data-coming-soon data-artwork="compatibility.webp"><span class="product-title">Совместимость</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <button class="product-card horary" type="button" data-coming-soon data-artwork="horary.webp"><span class="product-title">Хорарная нумерология</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <button class="product-card appointment" type="button" data-coming-soon data-artwork="appointment.jpg"><span class="product-title">Записаться на личный расчёт</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card calculation" type="button" data-open-matrix data-artwork="assets/full-calculation.webp"><span class="product-title">Полный расчёт</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card red-flag" type="button" data-coming-soon data-artwork="assets/red-flag.webp"><span class="product-title">Мужчина или Ред Флаг</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card woman" type="button" data-coming-soon data-artwork="assets/woman.webp"><span class="product-title">Женщина или тарелочница</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card code" type="button" data-coming-soon data-artwork="assets/code.webp"><span class="product-title">Мой код судьбы</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card day" type="button" data-coming-soon data-artwork="assets/day.webp"><span class="product-title">Расчёт на день</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card year-card" type="button" data-open-year data-artwork="assets/year.webp"><span class="product-title">Разбор года</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card child" type="button" data-coming-soon data-artwork="assets/children.webp"><span class="product-title">Расчёт для детей</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card money" type="button" data-coming-soon data-artwork="assets/money.webp"><span class="product-title">Деньги</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card compatibility" type="button" data-coming-soon data-artwork="assets/compatibility.webp"><span class="product-title">Совместимость</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card horary" type="button" data-coming-soon data-artwork="assets/horary.webp"><span class="product-title">Хорарная нумерология</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card appointment" type="button" data-coming-soon data-artwork="assets/appointment.jpg"><span class="product-title">Записаться на личный расчёт</span><span class="product-arrow" aria-hidden="true">→</span></button>
         </section>
+      </section>
+
+      <section id="matrix" class="screen" aria-labelledby="matrix-title">
+        <div id="matrix-root" class="matrix-paper">
+          <header class="matrix-panel-topbar">
+            <p class="eyebrow">Полный расчёт</p>
+            <button id="back-matrix-home" class="matrix-close" type="button" aria-label="Вернуться ко всем расчётам">×</button>
+          </header>
+
+          <div class="matrix-intro">
+            <h1 id="matrix-title">Большой расчёт<br />по дате рождения</h1>
+            <p>Введите дату рождения — сначала покажем вашу личную матрицу. Расшифровки и подробные разделы добавим следующим шагом.</p>
+          </div>
+
+          <form id="matrix-form" class="matrix-form" novalidate>
+            <label>
+              <span>Дата рождения</span>
+              <input id="matrix-birth-date" type="text" inputmode="numeric" autocomplete="bday" placeholder="ДД.ММ.ГГГГ" pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}" maxlength="10" required />
+            </label>
+            <p id="matrix-error" class="matrix-error" hidden aria-live="polite"></p>
+            <button class="matrix-submit" type="submit">Рассчитать <span aria-hidden="true">→</span></button>
+          </form>
+
+          <section id="matrix-result" class="matrix-result" hidden aria-live="polite">
+            <div class="matrix-result-heading">
+              <p class="eyebrow">Ваша матрица</p>
+              <h2 id="matrix-result-title">Личный рисунок энергий</h2>
+            </div>
+            <div id="matrix-diagram" class="matrix-diagram" aria-label="Матрица судьбы"></div>
+          </section>
+        </div>
       </section>
 
       <section id="year" class="screen" aria-labelledby="year-title">

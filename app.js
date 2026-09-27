@@ -1,6 +1,9 @@
+const home = document.querySelector("#home");
 const dialog = document.querySelector("#coming-soon");
 let yearFeatureLoading;
 let yearStylesLoading;
+let matrixFeatureLoading;
+let matrixStylesLoading;
 
 const loadStylesheet = (href) => new Promise((resolve, reject) => {
   const existing = document.querySelector(`link[href^="${href}"]`);
@@ -26,8 +29,25 @@ const openYearFeature = async () => {
   feature.openYear();
 };
 
+const getMatrixFeature = () => {
+  if (!matrixFeatureLoading) matrixFeatureLoading = import("./matrix-feature.js?v=1");
+  return matrixFeatureLoading;
+};
+
+const openMatrixFeature = async () => {
+  const [feature] = await Promise.all([
+    getMatrixFeature(),
+    matrixStylesLoading ??= loadStylesheet("matrix-polish.css?v=1")
+  ]);
+  feature.openMatrix();
+};
+
 document.querySelectorAll("[data-open-year]").forEach((button) => button.addEventListener("click", () => {
   openYearFeature().catch(() => alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
+}));
+
+document.querySelectorAll("[data-open-matrix]").forEach((button) => button.addEventListener("click", () => {
+  openMatrixFeature().catch(() => alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
 }));
 
 document.querySelectorAll("[data-coming-soon]").forEach((button) => button.addEventListener("click", () => dialog.showModal()));

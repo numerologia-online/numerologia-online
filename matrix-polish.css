@@ -1,0 +1,159 @@
+#matrix {
+  background:
+    radial-gradient(circle at 6% 9%, rgba(48, 125, 119, .14), transparent 24rem),
+    radial-gradient(circle at 96% 85%, rgba(200, 164, 102, .15), transparent 23rem),
+    #f8f7f2;
+}
+
+.matrix-paper {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 20px 18px 34px;
+  border: 1px solid rgba(170, 132, 69, .22);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 12% 5%, rgba(221, 236, 233, .7), transparent 32%),
+    linear-gradient(145deg, #fffdf8, #fbf8ef);
+  box-shadow: 0 20px 45px rgba(27, 48, 47, .12);
+}
+
+.matrix-panel-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.matrix-panel-topbar .eyebrow { color: #2f6b58; }
+
+.matrix-close {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #eaf0e8;
+  color: #195c47;
+  font-size: 36px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.matrix-intro { padding: 14px 7px 24px; }
+
+.matrix-intro h1,
+.matrix-result-heading h2 {
+  color: #173d34;
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: -.06em;
+}
+
+.matrix-intro h1 { font-size: clamp(40px, 11vw, 62px); }
+
+.matrix-intro p {
+  max-width: 33ch;
+  margin: 18px 0 0;
+  color: #526158;
+}
+
+.matrix-form {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(165, 134, 77, .18);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .6);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .86);
+}
+
+.matrix-form label { display: grid; gap: 7px; color: #175d47; font-size: 14px; font-weight: 800; }
+
+.matrix-form input {
+  width: 100%;
+  min-height: 58px;
+  padding: 0 16px;
+  border: 1px solid rgba(35, 91, 72, .18);
+  border-radius: 17px;
+  background: rgba(255, 255, 255, .92);
+  color: #1d2f2a;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.matrix-form input:focus { outline: 3px solid rgba(61, 126, 103, .2); border-color: #348164; }
+
+.matrix-error { margin: -2px 0 0; color: #a23e43; font-size: 14px; font-weight: 700; }
+
+.matrix-submit {
+  min-height: 60px;
+  border: 0;
+  border-radius: 19px;
+  background: linear-gradient(130deg, #12664b, #23835f);
+  box-shadow: 0 13px 26px rgba(22, 96, 71, .18);
+  color: #fff;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.matrix-submit:active { transform: scale(.985); }
+
+.matrix-result { padding-top: 34px; }
+
+.matrix-result-heading { padding: 0 7px 14px; }
+.matrix-result-heading .eyebrow { color: #a27a35; }
+.matrix-result-heading h2 { font-size: clamp(30px, 8vw, 42px); }
+
+.matrix-diagram {
+  padding: 5px;
+  border: 1px solid rgba(172, 142, 82, .28);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(231, 244, 240, .66), transparent 42%),
+    #fffdf8;
+  box-shadow: 0 15px 28px rgba(34, 59, 51, .08);
+}
+
+.matrix-diagram svg { display: block; width: 100%; height: auto; }
+
+.matrix-frame { fill: none; stroke: #25433b; stroke-width: 2.2; vector-effect: non-scaling-stroke; }
+.matrix-frame--soft { stroke: #af8a4a; stroke-opacity: .5; stroke-width: 1.2; }
+.matrix-axis { fill: none; stroke-width: 1.45; vector-effect: non-scaling-stroke; }
+.matrix-axis--neutral { stroke: #557268; stroke-opacity: .56; }
+.matrix-axis--blue { stroke: #456f99; stroke-opacity: .75; }
+.matrix-axis--rose { stroke: #bd696b; stroke-opacity: .74; }
+
+.matrix-node circle { stroke-width: 1.8; vector-effect: non-scaling-stroke; }
+.matrix-node text {
+  dominant-baseline: central;
+  fill: #213b33;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+.matrix-node--medium text { font-size: 24px; }
+.matrix-node--major text { fill: #fff; font-size: 28px; }
+.matrix-node--center text { fill: #443410; font-size: 31px; }
+.matrix-node--plain circle { fill: #fffdf8; stroke: #253b35; }
+.matrix-node--blue circle { fill: #347ed6; stroke: #fff; }
+.matrix-node--blue text { fill: #fff; }
+.matrix-node--sky circle { fill: #25b6dc; stroke: #fff; }
+.matrix-node--sky text { fill: #fff; }
+.matrix-node--green circle { fill: #55ad62; stroke: #fff; }
+.matrix-node--green text { fill: #fff; }
+.matrix-node--gold circle { fill: #de9a55; stroke: #fff; }
+.matrix-node--gold text { fill: #fff; }
+.matrix-node--violet circle { fill: #a73b9f; stroke: #fff; }
+.matrix-node--rose circle { fill: #db5954; stroke: #fff; }
+.matrix-node--center circle { fill: #f4ca58; stroke: #fff7de; stroke-width: 2.4; }
+
+@media (max-width: 430px) {
+  #matrix { padding-right: 14px; padding-left: 14px; }
+  .matrix-paper { padding-right: 14px; padding-left: 14px; border-radius: 26px; }
+  .matrix-intro { padding-right: 4px; padding-left: 4px; }
+  .matrix-diagram { margin: 0 -4px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .matrix-submit:active { transform: none; }
+}
