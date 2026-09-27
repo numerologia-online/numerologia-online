@@ -45,14 +45,14 @@ const openMatrixFeature = async () => {
 };
 
 const getRedFlagFeature = () => {
-  if (!redFlagFeatureLoading) redFlagFeatureLoading = import("./redflag-feature.js?v=2");
+  if (!redFlagFeatureLoading) redFlagFeatureLoading = import("./redflag-feature.js?v=3");
   return redFlagFeatureLoading;
 };
 
 const openRedFlagFeature = async () => {
   const [feature] = await Promise.all([
     getRedFlagFeature(),
-    redFlagStylesLoading ??= loadStylesheet("redflag-polish.css?v=1")
+    redFlagStylesLoading ??= loadStylesheet("redflag-polish.css?v=2")
   ]);
   feature.openRedFlag();
 };

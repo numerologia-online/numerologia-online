@@ -174,3 +174,5 @@ export const LOVE_QUESTIONS = [
     )
   }
 ];
+
+export const QUESTIONS = LOVE_QUESTIONS;

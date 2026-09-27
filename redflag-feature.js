@@ -1,46 +1,36 @@
 import { parseBirthDate } from "./numerology-core.js?v=1";
-import { buildRelationshipProfile } from "./redflag-engine.js?v=1";
+import { buildRelationshipProfile } from "./redflag-engine.js?v=2";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=1";
 
 const home = document.querySelector("#home");
 const redFlag = document.querySelector("#redflag");
 const form = document.querySelector("#redflag-form");
 const birthDateInput = document.querySelector("#redflag-birth-date");
 const error = document.querySelector("#redflag-error");
-const category = document.querySelector("#redflag-category");
-const categoryToggle = document.querySelector("#redflag-category-toggle");
-const categoryContent = document.querySelector("#redflag-category-content");
-const readyNote = document.querySelector("#redflag-ready-note");
-const questionsRoot = document.querySelector("#redflag-questions");
+const categoriesRoot = document.querySelector("#redflag-categories");
 const backButton = document.querySelector("#back-redflag-home");
 
-let loveContentLoading;
-let questions = [];
-let activeQuestionId;
+const categoryStates = new Map(REDFLAG_CATEGORIES.map((category) => [category.id, {
+  expanded: false,
+  loading: false,
+  questions: null,
+  activeQuestionId: null
+}]));
+
 let activeProfile;
-
-const getLoveQuestions = async () => {
-  loveContentLoading ??= import("./redflag-love.js?v=1");
-  const content = await loveContentLoading;
-  return content.LOVE_QUESTIONS;
-};
-
-const setCategoryExpanded = (expanded) => {
-  categoryToggle.setAttribute("aria-expanded", String(expanded));
-  categoryContent.hidden = !expanded;
-  category.classList.toggle("is-open", expanded);
-};
+let formattedDate;
 
 const showError = (message) => {
   error.textContent = message;
   error.hidden = false;
 };
 
-const createQuestion = (question, profile, opened) => {
+const createQuestion = (question, state) => {
+  const opened = state.activeQuestionId === question.id;
   const article = document.createElement("article");
-  article.className = `redflag-question${opened ? " is-open" : ""}${profile ? " is-calculated" : " is-preview"}`;
-  article.dataset.questionId = question.id;
+  article.className = `redflag-question${opened ? " is-open" : ""}${activeProfile ? " is-calculated" : " is-preview"}`;
 
-  if (!profile) {
+  if (!activeProfile) {
     const preview = document.createElement("p");
     preview.className = "redflag-question-preview";
     preview.textContent = question.title;
@@ -48,7 +38,7 @@ const createQuestion = (question, profile, opened) => {
     return article;
   }
 
-  const response = question.answer(profile);
+  const response = question.answer(activeProfile);
   const button = document.createElement("button");
   button.className = "redflag-question-toggle";
   button.type = "button";
@@ -64,26 +54,78 @@ const createQuestion = (question, profile, opened) => {
     <p class="redflag-observation"><strong>На что смотреть:</strong> ${response.observation}</p>`;
 
   button.addEventListener("click", () => {
-    activeQuestionId = activeQuestionId === question.id ? null : question.id;
-    renderQuestions();
+    state.activeQuestionId = opened ? null : question.id;
+    renderCategories();
   });
 
   article.append(button, answer);
   return article;
 };
 
-const renderQuestions = () => {
-  questionsRoot.replaceChildren(...questions.map((question) => createQuestion(question, activeProfile, question.id === activeQuestionId)));
+const ensureQuestions = async (category) => {
+  const state = categoryStates.get(category.id);
+  if (state.questions || state.loading) return;
+
+  state.loading = true;
+  renderCategories();
+  try {
+    const content = await category.load();
+    state.questions = content.QUESTIONS;
+  } finally {
+    state.loading = false;
+    renderCategories();
+  }
 };
 
-const preparePreview = async () => {
-  if (!questions.length) questions = await getLoveQuestions();
-  renderQuestions();
+const createCategory = (category, index) => {
+  const state = categoryStates.get(category.id);
+  const section = document.createElement("section");
+  section.className = `redflag-category${state.expanded ? " is-open" : ""}`;
+
+  const toggle = document.createElement("button");
+  toggle.className = "redflag-category-toggle";
+  toggle.type = "button";
+  toggle.setAttribute("aria-expanded", String(state.expanded));
+  toggle.innerHTML = `<span><small>Блок ${index + 1} · 10 вопросов</small><strong>${category.title}</strong><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
+  toggle.addEventListener("click", () => {
+    state.expanded = !state.expanded;
+    renderCategories();
+    if (state.expanded) ensureQuestions(category);
+  });
+  section.append(toggle);
+
+  if (!state.expanded) return section;
+
+  const content = document.createElement("div");
+  content.className = "redflag-category-content";
+
+  if (state.loading) {
+    const loading = document.createElement("p");
+    loading.className = "redflag-loading";
+    loading.textContent = "Открываю вопросы…";
+    content.append(loading);
+  } else if (state.questions) {
+    if (activeProfile) {
+      const note = document.createElement("p");
+      note.className = "redflag-ready-note";
+      note.textContent = `Расчёт для ${formattedDate} готов. Откройте вопрос — внутри будет персональный ответ.`;
+      content.append(note);
+    }
+
+    const questions = document.createElement("div");
+    questions.className = "redflag-questions";
+    questions.setAttribute("aria-label", `Вопросы: ${category.title}`);
+    questions.append(...state.questions.map((question) => createQuestion(question, state)));
+    content.append(questions);
+  }
+
+  section.append(content);
+  return section;
 };
 
-categoryToggle.addEventListener("click", () => {
-  setCategoryExpanded(categoryContent.hidden);
-});
+const renderCategories = () => {
+  categoriesRoot.replaceChildren(...REDFLAG_CATEGORIES.map(createCategory));
+};
 
 birthDateInput.addEventListener("input", () => {
   const digits = birthDateInput.value.replace(/\D/g, "").slice(0, 8);
@@ -102,15 +144,16 @@ form.addEventListener("submit", async (event) => {
   }
 
   try {
-    if (!questions.length) questions = await getLoveQuestions();
     activeProfile = buildRelationshipProfile(date);
-    activeQuestionId = questions[0].id;
-    readyNote.textContent = `Расчёт для ${birthDateInput.value} готов. Откройте вопрос — внутри будет персональный ответ.`;
-    readyNote.hidden = false;
+    formattedDate = birthDateInput.value;
+    const firstCategory = REDFLAG_CATEGORIES[0];
+    const firstState = categoryStates.get(firstCategory.id);
+    firstState.expanded = true;
+    await ensureQuestions(firstCategory);
+    if (firstState.questions && !firstState.activeQuestionId) firstState.activeQuestionId = firstState.questions[0].id;
     error.hidden = true;
-    setCategoryExpanded(true);
-    renderQuestions();
-    category.scrollIntoView({ behavior: "smooth", block: "start" });
+    renderCategories();
+    categoriesRoot.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch {
     showError("Не удалось подготовить вопросы. Обновите страницу и попробуйте ещё раз.");
   }
@@ -126,6 +169,6 @@ export const openRedFlag = () => {
   home.classList.remove("is-active");
   redFlag.classList.add("is-active");
   window.scrollTo({ top: 0, behavior: "instant" });
-  preparePreview().catch(() => showError("Не удалось подготовить список вопросов. Обновите страницу и попробуйте ещё раз."));
+  renderCategories();
   window.setTimeout(() => birthDateInput.focus(), 220);
 };

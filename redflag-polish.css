@@ -82,6 +82,7 @@
   box-shadow: 0 10px 22px rgba(68, 48, 77, .06);
 }
 .redflag-category.is-open { border-color: rgba(159, 104, 127, .46); }
+.redflag-categories { display: grid; gap: 12px; }
 .redflag-category-toggle {
   display: flex;
   width: 100%;
@@ -112,6 +113,7 @@
   font-weight: 750;
   line-height: 1.35;
 }
+.redflag-loading { margin: 2px 3px 10px; color: #766171; font-size: 14px; font-weight: 700; }
 
 .redflag-form {
   display: grid;
@@ -122,7 +124,7 @@
   background: rgba(255, 255, 255, .62);
   box-shadow: inset 0 1px rgba(255, 255, 255, .85);
 }
-.redflag-form + .redflag-category { margin-top: 12px; }
+.redflag-form + .redflag-categories { margin-top: 12px; }
 .redflag-form label { display: grid; gap: 7px; color: #4b4d70; font-size: 14px; font-weight: 800; }
 .redflag-form input {
   width: 100%;
