@@ -6,14 +6,17 @@ const redFlag = document.querySelector("#redflag");
 const form = document.querySelector("#redflag-form");
 const birthDateInput = document.querySelector("#redflag-birth-date");
 const error = document.querySelector("#redflag-error");
-const result = document.querySelector("#redflag-result");
-const resultTitle = document.querySelector("#redflag-result-title");
-const resultNote = document.querySelector("#redflag-result-note");
+const category = document.querySelector("#redflag-category");
+const categoryToggle = document.querySelector("#redflag-category-toggle");
+const categoryContent = document.querySelector("#redflag-category-content");
+const readyNote = document.querySelector("#redflag-ready-note");
 const questionsRoot = document.querySelector("#redflag-questions");
 const backButton = document.querySelector("#back-redflag-home");
 
 let loveContentLoading;
+let questions = [];
 let activeQuestionId;
+let activeProfile;
 
 const getLoveQuestions = async () => {
   loveContentLoading ??= import("./redflag-love.js?v=1");
@@ -21,18 +24,31 @@ const getLoveQuestions = async () => {
   return content.LOVE_QUESTIONS;
 };
 
+const setCategoryExpanded = (expanded) => {
+  categoryToggle.setAttribute("aria-expanded", String(expanded));
+  categoryContent.hidden = !expanded;
+  category.classList.toggle("is-open", expanded);
+};
+
 const showError = (message) => {
   error.textContent = message;
   error.hidden = false;
-  result.hidden = true;
 };
 
-const createAnswer = (question, profile, opened) => {
-  const response = question.answer(profile);
+const createQuestion = (question, profile, opened) => {
   const article = document.createElement("article");
-  article.className = `redflag-question${opened ? " is-open" : ""}`;
+  article.className = `redflag-question${opened ? " is-open" : ""}${profile ? " is-calculated" : " is-preview"}`;
   article.dataset.questionId = question.id;
 
+  if (!profile) {
+    const preview = document.createElement("p");
+    preview.className = "redflag-question-preview";
+    preview.textContent = question.title;
+    article.append(preview);
+    return article;
+  }
+
+  const response = question.answer(profile);
   const button = document.createElement("button");
   button.className = "redflag-question-toggle";
   button.type = "button";
@@ -49,18 +65,25 @@ const createAnswer = (question, profile, opened) => {
 
   button.addEventListener("click", () => {
     activeQuestionId = activeQuestionId === question.id ? null : question.id;
-    renderQuestions(questionsRoot._questions, questionsRoot._profile);
+    renderQuestions();
   });
 
   article.append(button, answer);
   return article;
 };
 
-const renderQuestions = (questions, profile) => {
-  questionsRoot._questions = questions;
-  questionsRoot._profile = profile;
-  questionsRoot.replaceChildren(...questions.map((question) => createAnswer(question, profile, question.id === activeQuestionId)));
+const renderQuestions = () => {
+  questionsRoot.replaceChildren(...questions.map((question) => createQuestion(question, activeProfile, question.id === activeQuestionId)));
 };
+
+const preparePreview = async () => {
+  if (!questions.length) questions = await getLoveQuestions();
+  renderQuestions();
+};
+
+categoryToggle.addEventListener("click", () => {
+  setCategoryExpanded(categoryContent.hidden);
+});
 
 birthDateInput.addEventListener("input", () => {
   const digits = birthDateInput.value.replace(/\D/g, "").slice(0, 8);
@@ -79,15 +102,15 @@ form.addEventListener("submit", async (event) => {
   }
 
   try {
-    const questions = await getLoveQuestions();
-    const profile = buildRelationshipProfile(date);
+    if (!questions.length) questions = await getLoveQuestions();
+    activeProfile = buildRelationshipProfile(date);
     activeQuestionId = questions[0].id;
-    resultTitle.textContent = `Любовь и отношения: ${birthDateInput.value}`;
-    resultNote.textContent = `В этой версии — ${questions.length} вопросов. Мы смотрим на сценарий отношений, готовность к близости и личный период ${new Date().getFullYear()} года.`;
-    renderQuestions(questions, profile);
+    readyNote.textContent = `Расчёт для ${birthDateInput.value} готов. Откройте вопрос — внутри будет персональный ответ.`;
+    readyNote.hidden = false;
     error.hidden = true;
-    result.hidden = false;
-    result.scrollIntoView({ behavior: "smooth", block: "start" });
+    setCategoryExpanded(true);
+    renderQuestions();
+    category.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch {
     showError("Не удалось подготовить вопросы. Обновите страницу и попробуйте ещё раз.");
   }
@@ -103,5 +126,6 @@ export const openRedFlag = () => {
   home.classList.remove("is-active");
   redFlag.classList.add("is-active");
   window.scrollTo({ top: 0, behavior: "instant" });
+  preparePreview().catch(() => showError("Не удалось подготовить список вопросов. Обновите страницу и попробуйте ещё раз."));
   window.setTimeout(() => birthDateInput.focus(), 220);
 };

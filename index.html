@@ -97,6 +97,21 @@
             </div>
           </div>
 
+          <section id="redflag-category" class="redflag-category" aria-labelledby="redflag-category-title">
+            <button id="redflag-category-toggle" class="redflag-category-toggle" type="button" aria-expanded="false" aria-controls="redflag-category-content">
+              <span>
+                <small>Первый блок · 10 вопросов</small>
+                <strong id="redflag-category-title">Любовь и отношения</strong>
+                <em>Инициатива, зрелость, интерес и формат близости</em>
+              </span>
+              <b aria-hidden="true">+</b>
+            </button>
+            <div id="redflag-category-content" class="redflag-category-content" hidden>
+              <p id="redflag-ready-note" class="redflag-ready-note" hidden></p>
+              <div id="redflag-questions" class="redflag-questions" aria-label="Вопросы о любви и отношениях"></div>
+            </div>
+          </section>
+
           <form id="redflag-form" class="redflag-form" novalidate>
             <label>
               <span>Дата рождения мужчины</span>
@@ -106,15 +121,7 @@
             <button class="redflag-submit" type="submit">Посмотреть отношения <span aria-hidden="true">→</span></button>
           </form>
 
-          <section id="redflag-result" class="redflag-result" hidden aria-live="polite">
-            <div class="redflag-result-heading">
-              <p class="eyebrow">Первый блок</p>
-              <h2 id="redflag-result-title">Любовь и отношения</h2>
-              <p id="redflag-result-note"></p>
-            </div>
-            <div id="redflag-questions" class="redflag-questions" aria-label="Вопросы о любви и отношениях"></div>
-            <p class="redflag-footer">Это ориентир для наблюдения, а не приговор человеку. Сильнее любой даты — то, как он обращается с вами в реальности.</p>
-          </section>
+          <p class="redflag-footer">Это ориентир для наблюдения, а не приговор человеку. Сильнее любой даты — то, как он обращается с вами в реальности.</p>
         </div>
       </section>
 
@@ -175,6 +182,6 @@
       <div id="pdf-preview-pages" class="pdf-preview-pages" aria-label="Предпросмотр вашего разбора"></div>
       <button id="pdf-download-button" class="pdf-download-button" type="button">Скачать PDF <span>↓</span></button>
     </dialog>
-  <script type="module" src="app.js?v=39"></script>
+  <script type="module" src="app.js?v=40"></script>
   </body>
 </html>

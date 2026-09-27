@@ -74,6 +74,45 @@
   transform: translateY(-50%);
 }
 
+.redflag-category {
+  overflow: hidden;
+  border: 1px solid rgba(113, 74, 101, .18);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .64);
+  box-shadow: 0 10px 22px rgba(68, 48, 77, .06);
+}
+.redflag-category.is-open { border-color: rgba(159, 104, 127, .46); }
+.redflag-category-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px;
+  border: 0;
+  background: transparent;
+  color: #303856;
+  font: inherit;
+  text-align: left;
+}
+.redflag-category-toggle span { display: grid; gap: 4px; }
+.redflag-category-toggle small { color: #9a697c; font-size: 11px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+.redflag-category-toggle strong { color: #50394f; font-family: Georgia, "Times New Roman", serif; font-size: 24px; letter-spacing: -.035em; }
+.redflag-category-toggle em { color: #686d7d; font-size: 13px; font-style: normal; font-weight: 650; line-height: 1.25; }
+.redflag-category-toggle > b { color: #9b6478; font-size: 29px; font-weight: 400; line-height: 1; }
+.redflag-category.is-open .redflag-category-toggle > b { transform: rotate(45deg); }
+.redflag-category-content { padding: 0 12px 12px; }
+.redflag-ready-note {
+  margin: 0 2px 10px;
+  padding: 10px 11px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, rgba(240, 224, 229, .84), rgba(239, 235, 218, .78));
+  color: #604658;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
 .redflag-form {
   display: grid;
   gap: 10px;
@@ -83,6 +122,7 @@
   background: rgba(255, 255, 255, .62);
   box-shadow: inset 0 1px rgba(255, 255, 255, .85);
 }
+.redflag-category + .redflag-form { margin-top: 12px; }
 .redflag-form label { display: grid; gap: 7px; color: #4b4d70; font-size: 14px; font-weight: 800; }
 .redflag-form input {
   width: 100%;
@@ -123,6 +163,7 @@
   box-shadow: 0 8px 18px rgba(48, 48, 77, .045);
 }
 .redflag-question.is-open { border-color: rgba(176, 126, 147, .45); background: #fffdfb; }
+.redflag-question-preview { margin: 0; padding: 13px 14px; color: #40465f; font-size: 15px; font-weight: 750; line-height: 1.28; }
 .redflag-question-toggle {
   display: flex;
   width: 100%;
