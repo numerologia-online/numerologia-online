@@ -31,7 +31,7 @@
 
         <section class="products" aria-label="Направления расчётов">
           <button class="product-card calculation" type="button" data-open-matrix data-artwork="assets/full-calculation.webp"><span class="product-title">Полный расчёт</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <button class="product-card red-flag" type="button" data-coming-soon data-artwork="assets/red-flag.webp"><span class="product-title">Мужчина или Ред Флаг</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card red-flag" type="button" data-open-redflag data-artwork="assets/red-flag.webp"><span class="product-title">Мужчина или Ред Флаг</span><span class="product-arrow" aria-hidden="true">→</span></button>
           <button class="product-card woman" type="button" data-coming-soon data-artwork="assets/woman.webp"><span class="product-title">Женщина или тарелочница</span><span class="product-arrow" aria-hidden="true">→</span></button>
           <button class="product-card code" type="button" data-coming-soon data-artwork="assets/code.webp"><span class="product-title">Мой код судьбы</span><span class="product-arrow" aria-hidden="true">→</span></button>
           <button class="product-card day" type="button" data-coming-soon data-artwork="assets/day.webp"><span class="product-title">Расчёт на день</span><span class="product-arrow" aria-hidden="true">→</span></button>
@@ -76,6 +76,44 @@
               <h2 id="matrix-result-title">Личный рисунок энергий</h2>
             </div>
             <div id="matrix-diagram" class="matrix-diagram" aria-label="Матрица судьбы"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="redflag" class="screen" aria-labelledby="redflag-title">
+        <div class="redflag-paper">
+          <header class="redflag-topbar">
+            <p class="eyebrow">Мужчина или Red Flag</p>
+            <button id="back-redflag-home" class="redflag-close" type="button" aria-label="Вернуться ко всем расчётам">×</button>
+          </header>
+
+          <div class="redflag-intro">
+            <h1 id="redflag-title">Мужчина<br />или Red Flag?</h1>
+            <p>Десять вопросов о любви и отношениях: как он проявляется, выдерживает близость и готов ли к реальной связи.</p>
+            <div class="redflag-promise" aria-label="Что учитывает расчёт">
+              <span>Сценарий отношений</span>
+              <span>Готовность к близости</span>
+              <span>Текущий жизненный период</span>
+            </div>
+          </div>
+
+          <form id="redflag-form" class="redflag-form" novalidate>
+            <label>
+              <span>Дата рождения мужчины</span>
+              <input id="redflag-birth-date" type="text" inputmode="numeric" autocomplete="bday" placeholder="ДД.ММ.ГГГГ" pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}" maxlength="10" required />
+            </label>
+            <p id="redflag-error" class="redflag-error" hidden aria-live="polite"></p>
+            <button class="redflag-submit" type="submit">Посмотреть отношения <span aria-hidden="true">→</span></button>
+          </form>
+
+          <section id="redflag-result" class="redflag-result" hidden aria-live="polite">
+            <div class="redflag-result-heading">
+              <p class="eyebrow">Первый блок</p>
+              <h2 id="redflag-result-title">Любовь и отношения</h2>
+              <p id="redflag-result-note"></p>
+            </div>
+            <div id="redflag-questions" class="redflag-questions" aria-label="Вопросы о любви и отношениях"></div>
+            <p class="redflag-footer">Это ориентир для наблюдения, а не приговор человеку. Сильнее любой даты — то, как он обращается с вами в реальности.</p>
           </section>
         </div>
       </section>
@@ -137,6 +175,6 @@
       <div id="pdf-preview-pages" class="pdf-preview-pages" aria-label="Предпросмотр вашего разбора"></div>
       <button id="pdf-download-button" class="pdf-download-button" type="button">Скачать PDF <span>↓</span></button>
     </dialog>
-  <script type="module" src="app.js?v=38"></script>
+  <script type="module" src="app.js?v=39"></script>
   </body>
 </html>
