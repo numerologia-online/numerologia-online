@@ -37,7 +37,7 @@ const getMatrixFeature = () => {
 const openMatrixFeature = async () => {
   const [feature] = await Promise.all([
     getMatrixFeature(),
-    matrixStylesLoading ??= loadStylesheet("matrix-polish.css?v=1")
+    matrixStylesLoading ??= loadStylesheet("matrix-polish.css?v=2")
   ]);
   feature.openMatrix();
 };
