@@ -40,7 +40,7 @@
   line-height: 1;
 }
 
-.matrix-intro { padding: 14px 7px 24px; }
+.matrix-intro { padding: 8px 7px 16px; }
 
 .matrix-intro h1,
 .matrix-result-heading h2 {
@@ -49,20 +49,20 @@
   letter-spacing: -.06em;
 }
 
-.matrix-intro h1 { font-size: clamp(40px, 11vw, 62px); }
+.matrix-intro h1 { font-size: clamp(32px, 9vw, 50px); }
 
-.matrix-promises { display: grid; gap: 10px; margin-top: 23px; }
+.matrix-promises { display: grid; gap: 7px; margin-top: 15px; }
 
 .matrix-promises p {
   position: relative;
   margin: 0;
-  padding: 12px 15px 12px 34px;
+  padding: 9px 13px 9px 30px;
   border: 1px solid rgba(63, 76, 116, .12);
   border-radius: 17px;
   background: rgba(255, 255, 255, .66);
   box-shadow: 0 7px 16px rgba(53, 49, 84, .045);
   color: #343d5c;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 750;
   line-height: 1.18;
 }
@@ -70,9 +70,9 @@
 .matrix-promises p::before {
   position: absolute;
   top: 50%;
-  left: 15px;
-  width: 7px;
-  height: 7px;
+  left: 13px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #bd8b43;
   content: "";
@@ -80,11 +80,11 @@
 }
 
 .matrix-promises .matrix-promise-main {
-  padding: 17px 17px 17px 19px;
+  padding: 12px 14px;
   border-color: rgba(190, 145, 82, .36);
   background: linear-gradient(135deg, rgba(241, 231, 236, .86), rgba(243, 239, 220, .82));
   color: #313961;
-  font-size: 17px;
+  font-size: 15px;
   text-align: center;
 }
 
@@ -92,8 +92,8 @@
 
 .matrix-form {
   display: grid;
-  gap: 14px;
-  padding: 18px;
+  gap: 10px;
+  padding: 14px;
   border: 1px solid rgba(165, 134, 77, .23);
   border-radius: 24px;
   background: rgba(255, 255, 255, .6);
@@ -104,13 +104,13 @@
 
 .matrix-form input {
   width: 100%;
-  min-height: 58px;
+  min-height: 52px;
   padding: 0 16px;
   border: 1px solid rgba(58, 70, 114, .2);
   border-radius: 17px;
   background: rgba(255, 255, 255, .92);
   color: #27365d;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -119,13 +119,13 @@
 .matrix-error { margin: -2px 0 0; color: #a23e43; font-size: 14px; font-weight: 700; }
 
 .matrix-submit {
-  min-height: 60px;
+  min-height: 54px;
   border: 0;
   border-radius: 19px;
   background: linear-gradient(130deg, #293d71, #536ba6);
   box-shadow: 0 13px 26px rgba(52, 67, 123, .2);
   color: #fff;
-  font-size: 21px;
+  font-size: 19px;
   font-weight: 800;
 }
 
