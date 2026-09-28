@@ -148,6 +148,42 @@
 }
 
 .matrix-diagram svg { display: block; width: 100%; height: auto; }
+.matrix-reading { display: grid; gap: 12px; margin-top: 16px; }
+.matrix-reading-card {
+  padding: 17px;
+  border: 1px solid rgba(161, 124, 77, .22);
+  border-radius: 21px;
+  background: rgba(255, 255, 255, .74);
+  box-shadow: 0 10px 22px rgba(43, 54, 95, .06);
+}
+.matrix-reading-eyebrow { margin: 0 0 5px; color: #a3793b; font-size: 11px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+.matrix-reading-card h3 { margin: 0; color: #263a69; font-family: Georgia, "Times New Roman", serif; font-size: 25px; letter-spacing: -.035em; }
+.matrix-reading-card p:not(.matrix-reading-eyebrow), .matrix-reading-status { margin: 10px 0 0; color: #50566c; font-size: 15px; line-height: 1.48; }
+.matrix-reading-card p:last-child { margin-bottom: 0; }
+.matrix-reading-status { padding: 14px 16px; border-radius: 16px; background: rgba(238, 234, 224, .7); color: #625d6d; font-weight: 700; }
+.matrix-report-title { margin: 9px 4px 0; color: #263a69; font-family: Georgia, "Times New Roman", serif; font-size: 31px; letter-spacing: -.045em; }
+.matrix-report-intro { margin: -3px 4px 2px; color: #687084; font-size: 14px; line-height: 1.4; }
+.matrix-report-sections { display: grid; gap: 9px; }
+.matrix-report-section {
+  overflow: hidden;
+  border: 1px solid rgba(161, 124, 77, .2);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .72);
+  box-shadow: 0 8px 18px rgba(43, 54, 95, .04);
+}
+.matrix-report-section[open] { border-color: rgba(169, 128, 81, .44); background: #fffdfa; }
+.matrix-report-section summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 15px; cursor: pointer; list-style: none; }
+.matrix-report-section summary::-webkit-details-marker { display: none; }
+.matrix-report-section summary::after { color: #a87948; content: "+"; font-size: 25px; font-weight: 400; line-height: 1; }
+.matrix-report-section[open] summary::after { content: "−"; }
+.matrix-report-section summary span { display: grid; gap: 4px; }
+.matrix-report-section summary small { color: #a27c51; font-size: 10px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+.matrix-report-section summary strong { color: #394568; font-size: 16px; line-height: 1.22; }
+.matrix-report-section-content { padding: 0 15px 16px; color: #52586e; font-size: 16px; line-height: 1.52; }
+.matrix-report-section-content h4 { margin: 0 0 12px; color: #263a69; font-family: Georgia, "Times New Roman", serif; font-size: 23px; letter-spacing: -.03em; }
+.matrix-report-section-content p { margin: 0; }
+.matrix-report-section-content p + p { margin-top: 12px; }
+.matrix-report-loading { color: #6e6c78; font-size: 14px; font-weight: 700; }
 
 .matrix-frame { fill: none; stroke: #25433b; stroke-width: 2.2; vector-effect: non-scaling-stroke; }
 .matrix-frame--soft { stroke: #af8a4a; stroke-opacity: .5; stroke-width: 1.2; }

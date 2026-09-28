@@ -49,8 +49,21 @@ const createQuestion = (question, state) => {
   answer.className = "redflag-answer";
   answer.hidden = !opened;
   const paragraphs = response.paragraphs ?? [response.answer];
+  const scales = (response.scales ?? []).map(({ label, value }) => ({
+    label,
+    value: Math.max(0, Math.min(10, Math.round(Number(value) || 0)))
+  }));
+  const scalesMarkup = scales.length ? `
+    <div class="redflag-scales" aria-label="Шкалы ответа">
+      ${scales.map(({ label, value }) => `
+        <div class="redflag-scale">
+          <div class="redflag-scale-label"><span>${label}</span><strong>${value}/10</strong></div>
+          <div class="redflag-scale-track" aria-hidden="true"><i style="width: ${value * 10}%"></i></div>
+        </div>`).join("")}
+    </div>` : "";
   answer.innerHTML = `
     <p class="redflag-verdict">${response.verdict}</p>
+    ${scalesMarkup}
     ${paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")}
     <p class="redflag-observation"><strong>На что смотреть:</strong> ${response.observation}</p>`;
 

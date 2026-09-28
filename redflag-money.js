@@ -1,9 +1,12 @@
 import { answerMoneyQuestion } from "./redflag-money-composer.js?v=1";
+import { answerGiftPilot } from "./redflag-gift-pilot.js?v=3";
 
 const question = (id, title) => ({
   id,
   title,
-  answer: (profile) => answerMoneyQuestion(profile.classic, id)
+  answer: (profile) => id === "gift"
+    ? answerGiftPilot(profile.classic.birthDate)
+    : answerMoneyQuestion(profile.classic, id)
 });
 
 export const QUESTIONS = [

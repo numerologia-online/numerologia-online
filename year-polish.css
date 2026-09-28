@@ -330,8 +330,8 @@
   box-shadow: 0 14px 28px rgba(30, 51, 78, 0.2);
 }
 
-.pdf-live-page--cover { background: url("year-report-cover.png") center / 100% 100% no-repeat; }
-.pdf-live-page--inner { background: url("year-report-inner.png") center / 100% 100% no-repeat; }
+.pdf-live-page--cover { background: url("assets/year-report-cover.png") center / 100% 100% no-repeat; }
+.pdf-live-page--inner { background: url("assets/year-report-inner.png") center / 100% 100% no-repeat; }
 
 .pdf-live-page-content {
   position: absolute;
