@@ -1,0 +1,18 @@
+{
+  "sections": [
+    { "key": "main", "title": "Главное о вас" },
+    { "key": "karma", "title": "Кармические программы" },
+    { "key": "money", "title": "Деньги и финансовый код" },
+    { "key": "relations", "title": "Отношения и любовь" },
+    { "key": "family", "title": "Семья, быт и дети" },
+    { "key": "body", "title": "Тело и ресурс" },
+    { "key": "pythagor", "title": "Психоматрица Пифагора" },
+    { "key": "year", "title": "Личный период" },
+    { "key": "actions", "title": "План действий" }
+  ],
+  "pdf": {
+    "showCoverLead": true,
+    "showFooterNoteOnce": true
+  }
+}
+
