@@ -32,14 +32,14 @@ const openYearFeature = async () => {
 };
 
 const getMatrixFeature = () => {
-  if (!matrixFeatureLoading) matrixFeatureLoading = import("./matrix-feature.js?v=4");
+  if (!matrixFeatureLoading) matrixFeatureLoading = import("./matrix-feature.js?v=7");
   return matrixFeatureLoading;
 };
 
 const openMatrixFeature = async () => {
   const [feature] = await Promise.all([
     getMatrixFeature(),
-    matrixStylesLoading ??= loadStylesheet("matrix-polish.css?v=3")
+    matrixStylesLoading ??= loadStylesheet("matrix-polish.css?v=5")
   ]);
   feature.openMatrix();
 };

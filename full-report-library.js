@@ -54,8 +54,9 @@ export const buildFullReportPreview = (birthDate, matrix, knowledge) => {
 
   return [
     {
+      key: "center",
       eyebrow: `Центральная энергия ${matrix.center}`,
-      title: centralEnergy?.name ?? "Главный вектор",
+      title: "Главный вектор",
       paragraphs: [
         centralEnergy?.shortEssence,
         centralEnergy?.mainStrength,
@@ -64,8 +65,9 @@ export const buildFullReportPreview = (birthDate, matrix, knowledge) => {
       ].filter(Boolean)
     },
     {
+      key: "period",
       eyebrow: `${period.label} · энергия ${period.energy}`,
-      title: periodEnergy?.name ?? "Текущий жизненный период",
+      title: "Текущий жизненный период",
       paragraphs: [
         periodRule?.focus && `Сейчас в фокусе: ${periodRule.focus}.`,
         periodRule?.advice && `Лучше: ${periodRule.advice}.`,
