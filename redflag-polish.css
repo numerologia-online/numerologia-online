@@ -188,6 +188,20 @@
 .redflag-answer p { margin: 0; }
 .redflag-answer p + p { margin-top: 12px; }
 .redflag-verdict { color: #704557; font-weight: 850; }
+.redflag-scales {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid rgba(180, 137, 88, .2);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(248, 238, 232, .78), rgba(248, 244, 232, .72));
+}
+.redflag-scale { display: grid; gap: 6px; }
+.redflag-scale-label { display: flex; justify-content: space-between; gap: 12px; color: #625565; font-size: 13px; font-weight: 750; line-height: 1.2; }
+.redflag-scale-label strong { color: #8a5e45; white-space: nowrap; }
+.redflag-scale-track { height: 5px; overflow: hidden; border-radius: 999px; background: rgba(139, 103, 94, .14); }
+.redflag-scale-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #b98367, #8d5a6d); }
 .redflag-observation { padding-top: 11px; border-top: 1px solid rgba(181, 143, 82, .26); color: #5e6170; font-size: 14px; }
 .redflag-observation strong { color: #8e6832; }
 .redflag-footer { margin: 19px 7px 0; color: #6e7180; font-size: 13px; line-height: 1.4; }

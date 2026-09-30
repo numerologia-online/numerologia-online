@@ -76,7 +76,7 @@ export const parseEnergyText = (text, expectedEnergy) => {
 
 export const loadEnergy = (energy) => {
   if (!cache.has(energy)) {
-    const request = fetch(`energy-${energy}.txt`)
+    const request = fetch(`data/year/energy-${energy}.txt`)
       .then((response) => {
         if (response.status === 404) return null;
         if (!response.ok) throw new Error(`Не удалось открыть энергию ${energy}.`);

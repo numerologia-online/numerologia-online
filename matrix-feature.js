@@ -1,4 +1,10 @@
 import { calculateMatrix, parseBirthDate } from "./numerology-core.js?v=1";
+import {
+  buildFullReportPreview,
+  buildFullReportSections,
+  loadFullReportKnowledge,
+  loadFullReportSection
+} from "./full-report-library.js?v=2";
 
 const home = document.querySelector("#home");
 const matrix = document.querySelector("#matrix");
@@ -8,6 +14,7 @@ const error = document.querySelector("#matrix-error");
 const result = document.querySelector("#matrix-result");
 const resultTitle = document.querySelector("#matrix-result-title");
 const diagram = document.querySelector("#matrix-diagram");
+const reading = document.querySelector("#matrix-reading");
 const backButton = document.querySelector("#back-matrix-home");
 
 const node = (x, y, value, type = "plain", size = "small") => `
@@ -77,6 +84,104 @@ const showError = (message) => {
   result.hidden = true;
 };
 
+const renderReading = (cards) => {
+  reading.replaceChildren(...cards.map((card) => {
+    const article = document.createElement("article");
+    article.className = "matrix-reading-card";
+
+    const eyebrow = document.createElement("p");
+    eyebrow.className = "matrix-reading-eyebrow";
+    eyebrow.textContent = card.eyebrow;
+
+    const title = document.createElement("h3");
+    title.textContent = card.title;
+
+    article.append(eyebrow, title);
+    card.paragraphs.forEach((paragraph) => {
+      const text = document.createElement("p");
+      text.textContent = paragraph;
+      article.append(text);
+    });
+    return article;
+  }));
+  reading.hidden = false;
+};
+
+const showReadingStatus = (message) => {
+  reading.replaceChildren();
+  const text = document.createElement("p");
+  text.className = "matrix-reading-status";
+  text.textContent = message;
+  reading.append(text);
+  reading.hidden = false;
+};
+
+const renderSectionText = (container, definition, source) => {
+  container.replaceChildren();
+  const title = document.createElement("h4");
+  title.textContent = source?.title ?? definition.title;
+  container.append(title);
+
+  const paragraphs = Array.isArray(source?.paragraphs) ? source.paragraphs : [];
+  paragraphs.filter(Boolean).forEach((paragraph) => {
+    const text = document.createElement("p");
+    text.textContent = paragraph;
+    container.append(text);
+  });
+};
+
+const createFullSection = (definition) => {
+  const details = document.createElement("details");
+  details.className = "matrix-report-section";
+  const summary = document.createElement("summary");
+  const labels = document.createElement("span");
+  const eyebrow = document.createElement("small");
+  eyebrow.textContent = `${definition.eyebrow} · энергия ${definition.energy}`;
+  const title = document.createElement("strong");
+  title.textContent = definition.title;
+  labels.append(eyebrow, title);
+  summary.append(labels);
+
+  const content = document.createElement("div");
+  content.className = "matrix-report-section-content";
+  let loaded = false;
+
+  details.addEventListener("toggle", async () => {
+    if (!details.open || loaded) return;
+    const loading = document.createElement("p");
+    loading.className = "matrix-report-loading";
+    loading.textContent = "Открываю раздел…";
+    content.replaceChildren(loading);
+    try {
+      const energyRecord = await loadFullReportSection(definition.energy);
+      renderSectionText(content, definition, energyRecord?.sections?.[definition.key]);
+      loaded = true;
+    } catch {
+      content.replaceChildren();
+      const message = document.createElement("p");
+      message.className = "matrix-report-loading";
+      message.textContent = "Этот раздел пока не загрузился. Обновите страницу и попробуйте ещё раз.";
+      content.append(message);
+    }
+  });
+
+  details.append(summary, content);
+  return details;
+};
+
+const renderFullSections = (matrixData) => {
+  const title = document.createElement("h3");
+  title.className = "matrix-report-title";
+  title.textContent = "Полный разбор";
+  const intro = document.createElement("p");
+  intro.className = "matrix-report-intro";
+  intro.textContent = "Откройте нужную тему - внутри будет развёрнутая расшифровка по вашей дате.";
+  const list = document.createElement("div");
+  list.className = "matrix-report-sections";
+  list.append(...buildFullReportSections(matrixData).map(createFullSection));
+  reading.append(title, intro, list);
+};
+
 birthDateInput.addEventListener("input", () => {
   const digits = birthDateInput.value.replace(/\D/g, "").slice(0, 8);
   const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
@@ -84,7 +189,7 @@ birthDateInput.addEventListener("input", () => {
   error.hidden = true;
 });
 
-form.addEventListener("submit", (event) => {
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const date = parseBirthDate(birthDateInput.value);
   if (!date) {
@@ -95,10 +200,20 @@ form.addEventListener("submit", (event) => {
 
   error.hidden = true;
   const formattedDate = birthDateInput.value;
-  renderMatrix(calculateMatrix(date), formattedDate);
+  const matrixData = calculateMatrix(date);
+  renderMatrix(matrixData, formattedDate);
   resultTitle.textContent = `Матрица для ${formattedDate}`;
   result.hidden = false;
+  showReadingStatus("Подбираю ключи вашего полного расчёта…");
   result.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  try {
+    const knowledge = await loadFullReportKnowledge();
+    renderReading(buildFullReportPreview(date, matrixData, knowledge));
+    renderFullSections(matrixData);
+  } catch {
+    showReadingStatus("Матрица рассчитана. Расшифровка временно не загрузилась - попробуйте обновить страницу.");
+  }
 });
 
 backButton.addEventListener("click", () => {

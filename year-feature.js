@@ -328,8 +328,8 @@ let pdfTemplatesLoading;
 const getPdfTemplates = () => {
   if (!pdfTemplatesLoading) {
     pdfTemplatesLoading = Promise.all([
-      imageAsDataUrl("year-report-cover.jpg"),
-      imageAsDataUrl("year-report-inner.jpg")
+      imageAsDataUrl("assets/year-report-cover.jpg"),
+      imageAsDataUrl("assets/year-report-inner.jpg")
     ]).then(([cover, inner]) => ({ cover, inner }));
   }
   return pdfTemplatesLoading;
