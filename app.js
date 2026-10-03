@@ -19,7 +19,7 @@ const loadStylesheet = (href) => new Promise((resolve, reject) => {
 });
 
 const getYearFeature = () => {
-  if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=14");
+    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=15");
   return yearFeatureLoading;
 };
 
