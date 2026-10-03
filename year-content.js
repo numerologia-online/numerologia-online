@@ -74,22 +74,26 @@ export const parseEnergyText = (text, expectedEnergy) => {
   return result;
 };
 
-export const loadEnergy = (energy) => {
-  if (!cache.has(energy)) {
-    const request = fetch(`data/year/energy-${energy}.txt`)
+export const loadEnergy = (energy, variant = "even") => {
+  const cacheKey = `${variant}:${energy}`;
+  if (!cache.has(cacheKey)) {
+    const variantPath = variant === "odd" ? `data/year/odd/energy-${energy}.txt` : `data/year/energy-${energy}.txt`;
+    const fallbackPath = `data/year/energy-${energy}.txt`;
+    const request = fetch(variantPath)
       .then((response) => {
+        if (response.status === 404 && variant === "odd") return fetch(fallbackPath).then((fallback) => fallback.status === 404 ? null : fallback.ok ? fallback.text() : Promise.reject(new Error(`Не удалось открыть энергию ${energy}.`)));
         if (response.status === 404) return null;
         if (!response.ok) throw new Error(`Не удалось открыть энергию ${energy}.`);
         return response.text();
       })
       .then((text) => text === null ? emptyEnergy(energy) : parseEnergyText(text, energy));
-    cache.set(energy, request);
+    cache.set(cacheKey, request);
   }
-  return cache.get(energy);
+  return cache.get(cacheKey);
 };
 
-export const loadEnergies = async (energies) => {
+export const loadEnergies = async (energies, variant = "even") => {
   const unique = [...new Set(energies)];
-  const entries = await Promise.all(unique.map(async (energy) => [energy, await loadEnergy(energy)]));
+  const entries = await Promise.all(unique.map(async (energy) => [energy, await loadEnergy(energy, variant)]));
   return Object.fromEntries(entries);
 };
