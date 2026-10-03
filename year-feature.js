@@ -1,4 +1,4 @@
-import { loadEnergies, monthNames } from "./year-content.js?v=1";
+import { loadEnergies, monthNames } from "./year-content.js?v=2";
 
 const year = document.querySelector("#year");
 const form = document.querySelector("#year-form");
@@ -126,11 +126,14 @@ form.addEventListener("submit", async (event) => {
     return;
   }
   showCalculationLoading();
+  // Один набор текстов используется для чётных лет, второй — для нечётных.
+  // Расчёт энергий при этом остаётся неизменным.
+  const textVariant = reportYearValue % 2 === 0 ? "even" : "odd";
   const energyBeforeBirthday = personalYear(birthDate, reportYearValue - 1);
   const energyAfterBirthday = personalYear(birthDate, reportYearValue);
   let energyContent;
   try {
-    energyContent = await loadEnergies([energyBeforeBirthday, energyAfterBirthday]);
+    energyContent = await loadEnergies([energyBeforeBirthday, energyAfterBirthday], textVariant);
   } catch (error) {
     showCalculationError();
     yearInput.setCustomValidity("Не удалось открыть тексты года. Обновите страницу и попробуйте ещё раз.");
