@@ -1,4 +1,4 @@
-import { loadEnergies, monthNames } from "./year-content.js?v=2";
+import { loadEnergies, monthNames } from "./year-content.js?v=3";
 
 const year = document.querySelector("#year");
 const form = document.querySelector("#year-form");
