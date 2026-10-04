@@ -295,7 +295,7 @@ const createKarmicCard = (program, label, open = false) => {
   const marker = document.createElement("small");
   marker.textContent = label;
   const programTitle = document.createElement("strong");
-  programTitle.textContent = program.title;
+  programTitle.textContent = `${program.code} ${program.title}`;
   labels.append(marker, programTitle);
   summary.append(labels);
 

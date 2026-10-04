@@ -6,6 +6,7 @@ const parseProgramLibrary = (source) => {
   const entries = [...source.matchAll(/^## ([\d-]+) «(.+)»\s*\n+### Незакрытая история прошлой жизни\s*\n+([^]+?)\s*\n+### Как это влияет на эту жизнь\s*\n+([^]+?)\s*\n+### Главная задача души\s*\n+([^]+?)(?=\n+## |\s*$)/gm)];
   return entries.map(([, code, title, past, present, task]) => ({
     key: keyFor(code.split("-").map(Number)),
+    code,
     title,
     parts: [
       { title: "Незакрытая история прошлой жизни", text: past.trim() },
