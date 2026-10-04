@@ -34,14 +34,14 @@ const openYearFeature = async () => {
 };
 
 const getMatrixFeature = () => {
-  if (!matrixFeatureLoading) matrixFeatureLoading = import("./matrix-feature.js?v=9");
+  if (!matrixFeatureLoading) matrixFeatureLoading = import("./matrix-feature.js?v=10");
   return matrixFeatureLoading;
 };
 
 const openMatrixFeature = async () => {
   const [feature] = await Promise.all([
     getMatrixFeature(),
-    matrixStylesLoading ??= loadStylesheet("matrix-polish.css?v=5")
+    matrixStylesLoading ??= loadStylesheet("matrix-polish.css?v=6")
   ]);
   feature.openMatrix();
 };
@@ -85,7 +85,7 @@ window.addEventListener("open-matrix-for-date", (event) => {
   if (!date || !target) return;
   Promise.all([
     getMatrixFeature(),
-    matrixStylesLoading ??= loadStylesheet("matrix-polish.css?v=5")
+    matrixStylesLoading ??= loadStylesheet("matrix-polish.css?v=6")
   ]).then(([feature]) => feature.openMatrixForDate(date, target))
     .catch(() => alert("Не удалось открыть полный расчёт. Обновите страницу и попробуйте ещё раз."));
 });
