@@ -1,6 +1,6 @@
 import { parseBirthDate } from "./numerology-core.js?v=1";
 import { buildRelationshipProfile } from "./redflag-engine.js?v=3";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=1";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=3";
 
 const home = document.querySelector("#home");
 const redFlag = document.querySelector("#redflag");

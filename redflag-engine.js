@@ -1,6 +1,9 @@
 import { calculateMatrix, calculatePersonalYear } from "./numerology-core.js?v=1";
 import { buildClassicProfile } from "./redflag-classic.js?v=1";
 
+const PROFILE_PERIOD_NOTES = await fetch(new URL("./data/redflag/banks/profile-period-notes.json", import.meta.url))
+  .then((response) => response.json());
+
 const includes = (values, value) => values.includes(value);
 
 const initiativeMode = (value) => {
@@ -51,18 +54,6 @@ const familyMode = (value) => {
   return "flexible";
 };
 
-const periodNotes = {
-  1: "Сейчас он больше занят началом нового и проверкой собственной самостоятельности.",
-  2: "Сейчас ему важнее чувство безопасности, чем быстрые решения.",
-  3: "Сейчас он легче идёт в знакомство, игру и проявление чувств.",
-  4: "Сейчас он лучше реагирует на ясность, порядок и реальные договорённости.",
-  5: "Сейчас ему особенно трудно переносить ощущение, что его ограничивают.",
-  6: "Сейчас тема выбора, близости и ответственности выходит на первый план.",
-  7: "Сейчас ему нужно больше личного пространства для собственных выводов.",
-  8: "Сейчас он сильнее сфокусирован на результате, статусе и материальной опоре.",
-  9: "Сейчас он завершает старые истории; обещания стоит проверять особенно внимательно."
-};
-
 export const buildRelationshipProfile = (birthDate) => {
   const matrix = calculateMatrix(birthDate);
   const personalYear = calculatePersonalYear(birthDate);
@@ -72,7 +63,7 @@ export const buildRelationshipProfile = (birthDate) => {
     matrix,
     classic,
     personalYear,
-    periodNote: periodNotes[personalYear],
+    periodNote: PROFILE_PERIOD_NOTES[personalYear],
     initiative: initiativeMode(matrix.left),
     affection: affectionMode(matrix.center),
     commitment: commitmentMode(matrix.bottom),
