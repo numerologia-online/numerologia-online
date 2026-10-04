@@ -28,3 +28,8 @@
 .destiny-code-ritual{margin-top:18px;padding:16px;border:1px solid rgba(174,131,62,.22);border-radius:16px;background:rgba(255,255,255,.56);color:#594325}
 .destiny-code-ritual strong{color:#8f5d21;font-size:12px;letter-spacing:.07em;text-transform:uppercase}
 .destiny-code-ritual p{margin:7px 0 0;line-height:1.52}
+.destiny-code-full-cta{padding:22px 19px;border-radius:22px;background:#52386c;color:#fff;box-shadow:0 16px 30px rgba(70,44,97,.18)}
+.destiny-code-full-cta .eyebrow{margin:0;color:#dac6ed;font-size:11px;font-weight:850;letter-spacing:.09em;text-transform:uppercase}
+.destiny-code-full-cta h3{margin:8px 0 0;font-family:Georgia,"Times New Roman",serif;font-size:27px;font-weight:400}
+.destiny-code-full-cta p:not(.eyebrow){margin:12px 0 0;line-height:1.55}
+.destiny-code-full-cta button{width:100%;min-height:49px;margin-top:18px;border:1px solid rgba(255,255,255,.42);border-radius:15px;background:#fff;color:#51356d;font-weight:800}

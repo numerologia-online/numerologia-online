@@ -181,9 +181,7 @@ const MONEY_TEXTS = {
 };
 
 const MONEY_CARDS = [
-  { key: "moneyBlock", label: "Что блокирует деньги", fallback: "Почему деньги могут не приходить" },
-  { key: "moneyFlow", label: "Что открывает денежный поток", fallback: "Как включить свой денежный поток" },
-  { key: "earning", label: "Где и как легче заработать", fallback: "Где вам легче всего заработать" }
+  { key: "moneyBlock", label: "Что блокирует деньги", fallback: "Почему деньги могут не приходить" }
 ];
 
 const moneyCard = async ({ key, label, fallback }, energy) => {
@@ -198,6 +196,18 @@ const moneyCard = async ({ key, label, fallback }, energy) => {
     text: source?.paragraphs?.filter((paragraph) => !["Что это значит для вас", "Как проявляется в плюсе", "Где уходит в минус", "Что делать прямо сейчас"].includes(paragraph)) || ["Расшифровка этой денежной точки готовится."],
     advice: "Смотрите на этот сценарий как на ориентир для своих решений, а не как на приговор."
   };
+};
+
+const createFullReportCta = () => {
+  const article = document.createElement("article");
+  article.className = "destiny-code-full-cta";
+  article.innerHTML = `<p class="eyebrow">Продолжение разбора</p><h3>Деньги можно не только терять</h3><p>Подробнее о том, как открыть денежный поток и где легче зарабатывать, читайте в полном разборе вашей матрицы судьбы.</p><button type="button">Открыть полный разбор <span aria-hidden="true">→</span></button>`;
+  article.querySelector("button").addEventListener("click", () => {
+    section.classList.remove("is-active");
+    home.classList.add("is-active");
+    document.querySelector("[data-open-matrix]")?.click();
+  });
+  return article;
 };
 
 const buildCode = async (birthDate, energies) => {
@@ -268,7 +278,7 @@ form.addEventListener("submit", async (event) => {
     const { energies } = await loadFullReportKnowledge();
     const code = await buildCode(birthDate, energies);
     resultTitle.textContent = code.title;
-    cards.replaceChildren(...code.cards.map(createCard));
+    cards.replaceChildren(...code.cards.map(createCard), createFullReportCta());
     result.hidden = false;
     result.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch {
