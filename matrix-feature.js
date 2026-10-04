@@ -413,11 +413,11 @@ const buildFullReportPdf = async () => {
   return { url: URL.createObjectURL(blob), filename: `Полный разбор ${formattedDate}.pdf` };
 };
 
-const createFullReportPdfButton = () => {
+const createFullReportPdfButton = (position = "bottom") => {
   const button = document.createElement("button");
-  button.className = "matrix-pdf-button";
+  button.className = `matrix-pdf-button matrix-pdf-button--${position}`;
   button.type = "button";
-  button.innerHTML = "Сохранить полный разбор в PDF <span aria-hidden=\"true\">↓</span>";
+  button.innerHTML = "Скачать PDF <span aria-hidden=\"true\">↓</span>";
   button.addEventListener("click", async () => {
     const label = button.innerHTML;
     button.disabled = true;
@@ -599,10 +599,11 @@ form.addEventListener("submit", async (event) => {
     );
     karmicProgramControls = new Set();
     activeFullReport = { formattedDate, matrixData, karmicPrograms, karmicTails };
+    reading.append(createFullReportPdfButton("top"));
     renderKarmicTail(matrixData, karmicTails);
     renderKarmicPrograms(matrixData, karmicPrograms);
     renderFullSections(matrixData);
-    reading.append(createFullReportPdfButton());
+    reading.append(createFullReportPdfButton("bottom"));
     if (pendingMatrixTarget) {
       const target = pendingMatrixTarget;
       pendingMatrixTarget = undefined;

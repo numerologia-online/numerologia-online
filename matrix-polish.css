@@ -204,6 +204,7 @@
 .matrix-karmic-content p { margin: 0; }
 
 .matrix-pdf-button { width: 100%; min-height: 58px; margin: 24px 0 8px; border: 1px solid rgba(165, 111, 45, .42); border-radius: 18px; background: linear-gradient(135deg, #fbf2df, #fffaf0); color: #714b22; font-weight: 850; box-shadow: 0 10px 22px rgba(105, 76, 42, .1); }
+.matrix-pdf-button--top { margin: 18px 0 6px; }
 .matrix-pdf-button:disabled { opacity: .65; cursor: wait; }
 
 .matrix-frame { fill: none; stroke: #25433b; stroke-width: 2.2; vector-effect: non-scaling-stroke; }
