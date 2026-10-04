@@ -38,10 +38,10 @@ const formatBirthDateInput = () => {
 
 const nameFor = (number, energies) => energies[String(number)]?.name || `Число ${number}`;
 
-const createCard = ({ label, value, lead, text, advice, accent = false }) => {
+const createCard = ({ label, value, lead, text, advice, ritual = "", accent = false }) => {
   const article = document.createElement("article");
   article.className = `destiny-code-card${accent ? " destiny-code-card--accent" : ""}`;
-  article.innerHTML = `<p>${label}</p><div class="destiny-code-number">${value}</div><h3>${lead}</h3><p class="destiny-code-copy">${text}</p><p class="destiny-code-advice"><strong>Ориентир:</strong> ${advice}</p>`;
+  article.innerHTML = `<p>${label}</p><div class="destiny-code-number">${value}</div><h3>${lead}</h3><p class="destiny-code-copy">${text}</p>${ritual ? `<div class="destiny-code-ritual"><strong>Как его использовать</strong><p>${ritual}</p></div>` : ""}<p class="destiny-code-advice"><strong>Ориентир:</strong> ${advice}</p>`;
   return article;
 };
 
@@ -65,23 +65,25 @@ const buildCode = (birthDate, energies) => {
       advice: record?.[adviceField] || record?.advice || "Смотрите, где это число уже проявляется в вашей жизни."
     };
   };
+  const moneyCode = {
+    label: "Ваш код денег",
+    value: financialCode,
+    lead: "Личная денежная формула",
+    text: `Это не случайный набор цифр. В нём соединяются ваши привычки заработка, отношение к ценности и то, через какие качества деньги легче остаются в жизни. ${financialDigits.map((number) => `${number} отвечает за ${energy(number)?.shortEssence?.toLowerCase() || nameFor(number, energies).toLowerCase()}`).join(". ")}.`,
+    ritual: `Напишите ${financialCode} на первой странице финансового блокнота или в заметке, где ведёте доходы и цели. Можно поставить его рядом с конкретной суммой на карте желаний. Когда видите этот код, не ждите чуда, а делайте один денежный шаг: назвать цену, отправить предложение, проверить бюджет, закрыть долг или отложить сумму себе. Так цифры становятся личным знаком действия, а не просто красивым талисманом.`,
+    advice: `Результат кода: ${reduceClassic(financialDigits.reduce((sum, number) => sum + number, 0))}. Деньги включаются не от одной сильной цифры, а когда вся связка ${financialCode} работает вместе.`,
+    accent: true
+  };
 
   return {
     title: `Код даты ${String(birthDate.day).padStart(2, "0")}.${String(birthDate.month).padStart(2, "0")}.${birthDate.year}`,
     cards: [
+      moneyCode,
       item("Число жизненного пути", lifePath, "главный маршрут", "lifeScenario", "advice"),
       item("Число дня рождения", birthday, "ваше живое проявление", "mainStrength", "whatNotToDo"),
       item("Число месяца рождения", birthMonth, "внутренний двигатель", "shortEssence", "advice"),
       item("Число года рождения", birthYear, "фон взросления", "mainBlock", "whatNotToDo"),
       item(`Личный год ${currentYear}`, personalYear, "тема текущего периода", "lifeScenario", "advice"),
-      {
-        label: "Финансовый код",
-        value: financialCode,
-        lead: "Через что легче приходят деньги",
-        text: financialDigits.map((number) => `${number} - ${energy(number)?.money || energy(number)?.shortEssence || nameFor(number, energies)}`).join(" "),
-        advice: `Ваш результат финансового кода: ${reduceClassic(financialDigits.reduce((sum, number) => sum + number, 0))}. Не смотрите на цифры по одной: деньги включаются там, где эти качества работают вместе.`,
-        accent: true
-      }
     ]
   };
 };
