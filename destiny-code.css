@@ -18,6 +18,8 @@
 .destiny-code-number{margin:8px 0 5px;color:#604379;font-family:Georgia,"Times New Roman",serif;font-size:38px;line-height:1}
 .destiny-code-card h3{color:#30233d;font-family:Georgia,"Times New Roman",serif;font-size:25px;font-weight:400}
 .destiny-code-copy{margin:12px 0 0;color:#5d596a}
+.destiny-code-copy p{margin:0 0 13px;line-height:1.58}
+.destiny-code-copy p:last-child{margin-bottom:0}
 .destiny-code-advice{margin:14px 0 0;padding-top:13px;border-top:1px solid rgba(84,63,114,.12);color:#4d3d60}
 .destiny-code-card--accent{padding:25px 21px;border-color:rgba(174,131,62,.43);background:radial-gradient(circle at 88% 10%,rgba(255,255,255,.78),transparent 28%),linear-gradient(135deg,#fffaf0,#f7edda);box-shadow:0 18px 35px rgba(151,107,43,.14)}
 .destiny-code-card--accent>p:first-child{color:#a46d25}

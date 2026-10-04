@@ -1,4 +1,5 @@
-import { loadFullReportKnowledge } from "./full-report-library.js?v=3";
+import { loadFullReportKnowledge, loadFullReportSection } from "./full-report-library.js?v=3";
+import { calculateMatrix } from "./numerology-core.js?v=1";
 
 const home = document.querySelector("#home");
 const section = document.querySelector("#destiny-code");
@@ -38,33 +39,71 @@ const formatBirthDateInput = () => {
 
 const nameFor = (number, energies) => energies[String(number)]?.name || `Число ${number}`;
 
-const createCard = ({ label, value, lead, text, advice, ritual = "", accent = false }) => {
+const createCard = ({ label, value = "", lead, text, advice = "", ritual = "", accent = false }) => {
   const article = document.createElement("article");
   article.className = `destiny-code-card${accent ? " destiny-code-card--accent" : ""}`;
-  article.innerHTML = `<p>${label}</p><div class="destiny-code-number">${value}</div><h3>${lead}</h3><p class="destiny-code-copy">${text}</p>${ritual ? `<div class="destiny-code-ritual"><strong>Как его использовать</strong><p>${ritual}</p></div>` : ""}<p class="destiny-code-advice"><strong>Ориентир:</strong> ${advice}</p>`;
+  const paragraphs = Array.isArray(text) ? text : [text];
+  article.innerHTML = `<p>${label}</p>${value ? `<div class="destiny-code-number">${value}</div>` : ""}<h3>${lead}</h3><div class="destiny-code-copy">${paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")}</div>${ritual ? `<div class="destiny-code-ritual"><strong>Как его использовать</strong><p>${ritual}</p></div>` : ""}${advice ? `<p class="destiny-code-advice"><strong>Ориентир:</strong> ${advice}</p>` : ""}`;
   return article;
 };
 
-const buildCode = (birthDate, energies) => {
+const MONEY_TEXTS = {
+  1: {
+    moneyBlock: {
+      lead: "Когда чужая жизнь важнее своей",
+      text: [
+        "Деньги могут задерживаться, когда вы ждёте, что кто-то разрешит вам зарабатывать больше. Начальник заметит, близкие поддержат, клиент сам предложит достойную цену, появится идеальный момент. Но он может не появиться, пока вы сами не обозначите, чего хотите и что готовы предложить.",
+        "Иногда вы много работаете, берёте на себя чужие задачи, помогаете, стараетесь, но не занимаете позицию. Не называете цену, не просите повышение, не рассказываете о своей услуге, не решаетесь начать своё. Усилий много, а финансового роста мало.",
+        "Особая ловушка: решать чужую жизнь вместо своей. Подсказывать, спасать, тащить чужую ответственность, а потом уставать так, будто вы управляли целым миром. Но свой путь при этом остаётся без решения. Деньги начинают двигаться, когда вы возвращаете себе право выбирать за себя."
+      ]
+    },
+    moneyFlow: {
+      lead: "Первый шаг возвращает вам силу",
+      text: [
+        "Поток усиливается, когда вы сами создаёте движение: предлагаете идею, называете цену, заявляете о своей работе, начинаете проект, берёте ответственность за решение.",
+        "Вам важно не растворяться в чужих задачах и не быть просто хорошим исполнителем. Чем яснее видно ваше имя, подход, услугу и результат, тем легче людям выбрать и оплатить именно вас.",
+        "Когда страшно, не нужно ждать, пока страх исчезнет. Выберите одно денежное действие: написать клиенту, сделать предложение, выложить работу, обсудить оплату. Уверенность появляется уже в процессе."
+      ]
+    },
+    earning: {
+      lead: "Там, где ваше решение имеет вес",
+      text: [
+        "Лучше всего доход растёт там, где можно влиять на результат: принимать решения, запускать новое, вести людей, предлагать улучшения, договариваться и брать инициативу.",
+        "Подходят направления, где есть личная ответственность и видимый итог: управление, продажи, переговоры, консультации, запуск проектов, организация процессов, авторские услуги, экспертность, предпринимательство.",
+        "Самый выгодный формат: когда вам платят не только за часы работы, а за ваше решение, имя, опыт и способность привести человека или проект к результату."
+      ]
+    }
+  }
+};
+
+const MONEY_CARDS = [
+  { key: "moneyBlock", label: "Что блокирует деньги", fallback: "Почему деньги могут не приходить" },
+  { key: "moneyFlow", label: "Что открывает денежный поток", fallback: "Как включить свой денежный поток" },
+  { key: "earning", label: "Где и как легче заработать", fallback: "Где вам легче всего заработать" }
+];
+
+const moneyCard = async ({ key, label, fallback }, energy) => {
+  const custom = MONEY_TEXTS[energy]?.[key];
+  if (custom) return { label, ...custom };
+
+  const section = await loadFullReportSection(energy);
+  const source = section.sections?.[key];
+  return {
+    label,
+    lead: source?.title || fallback,
+    text: source?.paragraphs?.filter((paragraph) => !["Что это значит для вас", "Как проявляется в плюсе", "Где уходит в минус", "Что делать прямо сейчас"].includes(paragraph)) || ["Расшифровка этой денежной точки готовится."],
+    advice: "Смотрите на этот сценарий как на ориентир для своих решений, а не как на приговор."
+  };
+};
+
+const buildCode = async (birthDate, energies) => {
   const lifePath = reduceClassic(sumDigits(`${String(birthDate.day).padStart(2, "0")}${String(birthDate.month).padStart(2, "0")}${birthDate.year}`), true);
   const birthday = reduceClassic(birthDate.day, true);
   const birthMonth = reduceClassic(birthDate.month, true);
   const birthYear = reduceClassic(sumDigits(birthDate.year), true);
-  const currentYear = new Date().getFullYear();
-  const personalYear = reduceClassic(birthDate.day + birthDate.month + sumDigits(currentYear), true);
   const financialDigits = [reduceClassic(birthday), reduceClassic(birthMonth), reduceClassic(birthYear), reduceClassic(lifePath)];
   const financialCode = financialDigits.join("");
   const energy = (number) => energies[String(number)] || energies[String(reduceClassic(number))];
-  const item = (label, value, intro, field, adviceField) => {
-    const record = energy(value);
-    return {
-      label,
-      value,
-      lead: `${nameFor(value, energies)}. ${intro}`,
-      text: record?.[field] || record?.shortEssence || "Описание этой энергии сейчас готовится.",
-      advice: record?.[adviceField] || record?.advice || "Смотрите, где это число уже проявляется в вашей жизни."
-    };
-  };
   const moneyCode = {
     label: "Ваш код денег",
     value: financialCode,
@@ -75,15 +114,19 @@ const buildCode = (birthDate, energies) => {
     accent: true
   };
 
+  const matrix = calculateMatrix(birthDate);
+  const moneyPositions = {
+    moneyBlock: matrix.rightSpoke.outer,
+    moneyFlow: matrix.rightSpoke.near,
+    earning: matrix.rightSpoke.core
+  };
+  const moneyCards = await Promise.all(MONEY_CARDS.map((definition) => moneyCard(definition, moneyPositions[definition.key])));
+
   return {
     title: `Код даты ${String(birthDate.day).padStart(2, "0")}.${String(birthDate.month).padStart(2, "0")}.${birthDate.year}`,
     cards: [
       moneyCode,
-      item("Число жизненного пути", lifePath, "главный маршрут", "lifeScenario", "advice"),
-      item("Число дня рождения", birthday, "ваше живое проявление", "mainStrength", "whatNotToDo"),
-      item("Число месяца рождения", birthMonth, "внутренний двигатель", "shortEssence", "advice"),
-      item("Число года рождения", birthYear, "фон взросления", "mainBlock", "whatNotToDo"),
-      item(`Личный год ${currentYear}`, personalYear, "тема текущего периода", "lifeScenario", "advice"),
+      ...moneyCards
     ]
   };
 };
@@ -119,7 +162,7 @@ form.addEventListener("submit", async (event) => {
   button.textContent = "Считаю ваш код...";
   try {
     const { energies } = await loadFullReportKnowledge();
-    const code = buildCode(birthDate, energies);
+    const code = await buildCode(birthDate, energies);
     resultTitle.textContent = code.title;
     cards.replaceChildren(...code.cards.map(createCard));
     result.hidden = false;
@@ -129,6 +172,6 @@ form.addEventListener("submit", async (event) => {
     error.hidden = false;
   } finally {
     button.disabled = false;
-    button.innerHTML = "Узнать мой код <span aria-hidden=\"true\">→</span>";
+    button.innerHTML = "Узнать код денег <span aria-hidden=\"true\">→</span>";
   }
 });
