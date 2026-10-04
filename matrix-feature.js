@@ -21,6 +21,7 @@ const backButton = document.querySelector("#back-matrix-home");
 let reportSectionControls = new Map();
 let reportPreviewControls = new Map();
 let karmicProgramControls = new Set();
+let pendingMatrixTarget;
 
 const nodeRadius = (size) => (size === "major" ? 29 : size === "center" ? 34 : 18);
 
@@ -402,6 +403,11 @@ form.addEventListener("submit", async (event) => {
     renderKarmicTail(matrixData, karmicTails);
     renderKarmicPrograms(matrixData, karmicPrograms);
     renderFullSections(matrixData);
+    if (pendingMatrixTarget) {
+      const target = pendingMatrixTarget;
+      pendingMatrixTarget = undefined;
+      openMatrixTarget(target);
+    }
   } catch {
     showReadingStatus("Матрица рассчитана. Расшифровка временно не загрузилась - попробуйте обновить страницу.");
   }
@@ -418,4 +424,11 @@ export const openMatrix = () => {
   matrix.classList.add("is-active");
   window.scrollTo({ top: 0, behavior: "instant" });
   window.setTimeout(() => birthDateInput.focus(), 220);
+};
+
+export const openMatrixForDate = (date, target) => {
+  pendingMatrixTarget = target;
+  openMatrix();
+  birthDateInput.value = date;
+  form.requestSubmit();
 };

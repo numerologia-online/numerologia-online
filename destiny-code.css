@@ -28,11 +28,7 @@
 .destiny-code-ritual{margin-top:18px;padding:16px;border:1px solid rgba(174,131,62,.22);border-radius:16px;background:rgba(255,255,255,.56);color:#594325}
 .destiny-code-ritual strong{color:#8f5d21;font-size:12px;letter-spacing:.07em;text-transform:uppercase}
 .destiny-code-ritual p{margin:7px 0 0;line-height:1.52}
-.destiny-code-full-cta{padding:22px 19px;border-radius:22px;background:#52386c;color:#fff;box-shadow:0 16px 30px rgba(70,44,97,.18)}
-.destiny-code-full-cta .eyebrow{margin:0;color:#dac6ed;font-size:11px;font-weight:850;letter-spacing:.09em;text-transform:uppercase}
-.destiny-code-full-cta h3{margin:8px 0 0;font-family:Georgia,"Times New Roman",serif;font-size:27px;font-weight:400}
-.destiny-code-full-cta p:not(.eyebrow){margin:12px 0 0;line-height:1.55}
-.destiny-code-full-cta button{width:100%;min-height:49px;margin-top:18px;border:1px solid rgba(255,255,255,.42);border-radius:15px;background:#fff;color:#51356d;font-weight:800}
+.destiny-code-path-cta{display:grid;grid-template-columns:40px 1fr 20px;gap:12px;align-items:center;width:100%;padding:18px;border:1px solid rgba(84,63,114,.19);border-radius:22px;background:rgba(255,255,255,.85);box-shadow:0 9px 20px rgba(67,53,93,.06);color:#3d2b4e;text-align:left}.destiny-code-path-icon{display:grid;place-items:center;width:39px;height:39px;border-radius:50%;background:#5a3c75;color:#fff;font-size:18px}.destiny-code-path-cta p{margin:0;color:#79648d;font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.destiny-code-path-cta h3{margin:4px 0 2px;font-family:Georgia,"Times New Roman",serif;font-size:22px;font-weight:400}.destiny-code-path-cta small{color:#6e6578;font-size:12px;line-height:1.35}.destiny-code-path-cta>b{font-size:22px;color:#5a3c75}
 .destiny-code-rituals-cta{display:grid;grid-template-columns:40px 1fr 20px;gap:12px;align-items:center;width:100%;padding:18px;border:1px solid rgba(164,109,37,.34);border-radius:22px;background:linear-gradient(135deg,#fffaf0,#f5e7c9);color:#61441e;text-align:left}
 .destiny-code-rituals-cta>span{display:grid;place-items:center;width:39px;height:39px;border-radius:50%;background:#a56a20;color:#fff;font-size:20px}
 .destiny-code-rituals-cta p{margin:0;color:#9a6420;font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}

@@ -54,7 +54,7 @@ let moneyRitualsRequest;
 
 const loadMoneyBlocks = () => {
   if (!moneyBlocksRequest) {
-    moneyBlocksRequest = fetch("data/money-blocks.json?v=1").then((response) => {
+    moneyBlocksRequest = fetch("data/money-blocks.json?v=2").then((response) => {
       if (!response.ok) throw new Error("Не удалось загрузить денежные блоки");
       return response.json();
     });
@@ -91,22 +91,31 @@ const moneyCard = async ({ key, label, fallback }, energy) => {
   };
 };
 
-const createFullReportCta = () => {
+const createMoneyPathCta = ({ title, text, target, birthDate }) => {
   const article = document.createElement("article");
-  article.className = "destiny-code-full-cta";
-  article.innerHTML = `<p class="eyebrow">Продолжение разбора</p><h3>Деньги можно не только терять</h3><p>Подробнее о том, как открыть денежный поток и где легче зарабатывать, читайте в полном разборе вашей матрицы судьбы.</p><button type="button">Открыть полный разбор <span aria-hidden="true">→</span></button>`;
-  article.querySelector("button").addEventListener("click", () => {
-    section.classList.remove("is-active");
-    home.classList.add("is-active");
-    document.querySelector("[data-open-matrix]")?.click();
+  article.className = "destiny-code-path-cta";
+  article.innerHTML = `<span class="destiny-code-path-icon" aria-hidden="true">✦</span><div><p>Полный расчёт</p><h3>${title}</h3><small>${text}</small></div><b aria-hidden="true">→</b>`;
+  article.addEventListener("click", () => {
+    window.dispatchEvent(new CustomEvent("open-matrix-for-date", {
+      detail: { date: `${String(birthDate.day).padStart(2, "0")}.${String(birthDate.month).padStart(2, "0")}.${birthDate.year}`, target }
+    }));
   });
   return article;
 };
 
+const createActivationCard = (code) => createCard({
+  label: `Ваш код денег ${code}`,
+  lead: `Как активировать код ${code}`,
+  text: "Ваш код можно превратить в личный денежный знак, который будет напоминать не только о желании, но и о выбранном направлении.",
+  ritualTitle: "Как активировать талисман",
+  ritual: `Напишите ${code} своей рукой на первой странице финансового блокнота. Рядом запишите сумму, к которой вы идёте, или одно большое денежное желание. Не «хочу много», а именно ту цифру, которая для вас сейчас важна.\n\nСделайте код заметным, но личным: поставьте на заставку телефона, положите маленькую записку с ним в кошелёк, разместите на карте желаний рядом с домом, путешествием, обучением или суммой, которую хотите получить.\n\nМожно написать код на конверте, где вы храните накопления или записываете свои финансовые цели. Пусть он станет вашим личным знаком достатка, свободы и права жить лучше.`,
+  accent: true
+});
+
 const createRitualsCta = (code) => {
   const article = document.createElement("article");
   article.className = "destiny-code-rituals-cta";
-  article.innerHTML = `<span aria-hidden="true">✦</span><div><p>Денежная библиотека</p><h3>Ритуалы с кодом ${code}</h3><small>10 практик, которые можно сохранить себе</small></div><b aria-hidden="true">→</b>`;
+  article.innerHTML = `<span aria-hidden="true">✦</span><div><p>Денежная библиотека</p><h3>10 денежных ритуалов<br />с вашим личным кодом денег</h3><small>Код ${code} · практики, которые можно сохранить себе</small></div><b aria-hidden="true">→</b>`;
   article.addEventListener("click", () => openMoneyRituals(code));
   return article;
 };
@@ -145,8 +154,6 @@ const buildCode = async (birthDate, energies) => {
     value: financialCode,
     lead: "Личная денежная формула",
     text: "Это не случайный набор цифр. В нём соединяются ваши привычки заработка, отношение к ценности и то, через какие качества деньги легче остаются в жизни.",
-    ritualTitle: "Как активировать талисман",
-    ritual: `Напишите ${financialCode} своей рукой на первой странице финансового блокнота. Рядом запишите сумму, к которой вы идёте, или одно большое денежное желание. Не «хочу много», а именно ту цифру, которая для вас сейчас важна.\n\nСделайте код заметным, но личным: поставьте на заставку телефона, положите маленькую записку с ним в кошелёк, разместите на карте желаний рядом с домом, путешествием, обучением или суммой, которую хотите получить.\n\nМожно написать код на конверте, где вы храните накопления или записываете свои финансовые цели. Пусть он станет вашим личным знаком достатка, свободы и права жить лучше.`,
     accent: true
   };
 
@@ -207,7 +214,24 @@ form.addEventListener("submit", async (event) => {
     const { energies } = await loadFullReportKnowledge();
     const code = await buildCode(birthDate, energies);
     resultTitle.textContent = code.title;
-    cards.replaceChildren(...code.cards.map(createCard), createRitualsCta(code.financialCode), createFullReportCta());
+    cards.replaceChildren(
+      code.cards[0] && createCard(code.cards[0]),
+      createActivationCard(code.financialCode),
+      ...code.cards.slice(1).map(createCard),
+      createMoneyPathCta({
+        title: "Как включить свой денежный поток",
+        text: "Полная расшифровка энергии, через которую деньги начинают двигаться.",
+        target: "moneyFlow",
+        birthDate
+      }),
+      createMoneyPathCta({
+        title: "Где вам легче всего заработать",
+        text: "Полная расшифровка вашей точки заработка и сильного направления.",
+        target: "earning",
+        birthDate
+      }),
+      createRitualsCta(code.financialCode)
+    );
     result.hidden = false;
     result.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch {

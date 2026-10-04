@@ -34,7 +34,7 @@ const openYearFeature = async () => {
 };
 
 const getMatrixFeature = () => {
-  if (!matrixFeatureLoading) matrixFeatureLoading = import("./matrix-feature.js?v=8");
+  if (!matrixFeatureLoading) matrixFeatureLoading = import("./matrix-feature.js?v=9");
   return matrixFeatureLoading;
 };
 
@@ -67,7 +67,7 @@ const getDestinyCodeFeature = () => {
 const openDestinyCodeFeature = async () => {
   const [feature] = await Promise.all([
     getDestinyCodeFeature(),
-    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=1")
+    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=2")
   ]);
   feature.openDestinyCode();
 };
@@ -79,6 +79,16 @@ document.querySelectorAll("[data-open-year]").forEach((button) => button.addEven
 document.querySelectorAll("[data-open-matrix]").forEach((button) => button.addEventListener("click", () => {
   openMatrixFeature().catch(() => alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
 }));
+
+window.addEventListener("open-matrix-for-date", (event) => {
+  const { date, target } = event.detail || {};
+  if (!date || !target) return;
+  Promise.all([
+    getMatrixFeature(),
+    matrixStylesLoading ??= loadStylesheet("matrix-polish.css?v=5")
+  ]).then(([feature]) => feature.openMatrixForDate(date, target))
+    .catch(() => alert("Не удалось открыть полный расчёт. Обновите страницу и попробуйте ещё раз."));
+});
 
 document.querySelectorAll("[data-open-redflag]").forEach((button) => button.addEventListener("click", () => {
   openRedFlagFeature().catch(() => alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
