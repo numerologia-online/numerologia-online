@@ -279,6 +279,27 @@ const appendPdfParagraphs = (content, paragraphs = []) => {
   paragraphs.filter(Boolean).forEach((paragraph) => content.push({ text: paragraph, style: "paragraph" }));
 };
 
+const fullReportPdfFrame = () => ([
+  {
+    type: "rect",
+    x: 22,
+    y: 22,
+    w: 551,
+    h: 798,
+    lineColor: "#c3a56b",
+    lineWidth: 0.7
+  },
+  {
+    type: "rect",
+    x: 28,
+    y: 28,
+    w: 539,
+    h: 786,
+    lineColor: "#e7dcc7",
+    lineWidth: 0.35
+  }
+]);
+
 const buildFullReportPdf = async () => {
   if (!activeFullReport) throw new Error("Нет данных для PDF");
   const { formattedDate, matrixData, karmicPrograms, karmicTails } = activeFullReport;
@@ -292,9 +313,19 @@ const buildFullReportPdf = async () => {
   ]);
 
   const content = [
-    { text: "Полный\nразбор", style: "coverTitle" },
-    { text: `Дата рождения ${formattedDate}`, style: "coverDate" },
-    { text: "Ваши ключевые точки", style: "chapter", pageBreak: "before" },
+    {
+      stack: [
+        { text: "КАРМИЧЕСКАЯ НУМЕРОЛОГИЯ", style: "coverKicker" },
+        { text: "Полный\nразбор", style: "coverTitle" },
+        { text: `Дата рождения · ${formattedDate}`, style: "coverDate" },
+        { text: "Ваши ключевые энергии, деньги, отношения, ресурс и кармические задачи.", style: "coverCopy" }
+      ],
+      margin: [0, 168, 0, 0],
+      pageBreak: "after"
+    },
+    { text: "ВАША ЛИЧНАЯ КАРТА", style: "eyebrow" },
+    { text: "Ключевые точки", style: "chapter" },
+    { text: "Эти цифры становятся основой для всех разделов ниже.", style: "chapterLead" },
     {
       table: {
         widths: ["*", "auto"],
@@ -308,23 +339,37 @@ const buildFullReportPdf = async () => {
           ["Где легче заработать", String(matrixData.rightSpoke.core)]
         ]
       },
-      layout: "lightHorizontalLines",
+      layout: {
+        hLineWidth: (index) => (index === 0 || index === 7 ? 0.7 : 0.35),
+        vLineWidth: () => 0,
+        hLineColor: () => "#d8cfbd",
+        paddingLeft: () => 8,
+        paddingRight: () => 8,
+        paddingTop: () => 7,
+        paddingBottom: () => 7,
+        fillColor: (rowIndex) => (rowIndex % 2 === 0 ? "#fcfaf5" : null)
+      },
       style: "points"
     }
   ];
 
   records.forEach(({ definition, source }) => {
-    content.push(
-      { text: `${definition.eyebrow.toUpperCase()} · ЭНЕРГИЯ ${definition.energy}`, style: "eyebrow", pageBreak: "before" },
-      { text: source?.title || definition.title, style: "sectionTitle" }
-    );
-    appendPdfParagraphs(content, source?.paragraphs);
+    const paragraphs = (source?.paragraphs || []).filter(Boolean);
+    content.push({
+      stack: [
+        { text: `${definition.eyebrow.toUpperCase()} · ЭНЕРГИЯ ${definition.energy}`, style: "eyebrow" },
+        { text: source?.title || definition.title, style: "sectionTitle" },
+        ...paragraphs.slice(0, 1).map((paragraph) => ({ text: paragraph, style: "paragraph" }))
+      ],
+      margin: [0, 28, 0, 0]
+    });
+    appendPdfParagraphs(content, paragraphs.slice(1));
   });
 
   const tail = findKarmicTail(matrixData, karmicTails);
   const programs = findKarmicPrograms(matrixData, karmicPrograms);
   if (tail || programs.length) {
-    content.push({ text: "КАРМИЧЕСКИЕ ПРОГРАММЫ", style: "eyebrow", pageBreak: "before" });
+    content.push({ text: "КАРМИЧЕСКИЕ ПРОГРАММЫ", style: "eyebrow", margin: [0, 30, 0, 0] });
     if (tail) {
       content.push({ text: `Кармический хвост: ${tail.code} ${tail.title}`, style: "sectionTitle" });
       tail.parts.forEach((part) => {
@@ -343,21 +388,25 @@ const buildFullReportPdf = async () => {
 
   const documentDefinition = {
     pageSize: "A4",
-    pageMargins: [46, 54, 46, 52],
+    pageMargins: [56, 64, 56, 62],
     info: { title: `Полный разбор ${formattedDate}` },
+    background: fullReportPdfFrame,
     content,
-    defaultStyle: { font: "Roboto", fontSize: 10.5, color: "#493f53", lineHeight: 1.25 },
+    defaultStyle: { font: "Roboto", fontSize: 12.2, color: "#493f53", lineHeight: 1.32 },
     styles: {
-      coverTitle: { font: "Roboto", fontSize: 34, bold: true, color: "#563b6f", lineHeight: 1.02 },
-      coverDate: { font: "Roboto", fontSize: 14, color: "#a0682b", margin: [0, 18, 0, 0] },
-      chapter: { font: "Roboto", fontSize: 22, bold: true, color: "#563b6f", margin: [0, 0, 0, 16] },
-      eyebrow: { font: "Roboto", fontSize: 8.5, bold: true, color: "#1f777d", characterSpacing: 0.7, margin: [0, 0, 0, 7] },
-      sectionTitle: { font: "Roboto", fontSize: 19, bold: true, color: "#392846", margin: [0, 0, 0, 12] },
-      partTitle: { font: "Roboto", fontSize: 12, bold: true, color: "#89602d", margin: [0, 12, 0, 5] },
-      paragraph: { margin: [0, 0, 0, 10] },
-      points: { margin: [0, 0, 0, 0], color: "#493f53" }
+      coverKicker: { font: "Roboto", fontSize: 10, bold: true, color: "#28787a", characterSpacing: 1.5, margin: [0, 0, 0, 22] },
+      coverTitle: { font: "Roboto", fontSize: 43, bold: true, color: "#563b6f", lineHeight: 1.03 },
+      coverDate: { font: "Roboto", fontSize: 16, color: "#a0682b", margin: [0, 22, 0, 0] },
+      coverCopy: { font: "Roboto", fontSize: 14, color: "#6d6376", lineHeight: 1.4, margin: [0, 52, 0, 0] },
+      chapter: { font: "Roboto", fontSize: 27, bold: true, color: "#563b6f", margin: [0, 0, 0, 10] },
+      chapterLead: { font: "Roboto", fontSize: 13, color: "#6d6376", lineHeight: 1.38, margin: [0, 0, 0, 20] },
+      eyebrow: { font: "Roboto", fontSize: 9.5, bold: true, color: "#1f777d", characterSpacing: 1.05, margin: [0, 0, 0, 8] },
+      sectionTitle: { font: "Roboto", fontSize: 20, bold: true, color: "#392846", lineHeight: 1.14, margin: [0, 0, 0, 12] },
+      partTitle: { font: "Roboto", fontSize: 13.2, bold: true, color: "#89602d", margin: [0, 16, 0, 6] },
+      paragraph: { margin: [0, 0, 0, 12] },
+      points: { margin: [0, 0, 0, 0], color: "#493f53", fontSize: 11.3 }
     },
-    footer: (page, pages) => ({ text: `Нумерология Онлайн · ${page} / ${pages}`, alignment: "center", color: "#a089a8", fontSize: 8, margin: [0, 10, 0, 0] })
+    footer: (page, pages) => ({ text: `Нумерология Онлайн · ${page} / ${pages}`, alignment: "center", color: "#a089a8", fontSize: 8.5, margin: [0, 8, 0, 0] })
   };
 
   const blob = await new Promise((resolve) => pdfMake.createPdf(documentDefinition).getBlob(resolve));
