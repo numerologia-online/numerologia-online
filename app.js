@@ -6,6 +6,8 @@ let matrixFeatureLoading;
 let matrixStylesLoading;
 let redFlagFeatureLoading;
 let redFlagStylesLoading;
+let destinyCodeFeatureLoading;
+let destinyCodeStylesLoading;
 
 const loadStylesheet = (href) => new Promise((resolve, reject) => {
   const existing = document.querySelector(`link[href^="${href}"]`);
@@ -57,6 +59,19 @@ const openRedFlagFeature = async () => {
   feature.openRedFlag();
 };
 
+const getDestinyCodeFeature = () => {
+  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=1");
+  return destinyCodeFeatureLoading;
+};
+
+const openDestinyCodeFeature = async () => {
+  const [feature] = await Promise.all([
+    getDestinyCodeFeature(),
+    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=1")
+  ]);
+  feature.openDestinyCode();
+};
+
 document.querySelectorAll("[data-open-year]").forEach((button) => button.addEventListener("click", () => {
   openYearFeature().catch(() => alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
 }));
@@ -67,6 +82,10 @@ document.querySelectorAll("[data-open-matrix]").forEach((button) => button.addEv
 
 document.querySelectorAll("[data-open-redflag]").forEach((button) => button.addEventListener("click", () => {
   openRedFlagFeature().catch(() => alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
+}));
+
+document.querySelectorAll("[data-open-destiny-code]").forEach((button) => button.addEventListener("click", () => {
+  openDestinyCodeFeature().catch(() => alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
 }));
 
 document.querySelectorAll("[data-coming-soon]").forEach((button) => button.addEventListener("click", () => dialog.showModal()));
