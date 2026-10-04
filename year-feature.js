@@ -517,7 +517,14 @@ const downloadPdf = async () => {
     const link = document.createElement("a");
     link.href = url;
     link.download = filename;
+    // iOS Safari may ignore `download` for a Blob URL and replace the current
+    // tab with the PDF. Open it separately so closing the PDF returns to the
+    // already calculated report and its date/year form.
+    link.target = "_blank";
+    link.rel = "noopener";
+    document.body.append(link);
     link.click();
+    link.remove();
   } catch (error) {
     alert("PDF пока не удалось подготовить. Проверьте подключение к интернету и попробуйте ещё раз.");
   } finally {
