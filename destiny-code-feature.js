@@ -9,6 +9,9 @@ const error = document.querySelector("#destiny-code-error");
 const result = document.querySelector("#destiny-code-result");
 const resultTitle = document.querySelector("#destiny-code-result-title");
 const cards = document.querySelector("#destiny-code-cards");
+const ritualsSection = document.querySelector("#money-rituals");
+const ritualsCode = document.querySelector("#money-rituals-code");
+const ritualsList = document.querySelector("#money-rituals-list");
 
 const masterNumbers = new Set([11, 22, 33]);
 
@@ -47,6 +50,7 @@ const createCard = ({ label, value = "", lead, text, advice = "", ritual = "", r
 };
 
 let moneyBlocksRequest;
+let moneyRitualsRequest;
 
 const loadMoneyBlocks = () => {
   if (!moneyBlocksRequest) {
@@ -56,6 +60,16 @@ const loadMoneyBlocks = () => {
     });
   }
   return moneyBlocksRequest;
+};
+
+const loadMoneyRituals = () => {
+  if (!moneyRitualsRequest) {
+    moneyRitualsRequest = fetch("data/money-rituals.json?v=1").then((response) => {
+      if (!response.ok) throw new Error("Не удалось загрузить денежные ритуалы");
+      return response.json();
+    });
+  }
+  return moneyRitualsRequest;
 };
 
 const MONEY_CARDS = [
@@ -89,6 +103,36 @@ const createFullReportCta = () => {
   return article;
 };
 
+const createRitualsCta = (code) => {
+  const article = document.createElement("article");
+  article.className = "destiny-code-rituals-cta";
+  article.innerHTML = `<span aria-hidden="true">✦</span><div><p>Денежная библиотека</p><h3>Ритуалы с кодом ${code}</h3><small>10 практик, которые можно сохранить себе</small></div><b aria-hidden="true">→</b>`;
+  article.addEventListener("click", () => openMoneyRituals(code));
+  return article;
+};
+
+const createRitual = (ritual, code) => {
+  const details = document.createElement("details");
+  details.className = "money-ritual";
+  const render = (value) => value.replaceAll("{code}", code);
+  details.innerHTML = `<summary><span class="money-ritual-icon" aria-hidden="true">${ritual.icon}</span><span><b>${ritual.title}</b><small>${ritual.when}</small></span><i aria-hidden="true">+</i></summary><div class="money-ritual-body"><p class="money-ritual-needs"><strong>Понадобится:</strong> ${ritual.needs}</p><ol>${ritual.steps.map((step) => `<li>${render(step)}</li>`).join("")}</ol><p class="money-ritual-phrase">«${ritual.phrase}»</p></div>`;
+  return details;
+};
+
+const openMoneyRituals = async (code) => {
+  section.classList.remove("is-active");
+  ritualsSection.classList.add("is-active");
+  ritualsCode.textContent = `Ваш код денег: ${code}`;
+  ritualsList.innerHTML = `<p class="money-rituals-loading">Открываю денежную библиотеку…</p>`;
+  window.scrollTo({ top: 0, behavior: "instant" });
+  try {
+    const rituals = await loadMoneyRituals();
+    ritualsList.replaceChildren(...rituals.map((ritual) => createRitual(ritual, code)));
+  } catch {
+    ritualsList.innerHTML = `<p class="money-rituals-loading">Не удалось открыть ритуалы. Обновите страницу и попробуйте ещё раз.</p>`;
+  }
+};
+
 const buildCode = async (birthDate, energies) => {
   const lifePath = reduceClassic(sumDigits(`${String(birthDate.day).padStart(2, "0")}${String(birthDate.month).padStart(2, "0")}${birthDate.year}`), true);
   const birthday = reduceClassic(birthDate.day, true);
@@ -116,6 +160,7 @@ const buildCode = async (birthDate, energies) => {
 
   return {
     title: `Код даты ${String(birthDate.day).padStart(2, "0")}.${String(birthDate.month).padStart(2, "0")}.${birthDate.year}`,
+    financialCode,
     cards: [
       moneyCode,
       ...moneyCards
@@ -132,6 +177,12 @@ export const openDestinyCode = () => {
 document.querySelector("#back-destiny-code-home").addEventListener("click", () => {
   section.classList.remove("is-active");
   home.classList.add("is-active");
+  window.scrollTo({ top: 0, behavior: "instant" });
+});
+
+document.querySelector("#back-money-rituals").addEventListener("click", () => {
+  ritualsSection.classList.remove("is-active");
+  section.classList.add("is-active");
   window.scrollTo({ top: 0, behavior: "instant" });
 });
 
@@ -156,7 +207,7 @@ form.addEventListener("submit", async (event) => {
     const { energies } = await loadFullReportKnowledge();
     const code = await buildCode(birthDate, energies);
     resultTitle.textContent = code.title;
-    cards.replaceChildren(...code.cards.map(createCard), createFullReportCta());
+    cards.replaceChildren(...code.cards.map(createCard), createRitualsCta(code.financialCode), createFullReportCta());
     result.hidden = false;
     result.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch {
