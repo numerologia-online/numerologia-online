@@ -1,5 +1,97 @@
-const moneyScript=(src)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.head.append(s)});
-const moneyImage=(src)=>fetch(src).then(r=>r.blob()).then(blob=>new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(blob)}));
-async function moneyPdfReady(){if(!window.pdfMake){await moneyScript('https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/pdfmake.min.js');await moneyScript('https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/vfs_fonts.js')}}
-const moneyText=(block)=>block?.body||'Ваши деньги легче приходят туда, где вы не обесцениваете свой труд, замечаете свои возможности и спокойно разрешаете себе больше.';
-export function createMoneyPdfButton({birthDate,code,moneyBlock}){const button=document.createElement('button');button.type='button';button.className='destiny-code-pdf-button';button.textContent='Скачать личный PDF ↓';button.style.cssText='width:100%;min-height:58px;border:1px solid #b9833c;border-radius:18px;background:#fff6e5;color:#754316;font:800 16px/1.2 inherit;cursor:pointer';button.addEventListener('click',async()=>{const original=button.textContent;button.disabled=true;button.textContent='Собираем ваш PDF…';try{await moneyPdfReady();const cover=await moneyImage('year-report-cover.jpg');const inner=await moneyImage('year-report-inner.jpg');const date=birthDate?new Date(birthDate+'T00:00:00').toLocaleDateString('ru-RU'):'';const bg=(image)=>({image,width:595.28,height:841.89,absolutePosition:{x:0,y:0},opacity:.18});const doc={pageSize:'A4',pageMargins:[48,58,48,54],defaultStyle:{fontSize:13,lineHeight:1.35,color:'#39264a'},styles:{title:{fontSize:29,bold:true,color:'#70421b',alignment:'center'},code:{fontSize:58,bold:true,color:'#70421b',alignment:'center',margin:[0,18,0,18]},heading:{fontSize:21,bold:true,color:'#70421b',margin:[0,0,0,15]},lead:{fontSize:17,color:'#5b426b',alignment:'center',margin:[0,12,0,14]}},content:[{background:()=>bg(cover),stack:[{text:'ЛИЧНЫЙ ДЕНЕЖНЫЙ КОД',style:'title',margin:[0,145,0,0]},{text:code,style:'code'},{text:'Ваш знак достатка, смелых желаний и выбранного пути',style:'lead'},{text:'КОД ДЕНЕГ',style:'heading',alignment:'center',margin:[0,55,0,7]},{text:date,alignment:'center',color:'#806a56'}],pageBreak:'after'},{background:()=>bg(inner),stack:[{text:'Ваша денежная формула',style:'heading'},{text:'Код '+code+' — это мягкий ориентир: через какие качества вам легче замечать возможности, сохранять ценность своего труда и строить отношение с деньгами без внутренней борьбы.'},{text:'Что может блокировать деньги',style:'heading',margin:[0,32,0,15]},{text:moneyText(moneyBlock)}],pageBreak:'after'},{background:()=>bg(inner),stack:[{text:'Как активировать свой код',style:'heading'},{text:'Вспоминайте о своём коде в моменты выбора: когда называете цену, принимаете предложение, просите оплату или решаете вложиться в себя. Не нужно ждать идеального состояния — достаточно делать один спокойный шаг в сторону большей ценности.'},{text:'Практика на сегодня',style:'heading',margin:[0,32,0,15]},{ul:['Запишите код '+code+' там, где будете видеть его каждый день.','Выберите одну денежную задачу, которую откладывали.','Сделайте первый маленький шаг в течение суток.']}],pageBreak:'after'},{background:()=>bg(inner),stack:[{text:'Ритуал доверия переменам',style:'heading'},{text:'Когда перемены пугают, мы можем сопротивляться даже тому, что ведёт нас к лучшему. Этот ритуал — не про давление на себя, а про возвращение доверия к жизни.'},{text:'Положите руку на сердце и медленно скажите:',style:'heading',margin:[0,32,0,15]},{text:'«Я не сопротивляюсь переменам. Я доверяю течению жизни и Богу. Я отпускаю то, что завершилось, и открываюсь тому, что ведёт меня к моему благу. Я в безопасности на своём пути.»',italics:true,fontSize:16,color:'#70421b'},{text:'После этого сделайте одно бережное действие для нового этапа — письмо, звонок, запись, отказ от лишнего или выбор в свою пользу.',margin:[0,30,0,0]}]}]};pdfMake.createPdf(doc).download('Код денег '+code+'.pdf')}catch(error){console.error(error);button.textContent='Не удалось собрать PDF — попробуйте ещё раз'}finally{button.disabled=false;if(button.textContent==='Собираем ваш PDF…')button.textContent=original}});return button}
+const PDF_SCRIPT = "https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/pdfmake.min.js";
+const PDF_FONTS = "https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/vfs_fonts.js";
+
+const loadScript = (src) => new Promise((resolve, reject) => {
+  const script = document.createElement("script");
+  script.src = src;
+  script.onload = resolve;
+  script.onerror = reject;
+  document.head.append(script);
+});
+
+const ensurePdfMake = async () => {
+  if (window.pdfMake) return;
+  await loadScript(PDF_SCRIPT);
+  await loadScript(PDF_FONTS);
+};
+
+const asParagraphs = (value) => (Array.isArray(value) ? value : [value])
+  .filter(Boolean)
+  .map((text) => ({ text, margin: [0, 0, 0, 10] }));
+
+const formatDate = ({ day, month, year }) => `${String(day).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`;
+
+const createSection = ({ label, lead, text, ritual, ritualTitle, advice }) => ({
+  stack: [
+    { text: label || "", style: "eyebrow" },
+    { text: lead || "", style: "heading" },
+    ...asParagraphs(text),
+    ...(ritual ? [
+      { text: ritualTitle || "Как использовать", style: "subheading" },
+      ...asParagraphs(ritual.split("\n\n"))
+    ] : []),
+    ...(advice ? [{ text: advice, style: "advice" }] : [])
+  ],
+  margin: [0, 0, 0, 24],
+  unbreakable: true
+});
+
+export const createMoneyPdfButton = ({ birthDate, code, sections }) => {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "destiny-code-pdf-button";
+  button.textContent = "Сохранить результат в PDF ↓";
+  button.setAttribute("aria-label", "Сохранить расчёт кода денег в PDF");
+  button.style.cssText = "width:100%;min-height:58px;border:1px solid #b9833c;border-radius:18px;background:#fff6e5;color:#754316;font:800 16px/1.2 inherit;cursor:pointer";
+
+  button.addEventListener("click", async () => {
+    const originalLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = "Собираем ваш PDF…";
+
+    try {
+      await ensurePdfMake();
+      const doc = {
+        pageSize: "A4",
+        pageMargins: [48, 58, 48, 54],
+        defaultStyle: { fontSize: 12, lineHeight: 1.35, color: "#39264a" },
+        styles: {
+          eyebrow: { fontSize: 10, bold: true, color: "#9a6b31", characterSpacing: 0.8, margin: [0, 0, 0, 6] },
+          title: { fontSize: 26, bold: true, color: "#70421b", alignment: "center", margin: [0, 100, 0, 16] },
+          code: { fontSize: 54, bold: true, color: "#70421b", alignment: "center", margin: [0, 8, 0, 22] },
+          subtitle: { fontSize: 15, color: "#5b426b", alignment: "center", margin: [0, 0, 0, 34] },
+          heading: { fontSize: 19, bold: true, color: "#70421b", margin: [0, 0, 0, 13] },
+          subheading: { fontSize: 14, bold: true, color: "#70421b", margin: [0, 10, 0, 8] },
+          advice: { fontSize: 11, italics: true, color: "#5b426b", margin: [0, 4, 0, 4] }
+        },
+        footer: (page, pages) => ({
+          text: `Нумерология.online · ${page} / ${pages}`,
+          alignment: "center",
+          fontSize: 8,
+          color: "#806a56",
+          margin: [0, 14, 0, 0]
+        }),
+        content: [
+          { text: "ЛИЧНЫЙ ДЕНЕЖНЫЙ КОД", style: "title" },
+          { text: code, style: "code" },
+          { text: `Расчёт по дате ${formatDate(birthDate)}`, style: "subtitle" },
+          { text: "Ваш личный результат", style: "heading", pageBreak: "before" },
+          ...sections.map(createSection)
+        ]
+      };
+
+      window.pdfMake.createPdf(doc).download(`Код денег ${code}.pdf`);
+      button.textContent = "PDF готов — скачивание началось";
+    } catch (error) {
+      console.error(error);
+      button.textContent = "Не удалось собрать PDF — попробуйте ещё раз";
+    } finally {
+      button.disabled = false;
+      window.setTimeout(() => {
+        if (button.textContent !== originalLabel) button.textContent = originalLabel;
+      }, 2500);
+    }
+  });
+
+  return button;
+};
