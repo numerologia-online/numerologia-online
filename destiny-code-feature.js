@@ -50,13 +50,14 @@ const createCard = ({ label, value = "", lead, text, advice = "", ritual = "", r
   return article;
 };
 
-const createMoneyDisclosure = ({ label, lead, text, advice = "", ritual = "", ritualTitle = "Как использовать", accent = false }) => {
+const createMoneyDisclosure = ({ label, lead, text, advice = "", ritual = "", ritualTitle = "Как использовать", accent = false, cta = null }) => {
   const details = document.createElement("details");
   details.className = `destiny-code-disclosure${accent ? " destiny-code-disclosure--accent" : ""}`;
   const paragraphs = Array.isArray(text) ? text : [text];
   const copy = paragraphs.filter(Boolean).map((paragraph) => `<p>${paragraph}</p>`).join("");
   const ritualParagraphs = ritual ? ritual.split("\n\n").map((paragraph) => `<p>${paragraph}</p>`).join("") : "";
-  details.innerHTML = `<summary><span><p>${label}</p><h3>${lead}</h3></span><b aria-hidden="true">+</b></summary><div class="destiny-code-disclosure-body">${copy ? `<div class="destiny-code-copy">${copy}</div>` : ""}${ritual ? `<div class="destiny-code-ritual"><strong>${ritualTitle}</strong>${ritualParagraphs}</div>` : ""}${advice ? `<p class="destiny-code-advice"><strong>Ориентир:</strong> ${advice}</p>` : ""}</div>`;
+  const ctaMarkup = cta ? `<a class="destiny-code-telegram-link" href="${cta.href}" target="_blank" rel="noopener noreferrer">${cta.label}</a>` : "";
+  details.innerHTML = `<summary><span><p>${label}</p><h3>${lead}</h3></span><b aria-hidden="true">+</b></summary><div class="destiny-code-disclosure-body">${copy ? `<div class="destiny-code-copy">${copy}</div>` : ""}${ritual ? `<div class="destiny-code-ritual"><strong>${ritualTitle}</strong>${ritualParagraphs}</div>` : ""}${advice ? `<p class="destiny-code-advice"><strong>Ориентир:</strong> ${advice}</p>` : ""}${ctaMarkup}</div>`;
   return details;
 };
 
@@ -102,17 +103,15 @@ const moneyCard = async ({ key, label, fallback }, energy) => {
   };
 };
 
-const createMoneyPathCta = ({ title, text, target, birthDate }) => {
-  const article = document.createElement("article");
-  article.className = "destiny-code-path-cta destiny-code-disclosure";
-  article.innerHTML = `<span><p>Полный расчёт</p><h3>${title}</h3><small>${text}</small></span><b aria-hidden="true">→</b>`;
-  article.addEventListener("click", () => {
-    window.dispatchEvent(new CustomEvent("open-matrix-for-date", {
-      detail: { date: `${String(birthDate.day).padStart(2, "0")}.${String(birthDate.month).padStart(2, "0")}.${birthDate.year}`, target }
-    }));
-  });
-  return article;
-};
+const createMoneyPathOffer = ({ title, text }) => createMoneyDisclosure({
+  label: "Полный личный разбор",
+  lead: title,
+  text,
+  cta: {
+    label: "Получить полный личный разбор →",
+    href: "https://t.me/Kod_9966"
+  }
+});
 
 const createActivationContent = (code) => ({
   label: `Ваш код денег ${code}`,
@@ -126,11 +125,18 @@ const createActivationContent = (code) => ({
 const createActivationDisclosure = (code) => createMoneyDisclosure(createActivationContent(code));
 
 const createRitualsCta = (code) => {
-  const article = document.createElement("article");
-  article.className = "destiny-code-rituals-cta destiny-code-disclosure";
-  article.innerHTML = `<span><p>Денежная библиотека</p><h3>10 денежных ритуалов с вашим личным кодом денег</h3><small>Код ${code} · практики, которые можно сохранить себе</small></span><b aria-hidden="true">→</b>`;
-  article.addEventListener("click", () => openMoneyRituals(code));
-  return article;
+  const details = createMoneyDisclosure({
+    label: "Денежная библиотека",
+    lead: "10 денежных ритуалов с вашим личным кодом денег",
+    text: `Код ${code} · практики, которые можно сохранить себе.`
+  });
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "destiny-code-rituals-open";
+  button.textContent = "Открыть денежные ритуалы →";
+  button.addEventListener("click", () => openMoneyRituals(code));
+  details.querySelector(".destiny-code-disclosure-body").append(button);
+  return details;
 };
 
 const createRitual = (ritual, code) => {
@@ -231,17 +237,13 @@ form.addEventListener("submit", async (event) => {
       code.cards[0] && createCard(code.cards[0]),
       createActivationDisclosure(code.financialCode),
       ...code.cards.slice(1).map(createMoneyDisclosure),
-      createMoneyPathCta({
+      createMoneyPathOffer({
         title: "Как включить свой денежный поток",
-        text: "Полная расшифровка энергии, через которую деньги начинают двигаться.",
-        target: "moneyFlow",
-        birthDate
+        text: "Ваш код — это только начало. В полном личном разборе я показываю, через какую точку у вас включается денежный поток: что перестать делать, на что опереться и через какие качества деньги начинают двигаться легче."
       }),
-      createMoneyPathCta({
+      createMoneyPathOffer({
         title: "Где вам легче всего заработать",
-        text: "Полная расшифровка вашей точки заработка и сильного направления.",
-        target: "earning",
-        birthDate
+        text: "У каждого человека своя точка заработка. В полном личном разборе я показываю вашу личную точку заработка и направление, в котором деньги не приходится выжимать из себя."
       }),
       createRitualsCta(code.financialCode),
       createMoneyPdfButton({
