@@ -89,7 +89,7 @@ const MONEY_CARDS = [
 const moneyCard = async ({ key, label, fallback }, energy) => {
   const blocks = await loadMoneyBlocks();
   const custom = key === "moneyBlock" ? blocks[String(energy)] : null;
-  if (custom) return { label, lead: custom.lead, text: custom.paragraphs };
+  if (custom) return { label, lead: label, text: custom.paragraphs };
 
   const section = await loadFullReportSection(energy);
   const source = section.sections?.[key];
@@ -103,8 +103,8 @@ const moneyCard = async ({ key, label, fallback }, energy) => {
 
 const createMoneyPathCta = ({ title, text, target, birthDate }) => {
   const article = document.createElement("article");
-  article.className = "destiny-code-path-cta";
-  article.innerHTML = `<span class="destiny-code-path-icon" aria-hidden="true">✦</span><div><p>Полный расчёт</p><h3>${title}</h3><small>${text}</small></div><b aria-hidden="true">→</b>`;
+  article.className = "destiny-code-path-cta destiny-code-disclosure";
+  article.innerHTML = `<span><p>Полный расчёт</p><h3>${title}</h3><small>${text}</small></span><b aria-hidden="true">→</b>`;
   article.addEventListener("click", () => {
     window.dispatchEvent(new CustomEvent("open-matrix-for-date", {
       detail: { date: `${String(birthDate.day).padStart(2, "0")}.${String(birthDate.month).padStart(2, "0")}.${birthDate.year}`, target }
@@ -124,8 +124,8 @@ const createActivationDisclosure = (code) => createMoneyDisclosure({
 
 const createRitualsCta = (code) => {
   const article = document.createElement("article");
-  article.className = "destiny-code-rituals-cta";
-  article.innerHTML = `<span aria-hidden="true">✦</span><div><p>Денежная библиотека</p><h3>10 денежных ритуалов<br />с вашим личным кодом денег</h3><small>Код ${code} · практики, которые можно сохранить себе</small></div><b aria-hidden="true">→</b>`;
+  article.className = "destiny-code-rituals-cta destiny-code-disclosure";
+  article.innerHTML = `<span><p>Денежная библиотека</p><h3>10 денежных ритуалов с вашим личным кодом денег</h3><small>Код ${code} · практики, которые можно сохранить себе</small></span><b aria-hidden="true">→</b>`;
   article.addEventListener("click", () => openMoneyRituals(code));
   return article;
 };
