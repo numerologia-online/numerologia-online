@@ -60,14 +60,14 @@ const openRedFlagFeature = async () => {
 };
 
 const getDestinyCodeFeature = () => {
-  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=18");
+  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=19");
   return destinyCodeFeatureLoading;
 };
 
 const openDestinyCodeFeature = async () => {
   const [feature] = await Promise.all([
     getDestinyCodeFeature(),
-    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=3")
+    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=4")
   ]);
   feature.openDestinyCode();
 };
@@ -75,7 +75,7 @@ const openDestinyCodeFeature = async () => {
 const openMoneyCodeClientLink = async () => {
   const [feature] = await Promise.all([
     getDestinyCodeFeature(),
-    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=3")
+    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=4")
   ]);
   feature.openDestinyCode({ clientOnly: true });
   const backButton = document.querySelector("#back-destiny-code-home");
