@@ -103,13 +103,15 @@ const moneyCard = async ({ key, label, fallback }, energy) => {
   };
 };
 
+const telegramOrderText = encodeURIComponent("Татьяна, добрый день. Очень хочу заказать у вас полный личный разбор.");
+
 const createMoneyPathOffer = ({ title, text }) => createMoneyDisclosure({
   label: "Полный личный разбор",
   lead: title,
   text,
   cta: {
-    label: "Получить полный личный разбор →",
-    href: "https://t.me/Kod_9966"
+    label: "Написать Татьяне →",
+    href: `https://t.me/Kod_9966?text=${telegramOrderText}`
   }
 });
 
@@ -244,6 +246,10 @@ form.addEventListener("submit", async (event) => {
       createMoneyPathOffer({
         title: "Где вам легче всего заработать",
         text: "У каждого человека своя точка заработка. В полном личном разборе я показываю вашу личную точку заработка и направление, в котором деньги не приходится выжимать из себя."
+      }),
+      createMoneyPathOffer({
+        title: "Какие уроки вы проходите на пути к богатству",
+        text: "Иногда деньги не задерживаются не потому, что вы не умеете зарабатывать, а потому что повторяется старый сценарий: обесценивание себя, страх назвать цену или привычка отдавать больше, чем получать. В полном личном разборе видно, какой именно урок сейчас мешает деньгам закрепиться в вашей жизни."
       }),
       createRitualsCta(code.financialCode),
       createMoneyPdfButton({
