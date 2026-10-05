@@ -49,6 +49,16 @@ const createCard = ({ label, value = "", lead, text, advice = "", ritual = "", r
   return article;
 };
 
+const createMoneyDisclosure = ({ label, lead, text, advice = "", ritual = "", ritualTitle = "Как использовать", accent = false }) => {
+  const details = document.createElement("details");
+  details.className = `destiny-code-disclosure${accent ? " destiny-code-disclosure--accent" : ""}`;
+  const paragraphs = Array.isArray(text) ? text : [text];
+  const copy = paragraphs.filter(Boolean).map((paragraph) => `<p>${paragraph}</p>`).join("");
+  const ritualParagraphs = ritual ? ritual.split("\n\n").map((paragraph) => `<p>${paragraph}</p>`).join("") : "";
+  details.innerHTML = `<summary><span><p>${label}</p><h3>${lead}</h3></span><b aria-hidden="true">+</b></summary><div class="destiny-code-disclosure-body">${copy ? `<div class="destiny-code-copy">${copy}</div>` : ""}${ritual ? `<div class="destiny-code-ritual"><strong>${ritualTitle}</strong>${ritualParagraphs}</div>` : ""}${advice ? `<p class="destiny-code-advice"><strong>Ориентир:</strong> ${advice}</p>` : ""}</div>`;
+  return details;
+};
+
 let moneyBlocksRequest;
 let moneyRitualsRequest;
 
@@ -103,10 +113,10 @@ const createMoneyPathCta = ({ title, text, target, birthDate }) => {
   return article;
 };
 
-const createActivationCard = (code) => createCard({
+const createActivationDisclosure = (code) => createMoneyDisclosure({
   label: `Ваш код денег ${code}`,
   lead: `Как активировать код ${code}`,
-  text: "Ваш код можно превратить в личный денежный знак, который будет напоминать не только о желании, но и о выбранном направлении.",
+  text: "",
   ritualTitle: "Как активировать талисман",
   ritual: `Напишите ${code} своей рукой на первой странице финансового блокнота. Рядом запишите сумму, к которой вы идёте, или одно большое денежное желание. Не «хочу много», а именно ту цифру, которая для вас сейчас важна.\n\nСделайте код заметным, но личным: поставьте на заставку телефона, положите маленькую записку с ним в кошелёк, разместите на карте желаний рядом с домом, путешествием, обучением или суммой, которую хотите получить.\n\nМожно написать код на конверте, где вы храните накопления или записываете свои финансовые цели. Пусть он станет вашим личным знаком достатка, свободы и права жить лучше.`,
   accent: true
@@ -153,7 +163,7 @@ const buildCode = async (birthDate, energies) => {
     label: "Ваш код денег",
     value: financialCode,
     lead: "Личная денежная формула",
-    text: "Это не случайный набор цифр. В нём соединяются ваши привычки заработка, отношение к ценности и то, через какие качества деньги легче остаются в жизни.",
+    text: "Это не случайная цифра. Это ваш личный код богатства. В нём соединяются ваше отношение к деньгам, чувство собственной ценности и возможности, которые вы готовы впустить в жизнь. Сделайте из него свой денежный талисман: знак достатка, смелых желаний и выбранного пути.",
     accent: true
   };
 
@@ -216,8 +226,8 @@ form.addEventListener("submit", async (event) => {
     resultTitle.textContent = code.title;
     cards.replaceChildren(
       code.cards[0] && createCard(code.cards[0]),
-      createActivationCard(code.financialCode),
-      ...code.cards.slice(1).map(createCard),
+      createActivationDisclosure(code.financialCode),
+      ...code.cards.slice(1).map(createMoneyDisclosure),
       createMoneyPathCta({
         title: "Как включить свой денежный поток",
         text: "Полная расшифровка энергии, через которую деньги начинают двигаться.",
