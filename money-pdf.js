@@ -50,36 +50,24 @@ const asParagraphs = (value, style = "paragraph") => (Array.isArray(value) ? val
 
 const formatDate = ({ day, month, year }) => `${String(day).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`;
 
-const createSection = ({ label, lead, text, ritual, ritualTitle, advice }) => {
-  const paragraphs = asParagraphs(text);
-  const firstParagraph = paragraphs.slice(0, 1);
-  const remainingParagraphs = paragraphs.slice(1);
-
-  return [
-    {
-      stack: [
-        ...(label ? [{ text: label, style: "sectionKicker" }] : []),
-        ...(lead ? [{ text: lead, style: "sectionTitle" }] : []),
-        ...firstParagraph
-      ],
-      unbreakable: true
-    },
-    ...remainingParagraphs,
-    ...(ritual ? [
-      { text: ritualTitle || "Как использовать", style: "subsectionTitle" },
-      ...asParagraphs(ritual)
-    ] : []),
-    ...(advice ? [{ text: advice, style: "advice" }] : [])
-  ];
-};
+const createSection = ({ label, lead, text, ritual, ritualTitle, advice }) => [
+  ...(label ? [{ text: label, style: "sectionKicker" }] : []),
+  ...(lead ? [{ text: lead, style: "sectionTitle" }] : []),
+  ...asParagraphs(text),
+  ...(ritual ? [
+    { text: ritualTitle || "Как использовать", style: "subsectionTitle" },
+    ...asParagraphs(ritual)
+  ] : []),
+  ...(advice ? [{ text: advice, style: "advice" }] : [])
+];
 
 const buildDocument = ({ birthDate, code, sections }, templates) => ({
   info: { title: `Личный денежный код ${code}` },
   pageSize: "A4",
-  pageMargins: [72, 92, 72, 108],
+  pageMargins: [88, 112, 88, 122],
   images: { cover: templates.cover, inner: templates.inner },
   background: (page) => ({ image: page === 1 ? "cover" : "inner", width: 595.28, height: 841.89 }),
-  defaultStyle: { font: "Roboto", fontSize: 20, bold: true, color: "#142C43", lineHeight: 1.48 },
+  defaultStyle: { font: "Roboto", fontSize: 19, bold: true, color: "#142C43", lineHeight: 1.42 },
   styles: {
     coverKicker: { fontSize: 36, bold: true, color: "#1F3E5F", alignment: "center", lineHeight: 1.08 },
     coverCode: { fontSize: 108, bold: true, color: "#1D3654", alignment: "center" },
@@ -92,7 +80,7 @@ const buildDocument = ({ birthDate, code, sections }, templates) => ({
     sectionKicker: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 26, 0, 11] },
     sectionTitle: { fontSize: 31, bold: true, color: "#1E405F", margin: [0, 0, 0, 18] },
     subsectionTitle: { fontSize: 25, bold: true, color: "#60431D", margin: [0, 28, 0, 11] },
-    paragraph: { fontSize: 20, bold: true, color: "#142C43", margin: [0, 0, 0, 19] },
+    paragraph: { fontSize: 19, bold: true, color: "#142C43", margin: [0, 0, 0, 17] },
     advice: { fontSize: 17, bold: true, italics: true, color: "#60431D", margin: [0, 8, 0, 20] }
   },
   content: [
