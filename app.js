@@ -60,7 +60,7 @@ const openRedFlagFeature = async () => {
 };
 
 const getDestinyCodeFeature = () => {
-  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=17");
+  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=18");
   return destinyCodeFeatureLoading;
 };
 
@@ -78,6 +78,7 @@ const openMoneyCodeClientLink = async () => {
     destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=3")
   ]);
   feature.openDestinyCode({ clientOnly: true });
+  document.querySelector("#back-destiny-code-home").hidden = true;
 };
 
 const syncClientLink = () => {
