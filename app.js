@@ -60,7 +60,7 @@ const openRedFlagFeature = async () => {
 };
 
 const getDestinyCodeFeature = () => {
-  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=15");
+  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=16");
   return destinyCodeFeatureLoading;
 };
 
@@ -71,6 +71,23 @@ const openDestinyCodeFeature = async () => {
   ]);
   feature.openDestinyCode();
 };
+
+const openMoneyCodeClientLink = async () => {
+  const [feature] = await Promise.all([
+    getDestinyCodeFeature(),
+    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=3")
+  ]);
+  feature.openDestinyCode({ clientOnly: true });
+};
+
+const syncClientLink = () => {
+  if (window.location.hash === "#moy-kod-deneg") {
+    openMoneyCodeClientLink().catch(() => alert("Не удалось открыть код денег. Обновите страницу и попробуйте ещё раз."));
+  }
+};
+
+syncClientLink();
+window.addEventListener("hashchange", syncClientLink);
 
 document.querySelectorAll("[data-open-year]").forEach((button) => button.addEventListener("click", () => {
   openYearFeature().catch(() => alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
