@@ -60,7 +60,7 @@ const openRedFlagFeature = async () => {
 };
 
 const getDestinyCodeFeature = () => {
-  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=8");
+  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=9");
   return destinyCodeFeatureLoading;
 };
 
