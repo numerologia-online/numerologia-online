@@ -60,14 +60,14 @@ const openRedFlagFeature = async () => {
 };
 
 const getDestinyCodeFeature = () => {
-  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=12");
+  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=13");
   return destinyCodeFeatureLoading;
 };
 
 const openDestinyCodeFeature = async () => {
   const [feature] = await Promise.all([
     getDestinyCodeFeature(),
-    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=2")
+    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=3")
   ]);
   feature.openDestinyCode();
 };
