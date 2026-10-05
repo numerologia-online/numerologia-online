@@ -1,4 +1,4 @@
-import { createMoneyPdfButton } from "./money-pdf.js?v=5";
+import { createMoneyPdfButton } from "./money-pdf.js?v=6";
 import { loadFullReportKnowledge, loadFullReportSection } from "./full-report-library.js?v=3";
 import { calculateMatrix } from "./numerology-core.js?v=1";
 
