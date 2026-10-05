@@ -34,3 +34,12 @@
 .money-ritual{border:1px solid rgba(84,63,114,.16);border-radius:20px;background:rgba(255,255,255,.88);box-shadow:0 9px 20px rgba(67,53,93,.06);overflow:hidden}.money-ritual summary{display:grid;grid-template-columns:40px 1fr 20px;gap:11px;align-items:center;padding:15px;cursor:pointer;list-style:none}.money-ritual summary::-webkit-details-marker{display:none}.money-ritual-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#f5ead7;color:#a1651c;font-size:19px}.money-ritual summary b{display:block;color:#382844;font-family:Georgia,"Times New Roman",serif;font-size:20px;font-weight:400}.money-ritual summary small{display:block;margin-top:3px;color:#787180;font-size:11px;line-height:1.3}.money-ritual summary i{color:#9b692b;font-size:25px;font-style:normal}.money-ritual[open] summary i{transform:rotate(45deg)}.money-ritual-body{padding:0 16px 17px;border-top:1px solid rgba(84,63,114,.1);color:#5d596a;font-size:14px;line-height:1.5}.money-ritual-needs{margin:13px 0 8px}.money-ritual-body ol{display:grid;gap:8px;margin:0;padding-left:21px}.money-ritual-phrase{margin:15px 0 0;padding:12px;border-radius:13px;background:#f8f0e3;color:#765324;font-family:Georgia,"Times New Roman",serif;font-size:15px;line-height:1.4}
 
 .destiny-code-telegram-link,.destiny-code-rituals-open{display:flex;align-items:center;justify-content:center;min-height:48px;margin-top:16px;padding:0 16px;border:1px solid rgba(155,98,25,.62);border-radius:14px;background:#fff8ec;color:#754316;font:800 14px/1.2 inherit;text-align:center;text-decoration:none;cursor:pointer}.destiny-code-rituals-open{width:100%}
+
+/* Денежные ритуалы: сохраняем нежный шрифт, усиливаем читаемость */
+.money-ritual summary b{font-size:22px;font-weight:700;line-height:1.14}
+.money-ritual summary small{margin-top:6px;color:#5c5666;font-size:13px;font-weight:600;line-height:1.45}
+.money-ritual-body{color:#423d4d;font-size:17px;font-weight:500;line-height:1.65}
+.money-ritual-body strong{font-weight:800;color:#37253f}
+.money-ritual-body ol{gap:12px;padding-left:25px}
+.money-ritual-needs{margin:16px 0 12px}
+.money-ritual-phrase{margin-top:18px;padding:16px;color:#5e3d1d;font-size:18px;font-weight:600;line-height:1.55}
