@@ -82,7 +82,9 @@ const buildDocument = ({ birthDate, code, sections }, templates) => ({
     subsectionTitle: { fontSize: 25, bold: true, color: "#60431D", margin: [0, 28, 0, 11] },
     paragraph: { fontSize: 19, bold: true, color: "#142C43", margin: [0, 0, 0, 17] },
     advice: { fontSize: 17, bold: true, italics: true, color: "#60431D", margin: [0, 8, 0, 20] },
-    ctaTitle: { fontSize: 27, bold: true, color: "#1E405F", lineHeight: 1.25, margin: [0, 0, 0, 18] },
+    ctaTitle: { fontSize: 27, bold: true, color: "#1E405F", lineHeight: 1.2, margin: [0, 0, 0, 15] },
+    ctaCopy: { fontSize: 17, bold: true, color: "#142C43", lineHeight: 1.42, margin: [0, 0, 0, 15] },
+    ctaGift: { fontSize: 18, bold: true, color: "#60431D", lineHeight: 1.35, margin: [0, 0, 0, 16] },
     telegramLink: { fontSize: 21, bold: true, color: "#60431D", decoration: "underline", margin: [0, 0, 0, 22] }
   },
   content: [
@@ -101,9 +103,12 @@ const buildDocument = ({ birthDate, code, sections }, templates) => ({
     { text: "Сохраните этот разбор, чтобы возвращаться к нему в моменты денежных решений и новых целей.", style: "subtitle" },
     ...sections.flatMap(createSection),
     { text: "ПРОДОЛЖИТЬ ЛИЧНЫЙ РАЗБОР", style: "sectionKicker", margin: [0, 34, 0, 11] },
-    { text: "Как включить денежный поток\nГде вам легче всего заработать\nКакие уроки вы проходите на пути к своему богатству", style: "ctaTitle" },
-    { text: "Можно узнать на личном полном разборе года.", style: "paragraph", margin: [0, 0, 0, 18] },
-    { text: "Написать мне в Telegram", style: "telegramLink", link: "https://t.me/Kod_9966" }
+    { text: "Что откроется в полном личном разборе", style: "ctaTitle" },
+    { text: "Как вам легче включить денежный поток. Вы увидите свои денежные качества, решения и внутренние точки, через которые доход начинает двигаться легче.", style: "ctaCopy" },
+    { text: "Где вам легче всего заработать. Нумерология показывает сильные направления, форматы работы и способы получать деньги без постоянного выжимания себя.", style: "ctaCopy" },
+    { text: "Какие уроки вы проходите на пути к богатству. Это помогает заметить сценарии, из-за которых вы обесцениваете себя, боитесь назвать цену или не удерживаете деньги.", style: "ctaCopy" },
+    { text: "При заказе полного личного разбора вы получаете в подарок разборы 2026 и 2027 годов, а также 10 денежных ритуалов с вашим личным кодом.", style: "ctaGift" },
+    { text: "Написать Татьяне в Telegram", style: "telegramLink", link: `https://t.me/Kod_9966?text=${encodeURIComponent("Татьяна, добрый день! Хочу заказать у вас полный личный разбор судьбы и своей жизни. Подскажите, пожалуйста, как можно записаться и какая стоимость на данный момент?")}` }
   ],
   footer: (page, pages) => page === 1 ? null : ({
     text: `${page - 1} / ${pages - 1}`,
