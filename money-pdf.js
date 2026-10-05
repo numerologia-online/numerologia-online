@@ -4,36 +4,120 @@ const PDF_FONTS = "https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/vfs_fonts.js";
 const loadScript = (src) => new Promise((resolve, reject) => {
   const script = document.createElement("script");
   script.src = src;
+  script.async = true;
   script.onload = resolve;
   script.onerror = reject;
   document.head.append(script);
 });
 
-const ensurePdfMake = async () => {
-  if (window.pdfMake) return;
-  await loadScript(PDF_SCRIPT);
-  await loadScript(PDF_FONTS);
+const getPdfMake = async () => {
+  if (!window.pdfMake) {
+    await loadScript(PDF_SCRIPT);
+    await loadScript(PDF_FONTS);
+  }
+  return window.pdfMake;
 };
 
-const asParagraphs = (value) => (Array.isArray(value) ? value : [value])
+const imageAsDataUrl = async (source) => {
+  const response = await fetch(source);
+  if (!response.ok) throw new Error("Не удалось открыть шаблон PDF");
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
+let templatesLoading;
+const getTemplates = () => {
+  if (!templatesLoading) {
+    templatesLoading = Promise.all([
+      imageAsDataUrl("assets/year-report-cover.jpg"),
+      imageAsDataUrl("assets/year-report-inner.jpg")
+    ]).then(([cover, inner]) => ({ cover, inner }));
+  }
+  return templatesLoading;
+};
+
+const asParagraphs = (value, style = "paragraph") => (Array.isArray(value) ? value : [value])
   .filter(Boolean)
-  .map((text) => ({ text, margin: [0, 0, 0, 10] }));
+  .flatMap((text) => String(text).split("\n\n"))
+  .map((text) => text.trim())
+  .filter(Boolean)
+  .map((text) => ({ text, style }));
 
 const formatDate = ({ day, month, year }) => `${String(day).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`;
 
-const createSection = ({ label, lead, text, ritual, ritualTitle, advice }) => ({
-  stack: [
-    { text: label || "", style: "eyebrow" },
-    { text: lead || "", style: "heading" },
-    ...asParagraphs(text),
+const createSection = ({ label, lead, text, ritual, ritualTitle, advice }) => {
+  const paragraphs = asParagraphs(text);
+  const firstParagraph = paragraphs.slice(0, 1);
+  const remainingParagraphs = paragraphs.slice(1);
+
+  return [
+    {
+      stack: [
+        ...(label ? [{ text: label, style: "sectionKicker" }] : []),
+        ...(lead ? [{ text: lead, style: "sectionTitle" }] : []),
+        ...firstParagraph
+      ],
+      unbreakable: true
+    },
+    ...remainingParagraphs,
     ...(ritual ? [
-      { text: ritualTitle || "Как использовать", style: "subheading" },
-      ...asParagraphs(ritual.split("\n\n"))
+      { text: ritualTitle || "Как использовать", style: "subsectionTitle" },
+      ...asParagraphs(ritual)
     ] : []),
     ...(advice ? [{ text: advice, style: "advice" }] : [])
+  ];
+};
+
+const buildDocument = ({ birthDate, code, sections }, templates) => ({
+  info: { title: `Личный денежный код ${code}` },
+  pageSize: "A4",
+  pageMargins: [72, 92, 72, 108],
+  images: { cover: templates.cover, inner: templates.inner },
+  background: (page) => ({ image: page === 1 ? "cover" : "inner", width: 595.28, height: 841.89 }),
+  defaultStyle: { font: "Roboto", fontSize: 20, bold: true, color: "#142C43", lineHeight: 1.48 },
+  styles: {
+    coverKicker: { fontSize: 36, bold: true, color: "#1F3E5F", alignment: "center", lineHeight: 1.08 },
+    coverCode: { fontSize: 108, bold: true, color: "#1D3654", alignment: "center" },
+    coverName: { fontSize: 18, bold: true, color: "#80642F", characterSpacing: 1.8, alignment: "center" },
+    coverSubtitle: { fontSize: 28, bold: true, color: "#665332", alignment: "center", lineHeight: 1.1 },
+    coverDetails: { fontSize: 21, bold: true, color: "#142C43", alignment: "center", lineHeight: 1.45 },
+    innerKicker: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 1.25, alignment: "center", margin: [0, 0, 0, 16] },
+    title: { fontSize: 36, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 22] },
+    subtitle: { fontSize: 20, bold: true, color: "#334B62", alignment: "center", margin: [0, 0, 0, 30] },
+    sectionKicker: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 26, 0, 11] },
+    sectionTitle: { fontSize: 31, bold: true, color: "#1E405F", margin: [0, 0, 0, 18] },
+    subsectionTitle: { fontSize: 25, bold: true, color: "#60431D", margin: [0, 28, 0, 11] },
+    paragraph: { fontSize: 20, bold: true, color: "#142C43", margin: [0, 0, 0, 19] },
+    advice: { fontSize: 17, bold: true, italics: true, color: "#60431D", margin: [0, 8, 0, 20] }
+  },
+  content: [
+    {
+      stack: [
+        { text: "ЛИЧНЫЙ ДЕНЕЖНЫЙ КОД", style: "coverKicker", margin: [0, 42, 0, 26] },
+        { text: code, style: "coverCode", margin: [0, 0, 0, 30] },
+        { text: "НУМЕРОЛОГИЯ.ONLINE", style: "coverName", margin: [0, 0, 0, 16] },
+        { text: "ВАША ЛИЧНАЯ ДЕНЕЖНАЯ ФОРМУЛА", style: "coverSubtitle", margin: [0, 0, 0, 28] },
+        { text: `Дата рождения: ${formatDate(birthDate)}`, style: "coverDetails" }
+      ],
+      pageBreak: "after"
+    },
+    { text: "ВАШ ЛИЧНЫЙ РЕЗУЛЬТАТ", style: "innerKicker" },
+    { text: `Код денег ${code}`, style: "title" },
+    { text: "Сохраните этот разбор, чтобы возвращаться к нему в моменты денежных решений и новых целей.", style: "subtitle" },
+    ...sections.flatMap(createSection)
   ],
-  margin: [0, 0, 0, 24],
-  unbreakable: true
+  footer: (page, pages) => page === 1 ? null : ({
+    text: `${page - 1} / ${pages - 1}`,
+    alignment: "center",
+    color: "#9C7A42",
+    fontSize: 10,
+    margin: [0, 18, 0, 0]
+  })
 });
 
 export const createMoneyPdfButton = ({ birthDate, code, sections }) => {
@@ -50,37 +134,8 @@ export const createMoneyPdfButton = ({ birthDate, code, sections }) => {
     button.textContent = "Собираем ваш PDF…";
 
     try {
-      await ensurePdfMake();
-      const doc = {
-        pageSize: "A4",
-        pageMargins: [48, 58, 48, 54],
-        defaultStyle: { fontSize: 12, lineHeight: 1.35, color: "#39264a" },
-        styles: {
-          eyebrow: { fontSize: 10, bold: true, color: "#9a6b31", characterSpacing: 0.8, margin: [0, 0, 0, 6] },
-          title: { fontSize: 26, bold: true, color: "#70421b", alignment: "center", margin: [0, 100, 0, 16] },
-          code: { fontSize: 54, bold: true, color: "#70421b", alignment: "center", margin: [0, 8, 0, 22] },
-          subtitle: { fontSize: 15, color: "#5b426b", alignment: "center", margin: [0, 0, 0, 34] },
-          heading: { fontSize: 19, bold: true, color: "#70421b", margin: [0, 0, 0, 13] },
-          subheading: { fontSize: 14, bold: true, color: "#70421b", margin: [0, 10, 0, 8] },
-          advice: { fontSize: 11, italics: true, color: "#5b426b", margin: [0, 4, 0, 4] }
-        },
-        footer: (page, pages) => ({
-          text: `Нумерология.online · ${page} / ${pages}`,
-          alignment: "center",
-          fontSize: 8,
-          color: "#806a56",
-          margin: [0, 14, 0, 0]
-        }),
-        content: [
-          { text: "ЛИЧНЫЙ ДЕНЕЖНЫЙ КОД", style: "title" },
-          { text: code, style: "code" },
-          { text: `Расчёт по дате ${formatDate(birthDate)}`, style: "subtitle" },
-          { text: "Ваш личный результат", style: "heading", pageBreak: "before" },
-          ...sections.map(createSection)
-        ]
-      };
-
-      window.pdfMake.createPdf(doc).download(`Код денег ${code}.pdf`);
+      const [pdfMake, templates] = await Promise.all([getPdfMake(), getTemplates()]);
+      pdfMake.createPdf(buildDocument({ birthDate, code, sections }, templates)).download(`Код денег ${code}.pdf`);
       button.textContent = "PDF готов — скачивание началось";
     } catch (error) {
       console.error(error);
