@@ -1,5 +1,4 @@
-import { createMoneyPdfButton } from "./money-pdf.js?v=1";
-icreateRitualsCta(code.financialCode)mport { loadFullReportKnowledge, loadFullReportSection } from "./full-report-library.js?v=3";
+import { loadFullReportKnowledge, loadFullReportSection } from "./full-report-library.js?v=3";
 import { calculateMatrix } from "./numerology-core.js?v=1";
 
 const home = document.querySelector("#home");
@@ -62,14 +61,6 @@ const createMoneyDisclosure = ({ label, lead, text, advice = "", ritual = "", ri
 
 let moneyBlocksRequest;
 let moneyRitualsRequest;
-
-
-const moneyPdfObserver = new MutationObserver(() => {
-  const code = cards.querySelector(".destiny-code-number")?.textContent?.trim();
-  if (!code || cards.querySelector(".destiny-code-pdf-button")) return;
-  cards.append(createMoneyPdfButton({ code }));
-});
-moneyPdfObserver.observe(cards, { childList: true });
 
 const loadMoneyBlocks = () => {
   if (!moneyBlocksRequest) {
