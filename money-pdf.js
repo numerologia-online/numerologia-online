@@ -81,7 +81,9 @@ const buildDocument = ({ birthDate, code, sections }, templates) => ({
     sectionTitle: { fontSize: 31, bold: true, color: "#1E405F", margin: [0, 0, 0, 18] },
     subsectionTitle: { fontSize: 25, bold: true, color: "#60431D", margin: [0, 28, 0, 11] },
     paragraph: { fontSize: 19, bold: true, color: "#142C43", margin: [0, 0, 0, 17] },
-    advice: { fontSize: 17, bold: true, italics: true, color: "#60431D", margin: [0, 8, 0, 20] }
+    advice: { fontSize: 17, bold: true, italics: true, color: "#60431D", margin: [0, 8, 0, 20] },
+    ctaTitle: { fontSize: 27, bold: true, color: "#1E405F", lineHeight: 1.25, margin: [0, 0, 0, 18] },
+    telegramLink: { fontSize: 21, bold: true, color: "#60431D", decoration: "underline", margin: [0, 0, 0, 22] }
   },
   content: [
     {
@@ -97,7 +99,11 @@ const buildDocument = ({ birthDate, code, sections }, templates) => ({
     { text: "ВАШ ЛИЧНЫЙ РЕЗУЛЬТАТ", style: "innerKicker" },
     { text: `Код денег ${code}`, style: "title" },
     { text: "Сохраните этот разбор, чтобы возвращаться к нему в моменты денежных решений и новых целей.", style: "subtitle" },
-    ...sections.flatMap(createSection)
+    ...sections.flatMap(createSection),
+    { text: "ПРОДОЛЖИТЬ ЛИЧНЫЙ РАЗБОР", style: "sectionKicker", margin: [0, 34, 0, 11] },
+    { text: "Как включить денежный поток\nГде вам легче всего заработать\nКакие уроки вы проходите на пути к своему богатству", style: "ctaTitle" },
+    { text: "Можно узнать на личном полном разборе года.", style: "paragraph", margin: [0, 0, 0, 18] },
+    { text: "Написать мне в Telegram", style: "telegramLink", link: "https://t.me/Kod_9966" }
   ],
   footer: (page, pages) => page === 1 ? null : ({
     text: `${page - 1} / ${pages - 1}`,
