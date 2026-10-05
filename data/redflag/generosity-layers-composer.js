@@ -1,7 +1,9 @@
 import { reduce22 } from "../../numerology-core.js?v=1";
 
-const bank = await fetch(new URL("./drafts/money-generosity-layers.json", import.meta.url))
-  .then((response) => response.json());
+const [bank, scales] = await Promise.all([
+  fetch(new URL("./drafts/money-generosity-layers.json", import.meta.url)).then((response) => response.json()),
+  fetch(new URL("./drafts/money-generosity-scales.json", import.meta.url)).then((response) => response.json())
+]);
 
 const selectVerdict = (score, verdicts) => score <= 3
   ? verdicts.low
@@ -18,21 +20,21 @@ const calculateEnergies = (matrix) => {
 
 export const answerGenerosityLayers = (matrix) => {
   const { moneyFlow, moneyBlock, earning } = calculateEnergies(matrix);
-  const giving = bank.scales.giving.values[moneyFlow];
-  const disappointment = bank.scales.disappointment.values[moneyBlock];
+  const giving = scales.giving.values[moneyFlow];
+  const disappointment = scales.disappointment.values[moneyBlock];
 
   return {
-    verdict: `${selectVerdict(giving, bank.scales.verdicts.giving)}. ${selectVerdict(disappointment, bank.scales.verdicts.disappointment)}.`,
+    verdict: `${selectVerdict(giving, scales.verdicts.giving)}. ${selectVerdict(disappointment, scales.verdicts.disappointment)}.`,
     paragraphs: [
       bank.layers.flow.texts[moneyFlow],
       bank.layers.block.texts[moneyBlock],
       bank.layers.earning.texts[earning]
     ],
     scales: [
-      { label: bank.scales.giving.label, value: giving },
-      { label: bank.scales.disappointment.label, value: disappointment }
+      { label: scales.giving.label, value: giving },
+      { label: scales.disappointment.label, value: disappointment }
     ],
-    observation: "Смотри не на один красивый жест, а на то, остаётся ли участие тёплым и спокойным после траты.",
+    observation: scales.observation,
     trace: { moneyFlow, moneyBlock, earning }
   };
 };
