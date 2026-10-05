@@ -205,9 +205,10 @@ const buildCode = async (birthDate, energies) => {
   };
 };
 
-export const openDestinyCode = () => {
+export const openDestinyCode = ({ clientOnly = false } = {}) => {
   home.classList.remove("is-active");
   section.classList.add("is-active");
+  document.querySelector("#back-destiny-code-home").hidden = clientOnly;
   window.scrollTo({ top: 0, behavior: "instant" });
 };
 
