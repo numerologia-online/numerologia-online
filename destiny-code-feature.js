@@ -1,3 +1,4 @@
+import { createMoneyPdfButton } from "./money-pdf.js?v=2";
 import { loadFullReportKnowledge, loadFullReportSection } from "./full-report-library.js?v=3";
 import { calculateMatrix } from "./numerology-core.js?v=1";
 
@@ -113,7 +114,7 @@ const createMoneyPathCta = ({ title, text, target, birthDate }) => {
   return article;
 };
 
-const createActivationDisclosure = (code) => createMoneyDisclosure({
+const createActivationContent = (code) => ({
   label: `Ваш код денег ${code}`,
   lead: `Как активировать код ${code}`,
   text: "",
@@ -121,6 +122,8 @@ const createActivationDisclosure = (code) => createMoneyDisclosure({
   ritual: `Напишите ${code} своей рукой на первой странице финансового блокнота. Рядом запишите сумму, к которой вы идёте, или одно большое денежное желание. Не «хочу много», а именно ту цифру, которая для вас сейчас важна.\n\nСделайте код заметным, но личным: поставьте на заставку телефона, положите маленькую записку с ним в кошелёк, разместите на карте желаний рядом с домом, путешествием, обучением или суммой, которую хотите получить.\n\nМожно написать код на конверте, где вы храните накопления или записываете свои финансовые цели. Пусть он станет вашим личным знаком достатка, свободы и права жить лучше.`,
   accent: true
 });
+
+const createActivationDisclosure = (code) => createMoneyDisclosure(createActivationContent(code));
 
 const createRitualsCta = (code) => {
   const article = document.createElement("article");
@@ -240,7 +243,16 @@ form.addEventListener("submit", async (event) => {
         target: "earning",
         birthDate
       }),
-      createRitualsCta(code.financialCode)
+      createRitualsCta(code.financialCode),
+      createMoneyPdfButton({
+        birthDate,
+        code: code.financialCode,
+        sections: [
+          code.cards[0],
+          createActivationContent(code.financialCode),
+          ...code.cards.slice(1)
+        ]
+      })
     );
     result.hidden = false;
     result.scrollIntoView({ behavior: "smooth", block: "start" });
