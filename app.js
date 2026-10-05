@@ -78,7 +78,9 @@ const openMoneyCodeClientLink = async () => {
     destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=3")
   ]);
   feature.openDestinyCode({ clientOnly: true });
-  document.querySelector("#back-destiny-code-home").hidden = true;
+  const backButton = document.querySelector("#back-destiny-code-home");
+  backButton.hidden = true;
+  backButton.style.display = "none";
 };
 
 const syncClientLink = () => {
