@@ -76,7 +76,7 @@ const loadMoneyBlocks = () => {
 
 const loadMoneyRituals = () => {
   if (!moneyRitualsRequest) {
-    moneyRitualsRequest = fetch("data/money-rituals.json?v=1").then((response) => {
+    moneyRitualsRequest = fetch("data/money-rituals.json?v=2").then((response) => {
       if (!response.ok) throw new Error("Не удалось загрузить денежные ритуалы");
       return response.json();
     });
@@ -141,12 +141,10 @@ const createRitualsCta = (code) => {
     lead: "10 денежных ритуалов с вашим личным кодом денег",
     text: `Код ${code} · практики, которые можно сохранить себе.`
   });
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "destiny-code-rituals-open";
-  button.textContent = "Открыть денежные ритуалы →";
-  button.addEventListener("click", () => openMoneyRituals(code));
-  details.querySelector(".destiny-code-disclosure-body").append(button);
+  details.querySelector("summary").addEventListener("click", (event) => {
+    event.preventDefault();
+    openMoneyRituals(code);
+  });
   return details;
 };
 
