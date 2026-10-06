@@ -1,4 +1,19 @@
-import { calculateMatrix, parseBirthDate } from "./numerology-core.js?v=1";
+iconst { url, filename } = await buildFullReportPdf();
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.target = "_blank";
+      link.rel = "noopener";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+const { document, filename } = await buildFullReportPdf();
+      document.download(filename);mconst blob = await new Promise((resolve) => pdfMake.createPdf(documentDefinition).getBlob(resolve));
+  return { url: URL.createObjectURL(blob), filename: `Полный разбор ${formattedDate}.pdf` };
+const document = pdfMake.createPdf(documentDefinition);
+  const blob = await new Promise((resolve) => document.getBlob(resolve));
+  return { url: URL.createObjectURL(blob), filename: `Полный разбор ${formattedDate}.pdf`, document };port { calculateMatrix, parseBirthDate } from "./numerology-core.js?v=1";
 import {
   buildFullReportPreview,
   buildFullReportSections,
