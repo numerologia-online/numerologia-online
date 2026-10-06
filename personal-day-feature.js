@@ -1,61 +1,26 @@
 import { parseBirthDate, reduce9 } from "./numerology-core.js?v=1";
+import texts from "./personal-day-data.js?v=1";
 
-const today = () => new Date();
-const personalDay = ({ day, month, year }, date = today()) => {
+const personalDay = ({ day, month }, date = new Date()) => {
   const yearSum = String(date.getFullYear()).split("").reduce((a, n) => a + Number(n), 0);
-  const monthNumber = reduce9(day + month + yearSum);
-  const dayNumber = reduce9(day + monthNumber + date.getDate());
-  return { year: reduce9(day + month + yearSum), month: monthNumber, day: dayNumber };
+  const personalYear = reduce9(day + month + yearSum);
+  const personalMonth = reduce9(personalYear + date.getMonth() + 1);
+  return reduce9(personalMonth + date.getDate());
 };
 
-const texts = {
-  1: ["День первого шага", "Сегодня лучше не ждать разрешения. Выберите одно действие и сделайте его без лишних объяснений.", "Не давите на людей и не пытайтесь за один день переделать всю жизнь."],
-  2: ["День настройки", "Сегодня важны разговор, мягкость и внимательное отношение к сигналам людей.", "Не копите обиду и не заставляйте других угадывать ваши желания."],
-  3: ["День проявления", "Хорошо говорить, писать, показывать себя и выпускать идею наружу.", "Не распыляйтесь на десять дел и не обещайте больше, чем успеете."],
-  4: ["День порядка", "День помогает разобрать документы, деньги, планы и всё, что давно откладывалось.", "Не пытайтесь ускорить результат хаотичным рывком."],
-  5: ["День движения", "Меняйте маршрут, пробуйте новый формат и не держитесь за то, что стало тесным.", "Не путайте свободу с импульсивностью."],
-  6: ["День отношений", "Сегодня важны близкие, честные договорённости и забота без самопожертвования.", "Не спасайте всех ценой собственного ресурса."],
-  7: ["День тишины", "Полезны пауза, анализ, обучение и честный разговор с собой.", "Не уходите в холодность и бесконечное откладывание."],
-  8: ["День результата", "Считайте деньги, называйте цену и принимайте решения, которые укрепляют опору.", "Не доказывайте силу через конфликт и контроль."],
-  9: ["День завершения", "Закройте один старый вопрос и освободите место для следующего шага.", "Не тащите в новый день то, что уже закончилось."]
-};
+const publicDay = () => reduce9(new Date().getDate());
+const esc = (value = "") => String(value).replace(/[&<>\"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\\\"": "&quot;" }[c]));
+const paragraphs = (items = []) => items.filter(Boolean).map((text) => `<p>${esc(text)}</p>`).join("");
+const todayLabel = () => new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date()).toUpperCase();
 
-const open = () => {
+export const openPersonalDay = () => {
+  const general = texts[publicDay()] || texts[1];
   const shell = document.createElement("section");
-  shell.className = "personal-day-overlay";
-  shell.innerHTML = `<div class="personal-day-card" role="dialog" aria-modal="true"><button class="personal-day-close" type="button" aria-label="Закрыть">×</button><p class="eyebrow">Личный расчёт</p><h2>Расчёт на день</h2><form><label>Дата рождения<input required inputmode="numeric" placeholder="09.09.1986" maxlength="10"></label><button class="matrix-submit" type="submit">Рассчитать</button><p class="personal-day-error" hidden></p></form><article hidden></article></div>`;
+  shell.className = "personal-day-overlay personal-day-page-overlay";
+  shell.innerHTML = `<div class="personal-day-card personal-day-page" role="dialog" aria-modal="true"><button class="personal-day-close" type="button" aria-label="Закрыть">×</button><p class="eyebrow">Персональный прогноз</p><h2>Расчёт на день</h2><p class="personal-day-lead">Введите дату рождения, чтобы увидеть энергию личного дня и практические подсказки.</p><section class="personal-day-general"><p class="personal-day-date">СЕГОДНЯ: ${todayLabel()}</p><h3>${esc(general.title)}</h3>${paragraphs((general.openings || []).slice(0, 2))}</section><section class="personal-day-form-panel"><p class="personal-day-form-kicker">ЭТО ОБЩИЙ ФОН. РАССЧИТАЙТЕ ЛИЧНЫЙ ДЕНЬ</p><form><label><span class="sr-only">Дата рождения</span><input required type="tel" inputmode="numeric" autocomplete="bday" placeholder="09.09.1986" maxlength="10"></label><button class="personal-day-submit" type="submit" disabled>Рассчитать личный день</button><p class="personal-day-error" hidden></p></form></section><section class="personal-day-result" hidden></section></div>`;
   document.body.append(shell);
-  const card = shell.querySelector(".personal-day-card");
-  const form = shell.querySelector("form");
-  const input = shell.querySelector("input");
-  const result = shell.querySelector("article");
-  const submit = shell.querySelector("button[type=\"submit\"]");
-  input.type = "tel";
-  input.inputMode = "numeric";
-  input.autocomplete = "bday";
-  input.addEventListener("input", () => {
-    const digits = input.value.replace(/\\D/g, "").slice(0, 8);
-    const parts = [];
-    if (digits.length > 0) parts.push(digits.slice(0, 2));
-    if (digits.length > 2) parts.push(digits.slice(2, 4));
-    if (digits.length > 4) parts.push(digits.slice(4, 8));
-    input.value = parts.join(".");
-    submit.disabled = digits.length !== 8;
-  });
-  submit.disabled = true;
+  const card = shell.querySelector(".personal-day-card"), form = shell.querySelector("form"), input = shell.querySelector("input"), submit = shell.querySelector("button[type=submit]"), result = shell.querySelector(".personal-day-result");
   shell.querySelector(".personal-day-close").onclick = () => shell.remove();
-  form.onsubmit = (event) => {
-    event.preventDefault();
-    const birth = parseBirthDate(input.value.trim());
-    if (!birth) return shell.querySelector(".personal-day-error").replaceChildren("Введите дату в формате ДД.ММ.ГГГГ");
-    const number = personalDay(birth).day;
-    const item = texts[number] || texts[1];
-    const title = item.title;
-    const good = item.openings?.[0] || item.main?.[0] || "Сегодня важно выбрать главное и действовать спокойно.";
-    const avoid = item.avoid || item.main?.[1] || "Не принимайте решения на эмоциях.";
-    result.hidden = false;
-    result.innerHTML = `<p class="eyebrow">Сегодня ваш личный день</p><h3>${number} · ${title}</h3><p>${good}</p><p><strong>Сегодня лучше не делать:</strong> ${avoid}</p>`;
-  };
+  input.addEventListener("input", () => { const digits = input.value.replace(/\D/g, "").slice(0, 8); input.value = [digits.slice(0,2), digits.slice(2,4), digits.slice(4,8)].filter(Boolean).join("."); submit.disabled = digits.length !== 8; });
+  form.onsubmit = (event) => { event.preventDefault(); const birth = parseBirthDate(input.value); const error = shell.querySelector(".personal-day-error"); if (!birth) { error.hidden = false; error.textContent = "Введите дату в формате ДД.ММ.ГГГГ"; return; } error.hidden = true; const item = texts[personalDay(birth)] || texts[1]; result.hidden = false; result.innerHTML = `<section class="personal-day-main"><p class="personal-day-date">ВАШ ЛИЧНЫЙ ДЕНЬ</p><h3>${item.energy}. ${esc(item.title)}</h3>${paragraphs(item.main || item.openings)}${item.money?.length ? `<h4>Деньги</h4>${paragraphs(item.money)}` : ""}${item.love?.length ? `<h4>Отношения</h4>${paragraphs(item.love)}` : ""}${item.actions?.length ? `<h4>Сегодня важно сделать</h4>${paragraphs(item.actions)}` : ""}${item.avoid?.length ? `<h4>Сегодня лучше не делать</h4>${paragraphs(item.avoid)}` : ""}${item.questions?.length ? `<h4>Вопрос дня</h4>${paragraphs(item.questions)}` : ""}</section>`; card.scrollTop = card.scrollHeight; };
 };
-
-export const openPersonalDay = open;
