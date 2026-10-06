@@ -1,5 +1,5 @@
 import { parseBirthDate, reduce9 } from "./numerology-core.js?v=1";
-import texts from "./personal-day-data.js?v=1";
+import texts from "./personal-day-data-lite.js?v=1";
 
 const personalDay = ({ day, month }, date = new Date()) => {
   const yearSum = String(date.getFullYear()).split("").reduce((a, n) => a + Number(n), 0);
