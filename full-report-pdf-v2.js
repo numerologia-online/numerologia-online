@@ -102,9 +102,9 @@ const buildDocument = ({ formattedDate, matrixData, karmicPrograms, karmicTails 
     background: (page) => ({ image: page === 1 ? "cover" : "inner", width: 595.28, height: 841.89 }),
     defaultStyle: { font: "Roboto", fontSize: 24, color: "#142C43", lineHeight: 1.52 },
     styles: {
-      coverTitle: { fontSize: 58, bold: true, color: "#1D3654", alignment: "center", lineHeight: 1.04 },
-      coverDate: { fontSize: 23, bold: true, color: "#80642F", alignment: "center" },
-      coverAge: { fontSize: 23, bold: true, color: "#1D3654", alignment: "center" },
+      coverTitle: { fontSize: 72, bold: true, color: "#1D3654", alignment: "center", lineHeight: 1.04 },
+      coverDate: { fontSize: 30, bold: true, color: "#80642F", alignment: "center" },
+      coverAge: { fontSize: 30, bold: true, color: "#1D3654", alignment: "center" },
       title: { fontSize: 36, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 18] },
       eyebrow: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 1.25, alignment: "center", margin: [0, 0, 0, 16] },
       sectionTitle: { fontSize: 31, bold: true, color: "#1E405F", margin: [0, 0, 0, 18] },
@@ -115,7 +115,7 @@ const buildDocument = ({ formattedDate, matrixData, karmicPrograms, karmicTails 
     content: [
       {
         stack: [
-          { text: "Полный\nразбор", style: "coverTitle", margin: [0, 190, 0, 52] },
+          { text: "Полный\nразбор", style: "coverTitle", margin: [0, 165, 0, 58] },
           { text: `Дата рождения: ${formattedDate}`, style: "coverDate", margin: [0, 0, 0, 18] },
           { text: `Возраст: ${age} ${age === 1 ? "год" : age >= 2 && age <= 4 ? "года" : "лет"}`, style: "coverAge" }
         ],
