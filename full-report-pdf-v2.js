@@ -59,6 +59,7 @@ const sectionBlock = (definition, source) => ({
     { text: source?.title || definition.title, style: "sectionTitle" },
     ...paragraphs(source?.paragraphs || [])
   ],
+  unbreakable: (source?.paragraphs || []).join(" ").length < 900,
   margin: [0, 0, 0, 28]
 });
 
@@ -99,17 +100,17 @@ const buildDocument = ({ formattedDate, matrixData, karmicPrograms, karmicTails 
     pageMargins: [68, 92, 68, 86],
     images: templates,
     background: (page) => ({ image: page === 1 ? "cover" : "inner", width: 595.28, height: 841.89 }),
-    defaultStyle: { font: "Roboto", fontSize: 17, color: "#142C43", lineHeight: 1.38 },
+    defaultStyle: { font: "Roboto", fontSize: 24, color: "#142C43", lineHeight: 1.52 },
     styles: {
       coverTitle: { fontSize: 58, bold: true, color: "#1D3654", alignment: "center", lineHeight: 1.04 },
       coverDate: { fontSize: 23, bold: true, color: "#80642F", alignment: "center" },
       coverAge: { fontSize: 23, bold: true, color: "#1D3654", alignment: "center" },
-      title: { fontSize: 32, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 20] },
-      eyebrow: { fontSize: 14, bold: true, color: "#8A6A32", characterSpacing: 1, alignment: "center", margin: [0, 0, 0, 16] },
-      sectionTitle: { fontSize: 28, bold: true, color: "#1E405F", lineHeight: 1.13, margin: [0, 8, 0, 16] },
-      partTitle: { fontSize: 19, bold: true, color: "#60431D", margin: [0, 18, 0, 8] },
-      paragraph: { fontSize: 17, margin: [0, 0, 0, 15] },
-      points: { fontSize: 16, color: "#142C43" }
+      title: { fontSize: 36, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 18] },
+      eyebrow: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 1.25, alignment: "center", margin: [0, 0, 0, 16] },
+      sectionTitle: { fontSize: 31, bold: true, color: "#1E405F", margin: [0, 0, 0, 18] },
+      partTitle: { fontSize: 25, bold: true, color: "#60431D", margin: [0, 30, 0, 11] },
+      paragraph: { fontSize: 24, bold: true, margin: [0, 0, 0, 22] },
+      points: { fontSize: 22, color: "#142C43" }
     },
     content: [
       {
