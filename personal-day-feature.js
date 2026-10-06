@@ -35,7 +35,10 @@ const open = () => {
     const birth = parseBirthDate(input.value.trim());
     if (!birth) return shell.querySelector(".personal-day-error").replaceChildren("Введите дату в формате ДД.ММ.ГГГГ");
     const number = personalDay(birth).day;
-    const [title, good, avoid] = texts[number] || texts[9];
+    const item = texts[number] || texts[1];
+    const title = item.title;
+    const good = item.openings?.[0] || item.main?.[0] || "Сегодня важно выбрать главное и действовать спокойно.";
+    const avoid = item.avoid || item.main?.[1] || "Не принимайте решения на эмоциях.";
     result.hidden = false;
     result.innerHTML = `<p class="eyebrow">Сегодня ваш личный день</p><h3>${number} · ${title}</h3><p>${good}</p><p><strong>Сегодня лучше не делать:</strong> ${avoid}</p>`;
   };
