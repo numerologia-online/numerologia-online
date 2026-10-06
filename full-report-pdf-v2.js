@@ -1,20 +1,161 @@
 import { buildFullReportSections, loadFullReportSection } from "./full-report-library.js?v=3";
 import { findKarmicPrograms, findKarmicTail } from "./karmic-programs.js?v=2";
-let maker, frames;
-const load = src => new Promise((ok, no) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = no; document.head.append(s); });
-const pdfMake = () => maker || (maker = (window.pdfMake ? Promise.resolve(window.pdfMake) : load("https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/pdfmake.min.js").then(() => load("https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/vfs_fonts.js")).then(() => window.pdfMake)));
-const data = async src => { const b = await (await fetch(src)).blob(); return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(b); }); };
-const images = () => frames || (frames = Promise.all([data("assets/year-report-cover.jpg"), data("assets/year-report-inner.jpg")]).then(([cover, inner]) => ({cover, inner})));
-const paragraph = value => value && ({text:value, style:"p"});
-export const buildNewFullReportPdf = async report => {
+
+let pdfMakeLoading;
+let templatesLoading;
+
+const loadScript = (src) => new Promise((resolve, reject) => {
+  const existing = document.querySelector(`script[src="${src}"]`);
+  if (existing) {
+    if (window.pdfMake) resolve();
+    else existing.addEventListener("load", resolve, { once: true });
+    return;
+  }
+  const script = document.createElement("script");
+  script.src = src;
+  script.async = true;
+  script.onload = resolve;
+  script.onerror = () => reject(new Error("Не удалось загрузить модуль PDF"));
+  document.head.append(script);
+});
+
+const getPdfMake = () => {
+  if (window.pdfMake) return Promise.resolve(window.pdfMake);
+  if (!pdfMakeLoading) {
+    pdfMakeLoading = loadScript("https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/pdfmake.min.js")
+      .then(() => loadScript("https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/vfs_fonts.js"))
+      .then(() => window.pdfMake);
+  }
+  return pdfMakeLoading;
+};
+
+const imageAsDataUrl = async (src) => {
+  const response = await fetch(src);
+  if (!response.ok) throw new Error("Не удалось открыть шаблон PDF");
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
+const getTemplates = () => {
+  if (!templatesLoading) {
+    templatesLoading = Promise.all([
+      imageAsDataUrl("assets/year-report-cover.jpg"),
+      imageAsDataUrl("assets/year-report-inner.jpg")
+    ]).then(([cover, inner]) => ({ cover, inner }));
+  }
+  return templatesLoading;
+};
+
+const paragraphs = (items = []) => items.filter(Boolean).map((text) => ({ text, style: "paragraph" }));
+
+const sectionBlock = (definition, source) => ({
+  stack: [
+    { text: `${definition.eyebrow.toUpperCase()} · ЭНЕРГИЯ ${definition.energy}`, style: "eyebrow" },
+    { text: source?.title || definition.title, style: "sectionTitle" },
+    ...paragraphs(source?.paragraphs || [])
+  ],
+  margin: [0, 0, 0, 28]
+});
+
+const ageFromDate = (formattedDate) => {
+  const [day, month, year] = formattedDate.split(".").map(Number);
+  const today = new Date();
+  let age = today.getFullYear() - year;
+  if (today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day)) age -= 1;
+  return age;
+};
+
+const buildDocument = ({ formattedDate, matrixData, karmicPrograms, karmicTails }, templates, records) => {
+  const age = ageFromDate(formattedDate);
+  const tail = findKarmicTail(matrixData, karmicTails);
+  const programs = findKarmicPrograms(matrixData, karmicPrograms);
+  const keyPoints = [
+    ["День рождения", matrixData.left],
+    ["Месяц рождения", matrixData.top],
+    ["Энергия года", matrixData.right],
+    ["Центральная энергия", matrixData.center],
+    ["Что блокирует деньги", matrixData.rightSpoke.outer],
+    ["Как включить поток", matrixData.rightSpoke.near],
+    ["Где легче заработать", matrixData.rightSpoke.core]
+  ];
+  const karma = [];
+  if (tail) {
+    karma.push({ text: `Кармический хвост: ${tail.code} ${tail.title}`, style: "sectionTitle" });
+    tail.parts.forEach((part) => karma.push({ text: part.title, style: "partTitle" }, ...paragraphs([part.text])));
+  }
+  programs.forEach((program) => {
+    karma.push({ text: `${program.code} ${program.title}`, style: "sectionTitle" });
+    program.parts.forEach((part) => karma.push({ text: part.title, style: "partTitle" }, ...paragraphs([part.text])));
+  });
+
+  return {
+    info: { title: `Полный разбор ${formattedDate}` },
+    pageSize: "A4",
+    pageMargins: [68, 92, 68, 86],
+    images: templates,
+    background: (page) => ({ image: page === 1 ? "cover" : "inner", width: 595.28, height: 841.89 }),
+    defaultStyle: { font: "Roboto", fontSize: 17, color: "#142C43", lineHeight: 1.38 },
+    styles: {
+      coverTitle: { fontSize: 58, bold: true, color: "#1D3654", alignment: "center", lineHeight: 1.04 },
+      coverDate: { fontSize: 23, bold: true, color: "#80642F", alignment: "center" },
+      coverAge: { fontSize: 23, bold: true, color: "#1D3654", alignment: "center" },
+      title: { fontSize: 32, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 20] },
+      eyebrow: { fontSize: 14, bold: true, color: "#8A6A32", characterSpacing: 1, alignment: "center", margin: [0, 0, 0, 16] },
+      sectionTitle: { fontSize: 28, bold: true, color: "#1E405F", lineHeight: 1.13, margin: [0, 8, 0, 16] },
+      partTitle: { fontSize: 19, bold: true, color: "#60431D", margin: [0, 18, 0, 8] },
+      paragraph: { fontSize: 17, margin: [0, 0, 0, 15] },
+      points: { fontSize: 16, color: "#142C43" }
+    },
+    content: [
+      {
+        stack: [
+          { text: "Полный\nразбор", style: "coverTitle", margin: [0, 190, 0, 52] },
+          { text: `Дата рождения: ${formattedDate}`, style: "coverDate", margin: [0, 0, 0, 18] },
+          { text: `Возраст: ${age} ${age === 1 ? "год" : age >= 2 && age <= 4 ? "года" : "лет"}`, style: "coverAge" }
+        ],
+        pageBreak: "after"
+      },
+      { text: "ПОЛНЫЙ РАЗБОР", style: "eyebrow" },
+      { text: `Личная карта · ${formattedDate}`, style: "title" },
+      {
+        table: { widths: ["*", "auto"], body: keyPoints.map(([label, value]) => [label, String(value)]) },
+        layout: {
+          hLineWidth: () => 0.35,
+          vLineWidth: () => 0,
+          hLineColor: () => "#d8cfbd",
+          paddingLeft: () => 8,
+          paddingRight: () => 8,
+          paddingTop: () => 7,
+          paddingBottom: () => 7,
+          fillColor: (row) => (row % 2 === 0 ? "#fcfaf5" : null)
+        },
+        style: "points"
+      },
+      ...records.map(({ definition, source }) => sectionBlock(definition, source)),
+      ...(karma.length ? [{ stack: [{ text: "КАРМИЧЕСКИЕ ПРОГРАММЫ", style: "eyebrow" }, ...karma] }] : [])
+    ],
+    footer: (page, pages) => page === 1 ? null : ({ text: `${page - 1} / ${pages - 1}`, alignment: "center", color: "#9C7A42", fontSize: 10, margin: [0, 18, 0, 0] })
+  };
+};
+
+export const buildNewFullReportPdf = async (report) => {
   const definitions = buildFullReportSections(report.matrixData);
-  const [make, picture, items] = await Promise.all([pdfMake(), images(), Promise.all(definitions.map(async d => ({d, s:(await loadFullReportSection(d.energy))?.sections?.[d.key]})))]);
-  const tail = findKarmicTail(report.matrixData, report.karmicTails);
-  const karma = [tail, ...findKarmicPrograms(report.matrixData, report.karmicPrograms)].filter(Boolean);
-  const body = [{stack:[{text:"КАРМИЧЕСКАЯ НУМЕРОЛОГИЯ",style:"k"},{text:"Полный\nразбор",style:"cover"},{text:"Дата рождения: " + report.formattedDate,style:"date"}],pageBreak:"after"},{text:"ПОЛНЫЙ РАЗБОР",style:"k"},{table:{widths:["*","auto"],body:[["День рождения",String(report.matrixData.left)],["Месяц рождения",String(report.matrixData.top)],["Энергия года",String(report.matrixData.right)],["Центральная энергия",String(report.matrixData.center)]]},layout:"lightHorizontalLines"}];
-  items.forEach(({d,s}) => body.push({stack:[{text:(d.eyebrow || "ЭНЕРГИЯ").toUpperCase() + " · " + d.energy,style:"k"},{text:s?.title || d.title,style:"h"},...(s?.paragraphs || []).map(paragraph).filter(Boolean)],pageBreak:"before"}));
-  if (karma.length) body.push({stack:[{text:"КАРМИЧЕСКИЕ ПРОГРАММЫ",style:"k"},...karma.flatMap(x => [{text:(x.code || "") + " " + x.title,style:"h"},...(x.parts || []).flatMap(p => [{text:p.title,style:"sub"},paragraph(p.text)].filter(Boolean))])],pageBreak:"before"});
-  const doc = {pageSize:"A4",pageMargins:[72,92,72,100],images:picture,background:p => ({image:p === 1 ? "cover" : "inner",width:595.28,height:841.89}),defaultStyle:{font:"Roboto",fontSize:14,color:"#142C43",lineHeight:1.4},styles:{k:{fontSize:12,bold:true,color:"#8A6A32",alignment:"center",margin:[0,0,0,16]},cover:{fontSize:54,bold:true,color:"#1D3654",alignment:"center",margin:[0,120,0,28]},date:{fontSize:19,bold:true,color:"#80642F",alignment:"center"},h:{fontSize:25,bold:true,color:"#1E405F",margin:[0,0,0,14]},sub:{fontSize:17,bold:true,color:"#60431D",margin:[0,14,0,6]},p:{margin:[0,0,0,12]}},content:body};
-  const blob = await new Promise(ok => make.createPdf(doc).getBlob(ok));
-  return {url:URL.createObjectURL(blob),filename:"Полный разбор " + report.formattedDate + ".pdf"};
+  const [pdfMake, templates, records] = await Promise.all([
+    getPdfMake(),
+    getTemplates(),
+    Promise.all(definitions.map(async (definition) => ({
+      definition,
+      source: (await loadFullReportSection(definition.energy))?.sections?.[definition.key]
+    })))
+  ]);
+  const blob = await new Promise((resolve) => pdfMake.createPdf(buildDocument(report, templates, records)).getBlob(resolve));
+  return {
+    url: URL.createObjectURL(blob),
+    filename: `Полный разбор ${report.formattedDate}.pdf`
+  };
 };
