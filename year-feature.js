@@ -1,4 +1,33 @@
-import { loadEnergies, monthNames } from "./year-content.js?v=3";
+ilet currentPdfFilename = null;
+let currentPdfFilename = null;
+let currentPdfDocument = null;mif (currentPdfUrl && preparedPdfKey === pdfKey) return Promise.resolve({ url: currentPdfUrl, filename: currentPdfFilename });
+if (currentPdfUrl && preparedPdfKey === pdfKey) return Promise.resolve({ url: currentPdfUrl, filename: currentPdfFilename, document: currentPdfDocument });pconst blob = await new Promise((resolve) => pdfMake.createPdf(buildPdfDocument(templates)).getBlob(resolve));
+    if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
+    currentPdfUrl = URL.createObjectURL(blob);
+    currentPdfFilename = `${birthInput.value} ${yearInput.value} год.pdf`;
+    preparedPdfKey = pdfKey;
+    return { url: currentPdfUrl, filename: currentPdfFilename };
+const document = pdfMake.createPdf(buildPdfDocument(templates));
+    const blob = await new Promise((resolve) => document.getBlob(resolve));
+    if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
+    currentPdfUrl = URL.createObjectURL(blob);
+    currentPdfDocument = document;
+    currentPdfFilename = `${birthInput.value} ${yearInput.value} год.pdf`;
+    preparedPdfKey = pdfKey;
+    return { url: currentPdfUrl, filename: currentPdfFilename, document };oconst { url, filename } = await preparePdf();
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    // iOS Safari may ignore `download` for a Blob URL and replace the current
+    // tab with the PDF. Open it separately so closing the PDF returns to the
+    // already calculated report and its date/year form.
+    link.target = "_blank";
+    link.rel = "noopener";
+    document.body.append(link);
+    link.click();
+    link.remove();
+const { document, filename } = await preparePdf();
+    document.download(filename);rt { loadEnergies, monthNames } from "./year-content.js?v=3";
 
 const year = document.querySelector("#year");
 const form = document.querySelector("#year-form");
