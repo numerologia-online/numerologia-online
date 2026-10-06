@@ -18,3 +18,19 @@
 .personal-day-card article .eyebrow{font-size:13px;margin-bottom:8px}
 .personal-day-card article h3{margin:6px 0 16px;font-size:30px;line-height:1.12}
 @media (max-width:520px){.personal-day-card{padding:30px 22px 26px;border-radius:26px}.personal-day-card h2{font-size:36px}.personal-day-card label{font-size:18px}.personal-day-card input{min-height:62px;font-size:22px}.personal-day-card form .matrix-submit{min-height:58px;font-size:20px}}
+
+.personal-day-page-overlay{align-items:flex-start;overflow:auto;padding:28px 14px}
+.personal-day-page{width:min(100%,720px);max-height:calc(100vh - 56px);padding:34px 38px 42px}
+.personal-day-page .personal-day-lead{max-width:620px;margin:-12px 0 26px;font-size:22px;line-height:1.45;color:#4d4a47}
+.personal-day-general,.personal-day-form-panel,.personal-day-main{margin-top:22px;padding:26px 28px;border:1.5px solid #e6ca8b;border-radius:26px;background:linear-gradient(145deg,#fffaf0,#f7f1e5)}
+.personal-day-date,.personal-day-form-kicker{margin:0 0 12px;color:#a47727;font-size:16px;font-weight:800;letter-spacing:1.5px}
+.personal-day-general h3,.personal-day-main h3{margin:0 0 14px;color:#075c4b;font-family:Georgia,serif;font-size:clamp(31px,7vw,48px);line-height:1.08}
+.personal-day-general p,.personal-day-main p{font-size:20px;line-height:1.55;color:#36504b}
+.personal-day-form-panel{background:#fffdf8}
+.personal-day-form-panel form{display:grid;gap:14px}
+.personal-day-form-panel input{width:100%;box-sizing:border-box;min-height:68px;border:1.5px solid #e1c98e;border-radius:18px;padding:14px 20px;font-size:25px;font-weight:700;color:#142c43;background:#fff}
+.personal-day-submit{min-height:64px;border:0;border-radius:18px;background:#08704f;color:#fff;font-size:21px;font-weight:800;box-shadow:0 12px 24px rgba(8,112,79,.2)}
+.personal-day-submit:disabled{opacity:.45;box-shadow:none}
+.personal-day-main h4{margin:28px 0 8px;color:#075c4b;font-size:23px}
+.personal-day-main{background:#fffdf8}
+@media(max-width:520px){.personal-day-page{padding:28px 20px 32px}.personal-day-page .personal-day-lead{font-size:19px}.personal-day-general,.personal-day-form-panel,.personal-day-main{padding:22px 18px}.personal-day-general p,.personal-day-main p{font-size:18px}}
