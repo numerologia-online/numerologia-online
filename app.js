@@ -1,6 +1,4 @@
-c./year-feature.js?v=15
-  ./year-feature.js?v=16o./matrix-feature.js?v=12
-  ./matrix-feature.js?v=14nst home = document.querySelector("#home");
+const home = document.querySelector("#home");
 const dialog = document.querySelector("#coming-soon");
 let yearFeatureLoading;
 let yearStylesLoading;
