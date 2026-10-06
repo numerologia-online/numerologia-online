@@ -423,7 +423,7 @@ const createFullReportPdfButton = (position = "bottom") => {
     button.disabled = true;
     button.textContent = "Готовлю PDF…";
     try {
-          const { buildNewFullReportPdf } = await import("./full-report-pdf-v2.js?v=1");
+          const { buildNewFullReportPdf } = await import("./full-report-pdf-v2.js?v=2");
       const { url, filename } = await buildNewFullReportPdf(activeFullReport);
       const link = document.createElement("a");
       link.href = url;
