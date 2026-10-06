@@ -4,3 +4,17 @@
 .personal-day-overlay{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:rgba(10,14,28,.72)}
 .personal-day-card{width:min(100%,560px);max-height:90vh;overflow:auto;padding:32px;border:1px solid #d8c28b;border-radius:24px;background:#fffdf7;color:#142c43;box-shadow:0 24px 80px rgba(0,0,0,.28)}
 .personal-day-close{float:right;border:0;background:none;font-size:32px;line-height:1;color:#142c43;cursor:pointer}.personal-day-card h2{margin:8px 0 24px}.personal-day-card label{display:grid;gap:8px;font-weight:700}.personal-day-card input{width:100%;padding:14px;border:1px solid #c7b995;border-radius:12px;font:inherit}.personal-day-card form{display:grid;gap:16px}.personal-day-card article{margin-top:24px;padding-top:20px;border-top:1px solid #d8c28b;line-height:1.6}.personal-day-card article h3{font-size:28px;margin:8px 0 16px}.personal-day-error{color:#a23b3b}
+
+.personal-day-card{position:relative;width:min(100%,620px);padding:42px 38px 36px;border:1px solid rgba(196,164,83,.72);border-radius:30px;background:linear-gradient(145deg,#fffdf8 0%,#f7f3eb 100%);color:#142c43;box-shadow:0 28px 90px rgba(16,30,54,.3)}
+.personal-day-card .eyebrow{margin:0 0 12px;color:#26777b;font-size:15px;letter-spacing:2.4px;font-weight:800;text-transform:uppercase}
+.personal-day-card h2{margin:0 0 30px;color:#142c43;font-size:clamp(32px,7vw,48px);line-height:1.05;letter-spacing:-1.5px}
+.personal-day-card label{gap:10px;color:#142c43;font-size:20px;font-weight:800}
+.personal-day-card input{box-sizing:border-box;min-height:68px;padding:16px 20px;border:1.5px solid #c9b47d;border-radius:18px;background:#fff;color:#142c43;font-size:25px;font-weight:700;letter-spacing:.5px;outline:none}
+.personal-day-card input:focus{border-color:#2d7d82;box-shadow:0 0 0 4px rgba(45,125,130,.14)}
+.personal-day-card form .matrix-submit{min-height:64px;margin-top:4px;border:0;border-radius:18px;background:linear-gradient(135deg,#294981,#5573c0);box-shadow:0 12px 26px rgba(41,73,129,.24);font-size:22px;font-weight:800;letter-spacing:.1px;transition:transform .18s ease,box-shadow .18s ease}
+.personal-day-card form .matrix-submit:not(:disabled):active{transform:translateY(1px);box-shadow:0 7px 16px rgba(41,73,129,.2)}
+.personal-day-card form .matrix-submit:disabled{opacity:.48;cursor:not-allowed;box-shadow:none}
+.personal-day-card article{margin-top:30px;padding:24px 0 0;border-top:1px solid rgba(201,180,125,.7);font-size:18px}
+.personal-day-card article .eyebrow{font-size:13px;margin-bottom:8px}
+.personal-day-card article h3{margin:6px 0 16px;font-size:30px;line-height:1.12}
+@media (max-width:520px){.personal-day-card{padding:30px 22px 26px;border-radius:26px}.personal-day-card h2{font-size:36px}.personal-day-card label{font-size:18px}.personal-day-card input{min-height:62px;font-size:22px}.personal-day-card form .matrix-submit{min-height:58px;font-size:20px}}
