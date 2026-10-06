@@ -390,7 +390,7 @@ const buildFullReportPdf = async () => {
     pageSize: "A4",
     pageMargins: [56, 64, 56, 62],
     info: { title: `Полный разбор ${formattedDate}` },
-    background: fullReportPdfFrame,
+    background: () => ({ canvas: fullReportPdfFrame() }),
     content,
     defaultStyle: { font: "Roboto", fontSize: 12.2, color: "#493f53", lineHeight: 1.32 },
     styles: {
