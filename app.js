@@ -8,6 +8,7 @@ let redFlagFeatureLoading;
 let redFlagStylesLoading;
 let destinyCodeFeatureLoading;
 let destinyCodeStylesLoading;
+let personalDayFeatureLoading;
 
 const loadStylesheet = (href) => new Promise((resolve, reject) => {
   const existing = document.querySelector(`link[href^="${href}"]`);
@@ -57,6 +58,16 @@ const openRedFlagFeature = async () => {
     redFlagStylesLoading ??= loadStylesheet("redflag-polish.css?v=2")
   ]);
   feature.openRedFlag();
+};
+
+const getPersonalDayFeature = () => {
+  if (!personalDayFeatureLoading) personalDayFeatureLoading = import("./personal-day-feature.js?v=1");
+  return personalDayFeatureLoading;
+};
+
+const openPersonalDayFeature = async () => {
+  const feature = await getPersonalDayFeature();
+  feature.openPersonalDay();
 };
 
 const getDestinyCodeFeature = () => {
@@ -112,6 +123,10 @@ window.addEventListener("open-matrix-for-date", (event) => {
 
 document.querySelectorAll("[data-open-redflag]").forEach((button) => button.addEventListener("click", () => {
   openRedFlagFeature().catch(() => alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
+}));
+
+document.querySelectorAll("[data-open-personal-day]").forEach((button) => button.addEventListener("click", () => {
+  openPersonalDayFeature().catch(() => alert("Не удалось открыть расчёт на день. Обновите страницу и попробуйте ещё раз."));
 }));
 
 document.querySelectorAll("[data-open-destiny-code]").forEach((button) => button.addEventListener("click", () => {
