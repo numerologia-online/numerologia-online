@@ -34,3 +34,25 @@
 .personal-day-main h4{margin:28px 0 8px;color:#075c4b;font-size:23px}
 .personal-day-main{background:#fffdf8}
 @media(max-width:520px){.personal-day-page{padding:28px 20px 32px}.personal-day-page .personal-day-lead{font-size:19px}.personal-day-general,.personal-day-form-panel,.personal-day-main{padding:22px 18px}.personal-day-general p,.personal-day-main p{font-size:18px}}
+
+/* Personal day — old French editorial style */
+.personal-day-overlay{background:rgba(34,39,35,.68);backdrop-filter:blur(3px);padding:18px 12px}
+.personal-day-page{width:min(100%,700px);max-height:calc(100dvh - 36px);padding:46px 42px 44px;border:1px solid #c9a96a;border-radius:4px;background:#f8f2e7;color:#243e37;box-shadow:0 24px 70px rgba(28,35,29,.34);font-family:Inter,system-ui,sans-serif}
+.personal-day-page:before{content:"";position:absolute;inset:13px;border:1px solid rgba(171,132,61,.28);pointer-events:none}
+.personal-day-page .personal-day-close{position:absolute;top:20px;right:26px;width:38px;height:38px;border:1px solid rgba(36,62,55,.28);border-radius:50%;font-size:25px;color:#24443b}
+.personal-day-page .eyebrow{margin:0 0 14px;color:#286b60;font-size:13px;letter-spacing:.22em;font-weight:700}
+.personal-day-page h2{margin:0 0 22px;color:#263b36;font-family:Georgia,'Times New Roman',serif;font-size:clamp(45px,10vw,72px);font-weight:400;letter-spacing:-.045em;line-height:.98}
+.personal-day-page .personal-day-lead{max-width:30ch;margin:0 0 30px;color:#56635d;font-family:Georgia,'Times New Roman',serif;font-size:21px;line-height:1.42}
+.personal-day-general,.personal-day-form-panel,.personal-day-main{position:relative;margin-top:18px;padding:28px 30px;border:1px solid rgba(184,145,65,.52);border-radius:4px;background:#fbf6ed;box-shadow:0 8px 25px rgba(54,45,29,.06)}
+.personal-day-date,.personal-day-form-kicker{margin:0 0 16px;color:#a2772b;font-size:13px;letter-spacing:.16em;font-weight:700}
+.personal-day-general h3,.personal-day-main h3{margin:0 0 17px;color:#0c5e50;font-family:Georgia,'Times New Roman',serif;font-size:clamp(34px,8vw,54px);font-weight:400;letter-spacing:-.03em;line-height:1.03}
+.personal-day-general p:not(.personal-day-date),.personal-day-main p{margin:0 0 17px;color:#53615b;font-family:Georgia,'Times New Roman',serif;font-size:19px;line-height:1.55}
+.personal-day-form-panel{background:#f5eee2}
+.personal-day-form-kicker{max-width:26ch;color:#a2772b;font-size:16px;line-height:1.35}
+.personal-day-form-panel form{display:grid;gap:14px}
+.personal-day-form-panel input{width:100%;min-height:64px;padding:14px 18px;border:1px solid #c7ad78;border-radius:2px;background:#fffdf9;color:#263b36;font-size:24px;font-weight:600;letter-spacing:.04em;outline:none}
+.personal-day-form-panel input:focus{border-color:#286b60;box-shadow:0 0 0 3px rgba(40,107,96,.12)}
+.personal-day-submit{min-height:62px;border:1px solid #0d5b4d;border-radius:2px;background:#0d5b4d;color:#fff8ee;font-family:Georgia,'Times New Roman',serif;font-size:23px;font-weight:400;letter-spacing:.01em;box-shadow:0 8px 18px rgba(13,91,77,.16)}
+.personal-day-submit:disabled{background:#8a9b91;opacity:.55;box-shadow:none}
+.personal-day-main h4{margin:28px 0 8px;color:#a2772b;font-family:Georgia,'Times New Roman',serif;font-size:23px;font-weight:400}
+@media(max-width:520px){.personal-day-overlay{padding:10px 8px}.personal-day-page{max-height:calc(100dvh - 20px);padding:38px 22px 30px}.personal-day-page:before{inset:8px}.personal-day-page .personal-day-close{top:14px;right:18px}.personal-day-page h2{font-size:49px}.personal-day-page .personal-day-lead{font-size:19px}.personal-day-general,.personal-day-form-panel,.personal-day-main{padding:22px 19px}.personal-day-general h3,.personal-day-main h3{font-size:38px}.personal-day-general p:not(.personal-day-date),.personal-day-main p{font-size:18px}.personal-day-form-kicker{font-size:15px}}
