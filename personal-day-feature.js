@@ -29,6 +29,20 @@ const open = () => {
   const form = shell.querySelector("form");
   const input = shell.querySelector("input");
   const result = shell.querySelector("article");
+  const submit = shell.querySelector("button[type=\"submit\"]");
+  input.type = "tel";
+  input.inputMode = "numeric";
+  input.autocomplete = "bday";
+  input.addEventListener("input", () => {
+    const digits = input.value.replace(/\\D/g, "").slice(0, 8);
+    const parts = [];
+    if (digits.length > 0) parts.push(digits.slice(0, 2));
+    if (digits.length > 2) parts.push(digits.slice(2, 4));
+    if (digits.length > 4) parts.push(digits.slice(4, 8));
+    input.value = parts.join(".");
+    submit.disabled = digits.length !== 8;
+  });
+  submit.disabled = true;
   shell.querySelector(".personal-day-close").onclick = () => shell.remove();
   form.onsubmit = (event) => {
     event.preventDefault();
