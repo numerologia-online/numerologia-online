@@ -335,7 +335,8 @@ const dayPage = ({ day, item, info }, monthIndex, year) => {
   const forecast = String(item.text || "").trim();
   const parts = forecast ? forecast.split(/\n\s*\n/).filter(Boolean) : ["Текст дня пока недоступен."];
   return {
-    pageBreak: "before",
+    // Flow days continuously: a new date does not force a blank remainder on the previous page.
+    margin: [0, 18, 0, 10],
     stack: [
       { ...dayHeader({ day, monthIndex, year, energy: item.energy, weekday }), margin: [0, 0, 0, 18] },
       ...(specialLabel ? [{ text: specialLabel, fontSize: 16, bold: true, color: palette.color, alignment: "center", margin: [0, 0, 0, 14] }] : []),
