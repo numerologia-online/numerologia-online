@@ -109,3 +109,7 @@
 
 section.personal-day-main .personal-day-label{display:block;margin:0 0 18px;color:#173f7a!important;font:800 38px/1.05 Inter,system-ui,sans-serif!important;letter-spacing:.08em;text-align:center;text-transform:uppercase}
 @media(max-width:520px){section.personal-day-main .personal-day-label{font-size:34px!important;letter-spacing:.06em}}
+
+.personal-month-legend{justify-content:center;gap:10px 16px;margin-top:17px;color:#53647c;font-size:14px;font-weight:700}
+.personal-month-dot{width:14px;height:14px;flex:0 0 14px}.personal-month-dot.avoid{background:#9e2020}
+.personal-month-legend span{gap:6px}
