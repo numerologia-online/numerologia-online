@@ -61,7 +61,7 @@ const openRedFlagFeature = async () => {
 };
 
 const getPersonalDayFeature = () => {
-  if (!personalDayFeatureLoading) personalDayFeatureLoading = import("./personal-day-feature.js?v=7");
+  if (!personalDayFeatureLoading) personalDayFeatureLoading = import("./personal-day-feature.js?v=8");
   return personalDayFeatureLoading;
 };
 
