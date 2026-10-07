@@ -164,7 +164,7 @@ export const openPersonalDay = () => {
           const info = marked.get(day)?.info || { status: "neutral", label: "Обычный день" };
           return `
             <details class="personal-month-day-card personal-month-detail-${info.status}">
-              <summary><span><strong>${day} ${monthName}, ${new Intl.DateTimeFormat("ru-RU", { weekday: "long" }).format(new Date(now.getFullYear(), now.getMonth(), day))}</strong><em>${esc(info.label || "Обычный день")}</em></span><b>+</b></summary>
+              <summary aria-label="${day} ${monthName}"><strong>${day} ${monthName}</strong><b aria-hidden="true">+</b></summary>
               <div class="personal-month-day-content">
                 <p>${esc(item.text)}</p>
                 ${item.todayNeed?.length ? `<div class="personal-month-mini need"><strong>Сегодня нужно</strong><ul>${bullets(item.todayNeed)}</ul></div>` : ""}
