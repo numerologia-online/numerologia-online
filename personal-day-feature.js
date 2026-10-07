@@ -95,7 +95,7 @@ const monthCalendar = (birth, date = new Date()) => {
     <div class="personal-month-legend"><span><i class="personal-month-dot good"></i>Хороший день</span><span><i class="personal-month-dot chance"></i>Очень важный шанс</span><span><i class="personal-month-dot risk"></i>Осторожно</span><span><i class="personal-month-dot avoid"></i>Не делайте этого</span></div>
     <button type="button" class="personal-month-open">Открыть разбор месяца <span>→</span></button>
     <section class="personal-month-details" hidden>
-      <p class="personal-month-details-lead">Здесь собраны самые заметные даты месяца. Остальные дни остаются обычными и не требуют отдельного разбора.</p>
+      
       <div class="personal-month-detail-list"></div>
     </section>
   </section>`;
@@ -146,12 +146,13 @@ export const openPersonalDay = () => {
           }));
         }));
         const marked = monthMarkedDays(birth, now);
-        const grouped = { good: [], avoid: [], chance: [] };
+        const grouped = { good: [], avoid: [], chance: [], risk: [] };
         marked.forEach(({ day, info }) => { if (grouped[info.status]) grouped[info.status].push(day); });
         const dateWord = (days) => days.map((day) => `${day} ${monthName}`).join(", ");
         const summary = `
           <section class="personal-month-summary personal-month-summary-good"><h4>Сегодня можно</h4><p>${esc(dateWord(grouped.good))}</p><small>Деньги, действия, разговоры, документы и встречи. Эти даты лучше использовать по назначению.</small></section>
-          <section class="personal-month-summary personal-month-summary-avoid"><h4>Сегодня нельзя</h4><p>${esc(dateWord(grouped.avoid.concat(grouped.risk)))}</p><small>Не тратьте на эмоциях, не выясняйте отношения и не принимайте решения, о которых потом придётся жалеть.</small></section>
+          <section class="personal-month-summary personal-month-summary-avoid"><h4>Сегодня нельзя</h4><p>${esc(dateWord(grouped.avoid))}</p><small>Не делайте резких шагов, не тратьте на эмоциях и не принимайте решения, о которых потом придётся жалеть.</small></section>
+          <section class="personal-month-summary personal-month-summary-risk"><h4>Осторожно</h4><p>${esc(dateWord(grouped.risk))}</p><small>Риск конфликтов, резких реакций и возвращения к старым проблемам. Сначала успокойтесь, потом действуйте.</small></section>
           <section class="personal-month-summary personal-month-summary-chance"><h4>Важные шансы</h4><p>${esc(dateWord(grouped.chance))}</p><small>Даты для удовольствия, восстановления, неожиданной помощи и полезных подсказок.</small></section>`;
         const cards = days.map(({ day, item }) => {
           const info = marked.get(day)?.info || { status: "neutral", label: "Обычный день" };
