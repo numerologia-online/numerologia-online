@@ -67,8 +67,7 @@ const monthCalendar = (birth, date = new Date()) => {
     const current = new Date(year, month, day);
     const energy = personalDay(birth, current);
     const info = calendarInfo(energy);
-    const locked = day > openUntil;
-    cells.push(`<button type="button" class="personal-month-day personal-month-${locked ? "locked" : info.status}" data-month-day="${day}" ${locked ? "aria-label=\"День закрыт до подписки\"" : `aria-label="День ${day}, ${esc(info.label || `личный день ${energy}`)}"`}>${day}${locked ? '<span class="personal-month-lock">•</span>' : ""}</button>`);
+    cells.push(`<button type="button" class="personal-month-day personal-month-${info.status}" data-month-day="${day}" aria-label="День ${day}, ${esc(info.label || `личный день ${energy}`)}">${day}</button>`);
   }
   return `<section class="personal-month-preview">
     <div class="personal-month-heading"><div><p class="personal-month-kicker">Карта ближайших дней</p><h3>${esc(monthTitle(date))}</h3></div><span class="personal-month-mark">✦</span></div>
