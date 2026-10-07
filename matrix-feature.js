@@ -394,54 +394,66 @@ const buildFullReportPdf = async () => {
     today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day) ? 1 : 0
   );
 
-  const { corners, diagonals } = matrixData;
-  const tail = findKarmicTail(matrixData, karmicTails);
-  const programs = findKarmicPrograms(matrixData, karmicPrograms);
-  const numericRows = [
-    ["ОСНОВНЫЕ", [matrixData.left, matrixData.top, matrixData.right, matrixData.bottom, matrixData.center].join(" · ")],
-    ["УГЛЫ", [matrixData.corners.topLeft, matrixData.corners.topRight, matrixData.corners.bottomRight, matrixData.corners.bottomLeft].join(" · ")],
-    ["ВЕРХНЯЯ СВЯЗКА", [matrixData.topSpoke.outer, matrixData.topSpoke.near, matrixData.topSpoke.core].join(" · ")],
-    ["ЛЕВАЯ СВЯЗКА", [matrixData.leftSpoke.outer, matrixData.leftSpoke.near, matrixData.leftSpoke.core].join(" · ")],
-    ["ПРАВАЯ СВЯЗКА", [matrixData.rightSpoke.outer, matrixData.rightSpoke.near, matrixData.rightSpoke.core].join(" · ")],
-    ["КАРМИЧЕСКИЙ ХВОСТ", tail ? String(tail.code) : [matrixData.tail.first, matrixData.tail.second, matrixData.bottom].join(" · ")],
-    ["ДИАГОНАЛИ", [
-      diagonals.topLeft.outer, diagonals.topLeft.near,
-      diagonals.topRight.outer, diagonals.topRight.near,
-      diagonals.bottomRight.outer, diagonals.bottomRight.near,
-      diagonals.bottomLeft.outer, diagonals.bottomLeft.near
-    ].join(" · ")],
-    ["ПРОГРАММЫ", programs.length ? programs.map((program) => program.code).join("  ·  ") : "—"]
-  ];
-
   const content = [
     {
       stack: [
-        { text: "ЧИСЛОВОЕ ОГЛАВЛЕНИЕ", style: "chapter", alignment: "center", background: "#E9DDF1" },
-        { text: "Все энергии и связки этого разбора", style: "chapterLead", alignment: "center" },
-        {
-          table: {
-            widths: [170, "*"],
-            body: numericRows.map(([label, values]) => [
-              { text: label, style: "numericLabel" },
-              { text: values, style: "numericValues" }
-            ])
-          },
-          layout: {
-            hLineWidth: () => 0.55,
-            vLineWidth: () => 0,
-            hLineColor: () => "#D5B978",
-            paddingLeft: () => 12,
-            paddingRight: () => 12,
-            paddingTop: () => 13,
-            paddingBottom: () => 13,
-            fillColor: (rowIndex) => (rowIndex % 2 === 0 ? "#FCF7EA" : "#F4EAF8")
-          }
-        }
+        { svg: fullReportCoverTitle(), width: 483, height: 158, alignment: "center", margin: [0, 0, 0, 10] },
+        { svg: matrixPdfSvg, width: 430, height: 430, alignment: "center", margin: [0, 0, 0, 14] },
+        { text: `Дата рождения · ${formattedDate}`, style: "coverDate", alignment: "center" },
+        { text: `Возраст · ${age} лет`, style: "coverAge", alignment: "center" }
       ],
+      margin: [0, 0, 0, 0],
       pageBreak: "after"
+    },
+    { text: "ВАША ЛИЧНАЯ КАРТА", style: "eyebrow" },
+    { text: "Ключевые точки", style: "chapter" },
+    { text: "Эти цифры становятся основой для всех разделов ниже.", style: "chapterLead" },
+    {
+      table: {
+        widths: ["*", "auto"],
+        body: [
+          ["День рождения", String(matrixData.left)],
+          ["Месяц рождения", String(matrixData.top)],
+          ["Энергия года", String(matrixData.right)],
+          ["Центральная энергия", String(matrixData.center)],
+          ["Что блокирует деньги", String(matrixData.rightSpoke.outer)],
+          ["Как включить поток", String(matrixData.rightSpoke.near)],
+          ["Где легче заработать", String(matrixData.rightSpoke.core)]
+        ]
+      },
+      layout: {
+        hLineWidth: (index) => (index === 0 || index === 7 ? 0.7 : 0.35),
+        vLineWidth: () => 0,
+        hLineColor: () => "#d8cfbd",
+        paddingLeft: () => 8,
+        paddingRight: () => 8,
+        paddingTop: () => 7,
+        paddingBottom: () => 7,
+        fillColor: (rowIndex) => (rowIndex % 2 === 0 ? "#fcfaf5" : null)
+      },
+      style: "points"
     }
   ];
 
+    const tail = findKarmicTail(matrixData, karmicTails);
+    const programs = findKarmicPrograms(matrixData, karmicPrograms);
+    if (tail || programs.length) {
+      content.push({ text: "КАРМИЧЕСКИЕ ПРОГРАММЫ", style: "eyebrow", margin: [0, 30, 0, 0] });
+      if (tail) {
+        content.push({ text: `Кармический хвост: ${tail.code} ${tail.title}`, style: "sectionTitle" });
+        tail.parts.forEach((part) => {
+          content.push({ text: part.title, style: "partTitle" });
+          appendPdfParagraphs(content, [part.text]);
+        });
+      }
+      programs.forEach((program) => {
+        content.push({ text: `${program.code} ${program.title}`, style: "sectionTitle" });
+        program.parts.forEach((part) => {
+          content.push({ text: part.title, style: "partTitle" });
+          appendPdfParagraphs(content, [part.text]);
+        });
+      });
+    }
   content.push({ text: "", pageBreak: "after" });
 
   records.forEach(({ definition, source }) => {
@@ -476,9 +488,7 @@ const buildFullReportPdf = async () => {
       subheading: { font: "Roboto", fontSize: 32, bold: true, color: "#8C5B20", lineHeight: 1.16, margin: [0, 18, 0, 12] },
       partTitle: { font: "Roboto", fontSize: 34, bold: true, color: "#8C5B20", margin: [0, 26, 0, 12] },
       paragraph: { fontSize: 26, alignment: "left", lineHeight: 1.34, margin: [0, 0, 0, 22] },
-      points: { margin: [0, 0, 0, 0], color: "#493f53", fontSize: 22 },
-      numericLabel: { font: "Roboto", fontSize: 18, bold: true, color: "#8C5B20" },
-      numericValues: { font: "Roboto", fontSize: 25, bold: true, color: "#4D286B", alignment: "center" }
+      points: { margin: [0, 0, 0, 0], color: "#493f53", fontSize: 22 }
     },
     footer: (page, pages) => ({ text: `Нумерология Онлайн · ${page} / ${pages}`, alignment: "center", color: "#a089a8", fontSize: 8.5, margin: [0, 8, 0, 0] })
   };
