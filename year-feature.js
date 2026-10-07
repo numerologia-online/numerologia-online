@@ -330,7 +330,7 @@ const imageAsDataUrl = async (source) => {
 let pdfTemplatesLoading;
 const getPdfTemplates = () => Promise.resolve({});
 
-const yearReportFrame = () => ({ svg: \`<svg xmlns="http://www.w3.org/2000/svg" width="595.28" height="841.89" viewBox="0 0 595.28 841.89">
+const yearReportFrame = () => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" width="595.28" height="841.89" viewBox="0 0 595.28 841.89">
   <rect width="595.28" height="841.89" fill="#F7FAFC"/>
   <rect x="18" y="18" width="559.28" height="805.89" rx="2" fill="none" stroke="#C8A45D" stroke-width="1"/>
   <g fill="#B9CDE1" opacity=".22" font-family="Arial" font-weight="700">
@@ -341,16 +341,16 @@ const yearReportFrame = () => ({ svg: \`<svg xmlns="http://www.w3.org/2000/svg" 
     <text x="35" y="430" font-size="22" letter-spacing="6">9 6 9 6</text>
     <text x="450" y="430" font-size="22" letter-spacing="6">6 9 6 9</text>
   </g>
-</svg>\` });
+</svg>` });
 
-const yearReportTitle = (text) => ({ svg: \`<svg xmlns="http://www.w3.org/2000/svg" width="440" height="132" viewBox="0 0 440 132">
+const yearReportTitle = (text) => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" width="440" height="132" viewBox="0 0 440 132">
   <g font-family="Arial, sans-serif" font-weight="700" text-anchor="middle">
     <text x="220" y="60" font-size="48" fill="#C9A76A" opacity=".38" transform="translate(4 5)">${text}</text>
     <text x="220" y="60" font-size="48" fill="#5B3E74">${text}</text>
     <text x="220" y="112" font-size="48" fill="#C9A76A" opacity=".38" transform="translate(4 5)">года</text>
     <text x="220" y="112" font-size="48" fill="#5B3E74">года</text>
   </g>
-</svg>\` });
+</svg>` });
 
 const buildPdfDocument = (templates) => {
   const reportTitle = document.querySelector("#report-title").textContent;
