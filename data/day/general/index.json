@@ -1,0 +1,116 @@
+{
+  "schema": "day-general-index-v1",
+  "section": "Общий разбор дня",
+  "files": [
+    {
+      "generalEnergy": 1,
+      "path": "data/day/general/general-day-01.json",
+      "status": "ready"
+    },
+    {
+      "generalEnergy": 2,
+      "path": "data/day/general/general-day-02.json",
+      "status": "ready"
+    },
+    {
+      "generalEnergy": 3,
+      "path": "data/day/general/general-day-03.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 4,
+      "path": "data/day/general/general-day-04.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 5,
+      "path": "data/day/general/general-day-05.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 6,
+      "path": "data/day/general/general-day-06.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 7,
+      "path": "data/day/general/general-day-07.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 8,
+      "path": "data/day/general/general-day-08.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 9,
+      "path": "data/day/general/general-day-09.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 10,
+      "path": "data/day/general/general-day-10.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 11,
+      "path": "data/day/general/general-day-11.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 12,
+      "path": "data/day/general/general-day-12.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 13,
+      "path": "data/day/general/general-day-13.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 14,
+      "path": "data/day/general/general-day-14.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 15,
+      "path": "data/day/general/general-day-15.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 16,
+      "path": "data/day/general/general-day-16.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 17,
+      "path": "data/day/general/general-day-17.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 18,
+      "path": "data/day/general/general-day-18.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 19,
+      "path": "data/day/general/general-day-19.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 20,
+      "path": "data/day/general/general-day-20.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 21,
+      "path": "data/day/general/general-day-21.json",
+      "status": "pending"
+    },
+    {
+      "generalEnergy": 22,
+      "path": "data/day/general/general-day-22.json",
+      "status": "pending"
+    }
+  ]
+}
