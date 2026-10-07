@@ -385,7 +385,7 @@ const yearReportCover = ({ year, birthDate, age }) => {
   return {
     svg: `<svg xmlns="http://www.w3.org/2000/svg" width="451" height="620" viewBox="0 0 451 620">
       <g text-anchor="middle">
-        <text x="225.5" y="72" font-family="Arial, sans-serif" font-size="13" letter-spacing="4" fill="#A57B33">ПЕРСОНАЛЬНЫЙ</text>
+        <text x="225.5" y="72" font-family="Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="3.5" fill="#98691F">ПЕРСОНАЛЬНЫЙ</text>
 
         <text x="227" y="138" font-family="Georgia, 'Times New Roman', serif" font-size="51" fill="#D7C8AB" opacity=".45">РАЗБОР ГОДА</text>
         <text x="225.5" y="136" font-family="Georgia, 'Times New Roman', serif" font-size="51" fill="#19334E">РАЗБОР ГОДА</text>
@@ -404,7 +404,7 @@ const yearReportCover = ({ year, birthDate, age }) => {
             <circle cx="-104.8" cy="60.5" r="2.2"/><circle cx="-121" cy="0" r="2.2"/>
             <circle cx="-104.8" cy="-60.5" r="2.2"/><circle cx="-60.5" cy="-104.8" r="2.2"/>
           </g>
-          <g font-family="Arial, sans-serif" font-size="8.5" fill="#7A8794" text-anchor="middle" opacity=".72">
+          <g font-family="Arial, sans-serif" font-size="9.5" fill="#647A8D" text-anchor="middle" opacity=".86">
             <text x="0" y="-135">ЯНВ</text><text x="72" y="-117">ФЕВ</text>
             <text x="120" y="-69">МАР</text><text x="138" y="3">АПР</text>
             <text x="120" y="75">МАЙ</text><text x="72" y="123">ИЮН</text>
@@ -416,11 +416,11 @@ const yearReportCover = ({ year, birthDate, age }) => {
           <text x="0" y="20" font-family="Arial, sans-serif" font-size="77" font-weight="700" fill="#19334E">${safeYear}</text>
         </g>
 
-        <text x="225.5" y="492" font-family="Georgia, 'Times New Roman', serif" font-size="21" fill="#6E5B3B">ваша личная карта времени</text>
+        <text x="225.5" y="492" font-family="Georgia, 'Times New Roman', serif" font-size="23" fill="#5B472A">ваша личная карта времени</text>
         <path d="M104 520 H347" stroke="#C5A15D" stroke-width=".55" opacity=".68"/>
 
-        <text x="225.5" y="556" font-family="Arial, sans-serif" font-size="17" fill="#29445C">Дата рождения · ${safeBirth}</text>
-        <text x="225.5" y="586" font-family="Arial, sans-serif" font-size="16" fill="#7B643D">В ${safeYear} году вам исполняется ${safeAge} лет</text>
+        <text x="225.5" y="556" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#203E58">Дата рождения · ${safeBirth}</text>
+        <text x="225.5" y="586" font-family="Arial, sans-serif" font-size="17" fill="#6B5430">В ${safeYear} году вам исполняется ${safeAge} лет</text>
       </g>
     </svg>`
   };
@@ -488,9 +488,9 @@ const buildPdfDocument = (templates) => {
     info: { title: `${reportTitle} - ${birthInput.value}` },
     pageSize: "A4",
     // Wide inner margins keep large type safely inside the decorative frame.
-    pageMargins: [72, 92, 72, 108],
+    pageMargins: [68, 88, 68, 104],
     background: () => yearReportFrame(),
-    defaultStyle: { font: "Roboto", fontSize: 19.5, color: "#33495D", lineHeight: 1.46 },
+    defaultStyle: { font: "Roboto", fontSize: 22.5, color: "#26394A", lineHeight: 1.43 },
     styles: {
       coverKicker: { fontSize: 13, bold: true, color: "#A57B33", characterSpacing: 2.4, alignment: "center" },
       coverCode: { fontSize: 20, color: "#A57B33", characterSpacing: 4, alignment: "center" },
@@ -498,16 +498,16 @@ const buildPdfDocument = (templates) => {
       coverYear: { fontSize: 92, bold: true, color: "#19334E", alignment: "center" },
       coverSubtitle: { fontSize: 26, color: "#6E5B3B", alignment: "center", lineHeight: 1.14 },
       coverDetails: { fontSize: 18, color: "#29445C", alignment: "center", lineHeight: 1.42 },
-      innerKicker: { fontSize: 12, bold: true, color: "#A57B33", characterSpacing: 1.45, alignment: "center", margin: [0, 0, 0, 15] },
-      title: { fontSize: 32, bold: true, color: "#19334E", alignment: "center", margin: [0, 0, 0, 16] },
-      subtitle: { fontSize: 18, color: "#667686", alignment: "center", lineHeight: 1.4, margin: [12, 0, 12, 26] },
-      phase: { fontSize: 12, bold: true, color: "#A57B33", characterSpacing: 0.75, margin: [0, 26, 0, 10] },
-      sectionTitle: { fontSize: 27, bold: true, color: "#19334E", margin: [0, 6, 0, 14] },
-      subsectionTitle: { fontSize: 21.5, bold: true, color: "#526D7E", margin: [0, 21, 0, 9] },
-      monthKicker: { fontSize: 12, bold: true, color: "#A57B33", characterSpacing: 0.75, margin: [0, 0, 0, 11] },
-      noteTitle: { fontSize: 19, bold: true, color: "#7A6034", margin: [0, 25, 0, 9] },
-      paragraph: { fontSize: 19.5, color: "#33495D", lineHeight: 1.46, margin: [0, 0, 0, 18] },
-      monthTitle: { fontSize: 37, bold: true, color: "#19334E", alignment: "center", margin: [0, 12, 0, 8] }
+      innerKicker: { fontSize: 13.5, bold: true, color: "#98691F", characterSpacing: 1.35, alignment: "center", margin: [0, 0, 0, 15] },
+      title: { fontSize: 34, bold: true, color: "#142F49", alignment: "center", margin: [0, 0, 0, 16] },
+      subtitle: { fontSize: 20.5, color: "#465D70", alignment: "center", lineHeight: 1.42, margin: [8, 0, 8, 26] },
+      phase: { fontSize: 13.5, bold: true, color: "#98691F", characterSpacing: 0.7, margin: [0, 26, 0, 10] },
+      sectionTitle: { fontSize: 29, bold: true, color: "#142F49", margin: [0, 6, 0, 14] },
+      subsectionTitle: { fontSize: 24, bold: true, color: "#3F6174", margin: [0, 21, 0, 9] },
+      monthKicker: { fontSize: 13.5, bold: true, color: "#98691F", characterSpacing: 0.7, margin: [0, 0, 0, 11] },
+      noteTitle: { fontSize: 21.5, bold: true, color: "#6C522A", margin: [0, 25, 0, 9] },
+      paragraph: { fontSize: 22.5, color: "#26394A", lineHeight: 1.43, margin: [0, 0, 0, 19] },
+      monthTitle: { fontSize: 40, bold: true, color: "#142F49", alignment: "center", margin: [0, 12, 0, 9] }
     },
     content: [
       { ...yearReportCover({ year: reportYearValue, birthDate: birthInput.value, age }), pageBreak: "after" },
