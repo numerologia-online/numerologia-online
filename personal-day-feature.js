@@ -1,5 +1,6 @@
 import { parseBirthDate } from "./numerology-core.js?v=1";
 import texts from "./personal-day-data-lite.js?v=1";
+import { getPersonalMonthLink } from "./personal-month-links.js?v=1";
 
 const reduce22 = (value) => {
   let n = Math.abs(Number(value) || 0);
@@ -39,41 +40,16 @@ const paragraphs = (items = []) => items.filter(Boolean).map((text) => `<p>${esc
 const bullets = (items = []) => items.filter(Boolean).map((text) => `<li>${esc(text)}</li>`).join("");
 const todayLabel = () => new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date());
 const monthTitle = (date) => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(date);
-const calendarInfo = (energy) => {
-  const rules = {
-    1: ["good", "Решительный шаг"],
-    2: ["good", "Разговор и признание"],
-    3: ["chance", "Приятная покупка"],
-    4: ["good", "Документы и договоры"],
-    5: ["chance", "Неожиданный шанс"],
-    6: ["good", "Встреча и отношения"],
-    7: ["chance", "Пауза: замолчать и услышать правду"],
-    8: ["good", "Смелые покупки и деньги"],
-    9: ["chance", "Завершение старого"],
-    10: ["good", "Действия и важное решение"],
-    11: ["good", "Проявить силу и заявить о себе"],
-    12: ["chance", "Полезная подсказка"],
-    13: ["risk", "Не возвращаться к старым конфликтам"],
-    14: ["good", "Примирение и спокойный диалог"],
-    15: ["avoid", "Не тратить на эмоциях"],
-    16: ["avoid", "Не разрушать сгоряча"],
-    17: ["good", "Финансовый шанс"],
-    18: ["risk", "Не ругаться и не давить"],
-    19: ["good", "Успех и результат"],
-    20: ["good", "Семья и восстановление"],
-    21: ["good", "Завершение дела"],
-    22: ["chance", "Шанс на новый поворот — действуйте, если решение созрело"]
-  };
-  const [status, label] = rules[energy] || ["neutral", ""];
-  return { status, label };
+const calendarInfo = (energy, calendarDay) => {
+  const link = getPersonalMonthLink(energy, calendarDay);
+  return link ? { ...link, label: link.group } : { status: "neutral", group: "", label: "" };
 };
-const calendarStatus = (energy) => calendarInfo(energy).status;
 const monthMarkedDays = (birth, date = new Date()) => {
   const total = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   const selected = new Map();
   for (let day = 1; day <= total; day += 1) {
     const energy = personalDay(birth, new Date(date.getFullYear(), date.getMonth(), day));
-    const info = calendarInfo(energy);
+    const info = calendarInfo(energy, day);
     // Окрашиваем только заранее отмеченные сильные связки; остальные дни серые.
     if (info.status !== "neutral") selected.set(day, { day, energy, info });
   }
@@ -86,11 +62,12 @@ const monthCalendar = (birth, date = new Date()) => {
   const first = new Date(year, month, 1).getDay();
   const offset = (first + 6) % 7;
   const cells = [];
+  const marked = monthMarkedDays(birth, date);
   for (let i = 0; i < offset; i += 1) cells.push('<span class="personal-month-empty"></span>');
   for (let day = 1; day <= total; day += 1) {
     const current = new Date(year, month, day);
     const energy = personalDay(birth, current);
-    const info = monthMarkedDays(birth, date).get(day)?.info || { status: "neutral", label: "" };
+    const info = marked.get(day)?.info || { status: "neutral", label: "" };
     cells.push(`<button type="button" class="personal-month-day personal-month-${info.status}" data-month-day="${day}" aria-label="День ${day}, ${esc(info.label || `личный день ${energy}`)}">${day}</button>`);
   }
   return `<section class="personal-month-preview">
@@ -145,10 +122,20 @@ export const openPersonalDay = () => {
         const total = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         const monthName = new Intl.DateTimeFormat("ru-RU", { month: "long" }).format(now);
         const marked = monthMarkedDays(birth, now);
-        const dateLines = (statuses) => [...marked.values()].filter(({ info }) => statuses.includes(info.status)).map(({ day, info }) => "<span><strong>" + day + " " + monthName + "</strong> " + esc(info.label) + ".</span>").join("");
-        const summary = "<section class=\"personal-month-summary personal-month-summary-good\"><h4><span class=\"personal-month-summary-icon\">✓</span>Лучшие дни месяца</h4><div>" + dateLines(["good"]) + "</div></section>" +
-          "<section class=\"personal-month-summary personal-month-summary-risk\"><h4><span class=\"personal-month-summary-icon\">×</span>Дни риска</h4><div>" + dateLines(["risk", "avoid"]) + "</div></section>" +
-          "<section class=\"personal-month-summary personal-month-summary-chance\"><h4><span class=\"personal-month-summary-icon\">★</span>Важные шансы</h4><div>" + dateLines(["chance"]) + "</div></section>";
+        const groupLines = (status) => {
+          const groups = new Map();
+          marked.forEach(({ day, info }) => {
+            if (info.status !== status) return;
+            if (!groups.has(info.group)) groups.set(info.group, []);
+            groups.get(info.group).push(day);
+          });
+          return [...groups.entries()].map(([group, dates]) =>
+            "<span><strong>" + esc(group) + ":</strong> " + dates.join(", ") + " " + monthName + "</span>"
+          ).join("");
+        };
+        const summary = "<section class=\"personal-month-summary personal-month-summary-good\"><h4><span class=\"personal-month-summary-icon\">✓</span>Лучшие дни месяца</h4><div>" + groupLines("good") + "</div></section>" +
+          "<section class=\"personal-month-summary personal-month-summary-risk\"><h4><span class=\"personal-month-summary-icon\">×</span>Дни риска</h4><div>" + groupLines("risk") + "</div></section>" +
+          "<section class=\"personal-month-summary personal-month-summary-chance\"><h4><span class=\"personal-month-summary-icon\">★</span>Важные шансы</h4><div>" + groupLines("chance") + "</div></section>";
         monthList.innerHTML = summary + '<p class="personal-month-loading">Загружаю тексты дней…</p>';
         requestAnimationFrame(() => {
           const target = Math.max(0, monthDetails.getBoundingClientRect().top + window.scrollY - 12);
@@ -157,7 +144,7 @@ export const openPersonalDay = () => {
         const days = await Promise.all(Array.from({ length: total }, (_, index) => {
           const day = index + 1;
           return loadPersonalDay(birth, new Date(now.getFullYear(), now.getMonth(), day)).then((item) => ({
-            day, item, info: calendarInfo(item.energy)
+            day, item, info: calendarInfo(item.energy, day)
           }));
         }));
         const cards = days.map(({ day, item }) => {
