@@ -194,3 +194,55 @@ section.personal-day-main .personal-day-label{display:block;margin:0 0 18px;colo
   .personal-day-main .personal-day-advice h4{margin-bottom:31px !important}
   .personal-day-main .personal-day-advice ul{gap:19px}
 }
+
+
+/* Более собранные карточки советов */
+.personal-day-main .personal-day-advice{
+  width:calc(100% - 24px);
+  box-sizing:border-box;
+  margin-left:auto;
+  margin-right:auto;
+}
+.personal-day-main .personal-day-advice ul{gap:14px}
+@media(max-width:560px){
+  .personal-day-main .personal-day-advice{width:calc(100% - 18px)}
+  .personal-day-main .personal-day-advice ul{gap:13px}
+}
+
+/* В сводке сначала смысл, затем отдельной строкой даты */
+.personal-month-summary-line{
+  display:grid;
+  grid-template-columns:24px minmax(0,1fr);
+  gap:3px;
+  padding-left:0;
+}
+.personal-month-summary-line i{position:static;grid-column:1;grid-row:1 / span 2}
+.personal-month-summary-line > span{display:block;grid-column:2}
+.personal-month-summary-line strong,
+.personal-month-summary-line em{display:block}
+.personal-month-summary-line em{margin-top:3px;font-style:normal;font-weight:750;color:inherit}
+
+/* Кнопка сохранения результата */
+.personal-month-pdf{
+  display:block;
+  width:min(100%,340px);
+  margin:24px auto 4px;
+  min-height:54px;
+  border:0;
+  border-radius:17px;
+  background:linear-gradient(135deg,#244a82,#365e99);
+  color:#fff;
+  font:800 16px/1 Inter,system-ui,sans-serif;
+  box-shadow:0 10px 20px rgba(36,74,130,.22);
+}
+.personal-month-pdf:active{transform:scale(.985)}
+
+@media print{
+  body>*:not(.personal-day-overlay){display:none!important}
+  .personal-day-overlay{position:static!important;display:block!important;padding:0!important;background:#fff!important}
+  .personal-day-card{width:100%!important;max-height:none!important;overflow:visible!important;box-shadow:none!important;border:0!important}
+  .personal-day-close,.personal-day-form-panel,.personal-month-open,.personal-month-pdf{display:none!important}
+  .personal-month-details{display:block!important;border:0!important;background:#fff!important}
+  .personal-month-day-card{width:100%!important;max-width:none!important;break-inside:avoid}
+  .personal-month-day-card[open] .personal-month-day-content{display:block!important}
+}
