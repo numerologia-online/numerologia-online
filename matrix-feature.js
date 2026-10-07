@@ -302,6 +302,7 @@ const fullReportPdfFrame = () => `
 const buildFullReportPdf = async () => {
   if (!activeFullReport) throw new Error("Нет данных для PDF");
   const { formattedDate, matrixData, karmicPrograms, karmicTails } = activeFullReport;
+  const matrixSvg = diagram.querySelector("svg")?.outerHTML || "";
   const definitions = buildFullReportSections(matrixData);
   const [pdfMake, records] = await Promise.all([
     getPdfMake(),
