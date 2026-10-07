@@ -113,7 +113,7 @@ export const openPersonalDay = () => {
     result.insertAdjacentHTML("beforeend", monthCalendar(birth));
     const monthDetails = result.querySelector(".personal-month-details");
     const monthList = result.querySelector(".personal-month-detail-list");
-    result.querySelector(".personal-month-open")?.addEventListener("click", (event) => {
+    result.querySelector(".personal-month-open")?.addEventListener("click", async (event) => {
       const opened = !monthDetails.hidden;
       monthDetails.hidden = opened;
       event.currentTarget.innerHTML = opened ? "Открыть разбор месяца <span>→</span>" : "Скрыть разбор месяца <span>↑</span>";
@@ -132,8 +132,8 @@ export const openPersonalDay = () => {
             <summary><span><strong>${day} ${monthName}</strong><em>${esc(info.label || "Личный день")}</em></span><b>+</b></summary>
             <div class="personal-month-day-content">
               <p>${esc(item.text)}</p>
-              ${item.todayNeed?.length ? \`<div class="personal-month-mini need"><strong>Сегодня нужно</strong><ul>${bullets(item.todayNeed)}</ul></div>\` : ""}
-              ${item.todayAvoid?.length ? \`<div class="personal-month-mini avoid"><strong>Сегодня нельзя</strong><ul>${bullets(item.todayAvoid)}</ul></div>\` : ""}
+              ${item.todayNeed?.length ? `<div class="personal-month-mini need"><strong>Сегодня нужно</strong><ul>${bullets(item.todayNeed)}</ul></div>` : ""}
+              ${item.todayAvoid?.length ? `<div class="personal-month-mini avoid"><strong>Сегодня нельзя</strong><ul>${bullets(item.todayAvoid)}</ul></div>` : ""}
             </div>
           </details>`).join("");
         monthList.dataset.ready = "1";
