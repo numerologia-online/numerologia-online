@@ -303,6 +303,18 @@ const buildFullReportPdf = async () => {
   if (!activeFullReport) throw new Error("Нет данных для PDF");
   const { formattedDate, matrixData, karmicPrograms, karmicTails } = activeFullReport;
   const matrixSvg = diagram.querySelector("svg")?.outerHTML || "";
+  const matrixPdfSvg = matrixSvg.replace(/<svg([^>]*)>/, `<svg$1><style>
+    .matrix-frame polygon,.matrix-frame rect,.matrix-frame circle{fill:none;stroke:#8F8171;stroke-width:2}
+    .matrix-axis{fill:none;stroke-width:2}
+    .matrix-axis--neutral{stroke:#8F8171}.matrix-axis--blue{stroke:#5A79B7}.matrix-axis--rose{stroke:#C67883}
+    .matrix-node circle{fill:#FFFDF8;stroke:#2B2730;stroke-width:2}
+    .matrix-node--major circle{stroke-width:3}.matrix-node--violet circle{fill:#E6D7EE;stroke:#7D4D97}
+    .matrix-node--rose circle{fill:#F4D3D9;stroke:#B75C70}.matrix-node--blue circle{fill:#D8E5FA;stroke:#4779B8}
+    .matrix-node--sky circle{fill:#D9F0F4;stroke:#55AFC3}.matrix-node--green circle{fill:#DDEEDB;stroke:#70A968}
+    .matrix-node--gold circle{fill:#F4E2AC;stroke:#B58A38}.matrix-node--center circle{fill:#F5D875;stroke:#C49A2F;stroke-width:3}
+    .matrix-node text{font-family:Roboto,Arial,sans-serif;font-size:18px;text-anchor:middle;dominant-baseline:middle;fill:#1D3654}
+    .matrix-node--major text{font-size:24px;font-weight:700}.matrix-node--center text{font-size:27px;font-weight:700}
+  </style>`);
   const definitions = buildFullReportSections(matrixData);
   const [pdfMake, records] = await Promise.all([
     getPdfMake(),
@@ -318,12 +330,12 @@ const buildFullReportPdf = async () => {
         { text: "КАРМИЧЕСКАЯ НУМЕРОЛОГИЯ", style: "coverKicker" },
         { text: "Полный\nразбор", style: "coverTitle", alignment: "center" },
         { text: `Дата рождения · ${formattedDate}`, style: "coverDate", alignment: "center" },
-        ...(matrixSvg ? [{ svg: matrixSvg, width: 285, height: 285, alignment: "center", margin: [0, 18, 0, 8] }] : []),
         { text: "Ваши ключевые энергии, деньги, отношения, ресурс и кармические задачи.", style: "coverCopy", alignment: "center" }
       ],
       margin: [0, 168, 0, 0],
       pageBreak: "after"
     },
+    ...(matrixPdfSvg ? [{ svg: matrixPdfSvg, width: 455, height: 455, alignment: "center", margin: [0, 12, 0, 12], pageBreak: "after" }] : []),
     { text: "ВАША ЛИЧНАЯ КАРТА", style: "eyebrow" },
     { text: "Ключевые точки", style: "chapter" },
     { text: "Эти цифры становятся основой для всех разделов ниже.", style: "chapterLead" },
