@@ -316,9 +316,10 @@ const buildFullReportPdf = async () => {
     {
       stack: [
         { text: "КАРМИЧЕСКАЯ НУМЕРОЛОГИЯ", style: "coverKicker" },
-        { text: "Полный\nразбор", style: "coverTitle" },
-        { text: `Дата рождения · ${formattedDate}`, style: "coverDate" },
-        { text: "Ваши ключевые энергии, деньги, отношения, ресурс и кармические задачи.", style: "coverCopy" }
+        { text: "Полный\nразбор", style: "coverTitle", alignment: "center" },
+        { text: `Дата рождения · ${formattedDate}`, style: "coverDate", alignment: "center" },
+        ...(matrixSvg ? [{ svg: matrixSvg, width: 285, height: 285, alignment: "center", margin: [0, 18, 0, 8] }] : []),
+        { text: "Ваши ключевые энергии, деньги, отношения, ресурс и кармические задачи.", style: "coverCopy", alignment: "center" }
       ],
       margin: [0, 168, 0, 0],
       pageBreak: "after"
