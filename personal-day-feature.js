@@ -1,5 +1,4 @@
 import { parseBirthDate } from "./numerology-core.js?v=1";
-import texts from "./personal-day-data-lite.js?v=1";
 import { getPersonalMonthLink } from "./personal-month-links.js?v=1";
 
 const reduce22 = (value) => {
@@ -31,8 +30,14 @@ const loadPersonalDay = async (birth, date = new Date()) => {
     const advice = practical?.entries?.[String(calendarDay)] || {};
     if (entry?.text) return { energy: day, calendarDay, text: entry.text, todayNeed: advice.todayNeed || [], todayAvoid: advice.todayAvoid || [] };
   } catch {}
-  const fallback = texts[day] || texts[1];
-  return { energy: day, calendarDay, text: fallback.main?.[0] || fallback.openings?.[0] || "Ваш личный текст дня готовится." };
+  return {
+    energy: day,
+    calendarDay,
+    text: "Не удалось загрузить текст дня. Обновите страницу и попробуйте ещё раз.",
+    todayNeed: [],
+    todayAvoid: [],
+    loadError: true
+  };
 };
 
 const esc = (value = "") => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
