@@ -74,11 +74,26 @@ const buildDocument = ({ formattedDate, matrixData, karmicPrograms, karmicTails 
     info: { title: `Полный разбор ${formattedDate}` },
     pageSize: "A4",
     pageMargins: [68, 92, 68, 86],
-    background: (page) => ({
-      stack: [
-        { text: "9   9   6   6", color: "#E8DCC4", fontSize: 18, alignment: "right", margin: [0, 20, 34, 0] },
-        { canvas: [{ type: "rect", x: 20, y: 20, w: 555, h: 802, lineColor: "#C8A45D", lineWidth: 0.65 }] }
-      ]
+    background: () => ({
+      svg: `
+        <svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842">
+          <rect width="595" height="842" fill="#FBF7EE"/>
+          <rect x="18" y="18" width="559" height="806" rx="2" fill="none" stroke="#C8A45D" stroke-width="0.8"/>
+          <g fill="#C8A45D" opacity="0.13" font-family="Georgia, serif" text-anchor="middle">
+            <text x="74" y="106" font-size="72">9</text><text x="148" y="76" font-size="34">6</text><text x="218" y="118" font-size="26">✦</text>
+            <text x="505" y="112" font-size="70">6</text><text x="444" y="78" font-size="32">9</text><text x="382" y="122" font-size="24">✦</text>
+            <text x="64" y="430" font-size="30">✦</text><text x="92" y="510" font-size="46">6</text><text x="62" y="594" font-size="24">9</text>
+            <text x="530" y="428" font-size="30">✦</text><text x="500" y="512" font-size="48">9</text><text x="532" y="596" font-size="24">6</text>
+            <text x="92" y="770" font-size="66">6</text><text x="168" y="802" font-size="30">9</text><text x="238" y="766" font-size="24">✦</text>
+            <text x="505" y="770" font-size="68">9</text><text x="430" y="802" font-size="30">6</text><text x="360" y="766" font-size="24">✦</text>
+          </g>
+          <g fill="#B49354" opacity="0.08" font-family="Georgia, serif" font-size="18" text-anchor="middle">
+            <text x="297" y="54">9 · 9 · 6 · 6 · 9 · 9</text>
+            <text x="297" y="816">6 · 6 · 9 · 9 · 6 · 6</text>
+            <text x="31" y="330" transform="rotate(-90 31 330)">9 · 6 · 9 · 6 · 9</text>
+            <text x="564" y="520" transform="rotate(90 564 520)">6 · 9 · 6 · 9 · 6</text>
+          </g>
+        </svg>`
     }),
     defaultStyle: { font: "Roboto", fontSize: 24, color: "#142C43", lineHeight: 1.52 },
     styles: {
