@@ -299,22 +299,74 @@ const fullReportPdfFrame = () => `
     </g>
   </svg>`;
 
+const buildPdfMatrixSvg = (data) => {
+  const { corners, diagonals } = data;
+  const palettes = {
+    plain: { fill: "#FFFDF8", stroke: "#2B2730" },
+    violet: { fill: "#E6D7EE", stroke: "#7D4D97" },
+    rose: { fill: "#F4D3D9", stroke: "#B75C70" },
+    blue: { fill: "#D8E5FA", stroke: "#4779B8" },
+    sky: { fill: "#D9F0F4", stroke: "#55AFC3" },
+    green: { fill: "#DDEEDB", stroke: "#70A968" },
+    gold: { fill: "#F4E2AC", stroke: "#B58A38" },
+    center: { fill: "#F5D875", stroke: "#C49A2F" }
+  };
+  const pdfNode = (x, y, value, type = "plain", size = "small") => {
+    const palette = palettes[type];
+    const radius = size === "major" ? 29 : size === "center" ? 34 : size === "medium" ? 22 : 18;
+    const strokeWidth = size === "major" || size === "center" ? 3 : 2;
+    const fontSize = size === "center" ? 27 : size === "major" ? 24 : 18;
+    const weight = size === "major" || size === "center" ? 700 : 400;
+    return `<g><circle cx="${x}" cy="${y}" r="${radius}" fill="${palette.fill}" stroke="${palette.stroke}" stroke-width="${strokeWidth}"/><text x="${x}" y="${y + 6}" fill="#1D3654" font-family="Roboto, Arial, sans-serif" font-size="${fontSize}" font-weight="${weight}" text-anchor="middle">${value}</text></g>`;
+  };
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 620">
+      <g fill="none" stroke="#8F8171" stroke-width="2">
+        <polygon points="310,34 506,114 586,310 506,506 310,586 114,506 34,310 114,114"/>
+        <rect x="114" y="114" width="392" height="392"/>
+        <polygon points="310,34 586,310 310,586 34,310"/>
+        <polygon points="310,104 516,310 310,516 104,310"/>
+        <circle cx="310" cy="310" r="156"/>
+        <line x1="310" y1="68" x2="310" y2="552"/>
+        <line x1="68" y1="310" x2="552" y2="310"/>
+        <line x1="142" y1="478" x2="478" y2="142" stroke="#5A79B7"/>
+        <line x1="142" y1="142" x2="478" y2="478" stroke="#C67883"/>
+      </g>
+      ${pdfNode(310, 52, data.top, "violet", "major")}
+      ${pdfNode(568, 310, data.right, "rose", "major")}
+      ${pdfNode(310, 568, data.bottom, "rose", "major")}
+      ${pdfNode(52, 310, data.left, "violet", "major")}
+      ${pdfNode(128, 128, corners.topLeft, "plain", "medium")}
+      ${pdfNode(492, 128, corners.topRight, "plain", "medium")}
+      ${pdfNode(492, 492, corners.bottomRight, "plain", "medium")}
+      ${pdfNode(128, 492, corners.bottomLeft, "plain", "medium")}
+      ${pdfNode(310, 108, data.topSpoke.outer, "blue")}
+      ${pdfNode(310, 158, data.topSpoke.near, "sky")}
+      ${pdfNode(310, 216, data.topSpoke.core, "green")}
+      ${pdfNode(108, 310, data.leftSpoke.outer, "blue")}
+      ${pdfNode(158, 310, data.leftSpoke.near, "sky")}
+      ${pdfNode(216, 310, data.leftSpoke.core, "green")}
+      ${pdfNode(432, 310, data.rightSpoke.outer)}
+      ${pdfNode(382, 310, data.rightSpoke.near, "gold")}
+      ${pdfNode(356, 356, data.rightSpoke.core)}
+      ${pdfNode(310, 388, data.tail.first, "gold")}
+      ${pdfNode(310, 442, data.tail.second)}
+      ${pdfNode(186, 186, diagonals.topLeft.outer)}
+      ${pdfNode(230, 230, diagonals.topLeft.near)}
+      ${pdfNode(434, 186, diagonals.topRight.outer)}
+      ${pdfNode(390, 230, diagonals.topRight.near)}
+      ${pdfNode(434, 434, diagonals.bottomRight.outer)}
+      ${pdfNode(390, 390, diagonals.bottomRight.near)}
+      ${pdfNode(186, 434, diagonals.bottomLeft.outer)}
+      ${pdfNode(230, 390, diagonals.bottomLeft.near)}
+      ${pdfNode(310, 310, data.center, "center", "center")}
+    </svg>`;
+};
+
 const buildFullReportPdf = async () => {
   if (!activeFullReport) throw new Error("Нет данных для PDF");
   const { formattedDate, matrixData, karmicPrograms, karmicTails } = activeFullReport;
-  const matrixSvg = diagram.querySelector("svg")?.outerHTML || "";
-  const matrixPdfSvg = matrixSvg.replace(/<svg([^>]*)>/, `<svg$1><style>
-    .matrix-frame polygon,.matrix-frame rect,.matrix-frame circle{fill:none;stroke:#8F8171;stroke-width:2}
-    .matrix-axis{fill:none;stroke-width:2}
-    .matrix-axis--neutral{stroke:#8F8171}.matrix-axis--blue{stroke:#5A79B7}.matrix-axis--rose{stroke:#C67883}
-    .matrix-node circle{fill:#FFFDF8;stroke:#2B2730;stroke-width:2}
-    .matrix-node--major circle{stroke-width:3}.matrix-node--violet circle{fill:#E6D7EE;stroke:#7D4D97}
-    .matrix-node--rose circle{fill:#F4D3D9;stroke:#B75C70}.matrix-node--blue circle{fill:#D8E5FA;stroke:#4779B8}
-    .matrix-node--sky circle{fill:#D9F0F4;stroke:#55AFC3}.matrix-node--green circle{fill:#DDEEDB;stroke:#70A968}
-    .matrix-node--gold circle{fill:#F4E2AC;stroke:#B58A38}.matrix-node--center circle{fill:#F5D875;stroke:#C49A2F;stroke-width:3}
-    .matrix-node text{font-family:Roboto,Arial,sans-serif;font-size:18px;text-anchor:middle;dominant-baseline:middle;fill:#1D3654}
-    .matrix-node--major text{font-size:24px;font-weight:700}.matrix-node--center text{font-size:27px;font-weight:700}
-  </style>`);
+  const matrixPdfSvg = buildPdfMatrixSvg(matrixData);
   const definitions = buildFullReportSections(matrixData);
   const [pdfMake, records] = await Promise.all([
     getPdfMake(),
@@ -335,7 +387,7 @@ const buildFullReportPdf = async () => {
       margin: [0, 168, 0, 0],
       pageBreak: "after"
     },
-    ...(matrixPdfSvg ? [{ svg: matrixPdfSvg, width: 455, height: 455, alignment: "center", margin: [0, 12, 0, 12], pageBreak: "after" }] : []),
+    { svg: matrixPdfSvg, width: 455, height: 455, alignment: "center", margin: [0, 12, 0, 12], pageBreak: "after" },
     { text: "ВАША ЛИЧНАЯ КАРТА", style: "eyebrow" },
     { text: "Ключевые точки", style: "chapter" },
     { text: "Эти цифры становятся основой для всех разделов ниже.", style: "chapterLead" },
