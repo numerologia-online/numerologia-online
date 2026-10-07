@@ -328,15 +328,29 @@ const imageAsDataUrl = async (source) => {
 };
 
 let pdfTemplatesLoading;
-const getPdfTemplates = () => {
-  if (!pdfTemplatesLoading) {
-    pdfTemplatesLoading = Promise.all([
-      imageAsDataUrl("assets/year-report-cover.jpg"),
-      imageAsDataUrl("assets/year-report-inner.jpg")
-    ]).then(([cover, inner]) => ({ cover, inner }));
-  }
-  return pdfTemplatesLoading;
-};
+const getPdfTemplates = () => Promise.resolve({});
+
+const yearReportFrame = () => ({ svg: \`<svg xmlns="http://www.w3.org/2000/svg" width="595.28" height="841.89" viewBox="0 0 595.28 841.89">
+  <rect width="595.28" height="841.89" fill="#F7FAFC"/>
+  <rect x="18" y="18" width="559.28" height="805.89" rx="2" fill="none" stroke="#C8A45D" stroke-width="1"/>
+  <g fill="#B9CDE1" opacity=".22" font-family="Arial" font-weight="700">
+    <text x="45" y="110" font-size="82">9</text><text x="486" y="118" font-size="92">6</text>
+    <text x="66" y="730" font-size="78">6</text><text x="478" y="744" font-size="84">9</text>
+    <text x="228" y="54" font-size="18" letter-spacing="8">9 · 9 · 6 · 6</text>
+    <text x="224" y="806" font-size="18" letter-spacing="8">9 · 9 · 6 · 6</text>
+    <text x="35" y="430" font-size="22" letter-spacing="6">9 6 9 6</text>
+    <text x="450" y="430" font-size="22" letter-spacing="6">6 9 6 9</text>
+  </g>
+</svg>\` });
+
+const yearReportTitle = (text) => ({ svg: \`<svg xmlns="http://www.w3.org/2000/svg" width="440" height="132" viewBox="0 0 440 132">
+  <g font-family="Arial, sans-serif" font-weight="700" text-anchor="middle">
+    <text x="220" y="60" font-size="48" fill="#C9A76A" opacity=".38" transform="translate(4 5)">${text}</text>
+    <text x="220" y="60" font-size="48" fill="#5B3E74">${text}</text>
+    <text x="220" y="112" font-size="48" fill="#C9A76A" opacity=".38" transform="translate(4 5)">года</text>
+    <text x="220" y="112" font-size="48" fill="#5B3E74">года</text>
+  </g>
+</svg>\` });
 
 const buildPdfDocument = (templates) => {
   const reportTitle = document.querySelector("#report-title").textContent;
@@ -401,9 +415,8 @@ const buildPdfDocument = (templates) => {
     pageSize: "A4",
     // Wide inner margins keep large type safely inside the decorative frame.
     pageMargins: [72, 92, 72, 108],
-    images: { cover: templates.cover, inner: templates.inner },
-    background: (page) => ({ image: page === 1 ? "cover" : "inner", width: 595.28, height: 841.89 }),
-    defaultStyle: { font: "Roboto", fontSize: 24, color: "#142C43", lineHeight: 1.52 },
+    background: () => yearReportFrame(),
+    defaultStyle: { font: "Roboto", fontSize: 22, color: "#3E4054", lineHeight: 1.42 },
     styles: {
       coverKicker: { fontSize: 38, bold: true, color: "#1F3E5F", alignment: "center", lineHeight: 1.08 },
       coverCode: { fontSize: 24, color: "#9B7A3E", characterSpacing: 5, alignment: "center" },
@@ -425,11 +438,11 @@ const buildPdfDocument = (templates) => {
     content: [
       {
         stack: [
-          { text: "ПЕРСОНАЛЬНЫЙ ПРОГНОЗ", style: "coverKicker", margin: [0, 22, 0, 18] },
-          { text: personalCode, style: "coverCode", margin: [0, 0, 0, 34] },
-          { text: "НУМЕРОЛОГИЯ МОМЕНТА", style: "coverName", margin: [0, 0, 0, 12] },
-          { text: String(reportYearValue), style: "coverYear", margin: [0, 0, 0, 24] },
-          { text: `ЛИЧНАЯ КАРТА ГОДА ${reportYearValue}`, style: "coverSubtitle", margin: [0, 0, 0, 22] },
+          { ...yearReportTitle("Разбор"), margin: [0, 54, 0, 12] },
+          { text: personalCode, style: "coverCode", margin: [0, 0, 0, 24] },
+          { text: "ЛИЧНЫЙ ПРОГНОЗ", style: "coverName", margin: [0, 0, 0, 10] },
+          { text: String(reportYearValue), style: "coverYear", margin: [0, 0, 0, 18] },
+          { text: `ЛИЧНАЯ КАРТА ГОДА ${reportYearValue}`, style: "coverSubtitle", margin: [0, 0, 0, 18] },
           { text: `Дата рождения: ${birthInput.value}\nВ ${reportYearValue} вам исполняется: ${age} лет`, style: "coverDetails", margin: [0, 0, 0, 12] }
         ],
         pageBreak: "after"
