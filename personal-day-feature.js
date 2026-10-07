@@ -40,7 +40,8 @@ const bullets = (items = []) => items.filter(Boolean).map((text) => `<li>${esc(t
 const todayLabel = () => new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date());
 const monthTitle = (date) => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(date);
 const calendarStatus = (energy) => {
-  if ([9, 13, 16, 18].includes(energy)) return "risk";
+  if ([16, 18].includes(energy)) return "avoid";
+  if ([9, 13].includes(energy)) return "risk";
   if ([1, 3, 8, 17, 19, 21, 22].includes(energy)) return "good";
   if ([10, 20, 28].includes(energy)) return "chance";
   return "neutral";
@@ -64,7 +65,7 @@ const monthCalendar = (birth, date = new Date()) => {
     <div class="personal-month-heading"><div><p class="personal-month-kicker">Карта ближайших дней</p><h3>${esc(monthTitle(date))}</h3></div><span class="personal-month-mark">✦</span></div>
     <div class="personal-month-weekdays">${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d) => `<span>${d}</span>`).join("")}</div>
     <div class="personal-month-grid">${cells.join("")}</div>
-    <div class="personal-month-legend"><span><i class="personal-month-dot good"></i>Хороший день</span><span><i class="personal-month-dot chance"></i>Шанс</span><span><i class="personal-month-dot risk"></i>Осторожно</span><span><i class="personal-month-dot locked"></i>По подписке</span></div>
+    <div class="personal-month-legend"><span><i class="personal-month-dot good"></i>Хороший день</span><span><i class="personal-month-dot chance"></i>Очень важный шанс</span><span><i class="personal-month-dot risk"></i>Осторожно</span><span><i class="personal-month-dot avoid"></i>Не делайте этого</span><span><i class="personal-month-dot locked"></i>По подписке</span></div>
     <button type="button" class="personal-month-open">Открыть разбор месяца <span>→</span></button>
   </section>`;
 };
