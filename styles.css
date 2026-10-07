@@ -246,3 +246,23 @@ section.personal-day-main .personal-day-label{display:block;margin:0 0 18px;colo
   .personal-month-day-card{width:100%!important;max-width:none!important;break-inside:avoid}
   .personal-month-day-card[open] .personal-month-day-content{display:block!important}
 }
+
+
+/* Точка идёт рядом с названием категории, а не отдельной строкой */
+.personal-month-summary .personal-month-summary-line{
+  display:grid;
+  grid-template-columns:24px minmax(0,1fr);
+  align-items:start;
+}
+.personal-month-summary .personal-month-summary-line > i{
+  position:static;
+  display:block;
+  grid-column:1;
+  grid-row:1 / span 2;
+  margin-top:2px;
+}
+.personal-month-summary .personal-month-summary-line > span{
+  display:block;
+  grid-column:2;
+  grid-row:1;
+}
