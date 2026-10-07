@@ -139,20 +139,23 @@ export const openPersonalDay = () => {
         const now = new Date();
         const total = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         const monthName = new Intl.DateTimeFormat("ru-RU", { month: "long" }).format(now);
+        const marked = monthMarkedDays(birth, now);
+        const dateLines = (statuses) => [...marked.values()].filter(({ info }) => statuses.includes(info.status)).map(({ day, info }) => "<span><strong>" + day + " " + monthName + "</strong> " + esc(info.label) + ".</span>").join("");
+        const summary = "<section class=\"personal-month-summary personal-month-summary-good\"><h4>Лучшие дни месяца</h4><div>" + dateLines(["good"]) + "</div></section>" +
+          "<section class=\"personal-month-summary personal-month-summary-avoid\"><h4>Дни риска</h4><div>" + dateLines(["avoid"]) + "</div></section>" +
+          "<section class=\"personal-month-summary personal-month-summary-risk\"><h4>Осторожно</h4><div>" + dateLines(["risk"]) + "</div></section>" +
+          "<section class=\"personal-month-summary personal-month-summary-chance\"><h4>Важные шансы</h4><div>" + dateLines(["chance"]) + "</div></section>";
+        monthList.innerHTML = summary + '<p class="personal-month-loading">Загружаю тексты дней…</p>';
+        requestAnimationFrame(() => {
+          const target = Math.max(0, monthDetails.getBoundingClientRect().top + window.scrollY - 12);
+          window.scrollTo({ top: target, behavior: "smooth" });
+        });
         const days = await Promise.all(Array.from({ length: total }, (_, index) => {
           const day = index + 1;
           return loadPersonalDay(birth, new Date(now.getFullYear(), now.getMonth(), day)).then((item) => ({
             day, item, info: calendarInfo(item.energy)
           }));
         }));
-        const marked = monthMarkedDays(birth, now);
-        const grouped = { good: [], avoid: [], chance: [], risk: [] };
-        marked.forEach(({ day, info }) => { if (grouped[info.status]) grouped[info.status].push(day); });
-        const dateLines = (statuses) => [...marked.values()].filter(({ info }) => statuses.includes(info.status)).map(({ day, info }) => "<span><strong>" + day + " " + monthName + "</strong> " + esc(info.label) + ".</span>").join("");
-        const summary = "<section class=\"personal-month-summary personal-month-summary-good\"><h4>Лучшие дни месяца</h4><div>" + dateLines(["good"]) + "</div></section>" +
-          "<section class=\"personal-month-summary personal-month-summary-avoid\"><h4>Дни риска</h4><div>" + dateLines(["avoid"]) + "</div></section>" +
-          "<section class=\"personal-month-summary personal-month-summary-risk\"><h4>Осторожно</h4><div>" + dateLines(["risk"]) + "</div></section>" +
-          "<section class=\"personal-month-summary personal-month-summary-chance\"><h4>Важные шансы</h4><div>" + dateLines(["chance"]) + "</div></section>";
         const cards = days.map(({ day, item }) => {
           const info = marked.get(day)?.info || { status: "neutral", label: "Обычный день" };
           return `
