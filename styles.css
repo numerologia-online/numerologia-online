@@ -151,3 +151,21 @@ section.personal-day-main .personal-day-label{display:block;margin:0 0 18px;colo
 .personal-month-summary-line i{font-size:29px}
 .personal-month-summary-icon{width:56px;height:56px;flex-basis:56px;font-size:35px}
 @media(max-width:560px){.personal-day-overlay{padding:6px}.personal-day-page{width:100%;padding-left:12px;padding-right:12px}.personal-month-details{padding:10px 6px;border:0;background:transparent}.personal-month-summary{padding:20px 18px;border-radius:24px}.personal-month-summary h4{font-size:24px}.personal-month-summary-line{font-size:18px}}
+
+
+/* Компактные кнопки списка дней */
+.personal-month-detail-list{gap:9px}
+.personal-month-day-card{width:min(100%,340px);margin:0 auto;border-radius:18px;box-shadow:0 5px 14px rgba(43,65,98,.055);transition:transform .22s ease,box-shadow .22s ease}
+.personal-month-day-card summary{min-height:58px;padding:0 17px;gap:14px}
+.personal-month-day-card summary strong{font-size:18px;line-height:1.15;font-weight:850}
+.personal-month-day-card summary b{font-size:25px;line-height:1;color:#35578d;transition:transform .25s ease}
+.personal-month-day-card:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(43,65,98,.09)}
+.personal-month-day-card[open]{width:100%;max-width:640px}
+.personal-month-day-card[open] summary{min-height:58px}
+.personal-month-day-content{padding:3px 17px 17px;font-size:15px}
+@media(max-width:560px){
+  .personal-month-detail-list{gap:8px}
+  .personal-month-day-card{width:calc(100% - 12px);border-radius:17px}
+  .personal-month-day-card summary{min-height:56px;padding:0 16px}
+  .personal-month-day-card summary strong{font-size:17px}
+}
