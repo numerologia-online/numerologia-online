@@ -284,30 +284,52 @@ const fullReportPdfFrame = () => `
     <defs>
       <radialGradient id="fullPaper" cx="38%" cy="14%" r="96%">
         <stop offset="0%" stop-color="#FFFDF8"/>
-        <stop offset="66%" stop-color="#FAF6EE"/>
-        <stop offset="100%" stop-color="#F1E8D9"/>
+        <stop offset="62%" stop-color="#FAF6EE"/>
+        <stop offset="100%" stop-color="#EFE4D2"/>
+      </radialGradient>
+      <radialGradient id="fullGoldMist" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#DCBF7E" stop-opacity=".20"/>
+        <stop offset="100%" stop-color="#DCBF7E" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="fullBlueMist" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#A9C8CF" stop-opacity=".17"/>
+        <stop offset="100%" stop-color="#A9C8CF" stop-opacity="0"/>
       </radialGradient>
     </defs>
     <rect width="595" height="842" fill="url(#fullPaper)"/>
-    <rect x="18" y="18" width="559" height="806" rx="9" fill="none" stroke="#B98E46" stroke-width="0.75"/>
-    <rect x="25" y="25" width="545" height="792" rx="7" fill="none" stroke="#DCCCA9" stroke-width="0.28"/>
+    <ellipse cx="498" cy="129" rx="184" ry="176" fill="url(#fullBlueMist)"/>
+    <ellipse cx="91" cy="710" rx="168" ry="166" fill="url(#fullGoldMist)"/>
+    <rect x="18" y="18" width="559" height="806" rx="9" fill="none" stroke="#B98E46" stroke-width=".82"/>
+    <rect x="25" y="25" width="545" height="792" rx="7" fill="none" stroke="#DCCCA9" stroke-width=".34"/>
 
-    <g fill="none" stroke="#91B3C0" opacity="0.07">
-      <circle cx="74" cy="112" r="43" stroke-width=".55"/>
-      <circle cx="74" cy="112" r="29" stroke-width=".32" stroke-dasharray="2 5"/>
-      <path d="M74 58 V72 M74 152 V166 M20 112 H34 M114 112 H128" stroke-width=".45"/>
-      <polygon points="521,658 551,688 521,718 491,688" stroke-width=".4"/>
-      <circle cx="521" cy="688" r="43" stroke-width=".32"/>
+    <!-- light geometry: delicate, outside the reading column -->
+    <g fill="none" stroke="#8DAFBA" opacity=".12">
+      <circle cx="74" cy="112" r="43" stroke-width=".65"/>
+      <circle cx="74" cy="112" r="29" stroke-width=".36" stroke-dasharray="2 5"/>
+      <path d="M74 58 V72 M74 152 V166 M20 112 H34 M114 112 H128" stroke-width=".48"/>
+      <circle cx="521" cy="688" r="43" stroke-width=".48"/>
+      <polygon points="521,654 555,688 521,722 487,688" stroke-width=".45"/>
+      <circle cx="521" cy="688" r="23" stroke-width=".28" stroke-dasharray="2 6"/>
     </g>
 
-    <g fill="#B98E46" opacity=".26">
+    <!-- quiet golden corners and pearlescent dots -->
+    <g fill="none" stroke="#BA9049" stroke-width=".52" opacity=".35">
+      <path d="M37 56 H151 M444 56 H558 M37 786 H151 M444 786 H558"/>
+      <path d="M37 75 Q49 49 76 37 M558 75 Q546 49 519 37"/>
+      <path d="M37 767 Q49 793 76 805 M558 767 Q546 793 519 805"/>
+    </g>
+    <g fill="#B98E46" opacity=".30">
       <circle cx="297.5" cy="34" r="1.8"/><circle cx="288" cy="34" r=".9"/><circle cx="307" cy="34" r=".9"/>
       <circle cx="297.5" cy="808" r="1.8"/><circle cx="288" cy="808" r=".9"/><circle cx="307" cy="808" r=".9"/>
+      <circle cx="51" cy="51" r="2"/><circle cx="544" cy="51" r="2"/>
+      <circle cx="51" cy="791" r="2"/><circle cx="544" cy="791" r="2"/>
     </g>
 
-    <g fill="none" stroke="#B98E46" stroke-width=".48" opacity=".28">
-      <path d="M37 56 H151"/><path d="M444 56 H558"/>
-      <path d="M37 786 H151"/><path d="M444 786 H558"/>
+    <!-- 9966 signature, placed beyond page content and deliberately understated -->
+    <g fill="#A07837" font-family="Georgia, 'Times New Roman', serif" text-anchor="middle">
+      <text x="297.5" y="805" font-size="13" letter-spacing="5" opacity=".23">9 · 9 · 6 · 6</text>
+      <text x="37" y="466" transform="rotate(-90 37 466)" font-size="11" letter-spacing="4" opacity=".12">9 · 9 · 6 · 6</text>
+      <text x="558" y="376" transform="rotate(90 558 376)" font-size="11" letter-spacing="4" opacity=".12">9 · 9 · 6 · 6</text>
     </g>
   </svg>`;
 
