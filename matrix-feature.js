@@ -315,6 +315,29 @@ const fullReportPdfFrame = () => `
       <circle cx="521" cy="688" r="23" stroke-width=".28" stroke-dasharray="2 6"/>
     </g>
 
+    <!-- scattered large 9 / 9 / 6 / 6 watermarks; all extremely light -->
+    <g font-family="Georgia, 'Times New Roman', serif" text-anchor="middle">
+      <g fill="#C2A56E" opacity=".105">
+        <text x="81" y="139" font-size="87" transform="rotate(-11 81 139)">9</text>
+        <text x="148" y="89" font-size="43" transform="rotate(13 148 89)">9</text>
+        <text x="510" y="147" font-size="84" transform="rotate(9 510 147)">6</text>
+        <text x="446" y="91" font-size="43" transform="rotate(-12 446 91)">6</text>
+
+        <text x="80" y="757" font-size="87" transform="rotate(9 80 757)">9</text>
+        <text x="161" y="801" font-size="38" transform="rotate(-13 161 801)">6</text>
+        <text x="515" y="763" font-size="85" transform="rotate(-10 515 763)">6</text>
+        <text x="437" y="800" font-size="41" transform="rotate(11 437 800)">9</text>
+      </g>
+      <g fill="#9AB5BC" opacity=".085">
+        <text x="45" y="403" font-size="42" transform="rotate(-9 45 403)">6</text>
+        <text x="89" y="536" font-size="67" transform="rotate(8 89 536)">9</text>
+        <text x="52" y="622" font-size="35" transform="rotate(-15 52 622)">6</text>
+        <text x="553" y="418" font-size="44" transform="rotate(11 553 418)">9</text>
+        <text x="507" y="545" font-size="69" transform="rotate(-9 507 545)">6</text>
+        <text x="544" y="628" font-size="35" transform="rotate(14 544 628)">9</text>
+      </g>
+    </g>
+
     <!-- quiet golden corners and pearlescent dots -->
     <g fill="none" stroke="#BA9049" stroke-width=".52" opacity=".35">
       <path d="M37 56 H151 M444 56 H558 M37 786 H151 M444 786 H558"/>
