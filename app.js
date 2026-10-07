@@ -61,7 +61,7 @@ const openRedFlagFeature = async () => {
 };
 
 const getPersonalDayFeature = () => {
-  if (!personalDayFeatureLoading) personalDayFeatureLoading = import("./personal-day-feature.js?v=4");
+  if (!personalDayFeatureLoading) personalDayFeatureLoading = import("./personal-day-feature.js?v=5");
   return personalDayFeatureLoading;
 };
 
@@ -136,7 +136,7 @@ document.querySelectorAll("[data-open-redflag]").forEach((button) => button.addE
 }));
 
 document.querySelectorAll("[data-open-personal-day]").forEach((button) => button.addEventListener("click", () => {
-  openPersonalDayFeature().catch(() => alert("Не удалось открыть расчёт на день. Обновите страницу и попробуйте ещё раз."));
+  openPersonalDayFeature().catch(() => alert("Не удалось открыть личный расчёт дня. Обновите страницу и попробуйте ещё раз."));
 }));
 
 document.querySelectorAll("[data-open-destiny-code]").forEach((button) => button.addEventListener("click", () => {
