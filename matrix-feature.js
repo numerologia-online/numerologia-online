@@ -435,6 +435,27 @@ const buildFullReportPdf = async () => {
     }
   ];
 
+    const tail = findKarmicTail(matrixData, karmicTails);
+    const programs = findKarmicPrograms(matrixData, karmicPrograms);
+    if (tail || programs.length) {
+      content.push({ text: "КАРМИЧЕСКИЕ ПРОГРАММЫ", style: "eyebrow", margin: [0, 30, 0, 0] });
+      if (tail) {
+        content.push({ text: `Кармический хвост: ${tail.code} ${tail.title}`, style: "sectionTitle" });
+        tail.parts.forEach((part) => {
+          content.push({ text: part.title, style: "partTitle" });
+          appendPdfParagraphs(content, [part.text]);
+        });
+      }
+      programs.forEach((program) => {
+        content.push({ text: `${program.code} ${program.title}`, style: "sectionTitle" });
+        program.parts.forEach((part) => {
+          content.push({ text: part.title, style: "partTitle" });
+          appendPdfParagraphs(content, [part.text]);
+        });
+      });
+    }
+  content.push({ text: "", pageBreak: "after" });
+
   records.forEach(({ definition, source }) => {
     const paragraphs = (source?.paragraphs || []).filter(Boolean);
     content.push({
@@ -449,26 +470,6 @@ const buildFullReportPdf = async () => {
       content.push({ text: paragraph, style: paragraph.length < 90 ? "subheading" : "paragraph" });
     });
   });
-
-  const tail = findKarmicTail(matrixData, karmicTails);
-  const programs = findKarmicPrograms(matrixData, karmicPrograms);
-  if (tail || programs.length) {
-    content.push({ text: "КАРМИЧЕСКИЕ ПРОГРАММЫ", style: "eyebrow", margin: [0, 30, 0, 0] });
-    if (tail) {
-      content.push({ text: `Кармический хвост: ${tail.code} ${tail.title}`, style: "sectionTitle" });
-      tail.parts.forEach((part) => {
-        content.push({ text: part.title, style: "partTitle" });
-        appendPdfParagraphs(content, [part.text]);
-      });
-    }
-    programs.forEach((program) => {
-      content.push({ text: `${program.code} ${program.title}`, style: "sectionTitle" });
-      program.parts.forEach((part) => {
-        content.push({ text: part.title, style: "partTitle" });
-        appendPdfParagraphs(content, [part.text]);
-      });
-    });
-  }
 
   const documentDefinition = {
     pageSize: "A4",
