@@ -315,26 +315,30 @@ const fullReportPdfFrame = () => `
       <circle cx="521" cy="688" r="23" stroke-width=".28" stroke-dasharray="2 6"/>
     </g>
 
-    <!-- scattered large 9 / 9 / 6 / 6 watermarks; all extremely light -->
+    <!-- drifting gold and powder-blue digits: an irregular 9 / 9 / 6 / 6 signature -->
     <g font-family="Georgia, 'Times New Roman', serif" text-anchor="middle">
-      <g fill="#C2A56E" opacity=".105">
-        <text x="81" y="139" font-size="87" transform="rotate(-11 81 139)">9</text>
-        <text x="148" y="89" font-size="43" transform="rotate(13 148 89)">9</text>
-        <text x="510" y="147" font-size="84" transform="rotate(9 510 147)">6</text>
-        <text x="446" y="91" font-size="43" transform="rotate(-12 446 91)">6</text>
-
-        <text x="80" y="757" font-size="87" transform="rotate(9 80 757)">9</text>
-        <text x="161" y="801" font-size="38" transform="rotate(-13 161 801)">6</text>
-        <text x="515" y="763" font-size="85" transform="rotate(-10 515 763)">6</text>
-        <text x="437" y="800" font-size="41" transform="rotate(11 437 800)">9</text>
+      <g fill="#B7995C" opacity=".125">
+        <text x="81" y="153" font-size="103" transform="rotate(-14 81 153)">9</text>
+        <text x="170" y="91" font-size="35" transform="rotate(19 170 91)">6</text>
+        <text x="521" y="164" font-size="119" transform="rotate(12 521 164)">6</text>
+        <text x="448" y="86" font-size="46" transform="rotate(-21 448 86)">9</text>
+        <text x="73" y="733" font-size="96" transform="rotate(9 73 733)">6</text>
+        <text x="174" y="789" font-size="49" transform="rotate(-16 174 789)">9</text>
+        <text x="512" y="770" font-size="110" transform="rotate(-15 512 770)">9</text>
+        <text x="442" y="797" font-size="35" transform="rotate(20 442 797)">6</text>
       </g>
-      <g fill="#9AB5BC" opacity=".085">
-        <text x="45" y="403" font-size="42" transform="rotate(-9 45 403)">6</text>
-        <text x="89" y="536" font-size="67" transform="rotate(8 89 536)">9</text>
-        <text x="52" y="622" font-size="35" transform="rotate(-15 52 622)">6</text>
-        <text x="553" y="418" font-size="44" transform="rotate(11 553 418)">9</text>
-        <text x="507" y="545" font-size="69" transform="rotate(-9 507 545)">6</text>
-        <text x="544" y="628" font-size="35" transform="rotate(14 544 628)">9</text>
+      <g fill="#A6BFC1" opacity=".095">
+        <text x="48" y="333" font-size="54" transform="rotate(12 48 333)">9</text>
+        <text x="103" y="508" font-size="79" transform="rotate(-7 103 508)">6</text>
+        <text x="40" y="600" font-size="42" transform="rotate(18 40 600)">9</text>
+        <text x="547" y="386" font-size="59" transform="rotate(-12 547 386)">6</text>
+        <text x="491" y="545" font-size="93" transform="rotate(8 491 545)">9</text>
+        <text x="553" y="638" font-size="38" transform="rotate(-17 553 638)">6</text>
+      </g>
+      <!-- further-away impressions, visible only as a trace through empty space -->
+      <g fill="#B89D6B" opacity=".042">
+        <text x="279" y="181" font-size="52" transform="rotate(-17 279 181)">9</text>
+        <text x="339" y="690" font-size="68" transform="rotate(13 339 690)">6</text>
       </g>
     </g>
 
