@@ -440,12 +440,14 @@ const buildFullReportPdf = async () => {
     content.push({
       stack: [
         { text: `${definition.eyebrow.toUpperCase()} · ЭНЕРГИЯ ${definition.energy}`, style: "eyebrow" },
-        { text: source?.title || definition.title, style: "sectionTitle" },
-        ...paragraphs.slice(0, 1).map((paragraph) => ({ text: paragraph, style: "paragraph" }))
+        { text: source?.title || definition.title, style: "sectionTitle", background: "#E9DDF1" },
+        ...paragraphs.slice(0, 1).map((paragraph) => ({ text: paragraph, style: paragraph.length < 90 ? "subheading" : "paragraph" }))
       ],
       margin: [0, 28, 0, 0]
     });
-    appendPdfParagraphs(content, paragraphs.slice(1));
+    paragraphs.slice(1).forEach((paragraph) => {
+      content.push({ text: paragraph, style: paragraph.length < 90 ? "subheading" : "paragraph" });
+    });
   });
 
   const tail = findKarmicTail(matrixData, karmicTails);
@@ -478,11 +480,12 @@ const buildFullReportPdf = async () => {
     styles: {
       coverDate: { font: "Roboto", fontSize: 18, bold: true, color: "#A06A2D", margin: [0, 0, 0, 0] },
       coverAge: { font: "Roboto", fontSize: 17, color: "#1D3654", bold: true, margin: [0, 8, 0, 0] },
-      chapter: { font: "Roboto", fontSize: 38, bold: true, color: "#563b6f", margin: [0, 0, 0, 16] },
+      chapter: { font: "Roboto", fontSize: 46, bold: true, color: "#4D286B", margin: [0, 0, 0, 18] },
       chapterLead: { font: "Roboto", fontSize: 25, color: "#6d6376", lineHeight: 1.36, margin: [0, 0, 0, 28] },
-      eyebrow: { font: "Roboto", fontSize: 17, bold: true, color: "#1f777d", characterSpacing: 1.05, margin: [0, 0, 0, 12] },
-      sectionTitle: { font: "Roboto", fontSize: 32, bold: true, color: "#392846", lineHeight: 1.14, margin: [0, 0, 0, 18] },
-      partTitle: { font: "Roboto", fontSize: 25, bold: true, color: "#89602d", margin: [0, 24, 0, 11] },
+      eyebrow: { font: "Roboto", fontSize: 15, bold: true, color: "#087C82", characterSpacing: 1.05, margin: [0, 0, 0, 13] },
+      sectionTitle: { font: "Roboto", fontSize: 42, bold: true, color: "#5B2A78", lineHeight: 1.12, margin: [0, 0, 0, 20] },
+      subheading: { font: "Roboto", fontSize: 32, bold: true, color: "#8C5B20", lineHeight: 1.16, margin: [0, 18, 0, 12] },
+      partTitle: { font: "Roboto", fontSize: 34, bold: true, color: "#8C5B20", margin: [0, 26, 0, 12] },
       paragraph: { fontSize: 26, alignment: "left", lineHeight: 1.34, margin: [0, 0, 0, 22] },
       points: { margin: [0, 0, 0, 0], color: "#493f53", fontSize: 22 }
     },
