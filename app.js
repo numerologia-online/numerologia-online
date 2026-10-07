@@ -99,7 +99,7 @@ const openMoneyCodeClientLink = async () => {
 
 const syncClientLink = () => {
   if (window.location.hash === "#moy-kod-deneg") {
-    openMoneyCodeClientLink().catch(() => alert("Не удалось открыть код денег. Обновите страницу и попробуйте ещё раз."));
+    openMoneyCodeClientLink().catch(() => alert("Не удалось открыть код богатства. Обновите страницу и попробуйте ещё раз."));
   }
 };
 
