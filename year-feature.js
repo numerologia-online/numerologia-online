@@ -334,55 +334,94 @@ const getPdfTemplates = () => Promise.resolve({});
 
 const yearReportFrame = () => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842">
   <defs>
-    <radialGradient id="yearPaper" cx="50%" cy="32%" r="88%">
-      <stop offset="0%" stop-color="#F7FBFC"/>
-      <stop offset="58%" stop-color="#F9F9F4"/>
-      <stop offset="100%" stop-color="#FBF7EE"/>
+    <radialGradient id="yearPaper" cx="42%" cy="20%" r="94%">
+      <stop offset="0%" stop-color="#FFFDF8"/>
+      <stop offset="64%" stop-color="#FBFAF5"/>
+      <stop offset="100%" stop-color="#F4EFE4"/>
     </radialGradient>
   </defs>
   <rect width="595" height="842" fill="url(#yearPaper)"/>
-  <rect x="18" y="18" width="559" height="806" fill="none" stroke="#C8A45D" stroke-width="0.8"/>
-  <rect x="24" y="24" width="547" height="794" fill="none" stroke="#C8A45D" stroke-width="0.28" opacity=".52"/>
-  <g fill="#A8C4D1" opacity="0.16" font-family="Georgia, serif" text-anchor="middle">
-    <text x="72" y="108" font-size="72">9</text><text x="145" y="78" font-size="34">6</text><text x="215" y="120" font-size="25">✦</text>
-    <text x="506" y="112" font-size="70">6</text><text x="447" y="80" font-size="32">9</text><text x="380" y="122" font-size="24">✦</text>
-    <text x="64" y="430" font-size="30">✦</text><text x="92" y="512" font-size="48">6</text><text x="62" y="596" font-size="24">9</text>
-    <text x="531" y="430" font-size="30">✦</text><text x="502" y="514" font-size="48">9</text><text x="533" y="598" font-size="24">6</text>
-    <text x="92" y="770" font-size="66">6</text><text x="168" y="802" font-size="30">9</text><text x="238" y="768" font-size="24">✦</text>
-    <text x="505" y="770" font-size="68">9</text><text x="430" y="802" font-size="30">6</text><text x="360" y="768" font-size="24">✦</text>
+  <rect x="19" y="19" width="557" height="804" rx="8" fill="none" stroke="#C5A15D" stroke-width=".72"/>
+  <rect x="26" y="26" width="543" height="790" rx="7" fill="none" stroke="#DED0AD" stroke-width=".28"/>
+
+  <g fill="none" stroke="#6D8296" stroke-width=".35" opacity=".065">
+    <rect x="380" y="585" width="145" height="112" rx="5"/>
+    <path d="M400.7 585 V697 M421.4 585 V697 M442.1 585 V697 M462.8 585 V697 M483.5 585 V697 M504.2 585 V697"/>
+    <path d="M380 607.4 H525 M380 629.8 H525 M380 652.2 H525 M380 674.6 H525"/>
   </g>
-  <g fill="none" stroke="#C8A45D" stroke-width="0.7" opacity=".38">
-    <path d="M30 112 C45 74 76 48 118 34"/><path d="M30 92 C47 62 68 43 96 30"/>
-    <path d="M565 112 C550 74 519 48 477 34"/><path d="M565 92 C548 62 527 43 499 30"/>
-    <path d="M30 730 C45 768 76 794 118 808"/><path d="M565 730 C550 768 519 794 477 808"/>
+  <g fill="#6D8296" opacity=".055" font-family="Arial, sans-serif" font-size="9" text-anchor="middle">
+    <text x="390" y="579">ПН</text><text x="411" y="579">ВТ</text><text x="432" y="579">СР</text>
+    <text x="453" y="579">ЧТ</text><text x="474" y="579">ПТ</text><text x="495" y="579">СБ</text><text x="516" y="579">ВС</text>
   </g>
-  <g fill="#C8A45D" opacity=".48">
-    <circle cx="297.5" cy="30" r="2"/><circle cx="288" cy="30" r="1.3"/><circle cx="307" cy="30" r="1.3"/>
-    <circle cx="297.5" cy="812" r="2"/><circle cx="288" cy="812" r="1.3"/><circle cx="307" cy="812" r="1.3"/>
+
+  <g fill="none" stroke="#C5A15D" opacity=".20">
+    <circle cx="82" cy="112" r="42" stroke-width=".5"/>
+    <circle cx="82" cy="112" r="29" stroke-width=".3" stroke-dasharray="2 5"/>
+    <path d="M82 60 V72 M82 152 V164 M30 112 H42 M122 112 H134" stroke-width=".45"/>
+    <path d="M47 77 L55 85 M117 77 L109 85 M47 147 L55 139 M117 147 L109 139" stroke-width=".32"/>
+  </g>
+  <g fill="#C5A15D" opacity=".26">
+    <circle cx="82" cy="112" r="2.3"/>
+    <circle cx="82" cy="60" r="1.2"/><circle cx="134" cy="112" r="1.2"/>
+    <circle cx="82" cy="164" r="1.2"/><circle cx="30" cy="112" r="1.2"/>
+  </g>
+
+  <g fill="none" stroke="#C5A15D" stroke-width=".52" opacity=".34">
+    <path d="M35 52 H132"/><path d="M463 52 H560"/>
+    <path d="M35 790 H132"/><path d="M463 790 H560"/>
+  </g>
+  <g fill="#C5A15D" opacity=".42">
+    <circle cx="297.5" cy="34" r="1.7"/><circle cx="289" cy="34" r=".8"/><circle cx="306" cy="34" r=".8"/>
+    <circle cx="297.5" cy="808" r="1.7"/><circle cx="289" cy="808" r=".8"/><circle cx="306" cy="808" r=".8"/>
   </g>
 </svg>` });
 
 const yearReportCover = ({ year, birthDate, age }) => {
   const escape = (value) => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const layered = (value, y, size, color, family, weight = "normal") => {
-    const text = escape(value);
-    return `<g text-anchor="middle" font-family="${family}" font-weight="${weight}">
-      <text x="226" y="${y + 2}" font-size="${size}" fill="#B9955A" opacity="0.10">${text}</text>
-      <text x="225" y="${y + 1}" font-size="${size}" fill="#7A5A8B" opacity="0.13">${text}</text>
-      <text x="223" y="${y}" font-size="${size}" fill="${color}">${text}</text>
-    </g>`;
-  };
+  const safeYear = escape(year);
+  const safeBirth = escape(birthDate);
+  const safeAge = escape(age);
+
   return {
     svg: `<svg xmlns="http://www.w3.org/2000/svg" width="451" height="620" viewBox="0 0 451 620">
-      ${layered("Персональный", 113, 47, "#583D73", "Georgia, 'Times New Roman', serif", "normal")}
-      ${layered("разбор года", 192, 66, "#583D73", "Georgia, 'Times New Roman', serif", "normal")}
-      <path d="M93 221 H358" stroke="#C8A45D" stroke-width="0.7" opacity=".74"/>
-      <g fill="#C8A45D" opacity=".72"><circle cx="214" cy="247" r="1.5"/><circle cx="225.5" cy="247" r="2.2"/><circle cx="237" cy="247" r="1.5"/></g>
-      ${layered(year, 374, 121, "#1D3654", "Roboto, Arial, sans-serif", "normal")}
-      ${layered("ЛИЧНАЯ КАРТА ГОДА", 453, 24, "#80642F", "Roboto, Arial, sans-serif", "normal")}
-      <path d="M93 478 H358" stroke="#C8A45D" stroke-width="0.7" opacity=".74"/>
-      ${layered("Дата рождения: " + birthDate, 529, 19, "#1D3654", "Roboto, Arial, sans-serif", "normal")}
-      ${layered("В " + year + " вам исполняется: " + age + " лет", 567, 19, "#1D3654", "Roboto, Arial, sans-serif", "normal")}
+      <g text-anchor="middle">
+        <text x="225.5" y="72" font-family="Arial, sans-serif" font-size="13" letter-spacing="4" fill="#A57B33">ПЕРСОНАЛЬНЫЙ</text>
+
+        <text x="227" y="138" font-family="Georgia, 'Times New Roman', serif" font-size="51" fill="#D7C8AB" opacity=".45">РАЗБОР ГОДА</text>
+        <text x="225.5" y="136" font-family="Georgia, 'Times New Roman', serif" font-size="51" fill="#19334E">РАЗБОР ГОДА</text>
+
+        <path d="M115 167 H196 M255 167 H336" stroke="#C5A15D" stroke-width=".7"/>
+        <path d="M225.5 160 L229 167 L225.5 174 L222 167Z" fill="#C5A15D"/>
+
+        <g transform="translate(225.5 318)">
+          <circle r="121" fill="none" stroke="#C5A15D" stroke-width=".55" opacity=".48"/>
+          <circle r="101" fill="none" stroke="#B9C7D0" stroke-width=".35" stroke-dasharray="2 5" opacity=".64"/>
+          <g fill="#A57B33" opacity=".70">
+            <circle cx="0" cy="-121" r="2.2"/><circle cx="60.5" cy="-104.8" r="2.2"/>
+            <circle cx="104.8" cy="-60.5" r="2.2"/><circle cx="121" cy="0" r="2.2"/>
+            <circle cx="104.8" cy="60.5" r="2.2"/><circle cx="60.5" cy="104.8" r="2.2"/>
+            <circle cx="0" cy="121" r="2.2"/><circle cx="-60.5" cy="104.8" r="2.2"/>
+            <circle cx="-104.8" cy="60.5" r="2.2"/><circle cx="-121" cy="0" r="2.2"/>
+            <circle cx="-104.8" cy="-60.5" r="2.2"/><circle cx="-60.5" cy="-104.8" r="2.2"/>
+          </g>
+          <g font-family="Arial, sans-serif" font-size="8.5" fill="#7A8794" text-anchor="middle" opacity=".72">
+            <text x="0" y="-135">ЯНВ</text><text x="72" y="-117">ФЕВ</text>
+            <text x="120" y="-69">МАР</text><text x="138" y="3">АПР</text>
+            <text x="120" y="75">МАЙ</text><text x="72" y="123">ИЮН</text>
+            <text x="0" y="140">ИЮЛ</text><text x="-72" y="123">АВГ</text>
+            <text x="-120" y="75">СЕН</text><text x="-138" y="3">ОКТ</text>
+            <text x="-120" y="-69">НОЯ</text><text x="-72" y="-117">ДЕК</text>
+          </g>
+          <text x="2" y="23" font-family="Arial, sans-serif" font-size="77" font-weight="700" fill="#D8C49B" opacity=".44">${safeYear}</text>
+          <text x="0" y="20" font-family="Arial, sans-serif" font-size="77" font-weight="700" fill="#19334E">${safeYear}</text>
+        </g>
+
+        <text x="225.5" y="492" font-family="Georgia, 'Times New Roman', serif" font-size="21" fill="#6E5B3B">ваша личная карта времени</text>
+        <path d="M104 520 H347" stroke="#C5A15D" stroke-width=".55" opacity=".68"/>
+
+        <text x="225.5" y="556" font-family="Arial, sans-serif" font-size="17" fill="#29445C">Дата рождения · ${safeBirth}</text>
+        <text x="225.5" y="586" font-family="Arial, sans-serif" font-size="16" fill="#7B643D">В ${safeYear} году вам исполняется ${safeAge} лет</text>
+      </g>
     </svg>`
   };
 };
@@ -451,24 +490,24 @@ const buildPdfDocument = (templates) => {
     // Wide inner margins keep large type safely inside the decorative frame.
     pageMargins: [72, 92, 72, 108],
     background: () => yearReportFrame(),
-    defaultStyle: { font: "Roboto", fontSize: 22, color: "#3E4054", lineHeight: 1.42 },
+    defaultStyle: { font: "Roboto", fontSize: 19.5, color: "#33495D", lineHeight: 1.46 },
     styles: {
-      coverKicker: { fontSize: 38, bold: true, color: "#1F3E5F", alignment: "center", lineHeight: 1.08 },
-      coverCode: { fontSize: 24, color: "#9B7A3E", characterSpacing: 5, alignment: "center" },
-      coverName: { fontSize: 18, bold: true, color: "#80642F", characterSpacing: 1.8, alignment: "center" },
-      coverYear: { fontSize: 104, bold: true, color: "#1D3654", alignment: "center" },
-      coverSubtitle: { fontSize: 30, bold: true, color: "#665332", alignment: "center", lineHeight: 1.1 },
-      coverDetails: { fontSize: 20, bold: true, color: "#142C43", alignment: "center", lineHeight: 1.45 },
-      innerKicker: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 1.25, alignment: "center", margin: [0, 0, 0, 16] },
-      title: { fontSize: 36, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 18] },
-      subtitle: { fontSize: 20, color: "#334B62", alignment: "center", margin: [0, 0, 0, 28] },
-      phase: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 28, 0, 12] },
-      sectionTitle: { fontSize: 31, bold: true, color: "#5B3E74", background: "#EEE5F5", margin: [0, 8, 0, 16], padding: [10, 8, 10, 8] },
-      subsectionTitle: { fontSize: 25, bold: true, color: "#2D7480", background: "#E4F1F2", margin: [0, 24, 0, 10], padding: [8, 8, 8, 8] },
-      monthKicker: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 0, 0, 13] },
-      noteTitle: { fontSize: 22, bold: true, color: "#60431D", margin: [0, 28, 0, 10] },
-      paragraph: { fontSize: 24, bold: true, margin: [0, 0, 0, 22] },
-      monthTitle: { fontSize: 42, bold: true, color: "#5B3E74", background: "#EEE5F5", alignment: "center", margin: [0, 8, 0, 22], padding: [10, 8, 10, 8] }
+      coverKicker: { fontSize: 13, bold: true, color: "#A57B33", characterSpacing: 2.4, alignment: "center" },
+      coverCode: { fontSize: 20, color: "#A57B33", characterSpacing: 4, alignment: "center" },
+      coverName: { fontSize: 17, bold: true, color: "#6E5B3B", characterSpacing: 1.5, alignment: "center" },
+      coverYear: { fontSize: 92, bold: true, color: "#19334E", alignment: "center" },
+      coverSubtitle: { fontSize: 26, color: "#6E5B3B", alignment: "center", lineHeight: 1.14 },
+      coverDetails: { fontSize: 18, color: "#29445C", alignment: "center", lineHeight: 1.42 },
+      innerKicker: { fontSize: 12, bold: true, color: "#A57B33", characterSpacing: 1.45, alignment: "center", margin: [0, 0, 0, 15] },
+      title: { fontSize: 32, bold: true, color: "#19334E", alignment: "center", margin: [0, 0, 0, 16] },
+      subtitle: { fontSize: 18, color: "#667686", alignment: "center", lineHeight: 1.4, margin: [12, 0, 12, 26] },
+      phase: { fontSize: 12, bold: true, color: "#A57B33", characterSpacing: 0.75, margin: [0, 26, 0, 10] },
+      sectionTitle: { fontSize: 27, bold: true, color: "#19334E", margin: [0, 6, 0, 14] },
+      subsectionTitle: { fontSize: 21.5, bold: true, color: "#526D7E", margin: [0, 21, 0, 9] },
+      monthKicker: { fontSize: 12, bold: true, color: "#A57B33", characterSpacing: 0.75, margin: [0, 0, 0, 11] },
+      noteTitle: { fontSize: 19, bold: true, color: "#7A6034", margin: [0, 25, 0, 9] },
+      paragraph: { fontSize: 19.5, color: "#33495D", lineHeight: 1.46, margin: [0, 0, 0, 18] },
+      monthTitle: { fontSize: 37, bold: true, color: "#19334E", alignment: "center", margin: [0, 12, 0, 8] }
     },
     content: [
       { ...yearReportCover({ year: reportYearValue, birthDate: birthInput.value, age }), pageBreak: "after" },
