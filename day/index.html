@@ -2,16 +2,18 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <base href="../">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Личный расчёт дня</title>
-  <link rel="stylesheet" href="/numerologia-online/styles.css?v=202">
+  <link rel="stylesheet" href="/numerologia-online/styles.css?v=203">
 </head>
 <body class="personal-day-only-page">
   <script type="module">
-    const feature = await import("../personal-day-feature.js?v=20");
-    feature.openPersonalDay();
-    requestAnimationFrame(() => document.querySelector(".personal-day-close")?.remove());
+    import { openPersonalDay } from "/numerologia-online/personal-day-feature.js?v=33";
+
+    openPersonalDay();
+    requestAnimationFrame(() => {
+      document.querySelector(".personal-day-close")?.remove();
+    });
   </script>
 </body>
 </html>
