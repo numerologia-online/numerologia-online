@@ -58,7 +58,7 @@ export const openPersonalDay = () => {
     submit.textContent = "Считаю ваш день…";
     const item = await loadPersonalDay(birth);
     result.hidden = false;
-    result.innerHTML = `<section class="personal-day-main"><p class="personal-day-date">ВАШ ЛИЧНЫЙ ДЕНЬ · ${item.calendarDay} ЧИСЛО</p><h3>Личный день ${item.energy}</h3>${paragraphs([item.text])}</section>`;
+    result.innerHTML = `<section class="personal-day-main"><span class="personal-day-code">${item.energy} · ${item.calendarDay}</span>${paragraphs([item.text])}</section>`;
     submit.textContent = "Рассчитать личный день";
     submit.disabled = false;
     card.scrollTop = card.scrollHeight;
