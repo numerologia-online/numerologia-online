@@ -331,14 +331,17 @@ let pdfTemplatesLoading;
 const getPdfTemplates = () => Promise.resolve({});
 
 const yearReportFrame = () => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" width="595.28" height="841.89" viewBox="0 0 595.28 841.89">
-  <rect width="595.28" height="841.89" fill="#FBF8F0"/>
+  <defs>
+    <linearGradient id="yearPaper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FCF8F0"/>
+      <stop offset="55%" stop-color="#F8F4EC"/>
+      <stop offset="100%" stop-color="#F0F5F7"/>
+    </linearGradient>
+  </defs>
+  <rect width="595.28" height="841.89" fill="url(#yearPaper)"/>
   <rect x="18" y="18" width="559.28" height="805.89" rx="2" fill="none" stroke="#C8A45D" stroke-width="1"/>
-  <g fill="#D7C9AA" opacity=".24" font-family="Arial" font-weight="700">
-    <text x="45" y="110" font-size="82">9</text><text x="486" y="118" font-size="92">6</text>
-    <text x="66" y="730" font-size="78">6</text><text x="478" y="744" font-size="84">9</text>
-    <text x="228" y="54" font-size="18" letter-spacing="8">9 · 9 · 6 · 6</text>
-    <text x="224" y="806" font-size="18" letter-spacing="8">9 · 9 · 6 · 6</text>
-  </g>
+  <path d="M44 126 C134 76 220 76 300 118" fill="none" stroke="#DCCBA9" stroke-width="1" opacity=".42"/>
+  <path d="M296 752 C392 706 472 712 548 760" fill="none" stroke="#C8D9DE" stroke-width="1" opacity=".48"/>
 </svg>` });
 
 const yearReportTitle = (text) => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="180" viewBox="0 0 500 180">
@@ -350,23 +353,25 @@ const yearReportTitle = (text) => ({ svg: `<svg xmlns="http://www.w3.org/2000/sv
   </g>
 </svg>` });
 
-const yearReportCover = ({ code, year, birthDate, age }) => {
+const yearReportCover = ({ year, birthDate, age }) => {
   const svgText = (value) => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const layer = (value, x, y, size, color, weight = "700") => (
-    '<g font-family="Arial, sans-serif" font-weight="' + weight + '" text-anchor="middle">' +
-      '<text x="' + x + '" y="' + y + '" font-size="' + size + '" fill="#B99C68" opacity=".10" transform="translate(1 1)">' + svgText(value) + '</text>' +
-      '<text x="' + x + '" y="' + y + '" font-size="' + size + '" fill="#B99C68" opacity=".08" transform="translate(2 2)">' + svgText(value) + '</text>' +
+  const depth = (value, x, y, size, color, anchor = "start", family = "Georgia, serif", weight = "700") => (
+    '<g font-family="' + family + '" font-weight="' + weight + '" text-anchor="' + anchor + '">' +
+      '<text x="' + x + '" y="' + y + '" font-size="' + size + '" fill="#C3A570" opacity=".15" transform="translate(1.5 2)">' + svgText(value) + '</text>' +
+      '<text x="' + x + '" y="' + y + '" font-size="' + size + '" fill="#8B6D9B" opacity=".08" transform="translate(3 4)">' + svgText(value) + '</text>' +
       '<text x="' + x + '" y="' + y + '" font-size="' + size + '" fill="' + color + '">' + svgText(value) + '</text>' +
     '</g>'
   );
   return { svg: '<svg xmlns="http://www.w3.org/2000/svg" width="451" height="620" viewBox="0 0 451 620">' +
-    layer("Разбор", 225, 104, 76, "#583D73") +
-    layer("года", 225, 190, 76, "#583D73") +
-    layer(code, 225, 238, 25, "#9D772F", "500") +
-    layer(year, 225, 356, 112, "#203E61") +
-    layer("ЛИЧНАЯ КАРТА ГОДА", 225, 430, 31, "#7A5C28") +
-    layer("Дата рождения: " + birthDate, 225, 480, 22, "#203E61") +
-    layer("В " + year + " вам исполняется: " + age + " лет", 225, 522, 22, "#203E61") +
+    '<path d="M0 270 C114 236 282 232 451 278" fill="none" stroke="#D5C29A" stroke-width="1" opacity=".65"/>' +
+    '<path d="M25 52 C130 16 270 17 420 62" fill="none" stroke="#E0D6C0" stroke-width="1" opacity=".8"/>' +
+    depth("Разбор", 22, 140, 82, "#583D73") +
+    depth("года", 22, 232, 82, "#583D73") +
+    depth(year, 226, 414, 134, "#213F62", "middle", "Arial, sans-serif") +
+    depth("ЛИЧНАЯ КАРТА ГОДА", 23, 482, 28, "#86642B", "start", "Arial, sans-serif") +
+    '<line x1="24" y1="505" x2="427" y2="505" stroke="#D1B57F" stroke-width="1"/>' +
+    depth("Дата рождения: " + birthDate, 23, 548, 20, "#203E61", "start", "Arial, sans-serif", "600") +
+    depth("В " + year + " вам исполняется: " + age + " лет", 23, 588, 20, "#203E61", "start", "Arial, sans-serif", "600") +
   '</svg>' };
 };
 
@@ -454,7 +459,7 @@ const buildPdfDocument = (templates) => {
       monthTitle: { fontSize: 42, bold: true, color: "#5B3E74", background: "#EEE5F5", alignment: "center", margin: [0, 8, 0, 22], padding: [10, 8, 10, 8] }
     },
     content: [
-      { ...yearReportCover({ code: personalCode, year: reportYearValue, birthDate: birthInput.value, age }), pageBreak: "after" },
+      { ...yearReportCover({ year: reportYearValue, birthDate: birthInput.value, age }), pageBreak: "after" },
       { text: reportPeriod, style: "innerKicker" },
       { text: reportCopy, style: "subtitle" },
       ...phases,
