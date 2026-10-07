@@ -168,7 +168,10 @@ export const openPersonalDay = () => {
         }).join("");
         monthList.innerHTML = summary + `<h4 class="personal-month-all-title">Все дни месяца</h4>` + cards;
         monthList.dataset.ready = "1";
-        monthDetails.scrollIntoView({ behavior: "smooth", block: "start" });
+        requestAnimationFrame(() => {
+          const target = Math.max(0, monthDetails.getBoundingClientRect().top + window.scrollY - 12);
+          window.scrollTo({ top: target, behavior: "smooth" });
+        });
       }
     });
     result.querySelectorAll("[data-month-day]:not(.personal-month-locked)").forEach((button) => button.addEventListener("click", () => {
