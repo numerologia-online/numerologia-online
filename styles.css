@@ -169,3 +169,28 @@ section.personal-day-main .personal-day-label{display:block;margin:0 0 18px;colo
   .personal-month-day-card summary{min-height:56px;padding:0 16px}
   .personal-month-day-card summary strong{font-size:17px}
 }
+
+
+/* Карточки «Сегодня нужно / нельзя»: заголовок выше, пункты с воздухом */
+.personal-day-main .personal-day-advice{
+  margin-top:34px;
+  padding:22px 24px 28px;
+}
+.personal-day-main .personal-day-advice h4{
+  margin:0 0 34px !important;
+  text-align:center;
+}
+.personal-day-main .personal-day-advice ul{
+  margin:0;
+  padding-left:27px;
+  display:grid;
+  gap:21px;
+}
+.personal-day-main .personal-day-advice li{
+  margin:0 !important;
+}
+@media(max-width:560px){
+  .personal-day-main .personal-day-advice{padding:20px 22px 26px}
+  .personal-day-main .personal-day-advice h4{margin-bottom:31px !important}
+  .personal-day-main .personal-day-advice ul{gap:19px}
+}
