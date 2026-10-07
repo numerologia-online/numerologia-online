@@ -90,7 +90,7 @@
 @media(prefers-reduced-motion:reduce){.personal-day-submit:active{transform:none}}
 
 /* Personal day: compact reading surface */
-.personal-day-overlay{padding:8px;background:#eef2f6;backdrop-filter:none;-webkit-backdrop-filter:none}
+.personal-day-overlay{padding:8px;background:#eef2f6;backdrop-filter:none;-webkit-backdrop-filter:none;place-items:start center;align-content:start}
 .personal-day-page{width:min(100%,700px);max-height:calc(100dvh - 16px);padding:26px 24px 24px;border-radius:30px;background:radial-gradient(circle at 0 0,rgba(226,233,245,.82),transparent 48%),radial-gradient(circle at 100% 100%,rgba(246,226,231,.48),transparent 46%),linear-gradient(145deg,#fffdfa,#f6f4f3);box-shadow:0 24px 64px rgba(22,30,43,.28),inset 0 1px rgba(255,255,255,.94)}
 .personal-day-page .personal-day-lead{max-width:42ch;margin:14px 0 18px;font-size:17px;line-height:1.42}
 .personal-day-general,.personal-day-form-panel,.personal-day-main{margin-top:12px;padding:18px 20px;border-radius:22px}
