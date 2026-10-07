@@ -9,7 +9,7 @@ const personalDay = ({ day, month }, date = new Date()) => {
 };
 
 const publicDay = () => reduce9(new Date().getDate());
-const loadGeneralDay = async () => {\n  const day = publicDay();\n  const calendarDay = new Date().getDate();\n  try {\n    const response = await fetch(`./data/day/general-day-${String(day).padStart(2, "0")}.json?v=1`);\n    if (!response.ok) throw new Error("day bank unavailable");\n    const bank = await response.json();\n    const entry = bank.entries?.[String(calendarDay)];\n    if (entry?.text) return { energy: day, title: `День ${day}`, openings: [entry.text] };\n  } catch {}\n  return texts[day] || texts[1];\n};
+const loadGeneralDay = async () => {\n  const day = publicDay();\n  const calendarDay = new Date().getDate();\n  try {\n    const response = await fetch(`./data/day/general/general-day-${String(day).padStart(2, "0")}.json?v=1`);\n    if (!response.ok) throw new Error("day bank unavailable");\n    const bank = await response.json();\n    const entry = bank.entries?.[String(calendarDay)];\n    if (entry?.text) return { energy: day, title: `День ${day}`, openings: [entry.text] };\n  } catch {}\n  return texts[day] || texts[1];\n};
 const esc = (value = "") => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const paragraphs = (items = []) => items.filter(Boolean).map((text) => `<p>${esc(text)}</p>`).join("");
 const todayLabel = () => new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date()).toUpperCase();
