@@ -38,6 +38,36 @@ const esc = (value = "") => String(value).replace(/&/g, "&amp;").replace(/</g, "
 const paragraphs = (items = []) => items.filter(Boolean).map((text) => `<p>${esc(text)}</p>`).join("");
 const bullets = (items = []) => items.filter(Boolean).map((text) => `<li>${esc(text)}</li>`).join("");
 const todayLabel = () => new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date());
+const monthTitle = (date) => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(date);
+const calendarStatus = (energy) => {
+  if ([9, 13, 16, 18].includes(energy)) return "risk";
+  if ([1, 3, 8, 17, 19, 21, 22].includes(energy)) return "good";
+  if ([10, 20, 28].includes(energy)) return "chance";
+  return "neutral";
+};
+const monthCalendar = (birth, date = new Date()) => {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const total = new Date(year, month + 1, 0).getDate();
+  const first = new Date(year, month, 1).getDay();
+  const offset = (first + 6) % 7;
+  const openUntil = Math.ceil(total / 2);
+  const cells = [];
+  for (let i = 0; i < offset; i += 1) cells.push('<span class="personal-month-empty"></span>');
+  for (let day = 1; day <= total; day += 1) {
+    const current = new Date(year, month, day);
+    const energy = personalDay(birth, current);
+    const locked = day > openUntil;
+    cells.push(`<button type="button" class="personal-month-day personal-month-${locked ? "locked" : calendarStatus(energy)}" data-month-day="${day}" ${locked ? "aria-label=\"День закрыт до подписки\"" : `aria-label="День ${day}, личный день ${energy}"`}>${day}${locked ? '<span class="personal-month-lock">•</span>' : ""}</button>`);
+  }
+  return `<section class="personal-month-preview">
+    <div class="personal-month-heading"><div><p class="personal-month-kicker">Карта ближайших дней</p><h3>${esc(monthTitle(date))}</h3></div><span class="personal-month-mark">✦</span></div>
+    <div class="personal-month-weekdays">${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d) => `<span>${d}</span>`).join("")}</div>
+    <div class="personal-month-grid">${cells.join("")}</div>
+    <div class="personal-month-legend"><span><i class="personal-month-dot good"></i>Хороший день</span><span><i class="personal-month-dot chance"></i>Шанс</span><span><i class="personal-month-dot risk"></i>Осторожно</span><span><i class="personal-month-dot locked"></i>По подписке</span></div>
+    <button type="button" class="personal-month-open">Открыть разбор месяца <span>→</span></button>
+  </section>`;
+};
 
 export const openPersonalDay = () => {
   const shell = document.createElement("section");
@@ -66,6 +96,12 @@ export const openPersonalDay = () => {
     const item = await loadPersonalDay(birth);
     result.hidden = false;
     result.innerHTML = `<section class="personal-day-main"><span class="personal-day-code">${item.energy} · ${item.calendarDay}</span><p class="personal-day-label">ВАШ ДЕНЬ</p>${paragraphs([item.text])}${item.todayNeed?.length ? `<section class="personal-day-advice personal-day-need"><h4><span class="personal-day-advice-icon">✓</span> Сегодня нужно</h4><ul>${bullets(item.todayNeed)}</ul></section>` : ""}${item.todayAvoid?.length ? `<section class="personal-day-advice personal-day-avoid"><h4><span class="personal-day-advice-icon">×</span> Сегодня нельзя</h4><ul>${bullets(item.todayAvoid)}</ul></section>` : ""}</section>`;
+    result.insertAdjacentHTML("beforeend", monthCalendar(birth));
+    result.querySelector(".personal-month-open")?.addEventListener("click", () => alert("Разбор месяца скоро будет доступен по подписке."));
+    result.querySelectorAll("[data-month-day]:not(.personal-month-locked)").forEach((button) => button.addEventListener("click", () => {
+      const chosen = new Date(new Date().getFullYear(), new Date().getMonth(), Number(button.dataset.monthDay));
+      alert(`Личный день ${personalDay(birth, chosen)} уже рассчитан в вашем календаре.`);
+    }));
     submit.textContent = "Рассчитать личный день";
     submit.disabled = false;
   };
