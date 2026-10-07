@@ -148,12 +148,11 @@ export const openPersonalDay = () => {
         const marked = monthMarkedDays(birth, now);
         const grouped = { good: [], avoid: [], chance: [], risk: [] };
         marked.forEach(({ day, info }) => { if (grouped[info.status]) grouped[info.status].push(day); });
-        const dateWord = (days) => days.map((day) => `${day} ${monthName}`).join(", ");
-        const summary = `
-          <section class="personal-month-summary personal-month-summary-good"><h4>Сегодня можно</h4><p>${esc(dateWord(grouped.good))}</p><small>Деньги, действия, разговоры, документы и встречи. Эти даты лучше использовать по назначению.</small></section>
-          <section class="personal-month-summary personal-month-summary-avoid"><h4>Сегодня нельзя</h4><p>${esc(dateWord(grouped.avoid))}</p><small>Не делайте резких шагов, не тратьте на эмоциях и не принимайте решения, о которых потом придётся жалеть.</small></section>
-          <section class="personal-month-summary personal-month-summary-risk"><h4>Осторожно</h4><p>${esc(dateWord(grouped.risk))}</p><small>Риск конфликтов, резких реакций и возвращения к старым проблемам. Сначала успокойтесь, потом действуйте.</small></section>
-          <section class="personal-month-summary personal-month-summary-chance"><h4>Важные шансы</h4><p>${esc(dateWord(grouped.chance))}</p><small>Даты для удовольствия, восстановления, неожиданной помощи и полезных подсказок.</small></section>`;
+        const dateLines = (statuses) => [...marked.values()].filter(({ info }) => statuses.includes(info.status)).map(({ day, info }) => "<span><strong>" + day + " " + monthName + "</strong> " + esc(info.label) + ".</span>").join("");
+        const summary = "<section class=\"personal-month-summary personal-month-summary-good\"><h4>Лучшие дни месяца</h4><div>" + dateLines(["good"]) + "</div></section>" +
+          "<section class=\"personal-month-summary personal-month-summary-avoid\"><h4>Дни риска</h4><div>" + dateLines(["avoid"]) + "</div></section>" +
+          "<section class=\"personal-month-summary personal-month-summary-risk\"><h4>Осторожно</h4><div>" + dateLines(["risk"]) + "</div></section>" +
+          "<section class=\"personal-month-summary personal-month-summary-chance\"><h4>Важные шансы</h4><div>" + dateLines(["chance"]) + "</div></section>";
         const cards = days.map(({ day, item }) => {
           const info = marked.get(day)?.info || { status: "neutral", label: "Обычный день" };
           return `
