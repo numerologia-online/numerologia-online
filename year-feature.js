@@ -330,50 +330,48 @@ const imageAsDataUrl = async (source) => {
 let pdfTemplatesLoading;
 const getPdfTemplates = () => Promise.resolve({});
 
-const yearReportFrame = () => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" width="595.28" height="841.89" viewBox="0 0 595.28 841.89">
+const yearReportFrame = () => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842">
   <defs>
     <linearGradient id="yearPaper" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#FCF8F0"/>
-      <stop offset="55%" stop-color="#F8F4EC"/>
-      <stop offset="100%" stop-color="#F0F5F7"/>
+      <stop offset="0%" stop-color="#FBF7EE"/>
+      <stop offset="68%" stop-color="#FBF7EE"/>
+      <stop offset="100%" stop-color="#F3F7F7"/>
     </linearGradient>
   </defs>
-  <rect width="595.28" height="841.89" fill="url(#yearPaper)"/>
-  <rect x="18" y="18" width="559.28" height="805.89" rx="2" fill="none" stroke="#C8A45D" stroke-width="1"/>
-  <path d="M44 126 C134 76 220 76 300 118" fill="none" stroke="#DCCBA9" stroke-width="1" opacity=".42"/>
-  <path d="M296 752 C392 706 472 712 548 760" fill="none" stroke="#C8D9DE" stroke-width="1" opacity=".48"/>
-</svg>` });
-
-const yearReportTitle = (text) => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="180" viewBox="0 0 500 180">
-  <g font-family="Arial, sans-serif" font-weight="700" text-anchor="middle">
-    <text x="250" y="78" font-size="68" fill="#C9A76A" opacity=".16" transform="translate(2 2)">${text}</text>
-    <text x="250" y="78" font-size="68" fill="#5B3E74">${text}</text>
-    <text x="250" y="154" font-size="68" fill="#C9A76A" opacity=".16" transform="translate(2 2)">года</text>
-    <text x="250" y="154" font-size="68" fill="#5B3E74">года</text>
+  <rect width="595" height="842" fill="url(#yearPaper)"/>
+  <rect x="18" y="18" width="559" height="806" fill="none" stroke="#C8A45D" stroke-width="0.8"/>
+  <g fill="#C8A45D" opacity="0.14" font-family="Georgia, serif" text-anchor="middle">
+    <text x="72" y="108" font-size="72">9</text><text x="145" y="78" font-size="34">6</text><text x="215" y="120" font-size="25">✦</text>
+    <text x="506" y="112" font-size="70">6</text><text x="447" y="80" font-size="32">9</text><text x="380" y="122" font-size="24">✦</text>
+    <text x="64" y="430" font-size="30">✦</text><text x="92" y="512" font-size="48">6</text><text x="62" y="596" font-size="24">9</text>
+    <text x="531" y="430" font-size="30">✦</text><text x="502" y="514" font-size="48">9</text><text x="533" y="598" font-size="24">6</text>
+    <text x="92" y="770" font-size="66">6</text><text x="168" y="802" font-size="30">9</text><text x="238" y="768" font-size="24">✦</text>
+    <text x="505" y="770" font-size="68">9</text><text x="430" y="802" font-size="30">6</text><text x="360" y="768" font-size="24">✦</text>
   </g>
 </svg>` });
 
 const yearReportCover = ({ year, birthDate, age }) => {
-  const svgText = (value) => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const depth = (value, y, size, color, family = "Georgia, serif", weight = "700") => {
-    const text = svgText(value);
-    return '<g font-family="' + family + '" font-weight="' + weight + '" text-anchor="middle">' +
-      '<text x="225" y="' + y + '" font-size="' + size + '" fill="#B99A62" opacity=".26" transform="translate(1 1)">' + text + '</text>' +
-      '<text x="225" y="' + y + '" font-size="' + size + '" fill="#B99A62" opacity=".19" transform="translate(2 2)">' + text + '</text>' +
-      '<text x="225" y="' + y + '" font-size="' + size + '" fill="#90739E" opacity=".12" transform="translate(3 3)">' + text + '</text>' +
-      '<text x="225" y="' + y + '" font-size="' + size + '" fill="' + color + '" stroke="' + color + '" stroke-width=".35">' + text + '</text>' +
-    '</g>';
+  const escape = (value) => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const layered = (value, y, size, color, family, weight = "500") => {
+    const text = escape(value);
+    return `<g text-anchor="middle" font-family="${family}" font-weight="${weight}">
+      <text x="226" y="${y + 3}" font-size="${size}" fill="#B9955A" opacity="0.10">${text}</text>
+      <text x="225" y="${y + 1}" font-size="${size}" fill="#7A5A8B" opacity="0.16">${text}</text>
+      <text x="223" y="${y}" font-size="${size}" fill="${color}">${text}</text>
+    </g>`;
   };
-  return { svg: '<svg xmlns="http://www.w3.org/2000/svg" width="451" height="620" viewBox="0 0 451 620">' +
-    '<line x1="76" y1="270" x2="375" y2="270" stroke="#D6BD88" stroke-width="1"/>' +
-    depth("Разбор", 142, 88, "#583D73") +
-    depth("года", 242, 88, "#583D73") +
-    depth(year, 414, 136, "#213F62", "Arial, sans-serif") +
-    depth("ЛИЧНАЯ КАРТА ГОДА", 478, 30, "#86642B", "Arial, sans-serif") +
-    '<line x1="76" y1="503" x2="375" y2="503" stroke="#D6BD88" stroke-width="1"/>' +
-    depth("Дата рождения: " + birthDate, 550, 21, "#203E61", "Arial, sans-serif", "600") +
-    depth("В " + year + " вам исполняется: " + age + " лет", 592, 21, "#203E61", "Arial, sans-serif", "600") +
-  '</svg>' };
+  return {
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" width="451" height="620" viewBox="0 0 451 620">
+      ${layered("Разбор", 122, 70, "#583D73", "Georgia, 'Times New Roman', serif", "700")}
+      ${layered("года", 202, 70, "#583D73", "Georgia, 'Times New Roman', serif", "700")}
+      <line x1="90" y1="230" x2="361" y2="230" stroke="#C8A45D" stroke-width="0.7" opacity=".72"/>
+      ${layered(year, 368, 118, "#1D3654", "Roboto, Arial, sans-serif", "500")}
+      ${layered("ЛИЧНАЯ КАРТА ГОДА", 446, 25, "#80642F", "Roboto, Arial, sans-serif", "500")}
+      <line x1="90" y1="470" x2="361" y2="470" stroke="#C8A45D" stroke-width="0.7" opacity=".72"/>
+      ${layered("Дата рождения: " + birthDate, 520, 19, "#1D3654", "Roboto, Arial, sans-serif", "500")}
+      ${layered("В " + year + " вам исполняется: " + age + " лет", 558, 19, "#1D3654", "Roboto, Arial, sans-serif", "500")}
+    </svg>`
+  };
 };
 
 const buildPdfDocument = (templates) => {
