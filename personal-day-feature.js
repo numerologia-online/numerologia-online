@@ -190,7 +190,26 @@ export const openPersonalDay = () => {
         }).join("");
         monthList.innerHTML = summary + `<h4 class="personal-month-all-title">Все дни месяца</h4>` + cards + '<button type="button" class="personal-month-pdf">Сохранить в PDF</button>';
         monthList.dataset.ready = "1";
-        monthList.querySelector(".personal-month-pdf")?.addEventListener("click", () => window.print());
+        monthList.querySelector(".personal-month-pdf")?.addEventListener("click", async (event) => {
+          const button = event.currentTarget;
+          const originalLabel = button.textContent;
+          button.disabled = true;
+          button.textContent = "Готовлю красивый PDF…";
+          try {
+            const { downloadPersonalMonthPdf } = await import("./personal-month-pdf.js?v=1");
+            await downloadPersonalMonthPdf({ birth, monthDate: now, days });
+            button.textContent = "PDF готов ✓";
+          } catch (error) {
+            console.error(error);
+            button.textContent = "Не удалось собрать PDF";
+            alert("PDF пока не удалось подготовить. Проверьте подключение к интернету и попробуйте ещё раз.");
+          } finally {
+            window.setTimeout(() => {
+              button.disabled = false;
+              button.textContent = originalLabel;
+            }, 1800);
+          }
+        });
         scrollToMonthDetails();
       }
     });
