@@ -70,19 +70,12 @@ const calendarInfo = (energy) => {
 const calendarStatus = (energy) => calendarInfo(energy).status;
 const monthMarkedDays = (birth, date = new Date()) => {
   const total = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  const all = [];
+  const selected = new Map();
   for (let day = 1; day <= total; day += 1) {
     const energy = personalDay(birth, new Date(date.getFullYear(), date.getMonth(), day));
-    all.push({ day, energy, info: calendarInfo(energy) });
-  }
-  const selected = new Map();
-  const take = (status, count) => all.filter((item) => item.info.status === status).slice(0, count).forEach((item) => selected.set(item.day, item));
-  take("good", 5);
-  take("chance", 5);
-  take("risk", 5);
-  take("avoid", 5);
-  if ([...selected.values()].filter((item) => item.info.status === "risk" || item.info.status === "avoid").length < 5) {
-    all.filter((item) => !selected.has(item.day)).slice(0, 5).forEach((item) => selected.set(item.day, { ...item, info: { status: "risk", label: "Не принимайте решения на эмоциях" } }));
+    const info = calendarInfo(energy);
+    // Окрашиваем только заранее отмеченные сильные связки; остальные дни серые.
+    if (info.status !== "neutral") selected.set(day, { day, energy, info });
   }
   return selected;
 };
