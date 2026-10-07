@@ -22,7 +22,7 @@ const loadStylesheet = (href) => new Promise((resolve, reject) => {
 });
 
 const getYearFeature = () => {
-    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=15");
+    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=16");
   return yearFeatureLoading;
 };
 
