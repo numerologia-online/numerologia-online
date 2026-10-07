@@ -474,17 +474,17 @@ const buildFullReportPdf = async () => {
     info: { title: `Полный разбор ${formattedDate}` },
     background: () => ({ svg: fullReportPdfFrame() }),
     content,
-    defaultStyle: { font: "Roboto", fontSize: 14.2, color: "#493f53", lineHeight: 1.34 },
+    defaultStyle: { font: "Roboto", fontSize: 17, color: "#493f53", lineHeight: 1.38 },
     styles: {
       coverDate: { font: "Roboto", fontSize: 18, bold: true, color: "#A06A2D", margin: [0, 0, 0, 0] },
       coverAge: { font: "Roboto", fontSize: 17, color: "#1D3654", bold: true, margin: [0, 8, 0, 0] },
-      chapter: { font: "Roboto", fontSize: 30, bold: true, color: "#563b6f", margin: [0, 0, 0, 12] },
-      chapterLead: { font: "Roboto", fontSize: 15, color: "#6d6376", lineHeight: 1.4, margin: [0, 0, 0, 22] },
-      eyebrow: { font: "Roboto", fontSize: 11, bold: true, color: "#1f777d", characterSpacing: 1.05, margin: [0, 0, 0, 9] },
-      sectionTitle: { font: "Roboto", fontSize: 23, bold: true, color: "#392846", lineHeight: 1.16, margin: [0, 0, 0, 14] },
-      partTitle: { font: "Roboto", fontSize: 15, bold: true, color: "#89602d", margin: [0, 18, 0, 8] },
-      paragraph: { fontSize: 14.2, alignment: "justify", margin: [0, 0, 0, 14] },
-      points: { margin: [0, 0, 0, 0], color: "#493f53", fontSize: 13.2 }
+      chapter: { font: "Roboto", fontSize: 31, bold: true, color: "#563b6f", margin: [0, 0, 0, 14] },
+      chapterLead: { font: "Roboto", fontSize: 17, color: "#6d6376", lineHeight: 1.42, margin: [0, 0, 0, 24] },
+      eyebrow: { font: "Roboto", fontSize: 12, bold: true, color: "#1f777d", characterSpacing: 1.05, margin: [0, 0, 0, 10] },
+      sectionTitle: { font: "Roboto", fontSize: 26, bold: true, color: "#392846", lineHeight: 1.16, margin: [0, 0, 0, 16] },
+      partTitle: { font: "Roboto", fontSize: 17, bold: true, color: "#89602d", margin: [0, 20, 0, 9] },
+      paragraph: { fontSize: 17, alignment: "left", lineHeight: 1.38, margin: [0, 0, 0, 17] },
+      points: { margin: [0, 0, 0, 0], color: "#493f53", fontSize: 15.5 }
     },
     footer: (page, pages) => ({ text: `Нумерология Онлайн · ${page} / ${pages}`, alignment: "center", color: "#a089a8", fontSize: 8.5, margin: [0, 8, 0, 0] })
   };
