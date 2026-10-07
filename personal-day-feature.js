@@ -40,6 +40,18 @@ const paragraphs = (items = []) => items.filter(Boolean).map((text) => `<p>${esc
 const bullets = (items = []) => items.filter(Boolean).map((text) => `<li>${esc(text)}</li>`).join("");
 const todayLabel = () => new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date());
 const monthTitle = (date) => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(date);
+const animateScroll = (node, targetTop, duration = 980) => {
+  const startTop = node.scrollTop;
+  const distance = targetTop - startTop;
+  const startedAt = performance.now();
+  const step = (now) => {
+    const progress = Math.min(1, (now - startedAt) / duration);
+    const eased = 1 - Math.pow(1 - progress, 4);
+    node.scrollTop = startTop + distance * eased;
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+};
 const calendarInfo = (energy, calendarDay) => {
   const link = getPersonalMonthLink(energy, calendarDay);
   return link ? { ...link, label: link.group } : { status: "neutral", group: "", label: "" };
@@ -172,7 +184,7 @@ export const openPersonalDay = () => {
       const chosen = new Date(new Date().getFullYear(), new Date().getMonth(), Number(button.dataset.monthDay));
       alert(`Личный день ${personalDay(birth, chosen)} уже рассчитан в вашем календаре.`);
     }));
-    requestAnimationFrame(() => { card.scrollTo({ top: Math.max(0, result.offsetTop - 16), behavior: "smooth" }); });
+    requestAnimationFrame(() => { animateScroll(card, Math.max(0, result.offsetTop - 16)); });
     submit.textContent = "Рассчитать личный день";
     submit.disabled = false;
   };
