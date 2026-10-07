@@ -376,18 +376,24 @@ const buildFullReportPdf = async () => {
     })))
   ]);
 
+  const [day, month, year] = formattedDate.split(".").map(Number);
+  const today = new Date();
+  const age = today.getFullYear() - year - (
+    today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day) ? 1 : 0
+  );
+
   const content = [
     {
       stack: [
-        { text: "КАРМИЧЕСКАЯ НУМЕРОЛОГИЯ", style: "coverKicker" },
+        { text: "ЛИЧНЫЙ РАЗБОР", style: "coverKicker" },
         { text: "Полный\nразбор", style: "coverTitle", alignment: "center" },
         { text: `Дата рождения · ${formattedDate}`, style: "coverDate", alignment: "center" },
-        { text: "Ваши ключевые энергии, деньги, отношения, ресурс и кармические задачи.", style: "coverCopy", alignment: "center" }
+        { text: `Возраст · ${age} лет`, style: "coverAge", alignment: "center" },
+        { svg: matrixPdfSvg, width: 360, height: 360, alignment: "center", margin: [0, 18, 0, 0] }
       ],
-      margin: [0, 168, 0, 0],
+      margin: [0, 0, 0, 0],
       pageBreak: "after"
     },
-    { svg: matrixPdfSvg, width: 455, height: 455, alignment: "center", margin: [0, 12, 0, 12], pageBreak: "after" },
     { text: "ВАША ЛИЧНАЯ КАРТА", style: "eyebrow" },
     { text: "Ключевые точки", style: "chapter" },
     { text: "Эти цифры становятся основой для всех разделов ниже.", style: "chapterLead" },
@@ -461,8 +467,8 @@ const buildFullReportPdf = async () => {
     styles: {
       coverKicker: { font: "Roboto", fontSize: 10, bold: true, color: "#28787a", characterSpacing: 1.5, margin: [0, 0, 0, 22] },
       coverTitle: { font: "Roboto", fontSize: 43, bold: true, color: "#563b6f", lineHeight: 1.03 },
-      coverDate: { font: "Roboto", fontSize: 16, color: "#a0682b", margin: [0, 22, 0, 0] },
-      coverCopy: { font: "Roboto", fontSize: 14, color: "#6d6376", lineHeight: 1.4, margin: [0, 52, 0, 0] },
+      coverDate: { font: "Roboto", fontSize: 17, color: "#a0682b", margin: [0, 18, 0, 0] },
+      coverAge: { font: "Roboto", fontSize: 16, color: "#1D3654", bold: true, margin: [0, 9, 0, 0] },
       chapter: { font: "Roboto", fontSize: 27, bold: true, color: "#563b6f", margin: [0, 0, 0, 10] },
       chapterLead: { font: "Roboto", fontSize: 13, color: "#6d6376", lineHeight: 1.38, margin: [0, 0, 0, 20] },
       eyebrow: { font: "Roboto", fontSize: 9.5, bold: true, color: "#1f777d", characterSpacing: 1.05, margin: [0, 0, 0, 8] },
