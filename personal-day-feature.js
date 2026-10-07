@@ -145,16 +145,29 @@ export const openPersonalDay = () => {
             day, item, info: calendarInfo(item.energy)
           }));
         }));
-        monthList.innerHTML = days.map(({ day, item, info }) => `
-          <details class="personal-month-day-card personal-month-detail-${info.status}">
-            <summary><span><strong>${day} ${monthName}</strong><em>${esc(info.label || "Личный день")}</em></span><b>+</b></summary>
-            <div class="personal-month-day-content">
-              <p>${esc(item.text)}</p>
-              ${item.todayNeed?.length ? `<div class="personal-month-mini need"><strong>Сегодня нужно</strong><ul>${bullets(item.todayNeed)}</ul></div>` : ""}
-              ${item.todayAvoid?.length ? `<div class="personal-month-mini avoid"><strong>Сегодня нельзя</strong><ul>${bullets(item.todayAvoid)}</ul></div>` : ""}
-            </div>
-          </details>`).join("");
+        const marked = monthMarkedDays(birth, now);
+        const grouped = { good: [], avoid: [], chance: [] };
+        marked.forEach(({ day, info }) => { if (grouped[info.status]) grouped[info.status].push(day); });
+        const dateWord = (days) => days.map((day) => `${day} ${monthName}`).join(", ");
+        const summary = `
+          <section class="personal-month-summary personal-month-summary-good"><h4>Сегодня можно</h4><p>${esc(dateWord(grouped.good))}</p><small>Деньги, действия, разговоры, документы и встречи. Эти даты лучше использовать по назначению.</small></section>
+          <section class="personal-month-summary personal-month-summary-avoid"><h4>Сегодня нельзя</h4><p>${esc(dateWord(grouped.avoid.concat(grouped.risk)))}</p><small>Не тратьте на эмоциях, не выясняйте отношения и не принимайте решения, о которых потом придётся жалеть.</small></section>
+          <section class="personal-month-summary personal-month-summary-chance"><h4>Важные шансы</h4><p>${esc(dateWord(grouped.chance))}</p><small>Даты для удовольствия, восстановления, неожиданной помощи и полезных подсказок.</small></section>`;
+        const cards = days.map(({ day, item }) => {
+          const info = marked.get(day)?.info || { status: "neutral", label: "Обычный день" };
+          return `
+            <details class="personal-month-day-card personal-month-detail-${info.status}">
+              <summary><span><strong>${day} ${monthName}</strong><em>${esc(info.label || "Обычный день")}</em></span><b>+</b></summary>
+              <div class="personal-month-day-content">
+                <p>${esc(item.text)}</p>
+                ${item.todayNeed?.length ? `<div class="personal-month-mini need"><strong>Сегодня нужно</strong><ul>${bullets(item.todayNeed)}</ul></div>` : ""}
+                ${item.todayAvoid?.length ? `<div class="personal-month-mini avoid"><strong>Сегодня нельзя</strong><ul>${bullets(item.todayAvoid)}</ul></div>` : ""}
+              </div>
+            </details>`;
+        }).join("");
+        monthList.innerHTML = summary + `<h4 class="personal-month-all-title">Все дни месяца</h4>` + cards;
         monthList.dataset.ready = "1";
+        monthDetails.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     });
     result.querySelectorAll("[data-month-day]:not(.personal-month-locked)").forEach((button) => button.addEventListener("click", () => {
