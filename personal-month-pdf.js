@@ -334,12 +334,43 @@ const buildDocument = ({ birth, monthDate, days }) => {
   };
 };
 
+let preparedPdf = null;
+let preparedPdfKey = "";
+let preparingPdf = null;
+let preparingPdfKey = "";
+
+const getPdfKey = ({ birth, monthDate }) =>
+  `${formatBirth(birth)}|${monthDate.getFullYear()}-${monthDate.getMonth() + 1}`;
+
+export const warmPersonalMonthPdfEngine = () => getPdfMake();
+
+export const preparePersonalMonthPdf = ({ birth, monthDate, days }) => {
+  const key = getPdfKey({ birth, monthDate });
+  if (preparedPdf && preparedPdfKey === key) return Promise.resolve(preparedPdf);
+  if (preparingPdf && preparingPdfKey === key) return preparingPdf;
+
+  preparingPdfKey = key;
+  preparingPdf = (async () => {
+    const pdfMake = await getPdfMake();
+    const definition = buildDocument({ birth, monthDate, days });
+    const blob = await new Promise((resolve) => pdfMake.createPdf(definition).getBlob(resolve));
+    const url = URL.createObjectURL(blob);
+    const filename = `Личный календарь ${MONTHS[monthDate.getMonth()]} ${monthDate.getFullYear()} · ${formatBirth(birth)}.pdf`;
+
+    if (preparedPdf?.url && preparedPdf.url !== url) URL.revokeObjectURL(preparedPdf.url);
+    preparedPdf = { url, filename };
+    preparedPdfKey = key;
+    return preparedPdf;
+  })().finally(() => {
+    preparingPdf = null;
+    preparingPdfKey = "";
+  });
+
+  return preparingPdf;
+};
+
 export const downloadPersonalMonthPdf = async ({ birth, monthDate, days }) => {
-  const pdfMake = await getPdfMake();
-  const definition = buildDocument({ birth, monthDate, days });
-  const blob = await new Promise((resolve) => pdfMake.createPdf(definition).getBlob(resolve));
-  const url = URL.createObjectURL(blob);
-  const filename = `Личный календарь ${MONTHS[monthDate.getMonth()]} ${monthDate.getFullYear()} · ${formatBirth(birth)}.pdf`;
+  const { url, filename } = await preparePersonalMonthPdf({ birth, monthDate, days });
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
@@ -348,5 +379,4 @@ export const downloadPersonalMonthPdf = async ({ birth, monthDate, days }) => {
   document.body.append(link);
   link.click();
   link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 };
