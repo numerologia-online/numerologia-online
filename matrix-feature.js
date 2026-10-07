@@ -279,26 +279,25 @@ const appendPdfParagraphs = (content, paragraphs = []) => {
   paragraphs.filter(Boolean).forEach((paragraph) => content.push({ text: paragraph, style: "paragraph" }));
 };
 
-const fullReportPdfFrame = () => ([
-  {
-    type: "rect",
-    x: 22,
-    y: 22,
-    w: 551,
-    h: 798,
-    lineColor: "#c3a56b",
-    lineWidth: 0.7
-  },
-  {
-    type: "rect",
-    x: 28,
-    y: 28,
-    w: 539,
-    h: 786,
-    lineColor: "#e7dcc7",
-    lineWidth: 0.35
-  }
-]);
+const fullReportPdfFrame = () => `
+  <svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842">
+    <rect width="595" height="842" fill="#FBF7EE"/>
+    <rect x="18" y="18" width="559" height="806" fill="none" stroke="#C8A45D" stroke-width="0.8"/>
+    <g fill="#C8A45D" opacity="0.14" font-family="Georgia, serif" text-anchor="middle">
+      <text x="72" y="108" font-size="72">9</text><text x="145" y="78" font-size="34">6</text><text x="215" y="120" font-size="25">✦</text>
+      <text x="506" y="112" font-size="70">6</text><text x="447" y="80" font-size="32">9</text><text x="380" y="122" font-size="24">✦</text>
+      <text x="64" y="430" font-size="30">✦</text><text x="92" y="512" font-size="48">6</text><text x="62" y="596" font-size="24">9</text>
+      <text x="531" y="430" font-size="30">✦</text><text x="502" y="514" font-size="48">9</text><text x="533" y="598" font-size="24">6</text>
+      <text x="92" y="770" font-size="66">6</text><text x="168" y="802" font-size="30">9</text><text x="238" y="768" font-size="24">✦</text>
+      <text x="505" y="770" font-size="68">9</text><text x="430" y="802" font-size="30">6</text><text x="360" y="768" font-size="24">✦</text>
+    </g>
+    <g fill="#B49354" opacity="0.08" font-family="Georgia, serif" font-size="18" text-anchor="middle">
+      <text x="297" y="54">9 · 9 · 6 · 6 · 9 · 9</text>
+      <text x="297" y="816">6 · 6 · 9 · 9 · 6 · 6</text>
+      <text x="31" y="330" transform="rotate(-90 31 330)">9 · 6 · 9 · 6 · 9</text>
+      <text x="564" y="520" transform="rotate(90 564 520)">6 · 9 · 6 · 9 · 6</text>
+    </g>
+  </svg>`;
 
 const buildFullReportPdf = async () => {
   if (!activeFullReport) throw new Error("Нет данных для PDF");
@@ -390,7 +389,7 @@ const buildFullReportPdf = async () => {
     pageSize: "A4",
     pageMargins: [56, 64, 56, 62],
     info: { title: `Полный разбор ${formattedDate}` },
-    background: () => ({ canvas: fullReportPdfFrame() }),
+    background: () => ({ svg: fullReportPdfFrame() }),
     content,
     defaultStyle: { font: "Roboto", fontSize: 12.2, color: "#493f53", lineHeight: 1.32 },
     styles: {
