@@ -70,6 +70,9 @@ const openPersonalDayFeature = async () => {
   feature.openPersonalDay();
 };
 
+// Предзагрузка модуля расчёта дня, чтобы при открытии форма появлялась сразу.
+window.setTimeout(() => getPersonalDayFeature().catch(() => {}), 900);
+
 const getDestinyCodeFeature = () => {
   if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=20");
   return destinyCodeFeatureLoading;
