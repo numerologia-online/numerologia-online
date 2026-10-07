@@ -74,7 +74,7 @@ const monthCalendar = (birth, date = new Date()) => {
     <div class="personal-month-heading"><div><p class="personal-month-kicker">Карта ближайших дней</p><h3>${esc(monthTitle(date))}</h3></div><span class="personal-month-mark">✦</span></div>
     <div class="personal-month-weekdays">${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d) => `<span>${d}</span>`).join("")}</div>
     <div class="personal-month-grid">${cells.join("")}</div>
-    <div class="personal-month-legend"><span><i class="personal-month-dot good"></i>Хороший день</span><span><i class="personal-month-dot chance"></i>Очень важный шанс</span><span><i class="personal-month-dot risk"></i>Осторожно</span><span><i class="personal-month-dot avoid"></i>Не делайте этого</span></div>
+    <div class="personal-month-legend"><span><i class="personal-month-dot good"></i>Лучшие дни</span><span><i class="personal-month-dot chance"></i>Важные шансы</span><span><i class="personal-month-dot risk"></i>Дни риска</span></div>
     <button type="button" class="personal-month-open">Открыть разбор месяца <span>→</span></button>
     <section class="personal-month-details" hidden>
       
