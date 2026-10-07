@@ -166,7 +166,7 @@ export const openPersonalDay = () => {
       monthButton.innerHTML = "Готовлю разбор месяца… <span>↑</span>";
       scrollToMonthDetails();
 
-      const pdfModuleLoading = import("./personal-month-pdf.js?v=2");
+      const pdfModuleLoading = import("./personal-month-pdf.js?v=3");
       pdfModuleLoading
         .then(({ warmPersonalMonthPdfEngine }) => warmPersonalMonthPdfEngine())
         .catch(() => {});
