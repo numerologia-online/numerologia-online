@@ -122,6 +122,7 @@ export const openPersonalDay = () => {
         const total = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         const monthName = new Intl.DateTimeFormat("ru-RU", { month: "long" }).format(now);
         const marked = monthMarkedDays(birth, now);
+        const monthGenitive = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"][now.getMonth()];
         const groupLines = (status) => {
           const groups = new Map();
           marked.forEach(({ day, info }) => {
@@ -130,7 +131,7 @@ export const openPersonalDay = () => {
             groups.get(info.group).push(day);
           });
           return [...groups.entries()].map(([group, dates]) =>
-            "<span><strong>" + esc(group) + ":</strong> " + dates.join(", ") + " " + monthName + "</span>"
+            "<span class=\"personal-month-summary-line\"><i>•</i><strong>" + esc(group) + ":</strong> " + dates.join(", ") + " " + monthGenitive + "</span>"
           ).join("");
         };
         const summary = "<section class=\"personal-month-summary personal-month-summary-good\"><h4><span class=\"personal-month-summary-icon\">✓</span>Лучшие дни месяца</h4><div>" + groupLines("good") + "</div></section>" +
