@@ -40,19 +40,32 @@ const bullets = (items = []) => items.filter(Boolean).map((text) => `<li>${esc(t
 const todayLabel = () => new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date());
 const monthTitle = (date) => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(date);
 const calendarInfo = (energy) => {
-  if ([8, 17, 19].includes(energy)) return { status: "good", label: "День денег и покупок" };
-  if ([1, 10, 21].includes(energy)) return { status: "good", label: "День действий и важных решений" };
-  if ([2, 11, 23].includes(energy)) return { status: "good", label: "День разговоров и честного признания" };
-  if ([4, 22].includes(energy)) return { status: "good", label: "День документов и порядка" };
-  if ([6, 14, 20].includes(energy)) return { status: "good", label: "День встреч и отношений" };
-  if ([3, 7, 9].includes(energy)) return { status: "chance", label: "День удовольствия и восстановления" };
-  if ([5, 12].includes(energy)) return { status: "chance", label: "Неожиданный шанс и полезная подсказка" };
-  if ([15, 16].includes(energy)) return { status: "avoid", label: "Не делайте этого на эмоциях" };
-  if ([18, 24].includes(energy)) return { status: "risk", label: "Осторожно: разговоры и резкие реакции" };
-  if ([13, 25].includes(energy)) return { status: "risk", label: "Осторожно: не возвращайтесь к старому" };
-  if ([26, 28].includes(energy)) return { status: "risk", label: "Осторожно: покупки и крупные траты" };
-  if ([27, 29].includes(energy)) return { status: "avoid", label: "Сначала успокойтесь, потом решайте" };
-  return { status: "neutral", label: "" };
+  const rules = {
+    1: ["good", "Решительный шаг"],
+    2: ["good", "Разговор и признание"],
+    3: ["chance", "Приятная покупка"],
+    4: ["good", "Документы и договоры"],
+    5: ["chance", "Неожиданный шанс"],
+    6: ["good", "Встреча и отношения"],
+    7: ["chance", "Пауза: замолчать и услышать правду"],
+    8: ["good", "Смелые покупки и деньги"],
+    9: ["chance", "Завершение старого"],
+    10: ["good", "Действия и важное решение"],
+    11: ["good", "Проявить силу и заявить о себе"],
+    12: ["chance", "Полезная подсказка"],
+    13: ["risk", "Не возвращаться к старым конфликтам"],
+    14: ["good", "Примирение и спокойный диалог"],
+    15: ["avoid", "Не тратить на эмоциях"],
+    16: ["avoid", "Не разрушать сгоряча"],
+    17: ["good", "Финансовый шанс"],
+    18: ["risk", "Не ругаться и не давить"],
+    19: ["good", "Успех и результат"],
+    20: ["good", "Семья и восстановление"],
+    21: ["good", "Завершение дела"],
+    22: ["chance", "Новый путь и неожиданный шаг"]
+  };
+  const [status, label] = rules[energy] || ["neutral", ""];
+  return { status, label };
 };
 const calendarStatus = (energy) => calendarInfo(energy).status;
 const monthMarkedDays = (birth, date = new Date()) => {
