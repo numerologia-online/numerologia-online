@@ -70,20 +70,19 @@ const calendarInfo = (energy) => {
 const calendarStatus = (energy) => calendarInfo(energy).status;
 const monthMarkedDays = (birth, date = new Date()) => {
   const total = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  const byStatus = { good: [], chance: [], risk: [], avoid: [] };
+  const all = [];
   for (let day = 1; day <= total; day += 1) {
     const energy = personalDay(birth, new Date(date.getFullYear(), date.getMonth(), day));
-    const info = calendarInfo(energy);
-    if (byStatus[info.status]) byStatus[info.status].push({ day, energy, info });
+    all.push({ day, energy, info: calendarInfo(energy) });
   }
   const selected = new Map();
-  ["good", "chance", "risk"].forEach((status) => {
-    byStatus[status].slice(0, 5).forEach((item) => selected.set(item.day, item));
-  });
-  if (selected.size < 15) {
-    [...byStatus.avoid, ...byStatus.good, ...byStatus.chance, ...byStatus.risk].forEach((item) => {
-      if (selected.size < 15 && !selected.has(item.day)) selected.set(item.day, item);
-    });
+  const take = (status, count) => all.filter((item) => item.info.status === status).slice(0, count).forEach((item) => selected.set(item.day, item));
+  take("good", 5);
+  take("chance", 5);
+  take("risk", 5);
+  take("avoid", 5);
+  if ([...selected.values()].filter((item) => item.info.status === "risk" || item.info.status === "avoid").length < 5) {
+    all.filter((item) => !selected.has(item.day)).slice(0, 5).forEach((item) => selected.set(item.day, { ...item, info: { status: "risk", label: "Не принимайте решения на эмоциях" } }));
   }
   return selected;
 };
@@ -154,9 +153,9 @@ export const openPersonalDay = () => {
         const monthName = new Intl.DateTimeFormat("ru-RU", { month: "long" }).format(now);
         const marked = monthMarkedDays(birth, now);
         const dateLines = (statuses) => [...marked.values()].filter(({ info }) => statuses.includes(info.status)).map(({ day, info }) => "<span><strong>" + day + " " + monthName + "</strong> " + esc(info.label) + ".</span>").join("");
-        const summary = "<section class=\"personal-month-summary personal-month-summary-good\"><h4>Лучшие дни месяца</h4><div>" + dateLines(["good"]) + "</div></section>" +
-          "<section class=\"personal-month-summary personal-month-summary-risk\"><h4>Дни риска</h4><div>" + dateLines(["risk", "avoid"]) + "</div></section>" +
-          "<section class=\"personal-month-summary personal-month-summary-chance\"><h4>Важные шансы</h4><div>" + dateLines(["chance"]) + "</div></section>";
+        const summary = "<section class=\"personal-month-summary personal-month-summary-good\"><h4><span class=\"personal-month-summary-icon\">✓</span>Лучшие дни месяца</h4><div>" + dateLines(["good"]) + "</div></section>" +
+          "<section class=\"personal-month-summary personal-month-summary-risk\"><h4><span class=\"personal-month-summary-icon\">×</span>Дни риска</h4><div>" + dateLines(["risk", "avoid"]) + "</div></section>" +
+          "<section class=\"personal-month-summary personal-month-summary-chance\"><h4><span class=\"personal-month-summary-icon\">★</span>Важные шансы</h4><div>" + dateLines(["chance"]) + "</div></section>";
         monthList.innerHTML = summary + '<p class="personal-month-loading">Загружаю тексты дней…</p>';
         requestAnimationFrame(() => {
           const target = Math.max(0, monthDetails.getBoundingClientRect().top + window.scrollY - 12);
