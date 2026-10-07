@@ -105,13 +105,15 @@ const coverFrame = () => ({
         <stop offset="100%" stop-color="#F2E8D3"/>
       </radialGradient>
       <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#8F661F"/>
-        <stop offset="32%" stop-color="#E6C56F"/>
-        <stop offset="60%" stop-color="#B9892F"/>
-        <stop offset="100%" stop-color="#F1D78A"/>
+        <stop offset="0%" stop-color="#8A611B"/>
+        <stop offset="28%" stop-color="#E7C66A"/>
+        <stop offset="55%" stop-color="#B17E25"/>
+        <stop offset="78%" stop-color="#F1D789"/>
+        <stop offset="100%" stop-color="#9A6A1E"/>
       </linearGradient>
-      <radialGradient id="glow" cx="50%" cy="51%" r="48%">
-        <stop offset="0%" stop-color="#F7D985" stop-opacity=".28"/>
+      <radialGradient id="glow" cx="50%" cy="49%" r="52%">
+        <stop offset="0%" stop-color="#F2CF70" stop-opacity=".34"/>
+        <stop offset="55%" stop-color="#F5DFA7" stop-opacity=".12"/>
         <stop offset="100%" stop-color="#F7D985" stop-opacity="0"/>
       </radialGradient>
     </defs>
@@ -119,27 +121,38 @@ const coverFrame = () => ({
     <rect width="595" height="842" fill="url(#paper)"/>
     <rect width="595" height="842" fill="url(#glow)"/>
 
-    <rect x="19" y="19" width="557" height="804" rx="8" fill="none" stroke="#A97927" stroke-width="1.1"/>
-    <rect x="25" y="25" width="545" height="792" rx="7" fill="none" stroke="#D9BA68" stroke-width=".45"/>
+    <rect x="19" y="19" width="557" height="804" rx="8" fill="none" stroke="#9C7023" stroke-width="1.15"/>
+    <rect x="25" y="25" width="545" height="792" rx="7" fill="none" stroke="#D7B661" stroke-width=".45"/>
 
-    <g opacity=".11" fill="#A4782D" font-family="Georgia, serif" text-anchor="middle">
+    <g opacity=".085" fill="#9B7027" font-family="Arial, sans-serif" text-anchor="middle">
+      <text x="76" y="224" font-size="30">$</text>
+      <text x="519" y="224" font-size="30">€</text>
+      <text x="77" y="535" font-size="27">£</text>
+      <text x="519" y="535" font-size="27">₽</text>
+    </g>
+
+    <g opacity=".10" fill="#A4782D" font-family="Georgia, serif" text-anchor="middle">
       <text x="91" y="164" font-size="54">9</text>
       <text x="155" y="121" font-size="30">9</text>
       <text x="448" y="121" font-size="30">6</text>
       <text x="508" y="164" font-size="54">6</text>
-      <text x="85" y="694" font-size="48">6</text>
-      <text x="511" y="694" font-size="48">9</text>
+      <text x="86" y="692" font-size="44">6</text>
+      <text x="509" y="692" font-size="44">9</text>
     </g>
 
     <g fill="none" stroke="#B5893F">
-      <circle cx="297.5" cy="87" r="31" stroke-width=".65" opacity=".55"/>
-      <circle cx="297.5" cy="87" r="20" stroke-width=".45" opacity=".42"/>
-      <path d="M287 70 A19 19 0 1 0 287 104 A15 15 0 1 1 287 70Z" fill="#C39B4D" stroke="none" opacity=".78"/>
-      <path d="M297.5 50 V60 M297.5 114 V124 M260 87 H271 M324 87 H335" stroke-width=".7" opacity=".58"/>
+      <circle cx="297.5" cy="87" r="34" stroke-width=".65" opacity=".58"/>
+      <circle cx="297.5" cy="87" r="22" stroke-width=".42" opacity=".46"/>
+      <circle cx="297.5" cy="87" r="44" stroke-width=".28" stroke-dasharray="2 6" opacity=".42"/>
+      <path d="M287 70 A19 19 0 1 0 287 104 A15 15 0 1 1 287 70Z" fill="#C39B4D" stroke="none" opacity=".76"/>
+      <path d="M297.5 43 V59 M297.5 115 V131 M252 87 H270 M325 87 H343" stroke-width=".7" opacity=".58"/>
+      <path d="M266 55 L276 65 M329 55 L319 65 M266 119 L276 109 M329 119 L319 109" stroke-width=".45" opacity=".42"/>
     </g>
-    <g fill="#A97927" opacity=".86">
-      <path d="M297.5 71 L300.7 82.8 L312.5 86 L300.7 89.2 L297.5 101 L294.3 89.2 L282.5 86 L294.3 82.8Z"/>
-      <circle cx="297.5" cy="44" r="1.5"/><circle cx="289" cy="44" r=".8"/><circle cx="306" cy="44" r=".8"/>
+    <g fill="#A97927" opacity=".88">
+      <path d="M297.5 67 L301.2 80.3 L314.5 84 L301.2 87.7 L297.5 101 L293.8 87.7 L280.5 84 L293.8 80.3Z"/>
+      <circle cx="297.5" cy="38" r="1.5"/><circle cx="289" cy="38" r=".8"/><circle cx="306" cy="38" r=".8"/>
+      <circle cx="253" cy="58" r="1.2"/><circle cx="342" cy="58" r="1.2"/>
+      <circle cx="253" cy="116" r="1.2"/><circle cx="342" cy="116" r="1.2"/>
     </g>
 
     <g stroke="#A97927" fill="none" opacity=".72">
@@ -154,43 +167,69 @@ const coverFrame = () => ({
       <circle cx="54" cy="788" r="5"/><circle cx="541" cy="788" r="5"/>
     </g>
 
-    <g transform="translate(50 640)" opacity=".80">
-      <g fill="url(#gold)" stroke="#9D7126" stroke-width=".45">
-        <rect x="0" y="51" width="47" height="8" rx="4"/><ellipse cx="23.5" cy="51" rx="23.5" ry="4"/>
-        <rect x="4" y="41" width="42" height="8" rx="4"/><ellipse cx="25" cy="41" rx="21" ry="4"/>
-        <rect x="8" y="31" width="38" height="8" rx="4"/><ellipse cx="27" cy="31" rx="19" ry="4"/>
-        <rect x="15" y="21" width="31" height="8" rx="4"/><ellipse cx="30.5" cy="21" rx="15.5" ry="4"/>
+    <!-- light constellation / abundance sparkles -->
+    <g fill="#B6812A">
+      <circle cx="125" cy="305" r="1.2" opacity=".34"/>
+      <circle cx="159" cy="327" r="1.6" opacity=".46"/>
+      <circle cx="438" cy="305" r="1.2" opacity=".34"/>
+      <circle cx="472" cy="327" r="1.6" opacity=".46"/>
+      <circle cx="117" cy="431" r="1.1" opacity=".28"/>
+      <circle cx="478" cy="431" r="1.1" opacity=".28"/>
+      <path d="M137 354 L140 363 L149 366 L140 369 L137 378 L134 369 L125 366 L134 363Z" opacity=".33"/>
+      <path d="M458 354 L461 363 L470 366 L461 369 L458 378 L455 369 L446 366 L455 363Z" opacity=".33"/>
+      <path d="M297.5 581 L300 588 L307 590.5 L300 593 L297.5 600 L295 593 L288 590.5 L295 588Z" opacity=".32"/>
+    </g>
+
+    <!-- scattered coins, deliberately irregular rather than blocky -->
+    <g fill="url(#gold)" stroke="#9A6B1D" stroke-width=".55" opacity=".88">
+      <ellipse cx="77" cy="704" rx="18" ry="6"/>
+      <ellipse cx="96" cy="718" rx="15" ry="5"/>
+      <ellipse cx="120" cy="700" rx="12" ry="4.5"/>
+      <ellipse cx="139" cy="724" rx="10" ry="3.8"/>
+      <ellipse cx="62" cy="731" rx="11" ry="4"/>
+      <ellipse cx="151" cy="686" rx="8" ry="3.2"/>
+      <ellipse cx="518" cy="704" rx="18" ry="6"/>
+      <ellipse cx="499" cy="718" rx="15" ry="5"/>
+      <ellipse cx="475" cy="700" rx="12" ry="4.5"/>
+      <ellipse cx="456" cy="724" rx="10" ry="3.8"/>
+      <ellipse cx="533" cy="731" rx="11" ry="4"/>
+      <ellipse cx="444" cy="686" rx="8" ry="3.2"/>
+    </g>
+    <g fill="none" stroke="#F1D995" stroke-width=".55" opacity=".78">
+      <ellipse cx="77" cy="704" rx="12" ry="3.5"/>
+      <ellipse cx="96" cy="718" rx="9" ry="2.8"/>
+      <ellipse cx="518" cy="704" rx="12" ry="3.5"/>
+      <ellipse cx="499" cy="718" rx="9" ry="2.8"/>
+    </g>
+
+    <!-- two simple old-money bullion bars -->
+    <g opacity=".86">
+      <g transform="translate(113 742) rotate(-7)">
+        <path d="M0 10 L12 0 H67 L78 10 L69 31 H9 Z" fill="url(#gold)" stroke="#96691E" stroke-width=".75"/>
+        <path d="M12 6 H65" stroke="#F5E0A1" stroke-width=".65" opacity=".84"/>
+        <circle cx="39" cy="18" r="5" fill="none" stroke="#8E631E" stroke-width=".6"/>
       </g>
-      <g transform="translate(55 25)">
-        <polygon points="0,24 39,17 49,40 9,47" fill="#D7AB4D" stroke="#9B6B20" stroke-width=".7"/>
-        <polygon points="8,9 45,2 55,25 17,31" fill="#E9C66D" stroke="#9B6B20" stroke-width=".7"/>
+      <g transform="translate(404 742) rotate(7)">
+        <path d="M0 10 L12 0 H67 L78 10 L69 31 H9 Z" fill="url(#gold)" stroke="#96691E" stroke-width=".75"/>
+        <path d="M12 6 H65" stroke="#F5E0A1" stroke-width=".65" opacity=".84"/>
+        <circle cx="39" cy="18" r="5" fill="none" stroke="#8E631E" stroke-width=".6"/>
       </g>
     </g>
 
-    <g transform="translate(445 640)" opacity=".80">
-      <g fill="url(#gold)" stroke="#9D7126" stroke-width=".45">
-        <rect x="50" y="51" width="47" height="8" rx="4"/><ellipse cx="73.5" cy="51" rx="23.5" ry="4"/>
-        <rect x="50" y="41" width="42" height="8" rx="4"/><ellipse cx="71" cy="41" rx="21" ry="4"/>
-        <rect x="50" y="31" width="38" height="8" rx="4"/><ellipse cx="69" cy="31" rx="19" ry="4"/>
-        <rect x="50" y="21" width="31" height="8" rx="4"/><ellipse cx="65.5" cy="21" rx="15.5" ry="4"/>
-      </g>
-      <g transform="translate(0 25)">
-        <polygon points="0,24 39,17 49,40 9,47" fill="#D7AB4D" stroke="#9B6B20" stroke-width=".7"/>
-        <polygon points="8,9 45,2 55,25 17,31" fill="#E9C66D" stroke="#9B6B20" stroke-width=".7"/>
-      </g>
+    <!-- central gem / talisman -->
+    <g transform="translate(297.5 718)" opacity=".84">
+      <polygon points="0,-24 28,-5 18,23 -18,23 -28,-5" fill="#FFFDF8" stroke="#C49A43" stroke-width=".9"/>
+      <path d="M-28 -5 L28 -5 M-18 23 L0 -24 L18 23 M-28 -5 L0 23 L28 -5" fill="none" stroke="#D7B970" stroke-width=".55"/>
+      <circle cx="0" cy="0" r="34" fill="none" stroke="#D1B15F" stroke-width=".35" stroke-dasharray="2 5" opacity=".58"/>
     </g>
 
-    <g transform="translate(297.5 701)" opacity=".78">
-      <polygon points="0,-23 29,-4 18,24 -18,24 -29,-4" fill="#FFFDF8" stroke="#CDA64F" stroke-width=".9"/>
-      <path d="M-29 -4 L29 -4 M-18 24 L0 -23 L18 24 M-29 -4 L0 24 L29 -4" fill="none" stroke="#D9BB72" stroke-width=".55"/>
+    <!-- pearl strands -->
+    <g fill="#F9F3E6" stroke="#AF8335" stroke-width=".45" opacity=".96">
+      <circle cx="185" cy="751" r="5.2"/><circle cx="198" cy="756" r="5"/><circle cx="212" cy="759" r="4.8"/><circle cx="227" cy="761" r="4.6"/>
+      <circle cx="410" cy="751" r="5.2"/><circle cx="397" cy="756" r="5"/><circle cx="383" cy="759" r="4.8"/><circle cx="368" cy="761" r="4.6"/>
     </g>
 
-    <g fill="#F7F0DE" stroke="#B88B39" stroke-width=".55" opacity=".95">
-      <circle cx="97" cy="740" r="6"/><circle cx="111" cy="746" r="5.5"/><circle cx="126" cy="750" r="5"/>
-      <circle cx="498" cy="740" r="6"/><circle cx="484" cy="746" r="5.5"/><circle cx="469" cy="750" r="5"/>
-    </g>
-
-    <g fill="#B78A3A" opacity=".17" font-family="Georgia, serif" text-anchor="middle">
+    <g fill="#B78A3A" opacity=".15" font-family="Georgia, serif" text-anchor="middle">
       <text x="297.5" y="803" font-size="12" letter-spacing="7">9 · 9 · 6 · 6</text>
     </g>
   </svg>`
@@ -244,27 +283,59 @@ const coverTitleSvg = () => ({
 const wealthCodeSvg = (code) => {
   const safeCode = escXml(code);
   return {
-    svg: `<svg xmlns="http://www.w3.org/2000/svg" width="455" height="210" viewBox="0 0 455 210">
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" width="455" height="226" viewBox="0 0 455 226">
       <defs>
         <linearGradient id="codeGold" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#7D571C"/>
-          <stop offset="26%" stop-color="#D3AD50"/>
-          <stop offset="52%" stop-color="#F0D88E"/>
-          <stop offset="76%" stop-color="#A67322"/>
-          <stop offset="100%" stop-color="#D7B45C"/>
+          <stop offset="0%" stop-color="#714A11"/>
+          <stop offset="23%" stop-color="#D2A845"/>
+          <stop offset="46%" stop-color="#F3DD98"/>
+          <stop offset="62%" stop-color="#A66F1D"/>
+          <stop offset="82%" stop-color="#E4C26A"/>
+          <stop offset="100%" stop-color="#835816"/>
         </linearGradient>
+        <radialGradient id="codeGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#F1CF73" stop-opacity=".30"/>
+          <stop offset="100%" stop-color="#F1CF73" stop-opacity="0"/>
+        </radialGradient>
       </defs>
-      <circle cx="227.5" cy="104" r="91" fill="none" stroke="#D9BF79" stroke-width=".7"/>
-      <circle cx="227.5" cy="104" r="78" fill="none" stroke="#C79A45" stroke-width=".35" stroke-dasharray="2 5"/>
-      <path d="M227.5 6 V28 M227.5 180 V202 M126 104 H150 M305 104 H329" stroke="#C79A45" stroke-width=".55" opacity=".72"/>
-      <g fill="#B88A36">
-        <path d="M227.5 24 L231 34 L241 37.5 L231 41 L227.5 51 L224 41 L214 37.5 L224 34Z" opacity=".74"/>
-        <path d="M227.5 157 L230.2 165 L238 167.7 L230.2 170.4 L227.5 178 L224.8 170.4 L217 167.7 L224.8 165Z" opacity=".54"/>
+
+      <circle cx="227.5" cy="112" r="104" fill="url(#codeGlow)"/>
+      <circle cx="227.5" cy="112" r="98" fill="none" stroke="#D6BA72" stroke-width=".65" opacity=".74"/>
+      <circle cx="227.5" cy="112" r="86" fill="none" stroke="#C49740" stroke-width=".38" stroke-dasharray="2 5" opacity=".78"/>
+      <circle cx="227.5" cy="112" r="72" fill="none" stroke="#E0C98D" stroke-width=".32" opacity=".72"/>
+
+      <path d="M227.5 3 V29 M227.5 195 V221 M109 112 H139 M316 112 H346" stroke="#C3943C" stroke-width=".58" opacity=".72"/>
+      <path d="M145 30 L163 48 M310 30 L292 48 M145 194 L163 176 M310 194 L292 176" stroke="#C3943C" stroke-width=".45" opacity=".45"/>
+
+      <g fill="none" stroke="#B98A34" stroke-width=".38" opacity=".64">
+        <path d="M146 112 A81 81 0 0 1 227.5 31"/>
+        <path d="M309 112 A81 81 0 0 1 227.5 193"/>
+        <path d="M227.5 31 A81 81 0 0 1 309 112"/>
+        <path d="M227.5 193 A81 81 0 0 1 146 112"/>
       </g>
-      <text x="227.5" y="128" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="92" font-weight="700" fill="url(#codeGold)">${safeCode}</text>
+
+      <g fill="#B5832F">
+        <path d="M227.5 15 L231.5 27.5 L244 31.5 L231.5 35.5 L227.5 48 L223.5 35.5 L211 31.5 L223.5 27.5Z" opacity=".82"/>
+        <path d="M227.5 176 L230.2 184 L238 186.7 L230.2 189.4 L227.5 197 L224.8 189.4 L217 186.7 L224.8 184Z" opacity=".60"/>
+        <path d="M129 112 L131.5 119 L138.5 121.5 L131.5 124 L129 131 L126.5 124 L119.5 121.5 L126.5 119Z" opacity=".43"/>
+        <path d="M326 112 L328.5 119 L335.5 121.5 L328.5 124 L326 131 L323.5 124 L316.5 121.5 L323.5 119Z" opacity=".43"/>
+        <circle cx="151" cy="60" r="1.4"/><circle cx="304" cy="60" r="1.4"/>
+        <circle cx="151" cy="164" r="1.4"/><circle cx="304" cy="164" r="1.4"/>
+        <circle cx="119" cy="78" r=".9"/><circle cx="336" cy="78" r=".9"/>
+        <circle cx="119" cy="146" r=".9"/><circle cx="336" cy="146" r=".9"/>
+      </g>
+
+      <g font-family="Arial, sans-serif" text-anchor="middle" fill="#9B722C" opacity=".22">
+        <text x="98" y="91" font-size="17">$</text>
+        <text x="357" y="91" font-size="17">€</text>
+        <text x="98" y="154" font-size="16">£</text>
+        <text x="357" y="154" font-size="16">₽</text>
+      </g>
+
+      <text x="227.5" y="137" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="92" font-weight="700" fill="url(#codeGold)">${safeCode}</text>
     </svg>`,
     width: 455,
-    height: 210,
+    height: 226,
     alignment: "center"
   };
 };
