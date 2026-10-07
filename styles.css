@@ -73,6 +73,7 @@
 }
 .personal-day-submit:disabled{opacity:1;background:#173f7a;box-shadow:0 10px 22px rgba(23,63,122,.24)}
 .personal-day-submit:not(:disabled):active{transform:scale(.985)}
+.personal-day-advice{margin-top:14px;padding:15px 16px;border-radius:18px}.personal-day-advice h4{margin:0 0 9px;font-size:18px}.personal-day-advice ul{margin:0;padding-left:22px}.personal-day-advice li{margin:7px 0;font-size:16px;line-height:1.4}.personal-day-need{background:#e8f7ee;border:1px solid #a8dfbd}.personal-day-need h4{color:#08753e}.personal-day-avoid{background:#fff0ef;border:1px solid #efb7b2}.personal-day-avoid h4{color:#b52e27}
 .personal-day-error{margin:0;color:#a23e43;font-size:14px}
 .personal-day-error[hidden],.personal-day-result[hidden]{display:none}
 .personal-day-result{margin-top:15px}
