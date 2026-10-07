@@ -393,6 +393,8 @@ const buildFullReportPdf = async () => {
   const age = today.getFullYear() - year - (
     today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day) ? 1 : 0
   );
+  const tail = findKarmicTail(matrixData, karmicTails);
+  const programs = findKarmicPrograms(matrixData, karmicPrograms);
 
   const content = [
     {
@@ -405,9 +407,9 @@ const buildFullReportPdf = async () => {
       margin: [0, 0, 0, 0],
       pageBreak: "after"
     },
-    { text: "ВАША ЛИЧНАЯ КАРТА", style: "eyebrow" },
-    { text: "Ключевые точки", style: "chapter" },
-    { text: "Эти цифры становятся основой для всех разделов ниже.", style: "chapterLead" },
+    { text: "ВАША ЛИЧНАЯ КАРТА", style: "eyebrow", fontSize: 12 },
+    { text: "Ключевые точки", style: "chapter", fontSize: 34, margin: [0, 0, 0, 10] },
+    { text: "Эти цифры становятся основой для всех разделов ниже.", style: "chapterLead", fontSize: 18, lineHeight: 1.2, margin: [0, 0, 0, 14] },
     {
       table: {
         widths: ["*", "auto"],
@@ -418,7 +420,9 @@ const buildFullReportPdf = async () => {
           ["Центральная энергия", String(matrixData.center)],
           ["Что блокирует деньги", String(matrixData.rightSpoke.outer)],
           ["Как включить поток", String(matrixData.rightSpoke.near)],
-          ["Где легче заработать", String(matrixData.rightSpoke.core)]
+          ["Где легче заработать", String(matrixData.rightSpoke.core)],
+          ["Кармический хвост", tail ? String(tail.code) : [matrixData.tail.first, matrixData.tail.second, matrixData.bottom].join("-")],
+          ["Кармические программы", programs.length ? programs.map((program) => program.code).join(" · ") : "—"]
         ]
       },
       layout: {
@@ -431,29 +435,9 @@ const buildFullReportPdf = async () => {
         paddingBottom: () => 7,
         fillColor: (rowIndex) => (rowIndex % 2 === 0 ? "#fcfaf5" : null)
       },
-      style: "points"
+      style: "points", fontSize: 16, lineHeight: 1.15
     }
   ];
-
-    const tail = findKarmicTail(matrixData, karmicTails);
-    const programs = findKarmicPrograms(matrixData, karmicPrograms);
-    if (tail || programs.length) {
-      content.push({ text: "КАРМИЧЕСКИЕ ПРОГРАММЫ", style: "eyebrow", margin: [0, 30, 0, 0] });
-      if (tail) {
-        content.push({ text: `Кармический хвост: ${tail.code} ${tail.title}`, style: "sectionTitle" });
-        tail.parts.forEach((part) => {
-          content.push({ text: part.title, style: "partTitle" });
-          appendPdfParagraphs(content, [part.text]);
-        });
-      }
-      programs.forEach((program) => {
-        content.push({ text: `${program.code} ${program.title}`, style: "sectionTitle" });
-        program.parts.forEach((part) => {
-          content.push({ text: part.title, style: "partTitle" });
-          appendPdfParagraphs(content, [part.text]);
-        });
-      });
-    }
   content.push({ text: "", pageBreak: "after" });
 
   records.forEach(({ definition, source }) => {
