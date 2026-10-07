@@ -112,10 +112,17 @@ const syncYearLink = () => {
 };
 syncYearLink();
 window.addEventListener("hashchange", syncYearLink);
+const personalDayOnly = new URLSearchParams(window.location.search).get("view") === "day";
 const syncPersonalDayLink = () => {
-  if (window.location.hash === "#lichnyj-den") {
+  if (window.location.hash === "#lichnyj-den" || personalDayOnly) {
     if (home) home.hidden = true;
-    openPersonalDayFeature().catch(() => alert("Не удалось открыть расчёт дня. Обновите страницу и попробуйте ещё раз."));
+    openPersonalDayFeature()
+      .then(() => {
+        if (personalDayOnly) {
+          requestAnimationFrame(() => document.querySelector(".personal-day-close")?.remove());
+        }
+      })
+      .catch(() => alert("Не удалось открыть расчёт дня. Обновите страницу и попробуйте ещё раз."));
   }
 };
 syncPersonalDayLink();
