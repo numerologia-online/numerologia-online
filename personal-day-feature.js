@@ -94,7 +94,6 @@ export const openPersonalDay = () => {
     submit.disabled = true;
     submit.textContent = "Считаю ваш день…";
     const item = await loadPersonalDay(birth);
-    const preservedScrollTop = card.scrollTop;
     result.hidden = false;
     result.innerHTML = `<section class="personal-day-main"><span class="personal-day-code">${item.energy} · ${item.calendarDay}</span><p class="personal-day-label">ВАШ ДЕНЬ</p>${paragraphs([item.text])}${item.todayNeed?.length ? `<section class="personal-day-advice personal-day-need"><h4><span class="personal-day-advice-icon">✓</span> Сегодня нужно</h4><ul>${bullets(item.todayNeed)}</ul></section>` : ""}${item.todayAvoid?.length ? `<section class="personal-day-advice personal-day-avoid"><h4><span class="personal-day-advice-icon">×</span> Сегодня нельзя</h4><ul>${bullets(item.todayAvoid)}</ul></section>` : ""}</section>`;
     result.insertAdjacentHTML("beforeend", monthCalendar(birth));
@@ -103,7 +102,7 @@ export const openPersonalDay = () => {
       const chosen = new Date(new Date().getFullYear(), new Date().getMonth(), Number(button.dataset.monthDay));
       alert(`Личный день ${personalDay(birth, chosen)} уже рассчитан в вашем календаре.`);
     }));
-    requestAnimationFrame(() => { card.scrollTop = preservedScrollTop; });
+    requestAnimationFrame(() => { card.scrollTo({ top: Math.max(0, result.offsetTop - 8), behavior: "instant" }); });
     submit.textContent = "Рассчитать личный день";
     submit.disabled = false;
   };
