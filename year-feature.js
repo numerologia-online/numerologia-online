@@ -547,8 +547,8 @@ const downloadPdf = async () => {
   }
 };
 
-pdfButton.addEventListener("click", openPdfPreview);
-pdfButtonTop.addEventListener("click", openPdfPreview);
+pdfButton.addEventListener("click", downloadPdf);
+pdfButtonTop.addEventListener("click", downloadPdf);
 pdfPreviewClose.addEventListener("click", () => pdfPreviewDialog.close());
 pdfDownloadButton.addEventListener("click", downloadPdf);
 pdfPreviewDialog.addEventListener("close", () => {
