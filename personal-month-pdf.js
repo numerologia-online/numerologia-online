@@ -39,82 +39,88 @@ const MONTHS_GENITIVE = [
   "июля", "августа", "сентября", "октября", "ноября", "декабря"
 ];
 
+const WEEKDAYS = [
+  "ВОСКРЕСЕНЬЕ", "ПОНЕДЕЛЬНИК", "ВТОРНИК", "СРЕДА",
+  "ЧЕТВЕРГ", "ПЯТНИЦА", "СУББОТА"
+];
+
 const STATUS = {
   good: {
     label: "Лучшие дни",
-    color: "#0A8F55",
-    soft: "#E5F8EE",
-    border: "#A7E4C5",
-    symbol: "✓"
+    color: "#466D73",
+    soft: "#EAF3F2",
+    border: "#B8D2D2",
+    symbol: "✦"
   },
   chance: {
     label: "Важные шансы",
-    color: "#9A6B13",
-    soft: "#FFF3D7",
-    border: "#E8CC88",
-    symbol: "★"
+    color: "#9A702F",
+    soft: "#F8F0DF",
+    border: "#DCC792",
+    symbol: "◇"
   },
   risk: {
     label: "Дни риска",
-    color: "#B33A36",
-    soft: "#FDE9E7",
-    border: "#F0B8B3",
+    color: "#8A5D62",
+    soft: "#F6EBEB",
+    border: "#DDBFC2",
     symbol: "!"
   },
   neutral: {
     label: "Обычный день",
-    color: "#405A77",
-    soft: "#F1F4F8",
-    border: "#DCE3EC",
-    symbol: "•"
+    color: "#657484",
+    soft: "#F3F1EC",
+    border: "#D9D4C8",
+    symbol: "·"
   }
 };
 
 const formatBirth = (birth) =>
   `${String(birth.day).padStart(2, "0")}.${String(birth.month).padStart(2, "0")}.${birth.year}`;
 
-const xml = (value) => String(value)
-  .replace(/&/g, "&amp;")
-  .replace(/</g, "&lt;")
-  .replace(/>/g, "&gt;");
-
 const coverBackground = () => ({
   svg: `<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842">
     <defs>
-      <linearGradient id="cover" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#111B3B"/>
-        <stop offset="48%" stop-color="#263B74"/>
-        <stop offset="100%" stop-color="#663B78"/>
+      <radialGradient id="paper" cx="42%" cy="18%" r="92%">
+        <stop offset="0%" stop-color="#FFFDF8"/>
+        <stop offset="62%" stop-color="#F8F2E7"/>
+        <stop offset="100%" stop-color="#EEE3D2"/>
+      </radialGradient>
+      <linearGradient id="powder" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#DCEAF0"/>
+        <stop offset="100%" stop-color="#C7DDE5"/>
       </linearGradient>
-      <radialGradient id="glowA" cx="18%" cy="16%" r="58%">
-        <stop offset="0%" stop-color="#7AD5E0" stop-opacity=".32"/>
-        <stop offset="100%" stop-color="#7AD5E0" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="glowB" cx="86%" cy="78%" r="62%">
-        <stop offset="0%" stop-color="#E29BCD" stop-opacity=".30"/>
-        <stop offset="100%" stop-color="#E29BCD" stop-opacity="0"/>
-      </radialGradient>
     </defs>
-    <rect width="595" height="842" fill="url(#cover)"/>
-    <rect width="595" height="842" fill="url(#glowA)"/>
-    <rect width="595" height="842" fill="url(#glowB)"/>
-    <rect x="25" y="25" width="545" height="792" rx="22" fill="none" stroke="#E5C985" stroke-width="0.8" opacity=".72"/>
-    <rect x="33" y="33" width="529" height="776" rx="18" fill="none" stroke="#FFFFFF" stroke-width="0.35" opacity=".22"/>
-    <g fill="#FFFFFF" opacity=".10" font-family="Georgia, serif" text-anchor="middle">
-      <text x="78" y="130" font-size="88">9</text>
-      <text x="158" y="92" font-size="39">6</text>
-      <text x="504" y="148" font-size="76">6</text>
-      <text x="449" y="97" font-size="36">9</text>
-      <text x="90" y="735" font-size="70">6</text>
-      <text x="495" y="748" font-size="82">9</text>
+    <rect width="595" height="842" fill="url(#paper)"/>
+    <rect x="20" y="20" width="555" height="802" rx="12" fill="none" stroke="#B78A3F" stroke-width=".8"/>
+    <rect x="27" y="27" width="541" height="788" rx="10" fill="none" stroke="#D9C59F" stroke-width=".32"/>
+
+    <g fill="none" stroke="#B78A3F" opacity=".30">
+      <circle cx="297.5" cy="99" r="38" stroke-width=".5"/>
+      <circle cx="297.5" cy="99" r="25" stroke-width=".35" stroke-dasharray="2 5"/>
+      <path d="M297.5 50 V65 M297.5 133 V148 M249 99 H264 M331 99 H346" stroke-width=".45"/>
     </g>
-    <g fill="#E5C985" opacity=".78">
-      <circle cx="297.5" cy="82" r="2.2"/>
-      <circle cx="285" cy="82" r="1.2"/>
-      <circle cx="310" cy="82" r="1.2"/>
-      <circle cx="297.5" cy="762" r="2.2"/>
-      <circle cx="285" cy="762" r="1.2"/>
-      <circle cx="310" cy="762" r="1.2"/>
+    <g fill="#B78A3F" opacity=".55">
+      <path d="M297.5 77 L301 89 L313 92.5 L301 96 L297.5 108 L294 96 L282 92.5 L294 89Z"/>
+    </g>
+
+    <!-- abstract tear-off calendar silhouette -->
+    <g transform="translate(125 255)">
+      <rect x="0" y="0" width="345" height="330" rx="18" fill="#FFFDFC" stroke="#C8A45D" stroke-width=".9"/>
+      <rect x="0" y="0" width="345" height="75" rx="18" fill="url(#powder)"/>
+      <rect x="0" y="58" width="345" height="17" fill="url(#powder)"/>
+      <circle cx="92" cy="22" r="7.5" fill="#F8F2E7" stroke="#B78A3F" stroke-width=".6"/>
+      <circle cx="253" cy="22" r="7.5" fill="#F8F2E7" stroke="#B78A3F" stroke-width=".6"/>
+      <path d="M26 91 H319" stroke="#C8A45D" stroke-width=".55" stroke-dasharray="2 5" opacity=".58"/>
+      <g fill="#B78A3F" opacity=".10" font-family="Georgia, serif" text-anchor="middle">
+        <text x="55" y="288" font-size="46">9</text>
+        <text x="290" y="285" font-size="44">6</text>
+      </g>
+    </g>
+
+    <g fill="#B78A3F" opacity=".42">
+      <circle cx="297.5" cy="34" r="1.8"/><circle cx="288" cy="34" r=".9"/><circle cx="307" cy="34" r=".9"/>
+      <circle cx="297.5" cy="808" r="1.8"/><circle cx="288" cy="808" r=".9"/><circle cx="307" cy="808" r=".9"/>
     </g>
   </svg>`
 });
@@ -122,21 +128,24 @@ const coverBackground = () => ({
 const innerBackground = () => ({
   svg: `<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842">
     <defs>
-      <radialGradient id="paper" cx="18%" cy="8%" r="90%">
-        <stop offset="0%" stop-color="#F4F7FF"/>
-        <stop offset="52%" stop-color="#FCFBF8"/>
-        <stop offset="100%" stop-color="#F8F3FB"/>
+      <radialGradient id="innerPaper" cx="35%" cy="12%" r="96%">
+        <stop offset="0%" stop-color="#FFFDF9"/>
+        <stop offset="70%" stop-color="#FAF7F0"/>
+        <stop offset="100%" stop-color="#F2EBDF"/>
       </radialGradient>
     </defs>
-    <rect width="595" height="842" fill="url(#paper)"/>
-    <rect x="20" y="20" width="555" height="802" rx="16" fill="none" stroke="#D3B56F" stroke-width="0.75" opacity=".72"/>
-    <rect x="27" y="27" width="541" height="788" rx="13" fill="none" stroke="#6F83B6" stroke-width="0.3" opacity=".34"/>
-    <circle cx="35" cy="94" r="58" fill="#7D9BD1" opacity=".055"/>
-    <circle cx="555" cy="724" r="88" fill="#9F67AA" opacity=".05"/>
-    <g fill="#C39C49" opacity=".24">
-      <circle cx="297.5" cy="34" r="1.7"/>
-      <circle cx="289" cy="34" r="1"/>
-      <circle cx="306" cy="34" r="1"/>
+    <rect width="595" height="842" fill="url(#innerPaper)"/>
+    <rect x="20" y="20" width="555" height="802" rx="10" fill="none" stroke="#B99151" stroke-width=".62"/>
+    <rect x="27" y="27" width="541" height="788" rx="8" fill="none" stroke="#DCCDAF" stroke-width=".25"/>
+
+    <g fill="none" stroke="#91B2C0" opacity=".065">
+      <rect x="402" y="625" width="124" height="96" rx="4"/>
+      <path d="M419.7 625 V721 M437.4 625 V721 M455.1 625 V721 M472.8 625 V721 M490.5 625 V721 M508.2 625 V721"/>
+      <path d="M402 644.2 H526 M402 663.4 H526 M402 682.6 H526 M402 701.8 H526"/>
+    </g>
+
+    <g fill="#C29B58" opacity=".20">
+      <circle cx="297.5" cy="34" r="1.6"/><circle cx="289" cy="34" r=".8"/><circle cx="306" cy="34" r=".8"/>
     </g>
   </svg>`
 });
@@ -161,31 +170,31 @@ const summaryCard = (days, status, monthIndex) => {
       widths: ["*"],
       body: [[{
         fillColor: palette.soft,
-        margin: [17, 15, 17, 15],
+        margin: [18, 16, 18, 16],
         stack: [
           {
             columns: [
-              { text: palette.symbol, width: 28, color: palette.color, bold: true, fontSize: 22, alignment: "center" },
-              { text: palette.label.toUpperCase(), color: palette.color, bold: true, fontSize: 17, margin: [5, 1, 0, 0] }
+              { text: palette.symbol, width: 28, color: palette.color, bold: true, fontSize: 20, alignment: "center" },
+              { text: palette.label.toUpperCase(), color: palette.color, bold: true, fontSize: 16.5, margin: [5, 1, 0, 0] }
             ],
-            margin: [0, 0, 0, 10]
+            margin: [0, 0, 0, 9]
           },
           ...groups.map(([label, dates]) => ({
             stack: [
-              { text: label, bold: true, color: "#273A57", fontSize: 15, margin: [0, 6, 0, 2] },
-              { text: `${dates.join(", ")} ${MONTHS_GENITIVE[monthIndex]}`, color: "#53647D", fontSize: 13 }
+              { text: label, bold: true, color: "#304657", fontSize: 15.5, margin: [0, 5, 0, 2] },
+              { text: `${dates.join(", ")} ${MONTHS_GENITIVE[monthIndex]}`, color: "#687685", fontSize: 13.5 }
             ]
           }))
         ]
       }]]
     },
     layout: {
-      hLineWidth: () => 0.8,
-      vLineWidth: () => 0.8,
+      hLineWidth: () => 0.6,
+      vLineWidth: () => 0.6,
       hLineColor: () => palette.border,
       vLineColor: () => palette.border
     },
-    margin: [0, 0, 0, 13]
+    margin: [0, 0, 0, 14]
   };
 };
 
@@ -196,73 +205,130 @@ const adviceBox = (title, items, type) => {
     table: {
       widths: ["*"],
       body: [[{
-        fillColor: need ? "#EBF8F0" : "#FDEEEE",
-        margin: [13, 10, 13, 10],
+        fillColor: need ? "#EEF4F3" : "#F6EEEE",
+        margin: [16, 13, 16, 13],
         stack: [
-          { text: title, bold: true, color: need ? "#087A48" : "#A73B37", fontSize: 12.5, margin: [0, 0, 0, 5] },
-          { ul: items, color: "#344B67", fontSize: 11.5, lineHeight: 1.28, margin: [7, 0, 0, 0] }
+          {
+            text: title,
+            bold: true,
+            color: need ? "#466D73" : "#8A5D62",
+            fontSize: 13.5,
+            characterSpacing: .6,
+            margin: [0, 0, 0, 7]
+          },
+          {
+            ul: items,
+            color: "#35495A",
+            fontSize: 13,
+            lineHeight: 1.32,
+            margin: [7, 0, 0, 0]
+          }
         ]
       }]]
     },
     layout: {
-      hLineWidth: () => 0.5,
-      vLineWidth: () => 0.5,
-      hLineColor: () => need ? "#B9E5CB" : "#F0C1BE",
-      vLineColor: () => need ? "#B9E5CB" : "#F0C1BE"
+      hLineWidth: () => 0.45,
+      vLineWidth: () => 0.45,
+      hLineColor: () => need ? "#BCD0D0" : "#DABFC2",
+      vLineColor: () => need ? "#BCD0D0" : "#DABFC2"
     },
-    margin: [0, 7, 0, 0]
+    margin: [0, 8, 0, 0]
   };
 };
 
-const dayBlock = ({ day, item, info }, monthIndex) => {
+const dayPage = ({ day, item, info }, monthIndex, year, isLast) => {
   const status = info?.status || "neutral";
   const palette = STATUS[status] || STATUS.neutral;
   const specialLabel = status === "neutral" ? "" : (info?.group || palette.label);
+  const weekday = WEEKDAYS[new Date(year, monthIndex, day).getDay()];
 
-  return [
-    {
-      columns: [
-        {
-          width: 54,
-          table: {
-            widths: [54],
-            heights: [54],
-            body: [[{
-              text: String(day),
-              alignment: "center",
-              bold: true,
-              fontSize: 22,
-              color: palette.color,
-              fillColor: palette.soft,
-              margin: [0, 12, 0, 10]
-            }]]
-          },
-          layout: {
-            hLineWidth: () => 0.8,
-            vLineWidth: () => 0.8,
-            hLineColor: () => palette.border,
-            vLineColor: () => palette.border
-          }
+  return {
+    unbreakable: true,
+    stack: [
+      {
+        table: {
+          widths: ["*"],
+          body: [[{
+            fillColor: "#FFFDFC",
+            margin: [24, 0, 24, 24],
+            stack: [
+              {
+                table: {
+                  widths: ["*", "*"],
+                  body: [[
+                    { text: "○", fontSize: 21, color: "#B78A3F", alignment: "left", margin: [18, 10, 0, 2] },
+                    { text: "○", fontSize: 21, color: "#B78A3F", alignment: "right", margin: [0, 10, 18, 2] }
+                  ]]
+                },
+                layout: "noBorders",
+                margin: [-24, 0, -24, 0]
+              },
+              {
+                canvas: [{
+                  type: "line",
+                  x1: 0, y1: 0, x2: 413, y2: 0,
+                  lineWidth: .55,
+                  lineColor: "#C9B077",
+                  dash: { length: 2, space: 4 }
+                }],
+                margin: [0, 1, 0, 16]
+              },
+              { text: weekday, fontSize: 12.5, bold: true, color: "#9A702F", characterSpacing: 1.8, alignment: "center" },
+              { text: String(day), fontSize: 76, bold: true, color: "#19364E", alignment: "center", margin: [0, 2, 0, -3] },
+              { text: MONTHS_GENITIVE[monthIndex].toUpperCase(), fontSize: 14, color: "#6B7D88", characterSpacing: 1.5, alignment: "center" },
+              {
+                columns: [
+                  { width: "*", text: "" },
+                  {
+                    width: "auto",
+                    text: `ЛИЧНЫЙ ДЕНЬ ${item.energy}`,
+                    fontSize: 12.5,
+                    bold: true,
+                    color: "#466D73",
+                    fillColor: "#EAF3F2",
+                    margin: [10, 6, 10, 6],
+                    alignment: "center"
+                  },
+                  { width: "*", text: "" }
+                ],
+                margin: [0, 10, 0, 8]
+              },
+              ...(specialLabel ? [{
+                text: specialLabel,
+                fontSize: 12.5,
+                bold: true,
+                color: palette.color,
+                alignment: "center",
+                margin: [0, 0, 0, 13]
+              }] : []),
+              {
+                canvas: [{ type: "line", x1: 46, y1: 0, x2: 367, y2: 0, lineWidth: .55, lineColor: "#D8C59C" }],
+                margin: [0, 0, 0, 17]
+              },
+              {
+                text: item.text || "Текст дня пока недоступен.",
+                color: "#2F4353",
+                fontSize: 15,
+                lineHeight: 1.38,
+                alignment: "left",
+                margin: [4, 0, 4, 7]
+              },
+              ...(adviceBox("СЕГОДНЯ НУЖНО", item.todayNeed, "need") ? [adviceBox("СЕГОДНЯ НУЖНО", item.todayNeed, "need")] : []),
+              ...(adviceBox("СЕГОДНЯ НЕЛЬЗЯ", item.todayAvoid, "avoid") ? [adviceBox("СЕГОДНЯ НЕЛЬЗЯ", item.todayAvoid, "avoid")] : [])
+            ]
+          }]]
         },
-        {
-          width: "*",
-          margin: [14, 2, 0, 0],
-          stack: [
-            { text: `${day} ${MONTHS_GENITIVE[monthIndex]} · личный день ${item.energy}`, bold: true, color: "#243B60", fontSize: 16 },
-            ...(specialLabel ? [{ text: specialLabel, bold: true, color: palette.color, fontSize: 11.5, margin: [0, 5, 0, 0] }] : [])
-          ]
+        layout: {
+          hLineWidth: () => .75,
+          vLineWidth: () => .75,
+          hLineColor: () => "#C8A45D",
+          vLineColor: () => "#C8A45D"
         }
-      ],
-      margin: [0, 6, 0, 10]
-    },
-    { text: item.text || "Текст дня пока недоступен.", color: "#42536D", fontSize: 13.5, lineHeight: 1.32, margin: [0, 0, 0, 6] },
-    ...(adviceBox("СЕГОДНЯ НУЖНО", item.todayNeed, "need") ? [adviceBox("СЕГОДНЯ НУЖНО", item.todayNeed, "need")] : []),
-    ...(adviceBox("СЕГОДНЯ НЕЛЬЗЯ", item.todayAvoid, "avoid") ? [adviceBox("СЕГОДНЯ НЕЛЬЗЯ", item.todayAvoid, "avoid")] : []),
-    {
-      canvas: [{ type: "line", x1: 0, y1: 0, x2: 463, y2: 0, lineWidth: 0.45, lineColor: "#D8DDE8" }],
-      margin: [0, 16, 0, 10]
-    }
-  ];
+      }
+    ],
+    margin: [0, 4, 0, 0],
+    ...(isLast ? {} : { pageBreak: "after" })
+  };
 };
 
 const buildDocument = ({ birth, monthDate, days }) => {
@@ -279,34 +345,32 @@ const buildDocument = ({ birth, monthDate, days }) => {
       subject: "Персональный нумерологический разбор месяца"
     },
     pageSize: "A4",
-    pageMargins: [66, 72, 66, 72],
+    pageMargins: [62, 66, 62, 66],
     background: (page) => page === 1 ? coverBackground() : innerBackground(),
-    defaultStyle: { font: "Roboto", color: "#3F506A" },
+    defaultStyle: { font: "Roboto", color: "#34495A" },
     styles: {
-      coverBrand: { fontSize: 12, bold: true, color: "#E9D493", characterSpacing: 2.1, alignment: "center" },
-      coverTitle: { fontSize: 25, bold: true, color: "#FFFFFF", alignment: "center", characterSpacing: 1.15 },
-      coverMonth: { fontSize: 54, bold: true, color: "#FFFFFF", alignment: "center", lineHeight: 1.0 },
-      coverYear: { fontSize: 78, bold: true, color: "#A9DDE5", alignment: "center", lineHeight: 1.0 },
-      coverDate: { fontSize: 16, bold: true, color: "#F0D79A", alignment: "center" },
-      coverCopy: { fontSize: 15, color: "#E5EAF7", alignment: "center", lineHeight: 1.36 },
-      kicker: { fontSize: 11, bold: true, color: "#A2762D", characterSpacing: 1.3, alignment: "center" },
-      pageTitle: { fontSize: 33, bold: true, color: "#243F73", alignment: "center", margin: [0, 0, 0, 12] },
-      pageLead: { fontSize: 14, color: "#61708A", alignment: "center", lineHeight: 1.34, margin: [0, 0, 0, 24] },
-      sectionKicker: { fontSize: 10.5, bold: true, color: "#9A742F", characterSpacing: 1.15, margin: [0, 0, 0, 8] },
-      sectionTitle: { fontSize: 30, bold: true, color: "#243F73", margin: [0, 0, 0, 12] }
+      coverBrand: { fontSize: 11.5, bold: true, color: "#9A702F", characterSpacing: 2.2, alignment: "center" },
+      coverTitle: { fontSize: 21, bold: true, color: "#19364E", alignment: "center", characterSpacing: 1.3 },
+      coverMonth: { fontSize: 49, bold: true, color: "#19364E", alignment: "center", lineHeight: 1.0 },
+      coverYear: { fontSize: 67, bold: true, color: "#9A702F", alignment: "center", lineHeight: 1.0 },
+      coverDate: { fontSize: 15.5, bold: true, color: "#5B6E79", alignment: "center" },
+      coverCopy: { fontSize: 14.5, color: "#687985", alignment: "center", lineHeight: 1.38 },
+      kicker: { fontSize: 11.5, bold: true, color: "#9A702F", characterSpacing: 1.35, alignment: "center" },
+      pageTitle: { fontSize: 31, bold: true, color: "#19364E", alignment: "center", margin: [0, 0, 0, 12] },
+      pageLead: { fontSize: 14.5, color: "#687985", alignment: "center", lineHeight: 1.4, margin: [8, 0, 8, 24] }
     },
     content: [
       {
         stack: [
-          { text: "НУМЕРОЛОГИЯ ONLINE", style: "coverBrand", margin: [0, 42, 0, 62] },
-          { text: "ЛИЧНЫЙ КАЛЕНДАРЬ", style: "coverTitle", margin: [0, 0, 0, 19] },
-          { text: month.toUpperCase(), style: "coverMonth", margin: [0, 0, 0, 3] },
+          { text: "НУМЕРОЛОГИЯ ONLINE", style: "coverBrand", margin: [0, 47, 0, 69] },
+          { text: "ЛИЧНЫЙ КАЛЕНДАРЬ", style: "coverTitle", margin: [0, 0, 0, 15] },
+          { text: month.toUpperCase(), style: "coverMonth", margin: [0, 0, 0, 1] },
           { text: String(year), style: "coverYear", margin: [0, 0, 0, 34] },
-          { text: `Дата рождения · ${formatBirth(birth)}`, style: "coverDate", margin: [0, 0, 0, 35] },
+          { text: `Дата рождения · ${formatBirth(birth)}`, style: "coverDate", margin: [0, 0, 0, 32] },
           {
-            text: "Лучшие дни · важные шансы · дни риска\nи личный прогноз на каждый день месяца",
+            text: "Ваш месяц как личный отрывной календарь —\nс прогнозом, подсказками и важными датами.",
             style: "coverCopy",
-            margin: [34, 0, 34, 0]
+            margin: [38, 0, 38, 0]
           }
         ],
         pageBreak: "after"
@@ -314,22 +378,19 @@ const buildDocument = ({ birth, monthDate, days }) => {
       { text: "ВАШ МЕСЯЦ В ОДНОМ ВЗГЛЯДЕ", style: "kicker" },
       { text: "Главные даты месяца", style: "pageTitle" },
       {
-        text: "Сначала сохраните ориентиры месяца, а затем переходите к подробному разбору каждого дня.",
+        text: "Сначала сохраните ориентиры месяца, а дальше листайте его как личный календарь — день за днём.",
         style: "pageLead"
       },
       ...summary,
       { text: "", pageBreak: "after" },
-      { text: "ПОДРОБНЫЙ КАЛЕНДАРЬ", style: "sectionKicker" },
-      { text: `Все дни · ${month} ${year}`, style: "sectionTitle" },
-      { text: `Дата рождения: ${formatBirth(birth)}`, color: "#718099", fontSize: 12.5, margin: [0, 0, 0, 20] },
-      ...days.flatMap((day) => dayBlock(day, monthIndex))
+      ...days.map((day, index) => dayPage(day, monthIndex, year, index === days.length - 1))
     ],
     footer: (page, pages) => page === 1 ? null : ({
       text: `Нумерология Онлайн · ${page - 1} / ${pages - 1}`,
       alignment: "center",
-      color: "#8B7896",
+      color: "#9A8661",
       fontSize: 8.5,
-      margin: [0, 12, 0, 0]
+      margin: [0, 11, 0, 0]
     })
   };
 };
