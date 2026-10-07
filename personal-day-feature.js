@@ -55,6 +55,25 @@ const calendarInfo = (energy) => {
   return { status: "neutral", label: "" };
 };
 const calendarStatus = (energy) => calendarInfo(energy).status;
+const monthMarkedDays = (birth, date = new Date()) => {
+  const total = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  const byStatus = { good: [], chance: [], risk: [], avoid: [] };
+  for (let day = 1; day <= total; day += 1) {
+    const energy = personalDay(birth, new Date(date.getFullYear(), date.getMonth(), day));
+    const info = calendarInfo(energy);
+    if (byStatus[info.status]) byStatus[info.status].push({ day, energy, info });
+  }
+  const selected = new Map();
+  ["good", "chance", "risk"].forEach((status) => {
+    byStatus[status].slice(0, 5).forEach((item) => selected.set(item.day, item));
+  });
+  if (selected.size < 15) {
+    [...byStatus.avoid, ...byStatus.good, ...byStatus.chance, ...byStatus.risk].forEach((item) => {
+      if (selected.size < 15 && !selected.has(item.day)) selected.set(item.day, item);
+    });
+  }
+  return selected;
+};
 const monthCalendar = (birth, date = new Date()) => {
   const year = date.getFullYear();
   const month = date.getMonth();
@@ -66,7 +85,7 @@ const monthCalendar = (birth, date = new Date()) => {
   for (let day = 1; day <= total; day += 1) {
     const current = new Date(year, month, day);
     const energy = personalDay(birth, current);
-    const info = calendarInfo(energy);
+    const info = monthMarkedDays(birth, date).get(day)?.info || { status: "neutral", label: "" };
     cells.push(`<button type="button" class="personal-month-day personal-month-${info.status}" data-month-day="${day}" aria-label="День ${day}, ${esc(info.label || `личный день ${energy}`)}">${day}</button>`);
   }
   return `<section class="personal-month-preview">
