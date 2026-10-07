@@ -394,6 +394,7 @@ const buildFullReportPdf = async () => {
     today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day) ? 1 : 0
   );
 
+  const { corners, diagonals } = matrixData;
   const tail = findKarmicTail(matrixData, karmicTails);
   const programs = findKarmicPrograms(matrixData, karmicPrograms);
   const numericRows = [
