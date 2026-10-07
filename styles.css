@@ -76,7 +76,7 @@
 .personal-day-error{margin:0;color:#a23e43;font-size:14px}
 .personal-day-error[hidden],.personal-day-result[hidden]{display:none}
 .personal-day-result{margin-top:15px}
-.personal-day-main{margin:0}
+.personal-day-main{margin:0;position:relative}.personal-day-code{position:absolute;top:12px;right:16px;color:#9aa6b9;font:600 10px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;opacity:.72}
 .personal-day-main h4{margin:20px 0 7px;color:#3a5273;font-size:18px}
 .personal-day-main p+p{margin-top:10px}
 @media(max-width:520px){
