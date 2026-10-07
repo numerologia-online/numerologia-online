@@ -39,13 +39,22 @@ const paragraphs = (items = []) => items.filter(Boolean).map((text) => `<p>${esc
 const bullets = (items = []) => items.filter(Boolean).map((text) => `<li>${esc(text)}</li>`).join("");
 const todayLabel = () => new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date());
 const monthTitle = (date) => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(date);
-const calendarStatus = (energy) => {
-  if ([16, 18].includes(energy)) return "avoid";
-  if ([9, 13].includes(energy)) return "risk";
-  if ([1, 3, 8, 17, 19, 21, 22].includes(energy)) return "good";
-  if ([10, 20, 28].includes(energy)) return "chance";
-  return "neutral";
+const calendarInfo = (energy) => {
+  if ([8, 17, 19].includes(energy)) return { status: "good", label: "День денег и покупок" };
+  if ([1, 10, 21].includes(energy)) return { status: "good", label: "День действий и важных решений" };
+  if ([2, 11, 23].includes(energy)) return { status: "good", label: "День разговоров и честного признания" };
+  if ([4, 22].includes(energy)) return { status: "good", label: "День документов и порядка" };
+  if ([6, 14, 20].includes(energy)) return { status: "good", label: "День встреч и отношений" };
+  if ([3, 7, 9].includes(energy)) return { status: "chance", label: "День удовольствия и восстановления" };
+  if ([5, 12].includes(energy)) return { status: "chance", label: "Неожиданный шанс и полезная подсказка" };
+  if ([15, 16].includes(energy)) return { status: "avoid", label: "Не делайте этого на эмоциях" };
+  if ([18, 24].includes(energy)) return { status: "risk", label: "Осторожно: разговоры и резкие реакции" };
+  if ([13, 25].includes(energy)) return { status: "risk", label: "Осторожно: не возвращайтесь к старому" };
+  if ([26, 28].includes(energy)) return { status: "risk", label: "Осторожно: покупки и крупные траты" };
+  if ([27, 29].includes(energy)) return { status: "avoid", label: "Сначала успокойтесь, потом решайте" };
+  return { status: "neutral", label: "" };
 };
+const calendarStatus = (energy) => calendarInfo(energy).status;
 const monthCalendar = (birth, date = new Date()) => {
   const year = date.getFullYear();
   const month = date.getMonth();
@@ -58,8 +67,9 @@ const monthCalendar = (birth, date = new Date()) => {
   for (let day = 1; day <= total; day += 1) {
     const current = new Date(year, month, day);
     const energy = personalDay(birth, current);
+    const info = calendarInfo(energy);
     const locked = day > openUntil;
-    cells.push(`<button type="button" class="personal-month-day personal-month-${locked ? "locked" : calendarStatus(energy)}" data-month-day="${day}" ${locked ? "aria-label=\"День закрыт до подписки\"" : `aria-label="День ${day}, личный день ${energy}"`}>${day}${locked ? '<span class="personal-month-lock">•</span>' : ""}</button>`);
+    cells.push(`<button type="button" class="personal-month-day personal-month-${locked ? "locked" : info.status}" data-month-day="${day}" ${locked ? "aria-label=\"День закрыт до подписки\"" : `aria-label="День ${day}, ${esc(info.label || `личный день ${energy}`)}"`}>${day}${locked ? '<span class="personal-month-lock">•</span>' : ""}</button>`);
   }
   return `<section class="personal-month-preview">
     <div class="personal-month-heading"><div><p class="personal-month-kicker">Карта ближайших дней</p><h3>${esc(monthTitle(date))}</h3></div><span class="personal-month-mark">✦</span></div>
@@ -67,6 +77,10 @@ const monthCalendar = (birth, date = new Date()) => {
     <div class="personal-month-grid">${cells.join("")}</div>
     <div class="personal-month-legend"><span><i class="personal-month-dot good"></i>Хороший день</span><span><i class="personal-month-dot chance"></i>Очень важный шанс</span><span><i class="personal-month-dot risk"></i>Осторожно</span><span><i class="personal-month-dot avoid"></i>Не делайте этого</span><span><i class="personal-month-dot locked"></i>По подписке</span></div>
     <button type="button" class="personal-month-open">Открыть разбор месяца <span>→</span></button>
+    <section class="personal-month-details" hidden>
+      <p class="personal-month-details-lead">Здесь собраны самые заметные даты месяца. Остальные дни остаются обычными и не требуют отдельного разбора.</p>
+      <div class="personal-month-detail-list"></div>
+    </section>
   </section>`;
 };
 
@@ -98,7 +112,24 @@ export const openPersonalDay = () => {
     result.hidden = false;
     result.innerHTML = `<section class="personal-day-main"><span class="personal-day-code">${item.energy} · ${item.calendarDay}</span><p class="personal-day-label">ВАШ ДЕНЬ</p>${paragraphs([item.text])}${item.todayNeed?.length ? `<section class="personal-day-advice personal-day-need"><h4><span class="personal-day-advice-icon">✓</span> Сегодня нужно</h4><ul>${bullets(item.todayNeed)}</ul></section>` : ""}${item.todayAvoid?.length ? `<section class="personal-day-advice personal-day-avoid"><h4><span class="personal-day-advice-icon">×</span> Сегодня нельзя</h4><ul>${bullets(item.todayAvoid)}</ul></section>` : ""}</section>`;
     result.insertAdjacentHTML("beforeend", monthCalendar(birth));
-    result.querySelector(".personal-month-open")?.addEventListener("click", () => alert("Разбор месяца скоро будет доступен по подписке."));
+    const monthDetails = result.querySelector(".personal-month-details");
+    const monthList = result.querySelector(".personal-month-detail-list");
+    result.querySelector(".personal-month-open")?.addEventListener("click", (event) => {
+      const opened = !monthDetails.hidden;
+      monthDetails.hidden = opened;
+      event.currentTarget.innerHTML = opened ? "Открыть разбор месяца <span>→</span>" : "Скрыть разбор месяца <span>↑</span>";
+      if (!opened && !monthList.dataset.ready) {
+        const now = new Date();
+        const total = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const highlights = [];
+        for (let day = 1; day <= total; day += 1) {
+          const info = calendarInfo(personalDay(birth, new Date(now.getFullYear(), now.getMonth(), day)));
+          if (info.status !== "neutral" && highlights.length < 15) highlights.push({ day, ...info });
+        }
+        monthList.innerHTML = highlights.map(({ day, status, label }) => `<p class="personal-month-detail-${status}"><strong>${day} ${new Intl.DateTimeFormat("ru-RU", { month: "long" }).format(now)}:</strong> ${esc(label)}.</p>`).join("");
+        monthList.dataset.ready = "1";
+      }
+    });
     result.querySelectorAll("[data-month-day]:not(.personal-month-locked)").forEach((button) => button.addEventListener("click", () => {
       const chosen = new Date(new Date().getFullYear(), new Date().getMonth(), Number(button.dataset.monthDay));
       alert(`Личный день ${personalDay(birth, chosen)} уже рассчитан в вашем календаре.`);
