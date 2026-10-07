@@ -281,21 +281,33 @@ const appendPdfParagraphs = (content, paragraphs = []) => {
 
 const fullReportPdfFrame = () => `
   <svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842">
-    <rect width="595" height="842" fill="#FBF7EE"/>
-    <rect x="18" y="18" width="559" height="806" fill="none" stroke="#C8A45D" stroke-width="0.8"/>
-    <g fill="#C8A45D" opacity="0.14" font-family="Georgia, serif" text-anchor="middle">
-      <text x="72" y="108" font-size="72">9</text><text x="145" y="78" font-size="34">6</text><text x="215" y="120" font-size="25">✦</text>
-      <text x="506" y="112" font-size="70">6</text><text x="447" y="80" font-size="32">9</text><text x="380" y="122" font-size="24">✦</text>
-      <text x="64" y="430" font-size="30">✦</text><text x="92" y="512" font-size="48">6</text><text x="62" y="596" font-size="24">9</text>
-      <text x="531" y="430" font-size="30">✦</text><text x="502" y="514" font-size="48">9</text><text x="533" y="598" font-size="24">6</text>
-      <text x="92" y="770" font-size="66">6</text><text x="168" y="802" font-size="30">9</text><text x="238" y="768" font-size="24">✦</text>
-      <text x="505" y="770" font-size="68">9</text><text x="430" y="802" font-size="30">6</text><text x="360" y="768" font-size="24">✦</text>
+    <defs>
+      <radialGradient id="fullPaper" cx="38%" cy="14%" r="96%">
+        <stop offset="0%" stop-color="#FFFDF8"/>
+        <stop offset="66%" stop-color="#FAF6EE"/>
+        <stop offset="100%" stop-color="#F1E8D9"/>
+      </radialGradient>
+    </defs>
+    <rect width="595" height="842" fill="url(#fullPaper)"/>
+    <rect x="18" y="18" width="559" height="806" rx="9" fill="none" stroke="#B98E46" stroke-width="0.75"/>
+    <rect x="25" y="25" width="545" height="792" rx="7" fill="none" stroke="#DCCCA9" stroke-width="0.28"/>
+
+    <g fill="none" stroke="#91B3C0" opacity="0.07">
+      <circle cx="74" cy="112" r="43" stroke-width=".55"/>
+      <circle cx="74" cy="112" r="29" stroke-width=".32" stroke-dasharray="2 5"/>
+      <path d="M74 58 V72 M74 152 V166 M20 112 H34 M114 112 H128" stroke-width=".45"/>
+      <polygon points="521,658 551,688 521,718 491,688" stroke-width=".4"/>
+      <circle cx="521" cy="688" r="43" stroke-width=".32"/>
     </g>
-    <g fill="#B49354" opacity="0.08" font-family="Georgia, serif" font-size="18" text-anchor="middle">
-      <text x="297" y="54">9 · 9 · 6 · 6 · 9 · 9</text>
-      <text x="297" y="816">6 · 6 · 9 · 9 · 6 · 6</text>
-      <text x="31" y="330" transform="rotate(-90 31 330)">9 · 6 · 9 · 6 · 9</text>
-      <text x="564" y="520" transform="rotate(90 564 520)">6 · 9 · 6 · 9 · 6</text>
+
+    <g fill="#B98E46" opacity=".26">
+      <circle cx="297.5" cy="34" r="1.8"/><circle cx="288" cy="34" r=".9"/><circle cx="307" cy="34" r=".9"/>
+      <circle cx="297.5" cy="808" r="1.8"/><circle cx="288" cy="808" r=".9"/><circle cx="307" cy="808" r=".9"/>
+    </g>
+
+    <g fill="none" stroke="#B98E46" stroke-width=".48" opacity=".28">
+      <path d="M37 56 H151"/><path d="M444 56 H558"/>
+      <path d="M37 786 H151"/><path d="M444 786 H558"/>
     </g>
   </svg>`;
 
@@ -365,13 +377,17 @@ const buildPdfMatrixSvg = (data) => {
 
 const fullReportCoverTitle = () => `
   <svg xmlns="http://www.w3.org/2000/svg" width="483" height="158" viewBox="0 0 483 158">
-    <g text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="700">
-      <text x="241" y="71" font-size="66" fill="#B9955A" opacity="0.10">Полный</text>
-      <text x="241" y="145" font-size="66" fill="#B9955A" opacity="0.10">разбор</text>
-      <text x="240" y="70" font-size="66" fill="#7A5A8B" opacity="0.16">Полный</text>
-      <text x="240" y="144" font-size="66" fill="#7A5A8B" opacity="0.16">разбор</text>
-      <text x="238" y="68" font-size="66" fill="#583D73">Полный</text>
-      <text x="238" y="142" font-size="66" fill="#583D73">разбор</text>
+    <g text-anchor="middle">
+      <text x="241.5" y="25" font-family="Roboto, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3.5" fill="#9A702F">ПЕРСОНАЛЬНЫЙ</text>
+
+      <g font-family="Georgia, 'Times New Roman', serif" font-weight="700">
+        <text x="241" y="80" font-size="54" fill="#D6C7A8" opacity=".55">Полный разбор</text>
+        <text x="239.5" y="78" font-size="54" fill="#19364E">Полный разбор</text>
+      </g>
+
+      <path d="M103 111 H210 M273 111 H380" stroke="#B98E46" stroke-width=".7"/>
+      <path d="M241.5 103 L245 111 L241.5 119 L238 111Z" fill="#B98E46"/>
+      <text x="241.5" y="145" font-family="Roboto, Arial, sans-serif" font-size="13" letter-spacing="1.6" fill="#627888">ЛИЧНАЯ КАРТА И РАСШИФРОВКА</text>
     </g>
   </svg>`;
 
@@ -429,12 +445,12 @@ const buildFullReportPdf = async () => {
       layout: {
         hLineWidth: (index) => (index === 0 || index === 7 ? 0.7 : 0.35),
         vLineWidth: () => 0,
-        hLineColor: () => "#d8cfbd",
+        hLineColor: () => "#d7c6a4",
         paddingLeft: () => 8,
         paddingRight: () => 8,
         paddingTop: () => 7,
         paddingBottom: () => 7,
-        fillColor: (rowIndex) => (rowIndex % 2 === 0 ? "#fcfaf5" : null)
+        fillColor: (rowIndex) => (rowIndex % 2 === 0 ? "#FBF7EE" : "#F5F8F7")
       },
       style: "points", fontSize: 16, lineHeight: 1.15
     }
@@ -446,7 +462,7 @@ const buildFullReportPdf = async () => {
     content.push({
       stack: [
         { text: `${definition.eyebrow.toUpperCase()} · ЭНЕРГИЯ ${definition.energy}`, style: "eyebrow" },
-        { text: source?.title || definition.title, style: "sectionTitle", background: "#E9DDF1" },
+        { text: source?.title || definition.title, style: "sectionTitle", background: "#EEF3F2" },
         ...paragraphs.slice(0, 1).map((paragraph) => ({ text: paragraph, style: paragraph.length < 90 ? "subheading" : "paragraph" }))
       ],
       margin: [0, 28, 0, 0]
@@ -462,20 +478,20 @@ const buildFullReportPdf = async () => {
     info: { title: `Полный разбор ${formattedDate}` },
     background: () => ({ svg: fullReportPdfFrame() }),
     content,
-    defaultStyle: { font: "Roboto", fontSize: 26, color: "#493f53", lineHeight: 1.34 },
+    defaultStyle: { font: "Roboto", fontSize: 26, color: "#314454", lineHeight: 1.34 },
     styles: {
-      coverDate: { font: "Roboto", fontSize: 18, bold: true, color: "#A06A2D", margin: [0, 0, 0, 0] },
-      coverAge: { font: "Roboto", fontSize: 17, color: "#1D3654", bold: true, margin: [0, 8, 0, 0] },
-      chapter: { font: "Roboto", fontSize: 46, bold: true, color: "#4D286B", margin: [0, 0, 0, 18] },
-      chapterLead: { font: "Roboto", fontSize: 25, color: "#6d6376", lineHeight: 1.36, margin: [0, 0, 0, 28] },
-      eyebrow: { font: "Roboto", fontSize: 15, bold: true, color: "#087C82", characterSpacing: 1.05, margin: [0, 0, 0, 13] },
-      sectionTitle: { font: "Roboto", fontSize: 42, bold: true, color: "#5B2A78", lineHeight: 1.12, margin: [0, 0, 0, 20] },
-      subheading: { font: "Roboto", fontSize: 32, bold: true, color: "#8C5B20", lineHeight: 1.16, margin: [0, 18, 0, 12] },
-      partTitle: { font: "Roboto", fontSize: 34, bold: true, color: "#8C5B20", margin: [0, 26, 0, 12] },
-      paragraph: { fontSize: 26, alignment: "left", lineHeight: 1.34, margin: [0, 0, 0, 22] },
-      points: { margin: [0, 0, 0, 0], color: "#493f53", fontSize: 22 }
+      coverDate: { font: "Roboto", fontSize: 18, bold: true, color: "#8E6729", margin: [0, 0, 0, 0] },
+      coverAge: { font: "Roboto", fontSize: 17, color: "#19364E", bold: true, margin: [0, 8, 0, 0] },
+      chapter: { font: "Roboto", fontSize: 46, bold: true, color: "#19364E", margin: [0, 0, 0, 18] },
+      chapterLead: { font: "Roboto", fontSize: 25, color: "#667784", lineHeight: 1.36, margin: [0, 0, 0, 28] },
+      eyebrow: { font: "Roboto", fontSize: 15, bold: true, color: "#5D8791", characterSpacing: 1.05, margin: [0, 0, 0, 13] },
+      sectionTitle: { font: "Roboto", fontSize: 42, bold: true, color: "#19364E", lineHeight: 1.12, margin: [0, 0, 0, 20] },
+      subheading: { font: "Roboto", fontSize: 32, bold: true, color: "#8A672F", lineHeight: 1.16, margin: [0, 18, 0, 12] },
+      partTitle: { font: "Roboto", fontSize: 34, bold: true, color: "#8A672F", margin: [0, 26, 0, 12] },
+      paragraph: { fontSize: 26, color: "#314454", alignment: "left", lineHeight: 1.34, margin: [0, 0, 0, 22] },
+      points: { margin: [0, 0, 0, 0], color: "#314454", fontSize: 22 }
     },
-    footer: (page, pages) => ({ text: `Нумерология Онлайн · ${page} / ${pages}`, alignment: "center", color: "#a089a8", fontSize: 8.5, margin: [0, 8, 0, 0] })
+    footer: (page, pages) => ({ text: `Нумерология Онлайн · ${page} / ${pages}`, alignment: "center", color: "#9A8661", fontSize: 8.5, margin: [0, 8, 0, 0] })
   };
 
   const blob = await new Promise((resolve) => pdfMake.createPdf(documentDefinition).getBlob(resolve));
