@@ -422,7 +422,8 @@ const buildFullReportPdf = async () => {
           ["Как включить поток", String(matrixData.rightSpoke.near)],
           ["Где легче заработать", String(matrixData.rightSpoke.core)],
           ["Кармический хвост", tail ? String(tail.code) : [matrixData.tail.first, matrixData.tail.second, matrixData.bottom].join("-")],
-          ["Кармические программы", programs.length ? programs.map((program) => program.code).join(" · ") : "—"]
+          ["Кармические программы", programs.length ? programs.map((program) => program.code).join(" · ") : "—"],
+          ...programs.map((program) => [String(program.code), program.title])
         ]
       },
       layout: {
