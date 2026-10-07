@@ -123,3 +123,21 @@ section.personal-day-main .personal-day-label{display:block;margin:0 0 18px;colo
 .personal-month-summary-risk{background:linear-gradient(135deg,#ffe1df 0%,#fff5f4 100%);border:2px solid #f0aaa5}.personal-month-summary-risk h4{color:#b52e27}
 
 .personal-month-summary h4{display:flex;align-items:center;gap:12px;font-weight:900;font-size:25px}.personal-month-summary-icon{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;color:#fff;font-size:27px;font-weight:900;line-height:1}.personal-month-summary-good .personal-month-summary-icon{background:#08a95a}.personal-month-summary-risk .personal-month-summary-icon,.personal-month-summary-avoid .personal-month-summary-icon{background:#e3352f}.personal-month-summary-chance .personal-month-summary-icon{background:#d49a24}.personal-month-summary strong{font-weight:900;color:#274674}.personal-month-summary span{font-weight:600}
+/* Месячный разбор: акцентные карточки как в утверждённом референсе */
+.personal-month-summary{margin:18px 0;padding:26px 24px;border-radius:28px;box-shadow:0 14px 30px rgba(33,55,83,.12)}
+.personal-month-summary h4{margin:0 0 22px;display:flex;align-items:center;gap:16px;font-size:29px;line-height:1.04;font-weight:950;letter-spacing:-.02em}
+.personal-month-summary div{gap:18px}
+.personal-month-summary-line{display:block;position:relative;padding-left:34px;font-size:22px;line-height:1.35;font-weight:800;color:#4f4a46}
+.personal-month-summary-line i{position:absolute;left:0;top:-1px;font-style:normal;font-size:34px;line-height:1;color:currentColor}
+.personal-month-summary-line strong{font-weight:950;color:#46413d}
+.personal-month-summary-icon{width:68px;height:68px;flex:0 0 68px;font-size:43px;box-shadow:0 8px 16px rgba(0,0,0,.12)}
+.personal-month-summary-good{background:radial-gradient(circle at 88% 14%,rgba(207,255,225,.9) 0 2%,transparent 11%),linear-gradient(145deg,#c7ffe1 0%,#e6fff0 50%,#f6fff9 100%);border:2px solid #76dca4}
+.personal-month-summary-good h4{color:#008142}
+.personal-month-summary-good .personal-month-summary-line{color:#4d4b46}
+.personal-month-summary-risk{background:radial-gradient(circle at 88% 14%,rgba(255,221,216,.95) 0 2%,transparent 11%),linear-gradient(145deg,#ffd9d5 0%,#fff0ee 52%,#fffafa 100%);border:2px solid #f39f98}
+.personal-month-summary-risk h4{color:#ce3028}
+.personal-month-summary-risk .personal-month-summary-line{color:#514a48}
+.personal-month-summary-chance{background:radial-gradient(circle at 88% 14%,rgba(255,237,171,.95) 0 2%,transparent 11%),linear-gradient(145deg,#ffe39a 0%,#fff1c9 52%,#fffaf0 100%);border:2px solid #deb447}
+.personal-month-summary-chance h4{color:#a8730e}
+.personal-month-summary-chance .personal-month-summary-line{color:#514a48}
+@media (max-width:560px){.personal-month-summary{padding:22px 20px;border-radius:24px}.personal-month-summary h4{font-size:26px;gap:14px}.personal-month-summary-line{font-size:20px;padding-left:29px}.personal-month-summary-line i{font-size:30px}.personal-month-summary-icon{width:58px;height:58px;flex-basis:58px;font-size:36px}}
