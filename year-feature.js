@@ -100,12 +100,14 @@ yearInput.addEventListener("input", () => yearInput.setCustomValidity(""));
 
 
 export const openYear = () => {
+  window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#razbor-goda`);
   document.querySelector("#home").classList.remove("is-active");
   year.classList.add("is-active");
   window.scrollTo({ top: 0, behavior: "instant" });
 };
 
 document.querySelector("#back-home").addEventListener("click", () => {
+  window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
   year.classList.remove("is-active");
   document.querySelector("#home").classList.add("is-active");
   window.scrollTo({ top: 0, behavior: "instant" });
