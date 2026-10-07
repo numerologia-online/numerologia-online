@@ -2,8 +2,6 @@ import { buildFullReportSections, loadFullReportSection } from "./full-report-li
 import { findKarmicPrograms, findKarmicTail } from "./karmic-programs.js?v=2";
 
 let pdfMakeLoading;
-let templatesLoading;
-
 const loadScript = (src) => new Promise((resolve, reject) => {
   const existing = document.querySelector(`script[src="${src}"]`);
   if (existing) {
@@ -29,28 +27,6 @@ const getPdfMake = () => {
   return pdfMakeLoading;
 };
 
-const imageAsDataUrl = async (src) => {
-  const response = await fetch(src);
-  if (!response.ok) throw new Error("Не удалось открыть шаблон PDF");
-  const blob = await response.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-};
-
-const getTemplates = () => {
-  if (!templatesLoading) {
-    templatesLoading = Promise.all([
-      imageAsDataUrl("assets/year-report-cover.jpg"),
-      imageAsDataUrl("assets/year-report-inner.jpg")
-    ]).then(([cover, inner]) => ({ cover, inner }));
-  }
-  return templatesLoading;
-};
-
 const paragraphs = (items = []) => items.filter(Boolean).map((text) => ({ text, style: "paragraph" }));
 
 const sectionBlock = (definition, source) => ({
@@ -71,7 +47,7 @@ const ageFromDate = (formattedDate) => {
   return age;
 };
 
-const buildDocument = ({ formattedDate, matrixData, karmicPrograms, karmicTails }, templates, records) => {
+const buildDocument = ({ formattedDate, matrixData, karmicPrograms, karmicTails }, records) => {
   const age = ageFromDate(formattedDate);
   const tail = findKarmicTail(matrixData, karmicTails);
   const programs = findKarmicPrograms(matrixData, karmicPrograms);
@@ -98,8 +74,12 @@ const buildDocument = ({ formattedDate, matrixData, karmicPrograms, karmicTails 
     info: { title: `Полный разбор ${formattedDate}` },
     pageSize: "A4",
     pageMargins: [68, 92, 68, 86],
-    images: templates,
-    background: (page) => ({ image: page === 1 ? "cover" : "inner", width: 595.28, height: 841.89 }),
+    background: (page) => ({
+      stack: [
+        { text: "9   9   6   6", color: "#E8DCC4", fontSize: 18, alignment: "right", margin: [0, 20, 34, 0] },
+        { canvas: [{ type: "rect", x: 20, y: 20, w: 555, h: 802, lineColor: "#C8A45D", lineWidth: 0.65 }] }
+      ]
+    }),
     defaultStyle: { font: "Roboto", fontSize: 24, color: "#142C43", lineHeight: 1.52 },
     styles: {
       coverTitle: { fontSize: 72, bold: true, color: "#1D3654", alignment: "center", lineHeight: 1.04 },
@@ -146,15 +126,14 @@ const buildDocument = ({ formattedDate, matrixData, karmicPrograms, karmicTails 
 
 export const buildNewFullReportPdf = async (report) => {
   const definitions = buildFullReportSections(report.matrixData);
-  const [pdfMake, templates, records] = await Promise.all([
+  const [pdfMake, records] = await Promise.all([
     getPdfMake(),
-    getTemplates(),
     Promise.all(definitions.map(async (definition) => ({
       definition,
       source: (await loadFullReportSection(definition.energy))?.sections?.[definition.key]
     })))
   ]);
-  const blob = await new Promise((resolve) => pdfMake.createPdf(buildDocument(report, templates, records)).getBlob(resolve));
+  const blob = await new Promise((resolve) => pdfMake.createPdf(buildDocument(report, records)).getBlob(resolve));
   return {
     url: URL.createObjectURL(blob),
     filename: `Полный разбор ${report.formattedDate}.pdf`
