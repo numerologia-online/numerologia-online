@@ -24,6 +24,9 @@ let karmicProgramControls = new Set();
 let pendingMatrixTarget;
 let activeFullReport;
 let pdfMakeLoading;
+let preparedFullPdf = null;
+let preparingFullPdf = null;
+let fullPdfGeneration = 0;
 
 const loadExternalScript = (source) => new Promise((resolve, reject) => {
   const existing = document.querySelector(`script[src="${source}"]`);
@@ -520,17 +523,79 @@ const buildFullReportPdf = async () => {
   return { url: URL.createObjectURL(blob), filename: `Полный разбор ${formattedDate}.pdf` };
 };
 
+const getFullPdfKey = () => activeFullReport ? `${activeFullReport.formattedDate}|full-pdf-9966-v1` : "";
+
+const updateFullPdfButtons = () => {
+  const key = getFullPdfKey();
+  const ready = Boolean(key && preparedFullPdf?.key === key);
+  const preparing = Boolean(key && preparingFullPdf?.key === key);
+  reading.querySelectorAll(".matrix-pdf-button").forEach((button) => {
+    if (button.dataset.downloading === "1") return;
+    const label = ready ? "Скачать PDF" : preparing ? "PDF готовится…" : "Скачать PDF";
+    button.innerHTML = `${label} <span aria-hidden="true">↓</span>`;
+  });
+};
+
+const invalidateFullPdf = () => {
+  fullPdfGeneration += 1;
+  if (preparedFullPdf?.url) URL.revokeObjectURL(preparedFullPdf.url);
+  preparedFullPdf = null;
+  preparingFullPdf = null;
+};
+
+const prepareFullReportPdf = () => {
+  const key = getFullPdfKey();
+  if (!key) return Promise.reject(new Error("Нет данных для PDF"));
+  if (preparedFullPdf?.key === key) return Promise.resolve(preparedFullPdf);
+  if (preparingFullPdf?.key === key) return preparingFullPdf.promise;
+
+  const generation = fullPdfGeneration;
+  const promise = buildFullReportPdf().then((file) => {
+    if (generation !== fullPdfGeneration || getFullPdfKey() !== key) {
+      URL.revokeObjectURL(file.url);
+      throw new Error("Расчёт изменился во время подготовки PDF");
+    }
+    if (preparedFullPdf?.url) URL.revokeObjectURL(preparedFullPdf.url);
+    preparedFullPdf = { ...file, key };
+    return preparedFullPdf;
+  }).finally(() => {
+    if (preparingFullPdf?.promise === promise) preparingFullPdf = null;
+    updateFullPdfButtons();
+  });
+
+  preparingFullPdf = { key, promise };
+  updateFullPdfButtons();
+  return promise;
+};
+
+const warmFullPdfInBackground = () => {
+  const key = getFullPdfKey();
+  if (!key) return;
+  const warm = () => {
+    if (getFullPdfKey() !== key) return;
+    prepareFullReportPdf().catch((error) => {
+      console.warn("Фоновая подготовка полного PDF:", error);
+    });
+  };
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(warm, { timeout: 900 });
+  } else {
+    window.setTimeout(warm, 160);
+  }
+};
+
 const createFullReportPdfButton = (position = "bottom") => {
   const button = document.createElement("button");
   button.className = `matrix-pdf-button matrix-pdf-button--${position}`;
   button.type = "button";
   button.innerHTML = "Скачать PDF <span aria-hidden=\"true\">↓</span>";
   button.addEventListener("click", async () => {
-    const label = button.innerHTML;
+    button.dataset.downloading = "1";
     button.disabled = true;
     button.textContent = "Готовлю PDF…";
     try {
-      const { url, filename } = await buildFullReportPdf();
+      // Await the same preparation as the background task; never build twice.
+      const { url, filename } = await prepareFullReportPdf();
       const link = document.createElement("a");
       link.href = url;
       link.download = filename;
@@ -539,12 +604,14 @@ const createFullReportPdfButton = (position = "bottom") => {
       document.body.append(link);
       link.click();
       link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch {
+      // The URL remains alive for a second download; it is revoked on a new calculation.
+    } catch (error) {
+      console.error(error);
       alert("PDF пока не удалось подготовить. Проверьте подключение к интернету и попробуйте ещё раз.");
     } finally {
       button.disabled = false;
-      button.innerHTML = label;
+      delete button.dataset.downloading;
+      updateFullPdfButtons();
     }
   });
   return button;
@@ -685,6 +752,8 @@ form.addEventListener("submit", async (event) => {
   }
 
   error.hidden = true;
+  invalidateFullPdf();
+  activeFullReport = null;
   const formattedDate = birthDateInput.value;
   const matrixData = calculateMatrix(date);
   renderMatrix(matrixData, formattedDate);
@@ -711,6 +780,8 @@ form.addEventListener("submit", async (event) => {
     renderKarmicPrograms(matrixData, karmicPrograms);
     renderFullSections(matrixData);
     reading.append(createFullReportPdfButton("bottom"));
+    // Start once when the report is ready; tapping either button reuses this PDF.
+    warmFullPdfInBackground();
     if (pendingMatrixTarget) {
       const target = pendingMatrixTarget;
       pendingMatrixTarget = undefined;
