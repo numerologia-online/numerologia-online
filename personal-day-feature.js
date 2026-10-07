@@ -172,7 +172,7 @@ export const openPersonalDay = () => {
       const chosen = new Date(new Date().getFullYear(), new Date().getMonth(), Number(button.dataset.monthDay));
       alert(`Личный день ${personalDay(birth, chosen)} уже рассчитан в вашем календаре.`);
     }));
-    requestAnimationFrame(() => { card.scrollTo({ top: Math.max(0, result.offsetTop - 8), behavior: "instant" }); });
+    requestAnimationFrame(() => { card.scrollTo({ top: Math.max(0, result.offsetTop - 16), behavior: "smooth" }); });
     submit.textContent = "Рассчитать личный день";
     submit.disabled = false;
   };
