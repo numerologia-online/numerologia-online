@@ -332,15 +332,16 @@ const getPdfTemplates = () => Promise.resolve({});
 
 const yearReportFrame = () => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842">
   <defs>
-    <linearGradient id="yearPaper" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#FBF7EE"/>
-      <stop offset="68%" stop-color="#FBF7EE"/>
-      <stop offset="100%" stop-color="#F3F7F7"/>
-    </linearGradient>
+    <radialGradient id="yearPaper" cx="50%" cy="32%" r="88%">
+      <stop offset="0%" stop-color="#F7FBFC"/>
+      <stop offset="58%" stop-color="#F9F9F4"/>
+      <stop offset="100%" stop-color="#FBF7EE"/>
+    </radialGradient>
   </defs>
   <rect width="595" height="842" fill="url(#yearPaper)"/>
   <rect x="18" y="18" width="559" height="806" fill="none" stroke="#C8A45D" stroke-width="0.8"/>
-  <g fill="#C8A45D" opacity="0.14" font-family="Georgia, serif" text-anchor="middle">
+  <rect x="24" y="24" width="547" height="794" fill="none" stroke="#C8A45D" stroke-width="0.28" opacity=".52"/>
+  <g fill="#A8C4D1" opacity="0.16" font-family="Georgia, serif" text-anchor="middle">
     <text x="72" y="108" font-size="72">9</text><text x="145" y="78" font-size="34">6</text><text x="215" y="120" font-size="25">✦</text>
     <text x="506" y="112" font-size="70">6</text><text x="447" y="80" font-size="32">9</text><text x="380" y="122" font-size="24">✦</text>
     <text x="64" y="430" font-size="30">✦</text><text x="92" y="512" font-size="48">6</text><text x="62" y="596" font-size="24">9</text>
@@ -348,28 +349,38 @@ const yearReportFrame = () => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" w
     <text x="92" y="770" font-size="66">6</text><text x="168" y="802" font-size="30">9</text><text x="238" y="768" font-size="24">✦</text>
     <text x="505" y="770" font-size="68">9</text><text x="430" y="802" font-size="30">6</text><text x="360" y="768" font-size="24">✦</text>
   </g>
+  <g fill="none" stroke="#C8A45D" stroke-width="0.7" opacity=".38">
+    <path d="M30 112 C45 74 76 48 118 34"/><path d="M30 92 C47 62 68 43 96 30"/>
+    <path d="M565 112 C550 74 519 48 477 34"/><path d="M565 92 C548 62 527 43 499 30"/>
+    <path d="M30 730 C45 768 76 794 118 808"/><path d="M565 730 C550 768 519 794 477 808"/>
+  </g>
+  <g fill="#C8A45D" opacity=".48">
+    <circle cx="297.5" cy="30" r="2"/><circle cx="288" cy="30" r="1.3"/><circle cx="307" cy="30" r="1.3"/>
+    <circle cx="297.5" cy="812" r="2"/><circle cx="288" cy="812" r="1.3"/><circle cx="307" cy="812" r="1.3"/>
+  </g>
 </svg>` });
 
 const yearReportCover = ({ year, birthDate, age }) => {
   const escape = (value) => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const layered = (value, y, size, color, family, weight = "500") => {
+  const layered = (value, y, size, color, family, weight = "normal") => {
     const text = escape(value);
     return `<g text-anchor="middle" font-family="${family}" font-weight="${weight}">
-      <text x="226" y="${y + 3}" font-size="${size}" fill="#B9955A" opacity="0.10">${text}</text>
-      <text x="225" y="${y + 1}" font-size="${size}" fill="#7A5A8B" opacity="0.16">${text}</text>
+      <text x="226" y="${y + 2}" font-size="${size}" fill="#B9955A" opacity="0.10">${text}</text>
+      <text x="225" y="${y + 1}" font-size="${size}" fill="#7A5A8B" opacity="0.13">${text}</text>
       <text x="223" y="${y}" font-size="${size}" fill="${color}">${text}</text>
     </g>`;
   };
   return {
     svg: `<svg xmlns="http://www.w3.org/2000/svg" width="451" height="620" viewBox="0 0 451 620">
-      ${layered("Разбор", 122, 70, "#583D73", "Georgia, 'Times New Roman', serif", "700")}
-      ${layered("года", 202, 70, "#583D73", "Georgia, 'Times New Roman', serif", "700")}
-      <line x1="90" y1="230" x2="361" y2="230" stroke="#C8A45D" stroke-width="0.7" opacity=".72"/>
-      ${layered(year, 368, 118, "#1D3654", "Roboto, Arial, sans-serif", "500")}
-      ${layered("ЛИЧНАЯ КАРТА ГОДА", 446, 25, "#80642F", "Roboto, Arial, sans-serif", "500")}
-      <line x1="90" y1="470" x2="361" y2="470" stroke="#C8A45D" stroke-width="0.7" opacity=".72"/>
-      ${layered("Дата рождения: " + birthDate, 520, 19, "#1D3654", "Roboto, Arial, sans-serif", "500")}
-      ${layered("В " + year + " вам исполняется: " + age + " лет", 558, 19, "#1D3654", "Roboto, Arial, sans-serif", "500")}
+      ${layered("Персональный", 113, 47, "#583D73", "Georgia, 'Times New Roman', serif", "normal")}
+      ${layered("разбор года", 192, 66, "#583D73", "Georgia, 'Times New Roman', serif", "normal")}
+      <path d="M93 221 H358" stroke="#C8A45D" stroke-width="0.7" opacity=".74"/>
+      <g fill="#C8A45D" opacity=".72"><circle cx="214" cy="247" r="1.5"/><circle cx="225.5" cy="247" r="2.2"/><circle cx="237" cy="247" r="1.5"/></g>
+      ${layered(year, 374, 121, "#1D3654", "Roboto, Arial, sans-serif", "normal")}
+      ${layered("ЛИЧНАЯ КАРТА ГОДА", 453, 24, "#80642F", "Roboto, Arial, sans-serif", "normal")}
+      <path d="M93 478 H358" stroke="#C8A45D" stroke-width="0.7" opacity=".74"/>
+      ${layered("Дата рождения: " + birthDate, 529, 19, "#1D3654", "Roboto, Arial, sans-serif", "normal")}
+      ${layered("В " + year + " вам исполняется: " + age + " лет", 567, 19, "#1D3654", "Roboto, Arial, sans-serif", "normal")}
     </svg>`
   };
 };
