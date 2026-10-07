@@ -155,8 +155,7 @@ export const openPersonalDay = () => {
         const marked = monthMarkedDays(birth, now);
         const dateLines = (statuses) => [...marked.values()].filter(({ info }) => statuses.includes(info.status)).map(({ day, info }) => "<span><strong>" + day + " " + monthName + "</strong> " + esc(info.label) + ".</span>").join("");
         const summary = "<section class=\"personal-month-summary personal-month-summary-good\"><h4>Лучшие дни месяца</h4><div>" + dateLines(["good"]) + "</div></section>" +
-          "<section class=\"personal-month-summary personal-month-summary-avoid\"><h4>Дни риска</h4><div>" + dateLines(["avoid"]) + "</div></section>" +
-          "<section class=\"personal-month-summary personal-month-summary-risk\"><h4>Осторожно</h4><div>" + dateLines(["risk"]) + "</div></section>" +
+          "<section class=\"personal-month-summary personal-month-summary-risk\"><h4>Дни риска</h4><div>" + dateLines(["risk", "avoid"]) + "</div></section>" +
           "<section class=\"personal-month-summary personal-month-summary-chance\"><h4>Важные шансы</h4><div>" + dateLines(["chance"]) + "</div></section>";
         monthList.innerHTML = summary + '<p class="personal-month-loading">Загружаю тексты дней…</p>';
         requestAnimationFrame(() => {
