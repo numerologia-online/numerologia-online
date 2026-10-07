@@ -1,115 +1,116 @@
 {
   "schema": "day-general-index-v1",
-  "section": "Общий разбор дня",
-  "files": [
+  "description": "Общие тексты дня: 22 энергии × 31 календарное число.",
+  "pathPattern": "data/day/general/general-day-{energy}.json",
+  "energies": [
     {
-      "generalEnergy": 1,
-      "path": "data/day/general/general-day-01.json",
+      "energy": 1,
+      "file": "general-day-01.json",
       "status": "ready"
     },
     {
-      "generalEnergy": 2,
-      "path": "data/day/general/general-day-02.json",
+      "energy": 2,
+      "file": "general-day-02.json",
       "status": "ready"
     },
     {
-      "generalEnergy": 3,
-      "path": "data/day/general/general-day-03.json",
+      "energy": 3,
+      "file": "general-day-03.json",
       "status": "ready"
     },
     {
-      "generalEnergy": 4,
-      "path": "data/day/general/general-day-04.json",
+      "energy": 4,
+      "file": "general-day-04.json",
       "status": "ready"
     },
     {
-      "generalEnergy": 5,
-      "path": "data/day/general/general-day-05.json",
+      "energy": 5,
+      "file": "general-day-05.json",
       "status": "ready"
     },
     {
-      "generalEnergy": 6,
-      "path": "data/day/general/general-day-06.json",
+      "energy": 6,
+      "file": "general-day-06.json",
       "status": "ready"
     },
     {
-      "generalEnergy": 7,
-      "path": "data/day/general/general-day-07.json",
+      "energy": 7,
+      "file": "general-day-07.json",
       "status": "ready"
     },
     {
-      "generalEnergy": 8,
-      "path": "data/day/general/general-day-08.json",
+      "energy": 8,
+      "file": "general-day-08.json",
       "status": "ready"
     },
     {
-      "generalEnergy": 9,
-      "path": "data/day/general/general-day-09.json",
+      "energy": 9,
+      "file": "general-day-09.json",
       "status": "ready"
     },
     {
-      "generalEnergy": 10,
-      "path": "data/day/general/general-day-10.json",
+      "energy": 10,
+      "file": "general-day-10.json",
       "status": "ready"
     },
     {
-      "generalEnergy": 11,
-      "path": "data/day/general/general-day-11.json",
+      "energy": 11,
+      "file": "general-day-11.json",
       "status": "ready"
     },
     {
-      "generalEnergy": 12,
-      "path": "data/day/general/general-day-12.json",
+      "energy": 12,
+      "file": "general-day-12.json",
       "status": "ready"
     },
     {
-      "generalEnergy": 13,
-      "path": "data/day/general/general-day-13.json",
+      "energy": 13,
+      "file": "general-day-13.json",
+      "status": "ready"
+    },
+    {
+      "energy": 14,
+      "file": "general-day-14.json",
       "status": "pending"
     },
     {
-      "generalEnergy": 14,
-      "path": "data/day/general/general-day-14.json",
+      "energy": 15,
+      "file": "general-day-15.json",
       "status": "pending"
     },
     {
-      "generalEnergy": 15,
-      "path": "data/day/general/general-day-15.json",
+      "energy": 16,
+      "file": "general-day-16.json",
       "status": "pending"
     },
     {
-      "generalEnergy": 16,
-      "path": "data/day/general/general-day-16.json",
+      "energy": 17,
+      "file": "general-day-17.json",
       "status": "pending"
     },
     {
-      "generalEnergy": 17,
-      "path": "data/day/general/general-day-17.json",
+      "energy": 18,
+      "file": "general-day-18.json",
       "status": "pending"
     },
     {
-      "generalEnergy": 18,
-      "path": "data/day/general/general-day-18.json",
+      "energy": 19,
+      "file": "general-day-19.json",
       "status": "pending"
     },
     {
-      "generalEnergy": 19,
-      "path": "data/day/general/general-day-19.json",
+      "energy": 20,
+      "file": "general-day-20.json",
       "status": "pending"
     },
     {
-      "generalEnergy": 20,
-      "path": "data/day/general/general-day-20.json",
+      "energy": 21,
+      "file": "general-day-21.json",
       "status": "pending"
     },
     {
-      "generalEnergy": 21,
-      "path": "data/day/general/general-day-21.json",
-      "status": "pending"
-    },
-    {
-      "generalEnergy": 22,
-      "path": "data/day/general/general-day-22.json",
+      "energy": 22,
+      "file": "general-day-22.json",
       "status": "pending"
     }
   ]
