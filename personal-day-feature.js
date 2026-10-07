@@ -144,11 +144,34 @@ export const openPersonalDay = () => {
       });
     });
     result.querySelector(".personal-month-open")?.addEventListener("click", async (event) => {
-      const opened = !monthDetails.hidden;
-      monthDetails.hidden = opened;
-      event.currentTarget.innerHTML = opened ? "Открыть разбор месяца <span>→</span>" : "Скрыть разбор месяца <span>↑</span>";
-      if (!opened && monthList.dataset.ready) scrollToMonthDetails();
-      if (!opened && !monthList.dataset.ready) {
+      const monthButton = event.currentTarget;
+
+      if (!monthDetails.hidden && monthList.dataset.ready && !monthList.dataset.loading) {
+        monthDetails.hidden = true;
+        monthButton.innerHTML = "Открыть разбор месяца <span>→</span>";
+        return;
+      }
+
+      monthDetails.hidden = false;
+      monthButton.innerHTML = "Скрыть разбор месяца <span>↑</span>";
+
+      if (monthList.dataset.ready) {
+        scrollToMonthDetails();
+        return;
+      }
+
+      if (monthList.dataset.loading) return;
+      monthList.dataset.loading = "1";
+      monthButton.disabled = true;
+      monthButton.innerHTML = "Готовлю разбор месяца… <span>↑</span>";
+      scrollToMonthDetails();
+
+      const pdfModuleLoading = import("./personal-month-pdf.js?v=2");
+      pdfModuleLoading
+        .then(({ warmPersonalMonthPdfEngine }) => warmPersonalMonthPdfEngine())
+        .catch(() => {});
+
+      try {
         const now = new Date();
         const total = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         const monthName = new Intl.DateTimeFormat("ru-RU", { month: "long" }).format(now);
@@ -168,14 +191,17 @@ export const openPersonalDay = () => {
         const summary = "<section class=\"personal-month-summary personal-month-summary-good\"><h4><span class=\"personal-month-summary-icon\">✓</span>Лучшие дни месяца</h4><div>" + groupLines("good") + "</div></section>" +
           "<section class=\"personal-month-summary personal-month-summary-risk\"><h4><span class=\"personal-month-summary-icon\">×</span>Дни риска</h4><div>" + groupLines("risk") + "</div></section>" +
           "<section class=\"personal-month-summary personal-month-summary-chance\"><h4><span class=\"personal-month-summary-icon\">★</span>Важные шансы</h4><div>" + groupLines("chance") + "</div></section>";
+
         monthList.innerHTML = summary + '<p class="personal-month-loading">Загружаю тексты дней…</p>';
         scrollToMonthDetails();
+
         const days = await Promise.all(Array.from({ length: total }, (_, index) => {
           const day = index + 1;
           return loadPersonalDay(birth, new Date(now.getFullYear(), now.getMonth(), day)).then((item) => ({
             day, item, info: calendarInfo(item.energy, day)
           }));
         }));
+
         const cards = days.map(({ day, item }) => {
           const info = marked.get(day)?.info || { status: "neutral", label: "Обычный день" };
           return `
@@ -188,15 +214,27 @@ export const openPersonalDay = () => {
               </div>
             </details>`;
         }).join("");
+
         monthList.innerHTML = summary + `<h4 class="personal-month-all-title">Все дни месяца</h4>` + cards + '<button type="button" class="personal-month-pdf">Сохранить в PDF</button>';
         monthList.dataset.ready = "1";
+
+        const preparePdfInBackground = () => pdfModuleLoading
+          .then(({ preparePersonalMonthPdf }) => preparePersonalMonthPdf({ birth, monthDate: now, days }))
+          .catch(() => {});
+
+        if ("requestIdleCallback" in window) {
+          window.requestIdleCallback(preparePdfInBackground, { timeout: 900 });
+        } else {
+          window.setTimeout(preparePdfInBackground, 120);
+        }
+
         monthList.querySelector(".personal-month-pdf")?.addEventListener("click", async (event) => {
           const button = event.currentTarget;
           const originalLabel = button.textContent;
           button.disabled = true;
-          button.textContent = "Готовлю красивый PDF…";
+          button.textContent = "Готовлю PDF…";
           try {
-            const { downloadPersonalMonthPdf } = await import("./personal-month-pdf.js?v=1");
+            const { downloadPersonalMonthPdf } = await pdfModuleLoading;
             await downloadPersonalMonthPdf({ birth, monthDate: now, days });
             button.textContent = "PDF готов ✓";
           } catch (error) {
@@ -210,9 +248,15 @@ export const openPersonalDay = () => {
             }, 1800);
           }
         });
+
         scrollToMonthDetails();
+      } finally {
+        delete monthList.dataset.loading;
+        monthButton.disabled = false;
+        monthButton.innerHTML = "Скрыть разбор месяца <span>↑</span>";
       }
     });
+    
     result.querySelectorAll("[data-month-day]:not(.personal-month-locked)").forEach((button) => button.addEventListener("click", () => {
       const chosen = new Date(new Date().getFullYear(), new Date().getMonth(), Number(button.dataset.monthDay));
       alert(`Личный день ${personalDay(birth, chosen)} уже рассчитан в вашем календаре.`);
