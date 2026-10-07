@@ -331,15 +331,13 @@ let pdfTemplatesLoading;
 const getPdfTemplates = () => Promise.resolve({});
 
 const yearReportFrame = () => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" width="595.28" height="841.89" viewBox="0 0 595.28 841.89">
-  <rect width="595.28" height="841.89" fill="#F7FAFC"/>
+  <rect width="595.28" height="841.89" fill="#FBF8F0"/>
   <rect x="18" y="18" width="559.28" height="805.89" rx="2" fill="none" stroke="#C8A45D" stroke-width="1"/>
-  <g fill="#B9CDE1" opacity=".22" font-family="Arial" font-weight="700">
+  <g fill="#D7C9AA" opacity=".24" font-family="Arial" font-weight="700">
     <text x="45" y="110" font-size="82">9</text><text x="486" y="118" font-size="92">6</text>
     <text x="66" y="730" font-size="78">6</text><text x="478" y="744" font-size="84">9</text>
     <text x="228" y="54" font-size="18" letter-spacing="8">9 · 9 · 6 · 6</text>
     <text x="224" y="806" font-size="18" letter-spacing="8">9 · 9 · 6 · 6</text>
-    <text x="35" y="430" font-size="22" letter-spacing="6">9 6 9 6</text>
-    <text x="450" y="430" font-size="22" letter-spacing="6">6 9 6 9</text>
   </g>
 </svg>` });
 
@@ -351,6 +349,26 @@ const yearReportTitle = (text) => ({ svg: `<svg xmlns="http://www.w3.org/2000/sv
     <text x="250" y="154" font-size="68" fill="#5B3E74">года</text>
   </g>
 </svg>` });
+
+const yearReportCover = ({ code, year, birthDate, age }) => {
+  const svgText = (value) => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const layer = (value, x, y, size, color, weight = "700") => (
+    '<g font-family="Arial, sans-serif" font-weight="' + weight + '" text-anchor="middle">' +
+      '<text x="' + x + '" y="' + y + '" font-size="' + size + '" fill="#B99C68" opacity=".10" transform="translate(1 1)">' + svgText(value) + '</text>' +
+      '<text x="' + x + '" y="' + y + '" font-size="' + size + '" fill="#B99C68" opacity=".08" transform="translate(2 2)">' + svgText(value) + '</text>' +
+      '<text x="' + x + '" y="' + y + '" font-size="' + size + '" fill="' + color + '">' + svgText(value) + '</text>' +
+    '</g>'
+  );
+  return { svg: '<svg xmlns="http://www.w3.org/2000/svg" width="451" height="620" viewBox="0 0 451 620">' +
+    layer("Разбор", 225, 104, 76, "#583D73") +
+    layer("года", 225, 190, 76, "#583D73") +
+    layer(code, 225, 238, 25, "#9D772F", "500") +
+    layer(year, 225, 356, 112, "#203E61") +
+    layer("ЛИЧНАЯ КАРТА ГОДА", 225, 430, 31, "#7A5C28") +
+    layer("Дата рождения: " + birthDate, 225, 480, 22, "#203E61") +
+    layer("В " + year + " вам исполняется: " + age + " лет", 225, 522, 22, "#203E61") +
+  '</svg>' };
+};
 
 const buildPdfDocument = (templates) => {
   const reportTitle = document.querySelector("#report-title").textContent;
@@ -436,19 +454,7 @@ const buildPdfDocument = (templates) => {
       monthTitle: { fontSize: 42, bold: true, color: "#5B3E74", background: "#EEE5F5", alignment: "center", margin: [0, 8, 0, 22], padding: [10, 8, 10, 8] }
     },
     content: [
-      {
-        stack: [
-          { ...yearReportTitle("Разбор"), margin: [0, 22, 0, 6] },
-          { text: personalCode, style: "coverCode", margin: [0, 0, 0, 8] },
-          { text: String(reportYearValue), style: "coverYear", margin: [0, 0, 0, 6] },
-          { text: "ЛИЧНАЯ КАРТА ГОДА", style: "coverSubtitle", margin: [0, 0, 0, 8] },
-          { text: `Дата рождения: ${birthInput.value}\nВ ${reportYearValue} вам исполняется: ${age} лет`, style: "coverDetails", margin: [0, 0, 0, 12] }
-        ],
-        pageBreak: "after"
-      },
-      { text: "КАРТА ГОДА", style: "innerKicker" },
-      { text: reportTitle, style: "title" },
-      { text: `Дата рождения: ${birthInput.value} · Год разбора: ${yearInput.value}`, style: "subtitle" },
+      { ...yearReportCover({ code: personalCode, year: reportYearValue, birthDate: birthInput.value, age }), pageBreak: "after" },
       { text: reportPeriod, style: "innerKicker" },
       { text: reportCopy, style: "subtitle" },
       ...phases,
