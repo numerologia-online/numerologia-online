@@ -62,7 +62,7 @@ const calendarInfo = (energy) => {
     19: ["good", "Успех и результат"],
     20: ["good", "Семья и восстановление"],
     21: ["good", "Завершение дела"],
-    22: ["chance", "Новый путь и неожиданный шаг"]
+    22: ["chance", "Шанс на новый поворот — действуйте, если решение созрело"]
   };
   const [status, label] = rules[energy] || ["neutral", ""];
   return { status, label };
