@@ -112,6 +112,14 @@ const syncYearLink = () => {
 };
 syncYearLink();
 window.addEventListener("hashchange", syncYearLink);
+const syncPersonalDayLink = () => {
+  if (window.location.hash === "#lichnyj-den") {
+    if (home) home.hidden = true;
+    openPersonalDayFeature().catch(() => alert("Не удалось открыть расчёт дня. Обновите страницу и попробуйте ещё раз."));
+  }
+};
+syncPersonalDayLink();
+window.addEventListener("hashchange", syncPersonalDayLink);
 
 document.querySelectorAll("[data-open-year]").forEach((button) => button.addEventListener("click", () => {
   openYearFeature().catch(() => alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
