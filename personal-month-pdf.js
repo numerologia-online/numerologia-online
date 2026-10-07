@@ -104,20 +104,23 @@ const coverBackground = () => ({
       <path d="M297.5 77 L301 89 L313 92.5 L301 96 L297.5 108 L294 96 L282 92.5 L294 89Z"/>
     </g>
 
-    <!-- abstract tear-off calendar silhouette -->
-    <g transform="translate(125 255)">
-      <rect x="0" y="0" width="345" height="330" rx="18" fill="#FFFDFC" stroke="#C8A45D" stroke-width=".9"/>
-      <rect x="0" y="0" width="345" height="75" rx="18" fill="url(#powder)"/>
-      <rect x="0" y="58" width="345" height="17" fill="url(#powder)"/>
-      <circle cx="92" cy="22" r="7.5" fill="#F8F2E7" stroke="#B78A3F" stroke-width=".6"/>
-      <circle cx="253" cy="22" r="7.5" fill="#F8F2E7" stroke="#B78A3F" stroke-width=".6"/>
-      <path d="M26 91 H319" stroke="#C8A45D" stroke-width=".55" stroke-dasharray="2 5" opacity=".58"/>
-      <g fill="#B78A3F" opacity=".10" font-family="Georgia, serif" text-anchor="middle">
-        <text x="55" y="288" font-size="46">9</text>
-        <text x="290" y="285" font-size="44">6</text>
+    <!-- pale stacked calendar leaves on either side -->
+    <g fill="#FFFDF9" stroke="#BCA174" stroke-width=".7" opacity=".16">
+      <g transform="translate(40 332) rotate(-13)">
+        <rect width="135" height="176" rx="8"/><path d="M0 33 H135" stroke-dasharray="2 5"/>
+        <circle cx="28" cy="14" r="4" fill="#E2CC9D"/><circle cx="106" cy="14" r="4" fill="#E2CC9D"/>
       </g>
+      <g transform="translate(438 333) rotate(12)">
+        <rect width="132" height="175" rx="8"/><path d="M0 33 H132" stroke-dasharray="2 5"/>
+        <circle cx="28" cy="14" r="4" fill="#E2CC9D"/><circle cx="104" cy="14" r="4" fill="#E2CC9D"/>
+      </g>
+      <g transform="translate(58 607) rotate(9)"><rect width="120" height="130" rx="7"/></g>
+      <g transform="translate(433 605) rotate(-8)"><rect width="120" height="130" rx="7"/></g>
     </g>
-
+    <g fill="#9D8049" font-family="Arial, sans-serif" text-anchor="middle" opacity=".07">
+      <text x="102" y="448" font-size="68">07</text><text x="506" y="452" font-size="68">21</text>
+      <text x="124" y="681" font-size="52">14</text><text x="483" y="682" font-size="52">30</text>
+    </g>
     <g fill="#B78A3F" opacity=".42">
       <circle cx="297.5" cy="34" r="1.8"/><circle cx="288" cy="34" r=".9"/><circle cx="307" cy="34" r=".9"/>
       <circle cx="297.5" cy="808" r="1.8"/><circle cx="288" cy="808" r=".9"/><circle cx="307" cy="808" r=".9"/>
@@ -150,6 +153,58 @@ const innerBackground = () => ({
   </svg>`
 });
 
+const coverFront = ({ month, year, birth, monthIndex }) => {
+  const monthText = String(month).toUpperCase();
+  const birthText = formatBirth(birth);
+  const first = (new Date(year, monthIndex, 1).getDay() + 6) % 7;
+  const total = new Date(year, monthIndex + 1, 0).getDate();
+  const dates = Array.from({ length: total }, (_, i) => {
+    const cell = first + i;
+    const x = 99 + (cell % 7) * 45;
+    const y = 395 + Math.floor(cell / 7) * 26;
+    return `<text x="${x}" y="${y}" font-size="14" fill="#4F6875" opacity=".75">${i + 1}</text>`;
+  }).join("");
+  return {
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" width="470" height="675" viewBox="0 0 470 675">
+      <defs><linearGradient id="goldCover" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#946620"/><stop offset="50%" stop-color="#D8B470"/><stop offset="100%" stop-color="#966A29"/>
+      </linearGradient></defs>
+      <g text-anchor="middle">
+        <circle cx="235" cy="45" r="28" stroke="#C4A76C" fill="none" stroke-width=".65" opacity=".8"/>
+        <circle cx="235" cy="45" r="21" stroke="#D5C29D" fill="none" stroke-width=".4" stroke-dasharray="2 5"/>
+        <path d="M235 20 L239 39 L257 45 L239 51 L235 70 L231 51 L213 45 L231 39Z" fill="#BE9B5C" opacity=".76"/>
+        <text x="235" y="103" font-family="Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3" fill="#986D32">НУМЕРОЛОГИЯ ONLINE</text>
+        <text x="235" y="155" font-family="Georgia, serif" font-size="26" fill="#1C3B51">ЛИЧНЫЙ КАЛЕНДАРЬ</text>
+        <path d="M88 174 H200 M270 174 H382" stroke="#BA9658" stroke-width=".7"/>
+        <path d="M235 168 L239 174 L235 180 L231 174Z" fill="#BA9658"/>
+        <text x="235" y="250" font-family="Georgia, serif" font-size="56" font-weight="700" fill="#1B3B50">${monthText}</text>
+        <text x="237" y="328" font-family="Georgia, serif" font-size="75" fill="#D9C49A" opacity=".55">${year}</text>
+        <text x="235" y="325" font-family="Georgia, serif" font-size="75" font-weight="700" fill="url(#goldCover)">${year}</text>
+      </g>
+      <rect x="54" y="360" width="362" height="173" rx="9" fill="#FFFDF9" stroke="#C4AA7E" stroke-width=".8"/>
+      <rect x="54" y="360" width="362" height="28" rx="9" fill="#DFEBEC"/>
+      <rect x="54" y="378" width="362" height="10" fill="#DFEBEC"/>
+      <path d="M70 388 H400" stroke="#C1A273" stroke-width=".5" stroke-dasharray="2 5"/>
+      <g fill="#FFFDF8" stroke="#C2A16B" stroke-width=".85">
+        <circle cx="105" cy="367" r="5"/><circle cx="364" cy="367" r="5"/>
+      </g>
+      <g text-anchor="middle" font-family="Arial, sans-serif">
+        <g font-size="10" font-weight="700" fill="#587783">
+          <text x="99" y="379">ПН</text><text x="144" y="379">ВТ</text><text x="189" y="379">СР</text>
+          <text x="234" y="379">ЧТ</text><text x="279" y="379">ПТ</text><text x="324" y="379">СБ</text><text x="369" y="379">ВС</text>
+        </g>
+        <g font-family="Georgia, serif">${dates}</g>
+      </g>
+      <g text-anchor="middle" font-family="Arial, sans-serif">
+        <text x="235" y="565" font-size="17" font-weight="700" fill="#274153">Дата рождения · ${birthText}</text>
+        <text x="235" y="608" font-size="16.5" fill="#536D7C">Ваш месяц — день за днём</text>
+        <text x="235" y="637" font-size="13" fill="#8B7145">Прогнозы · важные шансы · дни риска</text>
+      </g>
+    </svg>`,
+    width: 470, height: 675, alignment: "center"
+  };
+};
+
 const groupByStatus = (days, status) => {
   const groups = new Map();
   days.forEach(({ day, info }) => {
@@ -175,7 +230,7 @@ const summaryCard = (days, status, monthIndex) => {
           {
             columns: [
               { text: palette.symbol, width: 28, color: palette.color, bold: true, fontSize: 20, alignment: "center" },
-              { text: palette.label.toUpperCase(), color: palette.color, bold: true, fontSize: 16.5, margin: [5, 1, 0, 0] }
+              { text: palette.label.toUpperCase(), color: palette.color, bold: true, fontSize: 18, margin: [5, 1, 0, 0] }
             ],
             margin: [0, 0, 0, 9]
           },
@@ -297,26 +352,12 @@ const buildDocument = ({ birth, monthDate, days }) => {
       coverYear: { fontSize: 67, bold: true, color: "#9A702F", alignment: "center", lineHeight: 1.0 },
       coverDate: { fontSize: 15.5, bold: true, color: "#5B6E79", alignment: "center" },
       coverCopy: { fontSize: 14.5, color: "#687985", alignment: "center", lineHeight: 1.38 },
-      kicker: { fontSize: 11.5, bold: true, color: "#9A702F", characterSpacing: 1.35, alignment: "center" },
-      pageTitle: { fontSize: 31, bold: true, color: "#19364E", alignment: "center", margin: [0, 0, 0, 12] },
-      pageLead: { fontSize: 14.5, color: "#687985", alignment: "center", lineHeight: 1.4, margin: [8, 0, 8, 24] }
+      kicker: { fontSize: 13, bold: true, color: "#9A702F", characterSpacing: 1.35, alignment: "center" },
+      pageTitle: { fontSize: 34, bold: true, color: "#19364E", alignment: "center", margin: [0, 0, 0, 12] },
+      pageLead: { fontSize: 17, color: "#496372", alignment: "center", lineHeight: 1.4, margin: [8, 0, 8, 24] }
     },
     content: [
-      {
-        stack: [
-          { text: "НУМЕРОЛОГИЯ ONLINE", style: "coverBrand", margin: [0, 47, 0, 69] },
-          { text: "ЛИЧНЫЙ КАЛЕНДАРЬ", style: "coverTitle", margin: [0, 0, 0, 15] },
-          { text: month.toUpperCase(), style: "coverMonth", margin: [0, 0, 0, 1] },
-          { text: String(year), style: "coverYear", margin: [0, 0, 0, 34] },
-          { text: `Дата рождения · ${formatBirth(birth)}`, style: "coverDate", margin: [0, 0, 0, 32] },
-          {
-            text: "Ваш месяц как личный отрывной календарь —\nс прогнозом, подсказками и важными датами.",
-            style: "coverCopy",
-            margin: [38, 0, 38, 0]
-          }
-        ],
-        pageBreak: "after"
-      },
+      { ...coverFront({ month, year, birth, monthIndex }), pageBreak: "after" },
       { text: "ВАШ МЕСЯЦ В ОДНОМ ВЗГЛЯДЕ", style: "kicker" },
       { text: "Главные даты месяца", style: "pageTitle" },
       {
