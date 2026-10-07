@@ -286,16 +286,16 @@ const fullReportPdfFrame = () => `
   <svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842">
     <defs>
       <radialGradient id="fullPaper" cx="38%" cy="14%" r="96%">
-        <stop offset="0%" stop-color="#FFFDF8"/>
-        <stop offset="62%" stop-color="#FAF6EE"/>
-        <stop offset="100%" stop-color="#EFE4D2"/>
+        <stop offset="0%" stop-color="#FFFEFA"/>
+        <stop offset="62%" stop-color="#FCF9F3"/>
+        <stop offset="100%" stop-color="#F8F3EA"/>
       </radialGradient>
       <radialGradient id="fullGoldMist" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#DCBF7E" stop-opacity=".20"/>
+        <stop offset="0%" stop-color="#E7D9BE" stop-opacity=".07"/>
         <stop offset="100%" stop-color="#DCBF7E" stop-opacity="0"/>
       </radialGradient>
       <radialGradient id="fullBlueMist" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#A9C8CF" stop-opacity=".17"/>
+        <stop offset="0%" stop-color="#DCE7E4" stop-opacity=".04"/>
         <stop offset="100%" stop-color="#A9C8CF" stop-opacity="0"/>
       </radialGradient>
     </defs>
