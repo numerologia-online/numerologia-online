@@ -345,9 +345,9 @@ const yearReportFrame = () => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" w
 
 const yearReportTitle = (text) => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" width="440" height="132" viewBox="0 0 440 132">
   <g font-family="Arial, sans-serif" font-weight="700" text-anchor="middle">
-    <text x="220" y="60" font-size="48" fill="#C9A76A" opacity=".38" transform="translate(4 5)">${text}</text>
+    <text x="220" y="60" font-size="48" fill="#C9A76A" opacity=".16" transform="translate(2 2)">${text}</text>
     <text x="220" y="60" font-size="48" fill="#5B3E74">${text}</text>
-    <text x="220" y="112" font-size="48" fill="#C9A76A" opacity=".38" transform="translate(4 5)">года</text>
+    <text x="220" y="112" font-size="48" fill="#C9A76A" opacity=".16" transform="translate(2 2)">года</text>
     <text x="220" y="112" font-size="48" fill="#5B3E74">года</text>
   </g>
 </svg>` });
@@ -421,28 +421,28 @@ const buildPdfDocument = (templates) => {
       coverKicker: { fontSize: 38, bold: true, color: "#1F3E5F", alignment: "center", lineHeight: 1.08 },
       coverCode: { fontSize: 24, color: "#9B7A3E", characterSpacing: 5, alignment: "center" },
       coverName: { fontSize: 18, bold: true, color: "#80642F", characterSpacing: 1.8, alignment: "center" },
-      coverYear: { fontSize: 112, bold: true, color: "#1D3654", alignment: "center" },
-      coverSubtitle: { fontSize: 35, bold: true, color: "#665332", alignment: "center", lineHeight: 1.1 },
-      coverDetails: { fontSize: 24, bold: true, color: "#142C43", alignment: "center", lineHeight: 1.45 },
+      coverYear: { fontSize: 88, bold: true, color: "#1D3654", alignment: "center" },
+      coverSubtitle: { fontSize: 27, bold: true, color: "#665332", alignment: "center", lineHeight: 1.1 },
+      coverDetails: { fontSize: 20, bold: true, color: "#142C43", alignment: "center", lineHeight: 1.45 },
       innerKicker: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 1.25, alignment: "center", margin: [0, 0, 0, 16] },
       title: { fontSize: 36, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 18] },
       subtitle: { fontSize: 20, color: "#334B62", alignment: "center", margin: [0, 0, 0, 28] },
       phase: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 28, 0, 12] },
-      sectionTitle: { fontSize: 31, bold: true, color: "#1E405F", margin: [0, 0, 0, 18] },
-      subsectionTitle: { fontSize: 25, bold: true, color: "#60431D", margin: [0, 30, 0, 11] },
+      sectionTitle: { fontSize: 31, bold: true, color: "#5B3E74", background: "#EEE5F5", margin: [0, 8, 0, 16], padding: [10, 8, 10, 8] },
+      subsectionTitle: { fontSize: 25, bold: true, color: "#2D7480", background: "#E4F1F2", margin: [0, 24, 0, 10], padding: [8, 8, 8, 8] },
       monthKicker: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 0.7, margin: [0, 0, 0, 13] },
       noteTitle: { fontSize: 22, bold: true, color: "#60431D", margin: [0, 28, 0, 10] },
       paragraph: { fontSize: 24, bold: true, margin: [0, 0, 0, 22] },
-      monthTitle: { fontSize: 42, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 28] }
+      monthTitle: { fontSize: 42, bold: true, color: "#5B3E74", background: "#EEE5F5", alignment: "center", margin: [0, 8, 0, 22], padding: [10, 8, 10, 8] }
     },
     content: [
       {
         stack: [
-          { ...yearReportTitle("Разбор"), margin: [0, 54, 0, 12] },
-          { text: personalCode, style: "coverCode", margin: [0, 0, 0, 24] },
-          { text: "ЛИЧНЫЙ ПРОГНОЗ", style: "coverName", margin: [0, 0, 0, 10] },
-          { text: String(reportYearValue), style: "coverYear", margin: [0, 0, 0, 18] },
-          { text: `ЛИЧНАЯ КАРТА ГОДА ${reportYearValue}`, style: "coverSubtitle", margin: [0, 0, 0, 18] },
+          { ...yearReportTitle("Разбор"), margin: [0, 16, 0, 2] },
+          { text: personalCode, style: "coverCode", margin: [0, 0, 0, 8] },
+          { text: "ЛИЧНЫЙ ПРОГНОЗ", style: "coverName", margin: [0, 0, 0, 4] },
+          { text: String(reportYearValue), style: "coverYear", margin: [0, 0, 0, 6] },
+          { text: `ЛИЧНАЯ КАРТА ГОДА ${reportYearValue}`, style: "coverSubtitle", margin: [0, 0, 0, 6] },
           { text: `Дата рождения: ${birthInput.value}\nВ ${reportYearValue} вам исполняется: ${age} лет`, style: "coverDetails", margin: [0, 0, 0, 12] }
         ],
         pageBreak: "after"
