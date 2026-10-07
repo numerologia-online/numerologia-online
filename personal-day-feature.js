@@ -125,6 +125,12 @@ export const openPersonalDay = () => {
     result.insertAdjacentHTML("beforeend", monthCalendar(birth));
     const monthDetails = result.querySelector(".personal-month-details");
     const monthList = result.querySelector(".personal-month-detail-list");
+    const scrollToMonthDetails = () => requestAnimationFrame(() => {
+      const cardTop = card.getBoundingClientRect().top;
+      const detailsTop = monthDetails.getBoundingClientRect().top;
+      const target = Math.max(0, card.scrollTop + detailsTop - cardTop - 12);
+      animateScroll(card, target, 1120);
+    });
     result.querySelector(".personal-month-open")?.addEventListener("click", async (event) => {
       const opened = !monthDetails.hidden;
       monthDetails.hidden = opened;
@@ -143,17 +149,14 @@ export const openPersonalDay = () => {
             groups.get(info.group).push(day);
           });
           return [...groups.entries()].map(([group, dates]) =>
-            "<span class=\"personal-month-summary-line\"><i>•</i><strong>" + esc(group) + ":</strong> " + dates.join(", ") + " " + monthGenitive + "</span>"
+            "<span class=\"personal-month-summary-line\"><i>•</i><span><strong>" + esc(group) + "</strong><em>" + dates.join(", ") + " " + monthGenitive + "</em></span></span>"
           ).join("");
         };
         const summary = "<section class=\"personal-month-summary personal-month-summary-good\"><h4><span class=\"personal-month-summary-icon\">✓</span>Лучшие дни месяца</h4><div>" + groupLines("good") + "</div></section>" +
           "<section class=\"personal-month-summary personal-month-summary-risk\"><h4><span class=\"personal-month-summary-icon\">×</span>Дни риска</h4><div>" + groupLines("risk") + "</div></section>" +
           "<section class=\"personal-month-summary personal-month-summary-chance\"><h4><span class=\"personal-month-summary-icon\">★</span>Важные шансы</h4><div>" + groupLines("chance") + "</div></section>";
         monthList.innerHTML = summary + '<p class="personal-month-loading">Загружаю тексты дней…</p>';
-        requestAnimationFrame(() => {
-          const target = Math.max(0, monthDetails.getBoundingClientRect().top + window.scrollY - 12);
-          window.scrollTo({ top: target, behavior: "smooth" });
-        });
+        scrollToMonthDetails();
         const days = await Promise.all(Array.from({ length: total }, (_, index) => {
           const day = index + 1;
           return loadPersonalDay(birth, new Date(now.getFullYear(), now.getMonth(), day)).then((item) => ({
@@ -172,12 +175,10 @@ export const openPersonalDay = () => {
               </div>
             </details>`;
         }).join("");
-        monthList.innerHTML = summary + `<h4 class="personal-month-all-title">Все дни месяца</h4>` + cards;
+        monthList.innerHTML = summary + `<h4 class="personal-month-all-title">Все дни месяца</h4>` + cards + '<button type="button" class="personal-month-pdf">Сохранить в PDF</button>';
         monthList.dataset.ready = "1";
-        requestAnimationFrame(() => {
-          const target = Math.max(0, monthDetails.getBoundingClientRect().top + window.scrollY - 12);
-          window.scrollTo({ top: target, behavior: "smooth" });
-        });
+        monthList.querySelector(".personal-month-pdf")?.addEventListener("click", () => window.print());
+        scrollToMonthDetails();
       }
     });
     result.querySelectorAll("[data-month-day]:not(.personal-month-locked)").forEach((button) => button.addEventListener("click", () => {
