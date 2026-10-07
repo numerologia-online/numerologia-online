@@ -416,6 +416,8 @@ const buildFullReportPdf = async () => {
   const content = [
     {
       stack: [
+        { text: "ЧИСЛОВОЕ ОГЛАВЛЕНИЕ", style: "chapter", alignment: "center", background: "#E9DDF1" },
+        { text: "Все энергии и связки этого разбора", style: "chapterLead", alignment: "center" },
         {
           table: {
             widths: [170, "*"],
@@ -428,10 +430,10 @@ const buildFullReportPdf = async () => {
             hLineWidth: () => 0.55,
             vLineWidth: () => 0,
             hLineColor: () => "#D5B978",
-            paddingLeft: () => 10,
-            paddingRight: () => 10,
-            paddingTop: () => 8,
-            paddingBottom: () => 8,
+            paddingLeft: () => 12,
+            paddingRight: () => 12,
+            paddingTop: () => 13,
+            paddingBottom: () => 13,
             fillColor: (rowIndex) => (rowIndex % 2 === 0 ? "#FCF7EA" : "#F4EAF8")
           }
         }
@@ -475,8 +477,8 @@ const buildFullReportPdf = async () => {
       partTitle: { font: "Roboto", fontSize: 34, bold: true, color: "#8C5B20", margin: [0, 26, 0, 12] },
       paragraph: { fontSize: 26, alignment: "left", lineHeight: 1.34, margin: [0, 0, 0, 22] },
       points: { margin: [0, 0, 0, 0], color: "#493f53", fontSize: 22 },
-      numericLabel: { font: "Roboto", fontSize: 13, bold: true, color: "#8C5B20" },
-      numericValues: { font: "Roboto", fontSize: 17, bold: true, color: "#4D286B", alignment: "center" }
+      numericLabel: { font: "Roboto", fontSize: 18, bold: true, color: "#8C5B20" },
+      numericValues: { font: "Roboto", fontSize: 25, bold: true, color: "#4D286B", alignment: "center" }
     },
     footer: (page, pages) => ({ text: `Нумерология Онлайн · ${page} / ${pages}`, alignment: "center", color: "#a089a8", fontSize: 8.5, margin: [0, 8, 0, 0] })
   };
