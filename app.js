@@ -22,7 +22,7 @@ const loadStylesheet = (href) => new Promise((resolve, reject) => {
 });
 
 const getYearFeature = () => {
-    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=25");
+    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=26");
   return yearFeatureLoading;
 };
 
@@ -102,6 +102,13 @@ const syncClientLink = () => {
 
 syncClientLink();
 window.addEventListener("hashchange", syncClientLink);
+const syncYearLink = () => {
+  if (window.location.hash === "#razbor-goda") {
+    openYearFeature().catch(() => {});
+  }
+};
+syncYearLink();
+window.addEventListener("hashchange", syncYearLink);
 
 document.querySelectorAll("[data-open-year]").forEach((button) => button.addEventListener("click", () => {
   openYearFeature().catch(() => alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
