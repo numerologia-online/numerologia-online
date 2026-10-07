@@ -343,12 +343,12 @@ const yearReportFrame = () => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" w
   </g>
 </svg>` });
 
-const yearReportTitle = (text) => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" width="440" height="132" viewBox="0 0 440 132">
+const yearReportTitle = (text) => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="180" viewBox="0 0 500 180">
   <g font-family="Arial, sans-serif" font-weight="700" text-anchor="middle">
-    <text x="220" y="60" font-size="48" fill="#C9A76A" opacity=".16" transform="translate(2 2)">${text}</text>
-    <text x="220" y="60" font-size="48" fill="#5B3E74">${text}</text>
-    <text x="220" y="112" font-size="48" fill="#C9A76A" opacity=".16" transform="translate(2 2)">года</text>
-    <text x="220" y="112" font-size="48" fill="#5B3E74">года</text>
+    <text x="250" y="78" font-size="68" fill="#C9A76A" opacity=".16" transform="translate(2 2)">${text}</text>
+    <text x="250" y="78" font-size="68" fill="#5B3E74">${text}</text>
+    <text x="250" y="154" font-size="68" fill="#C9A76A" opacity=".16" transform="translate(2 2)">года</text>
+    <text x="250" y="154" font-size="68" fill="#5B3E74">года</text>
   </g>
 </svg>` });
 
@@ -421,8 +421,8 @@ const buildPdfDocument = (templates) => {
       coverKicker: { fontSize: 38, bold: true, color: "#1F3E5F", alignment: "center", lineHeight: 1.08 },
       coverCode: { fontSize: 24, color: "#9B7A3E", characterSpacing: 5, alignment: "center" },
       coverName: { fontSize: 18, bold: true, color: "#80642F", characterSpacing: 1.8, alignment: "center" },
-      coverYear: { fontSize: 88, bold: true, color: "#1D3654", alignment: "center" },
-      coverSubtitle: { fontSize: 27, bold: true, color: "#665332", alignment: "center", lineHeight: 1.1 },
+      coverYear: { fontSize: 104, bold: true, color: "#1D3654", alignment: "center" },
+      coverSubtitle: { fontSize: 30, bold: true, color: "#665332", alignment: "center", lineHeight: 1.1 },
       coverDetails: { fontSize: 20, bold: true, color: "#142C43", alignment: "center", lineHeight: 1.45 },
       innerKicker: { fontSize: 15, bold: true, color: "#8A6A32", characterSpacing: 1.25, alignment: "center", margin: [0, 0, 0, 16] },
       title: { fontSize: 36, bold: true, color: "#1E405F", alignment: "center", margin: [0, 0, 0, 18] },
@@ -438,11 +438,10 @@ const buildPdfDocument = (templates) => {
     content: [
       {
         stack: [
-          { ...yearReportTitle("Разбор"), margin: [0, 16, 0, 2] },
+          { ...yearReportTitle("Разбор"), margin: [0, 22, 0, 6] },
           { text: personalCode, style: "coverCode", margin: [0, 0, 0, 8] },
-          { text: "ЛИЧНЫЙ ПРОГНОЗ", style: "coverName", margin: [0, 0, 0, 4] },
           { text: String(reportYearValue), style: "coverYear", margin: [0, 0, 0, 6] },
-          { text: `ЛИЧНАЯ КАРТА ГОДА ${reportYearValue}`, style: "coverSubtitle", margin: [0, 0, 0, 6] },
+          { text: "ЛИЧНАЯ КАРТА ГОДА", style: "coverSubtitle", margin: [0, 0, 0, 8] },
           { text: `Дата рождения: ${birthInput.value}\nВ ${reportYearValue} вам исполняется: ${age} лет`, style: "coverDetails", margin: [0, 0, 0, 12] }
         ],
         pageBreak: "after"
