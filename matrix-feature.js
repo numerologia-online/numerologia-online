@@ -366,8 +366,10 @@ const buildPdfMatrixSvg = (data) => {
 const fullReportCoverTitle = () => `
   <svg xmlns="http://www.w3.org/2000/svg" width="483" height="158" viewBox="0 0 483 158">
     <g text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="700">
-      <text x="244" y="73" font-size="66" fill="#C5A25E" opacity="0.5">Полный</text>
-      <text x="244" y="147" font-size="66" fill="#C5A25E" opacity="0.5">разбор</text>
+      <text x="241" y="71" font-size="66" fill="#B9955A" opacity="0.10">Полный</text>
+      <text x="241" y="145" font-size="66" fill="#B9955A" opacity="0.10">разбор</text>
+      <text x="240" y="70" font-size="66" fill="#7A5A8B" opacity="0.16">Полный</text>
+      <text x="240" y="144" font-size="66" fill="#7A5A8B" opacity="0.16">разбор</text>
       <text x="238" y="68" font-size="66" fill="#583D73">Полный</text>
       <text x="238" y="142" font-size="66" fill="#583D73">разбор</text>
     </g>
