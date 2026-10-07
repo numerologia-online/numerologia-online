@@ -180,40 +180,73 @@ const coverFrame = () => ({
       <path d="M297.5 581 L300 588 L307 590.5 L300 593 L297.5 600 L295 593 L288 590.5 L295 588Z" opacity=".32"/>
     </g>
 
-    <!-- scattered coins, deliberately irregular rather than blocky -->
-    <g fill="url(#gold)" stroke="#9A6B1D" stroke-width=".55" opacity=".88">
-      <ellipse cx="77" cy="704" rx="18" ry="6"/>
-      <ellipse cx="96" cy="718" rx="15" ry="5"/>
-      <ellipse cx="120" cy="700" rx="12" ry="4.5"/>
-      <ellipse cx="139" cy="724" rx="10" ry="3.8"/>
-      <ellipse cx="62" cy="731" rx="11" ry="4"/>
-      <ellipse cx="151" cy="686" rx="8" ry="3.2"/>
-      <ellipse cx="518" cy="704" rx="18" ry="6"/>
-      <ellipse cx="499" cy="718" rx="15" ry="5"/>
-      <ellipse cx="475" cy="700" rx="12" ry="4.5"/>
-      <ellipse cx="456" cy="724" rx="10" ry="3.8"/>
-      <ellipse cx="533" cy="731" rx="11" ry="4"/>
-      <ellipse cx="444" cy="686" rx="8" ry="3.2"/>
-    </g>
-    <g fill="none" stroke="#F1D995" stroke-width=".55" opacity=".78">
-      <ellipse cx="77" cy="704" rx="12" ry="3.5"/>
-      <ellipse cx="96" cy="718" rx="9" ry="2.8"/>
-      <ellipse cx="518" cy="704" rx="12" ry="3.5"/>
-      <ellipse cx="499" cy="718" rx="9" ry="2.8"/>
+    <!-- recognisable gold currency coins -->
+    <g font-family="Arial, sans-serif" text-anchor="middle">
+      <g transform="translate(66 690)">
+        <circle cx="0" cy="0" r="17" fill="url(#gold)" stroke="#855817" stroke-width="1"/>
+        <circle cx="0" cy="0" r="13" fill="none" stroke="#F5DEA0" stroke-width=".8"/>
+        <text x="0" y="6" font-size="17" font-weight="700" fill="#7B5014">$</text>
+      </g>
+      <g transform="translate(111 713)">
+        <circle cx="0" cy="0" r="14" fill="#D9AE4C" stroke="#875A18" stroke-width=".9"/>
+        <circle cx="0" cy="0" r="10.5" fill="none" stroke="#F6E1A8" stroke-width=".65"/>
+        <text x="0" y="5" font-size="14" font-weight="700" fill="#765015">€</text>
+      </g>
+      <g transform="translate(151 684)">
+        <circle cx="0" cy="0" r="12.5" fill="#E7C365" stroke="#8C601B" stroke-width=".85"/>
+        <circle cx="0" cy="0" r="9" fill="none" stroke="#FFF0BE" stroke-width=".55"/>
+        <text x="0" y="4.5" font-size="12" font-weight="700" fill="#795016">₽</text>
+      </g>
+      <g transform="translate(80 742)">
+        <circle cx="0" cy="0" r="11" fill="#C99634" stroke="#7F5416" stroke-width=".85"/>
+        <circle cx="0" cy="0" r="7.8" fill="none" stroke="#F3D98E" stroke-width=".55"/>
+        <text x="0" y="4" font-size="10.5" font-weight="700" fill="#704711">¢</text>
+      </g>
+      <g transform="translate(139 741)">
+        <circle cx="0" cy="0" r="10" fill="#F0D37A" stroke="#93651D" stroke-width=".8"/>
+        <circle cx="0" cy="0" r="7" fill="none" stroke="#FFF0C2" stroke-width=".5"/>
+        <text x="0" y="3.8" font-size="9.5" font-weight="700" fill="#7C5317">£</text>
+      </g>
+
+      <g transform="translate(529 690)">
+        <circle cx="0" cy="0" r="17" fill="url(#gold)" stroke="#855817" stroke-width="1"/>
+        <circle cx="0" cy="0" r="13" fill="none" stroke="#F5DEA0" stroke-width=".8"/>
+        <text x="0" y="6" font-size="16" font-weight="700" fill="#7B5014">€</text>
+      </g>
+      <g transform="translate(484 713)">
+        <circle cx="0" cy="0" r="14" fill="#D9AE4C" stroke="#875A18" stroke-width=".9"/>
+        <circle cx="0" cy="0" r="10.5" fill="none" stroke="#F6E1A8" stroke-width=".65"/>
+        <text x="0" y="5" font-size="14" font-weight="700" fill="#765015">$</text>
+      </g>
+      <g transform="translate(444 684)">
+        <circle cx="0" cy="0" r="12.5" fill="#E7C365" stroke="#8C601B" stroke-width=".85"/>
+        <circle cx="0" cy="0" r="9" fill="none" stroke="#FFF0BE" stroke-width=".55"/>
+        <text x="0" y="4.5" font-size="12" font-weight="700" fill="#795016">£</text>
+      </g>
+      <g transform="translate(515 742)">
+        <circle cx="0" cy="0" r="11" fill="#C99634" stroke="#7F5416" stroke-width=".85"/>
+        <circle cx="0" cy="0" r="7.8" fill="none" stroke="#F3D98E" stroke-width=".55"/>
+        <text x="0" y="4" font-size="10.5" font-weight="700" fill="#704711">₽</text>
+      </g>
+      <g transform="translate(456 741)">
+        <circle cx="0" cy="0" r="10" fill="#F0D37A" stroke="#93651D" stroke-width=".8"/>
+        <circle cx="0" cy="0" r="7" fill="none" stroke="#FFF0C2" stroke-width=".5"/>
+        <text x="0" y="3.8" font-size="9.5" font-weight="700" fill="#7C5317">¢</text>
+      </g>
     </g>
 
-    <!-- two simple old-money bullion bars -->
-    <g opacity=".86">
-      <g transform="translate(113 742) rotate(-7)">
-        <path d="M0 10 L12 0 H67 L78 10 L69 31 H9 Z" fill="url(#gold)" stroke="#96691E" stroke-width=".75"/>
-        <path d="M12 6 H65" stroke="#F5E0A1" stroke-width=".65" opacity=".84"/>
-        <circle cx="39" cy="18" r="5" fill="none" stroke="#8E631E" stroke-width=".6"/>
-      </g>
-      <g transform="translate(404 742) rotate(7)">
-        <path d="M0 10 L12 0 H67 L78 10 L69 31 H9 Z" fill="url(#gold)" stroke="#96691E" stroke-width=".75"/>
-        <path d="M12 6 H65" stroke="#F5E0A1" stroke-width=".65" opacity=".84"/>
-        <circle cx="39" cy="18" r="5" fill="none" stroke="#8E631E" stroke-width=".6"/>
-      </g>
+    <!-- small coin stacks for depth -->
+    <g fill="url(#gold)" stroke="#8A5C18" stroke-width=".55">
+      <ellipse cx="187" cy="744" rx="17" ry="5"/>
+      <ellipse cx="187" cy="738" rx="17" ry="5"/>
+      <ellipse cx="187" cy="732" rx="17" ry="5"/>
+      <ellipse cx="408" cy="744" rx="17" ry="5"/>
+      <ellipse cx="408" cy="738" rx="17" ry="5"/>
+      <ellipse cx="408" cy="732" rx="17" ry="5"/>
+    </g>
+    <g fill="none" stroke="#F5DEA0" stroke-width=".5" opacity=".9">
+      <ellipse cx="187" cy="732" rx="12.5" ry="3.1"/>
+      <ellipse cx="408" cy="732" rx="12.5" ry="3.1"/>
     </g>
 
     <!-- central gem / talisman -->
@@ -286,16 +319,15 @@ const wealthCodeSvg = (code) => {
     svg: `<svg xmlns="http://www.w3.org/2000/svg" width="455" height="226" viewBox="0 0 455 226">
       <defs>
         <linearGradient id="codeGold" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#714A11"/>
-          <stop offset="23%" stop-color="#D2A845"/>
-          <stop offset="46%" stop-color="#F3DD98"/>
-          <stop offset="62%" stop-color="#A66F1D"/>
-          <stop offset="82%" stop-color="#E4C26A"/>
-          <stop offset="100%" stop-color="#835816"/>
+          <stop offset="0%" stop-color="#5F3B08"/>
+          <stop offset="22%" stop-color="#A86E16"/>
+          <stop offset="48%" stop-color="#D4A13A"/>
+          <stop offset="70%" stop-color="#8D5911"/>
+          <stop offset="100%" stop-color="#B87C1F"/>
         </linearGradient>
         <radialGradient id="codeGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#F1CF73" stop-opacity=".30"/>
-          <stop offset="100%" stop-color="#F1CF73" stop-opacity="0"/>
+          <stop offset="0%" stop-color="#E6BF58" stop-opacity=".12"/>
+          <stop offset="100%" stop-color="#E6BF58" stop-opacity="0"/>
         </radialGradient>
       </defs>
 
@@ -332,6 +364,7 @@ const wealthCodeSvg = (code) => {
         <text x="357" y="154" font-size="16">₽</text>
       </g>
 
+      <text x="227.5" y="137" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="92" font-weight="700" fill="#7A4D0E" stroke="#6D430A" stroke-width="1.4">${safeCode}</text>
       <text x="227.5" y="137" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="92" font-weight="700" fill="url(#codeGold)">${safeCode}</text>
     </svg>`,
     width: 455,
@@ -348,7 +381,7 @@ const buildDocument = ({ birthDate, code, sections }) => ({
   pageSize: "A4",
   pageMargins: [70, 78, 70, 82],
   background: (page) => page === 1 ? coverFrame() : innerFrame(),
-  defaultStyle: { font: "Roboto", fontSize: 16.5, color: "#263B52", lineHeight: 1.38 },
+  defaultStyle: { font: "Roboto", fontSize: 17.5, color: "#263B52", lineHeight: 1.4 },
   styles: {
     coverBrand: {
       fontSize: 11,
@@ -385,7 +418,7 @@ const buildDocument = ({ birthDate, code, sections }) => ({
       margin: [0, 0, 0, 12]
     },
     subtitle: {
-      fontSize: 15.5,
+      fontSize: 16.5,
       color: "#657083",
       alignment: "center",
       lineHeight: 1.35,
@@ -411,7 +444,7 @@ const buildDocument = ({ birthDate, code, sections }) => ({
       margin: [0, 20, 0, 8]
     },
     paragraph: {
-      fontSize: 16.5,
+      fontSize: 18,
       color: "#34495F",
       lineHeight: 1.4,
       margin: [0, 0, 0, 15]
@@ -423,13 +456,13 @@ const buildDocument = ({ birthDate, code, sections }) => ({
       margin: [0, 0, 0, 8]
     },
     ritualText: {
-      fontSize: 15.5,
+      fontSize: 17,
       color: "#4B4A43",
       lineHeight: 1.36,
       margin: [0, 0, 0, 10]
     },
     advice: {
-      fontSize: 14.5,
+      fontSize: 16,
       italics: true,
       color: "#45566A",
       lineHeight: 1.35
@@ -442,13 +475,13 @@ const buildDocument = ({ birthDate, code, sections }) => ({
       margin: [0, 0, 0, 13]
     },
     ctaCopy: {
-      fontSize: 15,
+      fontSize: 16.5,
       color: "#34495F",
       lineHeight: 1.38,
       margin: [0, 0, 0, 13]
     },
     ctaGift: {
-      fontSize: 15.5,
+      fontSize: 16.5,
       bold: true,
       color: "#7C591E",
       lineHeight: 1.35,
