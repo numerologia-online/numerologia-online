@@ -363,6 +363,16 @@ const buildPdfMatrixSvg = (data) => {
     </svg>`;
 };
 
+const fullReportCoverTitle = () => `
+  <svg xmlns="http://www.w3.org/2000/svg" width="483" height="158" viewBox="0 0 483 158">
+    <g text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="700">
+      <text x="244" y="73" font-size="66" fill="#C5A25E" opacity="0.5">Полный</text>
+      <text x="244" y="147" font-size="66" fill="#C5A25E" opacity="0.5">разбор</text>
+      <text x="238" y="68" font-size="66" fill="#583D73">Полный</text>
+      <text x="238" y="142" font-size="66" fill="#583D73">разбор</text>
+    </g>
+  </svg>`;
+
 const buildFullReportPdf = async () => {
   if (!activeFullReport) throw new Error("Нет данных для PDF");
   const { formattedDate, matrixData, karmicPrograms, karmicTails } = activeFullReport;
@@ -385,11 +395,10 @@ const buildFullReportPdf = async () => {
   const content = [
     {
       stack: [
-        { text: "ЛИЧНЫЙ РАЗБОР", style: "coverKicker" },
-        { text: "Полный\nразбор", style: "coverTitle", alignment: "center" },
+        { svg: fullReportCoverTitle(), width: 483, height: 158, alignment: "center", margin: [0, 0, 0, 10] },
+        { svg: matrixPdfSvg, width: 430, height: 430, alignment: "center", margin: [0, 0, 0, 14] },
         { text: `Дата рождения · ${formattedDate}`, style: "coverDate", alignment: "center" },
-        { text: `Возраст · ${age} лет`, style: "coverAge", alignment: "center" },
-        { svg: matrixPdfSvg, width: 360, height: 360, alignment: "center", margin: [0, 18, 0, 0] }
+        { text: `Возраст · ${age} лет`, style: "coverAge", alignment: "center" }
       ],
       margin: [0, 0, 0, 0],
       pageBreak: "after"
@@ -465,10 +474,8 @@ const buildFullReportPdf = async () => {
     content,
     defaultStyle: { font: "Roboto", fontSize: 12.2, color: "#493f53", lineHeight: 1.32 },
     styles: {
-      coverKicker: { font: "Roboto", fontSize: 10, bold: true, color: "#28787a", characterSpacing: 1.5, margin: [0, 0, 0, 22] },
-      coverTitle: { font: "Roboto", fontSize: 43, bold: true, color: "#563b6f", lineHeight: 1.03 },
-      coverDate: { font: "Roboto", fontSize: 17, color: "#a0682b", margin: [0, 18, 0, 0] },
-      coverAge: { font: "Roboto", fontSize: 16, color: "#1D3654", bold: true, margin: [0, 9, 0, 0] },
+      coverDate: { font: "Roboto", fontSize: 18, bold: true, color: "#A06A2D", margin: [0, 0, 0, 0] },
+      coverAge: { font: "Roboto", fontSize: 17, color: "#1D3654", bold: true, margin: [0, 8, 0, 0] },
       chapter: { font: "Roboto", fontSize: 27, bold: true, color: "#563b6f", margin: [0, 0, 0, 10] },
       chapterLead: { font: "Roboto", fontSize: 13, color: "#6d6376", lineHeight: 1.38, margin: [0, 0, 0, 20] },
       eyebrow: { font: "Roboto", fontSize: 9.5, bold: true, color: "#1f777d", characterSpacing: 1.05, margin: [0, 0, 0, 8] },
