@@ -147,6 +147,24 @@ const innerBackground = () => ({
       <path d="M402 644.2 H526 M402 663.4 H526 M402 682.6 H526 M402 701.8 H526"/>
     </g>
 
+    <!-- vintage pages and weekday traces, behind the reading area -->
+    <g transform="translate(492 123) rotate(12)" stroke="#90ADB7" stroke-width=".62" opacity=".10">
+      <rect x="-29" y="-34" width="91" height="125" rx="5" fill="#FFFEFB"/>
+      <rect x="-20" y="-25" width="91" height="125" rx="5" fill="#FFFDF8"/>
+      <rect x="-11" y="-16" width="91" height="125" rx="5" fill="#FFFDF8"/>
+      <path d="M-11 8 H80" stroke-dasharray="2 5"/>
+      <path d="M5 29 H64 M5 49 H64 M5 69 H64 M25 21 V80 M48 21 V80" opacity=".76"/>
+      <circle cx="8" cy="-4" r="4" fill="#C4AC7F"/>
+      <circle cx="61" cy="-4" r="4" fill="#C4AC7F"/>
+    </g>
+    <g transform="translate(29 565) rotate(-9)" fill="#FFFDF9" stroke="#B79D76" stroke-width=".53" opacity=".085">
+      <rect x="0" y="0" width="117" height="143" rx="6"/>
+      <path d="M0 27 H117" stroke-dasharray="2 5"/>
+      <path d="M20 49 H97 M20 70 H97 M20 91 H97 M20 112 H97" opacity=".70"/>
+    </g>
+    <g font-family="Georgia, serif" fill="#AA905E" opacity=".16" text-anchor="middle">
+      <text x="297.5" y="808" font-size="12" letter-spacing="5">9 · 9 · 6 · 6</text>
+    </g>
     <g fill="#C29B58" opacity=".20">
       <circle cx="297.5" cy="34" r="1.6"/><circle cx="289" cy="34" r=".8"/><circle cx="306" cy="34" r=".8"/>
     </g>
