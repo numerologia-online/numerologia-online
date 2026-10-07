@@ -61,7 +61,6 @@ const monthCalendar = (birth, date = new Date()) => {
   const total = new Date(year, month + 1, 0).getDate();
   const first = new Date(year, month, 1).getDay();
   const offset = (first + 6) % 7;
-  const openUntil = Math.ceil(total / 2);
   const cells = [];
   for (let i = 0; i < offset; i += 1) cells.push('<span class="personal-month-empty"></span>');
   for (let day = 1; day <= total; day += 1) {
@@ -75,7 +74,7 @@ const monthCalendar = (birth, date = new Date()) => {
     <div class="personal-month-heading"><div><p class="personal-month-kicker">Карта ближайших дней</p><h3>${esc(monthTitle(date))}</h3></div><span class="personal-month-mark">✦</span></div>
     <div class="personal-month-weekdays">${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d) => `<span>${d}</span>`).join("")}</div>
     <div class="personal-month-grid">${cells.join("")}</div>
-    <div class="personal-month-legend"><span><i class="personal-month-dot good"></i>Хороший день</span><span><i class="personal-month-dot chance"></i>Очень важный шанс</span><span><i class="personal-month-dot risk"></i>Осторожно</span><span><i class="personal-month-dot avoid"></i>Не делайте этого</span><span><i class="personal-month-dot locked"></i>По подписке</span></div>
+    <div class="personal-month-legend"><span><i class="personal-month-dot good"></i>Хороший день</span><span><i class="personal-month-dot chance"></i>Очень важный шанс</span><span><i class="personal-month-dot risk"></i>Осторожно</span><span><i class="personal-month-dot avoid"></i>Не делайте этого</span></div>
     <button type="button" class="personal-month-open">Открыть разбор месяца <span>→</span></button>
     <section class="personal-month-details" hidden>
       <p class="personal-month-details-lead">Здесь собраны самые заметные даты месяца. Остальные дни остаются обычными и не требуют отдельного разбора.</p>
@@ -121,12 +120,22 @@ export const openPersonalDay = () => {
       if (!opened && !monthList.dataset.ready) {
         const now = new Date();
         const total = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const highlights = [];
-        for (let day = 1; day <= total; day += 1) {
-          const info = calendarInfo(personalDay(birth, new Date(now.getFullYear(), now.getMonth(), day)));
-          if (info.status !== "neutral" && highlights.length < 15) highlights.push({ day, ...info });
-        }
-        monthList.innerHTML = highlights.map(({ day, status, label }) => `<p class="personal-month-detail-${status}"><strong>${day} ${new Intl.DateTimeFormat("ru-RU", { month: "long" }).format(now)}:</strong> ${esc(label)}.</p>`).join("");
+        const monthName = new Intl.DateTimeFormat("ru-RU", { month: "long" }).format(now);
+        const days = await Promise.all(Array.from({ length: total }, (_, index) => {
+          const day = index + 1;
+          return loadPersonalDay(birth, new Date(now.getFullYear(), now.getMonth(), day)).then((item) => ({
+            day, item, info: calendarInfo(item.energy)
+          }));
+        }));
+        monthList.innerHTML = days.map(({ day, item, info }) => `
+          <details class="personal-month-day-card personal-month-detail-${info.status}">
+            <summary><span><strong>${day} ${monthName}</strong><em>${esc(info.label || "Личный день")}</em></span><b>+</b></summary>
+            <div class="personal-month-day-content">
+              <p>${esc(item.text)}</p>
+              ${item.todayNeed?.length ? \`<div class="personal-month-mini need"><strong>Сегодня нужно</strong><ul>${bullets(item.todayNeed)}</ul></div>\` : ""}
+              ${item.todayAvoid?.length ? \`<div class="personal-month-mini avoid"><strong>Сегодня нельзя</strong><ul>${bullets(item.todayAvoid)}</ul></div>\` : ""}
+            </div>
+          </details>`).join("");
         monthList.dataset.ready = "1";
       }
     });
