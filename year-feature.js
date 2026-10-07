@@ -355,23 +355,24 @@ const yearReportTitle = (text) => ({ svg: `<svg xmlns="http://www.w3.org/2000/sv
 
 const yearReportCover = ({ year, birthDate, age }) => {
   const svgText = (value) => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const depth = (value, x, y, size, color, anchor = "start", family = "Georgia, serif", weight = "700") => (
-    '<g font-family="' + family + '" font-weight="' + weight + '" text-anchor="' + anchor + '">' +
-      '<text x="' + x + '" y="' + y + '" font-size="' + size + '" fill="#C3A570" opacity=".15" transform="translate(1.5 2)">' + svgText(value) + '</text>' +
-      '<text x="' + x + '" y="' + y + '" font-size="' + size + '" fill="#8B6D9B" opacity=".08" transform="translate(3 4)">' + svgText(value) + '</text>' +
-      '<text x="' + x + '" y="' + y + '" font-size="' + size + '" fill="' + color + '">' + svgText(value) + '</text>' +
-    '</g>'
-  );
+  const depth = (value, y, size, color, family = "Georgia, serif", weight = "700") => {
+    const text = svgText(value);
+    return '<g font-family="' + family + '" font-weight="' + weight + '" text-anchor="middle">' +
+      '<text x="225" y="' + y + '" font-size="' + size + '" fill="#B99A62" opacity=".26" transform="translate(1 1)">' + text + '</text>' +
+      '<text x="225" y="' + y + '" font-size="' + size + '" fill="#B99A62" opacity=".19" transform="translate(2 2)">' + text + '</text>' +
+      '<text x="225" y="' + y + '" font-size="' + size + '" fill="#90739E" opacity=".12" transform="translate(3 3)">' + text + '</text>' +
+      '<text x="225" y="' + y + '" font-size="' + size + '" fill="' + color + '" stroke="' + color + '" stroke-width=".35">' + text + '</text>' +
+    '</g>';
+  };
   return { svg: '<svg xmlns="http://www.w3.org/2000/svg" width="451" height="620" viewBox="0 0 451 620">' +
-    '<path d="M0 270 C114 236 282 232 451 278" fill="none" stroke="#D5C29A" stroke-width="1" opacity=".65"/>' +
-    '<path d="M25 52 C130 16 270 17 420 62" fill="none" stroke="#E0D6C0" stroke-width="1" opacity=".8"/>' +
-    depth("Разбор", 22, 140, 82, "#583D73") +
-    depth("года", 22, 232, 82, "#583D73") +
-    depth(year, 226, 414, 134, "#213F62", "middle", "Arial, sans-serif") +
-    depth("ЛИЧНАЯ КАРТА ГОДА", 23, 482, 28, "#86642B", "start", "Arial, sans-serif") +
-    '<line x1="24" y1="505" x2="427" y2="505" stroke="#D1B57F" stroke-width="1"/>' +
-    depth("Дата рождения: " + birthDate, 23, 548, 20, "#203E61", "start", "Arial, sans-serif", "600") +
-    depth("В " + year + " вам исполняется: " + age + " лет", 23, 588, 20, "#203E61", "start", "Arial, sans-serif", "600") +
+    '<line x1="76" y1="270" x2="375" y2="270" stroke="#D6BD88" stroke-width="1"/>' +
+    depth("Разбор", 142, 88, "#583D73") +
+    depth("года", 242, 88, "#583D73") +
+    depth(year, 414, 136, "#213F62", "Arial, sans-serif") +
+    depth("ЛИЧНАЯ КАРТА ГОДА", 478, 30, "#86642B", "Arial, sans-serif") +
+    '<line x1="76" y1="503" x2="375" y2="503" stroke="#D6BD88" stroke-width="1"/>' +
+    depth("Дата рождения: " + birthDate, 550, 21, "#203E61", "Arial, sans-serif", "600") +
+    depth("В " + year + " вам исполняется: " + age + " лет", 592, 21, "#203E61", "Arial, sans-serif", "600") +
   '</svg>' };
 };
 
