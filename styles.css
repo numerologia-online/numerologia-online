@@ -71,7 +71,7 @@
   font:750 17px Inter,system-ui,sans-serif;
   box-shadow:inset 0 1px rgba(255,255,255,.18),0 12px 23px rgba(48,71,121,.19);
 }
-.personal-day-submit:disabled{opacity:.66;box-shadow:none}
+.personal-day-submit:disabled{opacity:1;background:#173f7a;box-shadow:0 10px 22px rgba(23,63,122,.24)}
 .personal-day-submit:not(:disabled):active{transform:scale(.985)}
 .personal-day-error{margin:0;color:#a23e43;font-size:14px}
 .personal-day-error[hidden],.personal-day-result[hidden]{display:none}
