@@ -131,15 +131,23 @@ export const openPersonalDay = () => {
     const monthDetails = result.querySelector(".personal-month-details");
     const monthList = result.querySelector(".personal-month-detail-list");
     const scrollToMonthDetails = () => requestAnimationFrame(() => {
-      const cardTop = card.getBoundingClientRect().top;
-      const detailsTop = monthDetails.getBoundingClientRect().top;
-      const target = Math.max(0, card.scrollTop + detailsTop - cardTop - 12);
-      animateScroll(card, target, 1120);
+      requestAnimationFrame(() => {
+        const targetNode = monthList.querySelector(".personal-month-summary") || monthDetails;
+        if (targetNode?.scrollIntoView) {
+          targetNode.scrollIntoView({ behavior: "smooth", block: "start" });
+          return;
+        }
+        const cardTop = card.getBoundingClientRect().top;
+        const detailsTop = monthDetails.getBoundingClientRect().top;
+        const target = Math.max(0, card.scrollTop + detailsTop - cardTop - 12);
+        animateScroll(card, target, 1120);
+      });
     });
     result.querySelector(".personal-month-open")?.addEventListener("click", async (event) => {
       const opened = !monthDetails.hidden;
       monthDetails.hidden = opened;
       event.currentTarget.innerHTML = opened ? "Открыть разбор месяца <span>→</span>" : "Скрыть разбор месяца <span>↑</span>";
+      if (!opened && monthList.dataset.ready) scrollToMonthDetails();
       if (!opened && !monthList.dataset.ready) {
         const now = new Date();
         const total = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
