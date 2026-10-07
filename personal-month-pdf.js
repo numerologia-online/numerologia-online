@@ -181,8 +181,8 @@ const summaryCard = (days, status, monthIndex) => {
           },
           ...groups.map(([label, dates]) => ({
             stack: [
-              { text: label, bold: true, color: "#304657", fontSize: 15.5, margin: [0, 5, 0, 2] },
-              { text: `${dates.join(", ")} ${MONTHS_GENITIVE[monthIndex]}`, color: "#687685", fontSize: 13.5 }
+              { text: label, bold: true, color: "#304657", fontSize: 17, margin: [0, 5, 0, 2] },
+              { text: `${dates.join(", ")} ${MONTHS_GENITIVE[monthIndex]}`, color: "#687685", fontSize: 15.5 }
             ]
           }))
         ]
@@ -205,21 +205,21 @@ const adviceBox = (title, items, type) => {
     table: {
       widths: ["*"],
       body: [[{
-        fillColor: need ? "#EEF4F3" : "#F6EEEE",
+        fillColor: need ? "#ECF3F3" : "#F6EEEE",
         margin: [16, 13, 16, 13],
         stack: [
           {
             text: title,
             bold: true,
             color: need ? "#466D73" : "#8A5D62",
-            fontSize: 13.5,
+            fontSize: 15,
             characterSpacing: .6,
             margin: [0, 0, 0, 7]
           },
           {
             ul: items,
-            color: "#35495A",
-            fontSize: 13,
+            color: "#293F50",
+            fontSize: 15.5,
             lineHeight: 1.32,
             margin: [7, 0, 0, 0]
           }
@@ -236,98 +236,40 @@ const adviceBox = (title, items, type) => {
   };
 };
 
-const dayPage = ({ day, item, info }, monthIndex, year, isLast) => {
+const dayHeader = ({ day, monthIndex, year, energy, weekday }) => ({
+  svg: `<svg xmlns="http://www.w3.org/2000/svg" width="466" height="183" viewBox="0 0 466 183">
+    <defs><linearGradient id="dayTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E5F0F1"/><stop offset="100%" stop-color="#D4E5E9"/>
+    </linearGradient></defs>
+    <rect x="1" y="1" width="464" height="181" rx="10" fill="#FFFDF9" stroke="#C6A46A" stroke-width=".75"/>
+    <path d="M1 10 Q1 1 11 1 H455 Q465 1 465 10 V50 H1 Z" fill="url(#dayTop)"/>
+    <path d="M20 50 H446" stroke="#BFA06D" stroke-width=".7" stroke-dasharray="2 4"/>
+    <g fill="#FFFDF9" stroke="#B99151" stroke-width=".9"><circle cx="64" cy="16" r="6"/><circle cx="402" cy="16" r="6"/></g>
+    <g font-family="Arial, sans-serif" text-anchor="middle">
+      <text x="233" y="33" font-size="16" font-weight="700" letter-spacing="2" fill="#496A76">${weekday}</text>
+      <text x="233" y="125" font-size="78" font-weight="700" fill="#1C3B51">${day}</text>
+      <text x="233" y="152" font-size="15" font-weight="700" letter-spacing="2" fill="#926B30">${MONTHS_GENITIVE[monthIndex].toUpperCase()} · ${year}</text>
+      <text x="233" y="173" font-size="13" fill="#536E78">ЛИЧНЫЙ ДЕНЬ ${energy}</text>
+    </g></svg>`,
+  width: 466, height: 183, alignment: "center"
+});
+
+const dayPage = ({ day, item, info }, monthIndex, year) => {
   const status = info?.status || "neutral";
   const palette = STATUS[status] || STATUS.neutral;
   const specialLabel = status === "neutral" ? "" : (info?.group || palette.label);
   const weekday = WEEKDAYS[new Date(year, monthIndex, day).getDay()];
-
+  const forecast = String(item.text || "").trim();
+  const parts = forecast ? forecast.split(/\n\s*\n/).filter(Boolean) : ["Текст дня пока недоступен."];
   return {
-    unbreakable: true,
+    pageBreak: "before",
     stack: [
-      {
-        table: {
-          widths: ["*"],
-          body: [[{
-            fillColor: "#FFFDFC",
-            margin: [24, 0, 24, 24],
-            stack: [
-              {
-                table: {
-                  widths: ["*", "*"],
-                  body: [[
-                    { text: "○", fontSize: 21, color: "#B78A3F", alignment: "left", margin: [18, 10, 0, 2] },
-                    { text: "○", fontSize: 21, color: "#B78A3F", alignment: "right", margin: [0, 10, 18, 2] }
-                  ]]
-                },
-                layout: "noBorders",
-                margin: [-24, 0, -24, 0]
-              },
-              {
-                canvas: [{
-                  type: "line",
-                  x1: 0, y1: 0, x2: 413, y2: 0,
-                  lineWidth: .55,
-                  lineColor: "#C9B077",
-                  dash: { length: 2, space: 4 }
-                }],
-                margin: [0, 1, 0, 16]
-              },
-              { text: weekday, fontSize: 12.5, bold: true, color: "#9A702F", characterSpacing: 1.8, alignment: "center" },
-              { text: String(day), fontSize: 76, bold: true, color: "#19364E", alignment: "center", margin: [0, 2, 0, -3] },
-              { text: MONTHS_GENITIVE[monthIndex].toUpperCase(), fontSize: 14, color: "#6B7D88", characterSpacing: 1.5, alignment: "center" },
-              {
-                columns: [
-                  { width: "*", text: "" },
-                  {
-                    width: "auto",
-                    text: `ЛИЧНЫЙ ДЕНЬ ${item.energy}`,
-                    fontSize: 12.5,
-                    bold: true,
-                    color: "#466D73",
-                    fillColor: "#EAF3F2",
-                    margin: [10, 6, 10, 6],
-                    alignment: "center"
-                  },
-                  { width: "*", text: "" }
-                ],
-                margin: [0, 10, 0, 8]
-              },
-              ...(specialLabel ? [{
-                text: specialLabel,
-                fontSize: 12.5,
-                bold: true,
-                color: palette.color,
-                alignment: "center",
-                margin: [0, 0, 0, 13]
-              }] : []),
-              {
-                canvas: [{ type: "line", x1: 46, y1: 0, x2: 367, y2: 0, lineWidth: .55, lineColor: "#D8C59C" }],
-                margin: [0, 0, 0, 17]
-              },
-              {
-                text: item.text || "Текст дня пока недоступен.",
-                color: "#2F4353",
-                fontSize: 15,
-                lineHeight: 1.38,
-                alignment: "left",
-                margin: [4, 0, 4, 7]
-              },
-              ...(adviceBox("СЕГОДНЯ НУЖНО", item.todayNeed, "need") ? [adviceBox("СЕГОДНЯ НУЖНО", item.todayNeed, "need")] : []),
-              ...(adviceBox("СЕГОДНЯ НЕЛЬЗЯ", item.todayAvoid, "avoid") ? [adviceBox("СЕГОДНЯ НЕЛЬЗЯ", item.todayAvoid, "avoid")] : [])
-            ]
-          }]]
-        },
-        layout: {
-          hLineWidth: () => .75,
-          vLineWidth: () => .75,
-          hLineColor: () => "#C8A45D",
-          vLineColor: () => "#C8A45D"
-        }
-      }
-    ],
-    margin: [0, 4, 0, 0],
-    ...(isLast ? {} : { pageBreak: "after" })
+      { ...dayHeader({ day, monthIndex, year, energy: item.energy, weekday }), margin: [0, 0, 0, 18] },
+      ...(specialLabel ? [{ text: specialLabel, fontSize: 16, bold: true, color: palette.color, alignment: "center", margin: [0, 0, 0, 14] }] : []),
+      ...parts.map((part) => ({ text: part, fontSize: 19, color: "#263D4D", lineHeight: 1.38, margin: [5, 0, 5, 17] })),
+      ...(item.todayNeed?.length ? [adviceBox("СЕГОДНЯ НУЖНО", item.todayNeed, "need")] : []),
+      ...(item.todayAvoid?.length ? [adviceBox("СЕГОДНЯ НЕЛЬЗЯ", item.todayAvoid, "avoid")] : [])
+    ]
   };
 };
 
@@ -382,8 +324,7 @@ const buildDocument = ({ birth, monthDate, days }) => {
         style: "pageLead"
       },
       ...summary,
-      { text: "", pageBreak: "after" },
-      ...days.map((day, index) => dayPage(day, monthIndex, year, index === days.length - 1))
+      ...days.map((day) => dayPage(day, monthIndex, year))
     ],
     footer: (page, pages) => page === 1 ? null : ({
       text: `Нумерология Онлайн · ${page - 1} / ${pages - 1}`,
@@ -413,6 +354,7 @@ export const preparePersonalMonthPdf = ({ birth, monthDate, days }) => {
   preparingPdfKey = key;
   preparingPdf = (async () => {
     const pdfMake = await getPdfMake();
+    if (!Array.isArray(days) || !days.length || days.some(({ item }) => !item || typeof item.text !== "string" || !item.text.trim())) throw new Error("Неполные тексты календаря");
     const definition = buildDocument({ birth, monthDate, days });
     const blob = await new Promise((resolve) => pdfMake.createPdf(definition).getBlob(resolve));
     const url = URL.createObjectURL(blob);
