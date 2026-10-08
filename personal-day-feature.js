@@ -81,6 +81,18 @@ const paragraphs = (items = []) => items.filter(Boolean).map((text) => `<p>${esc
 const bullets = (items = []) => items.filter(Boolean).map((text) => `<li>${esc(text)}</li>`).join("");
 const todayLabel = () => new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date());
 const monthTitle = (date) => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(date);
+const animateScroll = (node, targetTop, duration = 980) => {
+  const startTop = node.scrollTop;
+  const distance = targetTop - startTop;
+  const startedAt = performance.now();
+  const step = (now) => {
+    const progress = Math.min(1, (now - startedAt) / duration);
+    const eased = 1 - Math.pow(1 - progress, 4);
+    node.scrollTop = startTop + distance * eased;
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+};
 const calendarInfo = (energy, personalNumber) => {
   const link = getPersonalMonthLink(energy, personalNumber);
   return link ? { ...link, label: link.group } : { status: "neutral", group: "", label: "" };
@@ -180,8 +192,6 @@ export const openPersonalDay = () => {
     error.hidden = true;
     submit.disabled = true;
     submit.textContent = "Считаю ваш день…";
-    // На iPhone фокус в поле ввода может вернуть прокрутку к форме.
-    input.blur();
     const item = await loadPersonalDay(birth);
     result.hidden = false;
     result.innerHTML = `<section class="personal-day-main"><span class="personal-day-code">${item.energy} · ${item.personalNumber}</span><p class="personal-day-label">ВАШ ДЕНЬ</p>${paragraphs([item.text])}${item.todayNeed?.length ? `<section class="personal-day-advice personal-day-need"><h4><span class="personal-day-advice-icon">✓</span> Сегодня нужно</h4><ul>${bullets(item.todayNeed)}</ul></section>` : ""}${item.todayAvoid?.length ? `<section class="personal-day-advice personal-day-avoid"><h4><span class="personal-day-advice-icon">×</span> Сегодня нельзя</h4><ul>${bullets(item.todayAvoid)}</ul></section>` : ""}</section>`;
@@ -189,19 +199,14 @@ export const openPersonalDay = () => {
     const importantButton = result.querySelector(".personal-month-open");
     const importantContent = result.querySelector(".personal-month-content");
     importantButton?.addEventListener("click", () => {
-      const before = card.scrollTop;
       const expanded = importantButton.getAttribute("aria-expanded") === "true";
       importantButton.setAttribute("aria-expanded", String(!expanded));
       importantContent.hidden = expanded;
       importantButton.innerHTML = expanded
         ? 'Важные числа месяца <span aria-hidden="true">↓</span>'
         : 'Скрыть важные числа <span aria-hidden="true">↑</span>';
-      // Раскрытие не должно переносить пользователя в начало экрана.
-      card.scrollTop = before;
-      requestAnimationFrame(() => { card.scrollTop = Math.min(before, card.scrollHeight - card.clientHeight); });
     });
-    // Один переход к результату: без длительной анимации, перебивающей ручной скролл.
-    requestAnimationFrame(() => { card.scrollTop = Math.max(0, result.offsetTop - 16); });
+    requestAnimationFrame(() => { animateScroll(card, Math.max(0, result.offsetTop - 16)); });
     submit.textContent = "Рассчитать личный день";
     submit.disabled = false;
   };

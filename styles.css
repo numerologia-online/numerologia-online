@@ -383,7 +383,3 @@ section.personal-day-main .personal-day-label{display:block;margin:0 0 18px;colo
   .personal-month-important .personal-month-summary h4{font-size:19px}
   .personal-month-important .personal-month-summary-line{font-size:15px}
 }
-
-
-/* Устойчивый скролл внутри расчёта дня на мобильных устройствах. */
-.personal-day-page{overflow-anchor:none;overscroll-behavior-y:contain}
