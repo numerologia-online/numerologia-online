@@ -126,7 +126,7 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 @media(prefers-reduced-motion:reduce){.pro-sector-tag{transition:none}}
 
 /* Подписи на SVG должны принимать касания всей площадью, включая iPhone. */
-.pro-sector-tag .pro-sector-hitbox {
+.pro-sector-tag rect.pro-sector-hitbox {
   fill:transparent;
   stroke:none;
   pointer-events:all;

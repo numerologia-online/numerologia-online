@@ -290,7 +290,7 @@ function renderDiagramSectorLabels(svg, zones) {
     // Без неё Safari может не передавать касания группе SVG.
     tag.append(svgElement("rect",{
       "class":"pro-sector-hitbox",
-      x:p.x-p.width/2,y:p.y-31,width:p.width,height:62,rx:24,
+      x:p.x-p.width/2,y:p.y-29,width:p.width,height:58,rx:24,
       fill:"transparent"
     }));
     const activate = () => selectZone(zone.id);
