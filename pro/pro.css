@@ -1,0 +1,71 @@
+
+:root{--paper:#f8f5ed;--white:#fffefa;--ink:#24394e;--ink2:#3f5563;--soft:#65727d;--gold:#b89966;--line:#e2dacb;--teal:#698c91}
+*{box-sizing:border-box}
+html{background:var(--paper);scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:16px/1.55 Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 85% 0,rgba(186,206,211,.23),transparent 430px),var(--paper)}
+button,input{font:inherit}
+button,a{touch-action:manipulation}
+button{cursor:pointer}
+.pro-shell{width:min(100%,780px);margin:0 auto;padding:18px clamp(17px,4vw,34px) 36px}
+.pro-bar{display:flex;justify-content:space-between;align-items:center;gap:15px}
+.pro-back{color:var(--ink);font-size:13px;text-decoration:none;padding:11px 0;font-weight:700}
+.pro-brand{font-size:10px;letter-spacing:.17em;font-weight:800;color:#9a7b52;text-align:right}
+.pro-hero{padding:47px 5px 28px}
+.pro-eyebrow{font-size:11px;font-weight:900;letter-spacing:.16em;color:#a88454;margin:0 0 10px}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.12;letter-spacing:-.038em}
+h1{font-size:clamp(45px,9vw,76px);margin:0 0 21px;font-weight:400}
+h2{font-size:clamp(29px,5vw,40px);font-weight:400;margin:0 0 15px}
+h3{font-size:24px;margin:0 0 12px;font-weight:400}
+.pro-hero-lead{font-size:17px;line-height:1.6;color:var(--ink2);max-width:610px;margin:0 0 23px}
+.pro-pills{display:flex;flex-wrap:wrap;gap:8px}
+.pro-pills span{border:1px solid #d8ccb6;border-radius:50px;padding:7px 11px;font-size:12px;color:#6b634f;background:#fffefa99}
+.pro-form,.pro-paper,.pro-summary{background:var(--white);border:1px solid var(--line);box-shadow:0 16px 50px rgba(56,55,47,.05);border-radius:27px;padding:clamp(18px,4.3vw,30px);margin:0 0 20px}
+.pro-form label{display:block;font-size:12px;color:#6f654f;font-weight:800;margin:0 0 11px}
+.pro-form-row{display:flex;gap:11px}
+.pro-form input{min-width:0;flex:1;padding:13px 17px;font-size:19px;letter-spacing:.06em;color:var(--ink);border:1px solid #d9d4c9;border-radius:15px;background:white;outline:none}
+.pro-form input:focus{border-color:#76989c;box-shadow:0 0 0 3px #76989c28}
+.pro-form button{border:0;border-radius:15px;background:#243b50;color:#fff;padding:14px 20px;font-weight:750;min-height:54px}
+.pro-form button span{margin-left:8px}
+.pro-error{color:#a03a43;font-size:14px;margin:9px 0 0}
+.pro-summary{background:linear-gradient(123deg,#fffefa,#f4f1e8)}
+.pro-summary h2{font-size:32px}
+.pro-summary-numbers{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 15px}
+.pro-number-box{flex:1 1 120px;min-width:120px;background:#fff;border-radius:16px;padding:12px;border:1px solid #e6decf}
+.pro-number-box small{display:block;color:#7b796e;font-size:11px}
+.pro-number-box strong{display:block;font:32px/1.1 Georgia,serif;color:#294c61;margin-top:7px}
+.pro-muted{color:var(--soft);font-size:14px;line-height:1.58;margin:10px 0 18px}
+.pro-title-row{display:flex;justify-content:space-between;gap:10px;align-items:start}
+.pro-small-note{font-size:12px;color:#967c56;white-space:nowrap}
+.pro-diagram{width:100%;max-width:600px;margin:4px auto 15px}
+.pro-diagram svg{width:100%;height:auto;display:block}
+.pro-diagram .pro-node{cursor:pointer;outline:none}
+.pro-diagram .pro-node circle{fill:#fffefa;stroke:#8298a0;stroke-width:2.4;transition:fill .15s}
+.pro-diagram .pro-node.major circle{fill:#e9e5ed;stroke:#79779c;stroke-width:3}
+.pro-diagram .pro-node.center circle{fill:#f4e7d1;stroke:#af956d;stroke-width:3.5}
+.pro-diagram .pro-node.active circle{fill:#d5e9e5;stroke:#287a82;stroke-width:4}
+.pro-diagram .pro-node text{font:700 19px/1 system-ui,sans-serif;fill:#24394e;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+.pro-diagram .pro-node.major text,.pro-diagram .pro-node.center text{font-size:23px}
+.pro-diagram .pro-node:focus-visible circle{stroke:#244c9e;stroke-width:5}
+.pro-position-buttons,.pro-question-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.pro-position-buttons button{font-size:12px;font-weight:650;border:1px solid #dfdbd3;border-radius:50px;padding:9px 12px;background:#fff;color:var(--ink)}
+.pro-position-buttons button[aria-pressed="true"],.pro-question-buttons button[aria-pressed="true"]{border-color:#65878e;background:#e5f1f0;color:#23545e}
+.pro-detail,.pro-answer{margin-top:22px;border-radius:19px;border:1px solid #e8e2d6;background:#fdfbf6;padding:clamp(17px,3.8vw,25px)}
+.pro-detail h3,.pro-answer h3{margin-top:0}
+.pro-detail p,.pro-answer p{margin:0 0 13px;line-height:1.65}
+.pro-detail p:last-child,.pro-answer p:last-child{margin-bottom:0}
+.pro-equation{border-left:3px solid #b79a65;padding:10px 14px;background:#f3f0e8;color:#44515b;font-size:14px}
+.pro-chips{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 16px}
+.pro-chips span{border:1px solid #e0d4bb;border-radius:40px;padding:5px 10px;font-size:12px;color:#7a6846}
+.pro-question-buttons button{flex:1 1 185px;min-height:56px;text-align:left;font-size:14px;font-weight:700;border:1px solid #dfd9cf;border-radius:15px;padding:12px 14px;background:#fff;color:#304a5b}
+.pro-question-buttons button small{display:block;color:#9a845f;font-weight:700;font-size:11px;margin-bottom:4px}
+.pro-answer .pro-paragraph-title{font:22px/1.2 Georgia,serif;color:#8a6c40;margin:22px 0 8px}
+.pro-answer .pro-paragraph-title:first-of-type{margin-top:8px}
+.pro-empty{color:var(--soft);font-size:14px}
+.pro-karma details{margin-top:11px;border:1px solid #e6dcc8;border-radius:13px;background:#fff;padding:14px}
+.pro-karma summary{font-weight:750;cursor:pointer}
+.pro-karma h4{color:#79643f;margin:17px 0 6px;font-size:14px}
+.pro-karma p{font-size:14px;line-height:1.6}
+.pro-footer{padding:20px 10px;text-align:center;color:#908a7f;font-size:11px}
+[hidden]{display:none!important}
+@media(max-width:520px){.pro-shell{padding:13px 13px 25px}.pro-hero{padding:35px 5px 23px}.pro-form-row{flex-direction:column}.pro-form button{width:100%}.pro-small-note{display:none}.pro-paper,.pro-summary,.pro-form{border-radius:22px;padding:18px}.pro-question-buttons button{flex:1 1 100%}.pro-diagram{margin-left:-6px;width:calc(100% + 12px)}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}

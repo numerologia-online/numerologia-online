@@ -1,0 +1,28 @@
+
+/* Отдельная карточка на главной: не изменяет остальные продукты. */
+.product-card.pro-card {
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  min-height:164px;
+  text-decoration:none;
+  color:#fff;
+  background:
+    radial-gradient(circle at 84% 16%,rgba(223,201,150,.36),transparent 33%),
+    radial-gradient(circle at 18% 95%,rgba(135,158,188,.27),transparent 45%),
+    linear-gradient(123deg,#172b40 0%,#304d63 55%,#5e6f7e 100%);
+  box-shadow:0 18px 44px rgba(30,48,66,.19);
+}
+.product-card.pro-card::before{
+  content:"✧";position:absolute;right:50px;bottom:-25px;font:150px/1 Georgia,serif;
+  color:rgba(253,232,195,.13);pointer-events:none;
+}
+.product-card.pro-card::after{
+  content:"";position:absolute;width:160px;height:160px;right:-44px;bottom:-86px;
+  border:1px solid rgba(255,242,216,.23);border-radius:50%;box-shadow:0 0 0 28px rgba(255,255,255,.045);
+  pointer-events:none;
+}
+.product-card.pro-card .product-title {position:relative;z-index:1;font-size:clamp(23px,5.7vw,32px);margin:19px 36px 0 0;line-height:1.05;}
+.pro-card-overline {position:relative;z-index:1;color:#e6cfa1;font-size:10px;font-weight:800;letter-spacing:.15em;}
+.product-card.pro-card .product-arrow{background:rgba(255,255,255,.16);}
+.product-card.pro-card:focus-visible{outline:3px solid #9ebfd1;outline-offset:3px;}
