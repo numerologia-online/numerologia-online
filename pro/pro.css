@@ -104,3 +104,23 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-all-points .pro-position-buttons{margin:4px 0 16px}
 @media(max-width:410px){.pro-zone-buttons{gap:8px}.pro-zone-button{padding:10px;gap:9px;min-height:73px}.pro-zone-labels strong{font-size:13px}.pro-zone-labels small{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.pro-zone-button{transition:none}}
+
+/* Подписи тематических зон внутри интерактивной схемы. */
+.pro-diagram{scroll-margin-top:20px;margin-bottom:8px}
+.pro-diagram-caption{font-size:13px;line-height:1.55;color:#7c827f;margin:0 0 25px}
+.pro-zone-picker{padding:18px 0 8px;border-top:1px solid #ebe4d9;margin-top:8px}
+.pro-sector-tag{cursor:pointer;outline:none;transition:opacity .15s}
+.pro-sector-tag rect{fill:#fffefa;fill-opacity:.96;stroke:var(--sector-color);stroke-width:2}
+.pro-sector-tag circle{fill:var(--sector-color)}
+.pro-sector-tag text{fill:#334659;font:700 15px/1 Inter,system-ui,sans-serif;pointer-events:none;letter-spacing:-.025em}
+.pro-sector-tag:hover rect{stroke-width:3}
+.pro-sector-tag.selected rect{fill:var(--sector-color);fill-opacity:.19;stroke-width:3.4}
+.pro-sector-tag.selected text{fill:#183d50}
+.pro-sector-tag:focus-visible rect{stroke:#1d5965;stroke-width:4.5}
+.pro-sector-tag rect,.pro-sector-tag circle{pointer-events:none}
+@media(max-width:520px){
+  .pro-diagram-caption{font-size:12px;margin-bottom:20px}
+  .pro-zone-picker{padding-top:16px}
+  .pro-sector-tag text{font-size:16px}
+}
+@media(prefers-reduced-motion:reduce){.pro-sector-tag{transition:none}}
