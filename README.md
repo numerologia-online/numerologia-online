@@ -1,17 +1,32 @@
-## Hi there 👋
+# Нумерология Онлайн
 
-<!--
-**numerologia-online/numerologia-online** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+Рабочий статический сайт с расчётами, персональными прогнозами и PDF. Основной репозиторий закрыт (GitHub Private). GitHub Pages для него не используется.
 
-Here are some ideas to get you started:
+## Публикация
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
-<!-- Обновление публикации 08.10.2026 -->
+- Основная ветка: `main`. Vercel автоматически выпускает новую production-версию после изменения `main`.
+- Изменения подготавливать в отдельной ветке, проверять и только потом объединять с `main`.
+- Не изменять формулы расчётов без согласования с владельцем методики.
+- Не копировать изменения в `gh-pages`: прежняя публикация GitHub Pages отключена.
+
+## Где что находится
+
+- `index.html`, `app.js`, `styles.css` и тематические CSS — стартовая страница, навигация и оформление.
+- `personal-day-feature.js` — алгоритм личного дня, календарь, загрузка текста и советов.
+- `data/day/general/general-day-01.json` … `general-day-22.json` — 22 банка по 31 тексту.
+- `data/day/practical/practical-day-01.json` … `practical-day-22.json` — блоки «Сегодня нужно / нельзя».
+- `year-feature.js`, `year-content.js`, `data/year/` — разбор года и его текстовые банки. Для нечётных лет есть `data/year/odd/`.
+- `knowledge/full-report/` и `matrix-feature.js` — полный расчёт.
+- `redflag-*.js` и `data/redflag/` — «Мужчина или Red Flag».
+- `assets/` — актуальные изображения. Дубликаты изображений в корне удалены.
+- `knowledge/archive/` — архивные версии, не используемые страницами.
+
+## Важно
+
+В `data/year/energy-6.txt` находится действующая версия энергии 6 для обычной ветки расчёта. В `data/year/odd/energy-6.txt` — отдельный вариант для нечётных лет. Старая корневая версия сохранена как `knowledge/archive/energy-6-former-root.txt`.
+
+Файлы `assets/year-report-cover.png` и `assets/year-report-inner.png` используются при оформлении PDF года. Не удалять и не заменять JPG без проверки внешнего вида PDF.
+
+Рабочая ссылка Vercel доступна без пароля. **Закрытый GitHub не делает HTML, JavaScript и JSON на опубликованном сайте секретными.** Перед монетизацией закрытые тексты и проверку оплаты нужно переносить на сервер и выдавать только авторизованным покупателям. Скрыванием кнопок в браузере защиту не обеспечить.
+
+В HTML и `robots.txt` включён `noindex` / запрет индексации **временно для рабочего адреса**. Перед публичным запуском на основном домене их необходимо пересмотреть.
