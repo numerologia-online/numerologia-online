@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#f8f5ed">
+  <base href="../">
+  <title>Для нумерологов | Нумерология Онлайн</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="pro/pro.css?v=1">
+</head>
+<body>
+  <main class="pro-shell">
+    <header class="pro-bar">
+      <a class="pro-back" href="./" aria-label="Вернуться ко всем разделам">← На главную</a>
+      <span class="pro-brand">НУМЕРОЛОГИЯ ONLINE</span>
+    </header>
+    <section class="pro-hero">
+      <p class="pro-eyebrow">ПРОФЕССИОНАЛЬНЫЙ РАЗДЕЛ</p>
+      <h1>Для нумерологов</h1>
+      <p class="pro-hero-lead">Расшифровка матрицы без догадок: выберите вопрос, найдите нужную энергию и откройте подробное объяснение. Даже если вы только начинаете изучать нумерологию.</p>
+      <div class="pro-pills"><span>22 энергии</span><span>28 точек матрицы</span><span>14 тем для разбора</span></div>
+    </section>
+    <form id="pro-form" class="pro-form" novalidate>
+      <label for="pro-birth-date">Дата рождения человека</label>
+      <div class="pro-form-row">
+        <input id="pro-birth-date" type="text" inputmode="numeric" autocomplete="bday" placeholder="ДД.ММ.ГГГГ" maxlength="10" required>
+        <button type="submit">Рассчитать <span aria-hidden="true">→</span></button>
+      </div>
+      <p id="pro-error" class="pro-error" hidden role="alert"></p>
+    </form>
+    <div id="pro-results" hidden>
+      <section class="pro-summary" aria-label="Итог расчёта">
+        <p class="pro-eyebrow">ПЕРСОНАЛЬНАЯ КАРТА</p>
+        <h2 id="pro-result-date"></h2>
+        <div id="pro-summary-numbers" class="pro-summary-numbers"></div>
+        <p class="pro-muted">Используется тот же расчёт матрицы, что и в разделе «Полный расчёт». Формулы не изменены.</p>
+      </section>
+      <section class="pro-paper" aria-labelledby="pro-matrix-title">
+        <div class="pro-title-row">
+          <div><p class="pro-eyebrow">ИНТЕРАКТИВНАЯ СХЕМА</p><h2 id="pro-matrix-title">Все точки матрицы</h2></div>
+          <span class="pro-small-note">Нажимайте на числа</span>
+        </div>
+        <div id="pro-diagram" class="pro-diagram"></div>
+        <p class="pro-muted">Каждая точка показывает своё число, способ расчёта, сильные и слабые стороны энергии.</p>
+        <div id="pro-position-buttons" class="pro-position-buttons" aria-label="Все позиции матрицы"></div>
+        <article id="pro-position-detail" class="pro-detail" aria-live="polite"></article>
+      </section>
+      <section class="pro-paper" aria-labelledby="pro-question-title">
+        <p class="pro-eyebrow">КОНСУЛЬТАЦИЯ ПО ТЕМАМ</p>
+        <h2 id="pro-question-title">О чём хотите узнать?</h2>
+        <p class="pro-muted">Выберите вопрос: система сама определит нужную точку и откроет её подробную расшифровку.</p>
+        <div id="pro-question-buttons" class="pro-question-buttons"></div>
+        <article id="pro-answer" class="pro-answer" aria-live="polite">
+          <p class="pro-empty">Выберите интересующий вопрос выше.</p>
+        </article>
+      </section>
+      <section class="pro-paper" aria-labelledby="pro-karmic-title">
+        <p class="pro-eyebrow">ПОВТОРЯЮЩИЕСЯ СВЯЗКИ</p>
+        <h2 id="pro-karmic-title">Кармические программы</h2>
+        <div id="pro-karma" class="pro-karma" aria-live="polite"><p class="pro-muted">Ищу программы...</p></div>
+      </section>
+    </div>
+    <footer class="pro-footer">Нумерология Онлайн · Профессиональный разбор по дате рождения</footer>
+  </main>
+  <script type="module" src="pro/pro.js?v=1"></script>
+</body>
+</html>
