@@ -169,6 +169,17 @@ function paintZone(zone) {
     node.classList.toggle("in-zone", selected.has(node.dataset.nodeKey));
     node.classList.toggle("out-of-zone",Boolean(zone) && !selected.has(node.dataset.nodeKey));
   });
+  // Подсветить и соответствующие кнопки в списках точек и вопросов.
+  // Зона остаётся цветовой подсказкой, а не меняет расчёты.
+  positionButtons.style.setProperty("--zone-color", zone?.color || "#698c91");
+  questionButtons.style.setProperty("--zone-color", zone?.color || "#698c91");
+  positionButtons.querySelectorAll("button[data-key]").forEach((button) => {
+    button.classList.toggle("in-zone", selected.has(button.dataset.key));
+  });
+  const zoneQuestions = new Set(zone?.questions || []);
+  questionButtons.querySelectorAll("button[data-question]").forEach((button) => {
+    button.classList.toggle("in-zone", zoneQuestions.has(button.dataset.question));
+  });
   zoneButtons.querySelectorAll("button[data-zone]").forEach((button) => {
     button.setAttribute("aria-pressed",String(button.dataset.zone === zone?.id));
   });
@@ -243,7 +254,7 @@ function selectZone(id, scrollToDiagram = false) {
 // Аккуратные подписи вокруг самой схемы. Координаты относятся только к
 // расположению надписей, а не меняют алгоритм и не добавляют новых расчётов.
 const sectorLabelPositions = {
-  spirit:        {x:165,y:43,width:160},
+  spirit:        {x:165,y:43,width:200},
   talents:       {x:449,y:43,width:202},
   lineage:       {x:108,y:245,width:190},
   relationships: {x:537,y:205,width:150},
@@ -275,6 +286,13 @@ function renderDiagramSectorLabels(svg, zones) {
     });
     name.textContent = zone.title;
     tag.append(name);
+    // Прозрачная область для нажатия поверх всей подписи.
+    // Без неё Safari может не передавать касания группе SVG.
+    tag.append(svgElement("rect",{
+      "class":"pro-sector-hitbox",
+      x:p.x-p.width/2,y:p.y-31,width:p.width,height:62,rx:24,
+      fill:"transparent"
+    }));
     const activate = () => selectZone(zone.id);
     tag.addEventListener("click",activate);
     tag.addEventListener("keydown",(event)=>{
