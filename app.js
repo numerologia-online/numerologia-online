@@ -61,7 +61,7 @@ const openRedFlagFeature = async () => {
 };
 
 const getPersonalDayFeature = () => {
-  if (!personalDayFeatureLoading) personalDayFeatureLoading = import("./personal-day-feature.js?v=45");
+  if (!personalDayFeatureLoading) personalDayFeatureLoading = import("./personal-day-feature.js?v=46");
   return personalDayFeatureLoading;
 };
 
@@ -117,11 +117,6 @@ const syncPersonalDayLink = () => {
   if (window.location.hash === "#lichnyj-den" || personalDayOnly) {
     if (home) home.hidden = true;
     openPersonalDayFeature()
-      .then(() => {
-        if (personalDayOnly) {
-          requestAnimationFrame(() => document.querySelector(".personal-day-close")?.remove());
-        }
-      })
       .catch(() => alert("Не удалось открыть расчёт дня. Обновите страницу и попробуйте ещё раз."));
   }
 };

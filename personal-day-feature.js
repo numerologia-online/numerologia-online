@@ -139,14 +139,31 @@ const monthCalendar = (birth, date = new Date()) => {
 export const openPersonalDay = () => {
   const shell = document.createElement("section");
   shell.className = "personal-day-overlay personal-day-page-overlay";
-  shell.innerHTML = `<div class="personal-day-card personal-day-page" role="dialog" aria-modal="true"><button class="personal-day-close" type="button" aria-label="Закрыть">×</button><p class="eyebrow">Личный прогноз</p><h2>Ваш личный расчёт дня</h2><p class="personal-day-lead">Личный разбор дня подскажет, куда направить силы, какой шаг сделать, чего избегать, к каким чувствам прислушаться и какие тайны бережно хранит для вас этот день.</p><section class="personal-day-form-panel"><p class="personal-day-form-kicker">РАССЧИТАЙТЕ СВОЙ ЛИЧНЫЙ ДЕНЬ</p><p class="personal-day-date">Сегодня ${todayLabel()}</p><form><label><span>Дата рождения</span><input required type="tel" inputmode="numeric" autocomplete="bday" placeholder="09.09.1986" maxlength="10"></label><button class="personal-day-submit" type="submit" disabled>Рассчитать личный день</button><p class="personal-day-error" hidden></p></form></section><section class="personal-day-result" hidden></section></div>`;
+  shell.innerHTML = `<div class="personal-day-card personal-day-page" role="dialog" aria-modal="true"><button class="personal-day-back" type="button" aria-label="Вернуться ко всем расчётам">← Назад</button><button class="personal-day-close" type="button" aria-label="Закрыть">×</button><p class="eyebrow">Личный прогноз</p><h2>Ваш личный расчёт дня</h2><p class="personal-day-lead">Личный разбор дня подскажет, куда направить силы, какой шаг сделать, чего избегать, к каким чувствам прислушаться и какие тайны бережно хранит для вас этот день.</p><section class="personal-day-form-panel"><p class="personal-day-form-kicker">РАССЧИТАЙТЕ СВОЙ ЛИЧНЫЙ ДЕНЬ</p><p class="personal-day-date">Сегодня ${todayLabel()}</p><form><label><span>Дата рождения</span><input required type="tel" inputmode="numeric" autocomplete="bday" placeholder="09.09.1986" maxlength="10"></label><button class="personal-day-submit" type="submit" disabled>Рассчитать личный день</button><p class="personal-day-error" hidden></p></form></section><section class="personal-day-result" hidden></section></div>`;
   document.body.append(shell);
   const card = shell.querySelector(".personal-day-card");
   const form = shell.querySelector("form");
   const input = shell.querySelector("input");
   const submit = shell.querySelector("button[type=submit]");
   const result = shell.querySelector(".personal-day-result");
-  shell.querySelector(".personal-day-close").onclick = () => shell.remove();
+  const returnToHome = () => {
+    shell.remove();
+    const home = document.querySelector("#home");
+    if (home) {
+      home.hidden = false;
+      if (window.location.hash === "#lichnyj-den" || new URLSearchParams(window.location.search).get("view") === "day") {
+        const url = new URL(window.location.href);
+        url.hash = "";
+        url.searchParams.delete("view");
+        window.history.replaceState(null, "", url.pathname + url.search);
+      }
+    } else {
+      // Прямое открытие day.html: на странице нет главного экрана.
+      window.location.assign("./");
+    }
+  };
+  shell.querySelector(".personal-day-close").onclick = returnToHome;
+  shell.querySelector(".personal-day-back").onclick = returnToHome;
   input.addEventListener("input", () => {
     const digits = input.value.replace(/\D/g, "").slice(0, 8);
     input.value = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean).join(".");
