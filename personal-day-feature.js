@@ -53,7 +53,7 @@ const loadPersonalDay = async (birth, date = new Date()) => {
   const { energy, personalNumber } = personalDay(birth, date);
   const calendarDay = date.getDate();
   try {
-    const response = await fetch(`./data/day/general/general-day-${String(energy).padStart(2, "0")}.json?v=6`);
+    const response = await fetch(`./data/day/general/general-day-${String(energy).padStart(2, "0")}.json?v=7`);
     if (!response.ok) throw new Error("personal day bank unavailable");
     const bank = await response.json();
     const entry = findDayEntry(bank.entries, energy, personalNumber);
