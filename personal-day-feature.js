@@ -108,34 +108,49 @@ const monthMarkedDays = (birth, date = new Date()) => {
   }
   return selected;
 };
+// Важные числа месяца: календарь и значения отмеченных дат.
+// Полный прогноз месяца остаётся в отдельном разделе "Разбор года".
 const monthCalendar = (birth, date = new Date()) => {
   const year = date.getFullYear();
   const month = date.getMonth();
   const total = new Date(year, month + 1, 0).getDate();
   const first = new Date(year, month, 1).getDay();
   const offset = (first + 6) % 7;
-  const cells = [];
   const marked = monthMarkedDays(birth, date);
+  const cells = [];
   for (let i = 0; i < offset; i += 1) cells.push('<span class="personal-month-empty"></span>');
   for (let day = 1; day <= total; day += 1) {
-    const current = new Date(year, month, day);
-    const { energy } = personalDay(birth, current);
     const info = marked.get(day)?.info || { status: "neutral", label: "" };
-    cells.push(`<button type="button" class="personal-month-day personal-month-${info.status}" data-month-day="${day}" aria-label="День ${day}, ${esc(info.label || `личный день ${energy}`)}">${day}</button>`);
+    cells.push(`<span class="personal-month-day personal-month-${info.status}" aria-label="${day}, ${esc(info.label || "обычный день")}">${day}</span>`);
   }
-  return `<section class="personal-month-preview">
-    <div class="personal-month-heading"><div><p class="personal-month-kicker">Карта ближайших дней</p><h3>${esc(monthTitle(date))}</h3></div><span class="personal-month-mark">✦</span></div>
-    <div class="personal-month-weekdays">${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d) => `<span>${d}</span>`).join("")}</div>
-    <div class="personal-month-grid">${cells.join("")}</div>
-    <div class="personal-month-legend"><span><i class="personal-month-dot good"></i>Лучшие дни</span><span><i class="personal-month-dot chance"></i>Важные шансы</span><span><i class="personal-month-dot risk"></i>Дни риска</span></div>
-    <button type="button" class="personal-month-open">Открыть разбор месяца <span>→</span></button>
-    <section class="personal-month-details" hidden>
-      
-      <div class="personal-month-detail-list"></div>
-    </section>
+  const monthGenitive = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"][month];
+  const groupLines = (status) => {
+    const groups = new Map();
+    marked.forEach(({ day, info }) => {
+      if (info.status !== status) return;
+      if (!groups.has(info.group)) groups.set(info.group, []);
+      groups.get(info.group).push(day);
+    });
+    if (!groups.size) return '<p class="personal-month-empty-note">В этом месяце нет отмеченных дат.</p>';
+    return [...groups.entries()].map(([group, dates]) =>
+      `<span class="personal-month-summary-line"><i aria-hidden="true">•</i><span><strong>${esc(group)}</strong><em>${dates.join(", ")} ${monthGenitive}</em></span></span>`
+    ).join("");
+  };
+  return `<section class="personal-month-preview personal-month-important">
+    <button type="button" class="personal-month-open" aria-expanded="false" aria-controls="personal-month-important-content">Важные числа месяца <span aria-hidden="true">↓</span></button>
+    <div class="personal-month-content" id="personal-month-important-content" hidden>
+      <div class="personal-month-heading"><div><p class="personal-month-kicker">Важные числа месяца</p><h3>${esc(monthTitle(date))}</h3></div><span class="personal-month-mark">✦</span></div>
+      <div class="personal-month-weekdays">${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d) => `<span>${d}</span>`).join("")}</div>
+      <div class="personal-month-grid">${cells.join("")}</div>
+      <div class="personal-month-legend"><span><i class="personal-month-dot good"></i>Лучшие дни</span><span><i class="personal-month-dot chance"></i>Важные шансы</span><span><i class="personal-month-dot risk"></i>Дни риска</span></div>
+      <div class="personal-month-detail-list">
+        <section class="personal-month-summary personal-month-summary-good"><h4><span class="personal-month-summary-icon">✓</span>Лучшие дни месяца</h4><div>${groupLines("good")}</div></section>
+        <section class="personal-month-summary personal-month-summary-risk"><h4><span class="personal-month-summary-icon">×</span>Дни риска</h4><div>${groupLines("risk")}</div></section>
+        <section class="personal-month-summary personal-month-summary-chance"><h4><span class="personal-month-summary-icon">★</span>Важные шансы</h4><div>${groupLines("chance")}</div></section>
+      </div>
+    </div>
   </section>`;
 };
-
 export const openPersonalDay = () => {
   const shell = document.createElement("section");
   shell.className = "personal-day-overlay personal-day-page-overlay";
@@ -181,140 +196,16 @@ export const openPersonalDay = () => {
     result.hidden = false;
     result.innerHTML = `<section class="personal-day-main"><span class="personal-day-code">${item.energy} · ${item.personalNumber}</span><p class="personal-day-label">ВАШ ДЕНЬ</p>${paragraphs([item.text])}${item.todayNeed?.length ? `<section class="personal-day-advice personal-day-need"><h4><span class="personal-day-advice-icon">✓</span> Сегодня нужно</h4><ul>${bullets(item.todayNeed)}</ul></section>` : ""}${item.todayAvoid?.length ? `<section class="personal-day-advice personal-day-avoid"><h4><span class="personal-day-advice-icon">×</span> Сегодня нельзя</h4><ul>${bullets(item.todayAvoid)}</ul></section>` : ""}</section>`;
     result.insertAdjacentHTML("beforeend", monthCalendar(birth));
-    const monthDetails = result.querySelector(".personal-month-details");
-    const monthList = result.querySelector(".personal-month-detail-list");
-    const scrollToMonthDetails = () => requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const targetNode = monthList.querySelector(".personal-month-summary") || monthDetails;
-        if (targetNode?.scrollIntoView) {
-          targetNode.scrollIntoView({ behavior: "smooth", block: "start" });
-          return;
-        }
-        const cardTop = card.getBoundingClientRect().top;
-        const detailsTop = monthDetails.getBoundingClientRect().top;
-        const target = Math.max(0, card.scrollTop + detailsTop - cardTop - 12);
-        animateScroll(card, target, 1120);
-      });
+    const importantButton = result.querySelector(".personal-month-open");
+    const importantContent = result.querySelector(".personal-month-content");
+    importantButton?.addEventListener("click", () => {
+      const expanded = importantButton.getAttribute("aria-expanded") === "true";
+      importantButton.setAttribute("aria-expanded", String(!expanded));
+      importantContent.hidden = expanded;
+      importantButton.innerHTML = expanded
+        ? 'Важные числа месяца <span aria-hidden="true">↓</span>'
+        : 'Скрыть важные числа <span aria-hidden="true">↑</span>';
     });
-    result.querySelector(".personal-month-open")?.addEventListener("click", async (event) => {
-      const monthButton = event.currentTarget;
-
-      if (!monthDetails.hidden && monthList.dataset.ready && !monthList.dataset.loading) {
-        monthDetails.hidden = true;
-        monthButton.innerHTML = "Открыть разбор месяца <span>→</span>";
-        return;
-      }
-
-      monthDetails.hidden = false;
-      monthButton.innerHTML = "Скрыть разбор месяца <span>↑</span>";
-
-      if (monthList.dataset.ready) {
-        scrollToMonthDetails();
-        return;
-      }
-
-      if (monthList.dataset.loading) return;
-      monthList.dataset.loading = "1";
-      monthButton.disabled = true;
-      monthButton.innerHTML = "Готовлю разбор месяца… <span>↑</span>";
-      scrollToMonthDetails();
-
-      const pdfModuleLoading = import("./personal-month-pdf.js?v=5");
-      pdfModuleLoading
-        .then(({ warmPersonalMonthPdfEngine }) => warmPersonalMonthPdfEngine())
-        .catch(() => {});
-
-      try {
-        const now = new Date();
-        const total = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const monthName = new Intl.DateTimeFormat("ru-RU", { month: "long" }).format(now);
-        const marked = monthMarkedDays(birth, now);
-        const monthGenitive = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"][now.getMonth()];
-        const groupLines = (status) => {
-          const groups = new Map();
-          marked.forEach(({ day, info }) => {
-            if (info.status !== status) return;
-            if (!groups.has(info.group)) groups.set(info.group, []);
-            groups.get(info.group).push(day);
-          });
-          return [...groups.entries()].map(([group, dates]) =>
-            "<span class=\"personal-month-summary-line\"><i>•</i><span><strong>" + esc(group) + "</strong><em>" + dates.join(", ") + " " + monthGenitive + "</em></span></span>"
-          ).join("");
-        };
-        const summary = "<section class=\"personal-month-summary personal-month-summary-good\"><h4><span class=\"personal-month-summary-icon\">✓</span>Лучшие дни месяца</h4><div>" + groupLines("good") + "</div></section>" +
-          "<section class=\"personal-month-summary personal-month-summary-risk\"><h4><span class=\"personal-month-summary-icon\">×</span>Дни риска</h4><div>" + groupLines("risk") + "</div></section>" +
-          "<section class=\"personal-month-summary personal-month-summary-chance\"><h4><span class=\"personal-month-summary-icon\">★</span>Важные шансы</h4><div>" + groupLines("chance") + "</div></section>";
-
-        monthList.innerHTML = summary + '<p class="personal-month-loading">Загружаю тексты дней…</p>';
-        scrollToMonthDetails();
-
-        const days = await Promise.all(Array.from({ length: total }, (_, index) => {
-          const day = index + 1;
-          return loadPersonalDay(birth, new Date(now.getFullYear(), now.getMonth(), day)).then((item) => ({
-            day, item, info: calendarInfo(item.energy, item.personalNumber)
-          }));
-        }));
-
-        const cards = days.map(({ day, item }) => {
-          const info = marked.get(day)?.info || { status: "neutral", label: "Обычный день" };
-          return `
-            <details class="personal-month-day-card personal-month-detail-${info.status}">
-              <summary aria-label="${day} ${monthName}"><strong>${day} ${monthName}</strong><b aria-hidden="true">+</b></summary>
-              <div class="personal-month-day-content">
-                <p>${esc(item.text)}</p>
-                ${item.todayNeed?.length ? `<div class="personal-month-mini need"><strong>Сегодня нужно</strong><ul>${bullets(item.todayNeed)}</ul></div>` : ""}
-                ${item.todayAvoid?.length ? `<div class="personal-month-mini avoid"><strong>Сегодня нельзя</strong><ul>${bullets(item.todayAvoid)}</ul></div>` : ""}
-              </div>
-            </details>`;
-        }).join("");
-
-        monthList.innerHTML = summary + `<h4 class="personal-month-all-title">Все дни месяца</h4>` + cards + '<button type="button" class="personal-month-pdf">Сохранить в PDF</button>';
-        monthList.dataset.ready = "1";
-
-        const preparePdfInBackground = () => pdfModuleLoading
-          .then(({ preparePersonalMonthPdf }) => preparePersonalMonthPdf({ birth, monthDate: now, days }))
-          .catch(() => {});
-
-        if ("requestIdleCallback" in window) {
-          window.requestIdleCallback(preparePdfInBackground, { timeout: 900 });
-        } else {
-          window.setTimeout(preparePdfInBackground, 120);
-        }
-
-        monthList.querySelector(".personal-month-pdf")?.addEventListener("click", async (event) => {
-          const button = event.currentTarget;
-          const originalLabel = button.textContent;
-          button.disabled = true;
-          button.textContent = "Готовлю PDF…";
-          try {
-            const { downloadPersonalMonthPdf } = await pdfModuleLoading;
-            await downloadPersonalMonthPdf({ birth, monthDate: now, days });
-            button.textContent = "PDF готов ✓";
-          } catch (error) {
-            console.error(error);
-            button.textContent = "Не удалось собрать PDF";
-            alert("PDF пока не удалось подготовить. Проверьте подключение к интернету и попробуйте ещё раз.");
-          } finally {
-            window.setTimeout(() => {
-              button.disabled = false;
-              button.textContent = originalLabel;
-            }, 1800);
-          }
-        });
-
-        scrollToMonthDetails();
-      } finally {
-        delete monthList.dataset.loading;
-        monthButton.disabled = false;
-        monthButton.innerHTML = "Скрыть разбор месяца <span>↑</span>";
-      }
-    });
-    
-    result.querySelectorAll("[data-month-day]:not(.personal-month-locked)").forEach((button) => button.addEventListener("click", () => {
-      const chosen = new Date(new Date().getFullYear(), new Date().getMonth(), Number(button.dataset.monthDay));
-      const { energy, personalNumber } = personalDay(birth, chosen);
-      alert(`Личный день ${energy}–${personalNumber} уже рассчитан в вашем календаре.`);
-    }));
     requestAnimationFrame(() => { animateScroll(card, Math.max(0, result.offsetTop - 16)); });
     submit.textContent = "Рассчитать личный день";
     submit.disabled = false;
