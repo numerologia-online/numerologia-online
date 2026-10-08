@@ -7,6 +7,8 @@ const input = document.querySelector("#pro-birth-date");
 const error = document.querySelector("#pro-error");
 const results = document.querySelector("#pro-results");
 const diagram = document.querySelector("#pro-diagram");
+const zoneButtons = document.querySelector("#pro-zone-buttons");
+const zoneGuide = document.querySelector("#pro-zone-guide");
 const positionButtons = document.querySelector("#pro-position-buttons");
 const positionDetail = document.querySelector("#pro-position-detail");
 const questionButtons = document.querySelector("#pro-question-buttons");
@@ -15,6 +17,28 @@ const karmic = document.querySelector("#pro-karma");
 const namespace = "http://www.w3.org/2000/svg";
 let current = null;
 let requestId = 0;
+let zoneLibraryRequest;
+
+function loadZoneLibrary() {
+  if (!zoneLibraryRequest) {
+    zoneLibraryRequest = fetch("pro/zones.json?v=1")
+      .then((response) => {
+        if (!response.ok) throw new Error("Не удалось загрузить обучающие зоны");
+        return response.json();
+      })
+      .then((source) => {
+        if (!Array.isArray(source.zones) || source.zones.length !== 8) {
+          throw new Error("Неполная база обучающих зон");
+        }
+        return source.zones;
+      })
+      .catch((err) => {
+        zoneLibraryRequest = null;
+        throw err;
+      });
+  }
+  return zoneLibraryRequest;
+}
 
 const category = {
   impression: "Личность", trueSelf: "Личность", growth: "Личность", character: "Личность",
@@ -95,6 +119,115 @@ function nodesFor(birth, matrix) {
   return points;
 }
 
+
+function renderZones(zones) {
+  const fragment = document.createDocumentFragment();
+  zones.forEach((zone) => {
+    const button = element("button", null, "pro-zone-button");
+    button.type = "button";
+    button.dataset.zone = zone.id;
+    button.style.setProperty("--zone-color", zone.color);
+    button.setAttribute("aria-pressed", "false");
+    button.append(element("span", "", "pro-zone-dot"));
+    const labels = element("span", null, "pro-zone-labels");
+    labels.append(element("strong", zone.title));
+    labels.append(element("small", zone.subtitle));
+    button.append(labels);
+    button.addEventListener("click", () => selectZone(zone.id));
+    fragment.append(button);
+  });
+  zoneButtons.replaceChildren(fragment);
+}
+
+function paintZone(zone) {
+  if (!current) return;
+  const layer = diagram.querySelector(".pro-zone-highlights");
+  const svg = diagram.querySelector("svg");
+  if (!layer || !svg) return;
+  layer.replaceChildren();
+  svg.style.setProperty("--zone-color", zone?.color || "#b89966");
+  const selected = new Set(zone?.points || []);
+  const points = current.points.filter((point) => selected.has(point.key));
+
+  // Подсветка только тематических точек - структура и формулы матрицы неизменны.
+  if (points.length) {
+    const anchor = points[0];
+    points.slice(1).forEach((point) => {
+      if (Math.hypot(point.x - anchor.x, point.y - anchor.y) <= 175) {
+        layer.append(svgElement("line", {
+          x1:anchor.x,y1:anchor.y,x2:point.x,y2:point.y
+        }));
+      }
+    });
+    points.forEach((point) => {
+      layer.append(svgElement("circle",{
+        cx:point.x,cy:point.y,r:(point.kind === "center" ? 46 : point.kind === "major" ? 41 : 31)
+      }));
+    });
+  }
+  diagram.querySelectorAll(".pro-node").forEach((node) => {
+    node.classList.toggle("in-zone", selected.has(node.dataset.nodeKey));
+    node.classList.toggle("out-of-zone",Boolean(zone) && !selected.has(node.dataset.nodeKey));
+  });
+  zoneButtons.querySelectorAll("button[data-zone]").forEach((button) => {
+    button.setAttribute("aria-pressed",String(button.dataset.zone === zone?.id));
+  });
+}
+
+function clearZone() {
+  if (!current || !current.activeZone) return;
+  current.activeZone = null;
+  zoneGuide.hidden = true;
+  zoneGuide.replaceChildren();
+  paintZone(null);
+}
+
+function renderZoneGuide(zone) {
+  if (!current) return;
+  zoneGuide.hidden = false;
+  zoneGuide.replaceChildren();
+  zoneGuide.style.setProperty("--zone-color",zone.color);
+  zoneGuide.append(paragraph("ИЗУЧАЕМ ЗОНУ","pro-eyebrow"));
+  zoneGuide.append(element("h3",zone.title));
+  zoneGuide.append(paragraph(zone.description));
+  zoneGuide.append(paragraph(zone.guide,"pro-zone-lesson"));
+  const pointHeader=element("h4","Изучите выделенные точки");
+  zoneGuide.append(pointHeader);
+  const pointLinks=element("div",null,"pro-zone-point-links");
+  zone.points.forEach((key) => {
+    const point=current.points.find((item)=>item.key===key);
+    if (!point) return;
+    const button=element("button",point.label+" · "+point.value);
+    button.type="button";
+    button.addEventListener("click",()=>selectPoint(key,true));
+    pointLinks.append(button);
+  });
+  zoneGuide.append(pointLinks);
+  const availableQuestions=zone.questions.map(key=>current.definitions.find(def=>def.key===key)).filter(Boolean);
+  if (availableQuestions.length) {
+    zoneGuide.append(element("h4","Развёрнутые ответы по теме"));
+    const questions=element("div",null,"pro-zone-question-links");
+    availableQuestions.forEach((definition)=>{
+      const button=element("button",definition.title+" →");
+      button.type="button";
+      button.addEventListener("click",()=>selectQuestion(definition.key,true));
+      questions.append(button);
+    });
+    zoneGuide.append(questions);
+  }
+}
+
+function selectZone(id) {
+  if (!current) return;
+  const zone=current.zones.find((item)=>item.id===id);
+  if (!zone) return;
+  current.activeZone=zone;
+  paintZone(zone);
+  renderZoneGuide(zone);
+  const first=zone.points.find(key=>current.points.some(point=>point.key===key));
+  if(first)selectPoint(first,false);
+}
+
 function renderDiagram(points) {
   const svg = svgElement("svg",{viewBox:"0 0 620 620",role:"group","aria-label":"Интерактивная матрица из 28 точек"});
   const frame = svgElement("g",{fill:"none",stroke:"#b4aba0","stroke-width":"1.9"});
@@ -110,6 +243,7 @@ function renderDiagram(points) {
     [142,478,478,142,"#9baeb9"],[142,142,478,478,"#ceabb0"]
   ].forEach(([x1,y1,x2,y2,stroke])=>frame.append(svgElement("line",{x1,y1,x2,y2,stroke})));
   svg.append(frame);
+  svg.append(svgElement("g",{"class":"pro-zone-highlights","aria-hidden":"true"}));
   points.forEach((point) => {
     const g = svgElement("g",{"class":"pro-node "+point.kind,"data-node-key":point.key,role:"button",tabindex:"0","aria-label":point.label + ": " + point.value});
     const radius = point.kind === "center" ? 34 : point.kind === "major" ? 29 : 20;
@@ -129,6 +263,7 @@ function selectPoint(key, scroll) {
   if(!current)return;
   const point = current.points.find(item => item.key === key);
   if(!point)return;
+  if(current.activeZone && !current.activeZone.points.includes(key))clearZone();
   diagram.querySelectorAll(".pro-node").forEach(node => node.classList.toggle("active",node.dataset.nodeKey===key));
   positionButtons.querySelectorAll("button").forEach(button=>button.setAttribute("aria-pressed",String(button.dataset.key===key)));
   const energy = current.knowledge.energies[String(point.value)];
@@ -272,12 +407,16 @@ form.addEventListener("submit", async(event)=>{
   submit.textContent="Подбираю ответы…";
   try{
     const matrix=calculateMatrix(birth);
-    const knowledge=await loadFullReportKnowledge();
+    const [knowledge,zones]=await Promise.all([loadFullReportKnowledge(),loadZoneLibrary()]);
     if(id!==requestId)return;
     const points=nodesFor(birth,matrix);
     const definitions=buildFullReportSections(matrix);
-    current={id,birth,matrix,knowledge,points,definitions,selected:null};
+    current={id,birth,matrix,knowledge,points,definitions,zones,activeZone:null,selected:null};
     renderDiagram(points);
+    renderZones(zones);
+    zoneGuide.hidden=true;
+    zoneGuide.replaceChildren();
+    document.querySelector(".pro-all-points").open=false;
     renderPointList(points);
     renderQuestions(definitions);
     answer.replaceChildren(paragraph("Выберите вопрос из списка. Подробный ответ откроется здесь.","pro-empty"));

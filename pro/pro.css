@@ -66,3 +66,41 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-detail-link{border:1px solid #b4d2d0;background:#e6f1f0;color:#205c62;border-radius:11px;padding:11px 13px;font-weight:750;margin:10px 0 0;width:100%;text-align:left}
 .pro-paragraph-title{font:22px/1.22 Georgia,serif!important;color:#8a6c40;margin:20px 0 9px!important}
 .pro-answer{scroll-margin-top:20px}
+
+
+/* Профессиональный учебный режим: цвета матрицы сохранены. */
+.pro-zone-picker{margin:14px 0 20px}
+.pro-zone-picker h3{font-size:clamp(22px,4vw,29px);margin:0 0 8px}
+.pro-zone-picker .pro-muted{margin:0 0 17px}
+.pro-zone-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pro-zone-button{display:flex;align-items:center;gap:11px;min-width:0;min-height:72px;padding:12px 13px;border:1px solid #e0d9cd;border-radius:17px;background:#fffefa;color:var(--ink);text-align:left;transition:border-color .15s,background .15s,box-shadow .15s}
+.pro-zone-button .pro-zone-dot{flex:none;width:12px;height:12px;border-radius:50%;background:var(--zone-color);box-shadow:0 0 0 5px color-mix(in srgb,var(--zone-color) 16%,white)}
+.pro-zone-labels{display:grid;min-width:0;gap:2px}
+.pro-zone-labels strong{font-size:14px;font-weight:800;line-height:1.23}
+.pro-zone-labels small{font-size:11px;color:#7a8286;line-height:1.35}
+.pro-zone-button[aria-pressed="true"]{border-color:var(--zone-color);background:color-mix(in srgb,var(--zone-color) 12%,white);box-shadow:0 0 0 2px color-mix(in srgb,var(--zone-color) 15%,transparent)}
+.pro-zone-button:focus-visible,.pro-zone-point-links button:focus-visible,.pro-zone-question-links button:focus-visible{outline:3px solid #4a8695;outline-offset:2px}
+.pro-diagram .pro-zone-highlights{pointer-events:none}
+.pro-diagram .pro-zone-highlights line{stroke:var(--zone-color);stroke-width:13;stroke-opacity:.14;stroke-linecap:round}
+.pro-diagram .pro-zone-highlights circle{fill:var(--zone-color);fill-opacity:.09;stroke:var(--zone-color);stroke-width:4;stroke-opacity:.47}
+.pro-diagram .pro-node.in-zone circle{stroke:var(--zone-color);stroke-width:4;fill:#fffefa}
+.pro-diagram .pro-node.out-of-zone{opacity:.42}
+.pro-diagram .pro-node.active.in-zone circle{fill:color-mix(in srgb,var(--zone-color) 22%,white);stroke:var(--zone-color);stroke-width:5}
+.pro-zone-guide{margin:12px 0 24px;padding:clamp(16px,3vw,22px);border-radius:21px;border:1px solid color-mix(in srgb,var(--zone-color) 55%,#e5dcd0);border-left:5px solid var(--zone-color);background:color-mix(in srgb,var(--zone-color) 7%,#fffefa)}
+.pro-zone-guide h3{font-size:30px;margin:0 0 14px}
+.pro-zone-guide h4{font-size:14px;color:#675c4a;margin:18px 0 8px}
+.pro-zone-guide p{font-size:14px;line-height:1.68;margin:0 0 12px;color:#495960}
+.pro-zone-guide .pro-eyebrow{font-size:10px;color:#987d54}
+.pro-zone-guide .pro-zone-lesson{padding:12px 14px;background:#fffefa;border:1px solid #e7dfd2;border-radius:13px;color:#385365}
+.pro-zone-point-links,.pro-zone-question-links{display:flex;flex-wrap:wrap;gap:8px}
+.pro-zone-point-links button{padding:9px 12px;border:1px solid #d9cfbf;border-radius:50px;background:#fffefa;color:#2a4456;font-size:12px;font-weight:700;text-align:left}
+.pro-zone-question-links button{flex:1 1 180px;border:1px solid #bccfd0;background:#edf3f1;padding:12px;border-radius:13px;font-size:13px;color:#235361;font-weight:750;text-align:left}
+.pro-all-points{border-top:1px solid #eae4d9;margin-top:18px;padding-top:6px}
+.pro-all-points summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 4px;cursor:pointer;list-style:none;color:#445a67;font-weight:800;font-size:14px}
+.pro-all-points summary::-webkit-details-marker{display:none}
+.pro-all-points summary span{font-size:12px;font-weight:500;color:#9b815f}
+.pro-all-points[open] summary span{font-size:0}
+.pro-all-points[open] summary span::after{content:"Скрыть список";font-size:12px}
+.pro-all-points .pro-position-buttons{margin:4px 0 16px}
+@media(max-width:410px){.pro-zone-buttons{gap:8px}.pro-zone-button{padding:10px;gap:9px;min-height:73px}.pro-zone-labels strong{font-size:13px}.pro-zone-labels small{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.pro-zone-button{transition:none}}
