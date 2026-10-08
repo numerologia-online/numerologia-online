@@ -95,16 +95,30 @@ const FULL_SECTION_DEFINITIONS = [
 ];
 
 export const buildFullReportSections = (matrix) => {
+  // Старые отчёты также вызывают функцию с базовой матрицей.
+  // Для новых расчётов используем точные позиции каналов.
+  const loveEntry = matrix.tail.first;
+  const moneyEntry = matrix.rightSpoke.near;
+  const balance = matrix.channels?.balance ?? (()=>{
+    let n = loveEntry + moneyEntry;
+    while(n > 22)n=String(n).split("").reduce((s,d)=>s+Number(d),0);
+    return n;
+  })();
+  const inner = (n)=>{
+    let value=n;
+    while(value>22)value=String(value).split("").reduce((s,d)=>s+Number(d),0);
+    return value;
+  };
   const positions = {
     personality: matrix.left,
     mission: matrix.center,
     realization: matrix.corners.bottomRight,
     family: matrix.corners.topLeft,
     karma: matrix.bottom,
-    relationships: matrix.corners.bottomLeft,
-    moneyBlock: matrix.rightSpoke.outer,
-    moneyFlow: matrix.rightSpoke.near,
-    earning: matrix.rightSpoke.core,
+    relationships: loveEntry,
+    moneyBlock: moneyEntry,
+    moneyFlow: balance,
+    earning: matrix.channels?.money.inner ?? inner(moneyEntry + balance),
     resource: matrix.center
   };
 
