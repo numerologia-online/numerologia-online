@@ -16,10 +16,8 @@ h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.12;letter-spa
 h1{font-size:clamp(45px,9vw,76px);margin:0 0 21px;font-weight:400}
 h2{font-size:clamp(29px,5vw,40px);font-weight:400;margin:0 0 15px}
 h3{font-size:24px;margin:0 0 12px;font-weight:400}
-.pro-hero-lead{font-size:17px;line-height:1.6;color:var(--ink2);max-width:610px;margin:0 0 23px}
-.pro-pills{display:flex;flex-wrap:wrap;gap:8px}
-.pro-pills span{border:1px solid #d8ccb6;border-radius:50px;padding:7px 11px;font-size:12px;color:#6b634f;background:#fffefa99}
-.pro-form,.pro-paper,.pro-summary{background:var(--white);border:1px solid var(--line);box-shadow:0 16px 50px rgba(56,55,47,.05);border-radius:27px;padding:clamp(18px,4.3vw,30px);margin:0 0 20px}
+.pro-hero-lead{font-size:17px;line-height:1.6;color:var(--ink2);max-width:610px;margin:0}
+.pro-form,.pro-paper{background:var(--white);border:1px solid var(--line);box-shadow:0 16px 50px rgba(56,55,47,.05);border-radius:27px;padding:clamp(18px,4.3vw,30px);margin:0 0 20px}
 .pro-form label{display:block;font-size:12px;color:#6f654f;font-weight:800;margin:0 0 11px}
 .pro-form-row{display:flex;gap:11px}
 .pro-form input{min-width:0;flex:1;padding:13px 17px;font-size:19px;letter-spacing:.06em;color:var(--ink);border:1px solid #d9d4c9;border-radius:15px;background:white;outline:none}
@@ -27,12 +25,6 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-form button{border:0;border-radius:15px;background:#243b50;color:#fff;padding:14px 20px;font-weight:750;min-height:54px}
 .pro-form button span{margin-left:8px}
 .pro-error{color:#a03a43;font-size:14px;margin:9px 0 0}
-.pro-summary{background:linear-gradient(123deg,#fffefa,#f4f1e8)}
-.pro-summary h2{font-size:32px}
-.pro-summary-numbers{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 15px}
-.pro-number-box{flex:1 1 120px;min-width:120px;background:#fff;border-radius:16px;padding:12px;border:1px solid #e6decf}
-.pro-number-box small{display:block;color:#7b796e;font-size:11px}
-.pro-number-box strong{display:block;font:32px/1.1 Georgia,serif;color:#294c61;margin-top:7px}
 .pro-muted{color:var(--soft);font-size:14px;line-height:1.58;margin:10px 0 18px}
 .pro-title-row{display:flex;justify-content:space-between;gap:10px;align-items:start}
 .pro-small-note{font-size:12px;color:#967c56;white-space:nowrap}
@@ -67,7 +59,7 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-karma p{font-size:14px;line-height:1.6}
 .pro-footer{padding:20px 10px;text-align:center;color:#908a7f;font-size:11px}
 [hidden]{display:none!important}
-@media(max-width:520px){.pro-shell{padding:13px 13px 25px}.pro-hero{padding:35px 5px 23px}.pro-form-row{flex-direction:column}.pro-form button{width:100%}.pro-small-note{display:none}.pro-paper,.pro-summary,.pro-form{border-radius:22px;padding:18px}.pro-question-buttons button{flex:1 1 100%}.pro-diagram{margin-left:-6px;width:calc(100% + 12px)}}
+@media(max-width:520px){.pro-shell{padding:13px 13px 25px}.pro-hero{padding:35px 5px 23px}.pro-form-row{flex-direction:column}.pro-form button{width:100%}.pro-small-note{display:none}.pro-paper,.pro-form{border-radius:22px;padding:18px}.pro-question-buttons button{flex:1 1 100%}.pro-diagram{margin-left:-6px;width:calc(100% + 12px)}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
 
 .pro-detail h4{font-size:17px;color:#776449;margin:15px 0 6px}
