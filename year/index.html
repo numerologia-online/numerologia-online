@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F8F3EA">
+  <meta name="description" content="Персональный нумерологический разбор года по дате рождения. Рассчитайте свой год по месяцам и сохраните красивый PDF.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Личный разбор года — Нумерология Онлайн">
+  <meta property="og:description" content="Узнайте, что ждёт вас в каждом месяце. Ваш личный расчёт года и PDF.">
+  <meta property="og:url" content="https://numerologia-online.github.io/numerologia-online/year/">
+  <link rel="canonical" href="https://numerologia-online.github.io/numerologia-online/year/">
+  <!-- Resolve shared CSS, text files and modules relative to the site root. -->
+  <base href="../">
+  <title>Личный разбор года | Нумерология Онлайн</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="styles.css?v=209">
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="year-polish.css?v=25">
+</head>
+<body>
+  <main class="app-shell">
+    <!-- The shared year module expects a home target; it is never displayed here. -->
+    <section id="home" hidden style="display:none" aria-hidden="true"></section>
+      <section id="year" class="screen is-active" aria-labelledby="year-title">
+        <div class="year-paper">
+          <header class="year-panel-topbar">
+            <p class="eyebrow">Персональный прогноз</p>
+            <button id="back-home" type="button" hidden style="display:none" aria-hidden="true" tabindex="-1"></button>
+          </header>
+
+          <div class="year-intro">
+            <h1 id="year-title">Ваш год<br />по месяцам</h1>
+            <p>Введите дату рождения и выберите год. Вы увидите ориентиры для денег, любви, отношений, здоровья и своего направления. Разбор можно спокойно прочитать на сайте, а затем сохранить в PDF.</p>
+          </div>
+
+          <form id="year-form" class="calculation-form">
+            <label>
+              <span>Дата рождения</span>
+              <input id="birth-date" type="text" inputmode="tel" autocomplete="bday" placeholder="ДД.ММ.ГГГГ" pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}" maxlength="10" required />
+            </label>
+            <label>
+              <span>Год разбора</span>
+              <input id="report-year" type="text" inputmode="numeric" autocomplete="off" placeholder="Например, 2026" pattern="[0-9]{4}" maxlength="4" required />
+            </label>
+            <button class="primary-button" type="submit">Получить расчёт <span>→</span></button>
+          </form>
+
+          <section id="calculation-loader" class="calculation-loader" hidden aria-live="polite" aria-label="Подготавливаем ваш разбор">
+            <div class="loader-track" role="progressbar" aria-label="Ход расчёта года" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <span id="loader-progress" class="loader-progress"></span>
+            </div>
+            <p id="loader-message" class="loader-message">Считаю ваш январь</p>
+          </section>
+
+          <section id="report" class="report" hidden aria-live="polite">
+            <button id="pdf-button-top" class="pdf-button pdf-button-top" type="button">Сохранить разбор в PDF <span>↓</span></button>
+            <div class="report-lead">
+              <p class="eyebrow" id="report-period">Ваш личный период</p>
+              <h2 id="report-title"></h2>
+              <p class="report-meta" id="report-meta"></p>
+              <p id="report-copy"></p>
+            </div>
+            <div id="year-transition" class="year-transition" aria-label="Периоды личного года"></div>
+            <div class="birthday-note" id="birthday-note"></div>
+            <div id="months" class="months" aria-label="Месяцы разбора"></div>
+            <button id="pdf-button" class="pdf-button" type="button">Посмотреть PDF <span>↓</span></button>
+          </section>
+        </div>
+      </section>
+  </main>
+    <dialog id="pdf-preview" class="pdf-preview-dialog">
+      <div class="pdf-preview-topbar">
+        <p>ВАШ PDF-РАЗБОР</p>
+        <button id="pdf-preview-close" type="button" aria-label="Вернуться к разбору" title="Вернуться к разбору">←</button>
+      </div>
+      <div id="pdf-preview-pages" class="pdf-preview-pages" aria-label="Предпросмотр вашего разбора"></div>
+      <button id="pdf-download-button" class="pdf-download-button" type="button">Скачать PDF <span>↓</span></button>
+    </dialog>
+  <p id="standalone-year-error" role="alert" hidden style="padding:16px;text-align:center;color:#864b4b">
+    Не удалось загрузить расчёт года. Проверьте интернет и обновите страницу.
+  </p>
+  <noscript>Для расчёта года необходимо разрешить JavaScript в браузере.</noscript>
+  <script type="module">
+    import("./year-feature.js?v=29").catch((error) => {
+      console.error("Не удалось загрузить годовой разбор", error);
+      document.querySelector("#standalone-year-error").hidden = false;
+    });
+  </script>
+</body>
+</html>
