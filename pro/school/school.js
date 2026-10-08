@@ -76,7 +76,7 @@ function buildFormulaSheet(birth) {
   });
 }
 formulaDate.addEventListener("input", () => {
-  const digits = formulaDate.value.replace(/\\D/g,"").slice(0,8);
+  const digits = formulaDate.value.replace(/\D/g,"").slice(0,8);
   formulaDate.value = [digits.slice(0,2),digits.slice(2,4),digits.slice(4,8)].filter(Boolean).join(".");
   formulaError.hidden = true;
 });
