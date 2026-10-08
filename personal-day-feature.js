@@ -1,9 +1,11 @@
 import { parseBirthDate } from "./numerology-core.js?v=1";
 import { getPersonalMonthLink } from "./personal-month-links.js?v=1";
 
+// Авторская шкала 1–22: значения выше 22 приводятся повторным вычитанием 22.
+// Не менять на сумму цифр: это другая методика и она исключает энергии 1 и 2.
 const reduce22 = (value) => {
-  let n = Math.abs(Number(value) || 0);
-  while (n > 22) n = String(n).split("").reduce((sum, digit) => sum + Number(digit), 0);
+  let n = Math.abs(Math.trunc(Number(value) || 0));
+  while (n > 22) n -= 22;
   return n || 22;
 };
 
@@ -14,6 +16,10 @@ const personalDay = ({ day, month }, date = new Date()) => {
   return reduce22(personalMonth + date.getDate());
 };
 
+// В старых банках энергии 1 ключи вида "1-1", в остальных — "1".
+const findDayEntry = (entries, energy, calendarDay) =>
+  entries?.[String(calendarDay)] ?? entries?.[`${energy}-${calendarDay}`];
+
 const loadPersonalDay = async (birth, date = new Date()) => {
   const day = personalDay(birth, date);
   const calendarDay = date.getDate();
@@ -21,13 +27,13 @@ const loadPersonalDay = async (birth, date = new Date()) => {
     const response = await fetch(`./data/day/general/general-day-${String(day).padStart(2, "0")}.json?v=3`);
     if (!response.ok) throw new Error("personal day bank unavailable");
     const bank = await response.json();
-    const entry = bank.entries?.[String(calendarDay)];
+    const entry = findDayEntry(bank.entries, day, calendarDay);
     let practical = null;
     try {
       const practicalResponse = await fetch(`./data/day/practical/practical-day-${String(day).padStart(2, "0")}.json?v=1`);
       if (practicalResponse.ok) practical = await practicalResponse.json();
     } catch {}
-    const advice = practical?.entries?.[String(calendarDay)] || {};
+    const advice = findDayEntry(practical?.entries, day, calendarDay) || {};
     if (entry?.text) return { energy: day, calendarDay, text: entry.text, todayNeed: advice.todayNeed || [], todayAvoid: advice.todayAvoid || [] };
   } catch {}
   return {
