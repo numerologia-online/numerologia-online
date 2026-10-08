@@ -243,14 +243,14 @@ function selectZone(id, scrollToDiagram = false) {
 // Аккуратные подписи вокруг самой схемы. Координаты относятся только к
 // расположению надписей, а не меняют алгоритм и не добавляют новых расчётов.
 const sectorLabelPositions = {
-  spirit:        {x:165,y:43,width:150},
-  talents:       {x:449,y:43,width:134},
-  lineage:       {x:75,y:190,width:92},
+  spirit:        {x:165,y:43,width:160},
+  talents:       {x:449,y:43,width:202},
+  lineage:       {x:108,y:245,width:190},
   relationships: {x:537,y:205,width:150},
   money:         {x:538,y:404,width:116},
   resource:      {x:128,y:553,width:192},
   family:        {x:487,y:555,width:160},
-  purpose:       {x:310,y:628,width:190}
+  purpose:       {x:310,y:628,width:195}
 };
 
 function renderDiagramSectorLabels(svg, zones) {
