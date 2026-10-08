@@ -9,23 +9,38 @@ const reduce22 = (value) => {
   return n || 22;
 };
 
-// Авторская формула: полная дата рождения и текущие личные циклы.
-// energy: 1–22; personalNumber: 1–31; результат выбирается из существующих текстов.
+// Авторская формула выбора из 682 готовых текстов.
+// Личные год, месяц и день рассчитываются в цикле 1–9, без смешения со шкалой 22 энергий.
+// Период для выбора текста определяется календарным годом; месячные прогнозы не меняем.
 const sumYearDigits = (year) => String(year).split("").reduce((sum, digit) => sum + Number(digit), 0);
+const reduce9 = (value) => {
+  let n = Math.abs(Math.trunc(Number(value) || 0));
+  while (n > 9) n = String(n).split("").reduce((sum, digit) => sum + Number(digit), 0);
+  return n || 9;
+};
+const lifePathNumber = ({ day, month, year }) => {
+  let n = sumYearDigits(day) + sumYearDigits(month) + sumYearDigits(year);
+  while (n > 9 && n !== 11 && n !== 22 && n !== 33) {
+    n = String(n).split("").reduce((sum, digit) => sum + Number(digit), 0);
+  }
+  return n;
+};
 const reduce31 = (value) => {
   let n = Math.abs(Math.trunc(Number(value) || 0));
   while (n > 31) n -= 31;
   return n || 31;
 };
 const personalDay = ({ day, month, year }, date = new Date()) => {
-  const currentYear = date.getFullYear();
   const today = date.getDate();
-  const lifePath = reduce22(day + month + sumYearDigits(year));
-  const personalYear = reduce22(day + month + sumYearDigits(currentYear));
-  const personalMonth = reduce22(personalYear + date.getMonth() + 1);
-  const energy = reduce22(lifePath + personalMonth + today);
-  const turningAge = currentYear - year;
-  const personalNumber = reduce31(day + turningAge + today);
+  const currentMonth = date.getMonth() + 1;
+  const currentYear = date.getFullYear();
+  const personalYear = reduce9(day + month + sumYearDigits(currentYear));
+  const personalMonth = reduce9(personalYear + currentMonth);
+  const personalDayNumber = reduce9(personalMonth + today);
+  const universalDay = reduce9(today + currentMonth + sumYearDigits(currentYear));
+  const lifePath = lifePathNumber({ day, month, year });
+  const energy = reduce22(personalDayNumber + personalMonth + universalDay + day + currentMonth);
+  const personalNumber = reduce31(lifePath + day + today + sumYearDigits(year));
   return { energy, personalNumber };
 };
 
