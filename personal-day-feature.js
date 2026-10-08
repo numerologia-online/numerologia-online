@@ -136,8 +136,31 @@ const monthCalendar = (birth, date = new Date()) => {
       `<span class="personal-month-summary-line"><i aria-hidden="true">•</i><span><strong>${esc(group)}</strong><em>${dates.join(", ")} ${monthGenitive}</em></span></span>`
     ).join("");
   };
+  // Наглядный тизер, не персональный прогноз: цветные первые 10 чисел,
+  // остальные приглушены. Настоящие цвета всегда строятся через monthMarkedDays.
+  const sampleColors = ["good","neutral","chance","risk","neutral","good","chance","neutral","risk","good"];
+  const teaserCells = [];
+  for (let i = 0; i < offset; i += 1) teaserCells.push('<span class="personal-month-teaser-empty"></span>');
+  for (let day = 1; day <= total; day += 1) {
+    const locked = day > 10;
+    const style = locked ? "locked" : sampleColors[day - 1];
+    const warning = day === 4;
+    teaserCells.push(`<span class="personal-month-teaser-day personal-month-teaser-${style}${warning ? " personal-month-teaser-warning" : ""}" aria-label="${day}${locked ? ", закрыто" : ""}">${day}${warning ? '<b aria-hidden="true">!</b>' : ""}</span>`);
+  }
   return `<section class="personal-month-preview personal-month-important">
-    <button type="button" class="personal-month-open" aria-expanded="false" aria-controls="personal-month-important-content">Важные числа месяца <span aria-hidden="true">↓</span></button>
+    <div class="personal-month-teaser">
+      <p class="personal-month-teaser-kicker">ТВОЙ КАЛЕНДАРЬ</p>
+      <h3 class="personal-month-teaser-title">Важные числа месяца</h3>
+      <p class="personal-month-teaser-subtitle">Реальные шансы и настоящие опасности</p>
+      <div class="personal-month-teaser-board" aria-label="Пример календаря с открытыми и скрытыми датами">
+        <div class="personal-month-teaser-weekdays">${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d) => `<span>${d}</span>`).join("")}</div>
+        <div class="personal-month-teaser-grid">${teaserCells.join("")}</div>
+        <div class="personal-month-teaser-warning-note"><span aria-hidden="true">!</span><strong>ОСТОРОЖНО</strong><small>Один неверный шаг может обойтись дорого. Узнай свои даты риска заранее.</small></div>
+      </div>
+      <p class="personal-month-teaser-footnote">Пример оформления. Точные цвета и даты покажет личный расчёт.</p>
+      <p class="personal-month-teaser-copy">В каждом месяце есть дни, когда открываются новые возможности, и даты, когда особенно важно не ошибиться. Проверь свои важные числа заранее.</p>
+    </div>
+    <button type="button" class="personal-month-open" aria-expanded="false" aria-controls="personal-month-important-content">Проверить важные числа месяца <span aria-hidden="true">↓</span></button>
     <div class="personal-month-content" id="personal-month-important-content" hidden>
       <div class="personal-month-heading"><div><p class="personal-month-kicker">Важные числа месяца</p><h3>${esc(monthTitle(date))}</h3></div><span class="personal-month-mark">✦</span></div>
       <div class="personal-month-weekdays">${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d) => `<span>${d}</span>`).join("")}</div>
@@ -215,8 +238,21 @@ export const openPersonalDay = () => {
       importantButton.setAttribute("aria-expanded", String(!expanded));
       importantContent.hidden = expanded;
       importantButton.innerHTML = expanded
-        ? 'Важные числа месяца <span aria-hidden="true">↓</span>'
+        ? 'Проверить важные числа месяца <span aria-hidden="true">↓</span>'
         : 'Скрыть важные числа <span aria-hidden="true">↑</span>';
+      if (!expanded) {
+        // Прокручиваем именно к настоящему календарю, а не к тизеру.
+        requestAnimationFrame(() => {
+          const targetTop = importantContent.getBoundingClientRect().top;
+          const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+          if (nativePageScroll) {
+            window.scrollTo({ top: Math.max(0, targetTop + window.scrollY - 12), behavior: reduceMotion ? "instant" : "smooth" });
+          } else {
+            const top = Math.max(0, card.scrollTop + targetTop - card.getBoundingClientRect().top - 12);
+            card.scrollTo({ top, behavior: reduceMotion ? "instant" : "smooth" });
+          }
+        });
+      }
     });
     requestAnimationFrame(() => {
       if (nativePageScroll) {
