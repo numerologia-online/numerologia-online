@@ -414,7 +414,7 @@ export const preparePersonalMonthPdf = ({ birth, monthDate, days }) => {
   preparingPdfKey = key;
   preparingPdf = (async () => {
     const pdfMake = await getPdfMake();
-    if (!Array.isArray(days) || !days.length || days.some(({ item }) => !item || typeof item.text !== "string" || !item.text.trim())) throw new Error("Неполные тексты календаря");
+    if (!Array.isArray(days) || !days.length || days.some(({ item }) => !item || item.loadError === true || typeof item.text !== "string" || !item.text.trim() || item.text.startsWith("Не удалось загрузить текст дня."))) throw new Error("Неполные тексты календаря: исправьте ошибку загрузки перед созданием PDF");
     const definition = buildDocument({ birth, monthDate, days });
     const blob = await new Promise((resolve) => pdfMake.createPdf(definition).getBlob(resolve));
     const url = URL.createObjectURL(blob);
