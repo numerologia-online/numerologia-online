@@ -383,3 +383,28 @@ section.personal-day-main .personal-day-label{display:block;margin:0 0 18px;colo
   .personal-month-important .personal-month-summary h4{font-size:19px}
   .personal-month-important .personal-month-summary-line{font-size:15px}
 }
+
+
+/* iOS Safari: отказаться от вложенного прокручиваемого fixed-окна.
+   Снимок экрана может менять visual viewport и сбрасывать его scrollTop. */
+@supports (-webkit-touch-callout: none) {
+  body.personal-day-reading .app-shell { display:none!important }
+  body.personal-day-reading .personal-day-overlay {
+    position:relative;
+    inset:auto;
+    min-height:100svh;
+    height:auto;
+    width:100%;
+    padding:max(8px,env(safe-area-inset-top)) 6px max(18px,env(safe-area-inset-bottom));
+    display:grid;
+    place-items:start center;
+    align-content:start;
+  }
+  body.personal-day-reading .personal-day-page {
+    height:auto;
+    max-height:none;
+    overflow:visible;
+    -webkit-overflow-scrolling:auto;
+    overscroll-behavior:auto;
+  }
+}

@@ -152,10 +152,16 @@ const monthCalendar = (birth, date = new Date()) => {
   </section>`;
 };
 export const openPersonalDay = () => {
+  // iOS: прокручиваем страницу, а не внутреннее фиксированное окно.
+  // Это сохраняет позицию при системном скриншоте и смене размеров viewport.
+  const nativePageScroll = window.CSS?.supports?.("-webkit-touch-callout", "none") === true;
+  const previousPageScroll = window.scrollY;
   const shell = document.createElement("section");
   shell.className = "personal-day-overlay personal-day-page-overlay";
   shell.innerHTML = `<div class="personal-day-card personal-day-page" role="dialog" aria-modal="true"><button class="personal-day-back" type="button" aria-label="Вернуться ко всем расчётам">← Назад</button><button class="personal-day-close" type="button" aria-label="Закрыть">×</button><p class="eyebrow">Личный прогноз</p><h2>Ваш личный расчёт дня</h2><p class="personal-day-lead">Личный разбор дня подскажет, куда направить силы, какой шаг сделать, чего избегать, к каким чувствам прислушаться и какие тайны бережно хранит для вас этот день.</p><section class="personal-day-form-panel"><p class="personal-day-form-kicker">РАССЧИТАЙТЕ СВОЙ ЛИЧНЫЙ ДЕНЬ</p><p class="personal-day-date">Сегодня ${todayLabel()}</p><form><label><span>Дата рождения</span><input required type="tel" inputmode="numeric" autocomplete="bday" placeholder="09.09.1986" maxlength="10"></label><button class="personal-day-submit" type="submit" disabled>Рассчитать личный день</button><p class="personal-day-error" hidden></p></form></section><section class="personal-day-result" hidden></section></div>`;
+  document.body.classList.add("personal-day-reading");
   document.body.append(shell);
+  if (nativePageScroll) window.scrollTo(0, 0);
   const card = shell.querySelector(".personal-day-card");
   const form = shell.querySelector("form");
   const input = shell.querySelector("input");
@@ -163,6 +169,7 @@ export const openPersonalDay = () => {
   const result = shell.querySelector(".personal-day-result");
   const returnToHome = () => {
     shell.remove();
+    document.body.classList.remove("personal-day-reading");
     const home = document.querySelector("#home");
     if (home) {
       home.hidden = false;
@@ -175,6 +182,9 @@ export const openPersonalDay = () => {
     } else {
       // Прямое открытие day.html: на странице нет главного экрана.
       window.location.assign("./");
+    }
+    if (nativePageScroll && home) {
+      requestAnimationFrame(() => window.scrollTo(0, previousPageScroll));
     }
   };
   shell.querySelector(".personal-day-close").onclick = returnToHome;
@@ -192,6 +202,8 @@ export const openPersonalDay = () => {
     error.hidden = true;
     submit.disabled = true;
     submit.textContent = "Считаю ваш день…";
+    // Убрать фокус с поля, чтобы iOS не пытался вернуть страницу к клавиатуре.
+    input.blur();
     const item = await loadPersonalDay(birth);
     result.hidden = false;
     result.innerHTML = `<section class="personal-day-main"><span class="personal-day-code">${item.energy} · ${item.personalNumber}</span><p class="personal-day-label">ВАШ ДЕНЬ</p>${paragraphs([item.text])}${item.todayNeed?.length ? `<section class="personal-day-advice personal-day-need"><h4><span class="personal-day-advice-icon">✓</span> Сегодня нужно</h4><ul>${bullets(item.todayNeed)}</ul></section>` : ""}${item.todayAvoid?.length ? `<section class="personal-day-advice personal-day-avoid"><h4><span class="personal-day-advice-icon">×</span> Сегодня нельзя</h4><ul>${bullets(item.todayAvoid)}</ul></section>` : ""}</section>`;
@@ -206,7 +218,15 @@ export const openPersonalDay = () => {
         ? 'Важные числа месяца <span aria-hidden="true">↓</span>'
         : 'Скрыть важные числа <span aria-hidden="true">↑</span>';
     });
-    requestAnimationFrame(() => { animateScroll(card, Math.max(0, result.offsetTop - 16)); });
+    requestAnimationFrame(() => {
+      if (nativePageScroll) {
+        // Единственный переход после расчёта; дальнейшую прокрутку ведёт браузер.
+        const top = result.getBoundingClientRect().top + window.scrollY - 16;
+        window.scrollTo(0, Math.max(0, top));
+      } else {
+        animateScroll(card, Math.max(0, result.offsetTop - 16));
+      }
+    });
     submit.textContent = "Рассчитать личный день";
     submit.disabled = false;
   };
