@@ -248,13 +248,6 @@ function renderKarmic(matrix, programsBank, tailsBank) {
   }
 }
 
-function addSummary(label,value) {
-  const box=element("div",null,"pro-number-box");
-  box.append(element("small",label));
-  box.append(element("strong",String(value)));
-  return box;
-}
-
 input.addEventListener("input",()=>{
   const digits=input.value.replace(/\D/g,"").slice(0,8);
   input.value=[digits.slice(0,2),digits.slice(2,4),digits.slice(4,8)].filter(Boolean).join(".");
@@ -284,15 +277,6 @@ form.addEventListener("submit", async(event)=>{
     const points=nodesFor(birth,matrix);
     const definitions=buildFullReportSections(matrix);
     current={id,birth,matrix,knowledge,points,definitions,selected:null};
-    document.querySelector("#pro-result-date").textContent=input.value;
-    const boxes=document.querySelector("#pro-summary-numbers");
-    boxes.replaceChildren(
-      addSummary("Центр",matrix.center),
-      addSummary("День",matrix.left),
-      addSummary("Месяц",matrix.top),
-      addSummary("Год",matrix.right),
-      addSummary("Главный урок",matrix.bottom)
-    );
     renderDiagram(points);
     renderPointList(points);
     renderQuestions(definitions);
