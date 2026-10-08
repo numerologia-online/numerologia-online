@@ -1,11 +1,13 @@
 import { reduce22 } from "./numerology-core.js?v=1";
 
 const keyFor = (values) => [...values].sort((left, right) => left - right).join("-");
+const orderedKeyFor = (values) => values.join("-");
 
 const parseProgramLibrary = (source) => {
   const entries = [...source.matchAll(/^## ([\d-]+) «(.+)»\s*\n+### Незакрытая история прошлой жизни\s*\n+([^]+?)\s*\n+### Как это влияет на эту жизнь\s*\n+([^]+?)\s*\n+### Главная задача души\s*\n+([^]+?)(?=\n+## |\s*$)/gm)];
   return entries.map(([, code, title, past, present, task]) => ({
     key: keyFor(code.split("-").map(Number)),
+    orderedKey: code,
     code,
     title,
     parts: [
@@ -27,8 +29,8 @@ export const loadKarmicPrograms = () => loadLibrary("./karmic-programs.md");
 export const loadKarmicTails = () => loadLibrary("./karmic-tails.md");
 
 export const findKarmicTail = (matrixData, library) => {
-  const key = keyFor([matrixData.tail.first, matrixData.tail.second, matrixData.bottom]);
-  return library.find((tail) => tail.key === key) ?? null;
+  const key = orderedKeyFor([matrixData.tail.first, matrixData.tail.second, matrixData.bottom]);
+  return library.find((tail) => tail.orderedKey === key) ?? null;
 };
 
 const getMatrixTriples = (data) => {
