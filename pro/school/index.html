@@ -27,6 +27,7 @@
       <nav class="school-tabs" aria-label="Разделы школы">
         <button type="button" data-school-panel="lessons" aria-pressed="true">Уроки</button>
         <button type="button" data-school-panel="trainer" aria-pressed="false">Тренажёр</button>
+        <button type="button" data-school-panel="formulas" aria-pressed="false">28 формул</button>
         <button type="button" data-school-panel="arcana" aria-pressed="false">22 энергии</button>
       </nav>
       <p id="school-error" class="school-error" role="alert" hidden></p>
@@ -64,6 +65,20 @@
           <p id="school-train-feedback" class="school-feedback" role="status" aria-live="polite"></p>
           <button id="school-train-next" type="button" class="school-secondary">Другая дата →</button>
         </div>
+      </section>
+      <section id="school-formulas" class="school-panel" aria-label="Справочник формул 28 точек" hidden>
+        <p class="school-overline">ПРОВЕРЯЕМАЯ АРИФМЕТИКА</p>
+        <h2>28 точек по шагам</h2>
+        <p class="school-section-lead">Введите дату рождения и проследите все формулы: из каких чисел складывается каждая точка и что получается после приведения к 22. Здесь показана текущая учебная схема нашего сайта; вспомогательные точки в других школах могут располагаться иначе.</p>
+        <form id="school-formula-form" class="school-formula-form" novalidate>
+          <label for="school-formula-date">Дата рождения для примера</label>
+          <div class="school-formula-row">
+            <input id="school-formula-date" type="text" inputmode="numeric" maxlength="10" placeholder="ДД.ММ.ГГГГ" value="14.07.1990" required>
+            <button type="submit" class="school-primary">Показать формулы</button>
+          </div>
+          <p id="school-formula-error" class="school-error" role="alert" hidden></p>
+        </form>
+        <div id="school-formula-list" class="school-formula-list" aria-live="polite"></div>
       </section>
       <section id="school-arcana" class="school-panel" aria-label="Справочник энергий" hidden>
         <p class="school-overline">ЭНЦИКЛОПЕДИЯ АРКАНОВ</p>
