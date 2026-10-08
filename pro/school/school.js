@@ -1,4 +1,5 @@
-import { calculateMatrix } from "../../numerology-core.js?v=1";
+import { calculateMatrix, parseBirthDate } from "../../numerology-core.js?v=1";
+import { pointCatalog } from "./points.js?v=1";
 
 const byId = (id) => document.getElementById(id);
 const error = byId("school-error");
@@ -48,22 +49,48 @@ const exampleDates = [
   "15.08.1992", "24.11.2001", "06.05.1995", "23.02.1988",
   "10.06.1969", "28.03.2003", "17.12.1999", "05.01.2010"
 ];
-const practicePoints = [
-  { name:"Левая точка - день рождения", get: (m) => m.left, work: (m,b) => `День ${b.day} → ${m.left}` },
-  { name:"Верхняя точка - месяц рождения", get: (m) => m.top, work: (m,b) => `Месяц ${b.month} → ${m.top}` },
-  { name:"Правая точка - сумма года", get: (m) => m.right, work: (m,b) => `Сумма цифр ${b.year} → ${m.right}` },
-  { name:"Нижняя опорная точка", get: (m) => m.bottom, work: (m) => `${m.left} + ${m.top} + ${m.right} → ${m.bottom}` },
-  { name:"Центральная энергия", get: (m) => m.center, work: (m) => `${m.left} + ${m.top} + ${m.right} + ${m.bottom} → ${m.center}` },
-  { name:"Верхний левый угол", get: (m) => m.corners.topLeft, work: (m) => `${m.left} + ${m.top} → ${m.corners.topLeft}` },
-  { name:"Верхний правый угол", get: (m) => m.corners.topRight, work: (m) => `${m.top} + ${m.right} → ${m.corners.topRight}` },
-  { name:"Нижний правый угол", get: (m) => m.corners.bottomRight, work: (m) => `${m.right} + ${m.bottom} → ${m.corners.bottomRight}` },
-  { name:"Нижний левый угол", get: (m) => m.corners.bottomLeft, work: (m) => `${m.bottom} + ${m.left} → ${m.corners.bottomLeft}` },
-  { name:"Первый узел кармического хвоста", get: (m) => m.tail.first, work: (m) => `${m.center} + ${m.bottom} → ${m.tail.first}` },
-  { name:"Второй узел кармического хвоста", get: (m) => m.tail.second, work: (m) => `${m.bottom} + ${m.tail.first} → ${m.tail.second}` },
-  { name:"Узел левой оси около центра", get: (m) => m.leftSpoke.near, work: (m) => `${m.left} + ${m.center} → ${m.leftSpoke.near}` },
-  { name:"Узел верхней оси около центра", get: (m) => m.topSpoke.near, work: (m) => `${m.top} + ${m.center} → ${m.topSpoke.near}` },
-  { name:"Узел правой оси около центра", get: (m) => m.rightSpoke.near, work: (m) => `${m.right} + ${m.center} → ${m.rightSpoke.near}` }
-];
+const practicePoints = pointCatalog;
+
+const formulaForm = byId("school-formula-form");
+const formulaDate = byId("school-formula-date");
+const formulaError = byId("school-formula-error");
+const formulaList = byId("school-formula-list");
+
+function buildFormulaSheet(birth) {
+  const matrix = calculateMatrix(birth);
+  formulaList.replaceChildren();
+  const groups = [...new Set(pointCatalog.map(point => point.group))];
+  groups.forEach((groupName) => {
+    const section = make("section","school-formula-group");
+    section.append(make("h3","",groupName));
+    const cards = make("div","school-formula-cards");
+    pointCatalog.filter(point => point.group === groupName).forEach((point) => {
+      const card = make("article","school-formula-card");
+      const header = make("div","school-formula-title");
+      header.append(make("span","",point.title),make("strong","",point.get(matrix)));
+      card.append(header,make("p","school-equation",point.work(matrix,birth)));
+      cards.append(card);
+    });
+    section.append(cards);
+    formulaList.append(section);
+  });
+}
+formulaDate.addEventListener("input", () => {
+  const digits = formulaDate.value.replace(/\\D/g,"").slice(0,8);
+  formulaDate.value = [digits.slice(0,2),digits.slice(2,4),digits.slice(4,8)].filter(Boolean).join(".");
+  formulaError.hidden = true;
+});
+formulaForm.addEventListener("submit",(event)=>{
+  event.preventDefault();
+  const birth = parseBirthDate(formulaDate.value);
+  if (!birth) {
+    formulaError.textContent = "Введите существующую дату в формате ДД.ММ.ГГГГ (не раньше 1900 года).";
+    formulaError.hidden = false;
+    return;
+  }
+  formulaError.hidden = true;
+  buildFormulaSheet(birth);
+});
 
 function showPanel(key) {
   for (const section of document.querySelectorAll(".school-panel")) {
@@ -285,6 +312,7 @@ async function startSchool() {
     renderArcanaButtons();
     renderArcana();
     renderTrainer();
+    buildFormulaSheet({ day:14, month:7, year:1990 });
   }catch(cause) {
     error.hidden=false;
     error.textContent="Не удалось открыть уроки. Обновите страницу и попробуйте снова.";
