@@ -133,7 +133,7 @@ function renderZones(zones) {
     labels.append(element("strong", zone.title));
     labels.append(element("small", zone.subtitle));
     button.append(labels);
-    button.addEventListener("click", () => selectZone(zone.id));
+    button.addEventListener("click", () => selectZone(zone.id, true));
     fragment.append(button);
   });
   zoneButtons.replaceChildren(fragment);
@@ -171,6 +171,11 @@ function paintZone(zone) {
   });
   zoneButtons.querySelectorAll("button[data-zone]").forEach((button) => {
     button.setAttribute("aria-pressed",String(button.dataset.zone === zone?.id));
+  });
+  diagram.querySelectorAll(".pro-sector-tag").forEach((tag) => {
+    const isActive = tag.dataset.zone === zone?.id;
+    tag.classList.toggle("selected", isActive);
+    tag.setAttribute("aria-pressed", String(isActive));
   });
 }
 
@@ -217,19 +222,71 @@ function renderZoneGuide(zone) {
   }
 }
 
-function selectZone(id) {
+function selectZone(id, scrollToDiagram = false) {
   if (!current) return;
   const zone=current.zones.find((item)=>item.id===id);
   if (!zone) return;
+  if (current.activeZone?.id === id) {
+    clearZone();
+    return;
+  }
   current.activeZone=zone;
   paintZone(zone);
   renderZoneGuide(zone);
   const first=zone.points.find(key=>current.points.some(point=>point.key===key));
   if(first)selectPoint(first,false);
+  if (scrollToDiagram) {
+    diagram.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+}
+
+// Аккуратные подписи вокруг самой схемы. Координаты относятся только к
+// расположению надписей, а не меняют алгоритм и не добавляют новых расчётов.
+const sectorLabelPositions = {
+  spirit:        {x:165,y:43,width:150},
+  talents:       {x:449,y:43,width:134},
+  lineage:       {x:75,y:190,width:92},
+  relationships: {x:537,y:205,width:150},
+  money:         {x:538,y:404,width:116},
+  resource:      {x:128,y:553,width:192},
+  family:        {x:487,y:555,width:160},
+  purpose:       {x:310,y:628,width:190}
+};
+
+function renderDiagramSectorLabels(svg, zones) {
+  const layer = svgElement("g",{"class":"pro-sector-labels","aria-label":"Названия зон матрицы"});
+  zones.forEach((zone) => {
+    const p = sectorLabelPositions[zone.id];
+    if (!p) return;
+    const tag = svgElement("g",{
+      "class":"pro-sector-tag","data-zone":zone.id,
+      role:"button",tabindex:"0","aria-label":"Подсветить зону: "+zone.title,
+      "aria-pressed":"false"
+    });
+    tag.style.setProperty("--sector-color",zone.color);
+    tag.append(svgElement("rect",{
+      x:p.x-p.width/2,y:p.y-19,width:p.width,height:38,rx:19
+    }));
+    tag.append(svgElement("circle",{
+      cx:p.x-p.width/2+18,cy:p.y,r:5
+    }));
+    const name = svgElement("text",{
+      x:p.x+10,y:p.y+1,"text-anchor":"middle","dominant-baseline":"middle"
+    });
+    name.textContent = zone.title;
+    tag.append(name);
+    const activate = () => selectZone(zone.id);
+    tag.addEventListener("click",activate);
+    tag.addEventListener("keydown",(event)=>{
+      if(event.key==="Enter" || event.key===" "){event.preventDefault();activate();}
+    });
+    layer.append(tag);
+  });
+  svg.append(layer);
 }
 
 function renderDiagram(points) {
-  const svg = svgElement("svg",{viewBox:"0 0 620 620",role:"group","aria-label":"Интерактивная матрица из 28 точек"});
+  const svg = svgElement("svg",{viewBox:"0 0 620 660",role:"group","aria-label":"Интерактивная матрица с нажимаемыми названиями сфер и 28 точками"});
   const frame = svgElement("g",{fill:"none",stroke:"#b4aba0","stroke-width":"1.9"});
   [
     ["polygon",{points:"310,34 506,114 586,310 506,506 310,586 114,506 34,310 114,114"}],
@@ -256,6 +313,7 @@ function renderDiagram(points) {
     g.addEventListener("keydown",(event) => {if(event.key==="Enter"||event.key===" "){event.preventDefault();activate();}});
     svg.append(g);
   });
+  renderDiagramSectorLabels(svg, current?.zones || []);
   diagram.replaceChildren(svg);
 }
 
