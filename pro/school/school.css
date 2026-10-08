@@ -62,3 +62,18 @@ p{margin:0 0 15px}.school-shell{width:min(100%,1120px);padding:16px clamp(15px,3
 @media(max-width:850px){.school-layout{grid-template-columns:1fr}.school-index{padding:10px}.school-lesson-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.school-arcana-buttons{grid-template-columns:repeat(6,minmax(0,1fr))}}
 @media(max-width:560px){.school-shell{padding:12px 13px 24px}.school-hero{padding-top:32px}.school-layout{gap:12px}.school-lesson-list{grid-template-columns:1fr}.school-lesson-list button{padding:10px}.school-arcana-buttons{grid-template-columns:repeat(6,minmax(0,1fr))}.school-arcana-detail dl{grid-template-columns:1fr}.school-next{align-items:stretch;flex-direction:column}.school-action{width:100%}.school-tabs button{min-width:0;font-size:13px;padding:7px}.school-progress{font-size:11px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* Рабочая тетрадь: формулы и результаты для каждой из 28 точек. */
+.school-formula-form{max-width:770px;margin:0 0 28px;border:1px solid #e5dfd3;padding:17px 19px;background:#fffefa;border-radius:18px}
+.school-formula-form label{display:block;font-size:13px;font-weight:800;margin:0 0 8px;color:#52616a}
+.school-formula-row{display:flex;align-items:stretch;gap:9px}
+.school-formula-row input{flex:1;min-width:0;border:1px solid #dad2c7;background:white;border-radius:12px;padding:12px 15px;font-size:18px;letter-spacing:.045em;color:#24394e}
+.school-formula-form .school-error{margin:14px 0 0;font-size:13px}
+.school-formula-group{margin:0 0 28px}
+.school-formula-group h3{font-size:25px;margin:0 0 12px}
+.school-formula-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.school-formula-card{background:#fffefa;border:1px solid #e3dcd0;border-radius:16px;padding:14px 15px;min-width:0}
+.school-formula-title{display:flex;justify-content:space-between;align-items:center;gap:12px;font-weight:750;font-size:13px;line-height:1.4}
+.school-formula-title strong{font:400 29px/1 Georgia,serif;color:#916f46}
+.school-equation{color:#546c74;font-size:13px;line-height:1.5;margin:8px 0 0;overflow-wrap:anywhere}
+@media(max-width:560px){.school-formula-row{flex-direction:column}.school-formula-cards{grid-template-columns:1fr}.school-formula-form{padding:15px}}
