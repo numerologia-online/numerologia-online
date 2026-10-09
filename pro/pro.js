@@ -6,7 +6,7 @@ import { createProDiagram } from "./pro-diagram.js?v=11";
 import { stopSoulSpeech } from "./pro-voice.js?v=2";
 import { createSoulStory } from "./pro-story.js?v=2";
 import { createFullReportPdfController } from "../full-report-pdf.js?v=2";
-import { buildProPdfChapters } from "./pro-pdf-content.js?v=2";
+import { buildProPdfChapters } from "./pro-pdf-content.js?v=3";
 import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
 
 const form = document.querySelector("#pro-form");
