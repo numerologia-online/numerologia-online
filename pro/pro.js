@@ -2,7 +2,7 @@ import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js
 import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
 import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicTails } from "../karmic-programs.js?v=5";
 import { nodesFor } from "./pro-points.js?v=2";
-import { createProDiagram } from "./pro-diagram.js?v=7";
+import { createProDiagram } from "./pro-diagram.js?v=8";
 import { stopSoulSpeech } from "./pro-voice.js?v=2";
 import { createSoulStory } from "./pro-story.js?v=2";
 
@@ -13,6 +13,7 @@ const results = document.querySelector("#pro-results");
 const diagram = document.querySelector("#pro-diagram");
 const pointDetails = document.querySelector("#pro-point-details");
 const zoneButtons = document.querySelector("#pro-zone-buttons");
+const zoneReading = document.querySelector("#pro-zone-reading");
 const questionButtons = document.querySelector("#pro-question-buttons");
 const karmic = document.querySelector("#pro-karma");
 const purpose = document.querySelector("#pro-purpose");
@@ -81,13 +82,14 @@ function loadKarmicDeepening() {
 
 function loadZoneLibrary() {
   if (!zoneLibraryRequest) {
-    zoneLibraryRequest = fetch("pro/zones.json?v=3")
+    zoneLibraryRequest = fetch("pro/zones.json?v=4")
       .then((response) => {
         if (!response.ok) throw new Error("Не удалось загрузить обучающие зоны");
         return response.json();
       })
       .then((source) => {
-        if (!Array.isArray(source.zones) || source.zones.length !== 13) {
+        if (!Array.isArray(source.zones) || source.zones.length !== 13
+          || source.zones.some(zone => !zone.reading || zone.points.some(key => !zone.reading.roles?.[key]))) {
           throw new Error("Неполная база обучающих зон");
         }
         return source.zones;
@@ -152,7 +154,8 @@ const {hidePointPreview, renderZones, renderDiagram} = createProDiagram({
   diagram, zoneButtons, questionButtons,
   element, svgElement,
   onSelectQuestion: (key, scroll) => selectQuestion(key, scroll),
-  onOpenPoint: (key) => openPointDetail(key)
+  onOpenPoint: (key) => openPointDetail(key),
+  onSelectZone: (zone, scroll) => renderZoneReading(zone, scroll)
 });
 const appendSoulStoryCard = createSoulStory({element, paragraph, karmic, getCurrent: () => current});
 
@@ -246,6 +249,91 @@ function openPointDetail(key) {
       pointDetails.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
     }
   });
+}
+
+
+function renderZoneReading(zone, shouldScroll = true) {
+  if (!zoneReading || !current) return;
+  zoneReading.replaceChildren();
+  if (!zone) {
+    zoneReading.hidden = true;
+    return;
+  }
+  if (pointDetails) {
+    pointDetails.hidden = true;
+    pointDetails.replaceChildren();
+  }
+  const {reading} = zone;
+  const positions = zone.points.map(key => current.points.find(point => point.key === key)).filter(Boolean);
+  const top = element("div", null, "pro-zone-reading-header");
+  const heading = element("div");
+  heading.append(element("p", "ВАША МАТРИЦА · РАЗБОР СФЕРЫ", "pro-eyebrow"));
+  const title = element("h3", zone.title);
+  title.id = "pro-zone-reading-title";
+  heading.append(title);
+  const close = element("button", "Закрыть", "pro-zone-reading-close");
+  close.type = "button";
+  close.setAttribute("aria-label", "Закрыть разбор выбранной сферы");
+  close.addEventListener("click", () => {
+    // The same topic can be selected again by its label or the lower picker.
+    zoneReading.hidden = true;
+    zoneReading.replaceChildren();
+    current.activeZone = null;
+    hidePointPreview();
+    renderZones(current.zones);
+    renderDiagram(current.points);
+  });
+  top.append(heading,close);
+  zoneReading.append(top);
+  zoneReading.style.setProperty("--reading-color", zone.color);
+  zoneReading.append(paragraph(reading.lead,"pro-zone-reading-lead"));
+  zoneReading.append(element("h4","Что говорят выделенные энергии"));
+
+  const list = element("div",null,"pro-zone-reading-points");
+  positions.forEach(point => {
+    const role=reading.roles[point.key];
+    if(!role)return;
+    const energy=current.knowledge.energies[String(point.value)] || {};
+    const card=element("article",null,"pro-zone-reading-position");
+    const line=element("div",null,"pro-zone-reading-position-head");
+    line.append(element("span",String(point.value),"pro-zone-reading-number"));
+    const labels=element("div");
+    labels.append(element("strong",role.title));
+    labels.append(element("small",energy.name ? "Энергия " + point.value + " · " + energy.name : "Энергия " + point.value));
+    line.append(labels);
+    card.append(line);
+    card.append(paragraph(role.meaning));
+    const energyText=energy[reading.energyField] || energy.shortEssence || energy.mainStrength;
+    if(energyText)card.append(paragraph(energyText,"pro-zone-reading-energy"));
+    const deeper=element("button","Разобрать эту точку подробнее →","pro-zone-reading-detail");
+    deeper.type="button";
+    deeper.addEventListener("click", () => openPointDetail(point.key));
+    card.append(deeper);
+    list.append(card);
+  });
+  zoneReading.append(list);
+
+  zoneReading.append(element("h4","Как читать сочетание"));
+  zoneReading.append(paragraph(reading.bridge));
+  const counts = new Map();
+  positions.forEach(point => counts.set(point.value,(counts.get(point.value)||0)+1));
+  const repeats = [...counts.entries()].filter(([,count]) => count>1).map(([n])=>String(n));
+  if(repeats.length) {
+    zoneReading.append(paragraph("В этой сфере повторяется энергия " + repeats.join(" и ") + ". Обратите внимание на её разные роли в каждой позиции, не смешивая значения.", "pro-zone-reading-repeat"));
+  }
+  zoneReading.append(element("h4","Что можно сделать в жизни"));
+  zoneReading.append(paragraph(reading.practice,"pro-zone-reading-practice"));
+  zoneReading.hidden = false;
+  if(shouldScroll){
+    const id=current.id;
+    window.requestAnimationFrame(() => {
+      if(!current || current.id !== id || current.activeZone?.id !== zone.id || zoneReading.hidden)return;
+      zoneReading.scrollIntoView({
+        behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block:"start"
+      });
+    });
+  }
 }
 
 function isSubheading(text) {
@@ -530,6 +618,8 @@ form.addEventListener("submit", async(event)=>{
     current={id,birth,matrix,knowledge,points,definitions,zones,previews,activeZone:null,selected:null};
     pointDetails.hidden = true;
     pointDetails.replaceChildren();
+    zoneReading.hidden = true;
+    zoneReading.replaceChildren();
     renderDiagram(points);
     renderZones(zones);
     renderQuestions(definitions);

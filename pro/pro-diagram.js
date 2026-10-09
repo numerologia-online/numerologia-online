@@ -1,5 +1,5 @@
 // SVG, интерактивные точки и тематические подсветки профессиональной матрицы.
-export function createProDiagram({getCurrent, diagram, zoneButtons, questionButtons, element, svgElement, onSelectQuestion, onOpenPoint}) {
+export function createProDiagram({getCurrent, diagram, zoneButtons, questionButtons, element, svgElement, onSelectQuestion, onOpenPoint, onSelectZone}) {
 // Компактная карточка выбранного числа. Переход вниз только при нажатии на карточку.
 const pointPreview = document.createElement("button");
 pointPreview.type = "button";
@@ -123,6 +123,7 @@ function clearZone() {
   if (!getCurrent() || !getCurrent().activeZone) return;
   getCurrent().activeZone = null;
   paintZone(null);
+  onSelectZone(null, false);
 }
 
 function selectZone(id, scrollToDiagram = false) {
@@ -137,9 +138,8 @@ function selectZone(id, scrollToDiagram = false) {
   getCurrent().activeZone=zone;
   paintZone(zone);
   diagram.querySelectorAll(".pro-node").forEach(node => node.classList.remove("active"));
-  if (scrollToDiagram) {
-    diagram.scrollIntoView({behavior:"smooth",block:"start"});
-  }
+  // Both SVG theme labels and buttons below the diagram open the same reading.
+  onSelectZone(zone, true);
 }
 
 // Все 13 тематических подписей видны одновременно, без переключателей.
