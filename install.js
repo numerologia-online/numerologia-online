@@ -1,128 +1,31 @@
 (() => {
-  "use strict";
-  const modal = document.getElementById("install-nudge");
-  if (!modal) return;
-  const action = document.getElementById("install-action");
-  const close = document.getElementById("install-dismiss");
-  const later = document.getElementById("install-later");
-  const help = document.getElementById("install-help");
-  const key = "numerologia-install-invite-v1";
-  const ua = navigator.userAgent || "";
-  const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  const safari = ios && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
-  const installed = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-  let deferredPrompt = null;
-  let visible = false;
-  let instructionsVisible = false;
-  let previousFocus = null;
-
-  const readExpiry = () => {
-    try {
-      const value = localStorage.getItem(key);
-      if (value === "installed") return Infinity;
-      return Number(value || 0);
-    } catch { return 0; }
-  };
-  const suppress = (days) => {
-    try { localStorage.setItem(key, days === Infinity ? "installed" : String(Date.now() + days * 86400000)); }
-    catch { /* Private browsing may disallow storage. */ }
-  };
-  const hide = (days = 21) => {
-    suppress(days);
-    modal.hidden = true;
-    document.body.classList.remove("install-invite-open");
-    visible = false;
-    if (previousFocus && previousFocus.isConnected) previousFocus.focus({preventScroll:true});
-  };
-  const showHelp = () => {
-    instructionsVisible = true;
-    help.hidden = false;
-    help.replaceChildren();
-    const heading = document.createElement("h3");
-    heading.textContent = ios ? "Как добавить на iPhone" : "Как сохранить на телефон";
-    help.append(heading);
-    const addStep = text => {
-      const p = document.createElement("p");
-      p.textContent = text;
-      help.append(p);
-    };
-    if (ios) {
-      if (!safari) {
-        addStep("1. Откройте эту страницу в Safari.");
-        addStep("2. В Safari нажмите «Поделиться» (квадрат со стрелкой вверх).");
-        addStep("3. Выберите «На экран Домой», затем «Добавить».");
-      } else {
-        addStep("1. Нажмите «Поделиться» (квадрат со стрелкой вверх).");
-        addStep("2. Пролистайте меню и выберите «На экран Домой».");
-        addStep("3. При необходимости включите «Открыть как веб-приложение» и нажмите «Добавить».");
-      }
-    } else {
-      addStep("1. Откройте меню браузера (обычно ⋮).");
-      addStep("2. Нажмите «Установить приложение» или «Добавить на главный экран».");
-      addStep("3. Подтвердите добавление.");
-    }
-    action.textContent = "Понятно, спасибо ♡";
-    action.focus({preventScroll:true});
-  };
-  const canShow = () =>
-    !installed() &&
-    Date.now() >= readExpiry() &&
-    (!location.hash || location.hash === "#home") &&
-    (navigator.maxTouchPoints > 0 || /Android|iPhone|iPad/i.test(ua)) &&
-    window.innerWidth <= 1100;
-
-  window.addEventListener("beforeinstallprompt", event => {
-    event.preventDefault();
-    deferredPrompt = event;
-  });
-  window.addEventListener("appinstalled", () => {
-    deferredPrompt = null;
-    hide(Infinity);
-  });
-
-  const show = () => {
-    if (!canShow() || visible) return;
-    visible = true;
-    instructionsVisible = false;
-    help.hidden = true;
-    action.textContent = "Сохранить на главный экран";
-    previousFocus = document.activeElement;
-    modal.hidden = false;
-    document.body.classList.add("install-invite-open");
-    close.focus({preventScroll:true});
-  };
-  action.addEventListener("click", async () => {
-    if (instructionsVisible) { hide(); return; }
-    if (deferredPrompt) {
-      const prompt = deferredPrompt;
-      deferredPrompt = null;
-      try {
-        await prompt.prompt();
-        const result = await prompt.userChoice;
-        hide(result.outcome === "accepted" ? Infinity : 21);
-      } catch { showHelp(); }
-      return;
-    }
-    showHelp();
-  });
-  close.addEventListener("click", () => hide());
-  later.addEventListener("click", () => hide());
-  modal.addEventListener("click", event => { if (event.target === modal) hide(); });
-  document.addEventListener("keydown", event => {
-    if (!visible) return;
-    if (event.key === "Escape") { hide(); return; }
-    if (event.key !== "Tab") return;
-    const tabbable = [...modal.querySelectorAll("button:not([disabled])")].filter(el => el.offsetParent !== null);
-    if (!tabbable.length) return;
-    if (event.shiftKey && document.activeElement === tabbable[0]) {
-      event.preventDefault(); tabbable[tabbable.length-1].focus();
-    } else if (!event.shiftKey && document.activeElement === tabbable[tabbable.length-1]) {
-      event.preventDefault(); tabbable[0].focus();
-    }
-  });
-
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch(() => {}), {once:true});
-  }
-  window.addEventListener("load", () => window.setTimeout(show, 1500), {once:true});
+"use strict";
+const modal=document.getElementById("install-nudge");if(!modal)return;
+const action=document.getElementById("install-action"),close=document.getElementById("install-dismiss"),later=document.getElementById("install-later"),guide=document.getElementById("install-guide"),visual=document.getElementById("install-visual"),progress=document.getElementById("install-progress"),caption=document.getElementById("install-step-caption"),title=document.getElementById("install-title"),copy=document.getElementById("install-copy");
+const ua=navigator.userAgent||"",ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1),safari=ios&&/Safari/.test(ua)&&!/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua),key="numerologia-install-invite-v2";
+let promptEvent=null,step=0,visible=false,previousFocus=null;
+const installed=()=>window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+const expires=()=>{try{const v=localStorage.getItem(key);return v==="installed"?Infinity:Number(v||0)}catch{return 0}};
+const mute=days=>{try{localStorage.setItem(key,days===Infinity?"installed":String(Date.now()+days*86400000))}catch{}};
+function hide(days=21){mute(days);modal.hidden=true;visible=false;if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true})}
+function canShow(){return !installed()&&Date.now()>=expires()&&(!location.hash||location.hash==="#home")&&(navigator.maxTouchPoints>0||/iPhone|iPad|Android/.test(ua))&&innerWidth<=1100}
+const shareIcon='<svg viewBox="0 0 80 80" class="install-share-icon" aria-hidden="true"><rect x="15" y="26" width="50" height="47" rx="11" fill="#e5f0ff" stroke="#4a83cc" stroke-width="3"/><path d="M40 51V8m0 0L27 21M40 8l13 13" fill="none" stroke="#347ed8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const houseIcon='<svg viewBox="0 0 45 45" width="36" height="36" aria-hidden="true" fill="none" stroke="#3b618a" stroke-width="2.3" stroke-linejoin="round"><path d="M7 21 22 9l16 12v18H7V21z"/><path d="M18 39V26h9v13M35 4v11M29 9h12"/></svg>';
+function draw(){
+guide.hidden=step===0;visual.replaceChildren();progress.replaceChildren();
+if(step===0){title.textContent="Добавь меня на экран Домой ♡";copy.textContent="Матрица, прогнозы и добрые подсказки всегда под рукой.";action.textContent=promptEvent?"Добавить на телефон":"Показать, как добавить";later.textContent="Не сейчас";return}
+title.textContent="Шаг "+step+" из 3";copy.textContent="";action.textContent=step===3?"Понятно ♡":"Дальше";later.textContent="Позже";
+for(let n=1;n<=3;n++){const d=document.createElement("span");d.className="install-progress-dot"+(n<=step?" is-on":"");progress.append(d)}
+if(step===1){visual.innerHTML=ios?shareIcon:'<span class="install-menu-dots">⋮</span>';caption.textContent=safari?'Нажми «Поделиться» в Safari':ios?'Открой сайт в Safari и нажми «Поделиться»':'Открой меню браузера ⋮';return}
+if(step===2){const row=document.createElement("div");row.className="install-menu-preview";row.innerHTML=ios?houseIcon:'<span class="install-menu-dots">+</span>';const lbl=document.createElement("strong");lbl.textContent=ios?"На экран Домой":"Установить приложение";row.append(lbl);visual.append(row);caption.textContent="Выбери этот пункт";return}
+const pane=document.createElement("div");pane.className="install-final-preview";pane.innerHTML='<img src="favicon.svg?v=2" width="43" height="43" alt=""><span>Нумерология Онлайн</span><b>Добавить</b>';visual.append(pane);caption.textContent="Нажми «Добавить» вверху экрана";
+}
+window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();promptEvent=event;if(visible&&step===0)draw()});
+window.addEventListener("appinstalled",()=>{promptEvent=null;visible?hide(Infinity):mute(Infinity)});
+function show(){if(!canShow()||visible)return;visible=true;step=0;previousFocus=document.activeElement;draw();modal.hidden=false;close.focus({preventScroll:true})}
+action.addEventListener("click",async()=>{if(step===0&&promptEvent){const p=promptEvent;promptEvent=null;try{await p.prompt();const response=await p.userChoice;hide(response.outcome==="accepted"?Infinity:21)}catch{step=1;draw()}return}if(step===3){hide();return}step++;draw();action.focus({preventScroll:true})});
+close.addEventListener("click",()=>hide());later.addEventListener("click",()=>hide());modal.addEventListener("click",e=>{if(e.target===modal)hide()});
+document.addEventListener("keydown",e=>{if(!visible)return;if(e.key==="Escape"){hide();return}if(e.key!=="Tab")return;const a=[close,action,later].filter(el=>el.offsetParent!==null);if(e.shiftKey&&document.activeElement===a[0]){e.preventDefault();a[a.length-1].focus()}else if(!e.shiftKey&&document.activeElement===a[a.length-1]){e.preventDefault();a[0].focus()}});
+if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}),{once:true});
+window.addEventListener("load",()=>setTimeout(show,1500),{once:true});
 })();
