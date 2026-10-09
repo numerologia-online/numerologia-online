@@ -21,7 +21,7 @@ def main():
         raise ValueError("Too many characters: " + str(len(text)))
     print("Russian text length:", len(text), flush=True)
     print("Connecting to Chatterbox Multilingual V3 demo...", flush=True)
-    client = Client("ResembleAI/Chatterbox-Multilingual-TTS-V3")
+    client = Client("ResembleAI/Chatterbox-Multilingual-TTS-V3", httpx_kwargs={"timeout": 120.0})
     print("Generating Russian storytelling voice...", flush=True)
     result = client.predict(
         text, handle_file(str(REFERENCE)), "ru", 0.82, 0.8, 20261009, 0.30,
