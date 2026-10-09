@@ -3,8 +3,6 @@ import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection
 import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=7";
 import { nodesFor } from "./pro-points.js?v=2";
 import { createProDiagram } from "./pro-diagram.js?v=11";
-import { stopSoulSpeech } from "./pro-voice.js?v=2";
-import { createSoulStory } from "./pro-story.js?v=2";
 import { createFullReportPdfController } from "../full-report-pdf.js?v=3";
 import { buildProPdfChapters } from "./pro-pdf-content.js?v=6";
 import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
@@ -272,7 +270,6 @@ document.addEventListener("keydown", event => {
 });
 document.querySelector('a[href="#pro-karmic-title"]')?.addEventListener("click", () => closeKarmicInline());
 
-const appendSoulStoryCard = createSoulStory({element, paragraph, karmic, getCurrent: () => current});
 const {invalidateFullPdf, createFullReportPdfButton} = createFullReportPdfController({
   getReport: () => current?.pdfReport || null,
   reading: pdfButtons,
@@ -618,7 +615,7 @@ const countLabel = count => count === 1 ? "1 раз" : count >= 2 && count <= 4 
 
 // Three clear lines instead of one overlong karmic-tail heading.
 function formatTailSummary(summary, name, code, count) {
-  summary.replaceChildren(element("span", "Кармический хвост", "pro-karma-tail-label"));
+  summary.replaceChildren(element("span", "История души · Кармический хвост", "pro-karma-tail-label"));
   if (name) summary.append(element("span", name, "pro-karma-tail-name"));
   summary.append(element("span", code + " · " + countLabel(count), "pro-karma-tail-meta"));
 }
@@ -729,11 +726,6 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
       tailMatches, true);
     formatTailSummary(tailCard.querySelector(":scope > summary"), tail.title, code, tailPlaces.length);
     karmic.append(tailCard);
-    // The soul story belongs to this tail. It appears inside the expanded
-    // tail card with its original reading and audio controls, not as a new row.
-    appendSoulStoryCard(tail, code);
-    const story = karmic.querySelector(".pro-soul-card");
-    if (story) tailCard.append(story);
   } else {
     karmic.append(paragraph("Для этого хвоста подробный текст пока не найден.", "pro-muted"));
   }
@@ -778,7 +770,6 @@ form.addEventListener("submit", async(event)=>{
   const formattedDate = input.value;
   const id=++requestId;
   hidePointPreview();
-  stopSoulSpeech();
   current=null;
   results.hidden=true;
   const submit=form.querySelector("button[type=submit]");
