@@ -475,3 +475,47 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-zone-buttons>.pro-karmic-preview{
   grid-column:1/-1;min-width:0;
 }
+
+
+/* One low, elegant block for every karmic reading (full text stays expandable). */
+.pro-karmic-paper{padding:15px 17px!important;margin-bottom:13px}
+.pro-karmic-paper>h2{font:500 clamp(23px,4.2vw,29px)/1.22 Georgia,serif;margin:0 0 10px;color:#263f52}
+.pro-karma-list{border:1px solid #e3d7c6;border-radius:13px;overflow:hidden;background:#fffdfa;margin:0;padding:0}
+.pro-karma .pro-karma-list>details{
+  display:block;border:0;border-bottom:1px solid #e9e1d5;
+  border-radius:0;background:transparent;box-shadow:none;padding:0;margin:0;
+}
+.pro-karma .pro-karma-list>details:last-child{border-bottom:0}
+.pro-karma .pro-karma-list>details>summary{
+  list-style:none;display:block;position:relative;cursor:pointer;box-sizing:border-box;
+  min-height:43px;padding:11px 34px 10px 12px;border:0;margin:0;
+  color:#35556a;font-size:13px;line-height:1.32;font-weight:750;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.pro-karma .pro-karma-list>details>summary::-webkit-details-marker{display:none}
+.pro-karma .pro-karma-list>details>summary::after{
+  content:"⌄";position:absolute;right:12px;top:50%;transform:translateY(-55%);
+  font:19px/1 system-ui,sans-serif;color:#ab9067;
+}
+.pro-karma .pro-karma-list>details[open]>summary{
+  background:#f7f5f0;white-space:normal;overflow:visible;
+}
+.pro-karma .pro-karma-list>details[open]>summary::after{
+  transform:translateY(-45%) rotate(180deg);
+}
+.pro-karma .pro-karma-list>details>summary:focus-visible{
+  outline:2px solid #7398a3;outline-offset:-2px;
+}
+.pro-karma .pro-karma-list>details>:not(summary){margin-left:12px;margin-right:12px}
+.pro-karma .pro-karma-list>details>p:first-of-type{margin-top:13px}
+.pro-karma .pro-karma-list>details>p:last-child{margin-bottom:14px}
+.pro-karma .pro-karma-list>details>h4{margin-top:13px}
+.pro-karma .pro-karma-list>.pro-soul-fold>.pro-soul-card{margin:1px 8px 10px}
+.pro-karma .pro-karma-list>.pro-soul-fold>summary{font-size:13px;font-weight:750;padding:11px 34px 10px 12px}
+.pro-karma .pro-karma-list>details[open]{padding-bottom:9px}
+.pro-karmic-inline-reading .pro-karma-list{margin:0}
+@media(max-width:520px){
+  .pro-karmic-paper{padding:13px!important;border-radius:18px}
+  .pro-karmic-paper>h2{font-size:23px;margin:0 0 8px}
+  .pro-karma .pro-karma-list>details>summary{min-height:41px;padding:10px 32px 9px 11px;font-size:12.5px}
+}

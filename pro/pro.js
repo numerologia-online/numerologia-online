@@ -611,6 +611,65 @@ function markKarmicNodes(matches) {
   });
 }
 
+
+// One compact index replaces the scattered karmic boxes. Every original
+// interpretation, story audio control and combination is moved, not rewritten.
+function compactKarmicList() {
+  const original = Array.from(karmic.children);
+  const codeText = karmic.querySelector(".pro-karmic-current-code");
+  const tailCode = codeText?.textContent.replace(/^Кармический хвост\s*/, "").trim() || "";
+  const tailInfo = codeText?.nextElementSibling;
+  const tailCard = original.find(node =>
+    node.matches?.("details.pro-karma-card") &&
+    node.querySelector(":scope > summary")?.textContent.startsWith("Кармический хвост.")
+  );
+  if (tailCard) {
+    const summary = tailCard.querySelector(":scope > summary");
+    if (tailCode) summary.textContent = summary.textContent.replace(/^Кармический хвост\./, "Кармический хвост ·") + " · " + tailCode;
+    if (tailInfo?.matches("p.pro-muted")) summary.after(tailInfo);
+    codeText?.remove();
+  } else if (codeText) {
+    // Unrecognised tails also get a single collapsed row.
+    const missing = element("details", null, "pro-karma-card");
+    missing.append(element("summary", "Кармический хвост · " + tailCode));
+    if (tailInfo?.matches("p.pro-muted")) missing.append(tailInfo);
+    const noDescription = Array.from(karmic.children).find(node => node.matches?.("p.pro-muted") && node.textContent.includes("Для этого хвоста подробный текст"));
+    if (noDescription) missing.append(noDescription);
+    codeText.replaceWith(missing);
+  }
+  const separator = Array.from(karmic.children).find(node =>
+    node.tagName === "H3" && node.textContent === "Другие программы по сферам жизни"
+  );
+  if (separator) {
+    const explanation = separator.nextElementSibling;
+    const firstProgram = explanation?.nextElementSibling;
+    if (explanation?.matches("p.pro-muted") && firstProgram?.matches("details.pro-karma-card")) {
+      firstProgram.querySelector(":scope > summary")?.after(explanation);
+    }
+    separator.remove();
+  }
+  const list = element("div", null, "pro-karma-list");
+  list.setAttribute("role", "group");
+  list.setAttribute("aria-label", "Кармический хвост и программы");
+  list.append(...Array.from(karmic.children));
+  // Only one full text is open at a time; all data remains available.
+  list.addEventListener("toggle", event => {
+    if (!event.target.open || event.target.parentElement !== list) return;
+    Array.from(list.children).forEach(item => {
+      if (item !== event.target && item.tagName === "DETAILS" && item.open) item.open = false;
+    });
+  }, true);
+  list.querySelectorAll(":scope > details > summary").forEach(summary => {
+    const originalTitle = summary.textContent;
+    summary.title = originalTitle;
+    if (originalTitle.startsWith("Все 10 сочетаний чисел матрицы")) summary.textContent = "10 сочетаний матрицы";
+    if (originalTitle.startsWith("Повторение темы кармического хвоста в других сферах")) summary.textContent = "Повторения кармического хвоста";
+    if (originalTitle.startsWith("Программа. ")) summary.textContent = originalTitle.replace(/^Программа\. /, "Программа · ").replace(/\. (\d+-\d+-\d+)$/, " · $1");
+    if (originalTitle.startsWith("Кармическая программа. ")) summary.textContent = originalTitle.replace(/^Кармическая программа\. /, "Кармическая программа · ").replace(/\. (\d+-\d+-\d+)$/, " · $1");
+  });
+  karmic.append(list);
+}
+
 function renderKarmic(matrix, programsBank, tailsBank, deepening) {
   const tail = findKarmicTail(matrix, tailsBank);
   const programs = findKarmicPrograms(matrix, programsBank);
@@ -724,6 +783,7 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
       karmic.append(repeatCard);
     }
   }
+  compactKarmicList();
 }
 
 input.addEventListener("input",()=>{
