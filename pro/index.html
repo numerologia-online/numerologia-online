@@ -8,7 +8,7 @@
   <base href="../">
   <title>Для нумерологов | Нумерология Онлайн</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="pro/pro.css?v=16">
+  <link rel="stylesheet" href="pro/pro.css?v=17">
 </head>
 <body>
   <main class="pro-shell">
@@ -30,6 +30,12 @@
       <p id="pro-error" class="pro-error" hidden role="alert"></p>
     </form>
     <div id="pro-results" hidden>
+      <nav class="pro-quick-nav" aria-label="Разделы готового расчёта">
+        <a href="#pro-matrix-title">Матрица</a>
+        <a href="#pro-question-title">Разборы</a>
+        <a href="#pro-purpose">Предназначение</a>
+        <a href="#pro-karmic-title">Кармические программы</a>
+      </nav>
       <section class="pro-paper" aria-labelledby="pro-matrix-title">
         <div class="pro-title-row">
           <div><p class="pro-eyebrow">ИНТЕРАКТИВНАЯ СХЕМА</p><h2 id="pro-matrix-title">Все точки матрицы</h2></div>
@@ -50,6 +56,7 @@
         <p class="pro-muted">Нажмите на вопрос - ответ раскроется прямо под ним. При выборе следующего предыдущий закроется.</p>
         <div id="pro-question-buttons" class="pro-question-buttons"></div>
       </section>
+      <section id="pro-purpose" class="pro-paper" aria-label="Расчёт предназначения"></section>
       <section class="pro-paper" aria-labelledby="pro-karmic-title">
         <p class="pro-eyebrow">ПОВТОРЯЮЩИЕСЯ СВЯЗКИ</p>
         <h2 id="pro-karmic-title">Кармические программы</h2>
@@ -58,6 +65,6 @@
     </div>
     <footer class="pro-footer">Нумерология Онлайн · Профессиональный разбор по дате рождения</footer>
   </main>
-  <script type="module" src="pro/pro.js?v=23"></script>
+  <script type="module" src="pro/pro.js?v=24"></script>
 </body>
 </html>
