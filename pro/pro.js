@@ -6,7 +6,8 @@ import { createProDiagram } from "./pro-diagram.js?v=10";
 import { stopSoulSpeech } from "./pro-voice.js?v=2";
 import { createSoulStory } from "./pro-story.js?v=2";
 import { createFullReportPdfController } from "../full-report-pdf.js?v=2";
-import { buildProPdfChapters } from "./pro-pdf-content.js?v=1";
+import { buildProPdfChapters } from "./pro-pdf-content.js?v=2";
+import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
 
 const form = document.querySelector("#pro-form");
 const input = document.querySelector("#pro-birth-date");
@@ -469,43 +470,26 @@ async function selectQuestion(key, scroll = false) {
   }
 }
 
-function renderPurpose(matrix, knowledge) {
+async function renderPurpose(matrix) {
   if (!purpose) return;
+  const id = current?.id;
+  purpose.replaceChildren(paragraph("Подбираю персональные трактовки предназначения…", "pro-muted"));
+  const readings = await loadPurposeReadings();
+  if (!current || current.id !== id) return;
   purpose.replaceChildren();
   const headline = element("h2", "Ваше предназначение");
   purpose.append(headline);
   purpose.append(paragraph("Сначала личные задачи и место среди людей. Затем общий жизненный путь. Каждое число рассчитано по вашей матрице.", "pro-muted"));
   const descriptions = [
-    {
-      label: "Личное предназначение",
-      number: matrix.purpose.personal,
-      detail: "Что важно развивать в себе и как соединить внутренние потребности с реальными делами."
-    },
-    {
-      label: "Социальное предназначение",
-      number: matrix.purpose.social,
-      detail: "Как вы можете приносить пользу другим людям через собственные способности и опыт."
-    },
-    {
-      label: "Общее предназначение",
-      number: matrix.purpose.general,
-      detail: "Направление в котором ваши личные качества и участие в жизни людей соединяются."
-    },
-    {
-      label: "Планетарное предназначение",
-      number: matrix.purpose.planetary,
-      detail: "Как объединить свои знания и жизненный опыт в дело которое полезно не только ближайшему окружению."
-    }
+    {label: "Личное предназначение", number: matrix.purpose.personal, scope: "personal"},
+    {label: "Социальное предназначение", number: matrix.purpose.social, scope: "social"},
+    {label: "Общее предназначение", number: matrix.purpose.general, scope: "general"},
+    {label: "Планетарное предназначение", number: matrix.purpose.planetary, scope: "planetary"}
   ];
-  descriptions.forEach(({label, number, detail}) => {
+  descriptions.forEach(({label, number, scope}) => {
     const card = element("details", null, "pro-purpose-card");
     card.append(element("summary", label + " - энергия " + number));
-    card.append(paragraph(detail));
-    const energy = knowledge.energies[String(number)];
-    if (energy?.shortEssence) card.append(paragraph(energy.shortEssence));
-    if (energy?.mainStrength) card.append(paragraph(energy.mainStrength));
-    if (energy?.mainBlock) card.append(paragraph(energy.mainBlock));
-    if (energy?.advice) card.append(paragraph(energy.advice));
+    card.append(paragraph(getPurposeReading(readings, scope, number), "pro-purpose-reading"));
     purpose.append(card);
   });
   const skyAndEarth = element("p", null, "pro-muted");
@@ -690,7 +674,12 @@ form.addEventListener("submit", async(event)=>{
     renderDiagram(points);
     renderZones(zones);
     renderQuestions(definitions);
-    renderPurpose(matrix, knowledge);
+    renderPurpose(matrix).catch(err => {
+      console.error("Не удалось загрузить предназначение:", err);
+      if (current?.id === id) {
+        purpose.replaceChildren(paragraph("Не удалось загрузить предназначение. Обновите страницу и попробуйте ещё раз.", "pro-muted"));
+      }
+    });
     diagram.querySelectorAll(".pro-node").forEach(node => node.classList.remove("pro-karmic-highlight"));
     results.hidden=false;
     results.scrollIntoView({behavior:"smooth",block:"start"});

@@ -1,5 +1,6 @@
 import { findKarmicPrograms, findKarmicTail, getMatrixTriples } from "../karmic-programs.js?v=5";
 import { buildFullReportSections } from "../full-report-library.js?v=4";
+import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
 
 // The professional matrix adds printable chapters without changing the original
 // full-report PDF, its typography, cover, calculations, or narrative sources.
@@ -102,20 +103,16 @@ export async function buildProPdfChapters(report) {
 
   chapter("Ваше предназначение",
     "Четыре направления предназначения помогают разобраться в личных задачах, проявлении среди людей и более широком жизненном пути.");
-  const purpose = [
-    ["Личное предназначение",matrix.purpose.personal,"Что важно развивать в себе и как соединить внутренние потребности с реальными делами."],
-    ["Социальное предназначение",matrix.purpose.social,"Как вы можете приносить пользу другим людям через собственные способности и опыт."],
-    ["Общее предназначение",matrix.purpose.general,"Направление, в котором личные качества и участие в жизни людей соединяются."],
-    ["Планетарное предназначение",matrix.purpose.planetary,"Как объединить знания и жизненный опыт в дело, полезное не только ближайшему окружению."]
+  const purposeReadings = await loadPurposeReadings();
+  const purposes = [
+    ["Личное предназначение", matrix.purpose.personal, "personal"],
+    ["Социальное предназначение", matrix.purpose.social, "social"],
+    ["Общее предназначение", matrix.purpose.general, "general"],
+    ["Планетарное предназначение", matrix.purpose.planetary, "planetary"]
   ];
-  purpose.forEach(([title, number, description]) => {
-    const energy = energyOf(number);
+  purposes.forEach(([title, number, scope]) => {
     heading(title + " · энергия " + number);
-    add(description);
-    minor("Основной смысл", energy.shortEssence);
-    minor("Сила", energy.mainStrength);
-    minor("Что мешает", energy.mainBlock);
-    minor("Совет", energy.advice);
+    add(getPurposeReading(purposeReadings, scope, number));
   });
   heading("Три центра силы матрицы");
   add("Личный центр · энергия " + matrix.center + ". Ваша внутренняя опора и привычные реакции.");
