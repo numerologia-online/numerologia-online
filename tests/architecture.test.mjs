@@ -118,14 +118,32 @@ test("Все 13 тем видны вокруг матрицы, без перек
   for (const zone of zones) assert.ok(labels.some(label => label.id===zone.id),zone.id);
   for (const label of labels) {
     assert.ok(label.x-label.w/2>=0 && label.x+label.w/2<=620,label.id+" за пределами SVG");
-    assert.ok(label.y>=29 && label.y<=841,label.id+" по вертикали");
+    assert.ok(label.y>=29 && label.y<=777,label.id+" по вертикали");
   }
   for(let i=0;i<labels.length;i++) for(let j=i+1;j<labels.length;j++) {
     const a=labels[i],b=labels[j];
     assert.ok(Math.abs(a.x-b.x)>=(a.w+b.w)/2+2 || Math.abs(a.y-b.y)>=60,
       a.id+" перекрывает "+b.id);
   }
-  assert.ok(code.includes('viewBox:"0 0 620 870"'));
+  assert.ok(code.includes('viewBox:"0 0 620 806"'));
+  // Подписи не должны закрывать рассчитанные кружки даже на компактной схеме.
+  const calc = loadPlainFunctions(await source("numerology-core.js"), "calculateMatrix");
+  const getPoints = loadPlainFunctions(await source("pro/pro-points.js"), "nodesFor");
+  const points = getPoints(birth,calc(birth));
+  for(const label of labels) for(const point of points) {
+    const radius = point.kind==="center" ? 34 : point.kind==="major" ? 29
+      : ["loveHeart","moneyPoint","wellbeing"].includes(point.key) ? 18 : 17;
+    const px = Math.max(label.x-label.w/2,Math.min(point.x,label.x+label.w/2));
+    const hit = ["spirit","talents"].includes(label.id) ? 20
+      : ["lineage","relationships"].includes(label.id) ? 24 : 29;
+    const py = Math.max(label.y-hit,Math.min(point.y,label.y+hit));
+    assert.ok(Math.hypot(px-point.x,py-point.y)>=radius+1,
+      label.id+" перекрывает число "+point.key);
+  }
+  const at = Object.fromEntries(labels.map(label=>[label.id,label]));
+  assert.ok(at.maleLine.y < at.spirit.y, "Мужская линия должна быть выше внутреннего мира");
+  assert.ok(at.femaleLine.y < at.talents.y, "Женская линия должна быть выше сильных сторон");
+  for(const id of ["lessons","growth","career"]) assert.ok(at[id].y > at.purpose.y,id+" должен быть ниже матрицы");
   assert.ok(!html.includes('id="pro-label-tabs"'));
   assert.ok(css.includes('.pro-diagram .pro-node.out-of-zone{opacity:.88}'));
 });

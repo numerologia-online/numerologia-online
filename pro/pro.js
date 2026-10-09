@@ -2,7 +2,7 @@ import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js
 import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
 import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "../karmic-programs.js?v=3";
 import { nodesFor } from "./pro-points.js?v=1";
-import { createProDiagram } from "./pro-diagram.js?v=4";
+import { createProDiagram } from "./pro-diagram.js?v=5";
 import { stopSoulSpeech } from "./pro-voice.js?v=1";
 import { createSoulStory } from "./pro-story.js?v=1";
 

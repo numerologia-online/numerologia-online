@@ -150,23 +150,26 @@ function selectZone(id, scrollToDiagram = false) {
   }
 }
 
-// Все 13 тематических подписей видны сразу, без переключателей.
-// Сохраняем геометрию самой матрицы, свободные 5 подписей размещаем
-// ниже круга по тому же принципу, что и основные темы.
+// Все 13 тематических подписей видны одновременно, без переключателей.
+// Мужскую и женскую линии помещаем над верхними темами, а три других
+// дополнительные подписи - под матрицей. Числа и геометрия не изменены.
 const sectorLabelPositions = {
-  spirit:        {x:165,y:43,width:200},
-  talents:       {x:449,y:43,width:202},
+  // Верхний ряд: мужская и женская линии рода.
+  maleLine:      {x:151,y:29,width:220},
+  femaleLine:    {x:469,y:29,width:220},
+  // Чуть ниже: внутренний мир и сильные стороны.
+  spirit:        {x:165,y:90,width:200},
+  talents:       {x:449,y:90,width:202},
   lineage:       {x:108,y:245,width:190},
   relationships: {x:537,y:205,width:150},
   money:         {x:538,y:404,width:116},
   resource:      {x:128,y:553,width:192},
   family:        {x:487,y:555,width:160},
   purpose:       {x:310,y:628,width:216},
-  maleLine:      {x:166,y:702,width:228},
-  femaleLine:    {x:454,y:702,width:228},
-  lessons:       {x:166,y:766,width:232},
-  growth:        {x:454,y:766,width:208},
-  career:        {x:310,y:830,width:202}
+  // Три дополнительные темы остаются ниже матрицы, в двух свободных рядах.
+  lessons:       {x:166,y:700,width:232},
+  growth:        {x:454,y:700,width:208},
+  career:        {x:310,y:763,width:202}
 };
 
 function renderDiagramSectorLabels(svg, zones) {
@@ -193,9 +196,13 @@ function renderDiagramSectorLabels(svg, zones) {
     tag.append(name);
     // Прозрачная область для нажатия поверх всей подписи.
     // Без неё Safari может не передавать касания группе SVG.
+    // У двух внутренних верхних подписей компактнее область касания:
+    // иначе её невидимый край перекрывает ближайшие кружки числа.
+    const hitPadding = (zone.id === "spirit" || zone.id === "talents") ? 20
+      : (zone.id === "lineage" || zone.id === "relationships") ? 24 : 29;
     tag.append(svgElement("rect",{
       "class":"pro-sector-hitbox",
-      x:p.x-p.width/2,y:p.y-29,width:p.width,height:58,rx:24,
+      x:p.x-p.width/2,y:p.y-hitPadding,width:p.width,height:hitPadding*2,rx:20,
       fill:"transparent"
     }));
     const activate = () => selectZone(zone.id);
@@ -209,7 +216,7 @@ function renderDiagramSectorLabels(svg, zones) {
 }
 
 function renderDiagram(points) {
-  const svg = svgElement("svg",{viewBox:"0 0 620 870",role:"group","aria-label":"Интерактивная матрица с нажимаемыми названиями сфер и 31 точкой"});
+  const svg = svgElement("svg",{viewBox:"0 0 620 806",role:"group","aria-label":"Интерактивная матрица с нажимаемыми названиями сфер и 31 точкой"});
   const frame = svgElement("g",{fill:"none",stroke:"#b4aba0","stroke-width":"1.9"});
   [
     ["polygon",{points:"310,34 506,114 586,310 506,506 310,586 114,506 34,310 114,114"}],
