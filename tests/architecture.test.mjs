@@ -104,3 +104,28 @@ test("После выбора точки нет повторяющих блок�
   assert.ok(html.includes('id="pro-question-buttons"'));
   assert.ok(html.includes('id="pro-karma"'));
 });
+
+test("Все 13 тем видны вокруг матрицы, без переключателя и перекрытий", async () => {
+  const code = await source("pro/pro-diagram.js");
+  const html = await source("pro/index.html");
+  const css = await source("pro/pro.css");
+  const zones = JSON.parse(await source("pro/zones.json")).zones;
+  const section = code.match(/const sectorLabelPositions = \{([\s\S]*?)\n\};/);
+  assert.ok(section,"Список координат подписей существует");
+  const labels = [...section[1].matchAll(/(\w+):\s*\{x:(\d+),y:(\d+),width:(\d+)\}/g)]
+    .map(match => ({id:match[1],x:+match[2],y:+match[3],w:+match[4]}));
+  assert.equal(labels.length,13);
+  for (const zone of zones) assert.ok(labels.some(label => label.id===zone.id),zone.id);
+  for (const label of labels) {
+    assert.ok(label.x-label.w/2>=0 && label.x+label.w/2<=620,label.id+" за пределами SVG");
+    assert.ok(label.y>=29 && label.y<=841,label.id+" по вертикали");
+  }
+  for(let i=0;i<labels.length;i++) for(let j=i+1;j<labels.length;j++) {
+    const a=labels[i],b=labels[j];
+    assert.ok(Math.abs(a.x-b.x)>=(a.w+b.w)/2+2 || Math.abs(a.y-b.y)>=60,
+      a.id+" перекрывает "+b.id);
+  }
+  assert.ok(code.includes('viewBox:"0 0 620 870"'));
+  assert.ok(!html.includes('id="pro-label-tabs"'));
+  assert.ok(css.includes('.pro-diagram .pro-node.out-of-zone{opacity:.88}'));
+});
