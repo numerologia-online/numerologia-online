@@ -246,3 +246,8 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-zone-reading-repeat{color:#806a4d;font-size:14px!important}
 .pro-zone-reading button:focus-visible{outline:3px solid #769da5;outline-offset:3px}
 @media(max-width:520px){.pro-zone-reading{padding:18px 16px;margin:10px 0 23px}.pro-zone-reading-points{grid-template-columns:minmax(0,1fr)}.pro-zone-reading-header h3{font-size:27px}.pro-zone-reading h4{font-size:21px}}
+
+/* Компактный просмотр сферы: переход только по желанию читателя. */
+.pro-zone-preview{z-index:9}
+.pro-zone-preview-values{font-size:13px;font-weight:800;line-height:1.4;color:#3e6673}
+.pro-zone-preview.inline{position:relative;grid-column:1/-1;justify-self:stretch;width:100%;max-width:none;margin:0 0 5px;box-shadow:0 8px 22px rgba(37,55,71,.11)}

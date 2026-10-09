@@ -191,3 +191,16 @@ test("Все 308 разборов вопросов заполнены для в�
     }
   }
 });
+
+test("Подсветка темы не прокручивает к разбору без второго нажатия", async () => {
+  const diagram = await source("pro/pro-diagram.js");
+  const preview = await source("pro/pro-zone-preview.js");
+  const html = await source("pro/index.html");
+  assert.ok(diagram.includes('onSelectZone(null, false)'));
+  assert.ok(diagram.includes('showZonePreview(zone, sectorLabelPositions, source, button)'));
+  assert.ok(!diagram.includes('onSelectZone(zone, true)'));
+  assert.ok(preview.includes('onSelectZone(zone, true)'));
+  assert.ok(preview.includes('Ваши числа: '));
+  assert.ok(preview.includes('Открыть разбор ↓'));
+  assert.ok(html.includes('id="pro-zone-reading"'));
+});

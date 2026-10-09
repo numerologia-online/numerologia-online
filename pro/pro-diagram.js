@@ -1,3 +1,5 @@
+import { createZonePreview } from "./pro-zone-preview.js?v=1";
+
 // SVG, интерактивные точки и тематические подсветки профессиональной матрицы.
 export function createProDiagram({getCurrent, diagram, zoneButtons, questionButtons, element, svgElement, onSelectQuestion, onOpenPoint, onSelectZone}) {
 // Компактная карточка выбранного числа. Переход вниз только при нажатии на карточку.
@@ -6,12 +8,16 @@ pointPreview.type = "button";
 pointPreview.className = "pro-point-preview";
 pointPreview.hidden = true;
 pointPreview.setAttribute("aria-label", "Перейти к разбору выбранной точки");
+const {preview: zonePreview, show: showZonePreview, hide: hideZonePreview} = createZonePreview({
+  diagram, element, getCurrent, hidePointPreview, onSelectZone
+});
 function hidePointPreview() {
   pointPreview.hidden = true;
   delete pointPreview.dataset.key;
 }
 function showPointPreview(key) {
   if (!getCurrent()) return;
+  hideZonePreview();
   const point = getCurrent().points.find(item => item.key === key);
   if (!point) return;
   const energy = getCurrent().knowledge.energies[String(point.value)];
@@ -49,9 +55,9 @@ pointPreview.addEventListener("click", () => {
   onOpenPoint(key);
 });
 document.addEventListener("keydown", event => {
-  if (event.key === "Escape") hidePointPreview();
+  if (event.key === "Escape") { hidePointPreview(); hideZonePreview(); }
 });
-window.addEventListener("resize", hidePointPreview);
+window.addEventListener("resize", () => { hidePointPreview(); hideZonePreview(); });
 
 function renderZones(zones) {
   const fragment = document.createDocumentFragment();
@@ -66,7 +72,7 @@ function renderZones(zones) {
     labels.append(element("strong", zone.title));
     labels.append(element("small", zone.subtitle));
     button.append(labels);
-    button.addEventListener("click", () => selectZone(zone.id, true));
+    button.addEventListener("click", () => selectZone(zone.id, "picker", button));
     fragment.append(button);
   });
   zoneButtons.replaceChildren(fragment);
@@ -120,26 +126,29 @@ function paintZone(zone) {
 
 function clearZone() {
   hidePointPreview();
+  hideZonePreview();
   if (!getCurrent() || !getCurrent().activeZone) return;
   getCurrent().activeZone = null;
   paintZone(null);
   onSelectZone(null, false);
 }
 
-function selectZone(id, scrollToDiagram = false) {
+function selectZone(id, source = "diagram", button = null) {
   if (!getCurrent()) return;
   hidePointPreview();
-  const zone=getCurrent().zones.find((item)=>item.id===id);
+  hideZonePreview();
+  const zone = getCurrent().zones.find(item => item.id === id);
   if (!zone) return;
   if (getCurrent().activeZone?.id === id) {
     clearZone();
     return;
   }
-  getCurrent().activeZone=zone;
+  getCurrent().activeZone = zone;
   paintZone(zone);
   diagram.querySelectorAll(".pro-node").forEach(node => node.classList.remove("active"));
-  // Both SVG theme labels and buttons below the diagram open the same reading.
-  onSelectZone(zone, true);
+  // Первое нажатие - только подсветка и маленькая карточка без перехода вниз.
+  onSelectZone(null, false);
+  showZonePreview(zone, sectorLabelPositions, source, button);
 }
 
 // Все 13 тематических подписей видны одновременно, без переключателей.
@@ -244,14 +253,16 @@ function renderDiagram(points) {
   });
   renderDiagramSectorLabels(svg, getCurrent()?.zones || []);
   svg.addEventListener("click", event => {
-    if (!event.target.closest(".pro-node, .pro-sector-tag")) hidePointPreview();
+    if (!event.target.closest(".pro-node, .pro-sector-tag")) { hidePointPreview(); hideZonePreview(); }
   });
   hidePointPreview();
-  diagram.replaceChildren(svg, pointPreview);
+  hideZonePreview();
+  diagram.replaceChildren(svg, pointPreview, zonePreview);
 }
 
 function markPointActive(key) {
   if (!getCurrent()) return;
+  hideZonePreview();
   if (getCurrent().activeZone && !getCurrent().activeZone.points.includes(key)) clearZone();
   diagram.querySelectorAll(".pro-node").forEach(node =>
     node.classList.toggle("active", node.dataset.nodeKey === key)
