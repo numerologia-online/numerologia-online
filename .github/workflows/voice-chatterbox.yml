@@ -1,0 +1,41 @@
+name: Chatterbox V3 Russian narration audition
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/generate_chatterbox_preview.py"
+      - ".github/workflows/voice-chatterbox.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  audition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Get synthetic Russian female sample
+        uses: actions/download-artifact@v4
+        with:
+          name: accented-albina-demo
+          run-id: 37892743578
+          github-token: ${{ github.token }}
+          path: reference
+      - name: Install Gradio client
+        run: python -m pip install --disable-pip-version-check "gradio_client>=1.9" imageio-ffmpeg
+      - name: Generate warm Russian storytelling
+        run: python -u scripts/generate_chatterbox_preview.py
+      - name: Save audition only, not website audio
+        uses: actions/upload-artifact@v4
+        with:
+          name: chatterbox-v3-russian-demo
+          path: voice-preview/chatterbox-v3-russian-narration.mp3
+          if-no-files-found: error
+          retention-days: 14
