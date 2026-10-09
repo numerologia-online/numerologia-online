@@ -22,7 +22,40 @@ const loadLibrary = async (path) => {
   return parseProgramLibrary(await response.text());
 };
 
-export const loadKarmicPrograms = () => loadLibrary("./karmic-programs.md");
+// Keep the 34 original authored interpretations in their existing file.
+ // Add 38 independently written, short programs from a single JSON bank.
+ // Each three-number combination is matched without regard to its order.
+export const loadKarmicPrograms = async () => {
+  const [original, response] = await Promise.all([
+    loadLibrary("./karmic-programs.md"),
+    fetch(new URL("./pro/karmic-program-additions.json?v=1", import.meta.url), { cache: "no-store" })
+  ]);
+  if (!response.ok) throw new Error("Не удалось загрузить новые кармические программы");
+  const bank = await response.json();
+  if (bank.schema !== "karmic-program-additions-v1" ||
+      !Array.isArray(bank.entries) || bank.entries.length !== 38) {
+    throw new Error("Неполный каталог новых кармических программ");
+  }
+  const keys = new Set(original.map(item => item.key));
+  const additions = bank.entries.map(item => {
+    const numbers = String(item.code || "").split("-").map(Number);
+    if (numbers.length !== 3 || numbers.some(n => !Number.isInteger(n) || n < 1 || n > 22)
+      || typeof item.title !== "string" || !item.title.trim()
+      || typeof item.text !== "string" || !item.text.trim()) {
+      throw new Error("Неверный формат новой кармической программы");
+    }
+    const key = keyFor(numbers);
+    if (keys.has(key)) throw new Error("Повторение кармической программы: " + key);
+    keys.add(key);
+    return {
+      key,
+      code: item.code,
+      title: item.title,
+      parts: [{ title: "Как программа проявляется в жизни", text: item.text }]
+    };
+  });
+  return [...original, ...additions];
+};
 
 export const loadKarmicTails = () => loadLibrary("./karmic-tails.md");
 
