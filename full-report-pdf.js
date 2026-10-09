@@ -276,7 +276,6 @@ const buildFullReportPdf = async () => {
       style: "points", fontSize: 16, lineHeight: 1.15
     }
   ];
-  content.push({ text: "", pageBreak: "after" });
 
   records.forEach(({ definition, source }) => {
     const paragraphs = (source?.paragraphs || []).filter(Boolean);

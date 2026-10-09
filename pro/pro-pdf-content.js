@@ -30,7 +30,7 @@ export async function buildProPdfChapters(report) {
   const chapter = (title, lead) => {
     add("НУМЕРОЛОГИЯ ОНЛАЙН · ПЕРСОНАЛЬНЫЙ РАЗБОР", {
       fontSize: 11, color: "#9d7e49", bold: true, characterSpacing: 1.3,
-      pageBreak: "before", margin: [0, 10, 0, 12]
+      margin: [0, 10, 0, 12]
     });
     add(title, {
       fontSize: 34, bold: true, color: "#19364e", lineHeight: 1.15,
