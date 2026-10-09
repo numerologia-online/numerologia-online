@@ -1,11 +1,11 @@
 // SVG, интерактивные точки и тематические подсветки профессиональной матрицы.
-export function createProDiagram({getCurrent, diagram, zoneButtons, zoneGuide, positionButtons, positionDetail, questionButtons, element, paragraph, appendParagraph, svgElement, onSelectQuestion}) {
+export function createProDiagram({getCurrent, diagram, zoneButtons, questionButtons, element, svgElement, onSelectQuestion}) {
 // Компактная карточка выбранного числа. Переход вниз только при нажатии на карточку.
 const pointPreview = document.createElement("button");
 pointPreview.type = "button";
 pointPreview.className = "pro-point-preview";
 pointPreview.hidden = true;
-pointPreview.setAttribute("aria-label", "Читать описание выбранной точки");
+pointPreview.setAttribute("aria-label", "Перейти к разбору выбранной точки");
 function hidePointPreview() {
   pointPreview.hidden = true;
   delete pointPreview.dataset.key;
@@ -45,7 +45,16 @@ pointPreview.addEventListener("click", () => {
   const key = pointPreview.dataset.key;
   if (!key) return;
   hidePointPreview();
-  selectPoint(key, true);
+  const point = getCurrent()?.points.find(item => item.key === key);
+  if (point?.topic && getCurrent()?.definitions.some(item => item.key === point.topic)) {
+    onSelectQuestion(point.topic, true);
+  } else {
+    // Не выдаём трактовку другой позиции за ответ по выбранному числу.
+    questionButtons.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start"
+    });
+  }
 });
 document.addEventListener("keydown", event => {
   if (event.key === "Escape") hidePointPreview();
@@ -101,13 +110,8 @@ function paintZone(zone) {
     node.classList.toggle("in-zone", selected.has(node.dataset.nodeKey));
     node.classList.toggle("out-of-zone",Boolean(zone) && !selected.has(node.dataset.nodeKey));
   });
-  // Подсветить и соответствующие кнопки в списках точек и вопросов.
-  // Зона остаётся цветовой подсказкой, а не меняет расчёты.
-  positionButtons.style.setProperty("--zone-color", zone?.color || "#698c91");
+  // Подсветка соответствующих развёрнутых вопросов без повторяющих инструкций.
   questionButtons.style.setProperty("--zone-color", zone?.color || "#698c91");
-  positionButtons.querySelectorAll("button[data-key]").forEach((button) => {
-    button.classList.toggle("in-zone", selected.has(button.dataset.key));
-  });
   const zoneQuestions = new Set(zone?.questions || []);
   questionButtons.querySelectorAll("button[data-question]").forEach((button) => {
     button.classList.toggle("in-zone", zoneQuestions.has(button.dataset.question));
@@ -126,51 +130,7 @@ function clearZone() {
   hidePointPreview();
   if (!getCurrent() || !getCurrent().activeZone) return;
   getCurrent().activeZone = null;
-  zoneGuide.hidden = true;
-  zoneGuide.replaceChildren();
   paintZone(null);
-}
-
-function renderZoneGuide(zone) {
-  if (!getCurrent()) return;
-  zoneGuide.hidden = false;
-  zoneGuide.replaceChildren();
-  zoneGuide.style.setProperty("--zone-color",zone.color);
-  zoneGuide.append(paragraph("ИЗУЧАЕМ ЗОНУ","pro-eyebrow"));
-  zoneGuide.append(element("h3",zone.title));
-  zoneGuide.append(paragraph(zone.description));
-  zoneGuide.append(paragraph(zone.guide,"pro-zone-lesson"));
-  if (zone.id === "purpose") {
-    const d = getCurrent().matrix.purpose;
-    zoneGuide.append(paragraph(
-      "Предназначение: Небо " + d.sky + ", Земля " + d.earth + ", личное " + d.personal +
-      "; мужская линия " + getCurrent().matrix.lineage.male + ", женская " + getCurrent().matrix.lineage.female +
-      ", социальное " + d.social + ", общее " + d.general + ".","pro-zone-lesson"));
-  }
-  const pointHeader=element("h4","Изучите выделенные точки");
-  zoneGuide.append(pointHeader);
-  const pointLinks=element("div",null,"pro-zone-point-links");
-  zone.points.forEach((key) => {
-    const point=getCurrent().points.find((item)=>item.key===key);
-    if (!point) return;
-    const button=element("button",point.label+" · "+point.value);
-    button.type="button";
-    button.addEventListener("click",()=>selectPoint(key,true));
-    pointLinks.append(button);
-  });
-  zoneGuide.append(pointLinks);
-  const availableQuestions=zone.questions.map(key=>getCurrent().definitions.find(def=>def.key===key)).filter(Boolean);
-  if (availableQuestions.length) {
-    zoneGuide.append(element("h4","Развёрнутые ответы по теме"));
-    const questions=element("div",null,"pro-zone-question-links");
-    availableQuestions.forEach((definition)=>{
-      const button=element("button",definition.title+" →");
-      button.type="button";
-      button.addEventListener("click",()=>onSelectQuestion(definition.key,true));
-      questions.append(button);
-    });
-    zoneGuide.append(questions);
-  }
 }
 
 function selectZone(id, scrollToDiagram = false) {
@@ -184,9 +144,7 @@ function selectZone(id, scrollToDiagram = false) {
   }
   getCurrent().activeZone=zone;
   paintZone(zone);
-  renderZoneGuide(zone);
-  const first=zone.points.find(key=>getCurrent().points.some(point=>point.key===key));
-  if(first)selectPoint(first,false);
+  diagram.querySelectorAll(".pro-node").forEach(node => node.classList.remove("active"));
   if (scrollToDiagram) {
     diagram.scrollIntoView({behavior:"smooth",block:"start"});
   }
@@ -275,7 +233,7 @@ function renderDiagram(points) {
     const text = svgElement("text",{x:point.x,y:point.y + 1});
     text.textContent = String(point.value);
     g.append(text);
-    const activate = () => { selectPoint(point.key,false); showPointPreview(point.key); };
+    const activate = () => { markPointActive(point.key); showPointPreview(point.key); };
     g.addEventListener("click",activate);
     g.addEventListener("keydown",(event) => {if(event.key==="Enter"||event.key===" "){event.preventDefault();activate();}});
     svg.append(g);
@@ -288,70 +246,14 @@ function renderDiagram(points) {
   diagram.replaceChildren(svg, pointPreview);
 }
 
-function selectPoint(key, scroll) {
-  if(!getCurrent())return;
-  const point = getCurrent().points.find(item => item.key === key);
-  if(!point)return;
-  if(getCurrent().activeZone && !getCurrent().activeZone.points.includes(key))clearZone();
-  diagram.querySelectorAll(".pro-node").forEach(node => node.classList.toggle("active",node.dataset.nodeKey===key));
-  positionButtons.querySelectorAll("button").forEach(button=>button.setAttribute("aria-pressed",String(button.dataset.key===key)));
-  const energy = getCurrent().knowledge.energies[String(point.value)];
-  positionDetail.replaceChildren();
-  positionDetail.append(element("p","ПОЗИЦИЯ И ЕЁ РАСЧЁТ","pro-eyebrow"));
-  positionDetail.append(element("h3",point.label + " · " + point.value));
-  positionDetail.append(paragraph("Формула: " + point.formula,"pro-equation"));
-  if(energy){
-    positionDetail.append(element("h4",energy.name || "Энергия " + point.value));
-    appendParagraph(positionDetail,energy.shortEssence);
-    appendParagraph(positionDetail,"Сильная сторона: " + (energy.plus || energy.mainStrength || "Нет описания."));
-    appendParagraph(positionDetail,"Сложность: " + (energy.minus || energy.mainBlock || "Нет описания."));
-    appendParagraph(positionDetail,"Практический ориентир: " + (energy.advice || "Сопоставьте эту точку с остальной картой."));
-  }
-  appendParagraph(positionDetail,point.hint,"pro-muted");
-  const relatedZones = getCurrent().zones.filter(zone => zone.points.includes(point.key));
-  if (relatedZones.length) {
-    const links = element("div", null, "pro-point-related");
-    links.append(element("span", "С этой точкой связаны:", "pro-point-related-label"));
-    relatedZones.forEach(zone => {
-      const button = element("button", zone.title);
-      button.type = "button";
-      button.addEventListener("click", () => selectZone(zone.id, true));
-      links.append(button);
-    });
-    positionDetail.append(links);
-  }
-  if(point.topic){
-    const definition=getCurrent().definitions.find(item=>item.key===point.topic);
-    if(definition){
-      const button=element("button","Подробно: " + definition.title + " →","pro-detail-link");
-      button.type="button";
-      button.addEventListener("click",()=>onSelectQuestion(definition.key,true));
-      positionDetail.append(button);
-    }
-  }
-  if(scroll) {
-    window.requestAnimationFrame(() => {
-      positionDetail.scrollIntoView({
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-        block: "start"
-      });
-    });
-  }
-}
-
-function renderPointList(points) {
-  const frag=document.createDocumentFragment();
-  points.forEach((point)=>{
-    const button=element("button",point.label+" · "+point.value);
-    button.type="button";
-    button.dataset.key=point.key;
-    button.setAttribute("aria-pressed","false");
-    button.addEventListener("click",()=>selectPoint(point.key,false));
-    frag.append(button);
-  });
-  positionButtons.replaceChildren(frag);
+function markPointActive(key) {
+  if (!getCurrent()) return;
+  if (getCurrent().activeZone && !getCurrent().activeZone.points.includes(key)) clearZone();
+  diagram.querySelectorAll(".pro-node").forEach(node =>
+    node.classList.toggle("active", node.dataset.nodeKey === key)
+  );
 }
 
 
-  return {hidePointPreview, renderZones, selectZone, renderDiagram, selectPoint, renderPointList};
+  return {hidePointPreview, renderZones, renderDiagram};
 }

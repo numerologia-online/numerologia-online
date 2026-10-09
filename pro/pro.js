@@ -2,7 +2,7 @@ import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js
 import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
 import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "../karmic-programs.js?v=3";
 import { nodesFor } from "./pro-points.js?v=1";
-import { createProDiagram } from "./pro-diagram.js?v=2";
+import { createProDiagram } from "./pro-diagram.js?v=3";
 import { stopSoulSpeech } from "./pro-voice.js?v=1";
 import { createSoulStory } from "./pro-story.js?v=1";
 
@@ -12,9 +12,6 @@ const error = document.querySelector("#pro-error");
 const results = document.querySelector("#pro-results");
 const diagram = document.querySelector("#pro-diagram");
 const zoneButtons = document.querySelector("#pro-zone-buttons");
-const zoneGuide = document.querySelector("#pro-zone-guide");
-const positionButtons = document.querySelector("#pro-position-buttons");
-const positionDetail = document.querySelector("#pro-position-detail");
 const questionButtons = document.querySelector("#pro-question-buttons");
 const answer = document.querySelector("#pro-answer");
 const karmic = document.querySelector("#pro-karma");
@@ -93,10 +90,10 @@ function svgElement(tag, attributes) {
   return node;
 }
 
-const {hidePointPreview, renderZones, selectZone, renderDiagram, selectPoint, renderPointList} = createProDiagram({
+const {hidePointPreview, renderZones, renderDiagram} = createProDiagram({
   getCurrent: () => current,
-  diagram, zoneButtons, zoneGuide, positionButtons, positionDetail, questionButtons,
-  element, paragraph, appendParagraph, svgElement,
+  diagram, zoneButtons, questionButtons,
+  element, svgElement,
   onSelectQuestion: (key, scroll) => selectQuestion(key, scroll)
 });
 const appendSoulStoryCard = createSoulStory({element, paragraph, karmic, getCurrent: () => current});
@@ -217,14 +214,9 @@ form.addEventListener("submit", async(event)=>{
     current={id,birth,matrix,knowledge,points,definitions,zones,previews,activeZone:null,selected:null};
     renderDiagram(points);
     renderZones(zones);
-    zoneGuide.hidden=true;
-    zoneGuide.replaceChildren();
-    document.querySelector(".pro-all-points").open=false;
-    renderPointList(points);
     renderQuestions(definitions);
     answer.replaceChildren(paragraph("Выберите вопрос из списка. Подробный ответ откроется здесь.","pro-empty"));
     results.hidden=false;
-    selectPoint("center",false);
     results.scrollIntoView({behavior:"smooth",block:"start"});
     karmic.replaceChildren(paragraph("Подбираю кармические программы…","pro-muted"));
     Promise.all([loadKarmicPrograms(),loadKarmicTails()])

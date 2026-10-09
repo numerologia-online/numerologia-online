@@ -87,3 +87,20 @@ test("Все локальные импорты указывают на суще�
     }
   }
 });
+
+test("После выбора точки нет повторяющих блоков", async () => {
+  const html = await source("pro/index.html");
+  const pro = await source("pro/pro.js");
+  const diagram = await source("pro/pro-diagram.js");
+  assert.ok(!html.includes('id="pro-zone-guide"'));
+  assert.ok(!html.includes('id="pro-position-detail"'));
+  assert.ok(!html.includes('class="pro-all-points"'));
+  assert.ok(!pro.includes('renderPointList('));
+  assert.ok(diagram.includes('pointPreview.addEventListener("click"'));
+  assert.ok(diagram.includes('onSelectQuestion(point.topic, true)'));
+  assert.ok(diagram.includes('questionButtons.scrollIntoView('));
+  assert.ok(diagram.includes('renderZones(zones)'));
+  assert.ok(diagram.includes('paintZone(zone)'));
+  assert.ok(html.includes('id="pro-question-buttons"'));
+  assert.ok(html.includes('id="pro-karma"'));
+});

@@ -38,13 +38,12 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-diagram .pro-node text{font:700 19px/1 system-ui,sans-serif;fill:#24394e;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
 .pro-diagram .pro-node.major text,.pro-diagram .pro-node.center text{font-size:23px}
 .pro-diagram .pro-node:focus-visible circle{stroke:#244c9e;stroke-width:5}
-.pro-position-buttons,.pro-question-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
-.pro-position-buttons button{font-size:12px;font-weight:650;border:1px solid #dfdbd3;border-radius:50px;padding:9px 12px;background:#fff;color:var(--ink)}
-.pro-position-buttons button[aria-pressed="true"],.pro-question-buttons button[aria-pressed="true"]{border-color:#65878e;background:#e5f1f0;color:#23545e}
-.pro-detail,.pro-answer{margin-top:22px;border-radius:19px;border:1px solid #e8e2d6;background:#fdfbf6;padding:clamp(17px,3.8vw,25px)}
-.pro-detail h3,.pro-answer h3{margin-top:0}
-.pro-detail p,.pro-answer p{margin:0 0 13px;line-height:1.65}
-.pro-detail p:last-child,.pro-answer p:last-child{margin-bottom:0}
+.pro-question-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.pro-question-buttons button[aria-pressed="true"]{border-color:#65878e;background:#e5f1f0;color:#23545e}
+.pro-answer{margin-top:22px;border-radius:19px;border:1px solid #e8e2d6;background:#fdfbf6;padding:clamp(17px,3.8vw,25px)}
+.pro-answer h3{margin-top:0}
+.pro-answer p{margin:0 0 13px;line-height:1.65}
+.pro-answer p:last-child{margin-bottom:0}
 .pro-equation{border-left:3px solid #b79a65;padding:10px 14px;background:#f3f0e8;color:#44515b;font-size:14px}
 .pro-chips{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 16px}
 .pro-chips span{border:1px solid #e0d4bb;border-radius:40px;padding:5px 10px;font-size:12px;color:#7a6846}
@@ -62,8 +61,6 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 @media(max-width:520px){.pro-shell{padding:13px 13px 25px}.pro-hero{padding:35px 5px 23px}.pro-form-row{flex-direction:column}.pro-form button{width:100%}.pro-small-note{display:none}.pro-paper,.pro-form{border-radius:22px;padding:18px}.pro-question-buttons button{flex:1 1 100%}.pro-diagram{margin-left:-6px;width:calc(100% + 12px)}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
 
-.pro-detail h4{font-size:17px;color:#776449;margin:15px 0 6px}
-.pro-detail-link{border:1px solid #b4d2d0;background:#e6f1f0;color:#205c62;border-radius:11px;padding:11px 13px;font-weight:750;margin:10px 0 0;width:100%;text-align:left}
 .pro-paragraph-title{font:22px/1.22 Georgia,serif!important;color:#8a6c40;margin:20px 0 9px!important}
 .pro-answer{scroll-margin-top:20px}
 
@@ -79,29 +76,13 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-zone-labels strong{font-size:14px;font-weight:800;line-height:1.23}
 .pro-zone-labels small{font-size:11px;color:#7a8286;line-height:1.35}
 .pro-zone-button[aria-pressed="true"]{border-color:var(--zone-color);background:color-mix(in srgb,var(--zone-color) 12%,white);box-shadow:0 0 0 2px color-mix(in srgb,var(--zone-color) 15%,transparent)}
-.pro-zone-button:focus-visible,.pro-zone-point-links button:focus-visible,.pro-zone-question-links button:focus-visible{outline:3px solid #4a8695;outline-offset:2px}
+.pro-zone-button:focus-visible{outline:3px solid #4a8695;outline-offset:2px}
 .pro-diagram .pro-zone-highlights{pointer-events:none}
 .pro-diagram .pro-zone-highlights line{stroke:var(--zone-color);stroke-width:13;stroke-opacity:.14;stroke-linecap:round}
 .pro-diagram .pro-zone-highlights circle{fill:var(--zone-color);fill-opacity:.09;stroke:var(--zone-color);stroke-width:4;stroke-opacity:.47}
 .pro-diagram .pro-node.in-zone circle{stroke:var(--zone-color);stroke-width:4;fill:#fffefa}
 .pro-diagram .pro-node.out-of-zone{opacity:.42}
 .pro-diagram .pro-node.active.in-zone circle{fill:color-mix(in srgb,var(--zone-color) 22%,white);stroke:var(--zone-color);stroke-width:5}
-.pro-zone-guide{margin:12px 0 24px;padding:clamp(16px,3vw,22px);border-radius:21px;border:1px solid color-mix(in srgb,var(--zone-color) 55%,#e5dcd0);border-left:5px solid var(--zone-color);background:color-mix(in srgb,var(--zone-color) 7%,#fffefa)}
-.pro-zone-guide h3{font-size:30px;margin:0 0 14px}
-.pro-zone-guide h4{font-size:14px;color:#675c4a;margin:18px 0 8px}
-.pro-zone-guide p{font-size:14px;line-height:1.68;margin:0 0 12px;color:#495960}
-.pro-zone-guide .pro-eyebrow{font-size:10px;color:#987d54}
-.pro-zone-guide .pro-zone-lesson{padding:12px 14px;background:#fffefa;border:1px solid #e7dfd2;border-radius:13px;color:#385365}
-.pro-zone-point-links,.pro-zone-question-links{display:flex;flex-wrap:wrap;gap:8px}
-.pro-zone-point-links button{padding:9px 12px;border:1px solid #d9cfbf;border-radius:50px;background:#fffefa;color:#2a4456;font-size:12px;font-weight:700;text-align:left}
-.pro-zone-question-links button{flex:1 1 180px;border:1px solid #bccfd0;background:#edf3f1;padding:12px;border-radius:13px;font-size:13px;color:#235361;font-weight:750;text-align:left}
-.pro-all-points{border-top:1px solid #eae4d9;margin-top:18px;padding-top:6px}
-.pro-all-points summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 4px;cursor:pointer;list-style:none;color:#445a67;font-weight:800;font-size:14px}
-.pro-all-points summary::-webkit-details-marker{display:none}
-.pro-all-points summary span{font-size:12px;font-weight:500;color:#9b815f}
-.pro-all-points[open] summary span{font-size:0}
-.pro-all-points[open] summary span::after{content:"Скрыть список";font-size:12px}
-.pro-all-points .pro-position-buttons{margin:4px 0 16px}
 @media(max-width:410px){.pro-zone-buttons{gap:8px}.pro-zone-button{padding:10px;gap:9px;min-height:73px}.pro-zone-labels strong{font-size:13px}.pro-zone-labels small{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.pro-zone-button{transition:none}}
 
@@ -133,15 +114,12 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   cursor:pointer;
   touch-action:manipulation;
 }
-/* При выборе зоны обозначить не только кружочки на схеме, но и кнопки,
-   которые раскрывают соответствующие точки и вопросы. */
-.pro-position-buttons button.in-zone,
+/* Подсвечиваем связанные вопросы из раздела развёрнутых разборов. */
 .pro-question-buttons button.in-zone {
   border-color:var(--zone-color);
   background:color-mix(in srgb,var(--zone-color) 17%,white);
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--zone-color) 25%,transparent);
 }
-.pro-position-buttons button.in-zone[aria-pressed="true"],
 .pro-question-buttons button.in-zone[aria-pressed="true"] {
   background:color-mix(in srgb,var(--zone-color) 30%,white);
 }
@@ -192,15 +170,9 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-point-preview[hidden]{display:none!important}
 .pro-point-preview-eyebrow{font-size:10px;font-weight:850;letter-spacing:.13em;color:#aa8a60}
 .pro-point-preview-title{font:500 22px/1.13 Georgia,serif;color:#304a63}
-.pro-point-preview-topic{font-size:12px;line-height:1.36;font-weight:700;color:#5b7280}
 .pro-point-preview-excerpt{font-size:12px;line-height:1.4;color:#637382}
 .pro-point-preview-arrow{position:absolute;right:13px;top:12px;font-size:19px;color:#af9370}
 .pro-point-preview:focus-visible{outline:3px solid #6f9aa5;outline-offset:3px}
-.pro-detail{scroll-margin-top:20px}
-.pro-point-related{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:18px;padding-top:14px;border-top:1px solid #e4ddd2}
-.pro-point-related-label{font-size:12px;color:#687b81;flex:1 1 100%}
-.pro-point-related button{border:1px solid #d4d0c5;background:#fffefa;color:#3e5b6d;border-radius:99px;padding:7px 11px;font-size:12px;font-weight:650}
-.pro-point-related button:focus-visible{outline:3px solid #7c9da4}
 @media(max-width:410px){.pro-point-preview{width:min(202px,calc(100% - 16px));padding:12px 14px}.pro-point-preview-title{font-size:20px}}
 
 /* Короткая карточка числа остаётся без кнопок переключения вокруг схемы. */
