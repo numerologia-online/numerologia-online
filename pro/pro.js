@@ -1,6 +1,6 @@
 import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=4";
 import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
-import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicTails } from "../karmic-programs.js?v=5";
+import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "../karmic-programs.js?v=5";
 import { nodesFor } from "./pro-points.js?v=2";
 import { createProDiagram } from "./pro-diagram.js?v=11";
 import { stopSoulSpeech } from "./pro-voice.js?v=2";
@@ -662,7 +662,6 @@ function compactKarmicList() {
   list.querySelectorAll(":scope > details > summary").forEach(summary => {
     const originalTitle = summary.textContent;
     summary.title = originalTitle;
-    if (originalTitle.startsWith("Все 10 сочетаний чисел матрицы")) summary.textContent = "10 сочетаний матрицы";
     if (originalTitle.startsWith("Повторение темы кармического хвоста в других сферах")) summary.textContent = "Повторения кармического хвоста";
     if (originalTitle.startsWith("Программа. ")) summary.textContent = originalTitle.replace(/^Программа\. /, "Программа · ").replace(/\. (\d+-\d+-\d+)$/, " · $1");
     if (originalTitle.startsWith("Кармическая программа. ")) summary.textContent = originalTitle.replace(/^Кармическая программа\. /, "Кармическая программа · ").replace(/\. (\d+-\d+-\d+)$/, " · $1");
@@ -744,30 +743,6 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
     karmic.append(paragraph("Другие именованные программы в выбранном каталоге не совпали. Это не означает отсутствие жизненных задач.", "pro-muted"));
   }
 
-  const combinations = getMatrixTriples(matrix);
-  const recognized = new Set([tail?.key, ...programs.map(program => program.key)]);
-  const overview = element("details", null, "pro-karma-card");
-  overview.append(element("summary", "Все 10 сочетаний чисел матрицы"));
-  overview.append(paragraph("Здесь показаны все рассчитанные тройки независимо от наличия отдельного названия. Не каждую тройку нужно считать тяжёлой кармической задачей.", "pro-muted"));
-  combinations.forEach(item => {
-    const code = item.values.join("-");
-    const sortedCode = [...item.values].sort((a,b) => a - b).join("-");
-    const present = recognized.has(sortedCode);
-    const inner = element("div", null, "pro-karmic-combination");
-    inner.append(element("strong", item.label + " - " + code));
-    inner.append(paragraph(present ? "Эта комбинация есть в подробном разборе выше." : "Это расчётная тройка без отдельного имени в выбранном каталоге."));
-    if (!present && current?.knowledge?.energies) {
-      const labels = item.values.map(number => current.knowledge.energies[String(number)]?.name).filter(Boolean);
-      if (labels.length) inner.append(paragraph("Энергии сочетания. " + labels.join(". ") + "."));
-      inner.append(paragraph("Читайте эти энергии вместе с темой линии. Одна и та же тройка в деньгах и в семье раскрывается через разные решения."));
-    }
-    const show = element("button", "Выделить числа на матрице", "pro-karmic-jump");
-    show.type = "button";
-    show.addEventListener("click", () => markKarmicNodes([item]));
-    inner.append(show);
-    overview.append(inner);
-  });
-  karmic.append(overview);
 
   const repeats = programs.filter(program => program.key === tail?.key);
   if (repeats.length) {
