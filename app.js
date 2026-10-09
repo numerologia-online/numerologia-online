@@ -35,7 +35,7 @@ const openYearFeature = async () => {
 };
 
 const getMatrixFeature = () => {
-  if (!matrixFeatureLoading) matrixFeatureLoading = import("./matrix-feature.js?v=33");
+  if (!matrixFeatureLoading) matrixFeatureLoading = import("./matrix-feature.js?v=34");
   return matrixFeatureLoading;
 };
 

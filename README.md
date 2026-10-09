@@ -5,7 +5,7 @@
 ## Публикация
 
 - Основная ветка: `main`. Vercel автоматически выпускает новую production-версию после изменения `main`.
-- Изменения подготавливать в отдельной ветке, проверять и только потом объединять с `main`.
+- По согласованию с владельцем работаем в `main`: проверить перед публикацией, затем один атомарный коммит. Новые ветки без запроса не создавать.
 - Не изменять формулы расчётов без согласования с владельцем методики.
 - Не копировать изменения в `gh-pages`: прежняя публикация GitHub Pages отключена.
 
@@ -16,7 +16,10 @@
 - `data/day/general/general-day-01.json` … `general-day-22.json` — 22 банка по 31 тексту.
 - `data/day/practical/practical-day-01.json` … `practical-day-22.json` — блоки «Сегодня нужно / нельзя».
 - `year-feature.js`, `year-content.js`, `data/year/` — разбор года и его текстовые банки. Для нечётных лет есть `data/year/odd/`.
-- `knowledge/full-report/` и `matrix-feature.js` — полный расчёт.
+- `knowledge/full-report/` — тексты полного разбора. `numerology-core.js` — общие формулы. `matrix-feature.js` — интерактивная матрица, `full-report-pdf.js` — создание и загрузка PDF.
+- `pro/pro.js` — вход и управление профессиональным разделом; `pro/pro-points.js` — 31 позиция; `pro/pro-diagram.js` — SVG, выделение зон и мини-карточки; `pro/pro-voice.js` — речь и музыка; `pro/pro-story.js` — кармическая история.
+- `pro/zones.json`, `pro/point-previews.json`, `pro/soul-stories.json` — тексты отдельно от программного кода.
+- Проверки архитектуры: `node --test tests/architecture.test.mjs` (Node.js 20+).
 - `redflag-*.js` и `data/redflag/` — «Мужчина или Red Flag».
 - `assets/` — актуальные изображения. Дубликаты изображений в корне удалены.
 - `knowledge/archive/` — архивные версии, не используемые страницами.
