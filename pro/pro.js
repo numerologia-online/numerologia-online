@@ -1,7 +1,7 @@
-import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=2";
+import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=3";
 import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
-import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "../karmic-programs.js?v=3";
-import { nodesFor } from "./pro-points.js?v=1";
+import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "../karmic-programs.js?v=4";
+import { nodesFor } from "./pro-points.js?v=2";
 import { createProDiagram } from "./pro-diagram.js?v=5";
 import { stopSoulSpeech } from "./pro-voice.js?v=1";
 import { createSoulStory } from "./pro-story.js?v=1";
@@ -14,6 +14,7 @@ const diagram = document.querySelector("#pro-diagram");
 const zoneButtons = document.querySelector("#pro-zone-buttons");
 const questionButtons = document.querySelector("#pro-question-buttons");
 const karmic = document.querySelector("#pro-karma");
+const purpose = document.querySelector("#pro-purpose");
 const namespace = "http://www.w3.org/2000/svg";
 
 let current = null;
@@ -46,6 +47,34 @@ function loadPracticalGuidance(energy) {
     practicalGuidanceRequests.set(number, request);
   }
   return practicalGuidanceRequests.get(number);
+}
+
+let karmicDeepeningRequest;
+function loadKarmicDeepening() {
+  if (!karmicDeepeningRequest) {
+    const paths = [
+      "pro/karmic-tail-deepening-a.json",
+      "pro/karmic-tail-deepening-b.json",
+      "pro/karmic-program-deepening-a.json",
+      "pro/karmic-program-deepening-b.json"
+    ];
+    karmicDeepeningRequest = Promise.all(paths.map(path =>
+      fetch(path + "?v=2").then(response => {
+        if (!response.ok) throw new Error("Не удалось загрузить дополнения кармических программ");
+        return response.json();
+      })
+    )).then(banks => {
+      if (banks.some(bank => !bank.entries || !bank.schema)) throw new Error("Неполная база программ");
+      return {
+        tail: Object.assign({}, ...banks.filter(bank => bank.role === "tail").map(bank => bank.entries)),
+        program: Object.assign({}, ...banks.filter(bank => bank.role === "program").map(bank => bank.entries))
+      };
+    }).catch(error => {
+      karmicDeepeningRequest = null;
+      throw error;
+    });
+  }
+  return karmicDeepeningRequest;
 }
 
 function loadZoneLibrary() {
@@ -232,31 +261,135 @@ async function selectQuestion(key, scroll = false) {
   }
 }
 
-function renderKarmic(matrix, programsBank, tailsBank) {
-  const tail=findKarmicTail(matrix,tailsBank);
-  const programs=findKarmicPrograms(matrix,programsBank);
+function renderPurpose(matrix, knowledge) {
+  if (!purpose) return;
+  purpose.replaceChildren();
+  const headline = element("h2", "Ваше предназначение");
+  purpose.append(headline);
+  purpose.append(paragraph("Сначала личные задачи и место среди людей. Затем общий жизненный путь. Каждое число рассчитано по вашей матрице.", "pro-muted"));
+  const descriptions = [
+    {
+      label: "Личное предназначение",
+      number: matrix.purpose.personal,
+      detail: "Что важно развивать в себе и как соединить внутренние потребности с реальными делами."
+    },
+    {
+      label: "Социальное предназначение",
+      number: matrix.purpose.social,
+      detail: "Как вы можете приносить пользу другим людям через собственные способности и опыт."
+    },
+    {
+      label: "Общее предназначение",
+      number: matrix.purpose.general,
+      detail: "Направление в котором ваши личные качества и участие в жизни людей соединяются."
+    }
+  ];
+  descriptions.forEach(({label, number, detail}) => {
+    const card = element("details", null, "pro-purpose-card");
+    card.append(element("summary", label + " - энергия " + number));
+    card.append(paragraph(detail));
+    const energy = knowledge.energies[String(number)];
+    if (energy?.shortEssence) card.append(paragraph(energy.shortEssence));
+    if (energy?.mainStrength) card.append(paragraph(energy.mainStrength));
+    if (energy?.mainBlock) card.append(paragraph(energy.mainBlock));
+    if (energy?.advice) card.append(paragraph(energy.advice));
+    purpose.append(card);
+  });
+  const skyAndEarth = element("p", null, "pro-muted");
+  skyAndEarth.textContent = "Личное предназначение складывается из неба " + matrix.purpose.sky
+    + " и земли " + matrix.purpose.earth + ". Социальное связано с мужской и женской линиями рода.";
+  purpose.append(skyAndEarth);
+}
+
+function markKarmicNodes(matches) {
+  const keys = new Set((matches || []).flatMap(match => match.nodes || []));
+  diagram.querySelectorAll(".pro-node").forEach(node => {
+    node.classList.toggle("pro-karmic-highlight", keys.has(node.dataset.nodeKey));
+  });
+  diagram.scrollIntoView({
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "center"
+  });
+}
+
+function renderKarmic(matrix, programsBank, tailsBank, deepening) {
+  const tail = findKarmicTail(matrix, tailsBank);
+  const programs = findKarmicPrograms(matrix, programsBank);
   karmic.replaceChildren();
-  const code=[matrix.tail.first,matrix.tail.second,matrix.bottom].join("-");
-  karmic.append(paragraph("Кармический хвост: " + code));
-  function card(title,source){
-    const details=element("details");
-    const summary=element("summary",title);
+  const code = [matrix.tail.first, matrix.tail.second, matrix.bottom].join("-");
+  karmic.append(paragraph("Кармический хвост " + code, "pro-karmic-current-code"));
+  karmic.append(paragraph("Первая энергия показывает вход в сценарий. Вторая показывает его развитие. Третья связана с главным уроком. Порядок чисел сохраняется.", "pro-muted"));
+
+  function card(title, source, guidance, locations = [], isTail = false) {
+    const details = element("details", null, "pro-karma-card");
+    const summary = element("summary", title);
     details.append(summary);
-    (source.parts||[]).forEach(part=>{
-      details.append(element("h4",part.title));
+    if (locations.length) {
+      details.append(paragraph("Где обнаружена программа. " + locations.map(item => item.label).join(". ") + ".", "pro-karmic-locations"));
+      const jump = element("button", "Показать точки на матрице", "pro-karmic-jump");
+      jump.type = "button";
+      jump.addEventListener("click", () => markKarmicNodes(locations));
+      details.append(jump);
+    }
+    (source.parts || []).forEach(part => {
+      details.append(element("h4", part.title));
       details.append(paragraph(part.text));
     });
+    const sections = [
+      ["origins", "Другие возможные истории происхождения"],
+      ["minus", "Как программа уводит жизнь в минус"],
+      ["plus", "Как выглядит программа в плюсе"],
+      ["practice", "Что конкретно делать"]
+    ];
+    if (guidance) sections.forEach(([key, title]) => {
+      if (!guidance[key]) return;
+      details.append(element("h4", title));
+      details.append(paragraph(guidance[key]));
+    });
+    if (isTail) details.open = true;
     return details;
   }
-  if(tail){
-    karmic.append(card("Описание кармического хвоста",tail));
-    appendSoulStoryCard(tail,code);
+
+  if (tail) {
+    const tailMatches = [{
+      label: "Нижний луч матрицы",
+      nodes: ["tailFirst", "tailSecond", "bottom"]
+    }];
+    karmic.append(card("Кармический хвост. " + tail.title, tail,
+      deepening?.tail?.[code] || deepening?.tail?.[tail.code],
+      tailMatches, true));
+    appendSoulStoryCard(tail, code);
+  } else {
+    karmic.append(paragraph("Для этого хвоста подробный текст пока не найден.", "pro-muted"));
   }
-  else karmic.append(paragraph("Для этой комбинации развёрнутая программа пока не найдена.","pro-muted"));
-  if(programs.length){
-    programs.forEach(program=>karmic.append(card(program.code+" · "+program.title+" (повторов: "+program.repeats+")",program)));
-  }else{
-    karmic.append(paragraph("Среди подготовленных кармических программ дополнительных совпадений не найдено.","pro-muted"));
+
+  const unique = programs.filter(program => program.key !== tail?.key);
+  if (unique.length) {
+    karmic.append(element("h3", "Другие программы по сферам жизни"));
+    karmic.append(paragraph("Название программы не определяет её тяжесть. Смотрите где именно в матрице встретились три энергии.", "pro-muted"));
+    unique.forEach(program => {
+      const level = program.karmicPlacement ? "Кармическая программа" : "Программа";
+      const title = level + ". " + program.title + ". " + program.code;
+      const guidance = deepening?.program?.[program.code] || deepening?.tail?.[program.code];
+      karmic.append(card(title, program, guidance, program.matches));
+    });
+  } else {
+    karmic.append(paragraph("Другие именованные программы в выбранном каталоге не совпали. Это не означает отсутствие жизненных задач.", "pro-muted"));
+  }
+
+  const repeats = programs.filter(program => program.key === tail?.key);
+  if (repeats.length) {
+    const otherPlaces = repeats.flatMap(program => program.matches.filter(match => match.id !== "tail"));
+    if (otherPlaces.length) {
+      const repeatCard = element("details", null, "pro-karma-card");
+      repeatCard.append(element("summary", "Повторение темы кармического хвоста в других сферах"));
+      repeatCard.append(paragraph("Та же тройка встретилась ещё здесь. " + otherPlaces.map(match => match.label).join(". ") + "."));
+      const jump = element("button", "Показать точки на матрице", "pro-karmic-jump");
+      jump.type = "button";
+      jump.addEventListener("click", () => markKarmicNodes(otherPlaces));
+      repeatCard.append(jump);
+      karmic.append(repeatCard);
+    }
   }
 }
 
@@ -294,11 +427,13 @@ form.addEventListener("submit", async(event)=>{
     renderDiagram(points);
     renderZones(zones);
     renderQuestions(definitions);
+    renderPurpose(matrix, knowledge);
+    diagram.querySelectorAll(".pro-node").forEach(node => node.classList.remove("pro-karmic-highlight"));
     results.hidden=false;
     results.scrollIntoView({behavior:"smooth",block:"start"});
     karmic.replaceChildren(paragraph("Подбираю кармические программы…","pro-muted"));
-    Promise.all([loadKarmicPrograms(),loadKarmicTails()])
-      .then(([programs,tails])=>{if(current?.id===id)renderKarmic(matrix,programs,tails);})
+    Promise.all([loadKarmicPrograms(),loadKarmicTails(),loadKarmicDeepening()])
+      .then(([programs,tails,deepening])=>{if(current?.id===id)renderKarmic(matrix,programs,tails,deepening);})
       .catch(()=>{if(current?.id===id)karmic.replaceChildren(paragraph("Не получилось загрузить кармические программы. Попробуйте обновить страницу.","pro-muted"));});
   }catch(err){
     error.textContent="Не удалось загрузить расчёт. Обновите страницу и попробуйте снова.";
