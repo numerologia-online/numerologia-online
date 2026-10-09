@@ -63,6 +63,9 @@ export const calculateMatrix = ({ day, month, year }) => {
   const female = reduce22(corners.topRight + corners.bottomLeft);
   const personal = reduce22(sky + earth);
   const social = reduce22(male + female);
+  const general = reduce22(personal + social);
+  const planetary = reduce22(social + general);
+  const overallCenter = reduce22(center + ancestralCenter);
 
   return {
     top,
@@ -72,8 +75,8 @@ export const calculateMatrix = ({ day, month, year }) => {
     center,
     corners,
     channels: { moneyEntry, loveEntry, balance, moneyPoint, lovePoint },
-    lineage: { male, female, ancestralCenter },
-    purpose: { sky, earth, personal, social, general: reduce22(personal + social) },
+    lineage: { male, female, ancestralCenter, overallCenter },
+    purpose: { sky, earth, personal, social, general, planetary },
     topSpoke: spoke(top),
     leftSpoke: spoke(left),
     rightSpoke: spoke(right),
