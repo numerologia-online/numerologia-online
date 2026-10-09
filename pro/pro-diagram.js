@@ -183,7 +183,6 @@ function selectZone(id, scrollToDiagram = false) {
     return;
   }
   getCurrent().activeZone=zone;
-  setLabelGroup(sectorLabelPositions[zone.id]?.group || "main");
   paintZone(zone);
   renderZoneGuide(zone);
   const first=zone.points.find(key=>getCurrent().points.some(point=>point.key===key));
@@ -195,42 +194,17 @@ function selectZone(id, scrollToDiagram = false) {
 
 // Аккуратные подписи вокруг самой схемы. Координаты относятся только к
 // расположению надписей, а не меняют алгоритм и не добавляют новых расчётов.
+// Вокруг диаграммы только 8 основных подписей. Остальные 5 тем доступны ниже.
 const sectorLabelPositions = {
-  spirit:        {x:165,y:43,width:200,group:"main"},
-  talents:       {x:449,y:43,width:202,group:"main"},
-  lineage:       {x:108,y:245,width:190,group:"main"},
-  relationships: {x:537,y:205,width:150,group:"main"},
-  money:         {x:538,y:404,width:116,group:"main"},
-  resource:      {x:128,y:553,width:192,group:"main"},
-  family:        {x:487,y:555,width:160,group:"main"},
-  purpose:       {x:310,y:628,width:216,group:"main"},
-  lessons:       {x:167,y:43,width:211,group:"extra"},
-  growth:        {x:453,y:43,width:182,group:"extra"},
-  maleLine:      {x:108,y:245,width:191,group:"extra"},
-  femaleLine:    {x:515,y:245,width:202,group:"extra"},
-  career:        {x:310,y:628,width:185,group:"extra"}
+  spirit:        {x:165,y:43,width:200},
+  talents:       {x:449,y:43,width:202},
+  lineage:       {x:108,y:245,width:190},
+  relationships: {x:537,y:205,width:150},
+  money:         {x:538,y:404,width:116},
+  resource:      {x:128,y:553,width:192},
+  family:        {x:487,y:555,width:160},
+  purpose:       {x:310,y:628,width:216}
 };
-const labelTabs = document.getElementById("pro-label-tabs");
-let labelGroup = "main";
-function setLabelGroup(group) {
-  labelGroup = group === "extra" ? "extra" : "main";
-  hidePointPreview();
-  labelTabs.querySelectorAll("button[data-label-group]").forEach(button => {
-    button.setAttribute("aria-pressed", String(button.dataset.labelGroup === labelGroup));
-  });
-  diagram.querySelectorAll(".pro-sector-tag").forEach(tag => {
-    const enabled = tag.dataset.labelGroup === labelGroup;
-    tag.style.display = enabled ? "" : "none";
-    tag.tabIndex = enabled ? 0 : -1;
-    tag.setAttribute("aria-hidden", String(!enabled));
-  });
-}
-labelTabs.addEventListener("click", event => {
-  const button = event.target.closest("button[data-label-group]");
-  if (!button || button.dataset.labelGroup === labelGroup) return;
-  clearZone();
-  setLabelGroup(button.dataset.labelGroup);
-});
 
 function renderDiagramSectorLabels(svg, zones) {
   const layer = svgElement("g",{"class":"pro-sector-labels","aria-label":"Названия зон матрицы"});
@@ -238,7 +212,7 @@ function renderDiagramSectorLabels(svg, zones) {
     const p = sectorLabelPositions[zone.id];
     if (!p) return;
     const tag = svgElement("g",{
-      "class":"pro-sector-tag","data-zone":zone.id,"data-label-group":p.group,
+      "class":"pro-sector-tag","data-zone":zone.id,
       role:"button",tabindex:"0","aria-label":"Подсветить зону: "+zone.title,
       "aria-pressed":"false"
     });
@@ -312,7 +286,6 @@ function renderDiagram(points) {
   });
   hidePointPreview();
   diagram.replaceChildren(svg, pointPreview);
-  setLabelGroup(labelGroup);
 }
 
 function selectPoint(key, scroll) {
