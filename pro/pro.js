@@ -283,6 +283,11 @@ function renderPurpose(matrix, knowledge) {
       label: "Общее предназначение",
       number: matrix.purpose.general,
       detail: "Направление в котором ваши личные качества и участие в жизни людей соединяются."
+    },
+    {
+      label: "Планетарное предназначение",
+      number: matrix.purpose.planetary,
+      detail: "Как объединить свои знания и жизненный опыт в дело которое полезно не только ближайшему окружению."
     }
   ];
   descriptions.forEach(({label, number, detail}) => {
@@ -300,6 +305,12 @@ function renderPurpose(matrix, knowledge) {
   skyAndEarth.textContent = "Личное предназначение складывается из неба " + matrix.purpose.sky
     + " и земли " + matrix.purpose.earth + ". Социальное связано с мужской и женской линиями рода.";
   purpose.append(skyAndEarth);
+  const centers = element("details", null, "pro-purpose-card");
+  centers.append(element("summary", "Три центра силы матрицы"));
+  centers.append(paragraph("Личный центр - энергия " + matrix.center + ". Показывает внутреннюю опору и привычные реакции."));
+  centers.append(paragraph("Родовой центр - энергия " + matrix.lineage.ancestralCenter + ". Складывается из четырёх углов родового квадрата."));
+  centers.append(paragraph("Общий центр силы - энергия " + matrix.lineage.overallCenter + ". Складывается из личного и родового центров."));
+  purpose.append(centers);
 }
 
 function markKarmicNodes(matches) {
