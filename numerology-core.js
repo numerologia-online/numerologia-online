@@ -41,8 +41,13 @@ export const calculateMatrix = ({ day, month, year }) => {
     const near = reduce22(base + center);
     return { outer: reduce22(base + near), near, core: reduce22(near + center) };
   };
+  // Ancestral diagonals are derived from the ancestral square's own
+  // central point, which is distinct from the main personal centre.
+  const ancestralCenter = reduce22(
+    corners.topLeft + corners.topRight + corners.bottomRight + corners.bottomLeft
+  );
   const diagonal = (corner) => {
-    const near = reduce22(corner + center);
+    const near = reduce22(corner + ancestralCenter);
     return { outer: reduce22(corner + near), near };
   };
   const tailFirst = reduce22(center + bottom);
@@ -67,7 +72,7 @@ export const calculateMatrix = ({ day, month, year }) => {
     center,
     corners,
     channels: { moneyEntry, loveEntry, balance, moneyPoint, lovePoint },
-    lineage: { male, female },
+    lineage: { male, female, ancestralCenter },
     purpose: { sky, earth, personal, social, general: reduce22(personal + social) },
     topSpoke: spoke(top),
     leftSpoke: spoke(left),
