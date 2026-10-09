@@ -303,6 +303,7 @@ function renderPurpose(matrix, knowledge) {
 }
 
 function markKarmicNodes(matches) {
+  hidePointPreview();
   const keys = new Set((matches || []).flatMap(match => match.nodes || []));
   diagram.querySelectorAll(".pro-node").forEach(node => {
     node.classList.toggle("pro-karmic-highlight", keys.has(node.dataset.nodeKey));
@@ -433,8 +434,13 @@ form.addEventListener("submit", async(event)=>{
     results.hidden=false;
     results.scrollIntoView({behavior:"smooth",block:"start"});
     karmic.replaceChildren(paragraph("Подбираю кармические программы…","pro-muted"));
-    Promise.all([loadKarmicPrograms(),loadKarmicTails(),loadKarmicDeepening()])
-      .then(([programs,tails,deepening])=>{if(current?.id===id)renderKarmic(matrix,programs,tails,deepening);})
+    Promise.all([
+      loadKarmicPrograms(),
+      loadKarmicTails(),
+      loadKarmicDeepening().catch(() => ({tail: {}, program: {}}))
+    ]).then(([programs,tails,deepening])=>{
+      if(current?.id===id)renderKarmic(matrix,programs,tails,deepening);
+    })
       .catch(()=>{if(current?.id===id)karmic.replaceChildren(paragraph("Не получилось загрузить кармические программы. Попробуйте обновить страницу.","pro-muted"));});
   }catch(err){
     error.textContent="Не удалось загрузить расчёт. Обновите страницу и попробуйте снова.";
