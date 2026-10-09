@@ -1,0 +1,36 @@
+name: Sample gentle Russian female voices
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/voice-preview.yml"
+      - "scripts/generate_soul_voice_preview.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthesize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install PyTorch CPU and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install numpy
+      - name: Generate two preview recordings
+        run: python scripts/generate_soul_voice_preview.py
+      - name: Share audio samples for listening, not site deployment
+        uses: actions/upload-artifact@v4
+        with:
+          name: female-voice-previews
+          path: voice-preview/*.mp3
+          if-no-files-found: error
+          retention-days: 14
