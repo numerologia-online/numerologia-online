@@ -129,3 +129,13 @@ test("Все 13 тем видны вокруг матрицы, без перек
   assert.ok(!html.includes('id="pro-label-tabs"'));
   assert.ok(css.includes('.pro-diagram .pro-node.out-of-zone{opacity:.88}'));
 });
+
+test("Подробный ответ загружается до прокрутки; ошибочный запрос не затирает следующий", async () => {
+  const script = await source("pro/pro.js");
+  const block = script.slice(script.indexOf("async function selectQuestion("),script.indexOf("function renderKarmic("));
+  assert.ok(block.includes("await loadFullReportSection(definition.energy)"));
+  assert.ok(!block.includes('if(scroll)answer.scrollIntoView({behavior:"smooth",block:"start"})'));
+  assert.ok(block.includes("if (scroll) scrollToSelectedAnswer(id, key)"));
+  assert.ok(block.includes("current.selected!==key"));
+  assert.ok(script.includes('answer.setAttribute("aria-busy","true")'));
+});

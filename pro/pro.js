@@ -118,6 +118,18 @@ function isSubheading(text) {
   return /^(Что это значит|Как проявляется|Где уходит|Что делать|Чего не делать|Стратегия|В плюсе|В минусе|Главный совет|Ваши сильные|Ваши слабые|Как включить|Где легче)/i.test(text) && !/[.!?]$/.test(text);
 }
 
+// Safari: сначала создаём полный ответ и только потом прокручиваем к нему.
+// Иначе короткая строка загрузки уводит экран к следующей карточке кармы.
+function scrollToSelectedAnswer(id, key) {
+  window.requestAnimationFrame(() => {
+    if (!current || current.id !== id || current.selected !== key) return;
+    answer.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start"
+    });
+  });
+}
+
 async function selectQuestion(key, scroll) {
   if(!current)return;
   const definition = current.definitions.find(item=>item.key===key);
@@ -125,8 +137,8 @@ async function selectQuestion(key, scroll) {
   const id=current.id;
   current.selected=key;
   questionButtons.querySelectorAll("button").forEach(button=>button.setAttribute("aria-pressed",String(button.dataset.question===key)));
+  answer.setAttribute("aria-busy","true");
   answer.replaceChildren(paragraph("Загружаю подробную расшифровку…","pro-muted"));
-  if(scroll)answer.scrollIntoView({behavior:"smooth",block:"start"});
   try {
     const bank=await loadFullReportSection(definition.energy);
     if(!current || current.id!==id || current.selected!==key)return;
@@ -146,9 +158,13 @@ async function selectQuestion(key, scroll) {
     source.paragraphs.filter(Boolean).forEach((text)=>{
       answer.append(isSubheading(text)?element("h4",text,"pro-paragraph-title"):paragraph(text));
     });
+    answer.setAttribute("aria-busy","false");
+    if (scroll) scrollToSelectedAnswer(id, key);
   }catch(err){
-    if(!current || current.id!==id)return;
+    if(!current || current.id!==id || current.selected!==key)return;
+    answer.setAttribute("aria-busy","false");
     answer.replaceChildren(paragraph("Не удалось загрузить расшифровку. Проверьте соединение и попробуйте выбрать вопрос снова.","pro-muted"));
+    if (scroll) scrollToSelectedAnswer(id, key);
   }
 }
 
