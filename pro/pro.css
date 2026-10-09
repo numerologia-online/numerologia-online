@@ -184,3 +184,21 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-wellbeing-money{fill:#b59049}
 .pro-channel-node circle{fill:#fffaf1;stroke:#ae966c;stroke-width:2.7}
 .pro-channel-node text{fill:#2d4555}
+
+
+/* Маленькая карточка над выбранной точкой. Переход вниз - только по её нажатию. */
+.pro-diagram{position:relative}
+.pro-point-preview{position:absolute;z-index:8;display:flex;flex-direction:column;gap:5px;text-align:left;width:min(224px,calc(100% - 16px));padding:14px 17px 15px;border:1px solid #d8c7ac;border-radius:19px;background:linear-gradient(155deg,#fffefb,#f7f4ee);color:#324b63;box-shadow:0 12px 32px rgba(37,55,71,.18);cursor:pointer;touch-action:manipulation;white-space:normal}
+.pro-point-preview[hidden]{display:none!important}
+.pro-point-preview-eyebrow{font-size:10px;font-weight:850;letter-spacing:.13em;color:#aa8a60}
+.pro-point-preview-title{font:500 22px/1.13 Georgia,serif;color:#304a63}
+.pro-point-preview-topic{font-size:12px;line-height:1.36;font-weight:700;color:#5b7280}
+.pro-point-preview-excerpt{font-size:12px;line-height:1.4;color:#637382}
+.pro-point-preview-arrow{position:absolute;right:13px;top:12px;font-size:19px;color:#af9370}
+.pro-point-preview:focus-visible{outline:3px solid #6f9aa5;outline-offset:3px}
+.pro-detail{scroll-margin-top:20px}
+.pro-point-related{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:18px;padding-top:14px;border-top:1px solid #e4ddd2}
+.pro-point-related-label{font-size:12px;color:#687b81;flex:1 1 100%}
+.pro-point-related button{border:1px solid #d4d0c5;background:#fffefa;color:#3e5b6d;border-radius:99px;padding:7px 11px;font-size:12px;font-weight:650}
+.pro-point-related button:focus-visible{outline:3px solid #7c9da4}
+@media(max-width:410px){.pro-point-preview{width:min(202px,calc(100% - 16px));padding:12px 14px}.pro-point-preview-title{font-size:20px}}

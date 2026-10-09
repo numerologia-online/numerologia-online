@@ -15,19 +15,69 @@ const questionButtons = document.querySelector("#pro-question-buttons");
 const answer = document.querySelector("#pro-answer");
 const karmic = document.querySelector("#pro-karma");
 const namespace = "http://www.w3.org/2000/svg";
+
+// Компактная карточка выбранного числа. Переход вниз только при нажатии на карточку.
+const pointPreview = document.createElement("button");
+pointPreview.type = "button";
+pointPreview.className = "pro-point-preview";
+pointPreview.hidden = true;
+pointPreview.setAttribute("aria-label", "Читать описание выбранной точки");
+function hidePointPreview() {
+  pointPreview.hidden = true;
+  delete pointPreview.dataset.key;
+}
+function showPointPreview(key) {
+  if (!current) return;
+  const point = current.points.find(item => item.key === key);
+  if (!point) return;
+  const energy = current.knowledge.energies[String(point.value)];
+  pointPreview.replaceChildren();
+  pointPreview.append(element("span", "ЭНЕРГИЯ " + point.value, "pro-point-preview-eyebrow"));
+  pointPreview.append(element("strong", energy?.name || "Энергия " + point.value, "pro-point-preview-title"));
+  pointPreview.append(element("span", point.label, "pro-point-preview-topic"));
+  if (energy?.shortEssence) pointPreview.append(element("span", energy.shortEssence, "pro-point-preview-excerpt"));
+  pointPreview.append(element("span", "↓", "pro-point-preview-arrow"));
+  pointPreview.dataset.key = key;
+  pointPreview.hidden = false;
+  const svg = diagram.querySelector("svg");
+  if (!svg) return;
+  const scale = svg.getBoundingClientRect().width / 620;
+  const width = pointPreview.getBoundingClientRect().width;
+  const height = pointPreview.getBoundingClientRect().height;
+  const svgBounds = svg.getBoundingClientRect();
+  const diagramBounds = diagram.getBoundingClientRect();
+  const px = svgBounds.left - diagramBounds.left + point.x * scale;
+  const py = svgBounds.top - diagramBounds.top + point.y * scale;
+  const x = Math.max(8, Math.min(px - width / 2, diagram.clientWidth - width - 8));
+  const above = point.y > 315;
+  const wantedY = above ? py - height - 21 : py + 25;
+  const y = Math.max(8, Math.min(wantedY, diagram.clientHeight - height - 8));
+  pointPreview.style.left = x + "px";
+  pointPreview.style.top = y + "px";
+}
+pointPreview.addEventListener("click", () => {
+  const key = pointPreview.dataset.key;
+  if (!key) return;
+  hidePointPreview();
+  selectPoint(key, true);
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") hidePointPreview();
+});
+window.addEventListener("resize", hidePointPreview);
 let current = null;
 let requestId = 0;
 let zoneLibraryRequest;
 
 function loadZoneLibrary() {
   if (!zoneLibraryRequest) {
-    zoneLibraryRequest = fetch("pro/zones.json?v=2")
+    zoneLibraryRequest = fetch("pro/zones.json?v=3")
       .then((response) => {
         if (!response.ok) throw new Error("Не удалось загрузить обучающие зоны");
         return response.json();
       })
       .then((source) => {
-        if (!Array.isArray(source.zones) || source.zones.length !== 8) {
+        if (!Array.isArray(source.zones) || source.zones.length !== 13) {
           throw new Error("Неполная база обучающих зон");
         }
         return source.zones;
@@ -194,6 +244,7 @@ function paintZone(zone) {
 }
 
 function clearZone() {
+  hidePointPreview();
   if (!current || !current.activeZone) return;
   current.activeZone = null;
   zoneGuide.hidden = true;
@@ -245,6 +296,7 @@ function renderZoneGuide(zone) {
 
 function selectZone(id, scrollToDiagram = false) {
   if (!current) return;
+  hidePointPreview();
   const zone=current.zones.find((item)=>item.id===id);
   if (!zone) return;
   if (current.activeZone?.id === id) {
@@ -271,7 +323,7 @@ const sectorLabelPositions = {
   money:         {x:538,y:404,width:116},
   resource:      {x:128,y:553,width:192},
   family:        {x:487,y:555,width:160},
-  purpose:       {x:310,y:628,width:195}
+  purpose:       {x:310,y:628,width:216}
 };
 
 function renderDiagramSectorLabels(svg, zones) {
@@ -314,7 +366,7 @@ function renderDiagramSectorLabels(svg, zones) {
 }
 
 function renderDiagram(points) {
-  const svg = svgElement("svg",{viewBox:"0 0 620 660",role:"group","aria-label":"Интерактивная матрица с нажимаемыми названиями сфер и 28 точками"});
+  const svg = svgElement("svg",{viewBox:"0 0 620 660",role:"group","aria-label":"Интерактивная матрица с нажимаемыми названиями сфер и 31 точкой"});
   const frame = svgElement("g",{fill:"none",stroke:"#b4aba0","stroke-width":"1.9"});
   [
     ["polygon",{points:"310,34 506,114 586,310 506,506 310,586 114,506 34,310 114,114"}],
@@ -343,13 +395,17 @@ function renderDiagram(points) {
     const text = svgElement("text",{x:point.x,y:point.y + 1});
     text.textContent = String(point.value);
     g.append(text);
-    const activate = () => selectPoint(point.key,true);
+    const activate = () => { selectPoint(point.key,false); showPointPreview(point.key); };
     g.addEventListener("click",activate);
     g.addEventListener("keydown",(event) => {if(event.key==="Enter"||event.key===" "){event.preventDefault();activate();}});
     svg.append(g);
   });
   renderDiagramSectorLabels(svg, current?.zones || []);
-  diagram.replaceChildren(svg);
+  svg.addEventListener("click", event => {
+    if (!event.target.closest(".pro-node, .pro-sector-tag")) hidePointPreview();
+  });
+  hidePointPreview();
+  diagram.replaceChildren(svg, pointPreview);
 }
 
 function selectPoint(key, scroll) {
@@ -372,6 +428,18 @@ function selectPoint(key, scroll) {
     appendParagraph(positionDetail,"Практический ориентир: " + (energy.advice || "Сопоставьте эту точку с остальной картой."));
   }
   appendParagraph(positionDetail,point.hint,"pro-muted");
+  const relatedZones = current.zones.filter(zone => zone.points.includes(point.key));
+  if (relatedZones.length) {
+    const links = element("div", null, "pro-point-related");
+    links.append(element("span", "С этой точкой связаны:", "pro-point-related-label"));
+    relatedZones.forEach(zone => {
+      const button = element("button", zone.title);
+      button.type = "button";
+      button.addEventListener("click", () => selectZone(zone.id, true));
+      links.append(button);
+    });
+    positionDetail.append(links);
+  }
   if(point.topic){
     const definition=current.definitions.find(item=>item.key===point.topic);
     if(definition){
@@ -381,7 +449,14 @@ function selectPoint(key, scroll) {
       positionDetail.append(button);
     }
   }
-  if(scroll)positionDetail.scrollIntoView({behavior:"smooth",block:"nearest"});
+  if(scroll) {
+    window.requestAnimationFrame(() => {
+      positionDetail.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "start"
+      });
+    });
+  }
 }
 
 function renderPointList(points) {
@@ -739,6 +814,7 @@ form.addEventListener("submit", async(event)=>{
   }
   error.hidden=true;
   const id=++requestId;
+  hidePointPreview();
   stopSoulSpeech();
   current=null;
   results.hidden=true;
