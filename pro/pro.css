@@ -147,39 +147,32 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 }
 
 
-/* Кармический театр. Лёгкий интерактивный сюжет без аудиофайлов. */
-.pro-soul-card{margin:19px 0 7px;padding:clamp(19px,3.4vw,29px);border:1px solid #ddc9a8;border-radius:25px;background:radial-gradient(ellipse at 95% 1%,rgba(203,168,109,.27),transparent 44%),linear-gradient(145deg,#182c40,#29475a 68%,#35455a);color:#fffaf0;box-shadow:0 16px 36px rgba(25,40,56,.16)}
-.pro-soul-eyebrow{margin:0 0 10px!important;color:#e6c58f!important;font-size:11px!important;letter-spacing:.16em;font-weight:850}
-.pro-soul-card>h3{margin:0 0 8px;font:700 clamp(27px,5vw,40px)/1.11 Georgia,serif;color:#ffefd3}
-.pro-soul-card .pro-soul-meta{margin:7px 0 13px;color:#ffdfaf;font-size:13px;line-height:1.5}
-.pro-soul-card .pro-soul-lead{margin:0 0 13px;font-size:15px;line-height:1.6;color:#eff6f5}
-.pro-soul-card .pro-soul-disclaimer{margin:0 0 19px;font-size:11px;line-height:1.55;color:#bacbd0}
-.pro-soul-story-title{margin:13px 0 17px!important;color:#fff2da!important;font:700 19px/1.35 Georgia,serif!important}
-.pro-soul-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 7px}
-.pro-soul-controls button,.pro-soul-choice-options button{appearance:none;border:1px solid #d8d2c3;border-radius:14px;padding:12px 14px;color:#233c50;background:#f7eee0;font-size:13px;font-weight:800;line-height:1.3;cursor:pointer}
-.pro-soul-controls .pro-soul-play{background:#efcb8d;color:#253243;border-color:#efcb8d;flex:1 1 195px}
-.pro-soul-controls .pro-soul-read{background:transparent;color:#ffeed1;border-color:#9daeb7}
-.pro-soul-controls .pro-soul-stop{background:transparent;color:#d7dfe2;border-color:#7e99a6}
-.pro-soul-controls button:disabled{opacity:.52;cursor:not-allowed}
-.pro-soul-controls button:focus-visible,.pro-soul-choice-options button:focus-visible{outline:3px solid #f9d69a;outline-offset:3px}
-.pro-soul-status{margin:8px 0 0!important;font-size:12px!important;color:#cbd6d8!important}
-.pro-soul-body{margin-top:21px;border-top:1px solid rgba(255,237,206,.28);padding-top:19px}
-.pro-soul-scene{padding:4px 0 15px}
-.pro-soul-scene h4,.pro-soul-today h4{font:700 clamp(20px,3vw,25px)/1.25 Georgia,serif;color:#ffd99f;margin:8px 0 15px}
-.pro-soul-spoken{margin:0 0 15px;padding:0 0 0 13px;border-left:2px solid rgba(223,192,145,.45)}
-.pro-soul-spoken small{display:block;color:#eed1a0;font-size:10px;font-weight:850;letter-spacing:.09em;text-transform:uppercase;margin:0 0 4px}
-.pro-soul-spoken p{margin:0!important;color:#f2f2ee!important;font-size:15px!important;line-height:1.78!important}
-.pro-soul-role-woman{border-color:#df9fb0}
-.pro-soul-role-man{border-color:#a0c1cf}
-.pro-soul-role-other{border-color:#adabbf}
-.pro-soul-choice,.pro-soul-today{margin-top:15px;padding:clamp(14px,3vw,21px);border-radius:19px;background:rgba(255,255,255,.085);border:1px solid rgba(255,255,255,.17)}
-.pro-soul-choice h4{font:700 22px/1.3 Georgia,serif;color:#ffe0ae;margin:0 0 10px}
-.pro-soul-choice>p,.pro-soul-today>p{font-size:14px;line-height:1.72;color:#f3f3ed;margin:10px 0}
-.pro-soul-choice-options{display:grid;gap:8px;margin-top:14px}
-.pro-soul-choice-options button{width:100%;text-align:left;background:#fff8ea}
-.pro-soul-choice-options button[aria-pressed="true"]{background:#efd09c;outline:2px solid #fbe4b9}
-.pro-soul-outcome{padding:12px 13px;border:1px solid rgba(252,216,158,.35);border-radius:12px;background:rgba(0,0,0,.12);color:#f7e8d1!important;line-height:1.7!important}
-.pro-soul-today h5{color:#ffe0ae;font:700 17px/1.3 Georgia,serif;margin:19px 0 11px}
-.pro-soul-today ol{padding-left:22px;margin:9px 0 17px}
-.pro-soul-today li{color:#f0f2ed;font-size:14px;line-height:1.62;margin-bottom:9px}
-@media(max-width:520px){.pro-soul-card{border-radius:19px;padding:18px}.pro-soul-controls .pro-soul-play{flex-basis:100%}.pro-soul-controls button{padding:12px 11px}.pro-soul-spoken p{font-size:14px!important}}
+/* Светлая, спокойная история души вместо сценического представления. */
+.pro-soul-card{margin:20px 0 7px;padding:clamp(19px,3.8vw,31px);border:1px solid #e3d5bc;border-radius:24px;background:radial-gradient(ellipse at 93% 0%,rgba(225,204,181,.27),transparent 46%),linear-gradient(145deg,#fffdf8,#f1f3f1);color:#35495a;box-shadow:0 14px 30px rgba(32,45,58,.09)}
+.pro-soul-eyebrow{margin:0 0 11px!important;color:#ad885c!important;font-size:11px!important;letter-spacing:.14em;font-weight:800}
+.pro-soul-card>h3{margin:0 0 9px;color:#2c4a60;font:500 clamp(27px,5vw,37px)/1.18 Georgia,serif}
+.pro-soul-card .pro-soul-meta{margin:7px 0 12px;color:#997a56;font-size:12px;line-height:1.5}
+.pro-soul-card .pro-soul-lead{margin:0 0 12px;color:#506474;font-size:15px;line-height:1.7}
+.pro-soul-card .pro-soul-disclaimer{margin:0 0 18px;font-size:11px;line-height:1.55;color:#78818a}
+.pro-soul-story-title{margin:16px 0 17px!important;color:#3e5870!important;font:500 18px/1.43 Georgia,serif!important}
+.pro-soul-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 8px}
+.pro-soul-controls button{appearance:none;border:1px solid #d4ccc1;border-radius:14px;padding:12px 14px;color:#2e455b;background:#fffaf0;font-size:13px;font-weight:700;line-height:1.3;cursor:pointer}
+.pro-soul-controls .pro-soul-play{background:#3f6077;color:#fffefa;border-color:#3f6077;flex:1 1 190px}
+.pro-soul-controls .pro-soul-read{background:#fffdf8;color:#3e6077;border-color:#becbd0}
+.pro-soul-controls .pro-soul-stop{background:transparent;color:#596f7f;border-color:#d6ddd9}
+.pro-soul-controls button:disabled{opacity:.5;cursor:not-allowed}
+.pro-soul-controls button:focus-visible,.pro-soul-music input:focus-visible{outline:3px solid #bd986e;outline-offset:3px}
+.pro-soul-music{display:inline-flex;align-items:center;gap:8px;color:#627581;font-size:13px;cursor:pointer;margin:1px 0}
+.pro-soul-music input{width:17px;height:17px;accent-color:#698598}
+.pro-soul-status{margin:10px 0 0!important;font-size:12px!important;color:#72818a!important}
+.pro-soul-body{margin-top:23px;border-top:1px solid #e4ddd0;padding-top:20px}
+.pro-soul-narrative{padding:1px 0 8px;max-width:75ch}
+.pro-soul-narrative p{font:400 clamp(16px,2.1vw,17px)/1.9 Georgia,"Times New Roman",serif!important;color:#364e60!important;margin:0 0 23px!important}
+.pro-soul-narrative p:first-of-type::first-letter{font-size:1.2em}
+.pro-soul-today{margin-top:17px;padding:clamp(15px,3vw,23px);border:1px solid #e5d9c9;border-radius:18px;background:#fffdfa}
+.pro-soul-today h4{font:500 clamp(22px,3vw,27px)/1.25 Georgia,serif;color:#3c5a72;margin:4px 0 14px}
+.pro-soul-today>p{font-size:15px;line-height:1.8;color:#475d6c;margin:10px 0 14px}
+.pro-soul-today h5{color:#876c54;font:700 17px/1.35 Georgia,serif;margin:18px 0 11px}
+.pro-soul-today ol{padding-left:22px;margin:8px 0 18px}
+.pro-soul-today li{color:#4a6170;font-size:14px;line-height:1.65;margin-bottom:9px}
+@media(max-width:520px){.pro-soul-card{border-radius:19px;padding:18px}.pro-soul-controls .pro-soul-play{flex-basis:100%}.pro-soul-controls button{padding:12px 11px}.pro-soul-narrative p{font-size:16px!important;line-height:1.78!important}}

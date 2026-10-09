@@ -437,69 +437,136 @@ async function selectQuestion(key, scroll) {
 
 let activeSoulSpeech = null;
 
+// Фоновая мелодия синтезируется на устройстве: никаких аудиофайлов и внешних сервисов.
+function makeSoulAmbient() {
+  const AudioEngine = window.AudioContext || window.webkitAudioContext;
+  if (!AudioEngine) return null;
+  try {
+    const context = new AudioEngine();
+    const sequence = [392, 440, 523.25, 440, 349.23, 392, 329.63, 349.23];
+    let cursor = 0;
+    let timer = null;
+    let closed = false;
+
+    function note(frequency, amplitude, seconds) {
+      if (closed || context.state !== "running") return;
+      const now = context.currentTime + 0.025;
+      const oscillator = context.createOscillator();
+      const envelope = context.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+      envelope.gain.setValueAtTime(0.00001, now);
+      envelope.gain.exponentialRampToValueAtTime(amplitude, now + 0.18);
+      envelope.gain.exponentialRampToValueAtTime(0.00001, now + seconds);
+      oscillator.connect(envelope);
+      envelope.connect(context.destination);
+      oscillator.start(now);
+      oscillator.stop(now + seconds + 0.03);
+    }
+
+    function step() {
+      note(sequence[cursor % sequence.length], 0.008, 3.6);
+      if (cursor % 4 === 0) note(cursor % 8 === 0 ? 196 : 174.61, 0.003, 6.3);
+      cursor++;
+    }
+
+    function resume() {
+      if (closed || timer !== null) return;
+      context.resume().then(() => {
+        if (closed) return;
+        step();
+        timer = window.setInterval(step, 2300);
+      }).catch(() => {});
+    }
+    function pause() {
+      if (timer !== null) window.clearInterval(timer);
+      timer = null;
+      if (!closed && context.state === "running") context.suspend().catch(() => {});
+    }
+    function stop() {
+      if (closed) return;
+      closed = true;
+      if (timer !== null) window.clearInterval(timer);
+      timer = null;
+      context.close().catch(() => {});
+    }
+    resume();
+    return { resume, pause, stop };
+  } catch {
+    return null;
+  }
+}
+
 function stopSoulSpeech() {
   const session = activeSoulSpeech;
   activeSoulSpeech = null;
   if (session) {
+    session.ambient?.stop();
     session.play.textContent = session.label;
     session.stop.disabled = true;
-    session.status.textContent = "Озвучка остановлена.";
+    session.status.textContent = "Чтение остановлено.";
   }
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 }
 
-function speakSoulLines(lines, play, stop, status) {
+function chooseSoulVoice(synth) {
+  const voices = synth.getVoices().filter(voice => /^ru/i.test(voice.lang));
+  // Имена зависят от ОС: женский голос выбирается, когда он доступен.
+  const feminine = /milena|anna|анна|алёна|алена|elena|елена|irina|ирина|maria|mariya|мария|svetlana|светлана|tatiana|татьяна|daria|дарья|yulia|юлия|katya|катя|katerina|екатерина|female|женский|alisa|алиса/i;
+  return voices.find(voice => feminine.test(voice.name))
+    || voices.find(voice => voice.localService)
+    || voices[0] || null;
+}
+
+function speakSoulLines(lines, play, stop, status, musicEnabled = () => true) {
   if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
-    status.textContent = "На этом устройстве системная озвучка недоступна. Текст можно прочитать ниже.";
+    status.textContent = "На этом устройстве нет системной озвучки. Рассказ можно прочитать ниже.";
     return;
   }
   const synth = window.speechSynthesis;
   if (activeSoulSpeech?.play === play) {
+    const session = activeSoulSpeech;
     if (synth.paused) {
       synth.resume();
+      session.ambient?.resume();
       play.textContent = "⏸ Пауза";
       status.textContent = "Продолжаю чтение.";
     } else {
       synth.pause();
+      session.ambient?.pause();
       play.textContent = "▶ Продолжить";
       status.textContent = "На паузе.";
     }
     return;
   }
   stopSoulSpeech();
-  const chunks = lines.filter(item => item?.text?.trim());
+  const chunks = lines.map(item => typeof item === "string" ? item : item?.text).filter(text => typeof text === "string" && text.trim());
   if (!chunks.length) return;
-  const voices = synth.getVoices().filter(voice => /^ru/i.test(voice.lang));
-  const voiceByRole = {
-    narrator: voices[0],
-    woman: voices[1] || voices[0],
-    man: voices[2] || voices[0],
-    other: voices[3] || voices[0]
-  };
-  const session = { play, stop, status, label: play.textContent };
+  const session = { play, stop, status, label: play.textContent, ambient: musicEnabled() ? makeSoulAmbient() : null };
   activeSoulSpeech = session;
   play.textContent = "⏸ Пауза";
   stop.disabled = false;
-  status.textContent = "Читаю вслух. Голоса зависят от устройства.";
+  status.textContent = "Спокойное чтение. Звучание голоса зависит от настроек телефона.";
   let index = 0;
+  const voice = chooseSoulVoice(synth);
   const next = () => {
     if (activeSoulSpeech !== session) return;
     if (index >= chunks.length) {
       stopSoulSpeech();
-      status.textContent = "История прочитана.";
+      status.textContent = "Рассказ окончен. Возвращайтесь к нему, когда захочется.";
       return;
     }
-    const chunk = chunks[index++];
-    const utterance = new SpeechSynthesisUtterance(chunk.text);
+    const utterance = new SpeechSynthesisUtterance(chunks[index++]);
     utterance.lang = "ru-RU";
-    utterance.rate = 0.94;
-    utterance.pitch = chunk.role === "man" ? 0.86 : chunk.role === "woman" ? 1.05 : 0.98;
-    if (voiceByRole[chunk.role]) utterance.voice = voiceByRole[chunk.role];
+    utterance.rate = 0.86;
+    utterance.pitch = 1.06;
+    utterance.volume = 1;
+    if (voice) utterance.voice = voice;
     utterance.onend = next;
     utterance.onerror = () => {
       if (activeSoulSpeech !== session) return;
       stopSoulSpeech();
-      status.textContent = "Озвучка прервалась. Можно снова нажать «Слушать» или прочитать текст.";
+      status.textContent = "Чтение прервалось. Можно нажать «Слушать» ещё раз.";
     };
     synth.speak(utterance);
   };
@@ -507,80 +574,64 @@ function speakSoulLines(lines, play, stop, status) {
 }
 
 function appendSoulStoryCard(tail, calculatedCode) {
-  // Первый сюжет доступен только для действительно найденной программы 6-9-15.
-  // Остальные кармические программы и их расчёт остаются без изменений.
+  // История доступна только для найденной программы 6-9-15. Расчёты не изменяем.
   if (tail?.code !== "6-9-15") return;
-
   const shell = element("section", null, "pro-soul-card");
-  shell.append(paragraph("ИНТЕРАКТИВНАЯ ИСТОРИЯ", "pro-soul-eyebrow"));
+  shell.append(paragraph("ТИХАЯ ИСТОРИЯ ДУШИ", "pro-soul-eyebrow"));
   shell.append(element("h3", "Услышать историю своей души"));
-  shell.append(paragraph("Ваш кармический хвост: " + calculatedCode + ". Программа: " + tail.code + " · " + tail.title, "pro-soul-meta"));
-  shell.append(paragraph("Не сухое описание, а история с голосами, поворотом сюжета и вопросами к себе.", "pro-soul-lead"));
-  shell.append(paragraph("Это художественная интерпретация нумерологической программы, а не утверждение о реальных событиях прошлой жизни.", "pro-soul-disclaimer"));
+  shell.append(paragraph("Ваш кармический хвост: " + calculatedCode + " · программа " + tail.code, "pro-soul-meta"));
+  shell.append(paragraph("Представьте одну из жизней, которые могла бы прожить эта душа. Нежный рассказ о даре чувствовать, мечтать и возвращаться к себе.", "pro-soul-lead"));
+  shell.append(paragraph("Это художественный образ программы, а не буквальное описание прошлой жизни.", "pro-soul-disclaimer"));
 
   const controls = element("div", null, "pro-soul-controls");
-  const play = element("button", "▶ Услышать историю своей души", "pro-soul-play");
+  const play = element("button", "▶ Слушать историю", "pro-soul-play");
   const read = element("button", "Читать историю", "pro-soul-read");
   const stop = element("button", "■ Остановить", "pro-soul-stop");
   [play, read, stop].forEach(button => { button.type = "button"; });
-  play.disabled = true;
-  read.disabled = true;
-  stop.disabled = true;
+  play.disabled = read.disabled = stop.disabled = true;
   controls.append(play, read, stop);
   shell.append(controls);
-  const status = paragraph("Подготавливаю историю…", "pro-soul-status");
+
+  const musicRow = element("label", null, "pro-soul-music");
+  const musicCheckbox = element("input");
+  musicCheckbox.type = "checkbox";
+  musicCheckbox.checked = true;
+  musicRow.append(musicCheckbox, document.createTextNode("Тихая музыка на фоне"));
+  musicCheckbox.addEventListener("change", () => {
+    if (!activeSoulSpeech) return;
+    if (!musicCheckbox.checked) {
+      activeSoulSpeech.ambient?.stop();
+      activeSoulSpeech.ambient = null;
+    } else if (!activeSoulSpeech.ambient) {
+      activeSoulSpeech.ambient = makeSoulAmbient();
+    }
+  });
+  shell.append(musicRow);
+
+  const status = paragraph("Готовлю рассказ…", "pro-soul-status");
   status.setAttribute("role", "status");
   shell.append(status);
-
   const body = element("div", null, "pro-soul-body");
   body.hidden = true;
   shell.append(body);
   karmic.append(shell);
 
-  fetch("pro/soul-stories.json?v=1")
+  fetch("pro/soul-stories.json?v=2")
     .then(response => {
-      if (!response.ok) throw new Error("Story data unavailable");
+      if (!response.ok) throw new Error("Story unavailable");
       return response.json();
     })
     .then(data => {
       if (!shell.isConnected || !current) return;
       const story = data.stories?.[tail.code];
-      if (!story?.scenes?.length || !story?.currentLife?.paragraphs?.length) throw new Error("Incomplete story");
-      const narration = story.scenes.flatMap(scene => scene.lines);
+      if (!story?.paragraphs?.length || !story?.currentLife?.paragraphs?.length) throw new Error("Incomplete story");
+      const narration = story.paragraphs;
       const interpretation = story.currentLife;
       shell.insertBefore(element("p", story.title + " · " + story.subtitle, "pro-soul-story-title"), controls);
-      const scenes = element("article", null, "pro-soul-scenes");
-      story.scenes.forEach(scene => {
-        const section = element("section", null, "pro-soul-scene");
-        section.append(element("h4", scene.heading));
-        scene.lines.forEach(line => {
-          const role = line.role === "woman" ? "Героиня" : line.role === "man" ? "Актёр" : line.role === "other" ? "Монтажёр" : "Рассказчик";
-          const spoken = element("div", null, "pro-soul-spoken");
-          spoken.classList.add("pro-soul-role-" + line.role);
-          spoken.append(element("small", role), paragraph(line.text));
-          section.append(spoken);
-        });
-        scenes.append(section);
-      });
-      body.append(scenes);
 
-      const choices = element("section", null, "pro-soul-choice");
-      choices.append(element("h4", "Последняя сцена - ваше решение"));
-      choices.append(paragraph("Как бы вы поступили на месте героини? Здесь нет правильного или неправильного ответа."));
-      const options = element("div", null, "pro-soul-choice-options");
-      const outcome = element("p", "Выберите один из вариантов и откройте продолжение.", "pro-soul-outcome");
-      (story.choices || []).forEach(choice => {
-        const button = element("button", choice.label);
-        button.type = "button";
-        button.addEventListener("click", () => {
-          options.querySelectorAll("button").forEach(item => item.setAttribute("aria-pressed", String(item === button)));
-          outcome.textContent = choice.result;
-        });
-        options.append(button);
-      });
-      outcome.setAttribute("aria-live", "polite");
-      choices.append(options, outcome);
-      body.append(choices);
+      const article = element("article", null, "pro-soul-narrative");
+      narration.forEach(item => article.append(paragraph(item)));
+      body.append(article);
 
       const today = element("section", null, "pro-soul-today");
       today.append(element("h4", interpretation.title));
@@ -590,15 +641,15 @@ function appendSoulStoryCard(tail, calculatedCode) {
       interpretation.actions.forEach(item => list.append(element("li", item)));
       today.append(list);
       const todayControls = element("div", null, "pro-soul-controls");
-      const todayPlay = element("button", "▶ Слушать разбор", "pro-soul-read");
+      const todayPlay = element("button", "▶ Слушать подсказку", "pro-soul-read");
       const todayStop = element("button", "■ Остановить", "pro-soul-stop");
-      const todayStatus = paragraph("Можно читать или слушать этот разбор.", "pro-soul-status");
+      const todayStatus = paragraph("Можно читать или слушать эту подсказку.", "pro-soul-status");
       todayStatus.setAttribute("role", "status");
       todayPlay.type = todayStop.type = "button";
       todayStop.disabled = true;
       todayPlay.addEventListener("click", () => speakSoulLines(
-        [...interpretation.paragraphs, interpretation.actionTitle, ...interpretation.actions].map(text => ({ role: "narrator", text })),
-        todayPlay, todayStop, todayStatus
+        [...interpretation.paragraphs, interpretation.actionTitle, ...interpretation.actions],
+        todayPlay, todayStop, todayStatus, () => musicCheckbox.checked
       ));
       todayStop.addEventListener("click", stopSoulSpeech);
       todayControls.append(todayPlay, todayStop);
@@ -608,22 +659,21 @@ function appendSoulStoryCard(tail, calculatedCode) {
       const open = (listen = false) => {
         body.hidden = false;
         read.textContent = "История открыта ✓";
-        if (listen) speakSoulLines(narration, play, stop, status);
-        else { status.textContent = "История открыта. Вы можете её прочитать или послушать."; body.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+        if (listen) speakSoulLines(narration, play, stop, status, () => musicCheckbox.checked);
+        else {
+          status.textContent = "Рассказ открыт. Его можно читать или слушать.";
+          body.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
       };
       read.addEventListener("click", () => open(false));
-      play.addEventListener("click", () => {
-        if (body.hidden) open(true);
-        else speakSoulLines(narration, play, stop, status);
-      });
+      play.addEventListener("click", () => body.hidden ? open(true) : speakSoulLines(narration, play, stop, status, () => musicCheckbox.checked));
       stop.addEventListener("click", stopSoulSpeech);
       play.disabled = false;
       read.disabled = false;
-      status.textContent = "История готова. Выберите чтение или озвучку.";
+      status.textContent = "Рассказ готов. Выберите чтение или прослушивание.";
     })
     .catch(() => {
-      if (!shell.isConnected) return;
-      status.textContent = "Пока не удалось загрузить историю. Обновите страницу и попробуйте ещё раз.";
+      if (shell.isConnected) status.textContent = "Не получилось загрузить рассказ. Обновите страницу и попробуйте ещё раз.";
     });
 }
 
