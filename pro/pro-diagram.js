@@ -81,17 +81,16 @@ function renderZones(zones) {
   const karmicLink = element("button", null, "pro-zone-button");
   karmicLink.type = "button";
   karmicLink.style.setProperty("--zone-color", "#ac8c62");
-  karmicLink.setAttribute("aria-label", "Перейти к кармическим программам");
+  karmicLink.dataset.karmic = "true";
+  karmicLink.setAttribute("aria-label", "Открыть кармические программы");
+  karmicLink.setAttribute("aria-expanded", "false");
+  karmicLink.setAttribute("aria-controls", "pro-karmic-preview");
   karmicLink.append(element("span", "", "pro-zone-dot"));
   const karmicLabels = element("span", null, "pro-zone-labels");
   karmicLabels.append(element("strong", "Кармические программы"));
   karmicLink.append(karmicLabels);
-  karmicLink.addEventListener("click", () => {
-    document.getElementById("pro-karmic-title")?.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-      block: "start"
-    });
-  });
+  // This item uses the same two-step preview as the 13 spheres.
+  // The parent page handles its fully interactive karmic reading in place.
   fragment.append(karmicLink);
   zoneButtons.replaceChildren(fragment);
 }
@@ -288,5 +287,5 @@ function markPointActive(key) {
 }
 
 
-  return {hidePointPreview, renderZones, renderDiagram};
+  return {hidePointPreview, hideZonePreview, clearZone, renderZones, renderDiagram};
 }

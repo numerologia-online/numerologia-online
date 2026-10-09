@@ -2,7 +2,7 @@ import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js
 import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
 import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicTails } from "../karmic-programs.js?v=5";
 import { nodesFor } from "./pro-points.js?v=2";
-import { createProDiagram } from "./pro-diagram.js?v=10";
+import { createProDiagram } from "./pro-diagram.js?v=11";
 import { stopSoulSpeech } from "./pro-voice.js?v=2";
 import { createSoulStory } from "./pro-story.js?v=2";
 import { createFullReportPdfController } from "../full-report-pdf.js?v=2";
@@ -159,7 +159,7 @@ function svgElement(tag, attributes) {
   return node;
 }
 
-const {hidePointPreview, renderZones, renderDiagram} = createProDiagram({
+const {hidePointPreview, hideZonePreview, clearZone, renderZones, renderDiagram} = createProDiagram({
   getCurrent: () => current,
   diagram, zoneButtons, questionButtons,
   element, svgElement,
@@ -167,6 +167,111 @@ const {hidePointPreview, renderZones, renderDiagram} = createProDiagram({
   onOpenPoint: (key) => openPointDetail(key),
   onSelectZone: (zone, scroll) => renderZoneReading(zone, scroll)
 });
+// The fourteenth compact topic now behaves exactly like the other sphere buttons:
+// first a preview, then the original full interpretation at this very position.
+// We MOVE #pro-karma instead of cloning it so that every existing action,
+// disclosure, audio control, and already loaded interpretation stays functional.
+const karmicHome = karmic.parentElement;
+const karmicHomeNext = karmic.nextSibling;
+const karmicPreview = element("button", null, "pro-point-preview pro-zone-preview inline pro-karmic-preview");
+karmicPreview.id = "pro-karmic-preview";
+karmicPreview.type = "button";
+karmicPreview.hidden = true;
+karmicPreview.setAttribute("aria-label", "Открыть полный разбор кармических программ");
+const karmicInline = element("section", null, "pro-zone-reading pro-karmic-inline-reading");
+karmicInline.id = "pro-karmic-inline-reading";
+karmicInline.hidden = true;
+karmicInline.setAttribute("aria-label", "Полный разбор кармических программ");
+const karmicInlineHead = element("div", null, "pro-zone-reading-header");
+const karmicInlineTitles = element("div");
+karmicInlineTitles.append(element("p", "ВАША МАТРИЦА · РАЗБОР СФЕРЫ", "pro-eyebrow"));
+karmicInlineTitles.append(element("h3", "Кармические программы"));
+const closeKarmicButton = element("button", "Закрыть", "pro-zone-reading-close");
+closeKarmicButton.type = "button";
+closeKarmicButton.setAttribute("aria-label", "Закрыть разбор кармических программ");
+karmicInlineHead.append(karmicInlineTitles, closeKarmicButton);
+karmicInline.append(karmicInlineHead);
+
+function karmicTopicButton() {
+  return zoneButtons.querySelector('button[data-karmic="true"]');
+}
+function hideKarmicPreview() {
+  karmicPreview.hidden = true;
+  karmicPreview.remove();
+}
+function closeKarmicInline({restoreFocus = false} = {}) {
+  hideKarmicPreview();
+  if (karmic.parentNode !== karmicHome) {
+    karmicHome.insertBefore(karmic, karmicHomeNext);
+  }
+  karmicHome.hidden = false;
+  karmicInline.hidden = true;
+  karmicInline.remove();
+  const button = karmicTopicButton();
+  if (button) {
+    button.setAttribute("aria-expanded", "false");
+    button.setAttribute("aria-controls", "pro-karmic-preview");
+    if (restoreFocus) button.focus();
+  }
+}
+function showKarmicPreview(button) {
+  closeKarmicInline();
+  clearZone();
+  hidePointPreview();
+  hideZonePreview();
+  karmicPreview.replaceChildren();
+  karmicPreview.append(element("span", "ВЫБРАННАЯ СФЕРА", "pro-point-preview-eyebrow"));
+  karmicPreview.append(element("strong", "Кармические программы", "pro-point-preview-title"));
+  const matrix = current?.matrix;
+  if (matrix?.tail) {
+    const code = [matrix.tail.first, matrix.tail.second, matrix.bottom].join("-");
+    karmicPreview.append(element("span", "Ваш кармический хвост: " + code, "pro-zone-preview-values"));
+  }
+  karmicPreview.append(element("span", "Узнайте, какие программы проявляются в вашей матрице, где они повторяются и как с ними работать.", "pro-point-preview-excerpt"));
+  karmicPreview.append(element("span", "Открыть разбор ↓", "pro-point-preview-next"));
+  button.after(karmicPreview);
+  karmicPreview.hidden = false;
+  button.setAttribute("aria-expanded", "true");
+}
+function openKarmicInline() {
+  const button = karmicTopicButton();
+  if (!button || !current) return;
+  hideKarmicPreview();
+  clearZone();
+  hideZonePreview();
+  // Retain the real, interactive reading and all its event listeners.
+  karmicInline.append(karmic);
+  karmicHome.hidden = true;
+  button.after(karmicInline);
+  karmicInline.hidden = false;
+  button.setAttribute("aria-expanded", "true");
+  button.setAttribute("aria-controls", "pro-karmic-inline-reading");
+}
+karmicPreview.addEventListener("click", openKarmicInline);
+closeKarmicButton.addEventListener("click", () => closeKarmicInline({restoreFocus: true}));
+zoneButtons.addEventListener("click", event => {
+  const specialButton = event.target.closest('button[data-karmic="true"]');
+  if (specialButton) {
+    if (!current) return;
+    if (karmicPreview.isConnected || karmicInline.isConnected) {
+      closeKarmicInline();
+    } else {
+      showKarmicPreview(specialButton);
+    }
+    return;
+  }
+  if (event.target.closest('button[data-zone]')) closeKarmicInline();
+});
+diagram.addEventListener("click", event => {
+  if (event.target.closest(".pro-sector-tag, .pro-node")) closeKarmicInline();
+}, true);
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && (karmicPreview.isConnected || karmicInline.isConnected)) {
+    closeKarmicInline({restoreFocus: true});
+  }
+});
+document.querySelector('a[href="#pro-karmic-title"]')?.addEventListener("click", () => closeKarmicInline());
+
 const appendSoulStoryCard = createSoulStory({element, paragraph, karmic, getCurrent: () => current});
 const {invalidateFullPdf, createFullReportPdfButton} = createFullReportPdfController({
   getReport: () => current?.pdfReport || null,
@@ -637,6 +742,7 @@ form.addEventListener("submit", async(event)=>{
     return;
   }
   error.hidden=true;
+  closeKarmicInline();
   invalidateFullPdf();
   pdfControls.hidden = true;
   pdfButtons.replaceChildren();

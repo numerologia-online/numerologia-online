@@ -456,3 +456,22 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
  .pro-zone-reading-position-head{min-height:49px}
  .pro-zone-reading-position-content{padding-left:39px}
 }
+
+
+/* Fourteenth topic: reuse the actual karmic report at its selected location. */
+.pro-zone-buttons>.pro-karmic-inline-reading{
+  grid-column:1/-1;width:100%;max-width:none;min-width:0;
+  padding:12px 10px;margin:0;border-radius:0;box-shadow:none;
+}
+.pro-zone-buttons>.pro-karmic-inline-reading .pro-zone-reading-header{
+  margin-bottom:9px;
+}
+.pro-karmic-inline-reading .pro-karma{
+  margin:0;
+}
+.pro-karmic-inline-reading .pro-karma details{
+  margin-top:7px;
+}
+.pro-zone-buttons>.pro-karmic-preview{
+  grid-column:1/-1;min-width:0;
+}
