@@ -26,14 +26,6 @@ let selectedZoneFrom = "diagram";
 diagram.addEventListener("click", () => { selectedZoneFrom = "diagram"; }, true);
 zoneButtons.addEventListener("click", () => { selectedZoneFrom = "picker"; }, true);
 
-document.querySelectorAll(".pro-quick-nav a[href^='#']").forEach(link => {
-  link.addEventListener("click", () => {
-    const target = document.querySelector(link.getAttribute("href"));
-    if (!target) return;
-    const group = target.closest("details.pro-compact-accordion");
-    if (group) group.open = true;
-  });
-});
 const namespace = "http://www.w3.org/2000/svg";
 
 let current = null;
@@ -288,7 +280,7 @@ function renderZoneReading(zone, shouldScroll = true) {
   }
   // From a compact sphere list, keep the full interpretation beside the row.
   // From the diagram, show it at the original spot directly below the matrix.
-  if (selectedZoneFrom === "picker" && zoneButtons.closest("details")?.open) {
+  if (selectedZoneFrom === "picker") {
     const selected = zoneButtons.querySelector('button[data-zone="' + zone.id + '"]');
     if (selected) selected.after(zoneReading);
     else zoneReadingHome.before(zoneReading);
@@ -412,8 +404,6 @@ async function selectQuestion(key, scroll = false) {
   });
   if (current.selected !== key) return;
   if (scroll) {
-    const group = document.querySelector("#pro-question-accordion");
-    if (group) group.open = true;
     scrollToSelectedQuestion(id, key, button);
   }
   if (alreadyOpen) return;
@@ -673,7 +663,6 @@ form.addEventListener("submit", async(event)=>{
     renderDiagram(points);
     renderZones(zones);
     renderQuestions(definitions);
-    document.querySelectorAll("#pro-results .pro-compact-accordion").forEach(group => { group.open = false; });
     renderPurpose(matrix, knowledge);
     diagram.querySelectorAll(".pro-node").forEach(node => node.classList.remove("pro-karmic-highlight"));
     results.hidden=false;

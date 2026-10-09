@@ -265,53 +265,6 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-pdf-note{grid-column:1/-1;font-size:12px;color:#77838a;margin:0}
 @media(max-width:620px){.pro-pdf-controls{grid-template-columns:minmax(0,1fr);padding:19px}.pro-pdf-buttons{grid-column:1;grid-row:auto}.pro-pdf-button{width:100%}.pro-pdf-note{grid-column:1}}
 
-
-/* Compact reading index: the unchanged interactive matrix stays full-size. */
-.pro-compact-paper{padding:0!important;overflow:visible}
-.pro-compact-accordion{margin:0}
-.pro-compact-accordion>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:17px 20px;min-height:56px;cursor:pointer;font-size:18px;font-weight:750;line-height:1.3;color:#294759}
-.pro-compact-accordion>summary::-webkit-details-marker{display:none}
-.pro-compact-accordion>summary::after{content:"⌄";font-size:24px;color:#9d8060;transform:translateY(-2px);flex:none}
-.pro-compact-accordion[open]>summary::after{transform:rotate(180deg)}
-.pro-compact-hint{font-size:11px;color:#8a8e8c;font-weight:500;margin-left:auto}
-.pro-compact-accordion>summary:focus-visible{outline:3px solid #7199a2;outline-offset:-3px;border-radius:18px}
-.pro-compact-accordion>.pro-muted{margin:0 20px 12px!important;font-size:12px;line-height:1.45}
-.pro-compact-accordion>.pro-zone-buttons,.pro-compact-accordion>.pro-question-buttons,.pro-compact-accordion>.pro-karma,.pro-compact-accordion>#pro-purpose{margin:0 14px 16px}
-.pro-zone-picker.pro-compact-accordion{border:1px solid #e5dccf;border-radius:17px;padding:0;margin:12px 0 0;background:#fffdfa;overflow:hidden}
-.pro-zone-picker.pro-compact-accordion>summary{font-size:16px;min-height:52px;padding:12px 15px}
-.pro-zone-picker.pro-compact-accordion>.pro-muted{margin:0 15px 12px!important}
-.pro-zone-picker.pro-compact-accordion>.pro-zone-buttons{margin:0 9px 12px}
-.pro-zone-buttons{gap:6px}
-.pro-zone-button{min-height:53px;padding:7px 9px;border-radius:11px;gap:8px}
-.pro-zone-labels{gap:1px}
-.pro-zone-labels strong{font-size:12px;line-height:1.2}
-.pro-zone-labels small{font-size:10px;line-height:1.2}
-.pro-zone-button .pro-zone-dot{width:9px;height:9px;box-shadow:0 0 0 3px color-mix(in srgb,var(--zone-color) 16%,white)}
-.pro-question-buttons{gap:0;margin-top:0}
-.pro-question-item{border-radius:0;border:0;border-bottom:1px solid #eae4da}
-.pro-question-item:last-child{border-bottom:0}
-.pro-question-item>button{min-height:49px;padding:9px 36px 9px 11px;font-size:13px;line-height:1.3}
-.pro-question-item>button small{display:inline;margin:0 6px 0 0;font-size:10px;opacity:.75}
-.pro-question-item>button::after{right:8px;font-size:21px}
-.pro-question-item.expanded{box-shadow:none;border-color:#a4bbb9}
-.pro-quick-nav{gap:5px;margin:2px 0 10px}
-.pro-quick-nav a{min-height:34px;padding:7px 10px;font-size:11px}
-.pro-pdf-controls{padding:14px 17px;margin-bottom:12px}
-.pro-paper{margin-bottom:12px}
-#pro-purpose{scroll-margin-top:15px}
-.pro-purpose-card{padding:10px 13px;margin:6px 0}
-.pro-karma details{padding:10px;margin-top:7px}
-@media(max-width:520px){
- .pro-compact-accordion>summary{padding:12px 14px;min-height:50px;font-size:16px}
- .pro-zone-button{min-height:49px;padding:7px 8px;gap:7px}
- .pro-zone-labels strong{font-size:11px}
- .pro-zone-labels small{font-size:9px}
- .pro-quick-nav a{min-height:32px;padding:5px 8px;font-size:10px}
- .pro-pdf-controls{padding:14px}
- .pro-compact-hint{font-size:10px}
-}
-
-
 /* Reader opens exactly at the chosen row; matrix itself is unchanged. */
 .pro-zone-buttons > .pro-zone-reading{grid-column:1/-1;width:100%;max-width:none;margin:6px 0 13px;padding:clamp(14px,3vw,22px);border-radius:14px;box-shadow:0 5px 18px rgba(48,58,65,.06)}
 .pro-karma > .pro-soul-fold{margin:7px 0;border:0;border-bottom:1px solid #eae4da;border-radius:0;padding:0;background:transparent}
@@ -322,4 +275,101 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-quick-nav a{flex:none}
 @media(max-width:520px){
  .pro-zone-buttons > .pro-zone-reading{padding:13px 10px;margin:7px 0 10px}
+}
+
+/* COMPRESSED NAVIGATION, 2026-10-09
+   No new buttons, tabs, accordion levels, or changes to the SVG matrix.
+   All 13 original zone buttons and 14 question buttons retain their handlers. */
+.pro-quick-nav{gap:5px;margin:0 0 12px}
+.pro-quick-nav a{min-height:32px;padding:6px 10px;font-size:11px}
+.pro-pdf-controls{padding:12px 15px;margin-bottom:12px;gap:7px 12px}
+.pro-pdf-intro h2{font-size:clamp(21px,3.6vw,26px);margin-bottom:3px}
+.pro-pdf-intro p:not(.pro-eyebrow){font-size:12px;line-height:1.4}
+.pro-pdf-button{min-height:44px;padding:11px 16px;font-size:13px}
+.pro-pdf-note{font-size:11px}
+.pro-zone-picker{margin:8px 0 9px;padding:12px 0 0}
+.pro-zone-picker h3{font-size:clamp(21px,3.5vw,26px);margin:0 0 4px}
+.pro-zone-picker .pro-eyebrow{margin-bottom:4px}
+.pro-zone-picker .pro-muted{font-size:12px;line-height:1.4;margin-bottom:9px}
+.pro-zone-buttons{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:0;
+  border:1px solid #e6ddcf;
+  border-radius:14px;
+  overflow:hidden;
+  background:#fffefa;
+}
+.pro-zone-button{
+  display:flex;
+  align-items:center;
+  min-width:0;
+  min-height:44px;
+  padding:8px 10px;
+  gap:8px;
+  border:0;
+  border-radius:0;
+  border-bottom:1px solid #ebe5da;
+  background:transparent;
+  box-shadow:none;
+  text-align:left;
+  cursor:pointer;
+}
+.pro-zone-button:nth-child(odd){border-right:1px solid #ebe5da}
+.pro-zone-button:nth-last-child(-n+2){border-bottom:0}
+.pro-zone-button .pro-zone-dot{
+  flex:none;width:8px;height:8px;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--zone-color) 15%,white);
+}
+.pro-zone-labels{gap:0}
+.pro-zone-labels strong{font-size:12px;line-height:1.25}
+.pro-zone-labels small{display:none}
+.pro-zone-button[aria-pressed="true"]{
+  background:color-mix(in srgb,var(--zone-color) 10%,white);
+  box-shadow:inset 0 0 0 1px var(--zone-color);
+}
+.pro-question-buttons{
+  gap:0;
+  border:1px solid #e8e0d3;
+  border-radius:14px;
+  overflow:hidden;
+  background:#fffefa;
+  margin-top:10px;
+}
+.pro-question-item{
+  border:0;
+  border-radius:0;
+  border-bottom:1px solid #ece5da;
+  box-shadow:none;
+  background:transparent;
+}
+.pro-question-item:last-child{border-bottom:0}
+.pro-question-item > button{
+  display:flex;
+  align-items:center;
+  width:100%;
+  min-height:43px;
+  padding:8px 33px 8px 12px;
+  font-size:13px;
+  line-height:1.3;
+  background:transparent;
+}
+.pro-question-item > button small{display:none}
+.pro-question-item > button::after{right:11px;font-size:21px}
+.pro-question-item.expanded{box-shadow:none;border-color:#d9e2de}
+.pro-question-item.expanded > button{background:#f4f8f7}
+.pro-purpose-card{padding:10px 12px;margin:6px 0;border-radius:11px}
+.pro-purpose-card summary{font-size:14px;line-height:1.35}
+.pro-karma details{padding:10px 12px;margin-top:6px;border-radius:11px}
+@media(max-width:520px){
+  .pro-quick-nav{gap:4px;margin-bottom:9px}
+  .pro-quick-nav a{min-height:30px;padding:5px 8px;font-size:10px}
+  .pro-zone-picker{padding-top:8px}
+  .pro-zone-picker h3{font-size:21px}
+  .pro-zone-button{min-height:43px;padding:8px 7px;gap:7px}
+  .pro-zone-labels strong{font-size:11px}
+  .pro-question-item > button{min-height:42px;padding:8px 32px 8px 11px;font-size:12px}
+  .pro-pdf-controls{padding:11px 13px}
+  .pro-pdf-intro p:not(.pro-eyebrow){font-size:11px}
+  .pro-pdf-button{min-height:43px}
 }

@@ -8,7 +8,7 @@
   <base href="../">
   <title>Для нумерологов | Нумерология Онлайн</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="pro/pro.css?v=25">
+  <link rel="stylesheet" href="pro/pro.css?v=26">
 </head>
 <body>
   <main class="pro-shell">
@@ -50,34 +50,28 @@
         <section id="pro-point-details" class="pro-point-details" role="region" aria-label="Подробный разбор выбранной точки" tabindex="-1" hidden></section>
         <section id="pro-zone-reading" class="pro-zone-reading" role="region" aria-labelledby="pro-zone-reading-title" tabindex="-1" hidden></section>
         <p class="pro-diagram-caption">Нажмите на название темы, чтобы увидеть выделенные энергии и подробную расшифровку их сочетания.</p>
-        <details class="pro-zone-picker pro-compact-accordion">
-          <summary id="pro-zone-picker-title"><span>13 сфер моей жизни</span><span class="pro-compact-hint">Выбрать сферу</span></summary>
+        <section class="pro-zone-picker" aria-labelledby="pro-zone-picker-title">
+          <p class="pro-eyebrow">УЧИМСЯ ЧИТАТЬ МАТРИЦУ</p>
+          <h3 id="pro-zone-picker-title">Выберите интересующую сферу</h3>
           <p class="pro-muted">Выберите тему, чтобы открыть разбор всех связанных энергий и узнать, как использовать их в жизни.</p>
           <div id="pro-zone-buttons" class="pro-zone-buttons" role="group" aria-label="Зоны матрицы"></div>
-        </details>
+        </section>
       </section>
-      <section class="pro-paper pro-compact-paper" aria-labelledby="pro-question-title">
-        <details id="pro-question-accordion" class="pro-compact-accordion">
-          <summary id="pro-question-title"><span>Подробные разборы</span><span class="pro-compact-hint">14 вопросов</span></summary>
-          <p class="pro-muted">Выберите вопрос, чтобы открыть полную расшифровку, советы и практики.</p>
-          <div id="pro-question-buttons" class="pro-question-buttons"></div>
-        </details>
+      <section class="pro-paper" aria-labelledby="pro-question-title">
+        <p class="pro-eyebrow">КОНСУЛЬТАЦИЯ ПО ТЕМАМ</p>
+        <h2 id="pro-question-title">О чём хотите узнать?</h2>
+        <p class="pro-muted">Нажмите на вопрос - ответ раскроется прямо под ним. При выборе следующего предыдущий закроется.</p>
+        <div id="pro-question-buttons" class="pro-question-buttons"></div>
       </section>
-      <section class="pro-paper pro-compact-paper" aria-label="Расчёт предназначения">
-        <details class="pro-compact-accordion">
-          <summary><span>Предназначение</span><span class="pro-compact-hint">4 направления</span></summary>
-          <div id="pro-purpose"></div>
-        </details>
-      </section>
-      <section class="pro-paper pro-compact-paper" aria-labelledby="pro-karmic-title">
-        <details class="pro-compact-accordion">
-          <summary id="pro-karmic-title"><span>Кармические программы</span><span class="pro-compact-hint">Открыть список</span></summary>
-          <div id="pro-karma" class="pro-karma" aria-live="polite"><p class="pro-muted">Ищу программы...</p></div>
-        </details>
+      <section id="pro-purpose" class="pro-paper" aria-label="Расчёт предназначения"></section>
+      <section class="pro-paper" aria-labelledby="pro-karmic-title">
+        <p class="pro-eyebrow">ПОВТОРЯЮЩИЕСЯ СВЯЗКИ</p>
+        <h2 id="pro-karmic-title">Кармические программы</h2>
+        <div id="pro-karma" class="pro-karma" aria-live="polite"><p class="pro-muted">Ищу программы...</p></div>
       </section>
     </div>
     <footer class="pro-footer">Нумерология Онлайн · Профессиональный разбор по дате рождения</footer>
   </main>
-  <script type="module" src="pro/pro.js?v=32"></script>
+  <script type="module" src="pro/pro.js?v=33"></script>
 </body>
 </html>
