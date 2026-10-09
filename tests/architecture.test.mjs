@@ -165,3 +165,29 @@ test("Вопросы раскрываются каждый внутри свое
   assert.ok(!html.includes('id="pro-answer"'));
   assert.ok(css.includes('.pro-question-item.expanded'));
 });
+
+test("Развёрнутые ответы не дублируют формулы и технические позиции матрицы", async () => {
+  const js = await source("pro/pro.js");
+  const css = await source("pro/pro.css");
+  const html = await source("pro/index.html");
+  assert.ok(!js.includes("pro-equation"));
+  assert.ok(!js.includes('answer.append(paragraph("Точка матрицы:'));
+  assert.ok(!css.includes(".pro-equation"));
+  assert.ok(html.includes('src="pro/pro.js?v=21"'));
+  assert.ok(html.includes('pro/pro.css?v=16'));
+  assert.ok(js.includes('loadFullReportSection(definition.energy)'));
+});
+
+test("Все 308 разборов вопросов заполнены для всех 22 энергий", async () => {
+  const sectionKeys = ["impression","trueSelf","growth","character","parentsPain","familyError",
+    "trueLove","partner","moneyBlock","moneyFlow","earning","energyLeak","health","lifeLesson"];
+  for (let energy=1;energy<=22;energy++) {
+    const raw = await source("knowledge/full-report/sections/energy-"+energy+".json");
+    const sections = JSON.parse(raw.replace(/^\uFEFF/, "")).sections;
+    for (const key of sectionKeys) {
+      const paragraphs = sections?.[key]?.paragraphs;
+      assert.ok(Array.isArray(paragraphs) && paragraphs.some(text => typeof text==="string" && text.trim().length>=50),
+        "Энергия "+energy+", вопрос "+key+" не заполнен");
+    }
+  }
+});

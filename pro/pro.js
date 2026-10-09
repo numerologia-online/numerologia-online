@@ -188,8 +188,6 @@ async function selectQuestion(key, scroll = false) {
     const energy = current.knowledge.energies[String(definition.energy)];
     if (energy?.name) chips.append(element("span", energy.name));
     answer.append(chips);
-    const match = current.points.find(point => point.topic === key);
-    if (match) answer.append(paragraph("Точка матрицы: " + match.label + ". Формула: " + match.formula, "pro-equation"));
     source.paragraphs.filter(Boolean).forEach(text => {
       answer.append(isSubheading(text) ? element("h4", text, "pro-paragraph-title") : paragraph(text));
     });
