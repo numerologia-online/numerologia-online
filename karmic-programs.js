@@ -22,40 +22,50 @@ const loadLibrary = async (path) => {
   return parseProgramLibrary(await response.text());
 };
 
-// Keep the 34 original authored interpretations in their existing file.
- // Add 38 independently written, short programs from a single JSON bank.
- // Each three-number combination is matched without regard to its order.
-export const loadKarmicPrograms = async () => {
-  const [original, response] = await Promise.all([
-    loadLibrary("./karmic-programs.md"),
-    fetch(new URL("./pro/karmic-program-additions.json?v=1", import.meta.url), { cache: "no-store" })
-  ]);
-  if (!response.ok) throw new Error("Не удалось загрузить новые кармические программы");
-  const bank = await response.json();
-  if (bank.schema !== "karmic-program-additions-v1" ||
-      !Array.isArray(bank.entries) || bank.entries.length !== 38) {
-    throw new Error("Неполный каталог новых кармических программ");
+// The single active catalog contains all 72 existing and new programs,
+ // plus earlier supplemental interpretations. Tail data remains independent.
+let activeProgramsRequest;
+function loadActiveProgramsBank() {
+  if (!activeProgramsRequest) {
+    activeProgramsRequest = fetch(
+      new URL("./pro/karmic-programs.json?v=1", import.meta.url),
+      { cache: "no-store" }
+    ).then(async response => {
+      if (!response.ok) throw new Error("Не удалось загрузить кармические программы");
+      const bank = await response.json();
+      if (bank.schema !== "pro-karmic-programs-v2" ||
+          !Array.isArray(bank.entries) || bank.entries.length !== 72 ||
+          !bank.guidanceByCode || typeof bank.guidanceByCode !== "object") {
+        throw new Error("Неполная база кармических программ");
+      }
+      return bank;
+    }).catch(error => {
+      activeProgramsRequest = null;
+      throw error;
+    });
   }
-  const keys = new Set(original.map(item => item.key));
-  const additions = bank.entries.map(item => {
-    const numbers = String(item.code || "").split("-").map(Number);
+  return activeProgramsRequest;
+}
+export const loadKarmicPrograms = async () => {
+  const bank = await loadActiveProgramsBank();
+  const keys = new Set();
+  return bank.entries.map(entry => {
+    const numbers = String(entry.code || "").split("-").map(Number);
     if (numbers.length !== 3 || numbers.some(n => !Number.isInteger(n) || n < 1 || n > 22)
-      || typeof item.title !== "string" || !item.title.trim()
-      || typeof item.text !== "string" || !item.text.trim()) {
-      throw new Error("Неверный формат новой кармической программы");
+      || typeof entry.title !== "string" || !entry.title.trim()
+      || !Array.isArray(entry.parts) || !entry.parts.length
+      || entry.parts.some(part => typeof part.title !== "string" || !part.title.trim()
+        || typeof part.text !== "string" || !part.text.trim())) {
+      throw new Error("Некорректная программа в общем каталоге");
     }
     const key = keyFor(numbers);
-    if (keys.has(key)) throw new Error("Повторение кармической программы: " + key);
+    if (keys.has(key)) throw new Error("Повторяющаяся кармическая программа: " + key);
     keys.add(key);
-    return {
-      key,
-      code: item.code,
-      title: item.title,
-      parts: [{ title: "Как программа проявляется в жизни", text: item.text }]
-    };
+    return { key, code: entry.code, title: entry.title, parts: entry.parts };
   });
-  return [...original, ...additions];
 };
+export const loadKarmicProgramGuidance = async () =>
+  (await loadActiveProgramsBank()).guidanceByCode;
 
 export const loadKarmicTails = () => loadLibrary("./karmic-tails.md");
 

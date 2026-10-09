@@ -1,12 +1,12 @@
 import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=4";
 import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
-import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "../karmic-programs.js?v=6";
+import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=7";
 import { nodesFor } from "./pro-points.js?v=2";
 import { createProDiagram } from "./pro-diagram.js?v=11";
 import { stopSoulSpeech } from "./pro-voice.js?v=2";
 import { createSoulStory } from "./pro-story.js?v=2";
 import { createFullReportPdfController } from "../full-report-pdf.js?v=3";
-import { buildProPdfChapters } from "./pro-pdf-content.js?v=5";
+import { buildProPdfChapters } from "./pro-pdf-content.js?v=6";
 import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
 
 const form = document.querySelector("#pro-form");
@@ -64,24 +64,24 @@ function loadPracticalGuidance(energy) {
 let karmicDeepeningRequest;
 function loadKarmicDeepening() {
   if (!karmicDeepeningRequest) {
+    // Program supplements are already included in the shared program JSON.
+    // Only the two ordered karmic-tail supplements remain separate.
     const paths = [
       "pro/karmic-tail-deepening-a.json",
-      "pro/karmic-tail-deepening-b.json",
-      "pro/karmic-program-deepening-a.json",
-      "pro/karmic-program-deepening-b.json",
-      "pro/karmic-program-deepening-c.json"
+      "pro/karmic-tail-deepening-b.json"
     ];
-    karmicDeepeningRequest = Promise.all(paths.map(path =>
-      fetch(path + "?v=2").then(response => {
-        if (!response.ok) throw new Error("Не удалось загрузить дополнения кармических программ");
+    karmicDeepeningRequest = Promise.all([
+      ...paths.map(path => fetch(path + "?v=2").then(response => {
+        if (!response.ok) throw new Error("Не удалось загрузить дополнения кармического хвоста");
         return response.json();
-      })
-    )).then(banks => {
-      if (banks.some(bank => !bank.entries || !bank.schema)) throw new Error("Неполная база программ");
-      return {
-        tail: Object.assign({}, ...banks.filter(bank => bank.role === "tail").map(bank => bank.entries)),
-        program: Object.assign({}, ...banks.filter(bank => bank.role === "program").map(bank => bank.entries))
-      };
+      })),
+      loadKarmicProgramGuidance()
+    ]).then(([tailA, tailB, program]) => {
+      if (tailA.role !== "tail" || tailB.role !== "tail" ||
+          !tailA.entries || !tailB.entries) {
+        throw new Error("Неполная база дополнений кармического хвоста");
+      }
+      return { tail: { ...tailA.entries, ...tailB.entries }, program };
     }).catch(error => {
       karmicDeepeningRequest = null;
       throw error;
