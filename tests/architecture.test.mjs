@@ -148,12 +148,20 @@ test("Все 13 тем видны вокруг матрицы, без перек
   assert.ok(css.includes('.pro-diagram .pro-node.out-of-zone{opacity:.88}'));
 });
 
-test("Подробный ответ загружается до прокрутки; ошибочный запрос не затирает следующий", async () => {
+test("Вопросы раскрываются каждый внутри своей карточки, без прокрутки вниз", async () => {
   const script = await source("pro/pro.js");
+  const html = await source("pro/index.html");
+  const css = await source("pro/pro.css");
   const block = script.slice(script.indexOf("async function selectQuestion("),script.indexOf("function renderKarmic("));
+  assert.ok(script.includes('const card = element("div", null, "pro-question-item")'));
+  assert.ok(script.includes('panel.hidden = true'));
+  assert.ok(block.includes('panel.hidden = !open'));
+  assert.ok(block.includes('alreadyOpen && !scroll ? null : key'));
   assert.ok(block.includes("await loadFullReportSection(definition.energy)"));
-  assert.ok(!block.includes('if(scroll)answer.scrollIntoView({behavior:"smooth",block:"start"})'));
-  assert.ok(block.includes("if (scroll) scrollToSelectedAnswer(id, key)"));
-  assert.ok(block.includes("current.selected!==key"));
-  assert.ok(script.includes('answer.setAttribute("aria-busy","true")'));
+  assert.ok(block.includes("current.selected !== key"));
+  assert.ok(block.includes("answerRequestId !== request"));
+  assert.ok(script.includes('trigger.setAttribute("aria-expanded", String(open))'));
+  assert.ok(!block.includes("answer.scrollIntoView"));
+  assert.ok(!html.includes('id="pro-answer"'));
+  assert.ok(css.includes('.pro-question-item.expanded'));
 });

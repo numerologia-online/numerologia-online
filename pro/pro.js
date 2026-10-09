@@ -13,12 +13,12 @@ const results = document.querySelector("#pro-results");
 const diagram = document.querySelector("#pro-diagram");
 const zoneButtons = document.querySelector("#pro-zone-buttons");
 const questionButtons = document.querySelector("#pro-question-buttons");
-const answer = document.querySelector("#pro-answer");
 const karmic = document.querySelector("#pro-karma");
 const namespace = "http://www.w3.org/2000/svg";
 
 let current = null;
 let requestId = 0;
+let answerRequestId = 0;
 let zoneLibraryRequest;
 let previewLibraryRequest;
 
@@ -99,16 +99,29 @@ const {hidePointPreview, renderZones, renderDiagram} = createProDiagram({
 const appendSoulStoryCard = createSoulStory({element, paragraph, karmic, getCurrent: () => current});
 
 function renderQuestions(definitions) {
-  const frag=document.createDocumentFragment();
-  definitions.forEach((definition)=>{
-    const button=element("button");
-    button.type="button";
-    button.dataset.question=definition.key;
-    button.setAttribute("aria-pressed","false");
-    button.append(element("small",category[definition.key] || "Расшифровка"));
-    button.append(element("span",definition.title));
-    button.addEventListener("click",()=>selectQuestion(definition.key,true));
-    frag.append(button);
+  const frag = document.createDocumentFragment();
+  definitions.forEach(definition => {
+    const card = element("div", null, "pro-question-item");
+    const button = element("button");
+    button.type = "button";
+    button.id = "pro-question-" + definition.key;
+    button.dataset.question = definition.key;
+    button.setAttribute("aria-pressed", "false");
+    button.setAttribute("aria-expanded", "false");
+    button.setAttribute("aria-controls", "pro-answer-" + definition.key);
+    button.append(element("small", category[definition.key] || "Расшифровка"));
+    button.append(element("span", definition.title));
+
+    const panel = element("article", null, "pro-answer");
+    panel.id = "pro-answer-" + definition.key;
+    panel.hidden = true;
+    panel.setAttribute("role", "region");
+    panel.setAttribute("aria-labelledby", button.id);
+    panel.setAttribute("aria-live", "polite");
+
+    button.addEventListener("click", () => selectQuestion(definition.key, false));
+    card.append(button, panel);
+    frag.append(card);
   });
   questionButtons.replaceChildren(frag);
 }
@@ -118,56 +131,75 @@ function isSubheading(text) {
   return /^(Что это значит|Как проявляется|Где уходит|Что делать|Чего не делать|Стратегия|В плюсе|В минусе|Главный совет|Ваши сильные|Ваши слабые|Как включить|Где легче)/i.test(text) && !/[.!?]$/.test(text);
 }
 
-// Safari: сначала создаём полный ответ и только потом прокручиваем к нему.
-// Иначе короткая строка загрузки уводит экран к следующей карточке кармы.
-function scrollToSelectedAnswer(id, key) {
+// Только переход из подсказки на матрице требует прокрутки к вопросу.
+// Обычное нажатие на вопрос никогда не переносит экран вниз.
+function scrollToSelectedQuestion(id, key, button) {
   window.requestAnimationFrame(() => {
-    if (!current || current.id !== id || current.selected !== key) return;
-    answer.scrollIntoView({
+    if (!current || current.id !== id || current.selected !== key || !button.isConnected) return;
+    button.scrollIntoView({
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
       block: "start"
     });
   });
 }
 
-async function selectQuestion(key, scroll) {
-  if(!current)return;
-  const definition = current.definitions.find(item=>item.key===key);
-  if(!definition)return;
-  const id=current.id;
-  current.selected=key;
-  questionButtons.querySelectorAll("button").forEach(button=>button.setAttribute("aria-pressed",String(button.dataset.question===key)));
-  answer.setAttribute("aria-busy","true");
-  answer.replaceChildren(paragraph("Загружаю подробную расшифровку…","pro-muted"));
+async function selectQuestion(key, scroll = false) {
+  if (!current) return;
+  const definition = current.definitions.find(item => item.key === key);
+  if (!definition) return;
+  const button = Array.from(questionButtons.querySelectorAll("button[data-question]"))
+    .find(item => item.dataset.question === key);
+  const answer = button?.parentElement?.querySelector(".pro-answer");
+  if (!button || !answer) return;
+
+  const id = current.id;
+  const request = ++answerRequestId;
+  const alreadyOpen = current.selected === key;
+  // Нажатие на ту же карточку закрывает её; переход с матрицы - открывает.
+  current.selected = alreadyOpen && !scroll ? null : key;
+
+  questionButtons.querySelectorAll(".pro-question-item").forEach(card => {
+    const trigger = card.querySelector("button[data-question]");
+    const panel = card.querySelector(".pro-answer");
+    const open = trigger.dataset.question === current.selected;
+    card.classList.toggle("expanded", open);
+    trigger.setAttribute("aria-expanded", String(open));
+    trigger.setAttribute("aria-pressed", String(open));
+    panel.hidden = !open;
+    if (!open) panel.setAttribute("aria-busy", "false");
+  });
+  if (current.selected !== key) return;
+  if (scroll) scrollToSelectedQuestion(id, key, button);
+  if (alreadyOpen) return;
+
+  answer.setAttribute("aria-busy", "true");
+  answer.replaceChildren(paragraph("Загружаю подробную расшифровку…", "pro-muted"));
   try {
-    const bank=await loadFullReportSection(definition.energy);
-    if(!current || current.id!==id || current.selected!==key)return;
-    const source=bank?.sections?.[key];
-    if(!source?.paragraphs?.length)throw new Error("Нет описания этой позиции");
+    const bank = await loadFullReportSection(definition.energy);
+    if (!current || current.id !== id || current.selected !== key || answerRequestId !== request) return;
+    const source = bank?.sections?.[key];
+    if (!source?.paragraphs?.length) throw new Error("Нет описания этой позиции");
     answer.replaceChildren();
-    answer.append(paragraph("ОТВЕТ ПО ВАШЕЙ МАТРИЦЕ","pro-eyebrow"));
-    answer.append(element("h3",source.title || definition.title));
-    const chips=element("div",null,"pro-chips");
-    chips.append(element("span","Энергия " + definition.energy));
-    chips.append(element("span","Тема: " + (category[key] || "Расшифровка")));
-    const energy=current.knowledge.energies[String(definition.energy)];
-    if(energy?.name)chips.append(element("span",energy.name));
+    answer.append(paragraph("ОТВЕТ ПО ВАШЕЙ МАТРИЦЕ", "pro-eyebrow"));
+    answer.append(element("h3", source.title || definition.title));
+    const chips = element("div", null, "pro-chips");
+    chips.append(element("span", "Энергия " + definition.energy));
+    chips.append(element("span", "Тема: " + (category[key] || "Расшифровка")));
+    const energy = current.knowledge.energies[String(definition.energy)];
+    if (energy?.name) chips.append(element("span", energy.name));
     answer.append(chips);
-    const match = current.points.find(point=>point.topic===key);
-    if(match)answer.append(paragraph("Точка матрицы: " + match.label + ". Формула: " + match.formula,"pro-equation"));
-    source.paragraphs.filter(Boolean).forEach((text)=>{
-      answer.append(isSubheading(text)?element("h4",text,"pro-paragraph-title"):paragraph(text));
+    const match = current.points.find(point => point.topic === key);
+    if (match) answer.append(paragraph("Точка матрицы: " + match.label + ". Формула: " + match.formula, "pro-equation"));
+    source.paragraphs.filter(Boolean).forEach(text => {
+      answer.append(isSubheading(text) ? element("h4", text, "pro-paragraph-title") : paragraph(text));
     });
-    answer.setAttribute("aria-busy","false");
-    if (scroll) scrollToSelectedAnswer(id, key);
-  }catch(err){
-    if(!current || current.id!==id || current.selected!==key)return;
-    answer.setAttribute("aria-busy","false");
-    answer.replaceChildren(paragraph("Не удалось загрузить расшифровку. Проверьте соединение и попробуйте выбрать вопрос снова.","pro-muted"));
-    if (scroll) scrollToSelectedAnswer(id, key);
+    answer.setAttribute("aria-busy", "false");
+  } catch (err) {
+    if (!current || current.id !== id || current.selected !== key || answerRequestId !== request) return;
+    answer.setAttribute("aria-busy", "false");
+    answer.replaceChildren(paragraph("Не удалось загрузить расшифровку. Проверьте соединение и попробуйте выбрать вопрос снова.", "pro-muted"));
   }
 }
-
 
 function renderKarmic(matrix, programsBank, tailsBank) {
   const tail=findKarmicTail(matrix,tailsBank);
@@ -231,7 +263,6 @@ form.addEventListener("submit", async(event)=>{
     renderDiagram(points);
     renderZones(zones);
     renderQuestions(definitions);
-    answer.replaceChildren(paragraph("Выберите вопрос из списка. Подробный ответ откроется здесь.","pro-empty"));
     results.hidden=false;
     results.scrollIntoView({behavior:"smooth",block:"start"});
     karmic.replaceChildren(paragraph("Подбираю кармические программы…","pro-muted"));
