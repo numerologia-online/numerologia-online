@@ -10,6 +10,7 @@ import wave
 
 import numpy as np
 import torch
+import imageio_ffmpeg
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "pro" / "soul-stories.json"
@@ -58,7 +59,7 @@ def main():
         mp3_path = OUT / f"soul-demo-{short_name}.mp3"
         save_wav(wav_path, merged)
         subprocess.run([
-            "ffmpeg", "-y", "-nostdin", "-loglevel", "error",
+            imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-nostdin", "-loglevel", "error",
             "-i", str(wav_path), "-ac", "1", "-ar", "24000", "-b:a", "112k",
             str(mp3_path)
         ], check=True)
