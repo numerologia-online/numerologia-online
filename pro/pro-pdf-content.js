@@ -66,6 +66,17 @@ export async function buildProPdfChapters(report) {
   ];
   const card = (title, entry, guidance) => {
     heading(title);
+    // Approved five-section reading: no duplicate legacy sections in PDF.
+    if (Array.isArray(guidance?.approvedReading) && guidance.approvedReading.length === 5) {
+      for (const part of guidance.approvedReading) {
+        const paragraphs = String(part.text || "").split(/\n\s*\n/).filter(Boolean);
+        paragraphs.forEach((paragraph, index) => {
+          if (index === 0) minor(part.title, paragraph.trim());
+          else add(paragraph.trim());
+        });
+      }
+      return;
+    }
     for (const part of (entry?.parts || [])) minor(part.title, part.text);
     if (guidance) {
       for (const [key, label] of sectionLabels) minor(label, guidance[key]);

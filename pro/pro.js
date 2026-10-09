@@ -4,7 +4,7 @@ import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicProgram
 import { nodesFor } from "./pro-points.js?v=2";
 import { createProDiagram } from "./pro-diagram.js?v=11";
 import { createFullReportPdfController } from "../full-report-pdf.js?v=3";
-import { buildProPdfChapters } from "./pro-pdf-content.js?v=6";
+import { buildProPdfChapters } from "./pro-pdf-content.js?v=7";
 import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
 
 const form = document.querySelector("#pro-form");
@@ -69,7 +69,7 @@ function loadKarmicDeepening() {
       "pro/karmic-tail-deepening-b.json"
     ];
     karmicDeepeningRequest = Promise.all([
-      ...paths.map(path => fetch(path + "?v=3").then(response => {
+      ...paths.map(path => fetch(path + "?v=4").then(response => {
         if (!response.ok) throw new Error("Не удалось загрузить дополнения кармического хвоста");
         return response.json();
       })),
@@ -696,6 +696,16 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
       jump.type = "button";
       jump.addEventListener("click", () => markKarmicNodes(locations));
       details.append(jump);
+    }
+    // Approved five-section readings replace old overlapping text for this entry.
+    if (Array.isArray(guidance?.approvedReading) && guidance.approvedReading.length === 5) {
+      guidance.approvedReading.forEach(part => {
+        details.append(element("h4", part.title));
+        String(part.text || "").split(/\n\s*\n/).filter(Boolean).forEach(text => {
+          details.append(paragraph(text.trim()));
+        });
+      });
+      return details;
     }
     (source.parts || []).forEach(part => {
       details.append(element("h4", part.title));
