@@ -3,8 +3,8 @@ import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection
 import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "../karmic-programs.js?v=4";
 import { nodesFor } from "./pro-points.js?v=2";
 import { createProDiagram } from "./pro-diagram.js?v=5";
-import { stopSoulSpeech } from "./pro-voice.js?v=1";
-import { createSoulStory } from "./pro-story.js?v=1";
+import { stopSoulSpeech } from "./pro-voice.js?v=2";
+import { createSoulStory } from "./pro-story.js?v=2";
 
 const form = document.querySelector("#pro-form");
 const input = document.querySelector("#pro-birth-date");
