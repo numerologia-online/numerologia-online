@@ -1,4 +1,4 @@
-import { activeSoulSpeech, stopSoulSpeech, speakSoulLines } from "./pro-voice.js?v=1";
+import { activeSoulSpeech, stopSoulSpeech, speakSoulLines, makeSoulAmbient } from "./pro-voice.js?v=2";
 
 // Карточка художественной истории отдельно от расчётов и схемы.
 export function createSoulStory({element, paragraph, karmic, getCurrent}) {
