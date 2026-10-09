@@ -1,0 +1,18 @@
+/* Легкое приглашение сохранить сайт на экран телефона. */
+.install-nudge{position:fixed;inset:0;z-index:20000;display:grid;place-items:center;padding:calc(18px + env(safe-area-inset-top)) 17px calc(18px + env(safe-area-inset-bottom));background:rgba(17,28,44,.47);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+.install-nudge[hidden],.install-help[hidden]{display:none!important}
+.install-card{position:relative;width:min(100%,400px);max-height:min(760px,calc(100dvh - 35px));overflow-y:auto;box-sizing:border-box;padding:30px 25px 23px;border:1px solid rgba(202,171,132,.5);border-radius:29px;background:radial-gradient(circle at 90% 0,rgba(240,221,213,.65),transparent 45%),linear-gradient(150deg,#fffefa,#f5f4f1);box-shadow:0 22px 70px rgba(17,30,49,.28);color:#2b4058;text-align:center}
+.install-x{position:absolute;top:12px;right:12px;width:46px;height:46px;border:0;border-radius:50%;background:transparent;color:#657188;font:400 30px/1 Arial,sans-serif;cursor:pointer}
+.install-mark{width:71px;height:71px;margin:0 auto 16px;display:grid;place-items:center;border-radius:22px;background:#263d58;color:#f5d6a7;font:38px/1 Georgia,serif;box-shadow:0 9px 24px rgba(28,53,81,.15)}
+.install-kicker{margin:0 0 8px;color:#ae8b63;letter-spacing:.13em;font:800 11px/1.4 system-ui,sans-serif}
+.install-card h2{margin:0 0 13px;color:#2a4666;font:400 clamp(31px,7.5vw,41px)/1.05 Georgia,"Times New Roman",serif;letter-spacing:-.03em}
+.install-card .install-copy{margin:0 auto 22px;max-width:32ch;color:#5d6980;font:400 16px/1.55 system-ui,sans-serif}
+.install-primary{display:block;width:100%;min-height:57px;padding:13px 16px;border:0;border-radius:17px;background:linear-gradient(130deg,#304b6f,#49658e);color:white;font:750 16px/1.3 system-ui,sans-serif;cursor:pointer}
+.install-later{display:block;width:100%;min-height:49px;margin:6px 0 0;border:0;background:transparent;color:#65758b;font:600 14px system-ui,sans-serif;cursor:pointer}
+.install-help{margin:19px 0 2px;padding:16px 17px;border:1px solid #e3daca;border-radius:17px;background:#fffefa;text-align:left}
+.install-help h3{margin:0 0 11px;color:#2a496a;font:700 17px/1.3 system-ui,sans-serif}
+.install-help p{margin:9px 0;color:#4e5e74;font:14px/1.5 system-ui,sans-serif}
+.install-help .install-warning{color:#a15d49}
+.install-x:focus-visible,.install-primary:focus-visible,.install-later:focus-visible{outline:3px solid #6f99bb;outline-offset:2px}
+@media(max-width:370px){.install-card{padding:25px 20px 18px}.install-card .install-copy{font-size:15px}}
+@media(prefers-reduced-motion:reduce){.install-nudge{backdrop-filter:none;-webkit-backdrop-filter:none}}
