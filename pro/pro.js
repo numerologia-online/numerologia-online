@@ -21,6 +21,32 @@ let requestId = 0;
 let answerRequestId = 0;
 let zoneLibraryRequest;
 let previewLibraryRequest;
+const practicalEnergies = new Set([4, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]);
+const practicalGuidanceRequests = new Map();
+
+function loadPracticalGuidance(energy) {
+  const number = Number(energy);
+  if (!practicalEnergies.has(number)) return Promise.resolve(null);
+  if (!practicalGuidanceRequests.has(number)) {
+    const request = fetch("pro/guidance/energy-" + number + ".json?v=1")
+      .then(response => {
+        if (!response.ok) throw new Error("Не удалось загрузить практическое дополнение");
+        return response.json();
+      })
+      .then(bank => {
+        if (bank.energy !== number || Object.keys(bank.sections || {}).length !== 14) {
+          throw new Error("Практическое дополнение неполное");
+        }
+        return bank;
+      })
+      .catch(() => {
+        practicalGuidanceRequests.delete(number);
+        return null;
+      });
+    practicalGuidanceRequests.set(number, request);
+  }
+  return practicalGuidanceRequests.get(number);
+}
 
 function loadZoneLibrary() {
   if (!zoneLibraryRequest) {
@@ -175,7 +201,7 @@ async function selectQuestion(key, scroll = false) {
   answer.setAttribute("aria-busy", "true");
   answer.replaceChildren(paragraph("Загружаю подробную расшифровку…", "pro-muted"));
   try {
-    const bank = await loadFullReportSection(definition.energy);
+    const [bank, practicalGuidance] = await Promise.all([loadFullReportSection(definition.energy), loadPracticalGuidance(definition.energy)]);
     if (!current || current.id !== id || current.selected !== key || answerRequestId !== request) return;
     const source = bank?.sections?.[key];
     if (!source?.paragraphs?.length) throw new Error("Нет описания этой позиции");
@@ -191,6 +217,13 @@ async function selectQuestion(key, scroll = false) {
     source.paragraphs.filter(Boolean).forEach(text => {
       answer.append(isSubheading(text) ? element("h4", text, "pro-paragraph-title") : paragraph(text));
     });
+    const practical = practicalGuidance?.sections?.[key];
+    if (practical?.action && practical?.result) {
+      answer.append(element("h4", "Практика на ближайшие семь дней", "pro-paragraph-title"));
+      answer.append(paragraph(practical.action));
+      answer.append(element("h4", "Как понять что энергия вышла в плюс", "pro-paragraph-title"));
+      answer.append(paragraph(practical.result));
+    }
     answer.setAttribute("aria-busy", "false");
   } catch (err) {
     if (!current || current.id !== id || current.selected !== key || answerRequestId !== request) return;
