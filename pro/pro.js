@@ -389,7 +389,11 @@ async function selectQuestion(key, scroll = false) {
     if (!open) panel.setAttribute("aria-busy", "false");
   });
   if (current.selected !== key) return;
-  if (scroll) scrollToSelectedQuestion(id, key, button);
+  if (scroll) {
+    const group = document.querySelector("#pro-question-accordion");
+    if (group) group.open = true;
+    scrollToSelectedQuestion(id, key, button);
+  }
   if (alreadyOpen) return;
 
   answer.setAttribute("aria-busy", "true");
@@ -637,6 +641,7 @@ form.addEventListener("submit", async(event)=>{
     renderDiagram(points);
     renderZones(zones);
     renderQuestions(definitions);
+    document.querySelectorAll("#pro-results .pro-compact-accordion").forEach(group => { group.open = false; });
     renderPurpose(matrix, knowledge);
     diagram.querySelectorAll(".pro-node").forEach(node => node.classList.remove("pro-karmic-highlight"));
     results.hidden=false;
