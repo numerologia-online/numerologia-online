@@ -528,3 +528,18 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 @media(max-width:620px){
   .pro-pdf-controls{padding:11px 13px;row-gap:7px}
 }
+
+/* Clear three-line title for the karmic tail. Other program rows stay compact. */
+.pro-karma .pro-karma-list>details>summary .pro-karma-tail-label{
+  display:block;margin-bottom:5px;font-size:12px;line-height:1.3;font-weight:750;color:#917651;
+}
+.pro-karma .pro-karma-list>details>summary .pro-karma-tail-name{
+  display:block;font-size:15px;line-height:1.43;font-weight:800;color:#35556a;
+}
+.pro-karma .pro-karma-list>details>summary .pro-karma-tail-meta{
+  display:block;margin-top:6px;font-size:13px;line-height:1.35;font-weight:700;color:#6c8290;
+}
+/* The special audio story now lives within the expanded tail, not in the main index. */
+.pro-karma .pro-karma-list>details>.pro-soul-card{
+  margin:18px 12px 14px;padding:clamp(16px,3vw,23px);box-shadow:none;border-radius:18px;
+}

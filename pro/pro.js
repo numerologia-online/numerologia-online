@@ -616,6 +616,13 @@ function markKarmicNodes(matches) {
 const karmicTripleKey = values => [...values].sort((a, b) => a - b).join("-");
 const countLabel = count => count === 1 ? "1 раз" : count >= 2 && count <= 4 ? count + " раза" : count + " раз";
 
+// Three clear lines instead of one overlong karmic-tail heading.
+function formatTailSummary(summary, name, code, count) {
+  summary.replaceChildren(element("span", "Кармический хвост", "pro-karma-tail-label"));
+  if (name) summary.append(element("span", name, "pro-karma-tail-name"));
+  summary.append(element("span", code + " · " + countLabel(count), "pro-karma-tail-meta"));
+}
+
 // One compact index keeps the complete readings and soul narration.
 function compactKarmicList(tailCount = 1) {
   const original = Array.from(karmic.children);
@@ -624,7 +631,7 @@ function compactKarmicList(tailCount = 1) {
   const tailInfo = codeText?.nextElementSibling;
   const tailCard = original.find(node =>
     node.matches?.("details.pro-karma-card") &&
-    node.querySelector(":scope > summary")?.textContent.startsWith("Кармический хвост ·")
+    node.querySelector(":scope > summary > .pro-karma-tail-label")
   );
   if (tailCard) {
     const summary = tailCard.querySelector(":scope > summary");
@@ -633,7 +640,9 @@ function compactKarmicList(tailCount = 1) {
   } else if (codeText) {
     // Unrecognised tails also get a single collapsed row.
     const missing = element("details", null, "pro-karma-card");
-    missing.append(element("summary", "Кармический хвост · " + tailCode + " · " + countLabel(tailCount)));
+    const missingSummary = element("summary");
+    formatTailSummary(missingSummary, "", tailCode, tailCount);
+    missing.append(missingSummary);
     if (tailInfo?.matches("p.pro-muted")) missing.append(tailInfo);
     const noDescription = Array.from(karmic.children).find(node => node.matches?.("p.pro-muted") && node.textContent.includes("Для этого хвоста подробный текст"));
     if (noDescription) missing.append(noDescription);
@@ -662,7 +671,9 @@ function compactKarmicList(tailCount = 1) {
     });
   }, true);
   list.querySelectorAll(":scope > details > summary").forEach(summary => {
-    summary.title = summary.textContent;
+    summary.title = summary.querySelector(".pro-karma-tail-label")
+      ? Array.from(summary.children).map(node => node.textContent).join(" · ")
+      : summary.textContent;
   });
   karmic.append(list);
 }
@@ -713,19 +724,16 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
       label: "Нижний луч матрицы",
       nodes: ["tailFirst", "tailSecond", "bottom"]
     }, ...tailPlaces.filter(item => item.id !== "tail")];
-    karmic.append(card("Кармический хвост · " + tail.title + " · " + code + " · " + countLabel(tailPlaces.length), tail,
+    const tailCard = card("", tail,
       deepening?.tail?.[code] || deepening?.tail?.[tail.code],
-      tailMatches, true));
+      tailMatches, true);
+    formatTailSummary(tailCard.querySelector(":scope > summary"), tail.title, code, tailPlaces.length);
+    karmic.append(tailCard);
+    // The soul story belongs to this tail. It appears inside the expanded
+    // tail card with its original reading and audio controls, not as a new row.
     appendSoulStoryCard(tail, code);
-    // The story, including its narration and full text, remains available
-    // but must not fill the compact index before a reader chooses it.
     const story = karmic.querySelector(".pro-soul-card");
-    if (story) {
-      const fold = element("details", null, "pro-soul-fold");
-      fold.append(element("summary", "История души - читать или слушать"));
-      story.replaceWith(fold);
-      fold.append(story);
-    }
+    if (story) tailCard.append(story);
   } else {
     karmic.append(paragraph("Для этого хвоста подробный текст пока не найден.", "pro-muted"));
   }
