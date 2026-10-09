@@ -56,7 +56,8 @@ function loadKarmicDeepening() {
       "pro/karmic-tail-deepening-a.json",
       "pro/karmic-tail-deepening-b.json",
       "pro/karmic-program-deepening-a.json",
-      "pro/karmic-program-deepening-b.json"
+      "pro/karmic-program-deepening-b.json",
+      "pro/karmic-program-deepening-c.json"
     ];
     karmicDeepeningRequest = Promise.all(paths.map(path =>
       fetch(path + "?v=2").then(response => {
