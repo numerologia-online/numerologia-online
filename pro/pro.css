@@ -184,3 +184,21 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-point-preview-title{font-size:19px;line-height:1.18;letter-spacing:-.02em}
 .pro-point-preview-excerpt{font-size:12px;line-height:1.43;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 @media(max-width:410px){.pro-point-preview-title{font-size:18px}}
+
+/* Professional reading navigation and detailed karmic programs */
+.pro-quick-nav{display:flex;flex-wrap:wrap;gap:9px;margin:2px 0 18px}
+.pro-quick-nav a{display:inline-flex;align-items:center;min-height:42px;padding:9px 15px;text-decoration:none;color:#344e5a;background:#fffefa;border:1px solid #dfd7c8;border-radius:999px;font-weight:700;font-size:13px}
+.pro-quick-nav a:focus-visible{outline:3px solid #4a8695;outline-offset:2px}
+#pro-purpose{scroll-margin-top:24px}
+.pro-purpose-card{padding:15px 17px;margin:10px 0;border:1px solid #e4dbcc;border-radius:16px;background:#fffefa}
+.pro-purpose-card summary{cursor:pointer;color:#345268;font-size:16px;font-weight:750;line-height:1.5}
+.pro-purpose-card p{color:#45535a;line-height:1.7}
+.pro-karmic-current-code{font-size:19px!important;font-weight:800;color:#3f5964}
+.pro-karma-card{scroll-margin-top:20px}
+.pro-karma-card summary{font-size:16px;line-height:1.5;color:#35556b}
+.pro-karma-card h4{font-size:17px;color:#866a43;margin:22px 0 8px}
+.pro-karma-card p{font-size:15px;line-height:1.75}
+.pro-karmic-locations{font-size:13px!important;color:#6f7880}
+.pro-karmic-jump{display:inline-flex;align-items:center;margin:5px 0 12px;padding:10px 14px;border:1px solid #b5c8c8;border-radius:12px;background:#eff7f5;color:#315f64;font-weight:750;cursor:pointer}
+.pro-diagram .pro-node.pro-karmic-highlight circle{stroke:#c28c40!important;stroke-width:5!important;fill:#fff0cf!important}
+@media(max-width:520px){.pro-quick-nav{gap:7px}.pro-quick-nav a{font-size:12px;padding:8px 12px}.pro-karma-card{padding:14px}.pro-karma-card h4{font-size:17px}}
