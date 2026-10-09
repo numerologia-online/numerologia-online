@@ -75,6 +75,24 @@ function renderZones(zones) {
     button.addEventListener("click", () => selectZone(zone.id, "picker", button));
     fragment.append(button);
   });
+  // Fourteenth compact navigation item balances the two columns.
+  // It leads to the already existing karmic section, without creating a
+  // new matrix sphere, changing calculations, or duplicating any content.
+  const karmicLink = element("button", null, "pro-zone-button");
+  karmicLink.type = "button";
+  karmicLink.style.setProperty("--zone-color", "#ac8c62");
+  karmicLink.setAttribute("aria-label", "Перейти к кармическим программам");
+  karmicLink.append(element("span", "", "pro-zone-dot"));
+  const karmicLabels = element("span", null, "pro-zone-labels");
+  karmicLabels.append(element("strong", "Кармические программы"));
+  karmicLink.append(karmicLabels);
+  karmicLink.addEventListener("click", () => {
+    document.getElementById("pro-karmic-title")?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start"
+    });
+  });
+  fragment.append(karmicLink);
   zoneButtons.replaceChildren(fragment);
 }
 
