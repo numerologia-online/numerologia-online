@@ -1,6 +1,6 @@
 import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=4";
 import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
-import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=7";
+import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=8";
 import { nodesFor } from "./pro-points.js?v=2";
 import { createProDiagram } from "./pro-diagram.js?v=11";
 import { createFullReportPdfController } from "../full-report-pdf.js?v=3";
@@ -69,7 +69,7 @@ function loadKarmicDeepening() {
       "pro/karmic-tail-deepening-b.json"
     ];
     karmicDeepeningRequest = Promise.all([
-      ...paths.map(path => fetch(path + "?v=2").then(response => {
+      ...paths.map(path => fetch(path + "?v=3").then(response => {
         if (!response.ok) throw new Error("Не удалось загрузить дополнения кармического хвоста");
         return response.json();
       })),
