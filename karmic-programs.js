@@ -27,8 +27,13 @@ export const loadKarmicPrograms = () => loadLibrary("./karmic-programs.md");
 export const loadKarmicTails = () => loadLibrary("./karmic-tails.md");
 
 export const findKarmicTail = (matrixData, library) => {
-  const key = keyFor([matrixData.tail.first, matrixData.tail.second, matrixData.bottom]);
-  return library.find((tail) => tail.key === key) ?? null;
+  // A karmic tail has an ordered reading. The 9-9-18, 18-9-9
+  // and 9-18-9 tails share the same numbers but not the same placement.
+  const ordered = [matrixData.tail.first, matrixData.tail.second, matrixData.bottom].join("-");
+  const exact = library.find((tail) => tail.code === ordered);
+  if (exact) return { ...exact, calculatedCode: ordered, exactOrder: true };
+  const matching = library.find((tail) => tail.key === keyFor([matrixData.tail.first, matrixData.tail.second, matrixData.bottom]));
+  return matching ? { ...matching, calculatedCode: ordered, exactOrder: false } : null;
 };
 
 const getMatrixTriples = (data) => {
@@ -39,16 +44,16 @@ const getMatrixTriples = (data) => {
   const relationshipResult = data.channels.lovePoint;
 
   return [
-    { values: [data.top, data.topSpoke.outer, data.topSpoke.near], nodes: ["top", "topOuter", "topNear"] },
-    { values: [data.left, data.leftSpoke.outer, data.leftSpoke.near], nodes: ["left", "leftOuter", "leftNear"] },
-    { values: [data.right, data.rightSpoke.outer, data.rightSpoke.near], nodes: ["right", "rightOuter", "rightNear"] },
-    { values: [data.tail.first, data.tail.second, data.bottom], nodes: ["tailFirst", "tailSecond", "bottom"] },
-    { values: [data.corners.topLeft, data.diagonals.topLeft.outer, data.diagonals.topLeft.near], nodes: ["topLeft", "topLeftOuter", "topLeftNear"] },
-    { values: [data.corners.topRight, data.diagonals.topRight.outer, data.diagonals.topRight.near], nodes: ["topRight", "topRightOuter", "topRightNear"] },
-    { values: [data.corners.bottomRight, data.diagonals.bottomRight.outer, data.diagonals.bottomRight.near], nodes: ["bottomRight", "bottomRightOuter", "bottomRightNear"] },
-    { values: [data.corners.bottomLeft, data.diagonals.bottomLeft.outer, data.diagonals.bottomLeft.near], nodes: ["bottomLeft", "bottomLeftOuter", "bottomLeftNear"] },
-    { values: [moneyStart, moneyResult, balance], nodes: ["rightNear", "moneyPoint", "wellbeing"] },
-    { values: [relationshipStart, relationshipResult, balance], nodes: ["tailFirst", "loveHeart", "wellbeing"] }
+    { id: "talents", label: "Линия талантов", values: [data.top, data.topSpoke.outer, data.topSpoke.near], nodes: ["top", "topOuter", "topNear"] },
+    { id: "parents", label: "Детство и родители", values: [data.left, data.leftSpoke.outer, data.leftSpoke.near], nodes: ["left", "leftOuter", "leftNear"] },
+    { id: "material", label: "Материальная карма", values: [data.right, data.rightSpoke.outer, data.rightSpoke.near], nodes: ["right", "rightOuter", "rightNear"] },
+    { id: "tail", label: "Кармический хвост", values: [data.tail.first, data.tail.second, data.bottom], nodes: ["tailFirst", "tailSecond", "bottom"] },
+    { id: "fatherTop", label: "Мужской род. Верхняя часть", values: [data.corners.topLeft, data.diagonals.topLeft.outer, data.diagonals.topLeft.near], nodes: ["topLeft", "topLeftOuter", "topLeftNear"] },
+    { id: "motherTop", label: "Женский род. Верхняя часть", values: [data.corners.topRight, data.diagonals.topRight.outer, data.diagonals.topRight.near], nodes: ["topRight", "topRightOuter", "topRightNear"] },
+    { id: "fatherBottom", label: "Мужской род. Нижняя часть", values: [data.corners.bottomRight, data.diagonals.bottomRight.outer, data.diagonals.bottomRight.near], nodes: ["bottomRight", "bottomRightOuter", "bottomRightNear"] },
+    { id: "motherBottom", label: "Женский род. Нижняя часть", values: [data.corners.bottomLeft, data.diagonals.bottomLeft.outer, data.diagonals.bottomLeft.near], nodes: ["bottomLeft", "bottomLeftOuter", "bottomLeftNear"] },
+    { id: "money", label: "Линия денег", values: [moneyStart, moneyResult, balance], nodes: ["rightNear", "moneyPoint", "wellbeing"] },
+    { id: "love", label: "Линия отношений", values: [relationshipStart, relationshipResult, balance], nodes: ["tailFirst", "loveHeart", "wellbeing"] }
   ];
 };
 
@@ -63,6 +68,14 @@ export const findKarmicPrograms = (matrixData, library) => {
 
   return library
     .filter((program) => repeats.has(program.key))
-    .map((program) => ({ ...program, repeats: repeats.get(program.key).length, matches: repeats.get(program.key) }))
-    .sort((left, right) => right.repeats - left.repeats || left.title.localeCompare(right.title, "ru"));
+    .map((program) => ({
+      ...program,
+      repeats: repeats.get(program.key).length,
+      matches: repeats.get(program.key),
+      // Only the lower tail and right material ray are called karmic in this
+      // interpretation. Other triads are talents, relationship or lineage programs.
+      karmicPlacement: repeats.get(program.key).some(match => ["tail", "material"].includes(match.id))
+    }))
+    .sort((left, right) => Number(right.karmicPlacement) - Number(left.karmicPlacement)
+      || right.repeats - left.repeats || left.title.localeCompare(right.title, "ru"));
 };
