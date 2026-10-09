@@ -32,10 +32,12 @@ function showPointPreview(key) {
   if (!point) return;
   const energy = current.knowledge.energies[String(point.value)];
   pointPreview.replaceChildren();
-  pointPreview.append(element("span", "ЭНЕРГИЯ " + point.value, "pro-point-preview-eyebrow"));
-  pointPreview.append(element("strong", energy?.name || "Энергия " + point.value, "pro-point-preview-title"));
-  pointPreview.append(element("span", point.label, "pro-point-preview-topic"));
-  if (energy?.shortEssence) pointPreview.append(element("span", energy.shortEssence, "pro-point-preview-excerpt"));
+  const previews = current.previews;
+  const context = previews.groups.money.includes(point.key) ? "money" : previews.groups.love.includes(point.key) ? "love" : "self";
+  const message = previews.energies[String(point.value)]?.[context] || energy?.advice;
+  pointPreview.append(element("span", "ВАША МАТРИЦА · ЧИСЛО " + point.value, "pro-point-preview-eyebrow"));
+  pointPreview.append(element("strong", previews.titles[point.key] || point.label, "pro-point-preview-title"));
+  if (message) pointPreview.append(element("span", message, "pro-point-preview-excerpt"));
   pointPreview.append(element("span", "↓", "pro-point-preview-arrow"));
   pointPreview.dataset.key = key;
   pointPreview.hidden = false;
@@ -68,6 +70,7 @@ window.addEventListener("resize", hidePointPreview);
 let current = null;
 let requestId = 0;
 let zoneLibraryRequest;
+let previewLibraryRequest;
 
 function loadZoneLibrary() {
   if (!zoneLibraryRequest) {
@@ -88,6 +91,24 @@ function loadZoneLibrary() {
       });
   }
   return zoneLibraryRequest;
+}
+
+function loadPreviewLibrary() {
+  if (!previewLibraryRequest) {
+    previewLibraryRequest = fetch("pro/point-previews.json?v=1")
+      .then(response => {
+        if (!response.ok) throw new Error("Не удалось загрузить короткие подсказки");
+        return response.json();
+      })
+      .then(source => {
+        if (Object.keys(source.energies || {}).length !== 22 || Object.keys(source.titles || {}).length !== 31) {
+          throw new Error("База коротких подсказок неполная");
+        }
+        return source;
+      })
+      .catch(error => { previewLibraryRequest = null; throw error; });
+  }
+  return previewLibraryRequest;
 }
 
 const category = {
@@ -304,6 +325,7 @@ function selectZone(id, scrollToDiagram = false) {
     return;
   }
   current.activeZone=zone;
+  setLabelGroup(sectorLabelPositions[zone.id]?.group || "main");
   paintZone(zone);
   renderZoneGuide(zone);
   const first=zone.points.find(key=>current.points.some(point=>point.key===key));
@@ -316,15 +338,41 @@ function selectZone(id, scrollToDiagram = false) {
 // Аккуратные подписи вокруг самой схемы. Координаты относятся только к
 // расположению надписей, а не меняют алгоритм и не добавляют новых расчётов.
 const sectorLabelPositions = {
-  spirit:        {x:165,y:43,width:200},
-  talents:       {x:449,y:43,width:202},
-  lineage:       {x:108,y:245,width:190},
-  relationships: {x:537,y:205,width:150},
-  money:         {x:538,y:404,width:116},
-  resource:      {x:128,y:553,width:192},
-  family:        {x:487,y:555,width:160},
-  purpose:       {x:310,y:628,width:216}
+  spirit:        {x:165,y:43,width:200,group:"main"},
+  talents:       {x:449,y:43,width:202,group:"main"},
+  lineage:       {x:108,y:245,width:190,group:"main"},
+  relationships: {x:537,y:205,width:150,group:"main"},
+  money:         {x:538,y:404,width:116,group:"main"},
+  resource:      {x:128,y:553,width:192,group:"main"},
+  family:        {x:487,y:555,width:160,group:"main"},
+  purpose:       {x:310,y:628,width:216,group:"main"},
+  lessons:       {x:167,y:43,width:211,group:"extra"},
+  growth:        {x:453,y:43,width:182,group:"extra"},
+  maleLine:      {x:108,y:245,width:191,group:"extra"},
+  femaleLine:    {x:515,y:245,width:202,group:"extra"},
+  career:        {x:310,y:628,width:185,group:"extra"}
 };
+const labelTabs = document.getElementById("pro-label-tabs");
+let labelGroup = "main";
+function setLabelGroup(group) {
+  labelGroup = group === "extra" ? "extra" : "main";
+  hidePointPreview();
+  labelTabs.querySelectorAll("button[data-label-group]").forEach(button => {
+    button.setAttribute("aria-pressed", String(button.dataset.labelGroup === labelGroup));
+  });
+  diagram.querySelectorAll(".pro-sector-tag").forEach(tag => {
+    const enabled = tag.dataset.labelGroup === labelGroup;
+    tag.style.display = enabled ? "" : "none";
+    tag.tabIndex = enabled ? 0 : -1;
+    tag.setAttribute("aria-hidden", String(!enabled));
+  });
+}
+labelTabs.addEventListener("click", event => {
+  const button = event.target.closest("button[data-label-group]");
+  if (!button || button.dataset.labelGroup === labelGroup) return;
+  clearZone();
+  setLabelGroup(button.dataset.labelGroup);
+});
 
 function renderDiagramSectorLabels(svg, zones) {
   const layer = svgElement("g",{"class":"pro-sector-labels","aria-label":"Названия зон матрицы"});
@@ -332,7 +380,7 @@ function renderDiagramSectorLabels(svg, zones) {
     const p = sectorLabelPositions[zone.id];
     if (!p) return;
     const tag = svgElement("g",{
-      "class":"pro-sector-tag","data-zone":zone.id,
+      "class":"pro-sector-tag","data-zone":zone.id,"data-label-group":p.group,
       role:"button",tabindex:"0","aria-label":"Подсветить зону: "+zone.title,
       "aria-pressed":"false"
     });
@@ -406,6 +454,7 @@ function renderDiagram(points) {
   });
   hidePointPreview();
   diagram.replaceChildren(svg, pointPreview);
+  setLabelGroup(labelGroup);
 }
 
 function selectPoint(key, scroll) {
@@ -823,11 +872,11 @@ form.addEventListener("submit", async(event)=>{
   submit.textContent="Подбираю ответы…";
   try{
     const matrix=calculateMatrix(birth);
-    const [knowledge,zones]=await Promise.all([loadFullReportKnowledge(),loadZoneLibrary()]);
+    const [knowledge,zones,previews]=await Promise.all([loadFullReportKnowledge(),loadZoneLibrary(),loadPreviewLibrary()]);
     if(id!==requestId)return;
     const points=nodesFor(birth,matrix);
     const definitions=buildFullReportSections(matrix);
-    current={id,birth,matrix,knowledge,points,definitions,zones,activeZone:null,selected:null};
+    current={id,birth,matrix,knowledge,points,definitions,zones,previews,activeZone:null,selected:null};
     renderDiagram(points);
     renderZones(zones);
     zoneGuide.hidden=true;
