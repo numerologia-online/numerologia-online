@@ -21,6 +21,19 @@ const karmic = document.querySelector("#pro-karma");
 const purpose = document.querySelector("#pro-purpose");
 const pdfControls = document.querySelector("#pro-pdf-controls");
 const pdfButtons = document.querySelector("#pro-pdf-buttons");
+const zoneReadingHome = zoneReading.nextElementSibling; // caption after the unchanged matrix
+let selectedZoneFrom = "diagram";
+diagram.addEventListener("click", () => { selectedZoneFrom = "diagram"; }, true);
+zoneButtons.addEventListener("click", () => { selectedZoneFrom = "picker"; }, true);
+
+document.querySelectorAll(".pro-quick-nav a[href^='#']").forEach(link => {
+  link.addEventListener("click", () => {
+    const target = document.querySelector(link.getAttribute("href"));
+    if (!target) return;
+    const group = target.closest("details.pro-compact-accordion");
+    if (group) group.open = true;
+  });
+});
 const namespace = "http://www.w3.org/2000/svg";
 
 let current = null;
@@ -272,6 +285,15 @@ function renderZoneReading(zone, shouldScroll = true) {
   if (pointDetails) {
     pointDetails.hidden = true;
     pointDetails.replaceChildren();
+  }
+  // From a compact sphere list, keep the full interpretation beside the row.
+  // From the diagram, show it at the original spot directly below the matrix.
+  if (selectedZoneFrom === "picker" && zoneButtons.closest("details")?.open) {
+    const selected = zoneButtons.querySelector('button[data-zone="' + zone.id + '"]');
+    if (selected) selected.after(zoneReading);
+    else zoneReadingHome.before(zoneReading);
+  } else {
+    zoneReadingHome.before(zoneReading);
   }
   const {reading} = zone;
   const positions = zone.points.map(key => current.points.find(point => point.key === key)).filter(Boolean);
@@ -527,7 +549,7 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
       details.append(element("h4", title));
       details.append(paragraph(guidance[key]));
     });
-    if (isTail) details.open = true;
+    // Leave the long karmic text folded until explicitly selected.
     return details;
   }
 
@@ -540,6 +562,15 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
       deepening?.tail?.[code] || deepening?.tail?.[tail.code],
       tailMatches, true));
     appendSoulStoryCard(tail, code);
+    // The story, including its narration and full text, remains available
+    // but must not fill the compact index before a reader chooses it.
+    const story = karmic.querySelector(".pro-soul-card");
+    if (story) {
+      const fold = element("details", null, "pro-soul-fold");
+      fold.append(element("summary", "История души - читать или слушать"));
+      story.replaceWith(fold);
+      fold.append(story);
+    }
   } else {
     karmic.append(paragraph("Для этого хвоста подробный текст пока не найден.", "pro-muted"));
   }
@@ -636,6 +667,7 @@ form.addEventListener("submit", async(event)=>{
     current={id,birth,matrix,knowledge,points,definitions,zones,previews,activeZone:null,selected:null};
     pointDetails.hidden = true;
     pointDetails.replaceChildren();
+    zoneReadingHome.before(zoneReading);
     zoneReading.hidden = true;
     zoneReading.replaceChildren();
     renderDiagram(points);

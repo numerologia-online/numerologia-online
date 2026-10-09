@@ -310,3 +310,16 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
  .pro-pdf-controls{padding:14px}
  .pro-compact-hint{font-size:10px}
 }
+
+
+/* Reader opens exactly at the chosen row; matrix itself is unchanged. */
+.pro-zone-buttons > .pro-zone-reading{grid-column:1/-1;width:100%;max-width:none;margin:6px 0 13px;padding:clamp(14px,3vw,22px);border-radius:14px;box-shadow:0 5px 18px rgba(48,58,65,.06)}
+.pro-karma > .pro-soul-fold{margin:7px 0;border:0;border-bottom:1px solid #eae4da;border-radius:0;padding:0;background:transparent}
+.pro-soul-fold > summary{padding:12px 14px;min-height:47px;cursor:pointer;color:#345268;font-size:14px;font-weight:700}
+.pro-soul-fold > .pro-soul-card{margin:0 3px 10px;box-shadow:none}
+.pro-quick-nav{flex-wrap:nowrap;overflow-x:auto;gap:7px;scrollbar-width:none;-webkit-overflow-scrolling:touch;white-space:nowrap}
+.pro-quick-nav::-webkit-scrollbar{display:none}
+.pro-quick-nav a{flex:none}
+@media(max-width:520px){
+ .pro-zone-buttons > .pro-zone-reading{padding:13px 10px;margin:7px 0 10px}
+}
