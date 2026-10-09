@@ -22,7 +22,12 @@ function showPointPreview(key) {
   pointPreview.append(element("span", "ВАША МАТРИЦА · ЧИСЛО " + point.value, "pro-point-preview-eyebrow"));
   pointPreview.append(element("strong", previews.titles[point.key] || point.label, "pro-point-preview-title"));
   if (message) pointPreview.append(element("span", message, "pro-point-preview-excerpt"));
-  pointPreview.append(element("span", "↓", "pro-point-preview-arrow"));
+  if (point.formula) {
+    pointPreview.append(element("span", "Расчёт. " + point.formula, "pro-point-preview-formula"));
+  }
+  const canOpen = Boolean(point.topic && getCurrent().definitions.some(item => item.key === point.topic));
+  pointPreview.append(element("span", canOpen ? "Открыть подробный ответ" : "Нажмите чтобы закрыть", "pro-point-preview-next"));
+  pointPreview.setAttribute("aria-label", canOpen ? "Открыть подробный ответ по выбранной точке" : "Закрыть подсказку по выбранной точке");
   pointPreview.dataset.key = key;
   pointPreview.hidden = false;
   const svg = diagram.querySelector("svg");
@@ -48,13 +53,9 @@ pointPreview.addEventListener("click", () => {
   const point = getCurrent()?.points.find(item => item.key === key);
   if (point?.topic && getCurrent()?.definitions.some(item => item.key === point.topic)) {
     onSelectQuestion(point.topic, true);
-  } else {
-    // Не выдаём трактовку другой позиции за ответ по выбранному числу.
-    questionButtons.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-      block: "start"
-    });
   }
+  // Additional points do not have their own 14-topic reading.
+  // Clicking their preview closes it instead of opening an unrelated answer.
 });
 document.addEventListener("keydown", event => {
   if (event.key === "Escape") hidePointPreview();
