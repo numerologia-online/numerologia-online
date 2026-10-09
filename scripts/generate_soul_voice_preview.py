@@ -1,5 +1,5 @@
 """Проба Silero v5 CIS с вручную проставленными ударениями (+ перед гласной).
-Только один короткий файл Альбины для прослушивания. Никаких изменений сайта."""
+Два коротких отрывка: Жазира с ударениями и Альбина с более мягкими паузами."""
 from pathlib import Path
 import json
 import re
@@ -17,7 +17,7 @@ SOURCE = ROOT / "pro" / "soul-stories.json"
 OUT = ROOT / "voice-preview"
 MODEL = "https://models.silero.ai/models/tts/ru/v5_cis_base_nostress.pt"
 WEIGHTS = Path("/tmp/v5_cis_base_nostress.pt")
-VOICES = {"albina-accents": "ru_albina"}
+VOICES = {"zhazira-accents": "ru_zhazira", "albina-gentle": "ru_albina"}
 SAMPLE_RATE = 24000
 
 STRESSED_SENTENCES = [
@@ -52,8 +52,10 @@ def main():
     model = torch.package.PackageImporter(str(WEIGHTS)).load_pickle("tts_models", "model")
     model.to(torch.device("cpu"))
     excerpts = get_excerpt()
-    silence = np.zeros(int(SAMPLE_RATE * .55), dtype="float32")
     for short_name, speaker in VOICES.items():
+        # Тёплый ритм не подменяет актёрскую интонацию: модель не имеет контроля эмоций.
+        pause = .78 if short_name == "albina-gentle" else .55
+        silence = np.zeros(int(SAMPLE_RATE * pause), dtype="float32")
         parts = []
         print("Synthesizing", speaker, flush=True)
         for sentence in excerpts:
@@ -68,7 +70,9 @@ def main():
         save_wav(wav_path, merged)
         subprocess.run([
             imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-nostdin", "-loglevel", "error",
-            "-i", str(wav_path), "-ac", "1", "-ar", "24000", "-b:a", "112k",
+            "-i", str(wav_path),
+            "-af", "atempo=0.965" if short_name == "albina-gentle" else "anull",
+            "-ac", "1", "-ar", "24000", "-b:a", "112k",
             str(mp3_path)
         ], check=True)
         wav_path.unlink()

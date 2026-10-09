@@ -1,4 +1,4 @@
-name: Sample Albina with correct Russian stresses
+name: Compare accented Zhazira with gentle Albina
 
 on:
   push:
@@ -25,12 +25,12 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
           python -m pip install numpy imageio-ffmpeg
-      - name: Generate two preview recordings
+      - name: Generate two emotionally different pacing samples
         run: python scripts/generate_soul_voice_preview.py
       - name: Share audio samples for listening, not site deployment
         uses: actions/upload-artifact@v4
         with:
-          name: accented-albina-demo
+          name: accented-russian-voice-comparison
           path: voice-preview/*.mp3
           if-no-files-found: error
           retention-days: 14
