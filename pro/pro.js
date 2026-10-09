@@ -492,16 +492,6 @@ async function renderPurpose(matrix) {
     card.append(paragraph(getPurposeReading(readings, scope, number), "pro-purpose-reading"));
     purpose.append(card);
   });
-  const skyAndEarth = element("p", null, "pro-muted");
-  skyAndEarth.textContent = "Личное предназначение складывается из неба " + matrix.purpose.sky
-    + " и земли " + matrix.purpose.earth + ". Социальное связано с мужской и женской линиями рода.";
-  purpose.append(skyAndEarth);
-  const centers = element("details", null, "pro-purpose-card");
-  centers.append(element("summary", "Три центра силы матрицы"));
-  centers.append(paragraph("Личный центр - энергия " + matrix.center + ". Показывает внутреннюю опору и привычные реакции."));
-  centers.append(paragraph("Родовой центр - энергия " + matrix.lineage.ancestralCenter + ". Складывается из четырёх углов родового квадрата."));
-  centers.append(paragraph("Общий центр силы - энергия " + matrix.lineage.overallCenter + ". Складывается из личного и родового центров."));
-  purpose.append(centers);
 }
 
 function markKarmicNodes(matches) {
