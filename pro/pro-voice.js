@@ -2,7 +2,7 @@
 export let activeSoulSpeech = null;
 
 // Фоновая мелодия синтезируется на устройстве: никаких аудиофайлов и внешних сервисов.
-function makeSoulAmbient() {
+export function makeSoulAmbient() {
   const AudioEngine = window.AudioContext || window.webkitAudioContext;
   if (!AudioEngine) return null;
   try {
