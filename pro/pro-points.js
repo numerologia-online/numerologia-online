@@ -46,7 +46,7 @@ export function nodesFor(birth, matrix) {
   ];
   diag.forEach(([key,base,part,ox,oy,nx,ny,label]) => {
     add(key + "Outer",label + " / внешняя",ox,oy,part.outer,expression([base,part.near],part.outer),"","",extraHint);
-    add(key + "Near",label + " / внутренняя",nx,ny,part.near,expression([base,m.center],part.near),"","",extraHint);
+    add(key + "Near",label + " / внутренняя",nx,ny,part.near,expression([base,m.lineage.ancestralCenter],part.near),"","",extraHint);
   });
   add("center","Центральная энергия",310,310,m.center,expression([m.left,m.top,m.right,m.bottom],m.center),"center","trueSelf",baseHint);
   return points;
