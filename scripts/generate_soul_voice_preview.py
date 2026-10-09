@@ -1,5 +1,5 @@
-"""Некоммерческая проба? Нет: MIT-licensed Silero CIS Base, голос не хранится в браузере.
-Только короткие демонстрации; пользователь выбирает тембр до публикации."""
+"""Проба Silero v5 CIS с вручную проставленными ударениями (+ перед гласной).
+Только один короткий файл Альбины для прослушивания. Никаких изменений сайта."""
 from pathlib import Path
 import json
 import re
@@ -17,15 +17,23 @@ SOURCE = ROOT / "pro" / "soul-stories.json"
 OUT = ROOT / "voice-preview"
 MODEL = "https://models.silero.ai/models/tts/ru/v5_cis_base_nostress.pt"
 WEIGHTS = Path("/tmp/v5_cis_base_nostress.pt")
-VOICES = {"albina": "ru_albina", "zhazira": "ru_zhazira"}
+VOICES = {"albina-accents": "ru_albina"}
 SAMPLE_RATE = 24000
+
+STRESSED_SENTENCES = [
+    "Предст+авьте небольш+ой город+ок у м+оря.",
+    "+Узкие +улочки нагрев+аются под с+олнцем, по утр+ам п+ахнет св+ежим хл+ебом, а за +окнами одног+о д+ома всегд+а гор+ит т+ёплый свет.",
+    "Возм+ожно, когд+а-то +именно там жил+а ж+енщина, кот+орая ум+ела превращ+ать об+ычные соб+ытия в удив+ительные ист+ории.",
+]
 
 def get_excerpt():
     story = json.loads(SOURCE.read_text(encoding="utf-8"))["stories"]["6-9-15"]["paragraphs"][0]
     # Только 3 предложения, без изменений текста и без новых интерпретаций.
     sentences = re.split(r"(?<=[.!?])\s+", story)
     assert len(sentences) >= 3
-    return sentences[:3]
+    reference = sentences[:3]
+    assert [line.replace("+", "") for line in STRESSED_SENTENCES] == reference, "Accent markup must preserve the story verbatim"
+    return STRESSED_SENTENCES
 
 def save_wav(path, pcm):
     samples = np.clip(pcm, -1.0, 1.0)
@@ -44,7 +52,7 @@ def main():
     model = torch.package.PackageImporter(str(WEIGHTS)).load_pickle("tts_models", "model")
     model.to(torch.device("cpu"))
     excerpts = get_excerpt()
-    silence = np.zeros(int(SAMPLE_RATE * .38), dtype="float32")
+    silence = np.zeros(int(SAMPLE_RATE * .55), dtype="float32")
     for short_name, speaker in VOICES.items():
         parts = []
         print("Synthesizing", speaker, flush=True)

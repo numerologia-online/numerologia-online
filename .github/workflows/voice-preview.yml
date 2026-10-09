@@ -1,4 +1,4 @@
-name: Sample gentle Russian female voices
+name: Sample Albina with correct Russian stresses
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
       - name: Share audio samples for listening, not site deployment
         uses: actions/upload-artifact@v4
         with:
-          name: female-voice-previews
+          name: accented-albina-demo
           path: voice-preview/*.mp3
           if-no-files-found: error
           retention-days: 14
