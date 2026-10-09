@@ -36,7 +36,7 @@ export const findKarmicTail = (matrixData, library) => {
   return matching ? { ...matching, calculatedCode: ordered, exactOrder: false } : null;
 };
 
-const getMatrixTriples = (data) => {
+export const getMatrixTriples = (data) => {
   const moneyStart = data.channels.moneyEntry;
   const relationshipStart = data.channels.loveEntry;
   const balance = data.channels.balance;
