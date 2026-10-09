@@ -2,7 +2,7 @@ import { buildFullReportSections, loadFullReportSection } from "./full-report-li
 import { findKarmicPrograms, findKarmicTail } from "./karmic-programs.js?v=3";
 
 // Отдельный модуль PDF: документ, фон, скачивание и кэширование.
-export function createFullReportPdfController({getReport, reading}) {
+export function createFullReportPdfController({getReport, reading, extendContent = null, buttonClass = "matrix-pdf-button"}) {
 let pdfMakeLoading;
 let preparedFullPdf = null;
 let preparingFullPdf = null;
@@ -293,6 +293,13 @@ const buildFullReportPdf = async () => {
     });
   });
 
+  // Optional extra chapters from the interactive matrix. The original PDF stays unchanged.
+  if (typeof extendContent === "function") {
+    const extra = await extendContent(getReport());
+    if (!Array.isArray(extra)) throw new Error("Дополнительные главы PDF не найдены");
+    content.push(...extra);
+  }
+
   const documentDefinition = {
     pageSize: "A4",
     pageMargins: [56, 64, 56, 62],
@@ -325,7 +332,7 @@ const updateFullPdfButtons = () => {
   const key = getFullPdfKey();
   const ready = Boolean(key && preparedFullPdf?.key === key);
   const preparing = Boolean(key && preparingFullPdf?.key === key);
-  reading.querySelectorAll(".matrix-pdf-button").forEach((button) => {
+  reading.querySelectorAll(`.${buttonClass}`).forEach((button) => {
     if (button.dataset.downloading === "1") return;
     const label = ready ? "Скачать PDF" : preparing ? "PDF готовится…" : "Скачать PDF";
     button.innerHTML = `${label} <span aria-hidden="true">↓</span>`;
@@ -382,7 +389,7 @@ const warmFullPdfInBackground = () => {
 
 const createFullReportPdfButton = (position = "bottom") => {
   const button = document.createElement("button");
-  button.className = `matrix-pdf-button matrix-pdf-button--${position}`;
+  button.className = `${buttonClass} ${buttonClass}--${position}`;
   button.type = "button";
   button.innerHTML = "Скачать PDF <span aria-hidden=\"true\">↓</span>";
   button.addEventListener("click", async () => {

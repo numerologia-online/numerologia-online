@@ -5,6 +5,8 @@ import { nodesFor } from "./pro-points.js?v=2";
 import { createProDiagram } from "./pro-diagram.js?v=9";
 import { stopSoulSpeech } from "./pro-voice.js?v=2";
 import { createSoulStory } from "./pro-story.js?v=2";
+import { createFullReportPdfController } from "../full-report-pdf.js?v=2";
+import { buildProPdfChapters } from "./pro-pdf-content.js?v=1";
 
 const form = document.querySelector("#pro-form");
 const input = document.querySelector("#pro-birth-date");
@@ -17,6 +19,8 @@ const zoneReading = document.querySelector("#pro-zone-reading");
 const questionButtons = document.querySelector("#pro-question-buttons");
 const karmic = document.querySelector("#pro-karma");
 const purpose = document.querySelector("#pro-purpose");
+const pdfControls = document.querySelector("#pro-pdf-controls");
+const pdfButtons = document.querySelector("#pro-pdf-buttons");
 const namespace = "http://www.w3.org/2000/svg";
 
 let current = null;
@@ -158,6 +162,12 @@ const {hidePointPreview, renderZones, renderDiagram} = createProDiagram({
   onSelectZone: (zone, scroll) => renderZoneReading(zone, scroll)
 });
 const appendSoulStoryCard = createSoulStory({element, paragraph, karmic, getCurrent: () => current});
+const {invalidateFullPdf, createFullReportPdfButton} = createFullReportPdfController({
+  getReport: () => current?.pdfReport || null,
+  reading: pdfButtons,
+  extendContent: buildProPdfChapters,
+  buttonClass: "pro-pdf-button"
+});
 
 function renderQuestions(definitions) {
   const frag = document.createDocumentFragment();
@@ -601,6 +611,10 @@ form.addEventListener("submit", async(event)=>{
     return;
   }
   error.hidden=true;
+  invalidateFullPdf();
+  pdfControls.hidden = true;
+  pdfButtons.replaceChildren();
+  const formattedDate = input.value;
   const id=++requestId;
   hidePointPreview();
   stopSoulSpeech();
@@ -633,7 +647,14 @@ form.addEventListener("submit", async(event)=>{
       loadKarmicTails(),
       loadKarmicDeepening().catch(() => ({tail: {}, program: {}}))
     ]).then(([programs,tails,deepening])=>{
-      if(current?.id===id)renderKarmic(matrix,programs,tails,deepening);
+      if(current?.id!==id)return;
+      renderKarmic(matrix,programs,tails,deepening);
+      current.pdfReport = {
+        formattedDate, matrixData: matrix, karmicPrograms: programs, karmicTails: tails,
+        points, zones, previews, knowledge, deepening
+      };
+      pdfButtons.replaceChildren(createFullReportPdfButton("top"));
+      pdfControls.hidden = false;
     })
       .catch(()=>{if(current?.id===id)karmic.replaceChildren(paragraph("Не получилось загрузить кармические программы. Попробуйте обновить страницу.","pro-muted"));});
   }catch(err){

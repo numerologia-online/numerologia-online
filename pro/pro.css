@@ -251,3 +251,16 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-zone-preview{z-index:9}
 .pro-zone-preview-values{font-size:13px;font-weight:800;line-height:1.4;color:#3e6673}
 .pro-zone-preview.inline{position:relative;grid-column:1/-1;justify-self:stretch;width:100%;max-width:none;margin:0 0 5px;box-shadow:0 8px 22px rgba(37,55,71,.11)}
+
+
+/* Download the complete interactive reading. No background PDF build on mobile. */
+.pro-pdf-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:19px;row-gap:8px;background:linear-gradient(135deg,#fffdfa,#f2f3ef);border:1px solid #dacbb1;box-shadow:0 13px 35px rgba(53,65,65,.08);border-radius:24px;padding:23px 25px;margin-bottom:19px}
+.pro-pdf-intro h2{font-size:clamp(23px,4vw,31px);margin:0 0 7px}
+.pro-pdf-intro .pro-eyebrow{margin-bottom:6px}
+.pro-pdf-intro p:not(.pro-eyebrow){font-size:14px;line-height:1.6;color:#586e78;margin:0}
+.pro-pdf-buttons{grid-column:2;grid-row:1;align-self:center}
+.pro-pdf-button{background:#274a5a;color:#fffdf8;border:1px solid #274a5a;padding:16px 23px;min-height:55px;border-radius:15px;font-weight:800;font-size:15px;box-shadow:0 6px 16px rgba(33,68,79,.15);white-space:nowrap;cursor:pointer}
+.pro-pdf-button:disabled{opacity:.75;cursor:wait}
+.pro-pdf-button:focus-visible{outline:3px solid #a89161;outline-offset:3px}
+.pro-pdf-note{grid-column:1/-1;font-size:12px;color:#77838a;margin:0}
+@media(max-width:620px){.pro-pdf-controls{grid-template-columns:minmax(0,1fr);padding:19px}.pro-pdf-buttons{grid-column:1;grid-row:auto}.pro-pdf-button{width:100%}.pro-pdf-note{grid-column:1}}
