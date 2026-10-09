@@ -202,3 +202,9 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-karmic-jump{display:inline-flex;align-items:center;margin:5px 0 12px;padding:10px 14px;border:1px solid #b5c8c8;border-radius:12px;background:#eff7f5;color:#315f64;font-weight:750;cursor:pointer}
 .pro-diagram .pro-node.pro-karmic-highlight circle{stroke:#c28c40!important;stroke-width:5!important;fill:#fff0cf!important}
 @media(max-width:520px){.pro-quick-nav{gap:7px}.pro-quick-nav a{font-size:12px;padding:8px 12px}.pro-karma-card{padding:14px}.pro-karma-card h4{font-size:17px}}
+
+.pro-karmic-combination{padding:13px 0;border-top:1px solid #e7e2d8}
+.pro-karmic-combination:first-of-type{margin-top:12px}
+.pro-karmic-combination strong{display:block;color:#345268;font-weight:750;font-size:15px;line-height:1.4}
+.pro-karmic-combination p{margin:7px 0 9px;font-size:13px!important;line-height:1.6;color:#55616b}
+.pro-karmic-combination .pro-karmic-jump{margin:3px 0 6px}
