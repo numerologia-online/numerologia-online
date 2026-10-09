@@ -211,3 +211,15 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 
 .pro-point-preview-formula{display:block;font-size:11px;line-height:1.4;color:#806d54;margin-top:4px;overflow-wrap:anywhere}
 .pro-point-preview-next{display:block;font-size:11px;font-weight:800;color:#346e75;margin-top:6px}
+
+/* Individual reading for each of the 31 diagram positions. */
+.pro-point-details{scroll-margin-top:16px;margin:12px auto 24px;max-width:660px;padding:clamp(18px,4vw,28px);background:#fffdf9;border:1px solid #d8c7ac;border-radius:22px;box-shadow:0 10px 32px rgba(48,61,64,.09);color:#30465a}
+.pro-point-details-header{display:flex;justify-content:space-between;align-items:start;gap:15px}
+.pro-point-details-header h3{font:500 clamp(25px,5vw,32px)/1.16 Georgia,serif;margin:4px 0 10px;color:#2d4559}
+.pro-point-details .pro-eyebrow{margin:0}
+.pro-point-details h4{font:500 21px/1.25 Georgia,serif;color:#94764d;margin:22px 0 9px}
+.pro-point-details p:not(.pro-eyebrow){font-size:15px;line-height:1.7;margin:0 0 12px}
+.pro-point-details-close{min-height:40px;padding:8px 12px;background:#f5f0e8;color:#40566b;border:1px solid #e0d4c2;border-radius:12px;cursor:pointer;flex-shrink:0}
+.pro-point-details-read{margin-top:12px;display:block;width:100%;text-align:center;min-height:48px;border:0;border-radius:12px;background:#294f5b;color:#fff;font-weight:750;cursor:pointer;padding:12px}
+.pro-point-details-close:focus-visible,.pro-point-details-read:focus-visible{outline:3px solid #779aa1;outline-offset:3px}
+@media(max-width:520px){.pro-point-details{padding:18px 16px;border-radius:18px}.pro-point-details-header{gap:9px}.pro-point-details-close{font-size:12px;padding:8px}.pro-point-details h4{font-size:20px}}

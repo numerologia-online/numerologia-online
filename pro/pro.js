@@ -2,7 +2,7 @@ import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js
 import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
 import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicTails } from "../karmic-programs.js?v=5";
 import { nodesFor } from "./pro-points.js?v=2";
-import { createProDiagram } from "./pro-diagram.js?v=6";
+import { createProDiagram } from "./pro-diagram.js?v=7";
 import { stopSoulSpeech } from "./pro-voice.js?v=2";
 import { createSoulStory } from "./pro-story.js?v=2";
 
@@ -11,6 +11,7 @@ const input = document.querySelector("#pro-birth-date");
 const error = document.querySelector("#pro-error");
 const results = document.querySelector("#pro-results");
 const diagram = document.querySelector("#pro-diagram");
+const pointDetails = document.querySelector("#pro-point-details");
 const zoneButtons = document.querySelector("#pro-zone-buttons");
 const questionButtons = document.querySelector("#pro-question-buttons");
 const karmic = document.querySelector("#pro-karma");
@@ -101,13 +102,13 @@ function loadZoneLibrary() {
 
 function loadPreviewLibrary() {
   if (!previewLibraryRequest) {
-    previewLibraryRequest = fetch("pro/point-previews.json?v=1")
+    previewLibraryRequest = fetch("pro/point-previews.json?v=2")
       .then(response => {
         if (!response.ok) throw new Error("Не удалось загрузить короткие подсказки");
         return response.json();
       })
       .then(source => {
-        if (Object.keys(source.energies || {}).length !== 22 || Object.keys(source.titles || {}).length !== 31) {
+        if (Object.keys(source.energies || {}).length !== 22 || Object.keys(source.titles || {}).length !== 31 || Object.keys(source.details || {}).length !== 31) {
           throw new Error("База коротких подсказок неполная");
         }
         return source;
@@ -150,7 +151,8 @@ const {hidePointPreview, renderZones, renderDiagram} = createProDiagram({
   getCurrent: () => current,
   diagram, zoneButtons, questionButtons,
   element, svgElement,
-  onSelectQuestion: (key, scroll) => selectQuestion(key, scroll)
+  onSelectQuestion: (key, scroll) => selectQuestion(key, scroll),
+  onOpenPoint: (key) => openPointDetail(key)
 });
 const appendSoulStoryCard = createSoulStory({element, paragraph, karmic, getCurrent: () => current});
 
@@ -180,6 +182,70 @@ function renderQuestions(definitions) {
     frag.append(card);
   });
   questionButtons.replaceChildren(frag);
+}
+
+// Every diagram point has its own contextual reading. The 14 large answers
+// remain an optional second layer and are never substituted for another point.
+function openPointDetail(key) {
+  if (!current || !pointDetails) return;
+  const point = current.points.find(item => item.key === key);
+  const detail = current.previews.details?.[key];
+  if (!point || !detail) return;
+  const energy = current.knowledge.energies[String(point.value)] || {};
+  const previews = current.previews;
+  const context = previews.groups.money.includes(key) ? "money"
+    : previews.groups.love.includes(key) ? "love" : "self";
+  const shortMessage = previews.energies[String(point.value)]?.[context];
+  pointDetails.replaceChildren();
+
+  const head = element("div", null, "pro-point-details-header");
+  const heading = element("div");
+  heading.append(element("p", "ПОДРОБНЫЙ РАЗБОР ТОЧКИ", "pro-eyebrow"));
+  heading.append(element("h3", previews.titles[key] || point.label));
+  const close = element("button", "Закрыть", "pro-point-details-close");
+  close.type = "button";
+  close.setAttribute("aria-label", "Закрыть подробный разбор точки");
+  close.addEventListener("click", () => {
+    pointDetails.hidden = true;
+    pointDetails.replaceChildren();
+  });
+  head.append(heading, close);
+  pointDetails.append(head);
+
+  const chips = element("div", null, "pro-chips");
+  chips.append(element("span", "Энергия " + point.value));
+  if (energy.name) chips.append(element("span", energy.name));
+  pointDetails.append(chips);
+  pointDetails.append(element("h4", "Что показывает эта точка"));
+  pointDetails.append(paragraph(detail.meaning));
+  if (shortMessage) {
+    pointDetails.append(element("h4", "Как эта энергия проявляется у вас"));
+    pointDetails.append(paragraph(shortMessage));
+  }
+  if (energy.plus || energy.mainStrength) {
+    pointDetails.append(element("h4", "В плюсе"));
+    pointDetails.append(paragraph(energy.plus || energy.mainStrength));
+  }
+  if (energy.minus || energy.mainBlock) {
+    pointDetails.append(element("h4", "В минусе"));
+    pointDetails.append(paragraph(energy.minus || energy.mainBlock));
+  }
+  pointDetails.append(element("h4", "Что сделать на практике"));
+  pointDetails.append(paragraph(detail.action));
+
+  if (point.topic && current.definitions.some(definition => definition.key === point.topic)) {
+    const deeper = element("button", "Читать полный разбор по этой теме ↓", "pro-point-details-read");
+    deeper.type = "button";
+    deeper.addEventListener("click", () => selectQuestion(point.topic, true));
+    pointDetails.append(deeper);
+  }
+  pointDetails.hidden = false;
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.requestAnimationFrame(() => {
+    if (!pointDetails.hidden) {
+      pointDetails.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    }
+  });
 }
 
 function isSubheading(text) {
@@ -462,6 +528,8 @@ form.addEventListener("submit", async(event)=>{
     const points=nodesFor(birth,matrix);
     const definitions=buildFullReportSections(matrix);
     current={id,birth,matrix,knowledge,points,definitions,zones,previews,activeZone:null,selected:null};
+    pointDetails.hidden = true;
+    pointDetails.replaceChildren();
     renderDiagram(points);
     renderZones(zones);
     renderQuestions(definitions);

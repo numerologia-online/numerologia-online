@@ -1,5 +1,5 @@
 // SVG, интерактивные точки и тематические подсветки профессиональной матрицы.
-export function createProDiagram({getCurrent, diagram, zoneButtons, questionButtons, element, svgElement, onSelectQuestion}) {
+export function createProDiagram({getCurrent, diagram, zoneButtons, questionButtons, element, svgElement, onSelectQuestion, onOpenPoint}) {
 // Компактная карточка выбранного числа. Переход вниз только при нажатии на карточку.
 const pointPreview = document.createElement("button");
 pointPreview.type = "button";
@@ -22,12 +22,8 @@ function showPointPreview(key) {
   pointPreview.append(element("span", "ВАША МАТРИЦА · ЧИСЛО " + point.value, "pro-point-preview-eyebrow"));
   pointPreview.append(element("strong", previews.titles[point.key] || point.label, "pro-point-preview-title"));
   if (message) pointPreview.append(element("span", message, "pro-point-preview-excerpt"));
-  if (point.formula) {
-    pointPreview.append(element("span", "Расчёт. " + point.formula, "pro-point-preview-formula"));
-  }
-  const canOpen = Boolean(point.topic && getCurrent().definitions.some(item => item.key === point.topic));
-  pointPreview.append(element("span", canOpen ? "Открыть подробный ответ" : "Нажмите чтобы закрыть", "pro-point-preview-next"));
-  pointPreview.setAttribute("aria-label", canOpen ? "Открыть подробный ответ по выбранной точке" : "Закрыть подсказку по выбранной точке");
+  pointPreview.append(element("span", "Открыть подробный разбор ↓", "pro-point-preview-next"));
+  pointPreview.setAttribute("aria-label", "Открыть подробный разбор выбранной точки");
   pointPreview.dataset.key = key;
   pointPreview.hidden = false;
   const svg = diagram.querySelector("svg");
@@ -50,12 +46,7 @@ pointPreview.addEventListener("click", () => {
   const key = pointPreview.dataset.key;
   if (!key) return;
   hidePointPreview();
-  const point = getCurrent()?.points.find(item => item.key === key);
-  if (point?.topic && getCurrent()?.definitions.some(item => item.key === point.topic)) {
-    onSelectQuestion(point.topic, true);
-  }
-  // Additional points do not have their own 14-topic reading.
-  // Clicking their preview closes it instead of opening an unrelated answer.
+  onOpenPoint(key);
 });
 document.addEventListener("keydown", event => {
   if (event.key === "Escape") hidePointPreview();
