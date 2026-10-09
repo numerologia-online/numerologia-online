@@ -1,8 +1,8 @@
-import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=3";
+import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=4";
 import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
 import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicTails } from "../karmic-programs.js?v=5";
 import { nodesFor } from "./pro-points.js?v=2";
-import { createProDiagram } from "./pro-diagram.js?v=5";
+import { createProDiagram } from "./pro-diagram.js?v=6";
 import { stopSoulSpeech } from "./pro-voice.js?v=2";
 import { createSoulStory } from "./pro-story.js?v=2";
 
