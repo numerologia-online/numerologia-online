@@ -32,11 +32,11 @@ export const findKarmicTail = (matrixData, library) => {
 };
 
 const getMatrixTriples = (data) => {
-  const moneyStart = data.rightSpoke.near;
-  const relationshipStart = data.tail.first;
-  const balance = reduce22(moneyStart + relationshipStart);
-  const moneyResult = reduce22(moneyStart + balance);
-  const relationshipResult = reduce22(relationshipStart + balance);
+  const moneyStart = data.channels.moneyEntry;
+  const relationshipStart = data.channels.loveEntry;
+  const balance = data.channels.balance;
+  const moneyResult = data.channels.moneyPoint;
+  const relationshipResult = data.channels.lovePoint;
 
   return [
     { values: [data.top, data.topSpoke.outer, data.topSpoke.near], nodes: ["top", "topOuter", "topNear"] },
@@ -47,8 +47,8 @@ const getMatrixTriples = (data) => {
     { values: [data.corners.topRight, data.diagonals.topRight.outer, data.diagonals.topRight.near], nodes: ["topRight", "topRightOuter", "topRightNear"] },
     { values: [data.corners.bottomRight, data.diagonals.bottomRight.outer, data.diagonals.bottomRight.near], nodes: ["bottomRight", "bottomRightOuter", "bottomRightNear"] },
     { values: [data.corners.bottomLeft, data.diagonals.bottomLeft.outer, data.diagonals.bottomLeft.near], nodes: ["bottomLeft", "bottomLeftOuter", "bottomLeftNear"] },
-    { values: [moneyStart, balance, moneyResult], nodes: ["rightNear"] },
-    { values: [relationshipStart, balance, relationshipResult], nodes: ["tailFirst"] }
+    { values: [moneyStart, moneyResult, balance], nodes: ["rightNear", "moneyPoint", "wellbeing"] },
+    { values: [relationshipStart, relationshipResult, balance], nodes: ["tailFirst", "loveHeart", "wellbeing"] }
   ];
 };
 

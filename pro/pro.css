@@ -176,3 +176,11 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-soul-today ol{padding-left:22px;margin:8px 0 18px}
 .pro-soul-today li{color:#4a6170;font-size:14px;line-height:1.65;margin-bottom:9px}
 @media(max-width:520px){.pro-soul-card{border-radius:19px;padding:18px}.pro-soul-controls .pro-soul-play{flex-basis:100%}.pro-soul-controls button{padding:12px 11px}.pro-soul-narrative p{font-size:16px!important;line-height:1.78!important}}
+
+/* Канал благополучия: любовь (сердце) и заработок (доллар). */
+.pro-wellbeing-line{stroke:#b6a58b;stroke-width:2;stroke-dasharray:5 6;fill:none;pointer-events:none}
+.pro-wellbeing-icon{font:bold 22px Georgia,serif;paint-order:stroke;stroke:#fffefa;stroke-width:3;pointer-events:none}
+.pro-wellbeing-heart{fill:#c68c99}
+.pro-wellbeing-money{fill:#b59049}
+.pro-channel-node circle{fill:#fffaf1;stroke:#ae966c;stroke-width:2.7}
+.pro-channel-node text{fill:#2d4555}

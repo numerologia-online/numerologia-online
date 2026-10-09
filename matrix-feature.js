@@ -1,11 +1,11 @@
-import { calculateMatrix, parseBirthDate } from "./numerology-core.js?v=1";
+import { calculateMatrix, parseBirthDate } from "./numerology-core.js?v=2";
 import {
   buildFullReportPreview,
   buildFullReportSections,
   loadFullReportKnowledge,
   loadFullReportSection
-} from "./full-report-library.js?v=3";
-import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "./karmic-programs.js?v=2";
+} from "./full-report-library.js?v=4";
+import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "./karmic-programs.js?v=3";
 
 const home = document.querySelector("#home");
 const matrix = document.querySelector("#matrix");
@@ -106,7 +106,7 @@ const bindMatrixTargets = () => {
 };
 
 const renderMatrix = (data, formattedDate) => {
-  const { corners, diagonals } = data;
+  const { corners, diagonals, channels } = data;
   diagram.innerHTML = `
     <svg viewBox="0 0 620 620" role="img" aria-labelledby="matrix-svg-title matrix-svg-description">
       <title id="matrix-svg-title">Матрица для даты ${formattedDate}</title>
@@ -119,19 +119,22 @@ const renderMatrix = (data, formattedDate) => {
         <circle cx="310" cy="310" r="156"></circle>
         <line class="matrix-axis matrix-axis--neutral" x1="310" y1="68" x2="310" y2="552"></line>
         <line class="matrix-axis matrix-axis--neutral" x1="68" y1="310" x2="552" y2="310"></line>
-        <line class="matrix-axis matrix-axis--blue" x1="142" y1="478" x2="478" y2="142"></line>
-        <line class="matrix-axis matrix-axis--rose" x1="142" y1="142" x2="478" y2="478"></line>
+        <line class="matrix-axis matrix-axis--blue" x1="142" y1="142" x2="478" y2="478"></line>
+        <line class="matrix-axis matrix-axis--rose" x1="142" y1="478" x2="478" y2="142"></line>
       </g>
+      <line class="matrix-wellbeing-line" x1="310" y1="462" x2="462" y2="310"></line>
+      <text class="matrix-wellbeing-heart" x="325" y="411" aria-hidden="true">♥</text>
+      <text class="matrix-wellbeing-dollar" x="445" y="354" aria-hidden="true">$</text>
 
-      ${node(310, 52, data.top, "violet", "major", "period", "Открыть описание текущего возрастного периода", "top")}
-      ${node(568, 310, data.right, "rose", "major", "earning", "Открыть раздел о заработке", "right")}
+      ${node(310, 52, data.top, "violet", "major", null, "", "top")}
+      ${node(568, 310, data.right, "rose", "major", null, "", "right")}
       ${node(310, 568, data.bottom, "rose", "major", "lifeLesson", "Открыть главный урок жизни", "bottom")}
       ${node(52, 310, data.left, "violet", "major", "impression", "Открыть раздел о том, как вас видят другие", "left")}
 
       ${node(128, 128, corners.topLeft, "plain", "medium", "parentsPain", "Открыть раздел о родительской теме", "topLeft")}
-      ${node(492, 128, corners.topRight, "plain", "medium", "partner", "Открыть раздел о подходящем партнёре", "topRight")}
+      ${node(492, 128, corners.topRight, "plain", "medium", null, "", "topRight")}
       ${node(492, 492, corners.bottomRight, "plain", "medium", "growth", "Открыть раздел о личном росте", "bottomRight")}
-      ${node(128, 492, corners.bottomLeft, "plain", "medium", "trueLove", "Открыть раздел о настоящей любви", "bottomLeft")}
+      ${node(128, 492, corners.bottomLeft, "plain", "medium", null, "", "bottomLeft")}
 
       ${node(310, 108, data.topSpoke.outer, "blue", "small", null, "", "topOuter")}
       ${node(310, 158, data.topSpoke.near, "sky", "small", null, "", "topNear")}
@@ -140,22 +143,25 @@ const renderMatrix = (data, formattedDate) => {
       ${node(158, 310, data.leftSpoke.near, "sky", "small", null, "", "leftNear")}
       ${node(216, 310, data.leftSpoke.core, "green")}
 
-      ${node(432, 310, data.rightSpoke.outer, "plain", "small", "moneyBlock", "Открыть раздел о денежных блоках", "rightOuter")}
-      ${node(382, 310, data.rightSpoke.near, "gold", "small", "moneyFlow", "Открыть раздел о денежном потоке", "rightNear")}
-      ${node(356, 356, data.rightSpoke.core, "plain", "small", "earning", "Открыть раздел о заработке")}
+      ${node(512, 310, data.rightSpoke.outer, "plain", "small", "moneyBlock", "Открыть материальную карму", "rightOuter")}
+      ${node(462, 310, channels.moneyEntry, "gold", "small", "moneyFlow", "Вход в денежный канал", "rightNear")}
+      ${node(404, 310, data.rightSpoke.core, "plain", "small", null, "", "rightCore")}
 
-      ${node(310, 388, data.tail.first, "gold", "small", "lifeLesson", "Открыть главный урок жизни", "tailFirst")}
-      ${node(310, 442, data.tail.second, "plain", "small", "familyError", "Открыть раздел о родовом сценарии", "tailSecond")}
+      ${node(310, 462, data.tail.first, "gold", "small", null, "", "tailFirst")}
+      ${node(310, 512, data.tail.second, "plain", "small", null, "", "tailSecond")}
 
-      ${node(186, 186, diagonals.topLeft.outer, "plain", "small", null, "", "topLeftOuter")}
-      ${node(230, 230, diagonals.topLeft.near, "plain", "small", null, "", "topLeftNear")}
-      ${node(434, 186, diagonals.topRight.outer, "plain", "small", null, "", "topRightOuter")}
-      ${node(390, 230, diagonals.topRight.near, "plain", "small", null, "", "topRightNear")}
-      ${node(434, 434, diagonals.bottomRight.outer, "plain", "small", null, "", "bottomRightOuter")}
-      ${node(390, 390, diagonals.bottomRight.near, "plain", "small", null, "", "bottomRightNear")}
-      ${node(186, 434, diagonals.bottomLeft.outer, "plain", "small", null, "", "bottomLeftOuter")}
-      ${node(230, 390, diagonals.bottomLeft.near, "plain", "small", null, "", "bottomLeftNear")}
+      ${node(160, 160, diagonals.topLeft.outer, "plain", "small", null, "", "topLeftOuter")}
+      ${node(202, 202, diagonals.topLeft.near, "plain", "small", null, "", "topLeftNear")}
+      ${node(460, 160, diagonals.topRight.outer, "plain", "small", null, "", "topRightOuter")}
+      ${node(418, 202, diagonals.topRight.near, "plain", "small", null, "", "topRightNear")}
+      ${node(460, 460, diagonals.bottomRight.outer, "plain", "small", null, "", "bottomRightOuter")}
+      ${node(418, 418, diagonals.bottomRight.near, "plain", "small", null, "", "bottomRightNear")}
+      ${node(160, 460, diagonals.bottomLeft.outer, "plain", "small", null, "", "bottomLeftOuter")}
+      ${node(202, 418, diagonals.bottomLeft.near, "plain", "small", null, "", "bottomLeftNear")}
 
+      ${node(348, 424, channels.lovePoint, "rose", "small", "partner", "Точка под сердцем", "loveHeart")}
+      ${node(386, 386, channels.balance, "plain", "small", null, "", "wellbeing")}
+      ${node(424, 348, channels.moneyPoint, "gold", "small", "earning", "Точка под долларом", "moneyPoint")}
       ${node(310, 310, data.center, "center", "center", "trueSelf", "Открыть раздел о вашей главной энергии")}
     </svg>
     <p class="matrix-diagram-hint">Кружки с двойным контуром можно нажать - они откроют свою расшифровку.</p>`;
@@ -364,7 +370,7 @@ const fullReportPdfFrame = () => `
   </svg>`;
 
 const buildPdfMatrixSvg = (data) => {
-  const { corners, diagonals } = data;
+  const { corners, diagonals, channels } = data;
   const palettes = {
     plain: { fill: "#FFFDF8", stroke: "#2B2730" },
     violet: { fill: "#E6D7EE", stroke: "#7D4D97" },
@@ -393,10 +399,13 @@ const buildPdfMatrixSvg = (data) => {
         <circle cx="310" cy="310" r="156"/>
         <line x1="310" y1="68" x2="310" y2="552"/>
         <line x1="68" y1="310" x2="552" y2="310"/>
-        <line x1="142" y1="478" x2="478" y2="142" stroke="#5A79B7"/>
-        <line x1="142" y1="142" x2="478" y2="478" stroke="#C67883"/>
+        <line x1="142" y1="142" x2="478" y2="478" stroke="#5A79B7"/>
+        <line x1="142" y1="478" x2="478" y2="142" stroke="#C67883"/>
       </g>
-      ${pdfNode(310, 52, data.top, "violet", "major")}
+      <line x1="310" y1="462" x2="462" y2="310" stroke="#B4A084" stroke-width="2" stroke-dasharray="6 7"/>
+       <text x="325" y="412" font-size="24" fill="#C98398">♥</text>
+       <text x="444" y="351" font-size="23" fill="#87935A">$</text>
+       ${pdfNode(310, 52, data.top, "violet", "major")}
       ${pdfNode(568, 310, data.right, "rose", "major")}
       ${pdfNode(310, 568, data.bottom, "rose", "major")}
       ${pdfNode(52, 310, data.left, "violet", "major")}
@@ -410,20 +419,23 @@ const buildPdfMatrixSvg = (data) => {
       ${pdfNode(108, 310, data.leftSpoke.outer, "blue")}
       ${pdfNode(158, 310, data.leftSpoke.near, "sky")}
       ${pdfNode(216, 310, data.leftSpoke.core, "green")}
-      ${pdfNode(432, 310, data.rightSpoke.outer)}
-      ${pdfNode(382, 310, data.rightSpoke.near, "gold")}
-      ${pdfNode(356, 356, data.rightSpoke.core)}
-      ${pdfNode(310, 388, data.tail.first, "gold")}
-      ${pdfNode(310, 442, data.tail.second)}
-      ${pdfNode(186, 186, diagonals.topLeft.outer)}
-      ${pdfNode(230, 230, diagonals.topLeft.near)}
-      ${pdfNode(434, 186, diagonals.topRight.outer)}
-      ${pdfNode(390, 230, diagonals.topRight.near)}
-      ${pdfNode(434, 434, diagonals.bottomRight.outer)}
-      ${pdfNode(390, 390, diagonals.bottomRight.near)}
-      ${pdfNode(186, 434, diagonals.bottomLeft.outer)}
-      ${pdfNode(230, 390, diagonals.bottomLeft.near)}
-      ${pdfNode(310, 310, data.center, "center", "center")}
+      ${pdfNode(512, 310, data.rightSpoke.outer)}
+      ${pdfNode(462, 310, channels.moneyEntry, "gold")}
+      ${pdfNode(404, 310, data.rightSpoke.core)}
+      ${pdfNode(310, 462, data.tail.first, "gold")}
+      ${pdfNode(310, 512, data.tail.second)}
+      ${pdfNode(160, 160, diagonals.topLeft.outer)}
+      ${pdfNode(202, 202, diagonals.topLeft.near)}
+      ${pdfNode(460, 160, diagonals.topRight.outer)}
+      ${pdfNode(418, 202, diagonals.topRight.near)}
+      ${pdfNode(460, 460, diagonals.bottomRight.outer)}
+      ${pdfNode(418, 418, diagonals.bottomRight.near)}
+      ${pdfNode(160, 460, diagonals.bottomLeft.outer)}
+      ${pdfNode(202, 418, diagonals.bottomLeft.near)}
+       ${pdfNode(348, 424, channels.lovePoint, "rose")}
+       ${pdfNode(386, 386, channels.balance)}
+       ${pdfNode(424, 348, channels.moneyPoint, "gold")}
+       ${pdfNode(310, 310, data.center, "center", "center")}
     </svg>`;
 };
 
@@ -487,15 +499,18 @@ const buildFullReportPdf = async () => {
           ["Энергия года", String(matrixData.right)],
           ["Центральная энергия", String(matrixData.center)],
           ["Что блокирует деньги", String(matrixData.rightSpoke.outer)],
-          ["Как включить поток", String(matrixData.rightSpoke.near)],
-          ["Где легче заработать", String(matrixData.rightSpoke.core)],
+          ["Вход в денежный канал", String(matrixData.channels.moneyEntry)],
+          ["Под долларом - заработок", String(matrixData.channels.moneyPoint)],
+           ["Вход в отношения", String(matrixData.channels.loveEntry)],
+           ["Под сердцем - партнёр", String(matrixData.channels.lovePoint)],
+           ["Баланс денег и любви", String(matrixData.channels.balance)],
           ["Кармический хвост", tail ? String(tail.code) : [matrixData.tail.first, matrixData.tail.second, matrixData.bottom].join("-")],
           ["Кармические программы", programs.length ? programs.map((program) => program.code).join(" · ") : "—"],
           ...programs.map((program) => [String(program.code), program.title])
         ]
       },
       layout: {
-        hLineWidth: (index) => (index === 0 || index === 7 ? 0.7 : 0.35),
+        hLineWidth: (index) => (index === 0 || index === 10 ? 0.7 : 0.35),
         vLineWidth: () => 0,
         hLineColor: () => "#d7c6a4",
         paddingLeft: () => 8,

@@ -46,6 +46,18 @@ export const calculateMatrix = ({ day, month, year }) => {
     return { outer: reduce22(corner + near), near };
   };
   const tailFirst = reduce22(center + bottom);
+  // Метод 22 энергий: линия денег и любви в нижнем правом секторе.
+  const moneyEntry = reduce22(right + center);
+  const loveEntry = tailFirst;
+  const balance = reduce22(moneyEntry + loveEntry);
+  const moneyPoint = reduce22(moneyEntry + balance);
+  const lovePoint = reduce22(loveEntry + balance);
+  const sky = reduce22(top + bottom);
+  const earth = reduce22(left + right);
+  const male = reduce22(corners.topLeft + corners.bottomRight);
+  const female = reduce22(corners.topRight + corners.bottomLeft);
+  const personal = reduce22(sky + earth);
+  const social = reduce22(male + female);
 
   return {
     top,
@@ -54,6 +66,9 @@ export const calculateMatrix = ({ day, month, year }) => {
     left,
     center,
     corners,
+    channels: { moneyEntry, loveEntry, balance, moneyPoint, lovePoint },
+    lineage: { male, female },
+    purpose: { sky, earth, personal, social, general: reduce22(personal + social) },
     topSpoke: spoke(top),
     leftSpoke: spoke(left),
     rightSpoke: spoke(right),

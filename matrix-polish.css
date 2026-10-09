@@ -267,3 +267,9 @@
   .matrix-submit:active { transform: none; }
   .matrix-karmic-trace { animation: none; }
 }
+
+/* Нижняя правая линия благополучия, сердце и доллар. */
+.matrix-wellbeing-line{stroke:#a89a79;stroke-width:2;stroke-dasharray:6 7;pointer-events:none}
+.matrix-wellbeing-heart,.matrix-wellbeing-dollar{font:700 25px Georgia,serif;paint-order:stroke;stroke:#fffaf2;stroke-width:4;pointer-events:none}
+.matrix-wellbeing-heart{fill:#cc7992}
+.matrix-wellbeing-dollar{fill:#58966e}

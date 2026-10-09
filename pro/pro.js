@@ -1,6 +1,6 @@
-import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=1";
-import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=3";
-import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "../karmic-programs.js?v=2";
+import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=2";
+import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
+import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "../karmic-programs.js?v=3";
 
 const form = document.querySelector("#pro-form");
 const input = document.querySelector("#pro-birth-date");
@@ -21,7 +21,7 @@ let zoneLibraryRequest;
 
 function loadZoneLibrary() {
   if (!zoneLibraryRequest) {
-    zoneLibraryRequest = fetch("pro/zones.json?v=1")
+    zoneLibraryRequest = fetch("pro/zones.json?v=2")
       .then((response) => {
         if (!response.ok) throw new Error("Не удалось загрузить обучающие зоны");
         return response.json();
@@ -87,29 +87,32 @@ function nodesFor(birth, matrix) {
   const baseHint = "Основная позиция: её значение используется для персональной расшифровки.";
   const extraHint = "Вспомогательная точка. Для полного вывода сопоставляйте её с соседними числами и основной позицией.";
   add("top","Месяц рождения",310,52,m.top,"Месяц рождения: " + birth.month,"major","",baseHint);
-  add("right","Энергия года рождения",568,310,m.right,"Сумма цифр года " + birth.year + ": " + sumDigits(birth.year) + " → " + m.right,"major","earning",baseHint);
+  add("right","Энергия года рождения",568,310,m.right,"Сумма цифр года " + birth.year + ": " + sumDigits(birth.year) + " → " + m.right,"major","",baseHint);
   add("bottom","Главный урок",310,568,m.bottom,expression([m.left,m.top,m.right],m.bottom),"major","lifeLesson",baseHint);
   add("left","День рождения / внешний образ",52,310,m.left,"День рождения: " + birth.day + " → " + m.left,"major","impression",baseHint);
   add("topLeft","Родительская тема",128,128,m.corners.topLeft,expression([m.left,m.top],m.corners.topLeft),"","parentsPain",baseHint);
-  add("topRight","Партнёрство",492,128,m.corners.topRight,expression([m.top,m.right],m.corners.topRight),"","partner",baseHint);
+  add("topRight","Женская линия рода / верхний угол",492,128,m.corners.topRight,expression([m.top,m.right],m.corners.topRight),"","",baseHint);
   add("bottomRight","Реализация и рост",492,492,m.corners.bottomRight,expression([m.right,m.bottom],m.corners.bottomRight),"","growth",baseHint);
-  add("bottomLeft","Любовь и близость",128,492,m.corners.bottomLeft,expression([m.bottom,m.left],m.corners.bottomLeft),"","trueLove",baseHint);
+  add("bottomLeft","Женская линия рода / нижний угол",128,492,m.corners.bottomLeft,expression([m.bottom,m.left],m.corners.bottomLeft),"","",baseHint);
   add("topOuter","Верхняя ось / внешняя точка",310,108,m.topSpoke.outer,expression([m.top,m.topSpoke.near],m.topSpoke.outer),"","",extraHint);
   add("topNear","Верхняя ось / средняя точка",310,158,m.topSpoke.near,expression([m.top,m.center],m.topSpoke.near),"","",extraHint);
   add("topCore","Верхняя ось / внутренняя точка",310,216,m.topSpoke.core,expression([m.topSpoke.near,m.center],m.topSpoke.core),"","",extraHint);
   add("leftOuter","Левая ось / внешняя точка",108,310,m.leftSpoke.outer,expression([m.left,m.leftSpoke.near],m.leftSpoke.outer),"","",extraHint);
   add("leftNear","Левая ось / средняя точка",158,310,m.leftSpoke.near,expression([m.left,m.center],m.leftSpoke.near),"","",extraHint);
   add("leftCore","Левая ось / внутренняя точка",216,310,m.leftSpoke.core,expression([m.leftSpoke.near,m.center],m.leftSpoke.core),"","",extraHint);
-  add("rightOuter","Что блокирует деньги",432,310,m.rightSpoke.outer,expression([m.right,m.rightSpoke.near],m.rightSpoke.outer),"","moneyBlock",baseHint);
-  add("rightNear","Как включить денежный поток",382,310,m.rightSpoke.near,expression([m.right,m.center],m.rightSpoke.near),"","moneyFlow",baseHint);
-  add("rightCore","Где легче зарабатывать",356,356,m.rightSpoke.core,expression([m.rightSpoke.near,m.center],m.rightSpoke.core),"","earning",baseHint);
-  add("tailFirst","Кармический хвост / начало",310,388,m.tail.first,expression([m.center,m.bottom],m.tail.first),"","lifeLesson",baseHint);
-  add("tailSecond","Кармический хвост / продолжение",310,442,m.tail.second,expression([m.bottom,m.tail.first],m.tail.second),"","familyError",baseHint);
+  add("rightOuter","Материальная карма / правый луч",512,310,m.rightSpoke.outer,expression([m.right,m.rightSpoke.near],m.rightSpoke.outer),"","moneyBlock",baseHint);
+  add("rightNear","Вход в денежный канал",462,310,m.channels.moneyEntry,expression([m.right,m.center],m.channels.moneyEntry),"","moneyFlow",baseHint);
+  add("rightCore","Внутренняя точка материальной оси",404,310,m.rightSpoke.core,expression([m.rightSpoke.near,m.center],m.rightSpoke.core),"","",extraHint);
+  add("tailFirst","Вход в канал отношений / кармический хвост",310,462,m.channels.loveEntry,expression([m.center,m.bottom],m.channels.loveEntry),"","",baseHint);
+  add("tailSecond","Кармический хвост / середина",310,512,m.tail.second,expression([m.bottom,m.tail.first],m.tail.second),"","",baseHint);
+  add("loveHeart","Под сердцем / партнёр",348,424,m.channels.lovePoint,expression([m.channels.loveEntry,m.channels.balance],m.channels.lovePoint),"","partner","Точка любви на диагонали денег и отношений.");
+  add("wellbeing","Баланс денег и отношений",386,386,m.channels.balance,expression([m.channels.moneyEntry,m.channels.loveEntry],m.channels.balance),"","","Общая точка любви и денег.");
+  add("moneyPoint","Под долларом / профессия и доход",424,348,m.channels.moneyPoint,expression([m.channels.moneyEntry,m.channels.balance],m.channels.moneyPoint),"","earning","Точка под знаком доллара на денежном канале.");
   const diag = [
-    ["topLeft",m.corners.topLeft,m.diagonals.topLeft,186,186,230,230,"Верхняя левая диагональ"],
-    ["topRight",m.corners.topRight,m.diagonals.topRight,434,186,390,230,"Верхняя правая диагональ"],
-    ["bottomRight",m.corners.bottomRight,m.diagonals.bottomRight,434,434,390,390,"Нижняя правая диагональ"],
-    ["bottomLeft",m.corners.bottomLeft,m.diagonals.bottomLeft,186,434,230,390,"Нижняя левая диагональ"]
+    ["topLeft",m.corners.topLeft,m.diagonals.topLeft,160,160,202,202,"Верхняя левая диагональ"],
+    ["topRight",m.corners.topRight,m.diagonals.topRight,460,160,418,202,"Верхняя правая диагональ"],
+    ["bottomRight",m.corners.bottomRight,m.diagonals.bottomRight,460,460,418,418,"Нижняя правая диагональ"],
+    ["bottomLeft",m.corners.bottomLeft,m.diagonals.bottomLeft,160,460,202,418,"Нижняя левая диагональ"]
   ];
   diag.forEach(([key,base,part,ox,oy,nx,ny,label]) => {
     add(key + "Outer",label + " / внешняя",ox,oy,part.outer,expression([base,part.near],part.outer),"","",extraHint);
@@ -207,6 +210,13 @@ function renderZoneGuide(zone) {
   zoneGuide.append(element("h3",zone.title));
   zoneGuide.append(paragraph(zone.description));
   zoneGuide.append(paragraph(zone.guide,"pro-zone-lesson"));
+  if (zone.id === "purpose") {
+    const d = current.matrix.purpose;
+    zoneGuide.append(paragraph(
+      "Предназначение: Небо " + d.sky + ", Земля " + d.earth + ", личное " + d.personal +
+      "; мужская линия " + current.matrix.lineage.male + ", женская " + current.matrix.lineage.female +
+      ", социальное " + d.social + ", общее " + d.general + ".","pro-zone-lesson"));
+  }
   const pointHeader=element("h4","Изучите выделенные точки");
   zoneGuide.append(pointHeader);
   const pointLinks=element("div",null,"pro-zone-point-links");
@@ -315,13 +325,20 @@ function renderDiagram(points) {
   ].forEach(([tag,attrs]) => frame.append(svgElement(tag,attrs)));
   [
     [310,68,310,552,"#b4aba0"],[68,310,552,310,"#b4aba0"],
-    [142,478,478,142,"#9baeb9"],[142,142,478,478,"#ceabb0"]
+    [142,142,478,478,"#9baeb9"],[142,478,478,142,"#ceabb0"]
   ].forEach(([x1,y1,x2,y2,stroke])=>frame.append(svgElement("line",{x1,y1,x2,y2,stroke})));
   svg.append(frame);
+  svg.append(svgElement("line",{"class":"pro-wellbeing-line",x1:310,y1:462,x2:462,y2:310,"aria-hidden":"true"}));
+  const heart = svgElement("text",{"class":"pro-wellbeing-icon pro-wellbeing-heart",x:325,y:411,"aria-hidden":"true"});
+  heart.textContent="♥";
+  const dollar = svgElement("text",{"class":"pro-wellbeing-icon pro-wellbeing-money",x:446,y:354,"aria-hidden":"true"});
+  dollar.textContent="$";
+  svg.append(heart,dollar);
   svg.append(svgElement("g",{"class":"pro-zone-highlights","aria-hidden":"true"}));
   points.forEach((point) => {
     const g = svgElement("g",{"class":"pro-node "+point.kind,"data-node-key":point.key,role:"button",tabindex:"0","aria-label":point.label + ": " + point.value});
-    const radius = point.kind === "center" ? 34 : point.kind === "major" ? 29 : 20;
+    const radius = point.kind === "center" ? 34 : point.kind === "major" ? 29 : ["loveHeart","moneyPoint","wellbeing"].includes(point.key) ? 18 : 17;
+    if (["loveHeart","moneyPoint","wellbeing"].includes(point.key)) g.classList.add("pro-channel-node");
     g.append(svgElement("circle",{cx:point.x,cy:point.y,r:radius}));
     const text = svgElement("text",{x:point.x,y:point.y + 1});
     text.textContent = String(point.value);

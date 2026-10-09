@@ -101,10 +101,10 @@ export const buildFullReportSections = (matrix) => {
     realization: matrix.corners.bottomRight,
     family: matrix.corners.topLeft,
     karma: matrix.bottom,
-    relationships: matrix.corners.bottomLeft,
+    relationships: matrix.channels.lovePoint,
     moneyBlock: matrix.rightSpoke.outer,
     moneyFlow: matrix.rightSpoke.near,
-    earning: matrix.rightSpoke.core,
+    earning: matrix.channels.moneyPoint,
     resource: matrix.center
   };
 
