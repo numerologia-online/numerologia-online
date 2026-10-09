@@ -1,6 +1,6 @@
 import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=4";
 import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
-import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=7";
+import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=7";
 import { nodesFor } from "./pro-points.js?v=2";
 import { createProDiagram } from "./pro-diagram.js?v=11";
 import { stopSoulSpeech } from "./pro-voice.js?v=2";
@@ -612,26 +612,28 @@ function markKarmicNodes(matches) {
 }
 
 
-// One compact index replaces the scattered karmic boxes. Every original
-// interpretation, story audio control and combination is moved, not rewritten.
-function compactKarmicList() {
+// Count the places where the same three energies appear, regardless of order.
+const karmicTripleKey = values => [...values].sort((a, b) => a - b).join("-");
+const countLabel = count => count === 1 ? "1 раз" : count >= 2 && count <= 4 ? count + " раза" : count + " раз";
+
+// One compact index keeps the complete readings and soul narration.
+function compactKarmicList(tailCount = 1) {
   const original = Array.from(karmic.children);
   const codeText = karmic.querySelector(".pro-karmic-current-code");
   const tailCode = codeText?.textContent.replace(/^Кармический хвост\s*/, "").trim() || "";
   const tailInfo = codeText?.nextElementSibling;
   const tailCard = original.find(node =>
     node.matches?.("details.pro-karma-card") &&
-    node.querySelector(":scope > summary")?.textContent.startsWith("Кармический хвост.")
+    node.querySelector(":scope > summary")?.textContent.startsWith("Кармический хвост ·")
   );
   if (tailCard) {
     const summary = tailCard.querySelector(":scope > summary");
-    if (tailCode) summary.textContent = summary.textContent.replace(/^Кармический хвост\./, "Кармический хвост ·") + " · " + tailCode;
     if (tailInfo?.matches("p.pro-muted")) summary.after(tailInfo);
     codeText?.remove();
   } else if (codeText) {
     // Unrecognised tails also get a single collapsed row.
     const missing = element("details", null, "pro-karma-card");
-    missing.append(element("summary", "Кармический хвост · " + tailCode));
+    missing.append(element("summary", "Кармический хвост · " + tailCode + " · " + countLabel(tailCount)));
     if (tailInfo?.matches("p.pro-muted")) missing.append(tailInfo);
     const noDescription = Array.from(karmic.children).find(node => node.matches?.("p.pro-muted") && node.textContent.includes("Для этого хвоста подробный текст"));
     if (noDescription) missing.append(noDescription);
@@ -660,11 +662,7 @@ function compactKarmicList() {
     });
   }, true);
   list.querySelectorAll(":scope > details > summary").forEach(summary => {
-    const originalTitle = summary.textContent;
-    summary.title = originalTitle;
-    if (originalTitle.startsWith("Повторение темы кармического хвоста в других сферах")) summary.textContent = "Повторения кармического хвоста";
-    if (originalTitle.startsWith("Программа. ")) summary.textContent = originalTitle.replace(/^Программа\. /, "Программа · ").replace(/\. (\d+-\d+-\d+)$/, " · $1");
-    if (originalTitle.startsWith("Кармическая программа. ")) summary.textContent = originalTitle.replace(/^Кармическая программа\. /, "Кармическая программа · ").replace(/\. (\d+-\d+-\d+)$/, " · $1");
+    summary.title = summary.textContent;
   });
   karmic.append(list);
 }
@@ -673,7 +671,10 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
   const tail = findKarmicTail(matrix, tailsBank);
   const programs = findKarmicPrograms(matrix, programsBank);
   karmic.replaceChildren();
-  const code = [matrix.tail.first, matrix.tail.second, matrix.bottom].join("-");
+  const tailValues = [matrix.tail.first, matrix.tail.second, matrix.bottom];
+  const code = tailValues.join("-");
+  const tailKey = karmicTripleKey(tailValues);
+  const tailPlaces = getMatrixTriples(matrix).filter(item => karmicTripleKey(item.values) === tailKey);
   karmic.append(paragraph("Кармический хвост " + code, "pro-karmic-current-code"));
   karmic.append(paragraph("Первая энергия показывает вход в сценарий. Вторая показывает его развитие. Третья связана с главным уроком. Порядок чисел сохраняется.", "pro-muted"));
 
@@ -711,8 +712,8 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
     const tailMatches = [{
       label: "Нижний луч матрицы",
       nodes: ["tailFirst", "tailSecond", "bottom"]
-    }];
-    karmic.append(card("Кармический хвост. " + tail.title, tail,
+    }, ...tailPlaces.filter(item => item.id !== "tail")];
+    karmic.append(card("Кармический хвост · " + tail.title + " · " + code + " · " + countLabel(tailPlaces.length), tail,
       deepening?.tail?.[code] || deepening?.tail?.[tail.code],
       tailMatches, true));
     appendSoulStoryCard(tail, code);
@@ -734,8 +735,7 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
     karmic.append(element("h3", "Другие программы по сферам жизни"));
     karmic.append(paragraph("Название программы не определяет её тяжесть. Смотрите где именно в матрице встретились три энергии.", "pro-muted"));
     unique.forEach(program => {
-      const level = program.karmicPlacement ? "Кармическая программа" : "Программа";
-      const title = level + ". " + program.title + ". " + program.code;
+      const title = program.title + " · " + program.code + " · " + countLabel(program.repeats);
       const guidance = deepening?.program?.[program.code] || deepening?.tail?.[program.code];
       karmic.append(card(title, program, guidance, program.matches));
     });
@@ -744,21 +744,7 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
   }
 
 
-  const repeats = programs.filter(program => program.key === tail?.key);
-  if (repeats.length) {
-    const otherPlaces = repeats.flatMap(program => program.matches.filter(match => match.id !== "tail"));
-    if (otherPlaces.length) {
-      const repeatCard = element("details", null, "pro-karma-card");
-      repeatCard.append(element("summary", "Повторение темы кармического хвоста в других сферах"));
-      repeatCard.append(paragraph("Та же тройка встретилась ещё здесь. " + otherPlaces.map(match => match.label).join(". ") + "."));
-      const jump = element("button", "Показать точки на матрице", "pro-karmic-jump");
-      jump.type = "button";
-      jump.addEventListener("click", () => markKarmicNodes(otherPlaces));
-      repeatCard.append(jump);
-      karmic.append(repeatCard);
-    }
-  }
-  compactKarmicList();
+  compactKarmicList(tailPlaces.length);
 }
 
 input.addEventListener("input",()=>{

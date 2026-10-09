@@ -488,9 +488,9 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-karma .pro-karma-list>details:last-child{border-bottom:0}
 .pro-karma .pro-karma-list>details>summary{
   list-style:none;display:block;position:relative;cursor:pointer;box-sizing:border-box;
-  min-height:43px;padding:11px 34px 10px 12px;border:0;margin:0;
-  color:#35556a;font-size:13px;line-height:1.32;font-weight:750;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  min-height:53px;padding:13px 40px 12px 14px;border:0;margin:0;
+  color:#35556a;font-size:14px;line-height:1.43;font-weight:750;
+  white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:break-word;
 }
 .pro-karma .pro-karma-list>details>summary::-webkit-details-marker{display:none}
 .pro-karma .pro-karma-list>details>summary::after{
@@ -517,7 +517,7 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 @media(max-width:520px){
   .pro-karmic-paper{padding:13px!important;border-radius:18px}
   .pro-karmic-paper>h2{font-size:23px;margin:0 0 8px}
-  .pro-karma .pro-karma-list>details>summary{min-height:41px;padding:10px 32px 9px 11px;font-size:12.5px}
+  .pro-karma .pro-karma-list>details>summary{min-height:52px;padding:12px 38px 11px 13px;font-size:13.5px}
 }
 
 /* Slightly smaller PDF download card, without reducing the tap target. */
