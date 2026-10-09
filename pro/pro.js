@@ -282,8 +282,14 @@ function renderZoneReading(zone, shouldScroll = true) {
   // From the diagram, show it at the original spot directly below the matrix.
   if (selectedZoneFrom === "picker") {
     const selected = zoneButtons.querySelector('button[data-zone="' + zone.id + '"]');
-    if (selected) selected.after(zoneReading);
-    else zoneReadingHome.before(zoneReading);
+    if (selected) {
+      const buttons = [...zoneButtons.querySelectorAll(".pro-zone-button")];
+      const index = buttons.indexOf(selected);
+      const rowEnd = index >= 0 && index % 2 === 0 ? (buttons[index + 1] || selected) : selected;
+      rowEnd.after(zoneReading);
+    } else {
+      zoneReadingHome.before(zoneReading);
+    }
   } else {
     zoneReadingHome.before(zoneReading);
   }
@@ -313,40 +319,61 @@ function renderZoneReading(zone, shouldScroll = true) {
   zoneReading.append(paragraph(reading.lead,"pro-zone-reading-lead"));
   zoneReading.append(element("h4","Что говорят выделенные энергии"));
 
-  const list = element("div",null,"pro-zone-reading-points");
+  // One compact, accessible list instead of seven large bordered cards.
+  // Nothing is cut: every original paragraph is inside its own disclosure.
+  const list = element("div", null, "pro-zone-reading-points");
   positions.forEach(point => {
-    const role=reading.roles[point.key];
-    if(!role)return;
-    const energy=current.knowledge.energies[String(point.value)] || {};
-    const card=element("article",null,"pro-zone-reading-position");
-    const line=element("div",null,"pro-zone-reading-position-head");
-    line.append(element("span",String(point.value),"pro-zone-reading-number"));
-    const labels=element("div");
-    labels.append(element("strong",role.title));
-    labels.append(element("small",energy.name ? "Энергия " + point.value + " · " + energy.name : "Энергия " + point.value));
+    const role = reading.roles[point.key];
+    if (!role) return;
+    const energy = current.knowledge.energies[String(point.value)] || {};
+    const card = element("details", null, "pro-zone-reading-position");
+    const line = element("summary", null, "pro-zone-reading-position-head");
+    line.append(element("span", String(point.value), "pro-zone-reading-number"));
+    const labels = element("span", null, "pro-zone-reading-position-labels");
+    labels.append(element("strong", role.title));
+    labels.append(element("small", energy.name ? "Энергия " + point.value + " · " + energy.name : "Энергия " + point.value));
     line.append(labels);
     card.append(line);
-    card.append(paragraph(role.meaning));
-    const energyText=energy[reading.energyField] || energy.shortEssence || energy.mainStrength;
-    if(energyText)card.append(paragraph(energyText,"pro-zone-reading-energy"));
-    const deeper=element("button","Разобрать эту точку подробнее →","pro-zone-reading-detail");
-    deeper.type="button";
+
+    const content = element("div", null, "pro-zone-reading-position-content");
+    content.append(paragraph(role.meaning));
+    const energyText = energy[reading.energyField] || energy.shortEssence || energy.mainStrength;
+    if (energyText) content.append(paragraph(energyText, "pro-zone-reading-energy"));
+    const deeper = element("button", "Разобрать эту точку подробнее →", "pro-zone-reading-detail");
+    deeper.type = "button";
     deeper.addEventListener("click", () => openPointDetail(point.key));
-    card.append(deeper);
+    content.append(deeper);
+    card.append(content);
+    card.addEventListener("toggle", () => {
+      if (!card.open) return;
+      list.querySelectorAll(".pro-zone-reading-position[open]").forEach(other => {
+        if (other !== card) other.open = false;
+      });
+    });
     list.append(card);
   });
   zoneReading.append(list);
 
-  zoneReading.append(element("h4","Как читать сочетание"));
-  zoneReading.append(paragraph(reading.bridge));
   const counts = new Map();
-  positions.forEach(point => counts.set(point.value,(counts.get(point.value)||0)+1));
-  const repeats = [...counts.entries()].filter(([,count]) => count>1).map(([n])=>String(n));
-  if(repeats.length) {
-    zoneReading.append(paragraph("В этой сфере повторяется энергия " + repeats.join(" и ") + ". Обратите внимание на её разные роли в каждой позиции, не смешивая значения.", "pro-zone-reading-repeat"));
+  positions.forEach(point => counts.set(point.value, (counts.get(point.value) || 0) + 1));
+  const repeats = [...counts.entries()].filter(([, count]) => count > 1).map(([n]) => String(n));
+
+  const combine = element("details", null, "pro-zone-reading-extra");
+  combine.append(element("summary", "Как читать сочетание"));
+  const combineContent = element("div", null, "pro-zone-reading-extra-content");
+  combineContent.append(paragraph(reading.bridge));
+  if (repeats.length) {
+    combineContent.append(paragraph("В этой сфере повторяется энергия " + repeats.join(" и ") + ". Обратите внимание на её разные роли в каждой позиции, не смешивая значения.", "pro-zone-reading-repeat"));
   }
-  zoneReading.append(element("h4","Что можно сделать в жизни"));
-  zoneReading.append(paragraph(reading.practice,"pro-zone-reading-practice"));
+  combine.append(combineContent);
+  zoneReading.append(combine);
+
+  const practice = element("details", null, "pro-zone-reading-extra");
+  practice.append(element("summary", "Что можно сделать в жизни"));
+  const practiceContent = element("div", null, "pro-zone-reading-extra-content");
+  practiceContent.append(paragraph(reading.practice, "pro-zone-reading-practice"));
+  practice.append(practiceContent);
+  zoneReading.append(practice);
   zoneReading.hidden = false;
   if(shouldScroll){
     const id=current.id;
