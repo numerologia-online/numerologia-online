@@ -1,10 +1,10 @@
 import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=4";
 import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
-import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=14";
+import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=15";
 import { nodesFor } from "./pro-points.js?v=2";
 import { createProDiagram } from "./pro-diagram.js?v=11";
 import { createFullReportPdfController } from "../full-report-pdf.js?v=3";
-import { buildProPdfChapters } from "./pro-pdf-content.js?v=13";
+import { buildProPdfChapters } from "./pro-pdf-content.js?v=14";
 import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
 
 const form = document.querySelector("#pro-form");
