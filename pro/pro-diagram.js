@@ -1,4 +1,4 @@
-import { createZonePreview } from "./pro-zone-preview.js?v=1";
+import { createZonePreview } from "./pro-zone-preview.js?v=2";
 
 // SVG, интерактивные точки и тематические подсветки профессиональной матрицы.
 export function createProDiagram({getCurrent, diagram, zoneButtons, questionButtons, element, svgElement, onSelectQuestion, onOpenPoint, onSelectZone}) {
