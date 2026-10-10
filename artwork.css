@@ -27,3 +27,26 @@
   background-image: url("assets/appointment.jpg");
   color: #104b3b;
 }
+
+/* Главная: только карточка «Полный расчёт». Остальные карточки без изменений. */
+.products > a.product-card.calculation {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:16px 62px;
+  text-decoration:none;
+  text-align:center;
+}
+.products > a.product-card.calculation .product-title {
+  max-width:100%;
+  margin:0;
+  font-size:clamp(26px,7vw,35px);
+  line-height:1.12;
+  letter-spacing:-.045em;
+  text-align:center;
+  text-decoration:none;
+}
+.products > a.product-card.calculation:hover,
+.products > a.product-card.calculation:focus-visible {
+  text-decoration:none;
+}

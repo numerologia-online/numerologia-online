@@ -834,6 +834,6 @@ form.addEventListener("submit", async(event)=>{
     error.hidden=false;
   }finally{
     submit.disabled=false;
-    submit.textContent="Рассчитать →";
+    submit.innerHTML='Открыть мой разбор <span aria-hidden="true">→</span>';
   }
 });
