@@ -28,25 +28,33 @@
   color: #104b3b;
 }
 
-/* Главная: только карточка «Полный расчёт». Остальные карточки без изменений. */
+/* Все названия на главной центрированы; изображения и стрелки не меняются. */
+.products > .product-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 78px;
+  text-align: center;
+}
+.products > .product-card .product-title {
+  max-width: 100%;
+  margin: 0;
+  text-align: center;
+  text-wrap: balance;
+}
 .products > a.product-card.calculation {
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  padding:16px 62px;
-  text-decoration:none;
-  text-align:center;
+  text-decoration: none;
 }
 .products > a.product-card.calculation .product-title {
-  max-width:100%;
-  margin:0;
-  font-size:clamp(26px,7vw,35px);
-  line-height:1.12;
-  letter-spacing:-.045em;
-  text-align:center;
-  text-decoration:none;
+  font-size: clamp(26px, 7vw, 35px);
+  line-height: 1.12;
+  letter-spacing: -.045em;
+  text-decoration: none;
 }
 .products > a.product-card.calculation:hover,
 .products > a.product-card.calculation:focus-visible {
-  text-decoration:none;
+  text-decoration: none;
+}
+@media (max-width: 699px) {
+  .products > .product-card { padding: 16px 62px; }
 }
