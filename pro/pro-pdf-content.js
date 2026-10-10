@@ -87,8 +87,10 @@ export async function buildProPdfChapters(report) {
     fontSize: 23, bold: true, color: "#19364e"
   });
   if (tail) {
+    const approvedProgramReading = deepening?.program?.[tailCode]?.approvedReading?.length === 5
+      ? deepening.program[tailCode] : null;
     card(tail.title, tail,
-      deepening?.tail?.[tailCode] || deepening?.tail?.[tail.code]);
+      approvedProgramReading || deepening?.tail?.[tailCode] || deepening?.tail?.[tail.code]);
   } else {
     add("Отдельная расшифровка кармического хвоста не найдена.");
   }

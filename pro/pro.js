@@ -4,7 +4,7 @@ import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicProgram
 import { nodesFor } from "./pro-points.js?v=2";
 import { createProDiagram } from "./pro-diagram.js?v=11";
 import { createFullReportPdfController } from "../full-report-pdf.js?v=3";
-import { buildProPdfChapters } from "./pro-pdf-content.js?v=11";
+import { buildProPdfChapters } from "./pro-pdf-content.js?v=12";
 import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
 
 const form = document.querySelector("#pro-form");
@@ -731,8 +731,12 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
       label: "Нижний луч матрицы",
       nodes: ["tailFirst", "tailSecond", "bottom"]
     }, ...tailPlaces.filter(item => item.id !== "tail")];
+    // Prefer the new complete five-part reading for this code, if one exists.
+    // Otherwise retain the existing tail-specific supplement.
+    const approvedProgramReading = deepening?.program?.[code]?.approvedReading?.length === 5
+      ? deepening.program[code] : null;
     const tailCard = card("", tail,
-      deepening?.tail?.[code] || deepening?.tail?.[tail.code],
+      approvedProgramReading || deepening?.tail?.[code] || deepening?.tail?.[tail.code],
       tailMatches, true);
     formatTailSummary(tailCard.querySelector(":scope > summary"), tail.title, code, tailPlaces.length);
     karmic.append(tailCard);
