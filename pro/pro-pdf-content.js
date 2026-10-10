@@ -1,4 +1,4 @@
-import { findKarmicPrograms, findKarmicTail } from "../karmic-programs.js?v=26";
+import { findKarmicPrograms, findKarmicTail } from "../karmic-programs.js?v=27";
 
 // The full PDF is intentionally focused: its original cover and 14 authored
 // readings come from full-report-pdf.js. Only the matched karmic programs are
