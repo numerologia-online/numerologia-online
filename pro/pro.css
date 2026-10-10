@@ -504,3 +504,28 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-karma .pro-karma-list>details>summary .pro-karma-tail-meta{
   display:block;margin-top:6px;font-size:13px;line-height:1.35;font-weight:700;color:#6c8290;
 }
+
+
+/* Only the two dense thematic previews need to fit between highlighted rows.
+   The inline previews and all other 11 zones keep their original appearance. */
+.pro-zone-preview[data-zone="lineage"]:not(.inline){padding:10px 13px 11px;gap:3px}
+.pro-zone-preview[data-zone="lineage"]:not(.inline) .pro-zone-preview-values{font-size:12px;line-height:1.25;letter-spacing:-.02em}
+.pro-zone-preview[data-zone="lineage"]:not(.inline) .pro-point-preview-excerpt{-webkit-line-clamp:2}
+.pro-zone-preview[data-zone="lineage"]:not(.inline) .pro-point-preview-next{margin-top:3px}
+.pro-zone-preview[data-zone="purpose"]:not(.inline){padding:8px 12px 9px;gap:2px}
+.pro-zone-preview[data-zone="purpose"]:not(.inline) .pro-point-preview-title{font-size:17px;line-height:1.12}
+.pro-zone-preview[data-zone="purpose"]:not(.inline) .pro-zone-preview-values{font-size:11px;line-height:1.25;letter-spacing:-.03em;white-space:nowrap}
+.pro-zone-preview[data-zone="purpose"]:not(.inline) .pro-point-preview-excerpt{font-size:11px;line-height:1.25;-webkit-line-clamp:1}
+.pro-zone-preview[data-zone="purpose"]:not(.inline) .pro-point-preview-next{margin-top:1px;font-size:11px;line-height:1.2}
+@media(max-width:410px){
+  .pro-zone-preview[data-zone="purpose"]:not(.inline){padding:6px 9px;gap:1px}
+  .pro-zone-preview[data-zone="purpose"]:not(.inline) .pro-point-preview-eyebrow{font-size:9px;line-height:1.1}
+  .pro-zone-preview[data-zone="purpose"]:not(.inline) .pro-point-preview-title{font-size:15px;line-height:1.05}
+  .pro-zone-preview[data-zone="purpose"]:not(.inline) .pro-zone-preview-values{font-size:10px;line-height:1.2;white-space:normal}
+  .pro-zone-preview[data-zone="purpose"]:not(.inline) .pro-point-preview-excerpt{font-size:10px;line-height:1.2}
+  .pro-zone-preview[data-zone="purpose"]:not(.inline) .pro-point-preview-next{font-size:10px;line-height:1.15}
+}
+@media(max-width:350px){
+  .pro-zone-preview[data-zone="purpose"]:not(.inline) .pro-point-preview-excerpt{display:none}
+  .pro-zone-preview[data-zone="lineage"]:not(.inline) .pro-point-preview-excerpt{-webkit-line-clamp:1}
+}

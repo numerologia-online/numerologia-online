@@ -56,6 +56,23 @@ export function createZonePreview({diagram, element, getCurrent, hidePointPrevie
     const desiredY = p.y > 400 ? y - height - 27 : y + 28;
     const preferredY = clamp(desiredY, maxY);
 
+    // Только у этих двух сфер числа расположены двумя рядами по краям.
+    // Держим компактную подсказку между выделенными рядами, не накрывая их.
+    const clearBand = zone.id === "purpose"
+      ? {upper:310,upperRadius:34,lower:568,lowerRadius:29}
+      : zone.id === "lineage"
+        ? {upper:128,upperRadius:17,lower:492,lowerRadius:17}
+        : null;
+    if (clearBand) {
+      const freeTop = rect.top - holder.top + (clearBand.upper + clearBand.upperRadius) * scale + 4;
+      const freeBottom = rect.top - holder.top + (clearBand.lower - clearBand.lowerRadius) * scale - 4;
+      if (freeBottom - freeTop >= height) {
+        preview.style.left = preferredX + "px";
+        preview.style.top = clamp(freeTop + (freeBottom - freeTop - height) / 2, maxY) + "px";
+        return;
+      }
+    }
+
     // Плашка остаётся на прежнем месте, если не закрывает числа своей сферы.
     // Иначе подбираем ближайшее свободное положение внутри схемы.
     const selected = new Set(zone.points);
