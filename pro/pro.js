@@ -69,7 +69,7 @@ function loadKarmicDeepening() {
       "pro/karmic-tail-deepening-b.json"
     ];
     karmicDeepeningRequest = Promise.all([
-      ...paths.map(path => fetch(path + "?v=8").then(response => {
+      ...paths.map(path => fetch(path + "?v=9").then(response => {
         if (!response.ok) throw new Error("Не удалось загрузить дополнения кармического хвоста");
         return response.json();
       })),
