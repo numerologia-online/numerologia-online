@@ -1,4 +1,4 @@
-import { findKarmicPrograms, findKarmicTail } from "../karmic-programs.js?v=9";
+import { findKarmicPrograms, findKarmicTail } from "../karmic-programs.js?v=10";
 
 // The full PDF is intentionally focused: its original cover and 14 authored
 // readings come from full-report-pdf.js. Only the matched karmic programs are
@@ -62,7 +62,7 @@ export async function buildProPdfChapters(report) {
     ["origins", "Другие возможные истории происхождения"],
     ["minus", "Как программа уводит жизнь в минус"],
     ["plus", "Как выглядит программа в плюсе"],
-    ["practice", "Что конкретно делать"]
+    ["practice", "Какие действия принимать, чтобы правильно проживать эту программу"]
   ];
   const card = (title, entry, guidance) => {
     heading(title);

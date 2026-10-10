@@ -1,10 +1,10 @@
 import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=4";
 import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
-import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=9";
+import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=10";
 import { nodesFor } from "./pro-points.js?v=2";
 import { createProDiagram } from "./pro-diagram.js?v=11";
 import { createFullReportPdfController } from "../full-report-pdf.js?v=3";
-import { buildProPdfChapters } from "./pro-pdf-content.js?v=7";
+import { buildProPdfChapters } from "./pro-pdf-content.js?v=8";
 import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
 
 const form = document.querySelector("#pro-form");
@@ -69,7 +69,7 @@ function loadKarmicDeepening() {
       "pro/karmic-tail-deepening-b.json"
     ];
     karmicDeepeningRequest = Promise.all([
-      ...paths.map(path => fetch(path + "?v=5").then(response => {
+      ...paths.map(path => fetch(path + "?v=6").then(response => {
         if (!response.ok) throw new Error("Не удалось загрузить дополнения кармического хвоста");
         return response.json();
       })),
@@ -715,7 +715,7 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
       ["origins", "Другие возможные истории происхождения"],
       ["minus", "Как программа уводит жизнь в минус"],
       ["plus", "Как выглядит программа в плюсе"],
-      ["practice", "Что конкретно делать"]
+      ["practice", "Какие действия принимать, чтобы правильно проживать эту программу"]
     ];
     if (guidance) sections.forEach(([key, title]) => {
       if (!guidance[key]) return;
