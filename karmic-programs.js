@@ -28,7 +28,7 @@ let activeProgramsRequest;
 function loadActiveProgramsBank() {
   if (!activeProgramsRequest) {
     activeProgramsRequest = fetch(
-      new URL("./pro/karmic-programs.json?v=7", import.meta.url),
+      new URL("./pro/karmic-programs.json?v=8", import.meta.url),
       { cache: "no-store" }
     ).then(async response => {
       if (!response.ok) throw new Error("Не удалось загрузить кармические программы");
