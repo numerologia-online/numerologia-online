@@ -28,33 +28,12 @@
   color: #104b3b;
 }
 
-/* Все названия на главной центрированы; изображения и стрелки не меняются. */
-.products > .product-card {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px 78px;
-  text-align: center;
-}
-.products > .product-card .product-title {
-  max-width: 100%;
-  margin: 0;
-  text-align: center;
-  text-wrap: balance;
-}
+/* Главная: ссылка «Полный разбор» визуально такая же, как соседние карточки. */
 .products > a.product-card.calculation {
-  text-decoration: none;
-}
-.products > a.product-card.calculation .product-title {
-  font-size: clamp(26px, 7vw, 35px);
-  line-height: 1.12;
-  letter-spacing: -.045em;
+  display: block;
   text-decoration: none;
 }
 .products > a.product-card.calculation:hover,
 .products > a.product-card.calculation:focus-visible {
   text-decoration: none;
-}
-@media (max-width: 699px) {
-  .products > .product-card { padding: 16px 62px; }
 }
