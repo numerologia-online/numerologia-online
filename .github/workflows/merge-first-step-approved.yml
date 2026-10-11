@@ -1,0 +1,81 @@
+name: Consolidate approved Red Flag first-step texts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/merge-first-step-approved.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: redflag-first-step-consolidation
+  cancel-in-progress: false
+
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify and consolidate 60 approved entries
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, pathlib, datetime
+          directory = pathlib.Path("data/redflag/love")
+          canonical = directory / "first-step.json"
+          additions = [
+              directory / "first-step-approved-1224-1233.json",
+              directory / "first-step-approved-1234-1243.json",
+              directory / "first-step-approved-1244-1257.json",
+              directory / "first-step-approved-1258-1271.json",
+              directory / "first-step-approved-1272-1283.json",
+          ]
+          base = json.loads(canonical.read_text(encoding="utf-8"))
+          if len(base["entries"]) != 1223:
+              raise SystemExit("Stop: main entry count changed, preserving all files")
+          combined = {}
+          for file in additions:
+              part = json.loads(file.read_text(encoding="utf-8"))
+              if part.get("questionId") != "first-step":
+                  raise SystemExit(f"Stop: incorrect question in {file}")
+              for key, value in part["entries"].items():
+                  if key in base["entries"] or key in combined:
+                      raise SystemExit(f"Stop: duplicate entry {key}")
+                  day, month, energy = map(int, key.split("-"))
+                  d = datetime.datetime.strptime(value["exampleDate"], "%d.%m.%Y")
+                  if day != d.day or month != d.month:
+                      raise SystemExit(f"Stop: invalid key {key}")
+                  year_energy = sum(map(int, str(d.year)))
+                  while year_energy > 22:
+                      year_energy = sum(map(int, str(year_energy)))
+                  if energy != year_energy or not value.get("text") or "\n" in value["text"]:
+                      raise SystemExit(f"Stop: invalid entry {key}")
+                  combined[key] = value
+          if len(combined) != 60:
+              raise SystemExit(f"Stop: expected 60 new entries, got {len(combined)}")
+          base["entries"].update(combined)
+          if len(base["entries"]) != 1283:
+              raise SystemExit("Stop: combined count mismatch")
+          canonical.write_text(json.dumps(base, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          for file in additions:
+              file.unlink()
+          saved = json.loads(canonical.read_text(encoding="utf-8"))
+          assert len(saved["entries"]) == 1283
+          assert all(saved["entries"][key] == value for key, value in combined.items())
+          print("Validated 1283 entries in canonical first-step.json")
+          PY
+      - name: Commit consolidated first-step database into main
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/redflag/love/first-step.json data/redflag/love/first-step-approved-*.json
+          git diff --cached --stat
+          git commit -m "Consolidate 60 approved first-step Red Flag texts into canonical JSON"
+          git push origin HEAD:main
