@@ -22,6 +22,9 @@ export const QUESTIONS = bank.questions.map((question, index) => ({
     }
     const { day, month } = profile.classic.birthDate;
     const key = `${reduce22(day)}-${month}`;
-    return { answer: textBank.entries[key] ?? "Новая трактовка для этой даты ещё готовится." };
+    const text = textBank.entries[key];
+    return text
+      ? { paragraphs: text.split(/\n\s*\n/).filter(Boolean) }
+      : { answer: "Новая трактовка для этой даты ещё готовится." };
   }
 }));
