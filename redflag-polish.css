@@ -138,7 +138,6 @@
   font-weight: 700;
 }
 .redflag-form input:focus { outline: 3px solid rgba(133, 104, 150, .18); border-color: #8f6b91; }
-.redflag-form input[type="date"] { box-sizing: border-box; min-width: 0; font-family: inherit; color-scheme: light; }
 .redflag-error { margin: -2px 0 0; color: #a23e43; font-size: 14px; font-weight: 700; }
 .redflag-submit {
   min-height: 54px;

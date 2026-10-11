@@ -141,42 +141,25 @@ const renderCategories = () => {
   categoriesRoot.replaceChildren(...REDFLAG_CATEGORIES.map(createCategory));
 };
 
-// Native calendar is limited to adult birth dates, without a separate age-calculation flow.
-const refreshBirthDateLimit = () => {
-  const today = new Date();
-  const birthYear = today.getFullYear() - 18;
-  const month = today.getMonth();
-  // Handle leap day in the browser's local timezone.
-  const day = Math.min(today.getDate(), new Date(birthYear, month + 1, 0).getDate());
-  const latestBirthDate = new Date(birthYear, month, day);
-  const two = (value) => String(value).padStart(2, "0");
-  birthDateInput.max = [
-    latestBirthDate.getFullYear(),
-    two(latestBirthDate.getMonth() + 1),
-    two(latestBirthDate.getDate())
-  ].join("-");
-};
-
-refreshBirthDateLimit();
 birthDateInput.addEventListener("input", () => {
+  const digits = birthDateInput.value.replace(/\D/g, "").slice(0, 8);
+  const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
+  birthDateInput.value = parts.join(".");
   error.hidden = true;
 });
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  // HTML date inputs return YYYY-MM-DD, but the shared calculator expects DD.MM.YYYY.
-  const [year, month, day] = birthDateInput.value.split("-");
-  const readableDate = year && month && day ? `${day}.${month}.${year}` : "";
-  const date = parseBirthDate(readableDate);
+  const date = parseBirthDate(birthDateInput.value);
   if (!date) {
-    showError("Выберите дату рождения в календаре.");
+    showError("Введите существующую дату в формате ДД.ММ.ГГГГ.");
     birthDateInput.focus();
     return;
   }
 
   try {
     activeProfile = buildRelationshipProfile(date);
-    formattedDate = readableDate;
+    formattedDate = birthDateInput.value;
     const firstCategory = REDFLAG_CATEGORIES[0];
     const firstState = categoryStates.get(firstCategory.id);
     firstState.expanded = true;
@@ -197,7 +180,6 @@ backButton.addEventListener("click", () => {
 });
 
 export const openRedFlag = () => {
-  refreshBirthDateLimit();
   home.classList.remove("is-active");
   redFlag.classList.add("is-active");
   window.scrollTo({ top: 0, behavior: "instant" });
