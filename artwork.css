@@ -30,7 +30,10 @@
 
 /* Главная: ссылка «Полный разбор» визуально такая же, как соседние карточки. */
 .products > a.product-card.calculation {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
   text-decoration: none;
 }
 .products > a.product-card.calculation:hover,
