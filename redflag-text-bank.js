@@ -16,7 +16,7 @@ export const loadQuestionBank = async (bankName) => {
     QUESTIONS: bank.questions.map((question, index) => {
       const textBank = questionTexts[index];
       if (textBank) {
-        if (textBank.questionId !== question.id || textBank.keyRule !== "reduce22(day)-month") {
+        if (textBank.questionId !== question.id || !["reduce22(day)-month", "day-month"].includes(textBank.keyRule)) {
           throw new Error(`Неверный формат текстовой базы: ${question.id}`);
         }
         return {
@@ -24,7 +24,7 @@ export const loadQuestionBank = async (bankName) => {
           title: question.title,
           answer: (profile) => {
             const { day, month } = profile.classic.birthDate;
-            const key = `${reduce22(day)}-${month}`;
+            const key = `${textBank.keyRule === "day-month" ? day : reduce22(day)}-${month}`;
             const answer = textBank.entries[key];
             if (typeof answer !== "string" || !answer.trim()) {
               throw new Error(`Ответ для ${question.id} и ${key} не найден`);
