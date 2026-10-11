@@ -1,6 +1,6 @@
 import { parseBirthDate } from "./numerology-core.js?v=1";
 import { buildRelationshipProfile } from "./redflag-engine.js?v=3";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=3";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=4";
 
 const home = document.querySelector("#home");
 const redFlag = document.querySelector("#redflag");
@@ -61,11 +61,15 @@ const createQuestion = (question, state) => {
           <div class="redflag-scale-track" aria-hidden="true"><i style="width: ${value * 10}%"></i></div>
         </div>`).join("")}
     </div>` : "";
+  const verdictMarkup = response.verdict
+    ? `<p class="redflag-verdict">${response.verdict}</p>` : "";
+  const observationMarkup = response.observation
+    ? `<p class="redflag-observation"><strong>На что смотреть:</strong> ${response.observation}</p>` : "";
   answer.innerHTML = `
-    <p class="redflag-verdict">${response.verdict}</p>
+    ${verdictMarkup}
     ${scalesMarkup}
     ${paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")}
-    <p class="redflag-observation"><strong>На что смотреть:</strong> ${response.observation}</p>`;
+    ${observationMarkup}`;
 
   button.addEventListener("click", () => {
     state.activeQuestionId = opened ? null : question.id;
