@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f8f5ed">
+  <meta name="robots" content="noindex,nofollow">
+  <base href="../../">
+  <title>Бесплатная школа нумерологии | Нумерология Онлайн</title>
+  <meta name="description" content="Бесплатные текстовые уроки матрицы судьбы, 22 энергии, примеры и тренажёр расчётов.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="pro/school/school.css?v=1">
+</head>
+<body>
+  <div class="school-shell">
+    <header class="school-top">
+      <a href="pro/" class="school-back">← Для нумерологов</a>
+      <span class="school-brand">НУМЕРОЛОГИЯ ONLINE</span>
+    </header>
+    <main>
+      <section class="school-hero">
+        <p class="school-overline">БЕСПЛАТНАЯ ТЕКСТОВАЯ ШКОЛА</p>
+        <h1>Учитесь понимать<br><em>каждое число</em></h1>
+        <p class="school-lead">Без видео и сложных терминов. Читайте уроки, разбирайте примеры и проверяйте себя. От первого расчёта до самостоятельного прочтения матрицы.</p>
+        <div class="school-metrics"><span>12 уроков</span><span>22 энергии</span><span>Живой тренажёр</span></div>
+      </section>
+      <nav class="school-tabs" aria-label="Разделы школы">
+        <button type="button" data-school-panel="lessons" aria-pressed="true">Уроки</button>
+        <button type="button" data-school-panel="trainer" aria-pressed="false">Тренажёр</button>
+        <button type="button" data-school-panel="formulas" aria-pressed="false">28 формул</button>
+        <button type="button" data-school-panel="arcana" aria-pressed="false">22 энергии</button>
+      </nav>
+      <p id="school-error" class="school-error" role="alert" hidden></p>
+      <section id="school-lessons" class="school-panel" aria-label="Программа обучения">
+        <div class="school-section-heading">
+          <div>
+            <p class="school-overline">ПОСЛЕДОВАТЕЛЬНО, В СВОЁМ ТЕМПЕ</p>
+            <h2>Программа обучения</h2>
+          </div>
+          <span id="school-progress" class="school-progress">0 из 12</span>
+        </div>
+        <div class="school-layout">
+          <aside class="school-index" aria-label="Выбрать урок">
+            <div id="school-lesson-list" class="school-lesson-list"></div>
+          </aside>
+          <article id="school-lesson-content" class="school-lesson-card" aria-live="polite">
+            <p>Загружаю уроки…</p>
+          </article>
+        </div>
+      </section>
+      <section id="school-trainer" class="school-panel" aria-label="Тренажёр расчётов" hidden>
+        <p class="school-overline">ПРАКТИКА БЕЗ ПОДСКАЗОК</p>
+        <h2>Посчитайте сами</h2>
+        <p class="school-section-lead">Решайте задачи на новых датах рождения. Ответ проверяется по тому же базовому алгоритму, который работает в нашей матрице.</p>
+        <div class="school-practice-card">
+          <p class="school-overline">ДАТА ДЛЯ ТРЕНИРОВКИ</p>
+          <p id="school-train-date" class="school-train-date">14.07.1990</p>
+          <form id="school-train-form" novalidate>
+            <label for="school-train-point">Какую точку рассчитать?</label>
+            <select id="school-train-point"></select>
+            <label for="school-train-answer">Введите число от 1 до 22</label>
+            <input id="school-train-answer" type="number" min="1" max="22" inputmode="numeric" required>
+            <button type="submit" class="school-primary">Проверить ответ</button>
+          </form>
+          <p id="school-train-feedback" class="school-feedback" role="status" aria-live="polite"></p>
+          <button id="school-train-next" type="button" class="school-secondary">Другая дата →</button>
+        </div>
+      </section>
+      <section id="school-formulas" class="school-panel" aria-label="Справочник формул 28 точек" hidden>
+        <p class="school-overline">ПРОВЕРЯЕМАЯ АРИФМЕТИКА</p>
+        <h2>28 точек по шагам</h2>
+        <p class="school-section-lead">Введите дату рождения и проследите все формулы: из каких чисел складывается каждая точка и что получается после приведения к 22. Здесь показана текущая учебная схема нашего сайта; вспомогательные точки в других школах могут располагаться иначе.</p>
+        <form id="school-formula-form" class="school-formula-form" novalidate>
+          <label for="school-formula-date">Дата рождения для примера</label>
+          <div class="school-formula-row">
+            <input id="school-formula-date" type="text" inputmode="numeric" maxlength="10" placeholder="ДД.ММ.ГГГГ" value="14.07.1990" required>
+            <button type="submit" class="school-primary">Показать формулы</button>
+          </div>
+          <p id="school-formula-error" class="school-error" role="alert" hidden></p>
+        </form>
+        <div id="school-formula-list" class="school-formula-list" aria-live="polite"></div>
+      </section>
+      <section id="school-arcana" class="school-panel" aria-label="Справочник энергий" hidden>
+        <p class="school-overline">ЭНЦИКЛОПЕДИЯ АРКАНОВ</p>
+        <h2>Все 22 энергии</h2>
+        <p class="school-section-lead">Выберите энергию. Её название, смысл, сильные и теневые стороны, проявление в деньгах и отношениях собраны в одном месте. В этой школе 8 - Справедливость, 11 - Сила.</p>
+        <div id="school-arcana-buttons" class="school-arcana-buttons" role="group" aria-label="Выбор энергии"></div>
+        <article id="school-arcana-content" class="school-arcana-detail" aria-live="polite"></article>
+      </section>
+      <section class="school-next" aria-label="Работа с матрицей">
+        <div>
+          <p class="school-overline">ПРИМЕНИТЕ ЗНАНИЯ</p>
+          <h2>Откройте живую матрицу</h2>
+          <p>Вернитесь к интерактивной схеме, введите любую дату и нажимайте на точки, чтобы проверить свои вычисления.</p>
+        </div>
+        <a href="pro/" class="school-action">К матрице →</a>
+      </section>
+    </main>
+    <footer class="school-footer">Нумерология Онлайн · Учебные материалы доступны бесплатно · Прогресс сохраняется в этом браузере</footer>
+  </div>
+  <script type="module" src="pro/school/school.js?v=1"></script>
+</body>
+</html>
