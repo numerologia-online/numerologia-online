@@ -106,10 +106,10 @@
             </div>
           </div>
 
-          <form id="redflag-form" class="redflag-form" novalidate>
+          <form id="redflag-form" class="redflag-form">
             <label>
               <span>Дата рождения мужчины</span>
-              <input id="redflag-birth-date" type="text" inputmode="numeric" autocomplete="bday" placeholder="ДД.ММ.ГГГГ" pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}" maxlength="10" required />
+              <input id="redflag-birth-date" type="date" autocomplete="bday" min="1965-01-01" aria-describedby="redflag-age-note" required />
             </label>
             <p id="redflag-error" class="redflag-error" hidden aria-live="polite"></p>
             <button class="redflag-submit" type="submit">Посмотреть отношения <span aria-hidden="true">→</span></button>
@@ -118,6 +118,7 @@
           <section id="redflag-categories" class="redflag-categories" aria-label="Разделы расчёта"></section>
 
           <p class="redflag-footer">Это ориентир для наблюдения, а не приговор человеку. Сильнее любой даты — то, как он обращается с вами в реальности.</p>
+          <p id="redflag-age-note" class="redflag-ethics-note">По этическим причинам мы не рассчитываем людей моложе 18 лет.</p>
         </div>
       </section>
 
@@ -255,6 +256,6 @@
       <button id="pdf-download-button" class="pdf-download-button" type="button">Скачать PDF <span>↓</span></button>
     </dialog>
   <script src="install.js?v=3" defer></script>
-  <script type="module" src="app.js?v=156"></script>
+  <script type="module" src="app.js?v=157"></script>
   </body>
 </html>

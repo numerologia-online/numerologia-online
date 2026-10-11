@@ -138,6 +138,7 @@
   font-weight: 700;
 }
 .redflag-form input:focus { outline: 3px solid rgba(133, 104, 150, .18); border-color: #8f6b91; }
+.redflag-form input[type="date"] { box-sizing: border-box; min-width: 0; font-family: inherit; color-scheme: light; }
 .redflag-error { margin: -2px 0 0; color: #a23e43; font-size: 14px; font-weight: 700; }
 .redflag-submit {
   min-height: 54px;
@@ -205,6 +206,7 @@
 .redflag-observation { padding-top: 11px; border-top: 1px solid rgba(181, 143, 82, .26); color: #5e6170; font-size: 14px; }
 .redflag-observation strong { color: #8e6832; }
 .redflag-footer { margin: 19px 7px 0; color: #6e7180; font-size: 13px; line-height: 1.4; }
+.redflag-ethics-note { margin: 8px 7px 0; color: #85818a; font-size: 11px; line-height: 1.35; text-align: center; }
 
 @media (max-width: 430px) {
   #redflag { padding-right: 14px; padding-left: 14px; }
