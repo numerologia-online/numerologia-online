@@ -1,0 +1,237 @@
+import { calculateMatrix, parseBirthDate } from "../../../numerology-core.js?v=4";
+import { nodesFor } from "../../pro-points.js?v=2";
+
+const $ = (id) => document.getElementById(id);
+const make = (tag, className, value) => {
+  const item = document.createElement(tag);
+  if (className) item.className = className;
+  if (value !== undefined) item.textContent = String(value);
+  return item;
+};
+const svgNS = "http://www.w3.org/2000/svg";
+const makeSvg = (tag, attrs = {}) => {
+  const item = document.createElementNS(svgNS, tag);
+  for (const [name, value] of Object.entries(attrs)) item.setAttribute(name, String(value));
+  return item;
+};
+const storeKey = "numerologia-online-pro-school-v1";
+let lesson, manifest, index = -1, currentBirth = {day:14,month:7,year:1990}, step = 0;
+const params = new URLSearchParams(location.search);
+const id = params.get("id") || "start";
+const diagram = $("lesson-diagram");
+const stepTitles = [
+  "Нарисуйте ромб и квадрат",
+  "Впишите день, месяц и год",
+  "Найдите нижнюю опору",
+  "Посчитайте центральную энергию",
+  "Заполните четыре угла"
+];
+const stepDescriptions = [
+  "На листе нарисуйте ромб: вершины сверху, справа, снизу и слева. Внутри нарисуйте квадрат и проведите вертикальную и горизонтальную линии через центр. Девять кружков пока пустые.",
+  "Число дня рождения ставим слева, месяца - сверху, сумму цифр года - справа. Большие числа приводим к диапазону 1-22 сложением цифр.",
+  "Нижняя опора - сумма трёх уже записанных чисел: левого, верхнего и правого. Если получилось больше 22, сложите цифры результата.",
+  "Центр - сумма четырёх опор: левой, верхней, правой и нижней. Не путайте с центром родового квадрата.",
+  "Каждый угол квадрата - сумма двух соседних вершин ромба. Теперь у вас заполнены все девять основных мест."
+];
+const stageKeys = [
+  [], ["left","top","right"], ["left","top","right","bottom"],
+  ["left","top","right","bottom","center"],
+  ["left","top","right","bottom","center","topLeft","topRight","bottomLeft","bottomRight"]
+];
+
+function drawBasic(matrix) {
+  const svg = makeSvg("svg",{viewBox:"0 0 400 400",role:"img","aria-label":"Матрица: девять опорных мест с числами по выбранному шагу"});
+  svg.append(makeSvg("polygon",{points:"200,35 365,200 200,365 35,200","class":"school-diagram-outline"}));
+  svg.append(makeSvg("rect",{x:83,y:83,width:234,height:234,"class":"school-diagram-outline"}));
+  [[200,35,200,365],[35,200,365,200],[83,83,317,317],[317,83,83,317]].forEach(([x1,y1,x2,y2]) =>
+    svg.append(makeSvg("line",{x1,y1,x2,y2,"class":"school-diagram-line"})));
+  const nodes = [
+    ["top",200,35,matrix.top,"Месяц"],["right",365,200,matrix.right,"Год"],
+    ["bottom",200,365,matrix.bottom,"Низ"],["left",35,200,matrix.left,"День"],
+    ["center",200,200,matrix.center,"Центр"],
+    ["topLeft",83,83,matrix.corners.topLeft,"Угол"],["topRight",317,83,matrix.corners.topRight,"Угол"],
+    ["bottomRight",317,317,matrix.corners.bottomRight,"Угол"],["bottomLeft",83,317,matrix.corners.bottomLeft,"Угол"]
+  ];
+  for (const [key,x,y,value,label] of nodes) {
+    const shown=stageKeys[step].includes(key);
+    const group=makeSvg("g",{"class":shown?"school-graph-node is-revealed":"school-graph-node"});
+    group.append(makeSvg("circle",{cx:x,cy:y,r:key==="center"?24:20}));
+    const text=makeSvg("text",{x,y:y+1,"text-anchor":"middle","dominant-baseline":"middle"});
+    text.textContent=shown?String(value):"?";
+    group.append(text);
+    const title=makeSvg("title");title.textContent=label+(shown?": "+value:" - пока пусто");group.append(title);
+    svg.append(group);
+  }
+  diagram.replaceChildren(svg);
+}
+
+function drawAllPositions(matrix) {
+  const svg=makeSvg("svg",{viewBox:"0 0 620 806",role:"img","aria-label":"Все 31 позиции рассчитанной матрицы"});
+  svg.append(makeSvg("polygon",{points:"310,34 506,114 586,310 506,506 310,586 114,506 34,310 114,114","class":"school-diagram-outline"}));
+  svg.append(makeSvg("rect",{x:114,y:114,width:392,height:392,"class":"school-diagram-outline"}));
+  svg.append(makeSvg("polygon",{points:"310,34 586,310 310,586 34,310","class":"school-diagram-outline"}));
+  [[310,68,310,552],[68,310,552,310],[114,114,506,506],[506,114,114,506]].forEach(([x1,y1,x2,y2]) =>
+    svg.append(makeSvg("line",{x1,y1,x2,y2,"class":"school-diagram-line"})));
+  for(const point of nodesFor(currentBirth,matrix)){
+    const group=makeSvg("g",{"class":"school-graph-node is-revealed"+(point.kind==="center"?" is-center":"")});
+    const radius=point.kind==="center"?28:point.kind==="major"?25:15;
+    group.append(makeSvg("circle",{cx:point.x,cy:point.y,r:radius}));
+    const text=makeSvg("text",{x:point.x,y:point.y+1,"text-anchor":"middle","dominant-baseline":"middle","font-size":radius<=15?17:22});
+    text.textContent=String(point.value);
+    group.append(text);
+    const title=makeSvg("title");title.textContent=point.label+": "+point.value;group.append(title);
+    svg.append(group);
+  }
+  diagram.replaceChildren(svg);
+}
+
+function drawCurrent() {
+  const m=calculateMatrix(currentBirth);
+  const full=id==="internal"&&step===4;
+  if(full) drawAllPositions(m);
+  else drawBasic(m);
+  $("lesson-step-count").textContent="ШАГ "+(step+1)+" ИЗ 5";
+  $("lesson-step-title").textContent=stepTitles[step];
+  $("lesson-step-text").textContent=stepDescriptions[step];
+  const examples=[
+    "Пока ничего не считаем - рисуем девять мест.",
+    "Слева "+m.left+", сверху "+m.top+", справа "+m.right+".",
+    m.left+" + "+m.top+" + "+m.right+" → "+m.bottom+".",
+    m.left+" + "+m.top+" + "+m.right+" + "+m.bottom+" → "+m.center+".",
+    "Углы: "+m.corners.topLeft+", "+m.corners.topRight+", "+m.corners.bottomRight+", "+m.corners.bottomLeft+"."
+  ];
+  $("lesson-step-formula").textContent=full?"Готовая основа. Теперь показаны все 31 позиции нашей интерактивной матрицы.":examples[step];
+  $("lesson-step-back").disabled=step===0;
+  $("lesson-step-next").disabled=step===4;
+}
+function setupDiagram() {
+  if(index>4)return;
+  $("lesson-drawing").hidden=false;
+  step=[0,1,1,3,4][index]??0;
+  $("lesson-step-back").addEventListener("click",()=>{step=Math.max(0,step-1);drawCurrent()});
+  $("lesson-step-next").addEventListener("click",()=>{step=Math.min(4,step+1);drawCurrent()});
+  const dateInput=$("lesson-date");
+  const dateError=$("lesson-date-error");
+  dateInput.addEventListener("input",()=>{
+    const digits=dateInput.value.replace(/\D/g,"").slice(0,8);
+    dateInput.value=[digits.slice(0,2),digits.slice(2,4),digits.slice(4,8)].filter(Boolean).join(".");
+    dateError.hidden=true;
+  });
+  $("lesson-date-form").addEventListener("submit",event=>{
+    event.preventDefault();
+    const birth=parseBirthDate(dateInput.value);
+    if(!birth){dateError.hidden=false;dateError.textContent="Проверьте дату в формате ДД.ММ.ГГГГ.";return}
+    dateError.hidden=true;
+    currentBirth=birth;
+    drawCurrent();
+  });
+  drawCurrent();
+}
+
+function renderQuiz(data) {
+  const root=$("lesson-quiz");
+  root.replaceChildren();
+  root.append(make("h2","","Проверьте, что запомнили"));
+  root.append(make("p","school-quiz-intro","Ответьте на вопросы - после правильных ответов урок отметится как пройденный."));
+  const form=make("form","school-quiz-form");
+  form.noValidate=true;
+  data.questions.forEach((question,index)=>{
+    const fieldset=make("fieldset","school-question");
+    fieldset.append(make("legend","",`${index+1}. ${question.prompt}`));
+    question.options.forEach((option,optionIndex)=>{
+      const label=make("label");
+      const input=make("input");
+      input.type="radio";input.name="quiz-"+index;input.value=String(optionIndex);
+      label.append(input,make("span","",option));
+      fieldset.append(label);
+    });
+    form.append(fieldset);
+  });
+  const submit=make("button","school-primary","Проверить знания");
+  submit.type="submit";
+  form.append(submit);
+  const feedback=make("p","school-quiz-result");
+  feedback.setAttribute("role","status");
+  feedback.setAttribute("aria-live","polite");
+  form.append(feedback);
+  form.addEventListener("submit",event=>{
+    event.preventDefault();
+    const answers=data.questions.map((_,i)=>form.querySelector(`input[name="quiz-${i}"]:checked`));
+    if(answers.some(a=>!a)){feedback.textContent="Выберите ответ на каждый вопрос.";return}
+    const score=answers.filter((a,i)=>Number(a.value)===data.questions[i].correct).length;
+    if(score===data.questions.length){
+      try{
+        const items=JSON.parse(localStorage.getItem(storeKey)||"[]");
+        const done=new Set(Array.isArray(items)?items:[]);
+        done.add(data.id);
+        localStorage.setItem(storeKey,JSON.stringify([...done]));
+      }catch{/* Без хранилища урок всё равно работает. */}
+      feedback.textContent="Отлично! Урок пройден. Можно переходить к следующему.";
+      submit.textContent="✓ Урок пройден";
+    }else{
+      feedback.textContent="Правильно: "+score+" из "+data.questions.length+". "+
+        data.questions.map((q,i)=>Number(answers[i].value)===q.correct?"":q.explain).filter(Boolean).join(" ");
+    }
+  });
+  root.append(form);
+}
+function renderNavigation() {
+  const nav=$("lesson-navigation");
+  nav.replaceChildren();
+  const prev=manifest[index-1],next=manifest[index+1];
+  const link=(item,txt,cl)=>{
+    const a=make("a",cl,txt);
+    a.href="pro/school/lesson/?id="+encodeURIComponent(item.id);
+    return a;
+  };
+  if(prev)nav.append(link(prev,"← Предыдущий урок","school-secondary"));
+  nav.append(link({id:"",title:""},"Вся программа","school-lesson-all"));
+  nav.lastElementChild.href="pro/school/";
+  if(next)nav.append(link(next,"Следующий урок →","school-primary"));
+}
+function renderLesson(data) {
+  document.title=data.title+" | Школа нумерологов";
+  $("lesson-count").textContent="УРОК "+(index+1)+" ИЗ "+manifest.length+" · "+data.level;
+  $("lesson-title").textContent=data.title;
+  $("lesson-lead").textContent=data.lead;
+  const root=$("lesson-content");
+  root.replaceChildren();
+  data.sections.forEach((section,i)=>{
+    const wrapper=make("section","school-topic");
+    wrapper.append(make("h2","school-topic-title",section.heading));
+    wrapper.append(make("p","",section.text));
+    if(section.example)wrapper.append(make("p","school-example",section.example));
+    root.append(wrapper);
+  });
+  const takeaway=make("section","school-takeaway");
+  takeaway.append(make("strong","","Главное, что нужно запомнить"));
+  takeaway.append(make("p","",data.takeaway));
+  root.append(takeaway);
+  renderQuiz(data);
+  renderNavigation();
+  setupDiagram();
+}
+async function start() {
+  try{
+    const res=await fetch("pro/school/lessons-manifest.json?v=1");
+    if(!res.ok)throw Error("Список уроков не найден");
+    const meta=await res.json();
+    if(meta.schema!=="pro-school-lessons-manifest-v1"||!Array.isArray(meta.lessons))throw Error("Некорректная программа");
+    manifest=meta.lessons;
+    index=manifest.findIndex(item=>item.id===id);
+    if(index<0)throw Error("Урок не найден");
+    const response=await fetch(manifest[index].file+"?v=1");
+    if(!response.ok)throw Error("Материал урока не найден");
+    lesson=await response.json();
+    if(lesson.id!==id||!Array.isArray(lesson.sections)||!Array.isArray(lesson.questions))
+      throw Error("Материал урока неполный");
+    renderLesson(lesson);
+  }catch(error){
+    console.error("Школа: урок",error);
+    const notice=$("lesson-error");
+    notice.hidden=false;
+    notice.textContent="Не получилось загрузить урок. Проверьте интернет и попробуйте открыть его снова.";
+    $("lesson-title").textContent="Урок временно недоступен";
+  }
+}
+start();
