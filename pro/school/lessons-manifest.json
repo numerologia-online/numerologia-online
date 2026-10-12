@@ -1,0 +1,102 @@
+{
+  "schema": "pro-school-lessons-manifest-v1",
+  "version": "2026-10-12",
+  "lessons": [
+    {
+      "id": "start",
+      "title": "Рисуем матрицу с нуля: где стоят числа",
+      "level": "Основы",
+      "minutes": 14,
+      "index": 1,
+      "file": "pro/school/lessons/start.json"
+    },
+    {
+      "id": "reduce",
+      "title": "Правило 22 энергий: считаем без ошибок",
+      "level": "Основы",
+      "minutes": 12,
+      "index": 2,
+      "file": "pro/school/lessons/reduce.json"
+    },
+    {
+      "id": "base",
+      "title": "Вписываем день, месяц, год, низ и центр",
+      "level": "Расчёты",
+      "minutes": 17,
+      "index": 3,
+      "file": "pro/school/lessons/base.json"
+    },
+    {
+      "id": "corners",
+      "title": "Добавляем четыре угла квадрата",
+      "level": "Расчёты",
+      "minutes": 14,
+      "index": 4,
+      "file": "pro/school/lessons/corners.json"
+    },
+    {
+      "id": "internal",
+      "title": "Внутренние цифры: оси, диагонали и каналы",
+      "level": "Расчёты",
+      "minutes": 22,
+      "index": 5,
+      "file": "pro/school/lessons/internal.json"
+    },
+    {
+      "id": "energies-a",
+      "title": "Энергии 1-11: характер действия",
+      "level": "Трактовки",
+      "minutes": 18,
+      "index": 6,
+      "file": "pro/school/lessons/energies-a.json"
+    },
+    {
+      "id": "energies-b",
+      "title": "Энергии 12-22: перемены и зрелость",
+      "level": "Трактовки",
+      "minutes": 18,
+      "index": 7,
+      "file": "pro/school/lessons/energies-b.json"
+    },
+    {
+      "id": "tail",
+      "title": "Кармический хвост: порядок имеет значение",
+      "level": "Связки",
+      "minutes": 15,
+      "index": 8,
+      "file": "pro/school/lessons/tail.json"
+    },
+    {
+      "id": "topics",
+      "title": "Отношения, деньги, род и ресурсы",
+      "level": "Сферы жизни",
+      "minutes": 15,
+      "index": 9,
+      "file": "pro/school/lessons/topics.json"
+    },
+    {
+      "id": "purpose",
+      "title": "Предназначение: три уровня расчёта",
+      "level": "Продвинутый уровень",
+      "minutes": 16,
+      "index": 10,
+      "file": "pro/school/lessons/purpose.json"
+    },
+    {
+      "id": "consult",
+      "title": "Как связать числа в живой разбор",
+      "level": "Практика",
+      "minutes": 15,
+      "index": 11,
+      "file": "pro/school/lessons/consult.json"
+    },
+    {
+      "id": "final",
+      "title": "Самостоятельный разбор: итоговая практика",
+      "level": "Проверка знаний",
+      "minutes": 20,
+      "index": 12,
+      "file": "pro/school/lessons/final.json"
+    }
+  ]
+}
