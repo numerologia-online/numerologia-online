@@ -31,7 +31,7 @@ function readProgress() {
     return new Set(Array.isArray(items) ? items.filter((item) => typeof item === "string") : []);
   } catch { return new Set(); }
 }
-const completed = readProgress();
+let completed = readProgress();
 function saveProgress() {
   try { localStorage.setItem(storageKey, JSON.stringify([...completed])); } catch { /* Можно заниматься без сохранения. */ }
 }
@@ -106,6 +106,7 @@ function updateProgress() {
   progressLabel.textContent = `${count} из ${lessons.length} пройдено`;
 }
 function renderLessonList() {
+  completed = readProgress();
   lessonList.replaceChildren();
   const groups = [
     {title:"01 · СТРОИМ МАТРИЦУ",start:0,end:5},
@@ -120,14 +121,21 @@ function renderLessonList() {
     section.append(make("h3","school-lesson-module-title",group.title));
     const list = make("div","school-lesson-module-list");
     items.forEach((lesson,index) => {
-      const link = make("a","school-lesson-link");
-      link.href = "pro/school/lesson/?id=" + encodeURIComponent(lesson.id);
-      if (completed.has(lesson.id)) link.classList.add("completed");
-      const number = make("span","school-lesson-number",completed.has(lesson.id)?"✓":group.start+index+1);
-      const summary = make("span","school-lesson-summary");
+      const position=group.start+index;
+      const unlocked=lessons.slice(0,position).every(previous=>completed.has(previous.id));
+      const link=make(unlocked?"a":"div","school-lesson-link"+(unlocked?"":" is-locked"));
+      if(unlocked)link.href = "pro/school/lesson/?id=" + encodeURIComponent(lesson.id);
+      else{
+        link.setAttribute("aria-disabled","true");
+        link.title="Откроется после успешного прохождения предыдущих уроков";
+      }
+      if(completed.has(lesson.id))link.classList.add("completed");
+      const number=make("span","school-lesson-number",completed.has(lesson.id)?"✓":position+1);
+      const summary=make("span","school-lesson-summary");
       summary.append(make("strong","",lesson.title));
       summary.append(make("small","",lesson.level+" · "+lesson.minutes+" мин"));
-      link.append(number,summary,make("span","school-lesson-arrow","→"));
+      if(!unlocked)summary.append(make("small","school-lesson-locked-hint","Откроется после предыдущих уроков"));
+      link.append(number,summary,make("span","school-lesson-arrow",unlocked?"→":"🔒"));
       list.append(link);
     });
     section.append(list);
@@ -234,4 +242,8 @@ async function startSchool() {
     lessonList.textContent="Программа временно недоступна.";
   }
 }
+window.addEventListener("pageshow",()=>{if(lessons.length)renderLessonList()});
+window.addEventListener("storage",event=>{
+  if(event.key===storageKey&&lessons.length)renderLessonList();
+});
 startSchool();
