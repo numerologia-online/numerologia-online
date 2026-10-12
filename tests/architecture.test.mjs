@@ -214,3 +214,16 @@ test("После расчёта Red Flag вопросы остаются зак�
   assert.ok(submit.includes('categoriesRoot.scrollIntoView({ behavior: "smooth", block: "start" });'));
   assert.ok(js.includes('state.activeQuestionId = opened ? null : question.id;'));
 });
+
+test("Первая страница совместимости умещается на экране телефона", async () => {
+  const css = await source("compatibility-polish.css");
+  const html = await source("index.html");
+  const app = await source("app.js");
+  assert.ok(css.includes("100dvh"), "Viewport layout must adapt to mobile screen height");
+  assert.ok(css.includes(".compatibility-result[hidden] + .compatibility-footer{display:none}"));
+  assert.ok(css.includes(".compatibility-intro{margin-top:auto}"));
+  assert.ok(css.includes(".compatibility-form{margin-bottom:auto}"));
+  assert.ok(html.includes("13 ответов о притяжении, чувствах и будущем вашей пары."));
+  assert.ok(html.includes('src="app.js?v=165"'));
+  assert.ok(app.includes('loadStylesheet("compatibility-polish.css?v=3")'));
+});
