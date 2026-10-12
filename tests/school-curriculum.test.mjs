@@ -226,12 +226,25 @@ test("Заголовок школы на двух строках одного р
 test("Статусы школ шире, содержат подсказку и аккуратно размещены на телефоне",async()=>{
   const html=await src("pro/schools/index.html");
   const css=await src("pro/schools/schools.css");
-  assert.ok(html.includes('schools.css?v=6'));
-  assert.equal((html.match(/class="academy-status academy-status--ready"/g)||[]).length,2);
+  assert.ok(html.includes('schools.css?v=7'));
+  assert.equal((html.match(/class="academy-status academy-status--ready"/g)||[]).length,1);
   assert.equal((html.match(/class="academy-status"/g)||[]).length,6);
-  assert.equal((html.match(/academy-status-subtitle">Начать обучение/g)||[]).length,2);
+  assert.equal((html.match(/academy-status-subtitle">Начать обучение/g)||[]).length,1);
   assert.equal((html.match(/academy-status-subtitle">Уроки готовятся/g)||[]).length,6);
   assert.ok(css.includes('width:164px;min-height:41px'));
   assert.ok(css.includes('.academy-status{grid-column:2;grid-row:2;'));
   assert.ok(css.includes('.academy-arrow{grid-column:3;grid-row:1/3;'));
+});
+
+test("Матрица судьбы показывает программу обучения вместо общей плашки",async()=>{
+  const html=await src("pro/schools/index.html");
+  const css=await src("pro/schools/schools.css");
+  const matrix=html.slice(html.indexOf('<a href="pro/school/"'),html.indexOf('</a>',html.indexOf('<a href="pro/school/"')));
+  assert.ok(matrix.includes('academy-school--matrix'));
+  assert.ok(matrix.includes('Построение матрицы с нуля · Уроки · Тренажёр · Формулы · Персональный разбор для клиента'));
+  assert.ok(matrix.includes('Перейти к обучению'));
+  assert.ok(!matrix.includes('Открыта'));
+  assert.ok(css.includes('.academy-school--matrix>.academy-school-description{'));
+  assert.ok(css.includes('.academy-school--matrix .academy-school-cta{'));
+  assert.ok(css.includes('grid-template-columns:36px minmax(0,1fr)'));
 });
