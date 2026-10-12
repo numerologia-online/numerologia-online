@@ -169,15 +169,16 @@ test("В первом тесте считаем кружочки и после �
   assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=8"'));
 });
 
-test("Заголовок школы единый, тёмно-синий и отделён от названия школы",async()=>{
+test("Заголовок школы на двух строках одного размера с золотым акцентом",async()=>{
   const html=await src("pro/school/index.html");
   const css=await src("pro/school/school.css");
-  assert.ok(html.includes('<h1>Учиться самостоятельно <span class="school-hero-gold">легко</span></h1>'));
-  assert.ok(html.includes('school.css?v=8'));
+  assert.ok(html.includes('<h1><span class="school-hero-primary">Учиться самостоятельно</span> <span class="school-hero-gold">это легко!</span></h1>'));
+  assert.ok(html.includes('school.css?v=9'));
+  assert.ok(css.includes('.school-hero h1 .school-hero-primary,.school-hero h1 .school-hero-gold{display:block;white-space:nowrap}'));
   assert.ok(css.includes('.school-hero h1 .school-hero-gold{color:#9e7e50}'));
   assert.ok(css.includes('.school-hero>.school-overline{margin-bottom:19px}'));
-  assert.ok(css.includes('font-size:clamp(28px,7.2vw,54px)'));
-  assert.ok(css.includes('color:var(--ink);text-wrap:balance'));
+  assert.ok(css.includes('font-size:clamp(23px,6.8vw,54px)'));
+  assert.ok(css.includes('color:var(--ink)'));
   assert.ok(!css.includes('.school-hero-first{'));
   assert.ok(!css.includes('.school-hero h1 em{'));
 });
