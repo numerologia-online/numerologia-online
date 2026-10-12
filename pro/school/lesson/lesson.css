@@ -10,6 +10,7 @@
 .school-date-form>label{display:block;font-size:13px;font-weight:850;margin:0 0 8px}
 .school-date-row{display:flex;gap:9px;max-width:470px}
 .school-date-row input{min-width:0;flex:1;min-height:47px;border-radius:12px;border:1px solid #d6cec0;background:white;font-size:17px;letter-spacing:.04em;padding:10px 14px}
+.school-date-row input::placeholder{color:#9ca8ac;opacity:.8;letter-spacing:normal}
 .school-date-row button{min-height:47px;padding:9px 14px;border:0;border-radius:12px;background:#29495b;color:white;font-weight:750}
 .school-date-error{font-size:13px;color:#a33c48;margin:9px 0 0}
 .school-visual-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.9fr);align-items:center;gap:clamp(15px,3vw,25px)}
