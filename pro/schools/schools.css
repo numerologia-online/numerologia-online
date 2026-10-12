@@ -153,47 +153,50 @@ a{color:inherit}
   .academy-intro h1:not([id])+p::after{font-size:15px}
 }
 
-/* Матрица судьбы: вместо общей плашки показываем программу обучения и переход. */
+/* Матрица судьбы: компактная карточка с описанием и текстовым переходом. */
 .academy-school--matrix{
-  grid-template-columns:42px minmax(0,1fr);
-  gap:7px 14px;
-  align-items:start;
-  min-height:0;
-  padding:20px 19px;
+  grid-template-columns:38px minmax(0,1fr) 18px;
+  gap:3px 10px;
+  align-items:center;
+  min-height:83px;
+  padding:11px 15px;
 }
 .academy-school--matrix .academy-school-number{
-  grid-column:1;grid-row:1/4;align-self:start;
-  width:42px;height:42px;
+  grid-column:1;grid-row:1/4;align-self:center;
+  width:38px;height:38px;
 }
 .academy-school--matrix h3{
   grid-column:2;grid-row:1;
-  font-size:clamp(19px,3.3vw,23px);
+  font-size:clamp(15px,2.3vw,18px);
 }
 .academy-school--matrix>.academy-school-description{
   display:block;
   grid-column:2;grid-row:2;
-  margin:1px 0 8px;
-  max-width:53ch;
-  font-size:14px;line-height:1.6;
-  color:#e6eced;
+  margin:0;
+  font-size:12px;line-height:1.4;
+  font-weight:400;color:#dbe5ea;
 }
 .academy-school--matrix .academy-school-cta{
   grid-column:2;grid-row:3;justify-self:start;
-  display:inline-flex;align-items:center;gap:12px;
-  min-height:43px;padding:10px 17px;
-  border-radius:13px;
-  background:#f4e6ca;color:#29475b;
-  font-size:13px;font-weight:850;
+  display:inline;
+  margin-top:2px;
+  padding:0;min-height:0;
+  border:0;border-radius:0;background:none;
+  color:#f5deb9;
+  font-size:12px;font-weight:750;line-height:1.4;
 }
-.academy-school--matrix .academy-school-cta span{font-size:19px;line-height:1}
+.academy-school--matrix .academy-arrow{
+  grid-column:3;grid-row:1/4;align-self:center;
+}
 @media(max-width:480px){
   .academy-school--matrix{
-    grid-template-columns:36px minmax(0,1fr);
-    gap:6px 11px;
-    padding:17px 14px;
+    grid-template-columns:32px minmax(0,1fr) 13px;
+    gap:3px 8px;
+    min-height:83px;
+    padding:10px 11px;
   }
-  .academy-school--matrix .academy-school-number{width:36px;height:36px}
-  .academy-school--matrix h3{font-size:19px}
-  .academy-school--matrix>.academy-school-description{font-size:13px;line-height:1.55;margin-bottom:8px}
-  .academy-school--matrix .academy-school-cta{min-height:42px;padding:10px 14px;font-size:12.5px}
+  .academy-school--matrix .academy-school-number{width:32px;height:32px}
+  .academy-school--matrix h3{font-size:15px}
+  .academy-school--matrix>.academy-school-description{font-size:11.5px;line-height:1.35}
+  .academy-school--matrix .academy-school-cta{font-size:11.5px}
 }
