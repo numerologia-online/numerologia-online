@@ -384,6 +384,18 @@ function renderLesson(data) {
   $("lesson-count").textContent="УРОК "+(index+1)+" ИЗ "+manifest.length+" · "+data.level;
   $("lesson-title").textContent=id==="start"?"Рисуем матрицу с нуля":data.title;
   $("lesson-lead").textContent=data.lead;
+  const mainRule=$("lesson-main-rule");
+  mainRule.replaceChildren();
+  if(data.mainRule&&Array.isArray(data.mainRule.lines)&&data.mainRule.lines.length){
+    mainRule.append(make("p","school-main-rule-label","✦ "+data.mainRule.title));
+    const lines=make("div","school-main-rule-lines");
+    data.mainRule.lines.forEach(line=>lines.append(make("p","school-main-rule-line",line)));
+    mainRule.append(lines);
+    if(data.mainRule.note)mainRule.append(make("p","school-main-rule-note",data.mainRule.note));
+    mainRule.hidden=false;
+  }else{
+    mainRule.hidden=true;
+  }
   if(id==="start"){
     // Объяснение начинается непосредственно в шагах: два вступления подряд не нужны.
     $("lesson-hero").classList.add("is-compact");
@@ -439,7 +451,7 @@ async function start() {
       nav.append(back);
       return;
     }
-    const response=await fetch(manifest[index].file+"?v=6");
+    const response=await fetch(manifest[index].file+"?v=7");
     if(!response.ok)throw Error("Материал урока не найден");
     lesson=await response.json();
     if(lesson.id!==id||!Array.isArray(lesson.sections)||!Array.isArray(lesson.questions))
