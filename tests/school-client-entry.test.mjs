@@ -14,7 +14,7 @@ test("Школа использует полный разбор и PDF осно�
   assert.equal(energyBank.arcana.length, 22);
   assert.match(school, /href="pro\/\?from=school"/);
   assert.match(school, /Рассчитать для клиента/);
-  assert.match(professional, /href="pro\/school\/"/);
+  assert.match(professional, /href="pro\/schools\/"/);
   assert.match(professional, /id="pro-pdf-controls"/);
   assert.match(feature, /createFullReportPdfController/);
   assert.match(feature, /get\("from"\) === "school"/);
@@ -27,7 +27,7 @@ test("Персональный PDF доступен только в режиме
   const home = await source("index.html");
   const pro = await source("pro/pro.js");
   const sitePdf = await source("pro/index.html");
-  assert.match(home, /href="\.\/pro\/school\/"/);
+  assert.match(home, /href="\.\/pro\/schools\/"/);
   assert.match(home, /Вход для нумерологов/);
   assert.match(pro, /beforeDownload: schoolClientMode \?/);
   assert.match(pro, /customizeDocument: schoolClientMode \?/);
