@@ -19,7 +19,7 @@ test("Школа начинает с построения матрицы и за
   assert.ok(!script.includes('fetch("pro/school/lessons.json'));
   assert.ok(script.includes('link.href = "pro/school/lesson/?id="'));
   assert.ok(reader.includes('<base href="../../../">'));
-  assert.ok(lessonJS.includes('fetch(manifest[index].file+"?v=5")'));
+  assert.ok(lessonJS.includes('fetch(manifest[index].file+"?v=6")'));
   assert.equal(manifest.lessons.length, 12);
   assert.deepEqual(manifest.lessons.slice(0,5).map(x=>x.id), ["start","reduce","base","corners","internal"]);
   for (const meta of manifest.lessons) {
@@ -75,7 +75,7 @@ test("Первый урок без повторов, дата подтвержд
   assert.ok(page.includes('id="lesson-date-submit"'));
   assert.ok(page.includes('id="lesson-date-confirmed"'));
   assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=6"'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=9"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=10"'));
   assert.ok(styles.includes(".school-date-row button.is-confirmed"));
   assert.ok(styles.includes(".school-lesson-quiz.is-locked"));
   const first=JSON.parse(await src("pro/school/lessons/start.json"));
@@ -117,7 +117,7 @@ test("Неверный ответ выделен красным и возвра�
   assert.ok(css.includes(".school-quiz-result.is-incorrect"));
   assert.ok(css.includes("color:#a82d38"));
   assert.ok(css.includes(".school-quiz-retry[hidden]"));
-  assert.ok(html.includes('lesson.js?v=9'));
+  assert.ok(html.includes('lesson.js?v=10'));
   assert.ok(html.includes('lesson.css?v=6'));
 });
 
@@ -166,7 +166,7 @@ test("В первом тесте считаем кружочки и после �
   assert.ok(success.includes('feedback.scrollIntoView({behavior:"smooth",block:"center"})'));
   assert.ok(!script.slice(script.indexOf('feedback.classList.add("is-incorrect")'),script.indexOf('retry.hidden=false')).includes("scrollIntoView"));
   assert.ok(script.includes('link(next,"Следующий урок →","school-primary")'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=9"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=10"'));
 });
 
 test("Уроки открываются строго последовательно, включая прямые ссылки",async()=>{
@@ -187,7 +187,7 @@ test("Уроки открываются строго последователь�
   assert.ok(css.includes(".school-lesson-link.is-locked"));
   assert.ok(css.includes(".school-lesson-locked-next"));
   assert.ok(homePage.includes('school.js?v=3'));
-  assert.ok(readerPage.includes('lesson.js?v=9'));
+  assert.ok(readerPage.includes('lesson.js?v=10'));
   assert.ok(readerPage.includes('school.css?v=10'));
 });
 
