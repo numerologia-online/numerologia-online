@@ -272,6 +272,33 @@ function renderQuiz(data) {
   feedback.setAttribute("role","status");
   feedback.setAttribute("aria-live","polite");
   form.append(feedback);
+
+  const retry=make("button","school-quiz-retry","↻ Пройти урок ещё раз");
+  retry.type="button";
+  retry.hidden=true;
+  retry.addEventListener("click",()=>{
+    form.querySelectorAll('input[type="radio"]').forEach(input=>{input.checked=false});
+    feedback.textContent="";
+    feedback.classList.remove("is-incorrect","is-correct");
+    retry.hidden=true;
+    submit.textContent="Проверить знания";
+    if(id==="start"){
+      // Возвращаем к первому шагу и снова закрываем тест до его прохождения.
+      step=0;
+      drawCurrent();
+      root.classList.add("is-locked");
+      root.setAttribute("aria-disabled","true");
+      const lock=$("lesson-quiz-lock");
+      if(lock)lock.hidden=false;
+      root.querySelectorAll("fieldset").forEach(fieldset=>{fieldset.disabled=true});
+      submit.disabled=true;
+      $("lesson-drawing").scrollIntoView({behavior:"smooth",block:"start"});
+    }else{
+      const content=$("lesson-content");
+      content.scrollIntoView({behavior:"smooth",block:"start"});
+    }
+  });
+  form.append(retry);
   form.addEventListener("submit",event=>{
     event.preventDefault();
     const answers=data.questions.map((_,i)=>form.querySelector(`input[name="quiz-${i}"]:checked`));
@@ -284,11 +311,16 @@ function renderQuiz(data) {
         done.add(data.id);
         localStorage.setItem(storeKey,JSON.stringify([...done]));
       }catch{/* Без хранилища урок всё равно работает. */}
+      feedback.classList.remove("is-incorrect");
+      feedback.classList.add("is-correct");
       feedback.textContent="Отлично! Урок пройден. Можно переходить к следующему.";
+      retry.hidden=true;
       submit.textContent="✓ Урок пройден";
     }else{
-      feedback.textContent="Правильно: "+score+" из "+data.questions.length+". "+
-        data.questions.map((q,i)=>Number(answers[i].value)===q.correct?"":q.explain).filter(Boolean).join(" ");
+      feedback.classList.remove("is-correct");
+      feedback.classList.add("is-incorrect");
+      feedback.textContent="Пройдите ещё раз урок. Это займёт немного времени, зато вы точно усвоите материал.";
+      retry.hidden=false;
     }
   });
   root.append(form);
@@ -352,7 +384,7 @@ async function start() {
     manifest=meta.lessons;
     index=manifest.findIndex(item=>item.id===id);
     if(index<0)throw Error("Урок не найден");
-    const response=await fetch(manifest[index].file+"?v=2");
+    const response=await fetch(manifest[index].file+"?v=3");
     if(!response.ok)throw Error("Материал урока не найден");
     lesson=await response.json();
     if(lesson.id!==id||!Array.isArray(lesson.sections)||!Array.isArray(lesson.questions))
