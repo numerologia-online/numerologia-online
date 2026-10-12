@@ -148,3 +148,16 @@
 }
 .school-quiz-retry[hidden]{display:none!important}
 .school-quiz-retry:focus-visible{outline:3px solid #db7b7f;outline-offset:3px}
+
+/* Первый урок не повторяет объяснение дважды: заголовок и сразу практика. */
+.school-lesson-hero.is-compact{
+  padding-top:clamp(16px,3vw,28px);
+  padding-bottom:0
+}
+.school-lesson-hero.is-compact h1{margin-bottom:0}
+.school-lesson-hero.is-compact .school-lesson-lead{display:none!important}
+.school-drawing.is-first-lesson .school-drawing-intro h2,
+.school-drawing.is-first-lesson #lesson-drawing-description,
+.school-drawing.is-first-lesson .school-diagram-footnote{display:none!important}
+.school-drawing.is-first-lesson .school-drawing-intro .school-overline{margin-bottom:2px}
+.school-drawing.is-first-lesson .school-date-form{padding-top:9px}
