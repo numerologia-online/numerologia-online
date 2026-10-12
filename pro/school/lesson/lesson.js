@@ -60,23 +60,26 @@ function drawFirstLessonOutline(){
     const title=makeSvg("title");title.textContent=label+" - место для числа";
     group.append(title);svg.append(group);
   }
-  diagram.replaceChildren(svg);
-  // Подписи вынесены ЗА пределы SVG, а не лежат поверх линий матрицы.
+  // На четвёртом шаге подписываем опоры прямо у кружков внутри рисунка.
+  // Без отдельной легенды: расположение понятно с первого взгляда.
   if(step===3){
-    const legend=make("div","school-position-key");
-    legend.setAttribute("aria-label","Расположение четырёх опорных позиций");
-    for(const [arrow,label] of [
-      ["↑","Месяц рождения"],
-      ["←","День рождения"],
-      ["→","Год рождения"],
-      ["↓","Сумма"]
-    ]){
-      const chip=make("div","school-position-chip");
-      chip.append(make("span","school-position-arrow",arrow),make("span","",label));
-      legend.append(chip);
+    const positions=[
+      {x:200,y:15,anchor:"middle",lines:["Месяц рождения"]},
+      {x:12,y:155,anchor:"start",lines:["День","рождения"]},
+      {x:388,y:155,anchor:"end",lines:["Год","рождения"]},
+      {x:200,y:392,anchor:"middle",lines:["Сумма"]}
+    ];
+    for(const {x,y,anchor,lines} of positions){
+      const text=makeSvg("text",{x,y,"text-anchor":anchor,"class":"school-diagram-anchor-label"});
+      lines.forEach((line,index)=>{
+        const span=makeSvg("tspan",{x,dy:index?16:0});
+        span.textContent=line;
+        text.append(span);
+      });
+      svg.append(text);
     }
-    diagram.append(legend);
   }
+  diagram.replaceChildren(svg);
 }
 
 const stageKeys = [
