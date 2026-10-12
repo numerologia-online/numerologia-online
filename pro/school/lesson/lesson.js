@@ -21,7 +21,7 @@ function readCompleted(){
     return new Set(Array.isArray(items)?items.filter(item=>typeof item==="string"):[]);
   }catch{return new Set()}
 }
-let lesson, manifest, index = -1, currentBirth = {day:14,month:7,year:1990}, step = 0;
+let lesson, manifest, index = -1, currentBirth = null, step = 0;
 const params = new URLSearchParams(location.search);
 const id = params.get("id") || "start";
 const diagram = $("lesson-diagram");
@@ -101,14 +101,14 @@ function drawBasic(matrix) {
   [[200,35,200,365],[35,200,365,200],[83,83,317,317],[317,83,83,317]].forEach(([x1,y1,x2,y2]) =>
     svg.append(makeSvg("line",{x1,y1,x2,y2,"class":"school-diagram-line"})));
   const nodes = [
-    ["top",200,35,matrix.top,"Месяц"],["right",365,200,matrix.right,"Год"],
-    ["bottom",200,365,matrix.bottom,"Низ"],["left",35,200,matrix.left,"День"],
-    ["center",200,200,matrix.center,"Центр"],
-    ["topLeft",83,83,matrix.corners.topLeft,"Угол"],["topRight",317,83,matrix.corners.topRight,"Угол"],
-    ["bottomRight",317,317,matrix.corners.bottomRight,"Угол"],["bottomLeft",83,317,matrix.corners.bottomLeft,"Угол"]
+    ["top",200,35,matrix?.top,"Месяц"],["right",365,200,matrix?.right,"Год"],
+    ["bottom",200,365,matrix?.bottom,"Низ"],["left",35,200,matrix?.left,"День"],
+    ["center",200,200,matrix?.center,"Центр"],
+    ["topLeft",83,83,matrix?.corners?.topLeft,"Угол"],["topRight",317,83,matrix?.corners?.topRight,"Угол"],
+    ["bottomRight",317,317,matrix?.corners?.bottomRight,"Угол"],["bottomLeft",83,317,matrix?.corners?.bottomLeft,"Угол"]
   ];
   for (const [key,x,y,value,label] of nodes) {
-    const shown=stageKeys[step].includes(key);
+    const shown=Boolean(matrix)&&stageKeys[step].includes(key);
     const group=makeSvg("g",{"class":shown?"school-graph-node is-revealed":"school-graph-node"});
     group.append(makeSvg("circle",{cx:x,cy:y,r:key==="center"?24:20}));
     const text=makeSvg("text",{x,y:y+1,"text-anchor":"middle","dominant-baseline":"middle"});
@@ -153,6 +153,19 @@ function drawCurrent() {
     const next=$("lesson-step-next");
     next.disabled=false;
     next.textContent=step===firstLessonSteps.length-1?"Открыть тест ✓":"Следующий шаг →";
+    return;
+  }
+  if(!currentBirth){
+    // Пока ученик не выбрал свою дату, показываем только пустую схему без чужого расчёта.
+    drawBasic(null);
+    $("lesson-step-count").textContent="ШАГ "+(step+1)+" ИЗ 5";
+    $("lesson-step-title").textContent=stepTitles[step];
+    $("lesson-step-text").textContent=stepDescriptions[step];
+    $("lesson-step-formula").hidden=false;
+    $("lesson-step-formula").textContent="Введите дату рождения выше и нажмите «Использовать», чтобы начать расчёт.";
+    $("lesson-step-back").disabled=true;
+    $("lesson-step-next").disabled=true;
+    $("lesson-step-next").textContent="Следующий шаг →";
     return;
   }
   $("lesson-step-formula").hidden=false;
@@ -227,6 +240,10 @@ function setupDiagram(){
     input.value=[digits.slice(0,2),digits.slice(2,4),digits.slice(4,8)].filter(Boolean).join(".");
     error.hidden=true;
     resetConfirmation();
+    if(id!=="start"){
+      currentBirth=null;
+      drawCurrent();
+    }
   });
   $("lesson-date-form").addEventListener("submit",event=>{
     event.preventDefault();
