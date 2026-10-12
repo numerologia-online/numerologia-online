@@ -97,7 +97,8 @@ p{margin:0 0 15px}.school-shell{width:min(100%,1120px);padding:16px clamp(15px,3
 /* Обновлённая школа: сначала обучение, а профессиональный инструмент ниже. */
 .school-hero{padding:clamp(12px,2vw,22px) 3px 10px}
 .school-hero>.school-overline{margin-bottom:19px}
-.school-hero h1{margin:0;text-align:center;font-size:clamp(28px,7.2vw,54px);line-height:1.18;font-weight:400;color:var(--ink);text-wrap:balance}
+.school-hero h1{margin:0;text-align:center;font-size:clamp(23px,6.8vw,54px);line-height:1.18;font-weight:400;color:var(--ink)}
+.school-hero h1 .school-hero-primary,.school-hero h1 .school-hero-gold{display:block;white-space:nowrap}
 .school-hero h1 .school-hero-gold{color:#9e7e50}
 .school-tabs{max-width:100%;margin:0 0 17px}
 .school-lesson-grid{display:grid;gap:24px}
