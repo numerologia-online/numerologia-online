@@ -310,6 +310,9 @@ function renderQuiz(data) {
       feedback.textContent="Отлично! Урок пройден. Можно переходить к следующему.";
       retry.hidden=true;
       submit.textContent="✓ Урок пройден";
+      // После успешного теста показываем поздравление и следующую ссылку,
+      // а не оставляем ученика среди ответов на вопросы.
+      feedback.scrollIntoView({behavior:"smooth",block:"center"});
     }else{
       feedback.classList.remove("is-correct");
       feedback.classList.add("is-incorrect");
@@ -383,7 +386,7 @@ async function start() {
     manifest=meta.lessons;
     index=manifest.findIndex(item=>item.id===id);
     if(index<0)throw Error("Урок не найден");
-    const response=await fetch(manifest[index].file+"?v=4");
+    const response=await fetch(manifest[index].file+"?v=5");
     if(!response.ok)throw Error("Материал урока не найден");
     lesson=await response.json();
     if(lesson.id!==id||!Array.isArray(lesson.sections)||!Array.isArray(lesson.questions))
