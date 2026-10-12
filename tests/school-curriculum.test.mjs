@@ -19,7 +19,7 @@ test("Школа начинает с построения матрицы и за
   assert.ok(!script.includes('fetch("pro/school/lessons.json'));
   assert.ok(script.includes('link.href = "pro/school/lesson/?id="'));
   assert.ok(reader.includes('<base href="../../../">'));
-  assert.ok(lessonJS.includes('fetch(manifest[index].file+"?v=4")'));
+  assert.ok(lessonJS.includes('fetch(manifest[index].file+"?v=5")'));
   assert.equal(manifest.lessons.length, 12);
   assert.deepEqual(manifest.lessons.slice(0,5).map(x=>x.id), ["start","reduce","base","corners","internal"]);
   for (const meta of manifest.lessons) {
@@ -75,7 +75,7 @@ test("Первый урок без повторов, дата подтвержд
   assert.ok(page.includes('id="lesson-date-submit"'));
   assert.ok(page.includes('id="lesson-date-confirmed"'));
   assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=5"'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=6"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=7"'));
   assert.ok(styles.includes(".school-date-row button.is-confirmed"));
   assert.ok(styles.includes(".school-lesson-quiz.is-locked"));
   const first=JSON.parse(await src("pro/school/lessons/start.json"));
@@ -116,8 +116,8 @@ test("Неверный ответ выделен красным и возвра�
   assert.ok(css.includes(".school-quiz-result.is-incorrect"));
   assert.ok(css.includes("color:#a82d38"));
   assert.ok(css.includes(".school-quiz-retry[hidden]"));
-  assert.ok(html.includes('lesson.js?v=5'));
-  assert.ok(html.includes('lesson.css?v=4'));
+  assert.ok(html.includes('lesson.js?v=7'));
+  assert.ok(html.includes('lesson.css?v=5'));
 });
 
 test("Первый урок показывает сразу практику, без двух вступлений",async()=>{
@@ -148,4 +148,19 @@ test("Пустая матрица первого урока не содержи�
   assert.ok(lesson.questions.length===3);
   assert.ok(!lesson.sections[3].text.includes("09.09.1986"));
   assert.ok(!lesson.sections[3].example.includes("09.09.1986"));
+});
+
+test("В первом тесте считаем кружочки и после успеха показываем переход дальше",async()=>{
+  const lesson=JSON.parse(await src("pro/school/lessons/start.json"));
+  const script=await src("pro/school/lesson/lesson.js");
+  const page=await src("pro/school/lesson/index.html");
+  assert.equal(lesson.questions[1].prompt,"Сколько кружочков мы нарисовали на схеме?");
+  assert.equal(lesson.questions[1].correct,1);
+  assert.ok(lesson.questions[1].explain.includes("девять"));
+  const success=script.slice(script.indexOf("if(score===data.questions.length)"),script.indexOf("}else{",script.indexOf("if(score===data.questions.length)")));
+  assert.ok(success.includes('feedback.classList.add("is-correct")'));
+  assert.ok(success.includes('feedback.scrollIntoView({behavior:"smooth",block:"center"})'));
+  assert.ok(!script.slice(script.indexOf('feedback.classList.add("is-incorrect")'),script.indexOf('retry.hidden=false')).includes("scrollIntoView"));
+  assert.ok(script.includes('link(next,"Следующий урок →","school-primary")'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=7"'));
 });
