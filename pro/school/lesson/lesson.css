@@ -1,0 +1,60 @@
+
+.school-lesson-shell{max-width:900px}
+.school-lesson-hero{padding:clamp(30px,6vw,58px) 2px 18px}
+.school-lesson-hero h1{font-size:clamp(34px,7.4vw,60px);margin:12px 0 17px}
+.school-lesson-lead{max-width:70ch;font-size:17px;line-height:1.7;color:#4d6069}
+.school-drawing{margin:20px 0 26px;padding:clamp(18px,3.5vw,30px);border:1px solid #d9d1c2;border-radius:24px;background:#fffefa}
+.school-drawing-intro h2{font-size:clamp(27px,5vw,36px);margin:0 0 11px}
+.school-drawing-intro>p:last-child{font-size:14px;color:#526974;line-height:1.65;max-width:68ch}
+.school-date-form{padding:13px 0 20px}
+.school-date-form>label{display:block;font-size:13px;font-weight:850;margin:0 0 8px}
+.school-date-row{display:flex;gap:9px;max-width:470px}
+.school-date-row input{min-width:0;flex:1;min-height:47px;border-radius:12px;border:1px solid #d6cec0;background:white;font-size:17px;letter-spacing:.04em;padding:10px 14px}
+.school-date-row button{min-height:47px;padding:9px 14px;border:0;border-radius:12px;background:#29495b;color:white;font-weight:750}
+.school-date-error{font-size:13px;color:#a33c48;margin:9px 0 0}
+.school-visual-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.9fr);align-items:center;gap:clamp(15px,3vw,25px)}
+.school-diagram-frame{min-width:0;overflow-x:auto;background:#fcfaf6;border:1px solid #e7ded1;border-radius:18px;padding:13px}
+.school-diagram svg{width:100%;height:auto;display:block;max-height:450px}
+.school-diagram-outline{fill:none;stroke:#aa9a84;stroke-width:2}
+.school-diagram-line{stroke:#c8bfb1;stroke-width:1.2}
+.school-graph-node circle{stroke:#bcb3a2;stroke-width:2;fill:#fffefb}
+.school-graph-node text{font:700 20px/1 system-ui,sans-serif;fill:#b1a898}
+.school-graph-node.is-revealed circle{fill:#e9f1ef;stroke:#66939c;stroke-width:2.7}
+.school-graph-node.is-revealed text{fill:#2d4a5f}
+.school-graph-node.is-center circle{fill:#f0e4cd;stroke:#a58b59}
+.school-step-panel h3{font:400 clamp(25px,4.5vw,33px)/1.18 Georgia,serif;margin:8px 0 12px}
+.school-step-panel>p:not(.school-overline){font-size:14px;line-height:1.65;color:#4a5e69}
+.school-step-formula{padding:13px 15px!important;margin:16px 0 18px!important;background:#f0eee6;border-radius:12px;color:#5e5441!important;font-size:15px!important;font-weight:750}
+.school-step-buttons{display:flex;gap:8px;flex-wrap:wrap}
+.school-step-buttons button{flex:1;min-height:45px;padding:10px 12px;border:1px solid #c6d1d0;border-radius:12px;background:#e6f1ef;color:#294958;font-weight:800}
+.school-step-buttons button:last-child{background:#29495b;color:#fff;border-color:#29495b}
+.school-step-buttons button:disabled{opacity:.35;cursor:default}
+.school-diagram-footnote{font-size:12px;color:#8b8075;margin:19px 0 0;line-height:1.5}
+.school-lesson-reading{padding:clamp(19px,4vw,32px);border:1px solid #e4ddcf;border-radius:23px;background:#fffefa;box-shadow:0 9px 30px #362f2510}
+.school-lesson-reading .school-topic{padding:22px 0}
+.school-lesson-reading .school-topic:first-child{border:0;padding-top:0}
+.school-lesson-reading .school-topic:last-child{padding-bottom:0}
+.school-lesson-reading .school-topic-title{font:400 clamp(24px,4vw,29px)/1.26 Georgia,serif;letter-spacing:-.02em;margin:0 0 12px}
+.school-lesson-reading .school-topic>p{font-size:16px;line-height:1.78;color:#3e5461;max-width:76ch;white-space:pre-line}
+.school-lesson-reading .school-example{white-space:pre-line;color:#664f38;background:#f5edde;border-left:3px solid #b89d6b}
+.school-lesson-reading .school-takeaway{margin:21px 0 0}
+.school-lesson-quiz{margin:22px 0;padding:clamp(19px,4vw,32px);background:#fffefa;border:1px solid #e4ddcf;border-radius:23px}
+.school-lesson-quiz h2{font-size:clamp(27px,4.7vw,35px);margin:0 0 14px}
+.school-lesson-quiz .school-quiz-intro{color:#64767c;font-size:14px;margin-bottom:20px}
+.school-quiz-form{display:grid;gap:12px}
+.school-lesson-quiz .school-question{margin:0}
+.school-lesson-navigation{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin:25px 0}
+.school-lesson-navigation a{display:inline-flex;min-height:46px;align-items:center;justify-content:center;text-decoration:none;font-size:14px;border-radius:12px;padding:10px 16px;font-weight:800}
+.school-lesson-all{color:#516975;border:1px solid #d8dedb;background:#f5f6f3}
+@media(max-width:680px){
+ .school-visual-grid{grid-template-columns:1fr}
+ .school-diagram-frame{max-width:510px;margin:auto;width:100%}
+ .school-step-panel{padding:4px 2px 0}
+ .school-lesson-navigation a{flex:1}
+}
+@media(max-width:410px){
+ .school-date-row{flex-direction:column}
+ .school-date-row button{width:100%}
+ .school-lesson-navigation{display:grid;grid-template-columns:1fr 1fr}
+ .school-lesson-navigation a:last-child{grid-column:1/-1}
+}
