@@ -266,6 +266,15 @@ function renderQuiz(data) {
     }
   });
   root.append(form);
+  if(id==="start"){
+    root.classList.add("is-locked");
+    root.setAttribute("aria-disabled","true");
+    const notice=make("p","school-quiz-locked-info","🔒 Тест станет доступен после всех четырёх шагов.");
+    notice.id="lesson-quiz-lock";
+    root.insertBefore(notice,form);
+    root.querySelectorAll("fieldset").forEach(fieldset=>{fieldset.disabled=true});
+    submit.disabled=true;
+  }
 }
 function renderNavigation() {
   const nav=$("lesson-navigation");
@@ -287,18 +296,23 @@ function renderLesson(data) {
   $("lesson-title").textContent=data.title;
   $("lesson-lead").textContent=data.lead;
   const root=$("lesson-content");
+  // Первый урок: все объяснения находятся рядом с рисунком по шагам.
+  // Не повторяем ту же информацию длинной статьёй ниже.
+  root.hidden=id==="start";
   root.replaceChildren();
-  data.sections.forEach((section,i)=>{
-    const wrapper=make("section","school-topic");
-    wrapper.append(make("h2","school-topic-title",section.heading));
-    wrapper.append(make("p","",section.text));
-    if(section.example)wrapper.append(make("p","school-example",section.example));
-    root.append(wrapper);
-  });
-  const takeaway=make("section","school-takeaway");
-  takeaway.append(make("strong","","Главное, что нужно запомнить"));
-  takeaway.append(make("p","",data.takeaway));
-  root.append(takeaway);
+  if(id!=="start"){
+    data.sections.forEach(section=>{
+      const wrapper=make("section","school-topic");
+      wrapper.append(make("h2","school-topic-title",section.heading));
+      wrapper.append(make("p","",section.text));
+      if(section.example)wrapper.append(make("p","school-example",section.example));
+      root.append(wrapper);
+    });
+    const takeaway=make("section","school-takeaway");
+    takeaway.append(make("strong","","Главное, что нужно запомнить"));
+    takeaway.append(make("p","",data.takeaway));
+    root.append(takeaway);
+  }
   renderQuiz(data);
   renderNavigation();
   setupDiagram();
