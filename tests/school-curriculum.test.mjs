@@ -169,15 +169,14 @@ test("В первом тесте считаем кружочки и после �
   assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=8"'));
 });
 
-test("Центрируется только фраза в заголовке школы, слово легко остаётся акцентным",async()=>{
+test("Заголовок школы единый, тёмно-синий и отделён от названия школы",async()=>{
   const html=await src("pro/school/index.html");
   const css=await src("pro/school/school.css");
-  assert.ok(html.includes('class="school-hero-first">Учиться самостоятельно</span> <em>легко</em>'));
-  assert.ok(html.includes('school.css?v=6'));
-  assert.ok(css.includes('school-hero-first{display:block;white-space:nowrap}'));
-  assert.ok(css.includes('font-size:clamp(23px,7.4vw,49px)'));
-  assert.ok(css.includes('font-size:clamp(40px,10.8vw,68px)'));
-  assert.ok(css.includes('margin-top:9px;font-size:clamp(40px,10.8vw,68px)'));
-  assert.ok(css.includes('color:#df3675'));
-  assert.ok(css.includes('padding-top:10px'));
+  assert.ok(html.includes('<h1>Учиться самостоятельно легко</h1>'));
+  assert.ok(html.includes('school.css?v=7'));
+  assert.ok(css.includes('.school-hero>.school-overline{margin-bottom:19px}'));
+  assert.ok(css.includes('font-size:clamp(28px,7.2vw,54px)'));
+  assert.ok(css.includes('color:var(--ink);text-wrap:balance'));
+  assert.ok(!css.includes('.school-hero-first{'));
+  assert.ok(!css.includes('.school-hero h1 em{'));
 });
