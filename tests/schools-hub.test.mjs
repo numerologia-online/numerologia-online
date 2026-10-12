@@ -31,7 +31,7 @@ test("Будущие направления показывают «В разра
   ];
   for (const name of schools) assert.ok(hub.includes('<h3>' + name + '</h3>'), name);
   assert.equal((hub.match(/class="academy-school academy-school--future"/g) || []).length, schools.length);
-  assert.equal((hub.match(/В разработке/g) || []).length, schools.length + 1); // one in the explanatory copy
+  assert.equal((hub.match(/В разработке/g) || []).length, schools.length);
   assert.equal((hub.match(/href="pro\/school\/"/g) || []).length, 1);
   assert.ok(hub.includes('<meta name="robots" content="noindex,nofollow">'));
 });
