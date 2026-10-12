@@ -58,3 +58,52 @@
  .school-lesson-navigation{display:grid;grid-template-columns:1fr 1fr}
  .school-lesson-navigation a:last-child{grid-column:1/-1}
 }
+
+/* Первая практика: использованная дата подтверждается зелёной галочкой. */
+.school-date-row button.is-confirmed{
+  background:#187d65;
+  color:#fff;
+  font-size:25px;
+  font-weight:900;
+  box-shadow:0 5px 16px #187d6533
+}
+.school-date-confirmed{
+  color:#19735e;
+  font-size:13px;
+  font-weight:750;
+  line-height:1.5;
+  margin:9px 0 0
+}
+.school-date-confirmed[hidden],
+.school-lesson-reading[hidden],
+.school-quiz-locked-info[hidden]{display:none!important}
+
+/* Тест видно сразу, но нельзя пройти раньше последнего шага. */
+.school-lesson-quiz.is-locked{
+  border-color:#e4dbce;
+  background:#f6f2eb
+}
+.school-lesson-quiz.is-locked .school-quiz-form{
+  opacity:.42;
+  pointer-events:none;
+  user-select:none
+}
+.school-quiz-locked-info{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:13px 15px;
+  border:1px solid #e2d3b9;
+  border-radius:13px;
+  background:#fff8ed;
+  font-size:14px;
+  font-weight:750;
+  color:#80643f;
+  line-height:1.55;
+  margin:0 0 19px
+}
+.school-lesson-quiz.is-locked button:disabled{
+  cursor:not-allowed;
+  opacity:.55
+}
+.school-lesson-quiz{scroll-margin-top:20px}
