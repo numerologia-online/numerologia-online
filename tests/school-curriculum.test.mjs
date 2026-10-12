@@ -75,7 +75,7 @@ test("Первый урок без повторов, дата подтвержд
   assert.ok(page.includes('id="lesson-date-submit"'));
   assert.ok(page.includes('id="lesson-date-confirmed"'));
   assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=6"'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=8"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=9"'));
   assert.ok(styles.includes(".school-date-row button.is-confirmed"));
   assert.ok(styles.includes(".school-lesson-quiz.is-locked"));
   const first=JSON.parse(await src("pro/school/lessons/start.json"));
@@ -117,7 +117,7 @@ test("Неверный ответ выделен красным и возвра�
   assert.ok(css.includes(".school-quiz-result.is-incorrect"));
   assert.ok(css.includes("color:#a82d38"));
   assert.ok(css.includes(".school-quiz-retry[hidden]"));
-  assert.ok(html.includes('lesson.js?v=8'));
+  assert.ok(html.includes('lesson.js?v=9'));
   assert.ok(html.includes('lesson.css?v=6'));
 });
 
@@ -166,14 +166,36 @@ test("В первом тесте считаем кружочки и после �
   assert.ok(success.includes('feedback.scrollIntoView({behavior:"smooth",block:"center"})'));
   assert.ok(!script.slice(script.indexOf('feedback.classList.add("is-incorrect")'),script.indexOf('retry.hidden=false')).includes("scrollIntoView"));
   assert.ok(script.includes('link(next,"Следующий урок →","school-primary")'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=8"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=9"'));
+});
+
+test("Уроки открываются строго последовательно, включая прямые ссылки",async()=>{
+  const home=await src("pro/school/school.js");
+  const reader=await src("pro/school/lesson/lesson.js");
+  const homePage=await src("pro/school/index.html");
+  const readerPage=await src("pro/school/lesson/index.html");
+  const css=await src("pro/school/school.css");
+  assert.ok(home.includes("lessons.slice(0,position).every(previous=>completed.has(previous.id))"));
+  assert.ok(home.includes('make(unlocked?"a":"div"'));
+  assert.ok(home.includes('if(unlocked)link.href = "pro/school/lesson/?id="'));
+  assert.ok(home.includes('link.setAttribute("aria-disabled","true")'));
+  assert.ok(home.includes('window.addEventListener("pageshow"'));
+  assert.ok(reader.includes('manifest.slice(0,index).find(item=>!completed.has(item.id))'));
+  assert.ok(reader.includes('if(firstMissing){'));
+  assert.ok(reader.includes('if(next&&readCompleted().has(id))nav.append(link(next,"Следующий урок →","school-primary"))'));
+  assert.ok(reader.includes('saved=readCompleted().has(data.id)'));
+  assert.ok(css.includes(".school-lesson-link.is-locked"));
+  assert.ok(css.includes(".school-lesson-locked-next"));
+  assert.ok(homePage.includes('school.js?v=3'));
+  assert.ok(readerPage.includes('lesson.js?v=9'));
+  assert.ok(readerPage.includes('school.css?v=10'));
 });
 
 test("Заголовок школы на двух строках одного размера с золотым акцентом",async()=>{
   const html=await src("pro/school/index.html");
   const css=await src("pro/school/school.css");
   assert.ok(html.includes('<h1><span class="school-hero-primary">Учиться самостоятельно</span> <span class="school-hero-gold">это легко!</span></h1>'));
-  assert.ok(html.includes('school.css?v=9'));
+  assert.ok(html.includes('school.css?v=10'));
   assert.ok(css.includes('.school-hero h1 .school-hero-primary,.school-hero h1 .school-hero-gold{display:block;white-space:nowrap}'));
   assert.ok(css.includes('.school-hero h1 .school-hero-gold{color:#9e7e50}'));
   assert.ok(css.includes('.school-hero>.school-overline{margin-bottom:19px}'));
