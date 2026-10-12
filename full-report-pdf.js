@@ -2,7 +2,7 @@ import { buildFullReportSections, loadFullReportSection } from "./full-report-li
 import { findKarmicPrograms, findKarmicTail } from "./karmic-programs.js?v=3";
 
 // Отдельный модуль PDF: документ, фон, скачивание и кэширование.
-export function createFullReportPdfController({getReport, reading, extendContent = null, buttonClass = "matrix-pdf-button"}) {
+export function createFullReportPdfController({getReport, reading, extendContent = null, buttonClass = "matrix-pdf-button", beforeDownload = null, customizeDocument = null}) {
 let pdfMakeLoading;
 let preparedFullPdf = null;
 let preparingFullPdf = null;
@@ -321,6 +321,7 @@ const buildFullReportPdf = async () => {
     footer: (page, pages) => ({ text: `Нумерология Онлайн · ${page} / ${pages}`, alignment: "center", color: "#9A8661", fontSize: 8.5, margin: [0, 8, 0, 0] })
   };
 
+  if (typeof customizeDocument === "function") await customizeDocument(documentDefinition);
   const blob = await new Promise((resolve) => pdfMake.createPdf(documentDefinition).getBlob(resolve));
   return { url: URL.createObjectURL(blob), filename: `Полный разбор ${formattedDate}.pdf` };
 };
@@ -371,6 +372,8 @@ const prepareFullReportPdf = () => {
 };
 
 const warmFullPdfInBackground = () => {
+  // In the school the PDF needs client details, which are collected at download time.
+  if (typeof beforeDownload === "function") return;
   const key = getFullPdfKey();
   if (!key) return;
   const warm = () => {
@@ -392,10 +395,17 @@ const createFullReportPdfButton = (position = "bottom") => {
   button.type = "button";
   button.innerHTML = "Скачать PDF <span aria-hidden=\"true\">↓</span>";
   button.addEventListener("click", async () => {
-    button.dataset.downloading = "1";
+    if (button.disabled) return;
     button.disabled = true;
-    button.textContent = "Готовлю PDF…";
     try {
+      // Only the school installs a questionnaire. Regular site PDF stays untouched.
+      if (typeof beforeDownload === "function") {
+        const accepted = await beforeDownload();
+        if (!accepted) return;
+        invalidateFullPdf();
+      }
+      button.dataset.downloading = "1";
+      button.textContent = "Готовлю PDF…";
       // Await the same preparation as the background task; never build twice.
       const { url, filename } = await prepareFullReportPdf();
       const link = document.createElement("a");
