@@ -19,7 +19,7 @@ test("Школа начинает с построения матрицы и за
   assert.ok(!script.includes('fetch("pro/school/lessons.json'));
   assert.ok(script.includes('link.href = "pro/school/lesson/?id="'));
   assert.ok(reader.includes('<base href="../../../">'));
-  assert.ok(lessonJS.includes('fetch(manifest[index].file+"?v=1")'));
+  assert.ok(lessonJS.includes('fetch(manifest[index].file+"?v=2")'));
   assert.equal(manifest.lessons.length, 12);
   assert.deepEqual(manifest.lessons.slice(0,5).map(x=>x.id), ["start","reduce","base","corners","internal"]);
   for (const meta of manifest.lessons) {
@@ -75,9 +75,21 @@ test("Первый урок без повторов, дата подтвержд
   assert.ok(page.includes('id="lesson-date-submit"'));
   assert.ok(page.includes('id="lesson-date-confirmed"'));
   assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=2"'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=2"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=3"'));
   assert.ok(styles.includes(".school-date-row button.is-confirmed"));
   assert.ok(styles.includes(".school-lesson-quiz.is-locked"));
   const first=JSON.parse(await src("pro/school/lessons/start.json"));
-  assert.equal(first.questions.length,2);
+  assert.equal(first.questions.length,3);
+  assert.deepEqual(first.questions.map(q=>q.correct),[1,1,1]);
+  assert.ok(first.questions.every(q=>!/рассчит|посчитать центр|вычислить центр/i.test(q.prompt)));
+  assert.ok(first.sections[3].text.includes("месяц рождения"));
+  assert.ok(first.sections[3].text.includes("день рождения"));
+  assert.ok(first.sections[3].text.includes("год рождения"));
+  assert.ok(script.includes('["МЕСЯЦ","РОЖДЕНИЯ"'));
+  assert.ok(script.includes('["ДЕНЬ","РОЖДЕНИЯ"'));
+  assert.ok(script.includes('["ГОД","РОЖДЕНИЯ"'));
+  assert.ok(script.includes('sum.textContent="СУММА"'));
+  assert.ok(script.includes('"Пример для "+date'));
+  assert.ok(script.includes('String(currentBirth.month).padStart(2,"0")'));
+
 });
