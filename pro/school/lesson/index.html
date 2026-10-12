@@ -10,7 +10,7 @@
   <meta name="description" content="Пошаговые уроки матрицы судьбы: от рисования схемы до самостоятельного расчёта и проверки знаний.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="pro/school/school.css?v=10">
-  <link rel="stylesheet" href="pro/school/lesson/lesson.css?v=6">
+  <link rel="stylesheet" href="pro/school/lesson/lesson.css?v=7">
 </head>
 <body>
   <div class="school-shell school-lesson-shell">
@@ -32,9 +32,9 @@
           <p id="lesson-drawing-description">Откройте тетрадь, повторяйте по шагам. Числа на схеме берутся из того же алгоритма, что и в полном разборе.</p>
         </div>
         <form id="lesson-date-form" class="school-date-form">
-          <label for="lesson-date">Дата рождения для примера</label>
+          <label for="lesson-date">Дата рождения</label>
           <div class="school-date-row">
-            <input id="lesson-date" inputmode="numeric" maxlength="10" placeholder="ДД.ММ.ГГГГ" value="14.07.1990" required>
+            <input id="lesson-date" inputmode="numeric" maxlength="10" placeholder="Введите любую дату" autocomplete="off" required>
             <button id="lesson-date-submit" type="submit" aria-label="Использовать выбранную дату">Использовать</button>
           </div>
           <p id="lesson-date-error" class="school-date-error" role="alert" hidden></p>
@@ -61,6 +61,6 @@
     </main>
     <footer class="school-footer">Школа нумерологов · Продолжайте в своём темпе</footer>
   </div>
-  <script type="module" src="pro/school/lesson/lesson.js?v=10"></script>
+  <script type="module" src="pro/school/lesson/lesson.js?v=11"></script>
 </body>
 </html>
