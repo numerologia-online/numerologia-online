@@ -53,3 +53,31 @@ test("28 формул в справочнике соответствуют те�
     }
   }
 });
+
+
+test("Первый урок без повторов, дата подтверждается галочкой и тест закрыт до последнего шага", async () => {
+  const script=await src("pro/school/lesson/lesson.js");
+  const page=await src("pro/school/lesson/index.html");
+  const styles=await src("pro/school/lesson/lesson.css");
+  assert.ok(script.includes('id==="start"?0:'));
+  assert.ok(script.includes("const firstLessonSteps=["));
+  assert.ok(script.includes("drawFirstLessonOutline()"));
+  assert.ok(script.includes('root.hidden=id==="start"'));
+  assert.ok(script.includes('if(id!=="start"){'));
+  assert.ok(script.includes('step===max'));
+  assert.ok(script.includes("unlockFirstLessonQuiz()"));
+  assert.ok(script.includes('root.classList.add("is-locked")'));
+  assert.ok(script.includes('fieldset.disabled=true'));
+  assert.ok(script.includes('fieldset.disabled=false'));
+  assert.ok(script.includes('submit.disabled=true'));
+  assert.ok(script.includes('button.textContent="✓"'));
+  assert.ok(script.includes('resetConfirmation()'));
+  assert.ok(page.includes('id="lesson-date-submit"'));
+  assert.ok(page.includes('id="lesson-date-confirmed"'));
+  assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=2"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=2"'));
+  assert.ok(styles.includes(".school-date-row button.is-confirmed"));
+  assert.ok(styles.includes(".school-lesson-quiz.is-locked"));
+  const first=JSON.parse(await src("pro/school/lessons/start.json"));
+  assert.equal(first.questions.length,2);
+});
