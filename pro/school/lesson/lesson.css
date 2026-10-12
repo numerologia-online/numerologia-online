@@ -205,3 +205,29 @@
   paint-order:stroke fill;
   pointer-events:none;
 }
+
+/* Урок 2: каждый круг получает не только ответ, но и понятный путь расчёта. */
+.school-step-formula.is-calculation-breakdown{
+  padding:15px!important;border:1px solid #e3d7c2;
+  background:linear-gradient(140deg,#faf7f0,#f1eee6);
+  box-shadow:inset 0 1px 0 #fff;
+  font-size:initial!important;
+}
+.school-calc-overline{margin:0 0 10px;color:#987749;font-size:11px;font-weight:900;letter-spacing:.095em;line-height:1.4}
+.school-calc-list{display:grid;gap:8px}
+.school-calc-row{
+  display:grid;grid-template-columns:minmax(0,1fr) 34px;
+  gap:8px;align-items:center;padding:11px 10px;
+  border:1px solid #e4dbcd;border-radius:12px;background:#fffefa;
+}
+.school-calc-explanation{display:grid;gap:4px;min-width:0}
+.school-calc-place{color:#987b53;font-size:10px;letter-spacing:.09em;font-weight:850}
+.school-calc-equation{
+  color:#2e4757;font-size:clamp(13px,2.6vw,15px);
+  line-height:1.5;font-weight:700;overflow-wrap:anywhere;
+}
+.school-calc-result{
+  display:grid;place-items:center;width:34px;height:34px;
+  border:1px solid #a9c9c7;border-radius:50%;
+  background:#e7f1ef;color:#294f60;font-size:16px;
+}
