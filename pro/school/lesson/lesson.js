@@ -154,26 +154,68 @@ function drawCurrent() {
   $("lesson-step-next").disabled=step===4;
   $("lesson-step-next").textContent="Следующий шаг →";
 }
-function setupDiagram() {
+function unlockFirstLessonQuiz(){
+  if(id!=="start")return;
+  const root=$("lesson-quiz");
+  root.classList.remove("is-locked");
+  root.setAttribute("aria-disabled","false");
+  const notice=$("lesson-quiz-lock");
+  if(notice)notice.hidden=true;
+  root.querySelectorAll("fieldset").forEach(fieldset=>{fieldset.disabled=false});
+  const button=root.querySelector('button[type="submit"]');
+  if(button)button.disabled=false;
+  root.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function setupDiagram(){
   if(index>4)return;
   $("lesson-drawing").hidden=false;
-  step=[0,1,1,3,4][index]??0;
-  $("lesson-step-back").addEventListener("click",()=>{step=Math.max(0,step-1);drawCurrent()});
-  $("lesson-step-next").addEventListener("click",()=>{step=Math.min(4,step+1);drawCurrent()});
-  const dateInput=$("lesson-date");
-  const dateError=$("lesson-date-error");
-  dateInput.addEventListener("input",()=>{
-    const digits=dateInput.value.replace(/\D/g,"").slice(0,8);
-    dateInput.value=[digits.slice(0,2),digits.slice(2,4),digits.slice(4,8)].filter(Boolean).join(".");
-    dateError.hidden=true;
+  step=id==="start"?0:([0,1,1,3,4][index]??0);
+  $("lesson-step-back").addEventListener("click",()=>{
+    step=Math.max(0,step-1);
+    drawCurrent();
+  });
+  $("lesson-step-next").addEventListener("click",()=>{
+    const max=id==="start"?firstLessonSteps.length-1:4;
+    if(id==="start"&&step===max){
+      unlockFirstLessonQuiz();
+      return;
+    }
+    step=Math.min(max,step+1);
+    drawCurrent();
+  });
+  const input=$("lesson-date");
+  const error=$("lesson-date-error");
+  const button=$("lesson-date-submit");
+  const confirmed=$("lesson-date-confirmed");
+  const resetConfirmation=()=>{
+    button.textContent="Использовать";
+    button.classList.remove("is-confirmed");
+    button.setAttribute("aria-label","Использовать выбранную дату");
+    confirmed.hidden=true;
+  };
+  input.addEventListener("input",()=>{
+    const digits=input.value.replace(/\D/g,"").slice(0,8);
+    input.value=[digits.slice(0,2),digits.slice(2,4),digits.slice(4,8)].filter(Boolean).join(".");
+    error.hidden=true;
+    resetConfirmation();
   });
   $("lesson-date-form").addEventListener("submit",event=>{
     event.preventDefault();
-    const birth=parseBirthDate(dateInput.value);
-    if(!birth){dateError.hidden=false;dateError.textContent="Проверьте дату в формате ДД.ММ.ГГГГ.";return}
-    dateError.hidden=true;
+    const birth=parseBirthDate(input.value);
+    if(!birth){
+      error.hidden=false;
+      error.textContent="Проверьте дату в формате ДД.ММ.ГГГГ.";
+      resetConfirmation();
+      return;
+    }
+    error.hidden=true;
     currentBirth=birth;
     drawCurrent();
+    button.textContent="✓";
+    button.classList.add("is-confirmed");
+    button.setAttribute("aria-label","Дата выбрана: "+input.value);
+    confirmed.textContent="✓ Дата "+input.value+" выбрана. Можно продолжать урок.";
+    confirmed.hidden=false;
   });
   drawCurrent();
 }
