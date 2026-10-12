@@ -163,7 +163,8 @@
 .school-drawing.is-first-lesson .school-date-form{padding-top:9px}
 
 /* У первого урока нет цифр и даты: только пустая схема и подписи под ней. */
-.school-drawing.is-first-lesson #lesson-date-form{display:none!important}
+.school-drawing.is-first-lesson #lesson-date-form,
+.school-drawing.is-first-lesson #lesson-step-formula{display:none!important}
 .school-position-key{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
