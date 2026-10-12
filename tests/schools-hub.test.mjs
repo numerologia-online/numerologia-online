@@ -36,3 +36,22 @@ test("Две школы открыты, остальные направлени�
   assert.equal((hub.match(/class="academy-school academy-school--ready/g) || []).length, 2);
   assert.ok(hub.includes('<meta name="robots" content="noindex,nofollow">'));
 });
+
+test("Каталог школ: короткий заголовок и компактный список для телефона", async () => {
+  const hub = await source("pro/schools/index.html");
+  const css = await source("pro/schools/schools.css");
+  assert.ok(hub.includes('<h1 id="academy-title">Школа <em>нумерологии</em></h1>'));
+  assert.ok(hub.includes("ОБУЧЕНИЕ И ПРАКТИКА"));
+  assert.ok(hub.includes("Выберите направление, которое хотите изучать самостоятельно."));
+  assert.ok(!hub.includes("Выберите свою школу"));
+  assert.ok(!hub.includes("Первая школа уже открыта"));
+  assert.ok(!hub.includes('class="academy-school-top"'));
+  assert.ok(!hub.includes('class="academy-school-bottom"'));
+  assert.ok(hub.includes('href="pro/schools/schools.css?v=3"'));
+  assert.equal((hub.match(/class="academy-school academy-school--/g) || []).length, 8);
+  assert.match(css, /\.academy-school\s*\{/);
+  assert.match(css, /min-height:65px/);
+  assert.match(css, /@media\(max-width:480px\)/);
+  assert.match(css, /min-height:61px/);
+  assert.ok(!css.includes("min-height:242px"));
+});
