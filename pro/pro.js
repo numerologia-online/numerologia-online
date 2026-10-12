@@ -351,6 +351,44 @@ function renderQuestions(definitions) {
   questionButtons.replaceChildren(frag);
 }
 
+// Один общий вывод полного авторского текста для точек схемы и сфер.
+// Берём готовый раздел из того же банка, который используется в «О чём хотите узнать?».
+// Никакой второй версии трактовок или формул.
+function loadInlineFullReading(target, key) {
+  const report = current;
+  const definition = report?.definitions.find(item => item.key === key);
+  if (!definition) return;
+  const id = report.id;
+  target.replaceChildren(paragraph("Открываю полный разбор…", "pro-muted"));
+  Promise.all([loadFullReportSection(definition.energy), loadPracticalGuidance(definition.energy)])
+    .then(([bank, guidance]) => {
+      if (!current || current.id !== id || !target.isConnected) return;
+      const section = bank?.sections?.[key];
+      if (!section?.paragraphs?.length) throw new Error("Полный текст позиции не найден");
+      const fragment = document.createDocumentFragment();
+      fragment.append(element("p", "ПОЛНЫЙ РАЗБОР ПО ВАШЕЙ МАТРИЦЕ", "pro-eyebrow"));
+      fragment.append(element("h4", section.title || definition.title, "pro-inline-reading-title"));
+      section.paragraphs.filter(Boolean).forEach(text => {
+        fragment.append(isSubheading(text)
+          ? element("h5", text, "pro-inline-reading-subheading")
+          : paragraph(text));
+      });
+      const practical = guidance?.sections?.[key];
+      if (practical?.action && practical?.result) {
+        fragment.append(element("h5", "Практика на ближайшие семь дней", "pro-inline-reading-subheading"));
+        fragment.append(paragraph(practical.action));
+        fragment.append(element("h5", "Как понять что энергия вышла в плюс", "pro-inline-reading-subheading"));
+        fragment.append(paragraph(practical.result));
+      }
+      target.replaceChildren(fragment);
+    })
+    .catch(error => {
+      if (current?.id !== id || !target.isConnected) return;
+      console.warn("Полная расшифровка точки:", error);
+      target.replaceChildren(paragraph("Не удалось загрузить полный текст. Проверьте интернет и откройте позицию ещё раз.", "pro-muted"));
+    });
+}
+
 // Every diagram point has its own contextual reading. The 14 large answers
 // remain an optional second layer and are never substituted for another point.
 function openPointDetail(key) {
@@ -385,26 +423,29 @@ function openPointDetail(key) {
   pointDetails.append(chips);
   pointDetails.append(element("h4", "Что показывает эта точка"));
   pointDetails.append(paragraph(detail.meaning));
-  if (shortMessage) {
-    pointDetails.append(element("h4", "Как эта энергия проявляется у вас"));
-    pointDetails.append(paragraph(shortMessage));
-  }
-  if (energy.plus || energy.mainStrength) {
-    pointDetails.append(element("h4", "В плюсе"));
-    pointDetails.append(paragraph(energy.plus || energy.mainStrength));
-  }
-  if (energy.minus || energy.mainBlock) {
-    pointDetails.append(element("h4", "В минусе"));
-    pointDetails.append(paragraph(energy.minus || energy.mainBlock));
-  }
-  pointDetails.append(element("h4", "Что сделать на практике"));
-  pointDetails.append(paragraph(detail.action));
-
-  if (point.topic && current.definitions.some(definition => definition.key === point.topic)) {
-    const deeper = element("button", "Читать полный разбор по этой теме ↓", "pro-point-details-read");
-    deeper.type = "button";
-    deeper.addEventListener("click", () => selectQuestion(point.topic, true));
-    pointDetails.append(deeper);
+  const hasAuthoredText = Boolean(point.topic &&
+    current.definitions.some(definition => definition.key === point.topic));
+  if (hasAuthoredText) {
+    // Пояснение остаётся; полный авторский текст раскрывается сразу, без третьей кнопки.
+    const full = element("section", null, "pro-inline-full-reading");
+    pointDetails.append(full);
+    loadInlineFullReading(full, point.topic);
+  } else {
+    // Вспомогательные точки: собственная позиционная трактовка, не чужой большой текст.
+    if (shortMessage && shortMessage.trim() !== detail.meaning.trim()) {
+      pointDetails.append(element("h4", "Как эта энергия проявляется у вас"));
+      pointDetails.append(paragraph(shortMessage));
+    }
+    if (energy.plus || energy.mainStrength) {
+      pointDetails.append(element("h4", "В плюсе"));
+      pointDetails.append(paragraph(energy.plus || energy.mainStrength));
+    }
+    if (energy.minus || energy.mainBlock) {
+      pointDetails.append(element("h4", "В минусе"));
+      pointDetails.append(paragraph(energy.minus || energy.mainBlock));
+    }
+    pointDetails.append(element("h4", "Что сделать на практике"));
+    pointDetails.append(paragraph(detail.action));
   }
   pointDetails.hidden = false;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -485,13 +526,44 @@ function renderZoneReading(zone, shouldScroll = true) {
     card.append(line);
 
     const content = element("div", null, "pro-zone-reading-position-content");
+    // Значение роли в конкретной сфере всегда сохраняем.
     content.append(paragraph(role.meaning));
-    const energyText = energy[reading.energyField] || energy.shortEssence || energy.mainStrength;
-    if (energyText) content.append(paragraph(energyText, "pro-zone-reading-energy"));
-    const deeper = element("button", "Разобрать эту точку подробнее →", "pro-zone-reading-detail");
-    deeper.type = "button";
-    deeper.addEventListener("click", () => openPointDetail(point.key));
-    content.append(deeper);
+    const authoredKey = point.topic && zone.questions.includes(point.topic)
+      && current.definitions.some(definition => definition.key === point.topic)
+      ? point.topic : null;
+    if (authoredKey) {
+      const full = element("section", null, "pro-inline-full-reading");
+      content.append(full);
+      // Теперь одно раскрытие позиции ведёт непосредственно к полному тексту.
+      card.addEventListener("toggle", () => {
+        if (card.open && !card.dataset.loaded) {
+          card.dataset.loaded = "true";
+          loadInlineFullReading(full, authoredKey);
+        }
+      });
+    } else {
+      // Когда большого текста для позиции нет, читаем индивидуальное пояснение
+      // из существующего каталога 31 точки прямо здесь, без дополнительных переходов.
+      const detail = current.previews.details?.[point.key];
+      const message = current.previews.energies[String(point.value)]?.[
+        current.previews.groups.money.includes(point.key) ? "money"
+          : current.previews.groups.love.includes(point.key) ? "love" : "self"
+      ];
+      const energyText = energy[reading.energyField] || energy.shortEssence || energy.mainStrength;
+      if (detail?.meaning && detail.meaning !== role.meaning) {
+        content.append(element("h5", "Значение этой позиции", "pro-inline-reading-subheading"));
+        content.append(paragraph(detail.meaning));
+      }
+      if (message && message !== role.meaning && message !== detail?.meaning) {
+        content.append(paragraph(message, "pro-zone-reading-energy"));
+      } else if (energyText && energyText !== role.meaning) {
+        content.append(paragraph(energyText, "pro-zone-reading-energy"));
+      }
+      if (detail?.action) {
+        content.append(element("h5", "Как использовать в жизни", "pro-inline-reading-subheading"));
+        content.append(paragraph(detail.action));
+      }
+    }
     card.append(content);
     card.addEventListener("toggle", () => {
       if (!card.open) return;
