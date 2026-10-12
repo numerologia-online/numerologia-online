@@ -96,10 +96,8 @@ p{margin:0 0 15px}.school-shell{width:min(100%,1120px);padding:16px clamp(15px,3
 
 /* Обновлённая школа: сначала обучение, а профессиональный инструмент ниже. */
 .school-hero{padding:clamp(12px,2vw,22px) 3px 10px}
-.school-hero>.school-overline{margin-bottom:6px}
-.school-hero h1{margin:5px 0 0;text-align:center;font-size:clamp(23px,7.4vw,49px);line-height:1.12;font-weight:600}
-.school-hero-first{display:block;white-space:nowrap}
-.school-hero h1 em{display:block;margin-top:9px;font-size:clamp(40px,10.8vw,68px);line-height:1.04;font-weight:600;color:#df3675;letter-spacing:-.035em}
+.school-hero>.school-overline{margin-bottom:19px}
+.school-hero h1{margin:0;text-align:center;font-size:clamp(28px,7.2vw,54px);line-height:1.18;font-weight:400;color:var(--ink);text-wrap:balance}
 .school-tabs{max-width:100%;margin:0 0 17px}
 .school-lesson-grid{display:grid;gap:24px}
 .school-lesson-module{min-width:0}
