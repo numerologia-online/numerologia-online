@@ -1,5 +1,5 @@
 // Тот же порядок 28 узлов, что использует pro/pro.js.
-// Значения всегда читаются из calculateMatrix: учебник не содержит второй версии формул.
+// Значения и примеры арифметики берутся из calculateMatrix: учебник не содержит второй версии формул.
 const equation = (values, result) => {
   const sum = values.reduce((a,b) => a + b, 0);
   return values.join(" + ") + " = " + sum + (sum === result ? "" : " → " + result);
@@ -29,12 +29,12 @@ export const pointCatalog = [
   point("tailFirst","Нижняя линия / первая","Кармический хвост",m=>m.tail.first,m=>equation([m.center,m.bottom],m.tail.first)),
   point("tailSecond","Нижняя линия / вторая","Кармический хвост",m=>m.tail.second,m=>equation([m.bottom,m.tail.first],m.tail.second)),
   point("topLeftOuter","Диагональ слева сверху / внешняя","Диагонали",m=>m.diagonals.topLeft.outer,m=>equation([m.corners.topLeft,m.diagonals.topLeft.near],m.diagonals.topLeft.outer)),
-  point("topLeftNear","Диагональ слева сверху / внутренняя","Диагонали",m=>m.diagonals.topLeft.near,m=>equation([m.corners.topLeft,m.center],m.diagonals.topLeft.near)),
+  point("topLeftNear","Диагональ слева сверху / внутренняя","Диагонали",m=>m.diagonals.topLeft.near,m=>equation([m.corners.topLeft,m.lineage.ancestralCenter],m.diagonals.topLeft.near)),
   point("topRightOuter","Диагональ справа сверху / внешняя","Диагонали",m=>m.diagonals.topRight.outer,m=>equation([m.corners.topRight,m.diagonals.topRight.near],m.diagonals.topRight.outer)),
-  point("topRightNear","Диагональ справа сверху / внутренняя","Диагонали",m=>m.diagonals.topRight.near,m=>equation([m.corners.topRight,m.center],m.diagonals.topRight.near)),
+  point("topRightNear","Диагональ справа сверху / внутренняя","Диагонали",m=>m.diagonals.topRight.near,m=>equation([m.corners.topRight,m.lineage.ancestralCenter],m.diagonals.topRight.near)),
   point("bottomRightOuter","Диагональ справа снизу / внешняя","Диагонали",m=>m.diagonals.bottomRight.outer,m=>equation([m.corners.bottomRight,m.diagonals.bottomRight.near],m.diagonals.bottomRight.outer)),
-  point("bottomRightNear","Диагональ справа снизу / внутренняя","Диагонали",m=>m.diagonals.bottomRight.near,m=>equation([m.corners.bottomRight,m.center],m.diagonals.bottomRight.near)),
+  point("bottomRightNear","Диагональ справа снизу / внутренняя","Диагонали",m=>m.diagonals.bottomRight.near,m=>equation([m.corners.bottomRight,m.lineage.ancestralCenter],m.diagonals.bottomRight.near)),
   point("bottomLeftOuter","Диагональ слева снизу / внешняя","Диагонали",m=>m.diagonals.bottomLeft.outer,m=>equation([m.corners.bottomLeft,m.diagonals.bottomLeft.near],m.diagonals.bottomLeft.outer)),
-  point("bottomLeftNear","Диагональ слева снизу / внутренняя","Диагонали",m=>m.diagonals.bottomLeft.near,m=>equation([m.corners.bottomLeft,m.center],m.diagonals.bottomLeft.near)),
+  point("bottomLeftNear","Диагональ слева снизу / внутренняя","Диагонали",m=>m.diagonals.bottomLeft.near,m=>equation([m.corners.bottomLeft,m.lineage.ancestralCenter],m.diagonals.bottomLeft.near)),
   point("center","Центр","Опорные",m=>m.center,m=>equation([m.left,m.top,m.right,m.bottom],m.center))
 ];
