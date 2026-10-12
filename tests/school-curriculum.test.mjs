@@ -172,8 +172,11 @@ test("В первом тесте считаем кружочки и после �
 test("Центрируется только фраза в заголовке школы, слово легко остаётся акцентным",async()=>{
   const html=await src("pro/school/index.html");
   const css=await src("pro/school/school.css");
-  assert.ok(html.includes('Учиться самостоятельно<br><em>легко</em>'));
-  assert.ok(html.includes('school.css?v=4'));
-  assert.ok(css.includes('.school-hero h1{margin:13px 0 0;text-align:center}'));
-  assert.ok(css.includes('.school-hero h1 em{font-size:.92em}'));
+  assert.ok(html.includes('class="school-hero-first">Учиться самостоятельно</span> <em>легко</em>'));
+  assert.ok(html.includes('school.css?v=5'));
+  assert.ok(css.includes('school-hero-first{display:block;white-space:nowrap}'));
+  assert.ok(css.includes('font-size:clamp(20px,6.6vw,46px)'));
+  assert.ok(css.includes('font-size:clamp(49px,14vw,82px)'));
+  assert.ok(css.includes('color:#df3675'));
+  assert.ok(css.includes('padding-top:10px'));
 });
