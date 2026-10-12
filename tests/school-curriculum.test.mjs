@@ -74,8 +74,8 @@ test("Первый урок без повторов, дата подтвержд
   assert.ok(script.includes('resetConfirmation()'));
   assert.ok(page.includes('id="lesson-date-submit"'));
   assert.ok(page.includes('id="lesson-date-confirmed"'));
-  assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=5"'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=7"'));
+  assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=6"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=8"'));
   assert.ok(styles.includes(".school-date-row button.is-confirmed"));
   assert.ok(styles.includes(".school-lesson-quiz.is-locked"));
   const first=JSON.parse(await src("pro/school/lessons/start.json"));
@@ -85,15 +85,16 @@ test("Первый урок без повторов, дата подтвержд
   assert.ok(first.sections[3].text.includes("месяц рождения"));
   assert.ok(first.sections[3].text.includes("день рождения"));
   assert.ok(first.sections[3].text.includes("год рождения"));
-  assert.ok(script.includes('["↑","Месяц рождения"]'));
-  assert.ok(script.includes('["←","День рождения"]'));
-  assert.ok(script.includes('["→","Год рождения"]'));
-  assert.ok(script.includes('["↓","Сумма"]'));
-  assert.ok(script.includes('diagram.append(legend)'));
+  assert.ok(script.includes('lines:["Месяц рождения"]'));
+  assert.ok(script.includes('lines:["День","рождения"]'));
+  assert.ok(script.includes('lines:["Год","рождения"]'));
+  assert.ok(script.includes('lines:["Сумма"]'));
+  assert.ok(script.includes('svg.append(text)'));
+  assert.ok(!script.includes('diagram.append(legend)'));
   assert.ok(!script.includes('"Пример для "+date'));
   assert.ok(script.includes('$("lesson-date-form").hidden=true'));
   assert.ok(script.includes('$("lesson-step-formula").hidden=true'));
-  assert.ok(styles.includes(".school-position-key"));
+  assert.ok(styles.includes(".school-diagram-anchor-label"));
   assert.ok(styles.includes(".school-drawing.is-first-lesson #lesson-date-form"));
   assert.ok(!JSON.stringify(first).includes("09.09.1986"));
 
@@ -116,8 +117,8 @@ test("Неверный ответ выделен красным и возвра�
   assert.ok(css.includes(".school-quiz-result.is-incorrect"));
   assert.ok(css.includes("color:#a82d38"));
   assert.ok(css.includes(".school-quiz-retry[hidden]"));
-  assert.ok(html.includes('lesson.js?v=7'));
-  assert.ok(html.includes('lesson.css?v=5'));
+  assert.ok(html.includes('lesson.js?v=8'));
+  assert.ok(html.includes('lesson.css?v=6'));
 });
 
 test("Первый урок показывает сразу практику, без двух вступлений",async()=>{
@@ -136,15 +137,18 @@ test("Первый урок показывает сразу практику, б
   assert.ok(js.includes('setupDiagram()'));
 });
 
-test("Пустая матрица первого урока не содержит подписей поверх линий и числовых примеров",async()=>{
+test("В четвёртом шаге подписи находятся на матрице, а не в отдельных карточках",async()=>{
   const js=await src("pro/school/lesson/lesson.js");
   const css=await src("pro/school/lesson/lesson.css");
   const lesson=JSON.parse(await src("pro/school/lessons/start.json"));
   const draw=js.slice(js.indexOf("function drawFirstLessonOutline()"),js.indexOf("const stageKeys = ["));
-  assert.ok(!draw.includes('makeSvg("text"'));
-  assert.ok(draw.includes('diagram.append(legend)'));
-  assert.ok(draw.includes('school-position-chip'));
-  assert.ok(css.includes("grid-template-columns:repeat(2,minmax(0,1fr))"));
+  assert.ok(draw.includes('makeSvg("text"'));
+  assert.ok(draw.includes('svg.append(text)'));
+  assert.ok(draw.includes('school-diagram-anchor-label'));
+  assert.ok(!draw.includes('school-position-chip'));
+  assert.ok(!draw.includes('diagram.append(legend)'));
+  assert.ok(css.includes(".school-diagram-anchor-label"));
+  assert.ok(!css.includes(".school-position-chip{"));
   assert.ok(lesson.questions.length===3);
   assert.ok(!lesson.sections[3].text.includes("09.09.1986"));
   assert.ok(!lesson.sections[3].example.includes("09.09.1986"));
@@ -162,5 +166,14 @@ test("В первом тесте считаем кружочки и после �
   assert.ok(success.includes('feedback.scrollIntoView({behavior:"smooth",block:"center"})'));
   assert.ok(!script.slice(script.indexOf('feedback.classList.add("is-incorrect")'),script.indexOf('retry.hidden=false')).includes("scrollIntoView"));
   assert.ok(script.includes('link(next,"Следующий урок →","school-primary")'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=7"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=8"'));
+});
+
+test("Центрируется только фраза в заголовке школы, слово легко остаётся акцентным",async()=>{
+  const html=await src("pro/school/index.html");
+  const css=await src("pro/school/school.css");
+  assert.ok(html.includes('Учиться самостоятельно<br><em>легко</em>'));
+  assert.ok(html.includes('school.css?v=4'));
+  assert.ok(css.includes('.school-hero h1{margin:13px 0 0;text-align:center}'));
+  assert.ok(css.includes('.school-hero h1 em{font-size:.92em}'));
 });
