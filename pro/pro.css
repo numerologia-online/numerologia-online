@@ -535,3 +535,17 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-school-shortcut{display:inline-flex;margin-top:18px;padding:9px 15px;align-items:center;min-height:40px;border:1px solid #d0c1a9;border-radius:13px;background:#fffefa;color:#4c6476;font-size:13px;font-weight:750;text-decoration:none}
 .pro-school-shortcut:hover{border-color:#a2bcb8;background:#f0f7f5}
 .pro-school-shortcut:focus-visible{outline:3px solid #729b9b;outline-offset:3px}
+
+/* Разбор точки читается на месте: контекст, затем готовый авторский текст. */
+.pro-inline-full-reading{margin:18px 0 3px;padding:17px 0 0;border-top:1px solid #ded4c3}
+.pro-inline-full-reading .pro-eyebrow{margin:0 0 8px!important;font-size:11px!important;color:#a27d49}
+.pro-zone-reading-position .pro-inline-full-reading p:not(.pro-eyebrow),
+.pro-point-details .pro-inline-full-reading p:not(.pro-eyebrow){font-size:16px;line-height:1.72;color:#344c5d;margin:0 0 17px}
+.pro-inline-reading-title{font:400 clamp(23px,4.8vw,29px)/1.22 Georgia,serif!important;color:#30495d!important;margin:6px 0 18px!important}
+.pro-inline-reading-subheading{font:400 21px/1.28 Georgia,serif;color:#96764c;margin:22px 0 10px}
+.pro-zone-reading-position .pro-inline-reading-subheading{font-size:19px}
+.pro-zone-reading-position-content > .pro-inline-full-reading:last-child{padding-bottom:2px}
+@media(max-width:480px){
+  .pro-zone-reading-position .pro-inline-full-reading p:not(.pro-eyebrow),
+  .pro-point-details .pro-inline-full-reading p:not(.pro-eyebrow){font-size:15.5px;line-height:1.67}
+}
