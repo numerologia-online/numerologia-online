@@ -223,7 +223,8 @@ test("Первая страница совместимости умещаетс�
   assert.ok(css.includes(".compatibility-result[hidden] + .compatibility-footer{display:none}"));
   assert.ok(css.includes(".compatibility-intro{margin-top:auto}"));
   assert.ok(css.includes(".compatibility-form{margin-bottom:auto}"));
-  assert.ok(html.includes("13 ответов о притяжении, чувствах и будущем вашей пары."));
-  assert.ok(html.includes('src="app.js?v=165"'));
+  assert.ok(html.includes("Говорят, души выбирают друг друга ещё на небесах."));
+  assert.ok(html.includes("13 глубоких ответов по двум датам рождения."));
+  assert.ok(html.includes('src="app.js?v=166"'));
   assert.ok(app.includes('loadStylesheet("compatibility-polish.css?v=3")'));
 });
