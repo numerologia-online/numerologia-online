@@ -1,6 +1,7 @@
 /** Список вопросов о паре; пользователь сам решает, какой ответ раскрыть. */
 import { parseBirthDate } from "./numerology-core.js?v=1";
 import { calculateCompatibility } from "./compatibility-engine.js?v=1";
+import { createCompatibilityPdfController } from "./compatibility-pdf.js?v=1";
 
 const home = document.querySelector("#home");
 const page = document.querySelector("#compatibility");
@@ -12,6 +13,7 @@ const summary = document.querySelector("#compatibility-summary");
 const topicsRoot = document.querySelector("#compatibility-topics");
 const result = document.querySelector("#compatibility-result");
 const back = document.querySelector("#back-compatibility-home");
+const pdfButtons = [...document.querySelectorAll("#compatibility .compatibility-pdf-button")];
 
 const cache = new Map();
 const getBank = (energy) => {
@@ -30,6 +32,8 @@ const getBank = (energy) => {
   cache.set(energy, promise);
   return promise;
 };
+
+const { setReport: setPdfReport } = createCompatibilityPdfController({ buttons: pdfButtons, getBank });
 
 const formatInput = (input) => {
   const digits = input.value.replace(/\D/g, "").slice(0, 8);
@@ -124,6 +128,7 @@ form.addEventListener("submit", (event) => {
   }
   const topics = calculateCompatibility(first, second);
   renderTopics(topics);
+  setPdfReport({ topics, dateA: aField.value, dateB: bField.value });
   summary.textContent = `Расчёт для ${aField.value} и ${bField.value} готов. Выбирайте любой вопрос, чтобы прочитать свой разбор.`;
   result.hidden = false;
   error.hidden = true;
