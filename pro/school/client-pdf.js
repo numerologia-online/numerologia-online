@@ -28,12 +28,15 @@ export function createSchoolClientPdf() {
         <button type="button" class="school-client-close" aria-label="Закрыть анкету">×</button>
       </div>
       <h2 id="school-client-form-title">Оформить PDF для клиента</h2>
-      <p class="school-client-explainer">Ваши расчёты останутся прежними. На титульном листе будут ваши данные, а в документе - личное обращение.</p>
-      <label>Имя клиента <span>*</span><input name="client" autocomplete="off" maxlength="90" required placeholder="Например, Анастасия"></label>
-      <label>Имя и фамилия нумеролога <span>*</span><input name="specialist" autocomplete="name" maxlength="110" required placeholder="Например, Мария Иванова"></label>
-      <label>Соцсети или контакт<input name="social" autocomplete="off" maxlength="140" placeholder="@maria_numerolog"></label>
-      <label>Главный запрос клиента<input name="focus" maxlength="200" placeholder="Например, семья и отношения"></label>
-      <label>Моё личное обращение к клиенту<textarea name="message" rows="4" maxlength="2200" placeholder="Анастасия, в вашем разборе я уделила особое внимание..."></textarea></label>
+      <p class="school-client-explainer">На первой странице PDF будут имя клиента, ваша подпись и выбранные контакты. Дополнительных страниц с обращением не будет.</p>
+      <label>Имя клиента <span>*</span>
+        <input name="client" autocomplete="off" maxlength="65" required placeholder="Например, Татьяны">
+        <small class="school-client-hint">Напишите так, как должно быть после слова «для»: для Татьяны, для Александра.</small>
+      </label>
+      <label>Имя и фамилия нумеролога <span>*</span><input name="specialist" autocomplete="name" maxlength="95" required placeholder="Например, Ирина Крафт"></label>
+      <label>Instagram<input name="instagram" autocomplete="off" maxlength="95" placeholder="@moy_numerolog"></label>
+      <label>Telegram<input name="telegram" autocomplete="off" maxlength="95" placeholder="@moy_telegram"></label>
+      <label>Другой контакт / соцсеть<input name="other" autocomplete="off" maxlength="110" placeholder="ВКонтакте, сайт или другой контакт"></label>
       <p class="school-client-privacy">Данные используются только для формирования PDF в вашем браузере.</p>
       <div class="school-client-actions">
         <button type="button" class="school-client-cancel">Отмена</button>
@@ -53,11 +56,11 @@ export function createSchoolClientPdf() {
     if (!form.reportValidity()) return;
     const fields = new FormData(form);
     details = {
-      client: clean(fields.get("client"), 90),
-      specialist: clean(fields.get("specialist"), 110),
-      social: clean(fields.get("social"), 140),
-      focus: clean(fields.get("focus"), 200),
-      message: clean(fields.get("message"), 2200)
+      client: clean(fields.get("client"), 65),
+      specialist: clean(fields.get("specialist"), 95),
+      instagram: clean(fields.get("instagram"), 95),
+      telegram: clean(fields.get("telegram"), 95),
+      other: clean(fields.get("other"), 110)
     };
     dialog.close("ready");
   });
@@ -82,33 +85,33 @@ export function createSchoolClientPdf() {
     if (!matrix) throw new Error("Матрица для титульного листа не найдена");
     const birthLine = first.stack.find((item) => typeof item.text === "string" && item.text.startsWith("Дата рождения"))?.text || "";
 
-    // Свой титульный лист вместо фирменного. Дальнейшие расшифровки берутся без изменений.
+    // Всё персональное оформление умещается на ОДНОЙ обложке.
+    // Все последующие разделы остаются без изменения.
+    const contacts = [
+      d.instagram ? `Instagram: ${d.instagram}` : "",
+      d.telegram ? `Telegram: ${d.telegram}` : "",
+      d.other ? `Контакт: ${d.other}` : ""
+    ].filter(Boolean);
+    const contactSize = contacts.some((item) => item.length > 45) ? 11 : 12.5;
     documentDefinition.content[0] = {
       stack: [
-        { text: "ПЕРСОНАЛЬНЫЙ НУМЕРОЛОГИЧЕСКИЙ РАЗБОР", color: "#9D7D49", bold: true, fontSize: 11, characterSpacing: 2, alignment: "center", margin: [0, 0, 0, 13] },
-        { text: "Полный разбор", color: "#263C50", bold: true, fontSize: 38, alignment: "center", margin: [0, 0, 0, 12] },
-        { text: d.client, color: "#A27D50", fontSize: 25, alignment: "center", margin: [0, 0, 0, 13] },
-        { ...matrix, width: 355, height: 355, alignment: "center", margin: [0, 0, 0, 18] },
-        { text: birthLine, fontSize: 18, bold: true, color: "#293F52", alignment: "center", margin: [0, 0, 0, 19] },
+        { text: "ПЕРСОНАЛЬНЫЙ НУМЕРОЛОГИЧЕСКИЙ РАЗБОР", color: "#9D7D49", bold: true, fontSize: 11, characterSpacing: 2, alignment: "center", margin: [0, 0, 0, 12] },
+        { text: "Полный разбор", color: "#263C50", bold: true, fontSize: 38, alignment: "center", margin: [0, 0, 0, 10] },
+        { text: `для ${d.client}`, color: "#A27D50", fontSize: 25, alignment: "center", margin: [0, 0, 0, 12] },
+        { ...matrix, width: 344, height: 344, alignment: "center", margin: [0, 0, 0, 14] },
+        { text: birthLine, fontSize: 18, bold: true, color: "#293F52", alignment: "center", margin: [0, 0, 0, 17] },
         { text: "Ваш персональный нумеролог", fontSize: 13, color: "#6B7780", alignment: "center", margin: [0, 0, 0, 5] },
-        { text: d.specialist, fontSize: 20, bold: true, color: "#293F52", alignment: "center" },
-        ...(d.social ? [{ text: d.social, fontSize: 13, color: "#9D7D49", alignment: "center", margin: [0, 6, 0, 0] }] : [])
+        { text: d.specialist, fontSize: 20, bold: true, color: "#293F52", alignment: "center", margin: [0, 0, 0, contacts.length ? 6 : 0] },
+        ...contacts.map((contact) => ({
+          text: contact,
+          fontSize: contactSize,
+          color: "#9D7D49",
+          alignment: "center",
+          margin: [0, 2, 0, 0]
+        }))
       ],
       pageBreak: "after"
     };
-
-    if (d.focus || d.message) {
-      const personalPage = [
-        { text: "ЛИЧНОЕ ОБРАЩЕНИЕ", bold: true, fontSize: 12, color: "#A0804D", characterSpacing: 1.7, margin: [0, 16, 0, 18] },
-        { text: d.client, bold: true, fontSize: 32, color: "#263C50", margin: [0, 0, 0, 22] },
-        ...(d.focus ? [{ text: "Главная тема консультации", bold: true, fontSize: 17, color: "#8F744F", margin: [0, 0, 0, 9] }, { text: d.focus, fontSize: 22, color: "#293F52", margin: [0, 0, 0, 29] }] : []),
-        ...(d.message ? [{ text: d.message, fontSize: 20, color: "#354658", lineHeight: 1.45, margin: [0, 0, 0, 31] }] : []),
-        { text: "Ваш персональный нумеролог", fontSize: 14, color: "#71808C", margin: [0, 8, 0, 5] },
-        { text: d.specialist, bold: true, fontSize: 19, color: "#263C50" },
-        ...(d.social ? [{ text: d.social, fontSize: 15, color: "#9D7D49", margin: [0, 8, 0, 0] }] : [])
-      ];
-      documentDefinition.content.splice(1, 0, { stack: personalPage, pageBreak: "after" });
-    }
 
     // Удаляем фирменные пометки и фоновый код из школьной, белой версии документа.
     for (const section of documentDefinition.content) {
