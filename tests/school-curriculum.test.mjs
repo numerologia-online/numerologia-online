@@ -226,7 +226,7 @@ test("Заголовок школы на двух строках одного р
 test("Статусы школ шире, содержат подсказку и аккуратно размещены на телефоне",async()=>{
   const html=await src("pro/schools/index.html");
   const css=await src("pro/schools/schools.css");
-  assert.ok(html.includes('schools.css?v=10'));
+  assert.ok(html.includes('schools.css?v=11'));
   assert.equal((html.match(/class="academy-status academy-status--ready"/g)||[]).length,1);
   assert.equal((html.match(/class="academy-status"/g)||[]).length,6);
   assert.equal((html.match(/academy-status-subtitle">Начать обучение/g)||[]).length,1);
@@ -247,6 +247,7 @@ test("Матрица судьбы показывает программу обу
   assert.ok(!matrix.includes('Открыта'));
   assert.ok(css.includes('.academy-school--matrix>.academy-school-description{'));
   assert.ok(!css.includes('.academy-school--matrix .academy-school-cta{'));
+  assert.ok(css.includes('.academy-school--matrix>.academy-school-cta{display:none!important}'));
   assert.ok(matrix.includes('class="academy-matrix-watermark"'));
   assert.ok(css.includes('background:linear-gradient(115deg,#223d52'));
   assert.ok(css.includes('.academy-school--matrix .academy-arrow{'));
@@ -280,4 +281,14 @@ test("Главное правило второго урока выделено �
   assert.ok(css.includes('.school-main-rule{'));
   assert.ok(css.includes('border:1px solid #d8bd8b'));
   assert.ok(css.includes('.school-main-rule-line{'));
+});
+
+test("Старая кнопка не возвращается при смешивании кэшированных версий",async()=>{
+  const html=await src("pro/schools/index.html");
+  const css=await src("pro/schools/schools.css");
+  const matrix=html.slice(html.indexOf('<a href="pro/school/"'),html.indexOf('</a>',html.indexOf('<a href="pro/school/"')));
+  assert.ok(!matrix.includes('academy-school-cta'));
+  assert.ok(matrix.includes('class="academy-arrow"'));
+  assert.ok(css.includes('.academy-school--matrix>.academy-school-cta{display:none!important}'));
+  assert.ok(html.includes('schools.css?v=11'));
 });
