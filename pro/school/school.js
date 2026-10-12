@@ -5,7 +5,6 @@ const byId = (id) => document.getElementById(id);
 const error = byId("school-error");
 const lessonsPanel = byId("school-lessons");
 const lessonList = byId("school-lesson-list");
-const lessonContent = byId("school-lesson-content");
 const progressLabel = byId("school-progress");
 const arcanaButtons = byId("school-arcana-buttons");
 const arcanaContent = byId("school-arcana-content");
@@ -39,7 +38,6 @@ function saveProgress() {
 
 let lessons = [];
 let arcana = [];
-let activeLessonIndex = 0;
 let activeArcanaIndex = 0;
 let practiceDateIndex = 0;
 let practicePointIndex = 0;
@@ -109,115 +107,33 @@ function updateProgress() {
 }
 function renderLessonList() {
   lessonList.replaceChildren();
-  lessons.forEach((lesson, index) => {
-    const button = make("button");
-    button.type = "button";
-    button.setAttribute("aria-current", String(index === activeLessonIndex));
-    button.classList.toggle("completed", completed.has(lesson.id));
-    button.append(make("span", "school-index-num", completed.has(lesson.id) ? "✓" : index + 1));
-    const copy = make("span");
-    copy.append(make("strong", "", lesson.title));
-    copy.append(make("small", "", `${lesson.level} · ${lesson.minutes} мин чтения`));
-    button.append(copy);
-    button.addEventListener("click", () => {
-      activeLessonIndex = index;
-      renderLessonList();
-      renderLesson();
-      if (window.matchMedia("(max-width: 850px)").matches) {
-        lessonContent.scrollIntoView({behavior:"smooth",block:"start"});
-      }
+  const groups = [
+    {title:"01 · СТРОИМ МАТРИЦУ",start:0,end:5},
+    {title:"02 · ИЗУЧАЕМ ЭНЕРГИИ",start:5,end:7},
+    {title:"03 · ЧИТАЕМ ЛИНИИ И СФЕРЫ",start:7,end:10},
+    {title:"04 · УЧИМСЯ КОНСУЛЬТИРОВАТЬ",start:10,end:lessons.length}
+  ];
+  for (const group of groups) {
+    const items = lessons.slice(group.start,group.end);
+    if (!items.length) continue;
+    const section = make("section","school-lesson-module");
+    section.append(make("h3","school-lesson-module-title",group.title));
+    const list = make("div","school-lesson-module-list");
+    items.forEach((lesson,index) => {
+      const link = make("a","school-lesson-link");
+      link.href = "pro/school/lesson/?id=" + encodeURIComponent(lesson.id);
+      if (completed.has(lesson.id)) link.classList.add("completed");
+      const number = make("span","school-lesson-number",completed.has(lesson.id)?"✓":group.start+index+1);
+      const summary = make("span","school-lesson-summary");
+      summary.append(make("strong","",lesson.title));
+      summary.append(make("small","",lesson.level+" · "+lesson.minutes+" мин"));
+      link.append(number,summary,make("span","school-lesson-arrow","→"));
+      list.append(link);
     });
-    lessonList.append(button);
-  });
+    section.append(list);
+    lessonList.append(section);
+  }
   updateProgress();
-}
-
-function renderQuiz(lesson) {
-  const quiz = make("section", "school-quiz");
-  quiz.append(make("h4", "", "Проверьте, что запомнили"));
-  addParagraph(quiz, "Ответьте на два вопроса. После двух правильных ответов урок отметится как пройденный.", "school-quiz-intro");
-  const form = make("form");
-  form.noValidate = true;
-  lesson.questions.forEach((question, index) => {
-    const group = make("fieldset", "school-question");
-    group.append(make("legend", "", `${index + 1}. ${question.prompt}`));
-    question.options.forEach((option, optionIndex) => {
-      const label = make("label");
-      const input = make("input");
-      input.type = "radio";
-      input.name = "quiz-" + index;
-      input.value = String(optionIndex);
-      label.append(input, make("span", "", option));
-      group.append(label);
-    });
-    form.append(group);
-  });
-  const submit = make("button", "school-primary", "Проверить знания");
-  submit.type = "submit";
-  form.append(submit);
-  const feedback = make("p", "school-quiz-result");
-  feedback.setAttribute("role","status");
-  feedback.setAttribute("aria-live","polite");
-  form.append(feedback);
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const answers = lesson.questions.map((_,i) => form.querySelector(`input[name="quiz-${i}"]:checked`));
-    if (answers.some(x => !x)) {
-      feedback.textContent = "Сначала выберите ответ на каждый вопрос.";
-      return;
-    }
-    const correct = answers.reduce((count,answer,i) => count + (Number(answer.value) === lesson.questions[i].correct ? 1 : 0), 0);
-    if (correct === lesson.questions.length) {
-      completed.add(lesson.id);
-      saveProgress();
-      renderLessonList();
-      feedback.textContent = "Все ответы правильные! Урок пройден. Можно двигаться дальше.";
-    } else {
-      const explanations = lesson.questions.map((question,i) => {
-        return Number(answers[i].value) === question.correct ? null : `${i+1}. ${question.explain}`;
-      }).filter(Boolean);
-      feedback.textContent = `Правильно: ${correct} из ${lesson.questions.length}. ${explanations.join(" ")}`;
-    }
-  });
-  quiz.append(form);
-  return quiz;
-}
-
-function renderLesson() {
-  const lesson = lessons[activeLessonIndex];
-  if (!lesson) return;
-  lessonContent.replaceChildren();
-  lessonContent.append(make("p", "school-overline", `УРОК ${activeLessonIndex + 1} ИЗ ${lessons.length} · ${lesson.level}`));
-  lessonContent.append(make("h3", "", lesson.title));
-  addParagraph(lessonContent, lesson.lead, "school-lesson-intro");
-  lesson.sections.forEach((section) => {
-    const wrapper = make("section", "school-topic");
-    wrapper.append(make("h4", "", section.heading));
-    addParagraph(wrapper, section.text);
-    if (section.example) addParagraph(wrapper, section.example, "school-example");
-    lessonContent.append(wrapper);
-  });
-  const box = make("div", "school-takeaway");
-  box.append(make("strong", "", "Главное, что нужно запомнить"));
-  addParagraph(box, lesson.takeaway);
-  lessonContent.append(box, renderQuiz(lesson));
-  const controls = make("div", "school-controls");
-  const prev = make("button", "school-secondary", "← Предыдущий урок");
-  prev.type = "button";
-  prev.disabled = activeLessonIndex === 0;
-  prev.addEventListener("click", () => moveLesson(-1));
-  const next = make("button", "school-primary", "Следующий урок →");
-  next.type = "button";
-  next.disabled = activeLessonIndex === lessons.length - 1;
-  next.addEventListener("click", () => moveLesson(1));
-  controls.append(prev,next);
-  lessonContent.append(controls);
-}
-function moveLesson(step) {
-  activeLessonIndex = Math.max(0,Math.min(lessons.length - 1,activeLessonIndex + step));
-  renderLessonList();
-  renderLesson();
-  lessonContent.scrollIntoView({behavior:"smooth",block:"start"});
 }
 function renderArcanaButtons() {
   arcanaButtons.replaceChildren();
@@ -298,17 +214,16 @@ byId("school-train-next").addEventListener("click",()=>{
 async function startSchool() {
   try {
     const [lessonResponse,arcanaResponse]=await Promise.all([
-      fetch("pro/school/lessons.json?v=1"),
+      fetch("pro/school/lessons-manifest.json?v=1"),
       fetch("pro/school/arcana.json?v=1")
     ]);
     if(!lessonResponse.ok||!arcanaResponse.ok)throw new Error("Учебная база недоступна");
     const [lessonData,arcanaData]=await Promise.all([lessonResponse.json(),arcanaResponse.json()]);
-    if(lessonData.schema!=="pro-school-lessons-v1"||arcanaData.schema!=="pro-school-arcana-v1"
+    if(lessonData.schema!=="pro-school-lessons-manifest-v1"||arcanaData.schema!=="pro-school-arcana-v1"
       || lessonData.lessons?.length!==12||arcanaData.arcana?.length!==22)throw new Error("Учебная база неполная");
     lessons=lessonData.lessons;
     arcana=arcanaData.arcana;
     renderLessonList();
-    renderLesson();
     renderArcanaButtons();
     renderArcana();
     renderTrainer();
@@ -316,7 +231,7 @@ async function startSchool() {
   }catch(cause) {
     error.hidden=false;
     error.textContent="Не удалось открыть уроки. Обновите страницу и попробуйте снова.";
-    lessonContent.textContent="Материалы временно недоступны.";
+    lessonList.textContent="Программа временно недоступна.";
   }
 }
 startSchool();
