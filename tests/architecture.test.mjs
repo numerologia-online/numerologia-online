@@ -204,3 +204,13 @@ test("Подсветка темы не прокручивает к разбор�
   assert.ok(preview.includes('Открыть разбор ↓'));
   assert.ok(html.includes('id="pro-zone-reading"'));
 });
+
+test("После расчёта Red Flag вопросы остаются закрытыми до выбора пользователя", async () => {
+  const js = await source("redflag-feature.js");
+  const submit = js.slice(js.indexOf('form.addEventListener("submit"'), js.indexOf('backButton.addEventListener("click"'));
+  assert.ok(submit.includes('firstState.expanded = true;'));
+  assert.ok(submit.includes('for (const state of categoryStates.values()) state.activeQuestionId = null;'));
+  assert.ok(!submit.includes('firstState.activeQuestionId = firstState.questions[0].id;'));
+  assert.ok(submit.includes('categoriesRoot.scrollIntoView({ behavior: "smooth", block: "start" });'));
+  assert.ok(js.includes('state.activeQuestionId = opened ? null : question.id;'));
+});
