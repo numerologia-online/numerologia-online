@@ -172,8 +172,9 @@ test("В первом тесте считаем кружочки и после �
 test("Заголовок школы единый, тёмно-синий и отделён от названия школы",async()=>{
   const html=await src("pro/school/index.html");
   const css=await src("pro/school/school.css");
-  assert.ok(html.includes('<h1>Учиться самостоятельно легко</h1>'));
-  assert.ok(html.includes('school.css?v=7'));
+  assert.ok(html.includes('<h1>Учиться самостоятельно <span class="school-hero-gold">легко</span></h1>'));
+  assert.ok(html.includes('school.css?v=8'));
+  assert.ok(css.includes('.school-hero h1 .school-hero-gold{color:#9e7e50}'));
   assert.ok(css.includes('.school-hero>.school-overline{margin-bottom:19px}'));
   assert.ok(css.includes('font-size:clamp(28px,7.2vw,54px)'));
   assert.ok(css.includes('color:var(--ink);text-wrap:balance'));
