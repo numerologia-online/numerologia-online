@@ -19,3 +19,26 @@ test("Школа использует полный разбор и PDF осно�
   assert.match(feature, /createFullReportPdfController/);
   assert.match(feature, /get\("from"\) === "school"/);
 });
+
+test("Персональный PDF доступен только в режиме школы", async () => {
+  const publicPdf = await source("full-report-pdf.js");
+  const schoolForm = await source("pro/school/client-pdf.js");
+  const clientStyles = await source("pro/school/client-pdf.css");
+  const home = await source("index.html");
+  const pro = await source("pro/pro.js");
+  const sitePdf = await source("pro/index.html");
+  assert.match(home, /href="\.\/pro\/school\/"/);
+  assert.match(home, /Вход для нумерологов/);
+  assert.match(pro, /beforeDownload: schoolClientMode \?/);
+  assert.match(pro, /customizeDocument: schoolClientMode \?/);
+  assert.match(pro, /import\("\.\/school\/client-pdf\.js\?v=1"\)/);
+  assert.match(sitePdf, /src="pro\/pro\.js\?v=83"/);
+  assert.match(publicPdf, /beforeDownload = null, customizeDocument = null/);
+  assert.match(publicPdf, /if \(typeof beforeDownload === "function"\) return;/);
+  assert.match(schoolForm, /Имя клиента/);
+  assert.match(schoolForm, /Имя и фамилия нумеролога/);
+  assert.match(schoolForm, /Моё личное обращение к клиенту/);
+  assert.match(schoolForm, /documentDefinition\.background =/);
+  assert.match(schoolForm, /documentDefinition\.footer =/);
+  assert.match(clientStyles, /school-client-dialog/);
+});
