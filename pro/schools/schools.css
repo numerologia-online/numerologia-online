@@ -153,17 +153,40 @@ a{color:inherit}
   .academy-intro h1:not([id])+p::after{font-size:15px}
 }
 
-/* Матрица судьбы: компактная карточка с описанием и текстовым переходом. */
+/* Матрица судьбы: компактная карточка с глубиной, мягким сиянием и водяным знаком. */
 .academy-school--matrix{
+  position:relative;isolation:isolate;overflow:hidden;
   grid-template-columns:38px minmax(0,1fr) 18px;
   gap:3px 10px;
   align-items:center;
   min-height:83px;
   padding:11px 15px;
+  background:linear-gradient(115deg,#223d52 0%,#2e506a 55%,#526d85 100%);
+  border-color:#4c6a7f;
+  box-shadow:inset 0 1px 0 #ffffff30,inset 0 -1px 0 #112c3c26,0 9px 24px #233c5328;
+}
+.academy-school--matrix::before{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse at 86% 30%,#b5d8ee24,transparent 65%),linear-gradient(155deg,#ffffff0d,transparent 55%);
+}
+.academy-school--matrix>:not(.academy-matrix-watermark){position:relative;z-index:1}
+.academy-matrix-watermark{
+  position:absolute;right:-15px;top:50%;z-index:0;
+  width:180px;height:180px;transform:translateY(-50%);
+  fill:none;stroke:#d8eff6;stroke-width:1.35;
+  opacity:.16;pointer-events:none;
+  filter:drop-shadow(0 0 5px #c6e4f4aa);
+}
+.academy-matrix-watermark circle{fill:#476c86;stroke:#e5f2f7;stroke-width:1.7}
+.academy-school--matrix:hover{
+  box-shadow:inset 0 1px 0 #ffffff30,0 12px 29px #233c5338;
 }
 .academy-school--matrix .academy-school-number{
   grid-column:1;grid-row:1/4;align-self:center;
   width:38px;height:38px;
+  background:linear-gradient(145deg,#ffffff24,#ffffff0d);
+  border:1px solid #ffffff22;
+  box-shadow:inset 0 1px 0 #ffffff24;
 }
 .academy-school--matrix h3{
   grid-column:2;grid-row:1;
@@ -178,12 +201,14 @@ a{color:inherit}
 }
 .academy-school--matrix .academy-school-cta{
   grid-column:2;grid-row:3;justify-self:start;
-  display:inline;
-  margin-top:2px;
-  padding:0;min-height:0;
-  border:0;border-radius:0;background:none;
-  color:#f5deb9;
-  font-size:12px;font-weight:750;line-height:1.4;
+  display:inline-flex;align-items:center;
+  margin-top:3px;
+  padding:4px 11px;min-height:26px;
+  border:1px solid #f2daab52;border-radius:999px;
+  background:linear-gradient(115deg,#f4dda344,#fff5dc18);
+  box-shadow:inset 0 1px 0 #ffffff35,0 3px 8px #142d401d;
+  color:#fff0cf;
+  font-size:11.5px;font-weight:750;line-height:1.4;
 }
 .academy-school--matrix .academy-arrow{
   grid-column:3;grid-row:1/4;align-self:center;
@@ -198,5 +223,6 @@ a{color:inherit}
   .academy-school--matrix .academy-school-number{width:32px;height:32px}
   .academy-school--matrix h3{font-size:15px}
   .academy-school--matrix>.academy-school-description{font-size:11.5px;line-height:1.35}
-  .academy-school--matrix .academy-school-cta{font-size:11.5px}
+  .academy-school--matrix .academy-school-cta{font-size:11px;padding:4px 10px;min-height:25px}
+  .academy-matrix-watermark{right:-38px;width:158px;height:158px;opacity:.13}
 }
