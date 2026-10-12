@@ -47,11 +47,24 @@ test("Каталог школ: короткий заголовок и компа
   assert.ok(!hub.includes("Первая школа уже открыта"));
   assert.ok(!hub.includes('class="academy-school-top"'));
   assert.ok(!hub.includes('class="academy-school-bottom"'));
-  assert.ok(hub.includes('href="pro/schools/schools.css?v=3"'));
+  assert.ok(hub.includes('href="pro/schools/schools.css?v=4"'));
   assert.equal((hub.match(/class="academy-school academy-school--/g) || []).length, 8);
   assert.match(css, /\.academy-school\s*\{/);
   assert.match(css, /min-height:65px/);
   assert.match(css, /@media\(max-width:480px\)/);
   assert.match(css, /min-height:61px/);
   assert.ok(!css.includes("min-height:242px"));
+});
+
+test("Старый HTML с новыми стилями не ломает карточки школ", async () => {
+  const css = await source("pro/schools/schools.css");
+  const html = await source("pro/schools/index.html");
+  assert.ok(css.includes(".academy-school-top{display:contents}"));
+  assert.ok(css.includes(".academy-school>p,.academy-school-bottom{display:none}"));
+  assert.ok(css.includes(".academy-headline,.academy-ending{display:none}"));
+  assert.ok(css.includes(".academy-school-number{order:0}"));
+  assert.ok(css.includes(".academy-school h3{order:1;overflow-wrap:anywhere}"));
+  assert.ok(css.includes(".academy-status{order:2}"));
+  assert.ok(css.includes('.academy-intro h1:not([id])::before'));
+  assert.ok(html.includes('href="pro/schools/schools.css?v=4"'));
 });
