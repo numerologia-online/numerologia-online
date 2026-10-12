@@ -38,7 +38,7 @@ const firstLessonSteps=[
  {title:"Нарисуйте большой ромб",text:"Отметьте сверху, справа, снизу и слева по одной точке. Соедините их линиями. Получился ромб.",hint:"На этом шаге никаких цифр. Только четыре вершины."},
  {title:"Добавьте прямой квадрат",text:"Между вершинами ромба отметьте ещё четыре точки: сверху слева, сверху справа, снизу справа и снизу слева. Соедините их в квадрат.",hint:"Теперь снаружи восемь точек: четыре у ромба и четыре у квадрата."},
  {title:"Найдите центр",text:"Проведите линию слева направо и линию сверху вниз. На пересечении нарисуйте девятый кружок.",hint:"Появился центр. Сами числа научимся считать в следующих уроках."},
- {title:"Подпишите места",text:"Сверху подпишите «месяц рождения», слева «день рождения», справа «год рождения», снизу «сумма». Четыре угла и центр пока оставьте пустыми. Всего девять кружков.",hint:"Выберите дату и нажмите «Использовать», чтобы увидеть пример. Затем откройте тест."}
+ {title:"Подпишите места",text:"Сверху подпишите «месяц рождения», слева «день рождения», справа «год рождения», снизу «сумма». Четыре угла и центр пока оставьте пустыми. Всего девять кружков.",hint:"На схеме пока нет ни одного числа. В следующем уроке научимся их вычислять. Теперь можно открыть тест."}
 ];
 function drawFirstLessonOutline(){
   const svg=makeSvg("svg",{viewBox:"0 0 400 400",role:"img","aria-label":"Пошаговая пустая матрица"});
@@ -60,25 +60,23 @@ function drawFirstLessonOutline(){
     const title=makeSvg("title");title.textContent=label+" - место для числа";
     group.append(title);svg.append(group);
   }
-  if(step===3){
-    // Две строки: полные названия позиций, без сокращения до «день / год».
-    const names=[
-      ["МЕСЯЦ","РОЖДЕНИЯ",200,12,24],
-      ["ДЕНЬ","РОЖДЕНИЯ",55,250,264],
-      ["ГОД","РОЖДЕНИЯ",345,250,264]
-    ];
-    for(const [first,second,x,y1,y2] of names){
-      for(const [value,y] of [[first,y1],[second,y2]]){
-        const label=makeSvg("text",{x,y,"text-anchor":"middle",fill:"#95764e","font-size":"12","font-weight":"800","font-family":"system-ui"});
-        label.textContent=value;
-        svg.append(label);
-      }
-    }
-    const sum=makeSvg("text",{x:200,y:395,"text-anchor":"middle",fill:"#95764e","font-size":"12","font-weight":"800","font-family":"system-ui"});
-    sum.textContent="СУММА";
-    svg.append(sum);
-  }
   diagram.replaceChildren(svg);
+  // Подписи вынесены ЗА пределы SVG, а не лежат поверх линий матрицы.
+  if(step===3){
+    const legend=make("div","school-position-key");
+    legend.setAttribute("aria-label","Расположение четырёх опорных позиций");
+    for(const [arrow,label] of [
+      ["↑","Месяц рождения"],
+      ["←","День рождения"],
+      ["→","Год рождения"],
+      ["↓","Сумма"]
+    ]){
+      const chip=make("div","school-position-chip");
+      chip.append(make("span","school-position-arrow",arrow),make("span","",label));
+      legend.append(chip);
+    }
+    diagram.append(legend);
+  }
 }
 
 const stageKeys = [
@@ -140,14 +138,7 @@ function drawCurrent() {
     $("lesson-step-count").textContent="ШАГ "+(step+1)+" ИЗ "+firstLessonSteps.length;
     $("lesson-step-title").textContent=info.title;
     $("lesson-step-text").textContent=info.text;
-    const date=String(currentBirth.day).padStart(2,"0")+"."+
-      String(currentBirth.month).padStart(2,"0")+"."+currentBirth.year;
-    $("lesson-step-formula").textContent=step===3
-      ? "Пример для "+date+": слева - день рождения "+String(currentBirth.day).padStart(2,"0")+
-        ", сверху - месяц рождения "+String(currentBirth.month).padStart(2,"0")+
-        ", справа - год рождения "+currentBirth.year+
-        ". Внизу - СУММА. Её и центр мы научимся рассчитывать позже."
-      : info.hint;
+    $("lesson-step-formula").textContent=info.hint;
     $("lesson-step-back").disabled=step===0;
     const next=$("lesson-step-next");
     next.disabled=false;
@@ -193,7 +184,8 @@ function setupDiagram(){
   if(id==="start"){
     $("lesson-drawing-title").textContent="Рисуем матрицу шаг за шагом";
     $("lesson-drawing-description").textContent="Возьмите лист бумаги. Смотрите на схему, повторяйте действие и нажимайте «Следующий шаг». Числа пока считать не нужно.";
-    $("lesson-date").setAttribute("aria-describedby","lesson-date-confirmed");
+    // Первый урок - построение ПУСТОЙ схемы. Ввод даты появится в следующих уроках.
+    $("lesson-date-form").hidden=true;
   }
   step=id==="start"?0:([0,1,1,3,4][index]??0);
   $("lesson-step-back").addEventListener("click",()=>{
