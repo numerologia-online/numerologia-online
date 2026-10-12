@@ -138,13 +138,15 @@ function drawCurrent() {
     $("lesson-step-count").textContent="ШАГ "+(step+1)+" ИЗ "+firstLessonSteps.length;
     $("lesson-step-title").textContent=info.title;
     $("lesson-step-text").textContent=info.text;
-    $("lesson-step-formula").textContent=info.hint;
+    // В первом уроке нет блока примеров: всё нужное видно на рисунке и в шаге.
+    $("lesson-step-formula").hidden=true;
     $("lesson-step-back").disabled=step===0;
     const next=$("lesson-step-next");
     next.disabled=false;
     next.textContent=step===firstLessonSteps.length-1?"Открыть тест ✓":"Следующий шаг →";
     return;
   }
+  $("lesson-step-formula").hidden=false;
   const m=calculateMatrix(currentBirth);
   const full=id==="internal"&&step===4;
   if(full) drawAllPositions(m);
@@ -381,7 +383,7 @@ async function start() {
     manifest=meta.lessons;
     index=manifest.findIndex(item=>item.id===id);
     if(index<0)throw Error("Урок не найден");
-    const response=await fetch(manifest[index].file+"?v=3");
+    const response=await fetch(manifest[index].file+"?v=4");
     if(!response.ok)throw Error("Материал урока не найден");
     lesson=await response.json();
     if(lesson.id!==id||!Array.isArray(lesson.sections)||!Array.isArray(lesson.questions))
