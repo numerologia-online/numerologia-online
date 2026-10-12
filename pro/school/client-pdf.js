@@ -126,6 +126,9 @@ export function createSchoolClientPdf() {
       author: d.specialist,
       subject: "Персональный нумерологический разбор"
     };
+    const safeName = d.client.replace(/[^\p{L}\p{N} -]/gu, "").trim() || "клиента";
+    const date = birthLine.split("·").pop().trim();
+    return { filename: `Полный разбор - ${safeName} - ${date}.pdf` };
   };
 
   return { beforeDownload, customizeDocument };
