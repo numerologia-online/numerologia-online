@@ -1,8 +1,118 @@
-:root{color-scheme:light;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#2a3f50;background:#faf7f1}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 12% 6%,#f2e5e5,transparent 34rem),radial-gradient(circle at 96% 50%,#edf3ef,transparent 35rem),#faf7f1;color:#2a3f50;line-height:1.55}a{color:inherit}.academy-shell{max-width:1080px;margin:auto;padding:clamp(16px,4vw,42px)}.academy-header{display:flex;justify-content:space-between;align-items:center;gap:20px;min-height:56px}.academy-back{display:inline-flex;align-items:center;text-decoration:none;min-height:42px;font-size:13px;font-weight:750;color:#536a77}.academy-back:hover{text-decoration:underline}.academy-brand{font-size:10px;color:#a38960;letter-spacing:.17em;font-weight:850;text-align:right}.academy-intro{text-align:center;padding:clamp(43px,7vw,83px) 0 clamp(26px,5vw,47px)}.academy-kicker{font-size:11px;letter-spacing:.23em;color:#a27e55;font-weight:850;margin:0 0 18px}.academy-intro h1{font:400 clamp(45px,8.6vw,77px)/1.07 Georgia,"Times New Roman",serif;letter-spacing:-.045em;margin:0;color:#293d50}.academy-intro h1 em{font-weight:400;color:#9d7887}.academy-intro>p:last-child{font-size:clamp(14px,2.2vw,17px);max-width:670px;line-height:1.7;margin:22px auto 0;color:#657785}.academy-headline{display:flex;justify-content:space-between;align-items:end;gap:20px;margin:0 0 19px}.academy-headline h2{font:400 clamp(26px,4.7vw,35px)/1.18 Georgia,serif;margin:0}.academy-headline p{margin:0;color:#77858c;font-size:13px;max-width:300px;text-align:right}.academy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(12px,2.4vw,19px)}.academy-school{min-width:0;min-height:242px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:0;border:1px solid #dfd6c9;border-radius:22px;padding:clamp(19px,3.5vw,28px);background:#fffefa;box-shadow:0 10px 30px #5047320e;text-decoration:none}.academy-school--ready{position:relative;overflow:hidden;background:radial-gradient(circle at 95% 10%,#debfa547,transparent 46%),linear-gradient(135deg,#263e51,#50677a);border-color:#41586a;box-shadow:0 16px 35px #2b44512b;color:#fff;transition:transform .2s ease,box-shadow .2s ease}.academy-school--ready::after{content:"✧";position:absolute;right:-5px;bottom:-78px;font:240px/1 Georgia,serif;color:#ffffff10;pointer-events:none}.academy-school--ready:hover{transform:translateY(-3px);box-shadow:0 19px 43px #2b445135}.academy-school--ready:focus-visible{outline:3px solid #a4bdc1;outline-offset:4px}.academy-school-top{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 24px}.academy-school-number{font-size:16px;letter-spacing:.08em;color:#b29a77}.academy-school--ready .academy-school-number{font-size:25px;color:#ebd4a7}.academy-status{font-size:11px;font-weight:800;border:1px solid #e4dbc9;border-radius:999px;padding:5px 11px;color:#9b866e;background:#f9f4ec;white-space:nowrap}.academy-status--ready{color:#fff1d4;border-color:#e8d4b45e;background:#ffffff1d}.academy-school h3{font:400 clamp(25px,3.8vw,34px)/1.12 Georgia,serif;margin:0 0 13px;letter-spacing:-.025em;color:#30495d}.academy-school--ready h3{color:#fff}.academy-school p{max-width:42ch;font-size:14px;line-height:1.65;color:#667681;margin:0 0 24px}.academy-school--ready p{color:#e3e7ec}.academy-school-bottom{font-size:13px;font-weight:750;color:#8d9a9a;margin-top:auto;display:flex;align-items:center;gap:10px}.academy-school--ready .academy-school-bottom{color:#ffe8bf}.academy-school-bottom>span{font-size:20px}.academy-ending{text-align:center;margin:34px auto 0;max-width:620px;color:#899395;font-size:13px;line-height:1.6}.academy-footer{margin-top:50px;border-top:1px solid #e5dacf;padding:22px 0;text-align:center;font-size:12px;color:#938a7f}@media(max-width:640px){.academy-grid{grid-template-columns:1fr}.academy-school{min-height:194px;padding:20px;border-radius:19px}.academy-school-top{margin-bottom:16px}.academy-intro{padding:47px 0 32px}.academy-headline{display:block}.academy-headline p{margin:8px 0 0;text-align:left}.academy-school p{margin-bottom:18px}.academy-brand{font-size:9px}.academy-header{gap:11px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
-
-
-/* Классическая школа - отдельная светлая цветовая система, уроки лениво загружаются. */
-.academy-school--classic{background:radial-gradient(circle at 96% 8%,#f8d5b7 0,transparent 54%),linear-gradient(135deg,#855d85,#b77a95 70%,#d7a38b);border-color:#ad8ca4}
-.academy-school--classic .academy-school-number{font-size:19px;color:#ffe1ca}
-.academy-school--classic p{color:#fff0f5}
-.academy-school--classic:hover{box-shadow:0 19px 43px #a76e9235}
+:root{
+  color-scheme:light;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:#2b4052;background:#faf7f1
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;line-height:1.5;color:#2b4052;
+  background:radial-gradient(circle at 5% 0%,#f5e8e6,transparent 25rem),#faf7f1
+}
+a{color:inherit}
+.academy-shell{max-width:760px;margin:0 auto;padding:12px clamp(16px,4vw,32px) 30px}
+.academy-header{
+  min-height:42px;display:flex;align-items:center;justify-content:space-between;gap:12px
+}
+.academy-back{
+  text-decoration:none;color:#506777;display:inline-flex;align-items:center;
+  font-size:13px;font-weight:750;min-height:40px
+}
+.academy-back:hover{text-decoration:underline}
+.academy-brand{
+  color:#a18660;font-size:10px;font-weight:850;letter-spacing:.15em;text-align:right
+}
+.academy-intro{
+  padding:20px 0 19px;text-align:center
+}
+.academy-kicker{
+  color:#9b7853;font-size:clamp(14px,2.5vw,17px);
+  font-weight:850;letter-spacing:.16em;margin:0 0 10px
+}
+.academy-intro h1{
+  font:400 clamp(39px,7vw,59px)/1.06 Georgia,"Times New Roman",serif;
+  letter-spacing:-.04em;margin:0;color:#263c50
+}
+.academy-intro h1 em{font-weight:400;color:#a17c90}
+.academy-intro>p:last-child{
+  margin:12px auto 0;max-width:40ch;font-size:clamp(15px,2vw,17px);
+  line-height:1.45;color:#617786
+}
+.academy-grid{display:grid;grid-template-columns:1fr;gap:8px}
+.academy-school{
+  display:grid;grid-template-columns:38px minmax(0,1fr) max-content 18px;
+  gap:10px;align-items:center;min-width:0;min-height:65px;
+  padding:10px 15px;border:1px solid #e1d8cc;border-radius:16px;
+  background:#fffefa;box-shadow:0 4px 14px #5144370a;
+  text-decoration:none
+}
+.academy-school h3{
+  min-width:0;margin:0;font:700 clamp(15px,2.3vw,18px)/1.25 Inter,system-ui,sans-serif;
+  letter-spacing:-.018em;color:#344b5d
+}
+.academy-school-number{
+  display:grid;place-items:center;height:36px;width:36px;
+  border-radius:11px;background:#f3eee7;color:#9b8568;
+  font-size:12px;font-weight:800
+}
+.academy-status{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:5px 7px;border-radius:999px;background:#f2efe9;
+  color:#988978;font-size:10px;font-weight:800;line-height:1.1;
+  white-space:nowrap
+}
+.academy-school--future{color:#576976}
+.academy-school--future .academy-status{color:#948c83}
+.academy-school--future .academy-school-number{background:#f0eeeb;color:#a19a90}
+.academy-school--ready{
+  color:#fff;background:linear-gradient(110deg,#263e52,#465f74);
+  border-color:#405a6f;box-shadow:0 5px 14px #30475b21;
+  transition:transform .18s,box-shadow .18s
+}
+.academy-school--ready .academy-school-number{
+  background:#ffffff1b;color:#f1d9b4;font-size:19px
+}
+.academy-school--ready h3{color:#fff}
+.academy-school--ready .academy-status{
+  color:#ffefd1;background:#ffffff23
+}
+.academy-arrow{font-size:19px;line-height:1;color:#f5deb9;justify-self:end}
+.academy-school--ready:hover{
+  transform:translateY(-1px);box-shadow:0 7px 18px #30475b29
+}
+.academy-school--ready:focus-visible,.academy-back:focus-visible{
+  outline:3px solid #85afb7;outline-offset:3px
+}
+.academy-school--classic{
+  background:linear-gradient(110deg,#8b6285,#ad7f9b);
+  border-color:#a17d9c
+}
+.academy-school--classic .academy-school-number{font-size:13px}
+.academy-footer{
+  text-align:center;margin:18px auto 0;color:#9a9289;
+  padding-top:14px;font-size:11px
+}
+@media(max-width:480px){
+  .academy-shell{padding-top:8px}
+  .academy-header{min-height:39px}
+  .academy-brand{font-size:9px;letter-spacing:.12em}
+  .academy-intro{padding:14px 0 16px}
+  .academy-kicker{font-size:15px;letter-spacing:.14em;margin-bottom:8px}
+  .academy-intro h1{font-size:clamp(37px,9vw,43px)}
+  .academy-intro>p:last-child{font-size:15px;margin-top:10px}
+  .academy-grid{gap:7px}
+  .academy-school{
+    grid-template-columns:32px minmax(0,1fr) max-content 13px;
+    gap:8px;min-height:61px;padding:9px 11px;border-radius:13px
+  }
+  .academy-school-number{width:32px;height:32px;border-radius:10px}
+  .academy-school h3{font-size:15px}
+  .academy-status{font-size:9px;padding:5px 6px}
+  .academy-arrow{font-size:17px}
+}
+@media(max-width:350px){
+  .academy-school{grid-template-columns:29px minmax(0,1fr) max-content 11px;gap:5px;padding:9px 8px}
+  .academy-school h3{font-size:14px}
+  .academy-status{font-size:8.5px}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
