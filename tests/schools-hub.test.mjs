@@ -40,14 +40,16 @@ test("Две школы открыты, остальные направлени�
 test("Каталог школ: короткий заголовок и компактный список для телефона", async () => {
   const hub = await source("pro/schools/index.html");
   const css = await source("pro/schools/schools.css");
-  assert.ok(hub.includes('<h1 id="academy-title">Школа <em>нумерологии</em></h1>'));
+  assert.ok(hub.includes('<h1 id="academy-title">Школа нумерологии</h1>'));
   assert.ok(hub.includes("ОБУЧЕНИЕ И ПРАКТИКА"));
   assert.ok(hub.includes("Выберите направление, которое хотите изучать самостоятельно."));
   assert.ok(!hub.includes("Выберите свою школу"));
+  assert.ok(!hub.includes("<em>нумерологии</em>"));
+  assert.ok(css.includes("font-style:normal;color:inherit"));
   assert.ok(!hub.includes("Первая школа уже открыта"));
   assert.ok(!hub.includes('class="academy-school-top"'));
   assert.ok(!hub.includes('class="academy-school-bottom"'));
-  assert.ok(hub.includes('href="pro/schools/schools.css?v=4"'));
+  assert.ok(hub.includes('href="pro/schools/schools.css?v=5"'));
   assert.equal((hub.match(/class="academy-school academy-school--/g) || []).length, 8);
   assert.match(css, /\.academy-school\s*\{/);
   assert.match(css, /min-height:65px/);
@@ -66,5 +68,5 @@ test("Старый HTML с новыми стилями не ломает кар�
   assert.ok(css.includes(".academy-school h3{order:1;overflow-wrap:anywhere}"));
   assert.ok(css.includes(".academy-status{order:2}"));
   assert.ok(css.includes('.academy-intro h1:not([id])::before'));
-  assert.ok(html.includes('href="pro/schools/schools.css?v=4"'));
+  assert.ok(html.includes('href="pro/schools/schools.css?v=5"'));
 });
