@@ -48,7 +48,7 @@ const openMatrixFeature = async () => {
 };
 
 const getRedFlagFeature = () => {
-  if (!redFlagFeatureLoading) redFlagFeatureLoading = import("./redflag-feature.js?v=12");
+  if (!redFlagFeatureLoading) redFlagFeatureLoading = import("./redflag-feature.js?v=13");
   return redFlagFeatureLoading;
 };
 
