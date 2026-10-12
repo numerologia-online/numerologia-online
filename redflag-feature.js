@@ -168,7 +168,8 @@ form.addEventListener("submit", async (event) => {
     const firstState = categoryStates.get(firstCategory.id);
     firstState.expanded = true;
     await ensureQuestions(firstCategory);
-    if (firstState.questions && !firstState.activeQuestionId) firstState.activeQuestionId = firstState.questions[0].id;
+    // After every calculation, let the visitor choose which question to open.
+    for (const state of categoryStates.values()) state.activeQuestionId = null;
     error.hidden = true;
     renderCategories();
     categoriesRoot.scrollIntoView({ behavior: "smooth", block: "start" });
