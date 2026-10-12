@@ -360,7 +360,7 @@ function loadInlineFullReading(target, key) {
   if (!definition) return;
   const id = report.id;
   target.replaceChildren(paragraph("Открываю полный разбор…", "pro-muted"));
-  Promise.all([loadFullReportSection(definition.energy), loadPracticalGuidance(definition.energy)])
+  return Promise.all([loadFullReportSection(definition.energy), loadPracticalGuidance(definition.energy)])
     .then(([bank, guidance]) => {
       if (!current || current.id !== id || !target.isConnected) return;
       const section = bank?.sections?.[key];
@@ -385,6 +385,8 @@ function loadInlineFullReading(target, key) {
     .catch(error => {
       if (current?.id !== id || !target.isConnected) return;
       console.warn("Полная расшифровка точки:", error);
+      const position = target.closest(".pro-zone-reading-position");
+      if (position) delete position.dataset.loaded; // allow retry on next opening
       target.replaceChildren(paragraph("Не удалось загрузить полный текст. Проверьте интернет и откройте позицию ещё раз.", "pro-muted"));
     });
 }
@@ -432,7 +434,7 @@ function openPointDetail(key) {
     loadInlineFullReading(full, point.topic);
   } else {
     // Вспомогательные точки: собственная позиционная трактовка, не чужой большой текст.
-    if (shortMessage && shortMessage.trim() !== detail.meaning.trim()) {
+    if (shortMessage && shortMessage.trim() !== String(detail.meaning || "").trim()) {
       pointDetails.append(element("h4", "Как эта энергия проявляется у вас"));
       pointDetails.append(paragraph(shortMessage));
     }
