@@ -42,9 +42,9 @@ test("Персональный PDF доступен только в режиме
   assert.match(schoolForm, /Другой контакт/);
   assert.doesNotMatch(schoolForm, /Главная тема консультации/);
   assert.doesNotMatch(schoolForm, /Моё личное обращение к клиенту/);
-  assert.doesNotMatch(schoolForm, /documentDefinition\\.content\\.splice\\(1/);
+  assert.ok(!schoolForm.includes("documentDefinition.content.splice(1"));
   assert.match(schoolForm, /pageBreak: "after"/);
-  assert.match(schoolForm, /text: \`для \${d\\.client}\\`/);
+  assert.ok(schoolForm.includes('text: `для ${d.client}`'));
   assert.match(schoolForm, /documentDefinition\.background =/);
   assert.match(schoolForm, /documentDefinition\.footer =/);
   assert.match(clientStyles, /school-client-dialog/);
