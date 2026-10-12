@@ -225,6 +225,37 @@ test("Первая страница совместимости умещаетс�
   assert.ok(css.includes(".compatibility-form{margin-bottom:auto}"));
   assert.ok(html.includes("Говорят, души выбирают друг друга ещё на небесах."));
   assert.ok(html.includes("13 глубоких ответов по двум датам рождения."));
-  assert.ok(html.includes('src="app.js?v=166"'));
-  assert.ok(app.includes('loadStylesheet("compatibility-polish.css?v=3")'));
+  assert.ok(html.includes('src="app.js?v=168"'));
+  assert.ok(app.includes('loadStylesheet("compatibility-polish.css?v=4")'));
+});
+
+test("PDF совместимости доступен до и после 13 вопросов и содержит полные JSON-ответы", async () => {
+  const html = await source("index.html");
+  const feature = await source("compatibility-feature.js");
+  const pdf = await source("compatibility-pdf.js");
+  const app = await source("app.js");
+  assert.equal((html.match(/class="compatibility-pdf-button"/g) || []).length, 2);
+  const screen = html.slice(html.indexOf('<section id="compatibility"'), html.indexOf('<section id="year"'));
+  assert.ok(screen.indexOf("compatibility-pdf-controls--top") < screen.indexOf('id="compatibility-topics"'));
+  assert.ok(screen.indexOf("compatibility-pdf-controls--bottom") > screen.indexOf('id="compatibility-topics"'));
+  assert.ok(screen.includes('id="compatibility-result" class="compatibility-result" hidden'));
+  assert.ok(feature.includes("setPdfReport({ topics, dateA: aField.value, dateB: bField.value })"));
+  assert.ok(feature.includes("createCompatibilityPdfController({ buttons: pdfButtons, getBank })"));
+  assert.ok(pdf.includes("current.topics.map(async topic =>"));
+  assert.ok(pdf.includes("const bank = await getBank(topic.energy)"));
+  assert.ok(pdf.includes("const block = bank[topic.key]"));
+  assert.ok(pdf.includes("pdfMake.createPdf(document).getBlob(resolve)"));
+  assert.ok(pdf.includes('pageSize: "A4"'));
+  assert.ok(app.includes('import("./compatibility-feature.js?v=2")'));
+
+  const keys = ["pairEssence","meetingMeaning","attraction","emotions","realLife","sex",
+    "money","conflict","lesson","swings","future","actions","honestFinal"];
+  for (let energy = 1; energy <= 22; energy++) {
+    const obj = JSON.parse(await source(`data/compatibility/deep/energy-${energy}.json`));
+    assert.equal(obj.energy, energy);
+    for (const key of keys) {
+      assert.ok(obj.blocks[key]?.lead?.trim().length > 5, `Нет вступления: ${energy}/${key}`);
+      assert.ok(obj.blocks[key]?.text?.trim().length > 90, `Нет текста: ${energy}/${key}`);
+    }
+  }
 });
