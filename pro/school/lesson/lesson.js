@@ -227,7 +227,7 @@ function drawCurrent() {
       "Слева "+m.left+", сверху "+m.top+", справа "+m.right+".",
       m.left+" + "+m.top+" + "+m.right+" → "+m.bottom+".",
       m.left+" + "+m.top+" + "+m.right+" + "+m.bottom+" → "+m.center+".",
-      "Углы: "+m.corners.topLeft+", "+m.corners.topRight+", "+m.corners.bottomLeft+", "+m.corners.bottomRight+"."
+      "Углы: "+m.corners.topLeft+", "+m.corners.topRight+", "+m.corners.bottomRight+", "+m.corners.bottomLeft+"."
     ];
     formulaBlock.textContent=full?"Готовая основа. Теперь показаны все 31 позиции нашей интерактивной матрицы.":examples[step];
   }
