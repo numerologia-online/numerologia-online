@@ -156,7 +156,6 @@ function reduce22Formula(number){
 function showFirstThreeCalculations(root,matrix,birth){
   root.replaceChildren();
   root.classList.add("is-calculation-breakdown");
-  root.append(make("p","school-calc-overline","ОТКУДА ВЗЯЛИСЬ ЭТИ ЧИСЛА"));
   const daySteps=reduce22Formula(birth.day);
   const dayFormula=daySteps.length?daySteps.join(" → ")
     :String(birth.day).padStart(2,"0")+(birth.day<10?" → "+birth.day:" - оставляем как есть");
@@ -165,17 +164,15 @@ function showFirstThreeCalculations(root,matrix,birth){
   const yearSum=yearDigits.reduce((sum,digit)=>sum+digit,0);
   const yearFormula=[yearDigits.join(" + ")+" = "+yearSum,...reduce22Formula(yearSum)].join(" → ");
   const rows=[
-    ["СЛЕВА · ДЕНЬ",dayFormula],
-    ["СВЕРХУ · МЕСЯЦ",monthFormula],
-    ["СПРАВА · ГОД",yearFormula]
+    ["Слева (день):",dayFormula],
+    ["Сверху (месяц):",monthFormula],
+    ["Справа (год):",yearFormula]
   ];
   const list=make("div","school-calc-list");
   rows.forEach(([place,formula])=>{
     const row=make("div","school-calc-row");
-    const explanation=make("div","school-calc-explanation");
-    explanation.append(make("span","school-calc-place",place));
-    explanation.append(make("span","school-calc-equation",formula));
-    row.append(explanation);
+    row.append(make("span","school-calc-place",place));
+    row.append(make("span","school-calc-equation",formula));
     list.append(row);
   });
   root.append(list);
