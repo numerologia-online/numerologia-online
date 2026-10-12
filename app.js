@@ -9,6 +9,8 @@ let redFlagStylesLoading;
 let destinyCodeFeatureLoading;
 let destinyCodeStylesLoading;
 let personalDayFeatureLoading;
+let compatibilityFeatureLoading;
+let compatibilityStylesLoading;
 
 const loadStylesheet = (href) => new Promise((resolve, reject) => {
   const existing = document.querySelector(`link[href^="${href}"]`);
@@ -58,6 +60,19 @@ const openRedFlagFeature = async () => {
     redFlagStylesLoading ??= loadStylesheet("redflag-polish.css?v=4")
   ]);
   feature.openRedFlag();
+};
+
+const getCompatibilityFeature = () => {
+  if (!compatibilityFeatureLoading) compatibilityFeatureLoading = import("./compatibility-feature.js?v=1");
+  return compatibilityFeatureLoading;
+};
+
+const openCompatibilityFeature = async () => {
+  const [feature] = await Promise.all([
+    getCompatibilityFeature(),
+    compatibilityStylesLoading ??= loadStylesheet("compatibility-polish.css?v=1")
+  ]);
+  feature.openCompatibility();
 };
 
 const getPersonalDayFeature = () => {
@@ -151,6 +166,10 @@ document.querySelectorAll("[data-open-personal-day]").forEach((button) => button
 
 document.querySelectorAll("[data-open-destiny-code]").forEach((button) => button.addEventListener("click", () => {
   openDestinyCodeFeature().catch(() => alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
+}));
+
+document.querySelectorAll("[data-open-compatibility]").forEach((button) => button.addEventListener("click", () => {
+  openCompatibilityFeature().catch(() => alert("Не удалось открыть совместимость. Обновите страницу и попробуйте ещё раз."));
 }));
 
 document.querySelectorAll("[data-coming-soon]").forEach((button) => button.addEventListener("click", () => dialog.showModal()));
