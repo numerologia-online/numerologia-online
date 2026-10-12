@@ -222,3 +222,6 @@ a{color:inherit}
   .academy-school--matrix .academy-arrow{width:29px;height:29px;font-size:24px}
   .academy-matrix-watermark{right:-38px;width:158px;height:158px;opacity:.13}
 }
+
+/* Защита от задержки GitHub Pages: старый HTML не должен показывать удалённый CTA. */
+.academy-school--matrix>.academy-school-cta{display:none!important}
