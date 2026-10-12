@@ -33,7 +33,7 @@ a{color:inherit}
   font:400 clamp(39px,7vw,59px)/1.06 Georgia,"Times New Roman",serif;
   letter-spacing:-.04em;margin:0;color:#263c50
 }
-.academy-intro h1 em{font-weight:400;color:#a17c90}
+.academy-intro h1 em{font-weight:inherit;font-style:normal;color:inherit}
 .academy-intro>p:last-child{
   margin:12px auto 0;max-width:40ch;font-size:clamp(15px,2vw,17px);
   line-height:1.45;color:#617786
