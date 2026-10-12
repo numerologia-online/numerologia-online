@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f8f5ed">
+  <meta name="robots" content="noindex,nofollow">
+  <base href="../../../">
+  <title>Урок · Школа нумерологов</title>
+  <meta name="description" content="Пошаговые уроки матрицы судьбы: от рисования схемы до самостоятельного расчёта и проверки знаний.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="pro/school/school.css?v=3">
+  <link rel="stylesheet" href="pro/school/lesson/lesson.css?v=1">
+</head>
+<body>
+  <div class="school-shell school-lesson-shell">
+    <header class="school-top">
+      <a href="pro/school/" class="school-back">← К программе обучения</a>
+      <span class="school-brand">ШКОЛА НУМЕРОЛОГОВ</span>
+    </header>
+    <main>
+      <section class="school-lesson-hero" aria-labelledby="lesson-title">
+        <p id="lesson-count" class="school-overline">УРОК</p>
+        <h1 id="lesson-title">Загружаю урок…</h1>
+        <p id="lesson-lead" class="school-lesson-lead"></p>
+      </section>
+      <p id="lesson-error" class="school-error" role="alert" hidden></p>
+      <section id="lesson-drawing" class="school-drawing" aria-label="Построение матрицы" hidden>
+        <div class="school-drawing-intro">
+          <p class="school-overline">ПРАКТИКА НА БУМАГЕ</p>
+          <h2>Рисуем и считаем вместе</h2>
+          <p>Откройте тетрадь, повторяйте по шагам. Числа на схеме берутся из того же алгоритма, что и в полном разборе.</p>
+        </div>
+        <form id="lesson-date-form" class="school-date-form">
+          <label for="lesson-date">Дата рождения для примера</label>
+          <div class="school-date-row">
+            <input id="lesson-date" inputmode="numeric" maxlength="10" placeholder="ДД.ММ.ГГГГ" value="14.07.1990" required>
+            <button type="submit">Пересчитать</button>
+          </div>
+          <p id="lesson-date-error" class="school-date-error" role="alert" hidden></p>
+        </form>
+        <div class="school-visual-grid">
+          <div class="school-diagram-frame"><div id="lesson-diagram" class="school-diagram" aria-live="polite"></div></div>
+          <div class="school-step-panel">
+            <p id="lesson-step-count" class="school-overline"></p>
+            <h3 id="lesson-step-title"></h3>
+            <p id="lesson-step-text"></p>
+            <p id="lesson-step-formula" class="school-step-formula"></p>
+            <div class="school-step-buttons">
+              <button id="lesson-step-back" type="button">← Назад</button>
+              <button id="lesson-step-next" type="button">Следующий шаг →</button>
+            </div>
+          </div>
+        </div>
+        <p class="school-diagram-footnote">На схеме показаны позиции, а не готовые предсказания. Для сложных линий сначала изучите опорные точки.</p>
+      </section>
+      <article id="lesson-content" class="school-lesson-reading" aria-live="polite"></article>
+      <section id="lesson-quiz" class="school-lesson-quiz" aria-label="Проверка знаний"></section>
+      <nav id="lesson-navigation" class="school-lesson-navigation" aria-label="Перемещение между уроками"></nav>
+    </main>
+    <footer class="school-footer">Школа нумерологов · Продолжайте в своём темпе</footer>
+  </div>
+  <script type="module" src="pro/school/lesson/lesson.js?v=1"></script>
+</body>
+</html>
