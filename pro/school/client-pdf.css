@@ -1,0 +1,21 @@
+/* This stylesheet loads only when the School opens its client PDF form. */
+.school-client-dialog{width:min(92vw,550px);max-height:min(90dvh,850px);border:1px solid #d5c7b2;border-radius:23px;padding:0;background:#fffefa;box-shadow:0 24px 90px #2333474b;color:#273f51;overflow:auto}
+.school-client-dialog::backdrop{background:rgba(20,34,48,.53);backdrop-filter:blur(3px)}
+.school-client-form{display:grid;gap:13px;padding:clamp(18px,4.5vw,31px)}
+.school-client-form-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.school-client-form-head p{margin:0;color:#9c7e56;font-size:10px;font-weight:900;letter-spacing:.14em}
+.school-client-close{width:36px;height:36px;border:1px solid #e1d9cb;border-radius:11px;background:#f8f4ed;font-size:25px;line-height:1;color:#42566a}
+.school-client-form h2{font:400 clamp(27px,5.5vw,36px)/1.15 Georgia,serif;margin:0}
+.school-client-explainer{font-size:13px;color:#617180;line-height:1.55;margin:0 0 5px}
+.school-client-form label{display:grid;gap:5px;font-size:13px;font-weight:750;color:#485766}
+.school-client-form label span{color:#a65461}
+.school-client-form input,.school-client-form textarea{width:100%;min-width:0;border:1px solid #d9d3c8;border-radius:12px;background:#fff;padding:11px 13px;color:#253c4e;font:400 15px/1.45 system-ui,sans-serif}
+.school-client-form input{min-height:46px}
+.school-client-form textarea{min-height:105px;resize:vertical}
+.school-client-form input:focus,.school-client-form textarea:focus{outline:2px solid #87adae;outline-offset:1px}
+.school-client-privacy{font-size:11px;color:#77858b;line-height:1.4;margin:0}
+.school-client-actions{display:flex;gap:9px;margin-top:4px}
+.school-client-actions button{min-height:48px;border-radius:12px;padding:10px 14px;font-weight:800;font-size:14px}
+.school-client-cancel{flex:1;background:#f1eee7;color:#465970;border:1px solid #e0d7ca}
+.school-client-confirm{flex:2;background:#29475a;color:white;border:1px solid #29475a}
+@media(max-width:430px){.school-client-dialog{width:calc(100vw - 20px);max-height:90dvh;border-radius:17px}.school-client-form{padding:17px;gap:11px}}
