@@ -10,7 +10,7 @@
   <meta name="description" content="Пошаговые уроки матрицы судьбы: от рисования схемы до самостоятельного расчёта и проверки знаний.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="pro/school/school.css?v=3">
-  <link rel="stylesheet" href="pro/school/lesson/lesson.css?v=1">
+  <link rel="stylesheet" href="pro/school/lesson/lesson.css?v=2">
 </head>
 <body>
   <div class="school-shell school-lesson-shell">
@@ -28,16 +28,17 @@
       <section id="lesson-drawing" class="school-drawing" aria-label="Построение матрицы" hidden>
         <div class="school-drawing-intro">
           <p class="school-overline">ПРАКТИКА НА БУМАГЕ</p>
-          <h2>Рисуем и считаем вместе</h2>
-          <p>Откройте тетрадь, повторяйте по шагам. Числа на схеме берутся из того же алгоритма, что и в полном разборе.</p>
+          <h2 id="lesson-drawing-title">Рисуем и считаем вместе</h2>
+          <p id="lesson-drawing-description">Откройте тетрадь, повторяйте по шагам. Числа на схеме берутся из того же алгоритма, что и в полном разборе.</p>
         </div>
         <form id="lesson-date-form" class="school-date-form">
           <label for="lesson-date">Дата рождения для примера</label>
           <div class="school-date-row">
             <input id="lesson-date" inputmode="numeric" maxlength="10" placeholder="ДД.ММ.ГГГГ" value="14.07.1990" required>
-            <button type="submit">Пересчитать</button>
+            <button id="lesson-date-submit" type="submit" aria-label="Использовать выбранную дату">Использовать</button>
           </div>
           <p id="lesson-date-error" class="school-date-error" role="alert" hidden></p>
+          <p id="lesson-date-confirmed" class="school-date-confirmed" role="status" hidden></p>
         </form>
         <div class="school-visual-grid">
           <div class="school-diagram-frame"><div id="lesson-diagram" class="school-diagram" aria-live="polite"></div></div>
@@ -60,6 +61,6 @@
     </main>
     <footer class="school-footer">Школа нумерологов · Продолжайте в своём темпе</footer>
   </div>
-  <script type="module" src="pro/school/lesson/lesson.js?v=1"></script>
+  <script type="module" src="pro/school/lesson/lesson.js?v=2"></script>
 </body>
 </html>
