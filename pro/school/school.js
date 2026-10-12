@@ -220,7 +220,7 @@ async function startSchool() {
     if(!lessonResponse.ok||!arcanaResponse.ok)throw new Error("Учебная база недоступна");
     const [lessonData,arcanaData]=await Promise.all([lessonResponse.json(),arcanaResponse.json()]);
     if(lessonData.schema!=="pro-school-lessons-manifest-v1"||arcanaData.schema!=="pro-school-arcana-v1"
-      || lessonData.lessons?.length!==12||arcanaData.arcana?.length!==22)throw new Error("Учебная база неполная");
+      || !Array.isArray(lessonData.lessons)||lessonData.lessons.length<1||arcanaData.arcana?.length!==22)throw new Error("Учебная база неполная");
     lessons=lessonData.lessons;
     arcana=arcanaData.arcana;
     renderLessonList();
