@@ -161,3 +161,40 @@
 .school-drawing.is-first-lesson .school-diagram-footnote{display:none!important}
 .school-drawing.is-first-lesson .school-drawing-intro .school-overline{margin-bottom:2px}
 .school-drawing.is-first-lesson .school-date-form{padding-top:9px}
+
+/* У первого урока нет цифр и даты: только пустая схема и подписи под ней. */
+.school-drawing.is-first-lesson #lesson-date-form{display:none!important}
+.school-position-key{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:15px;
+}
+.school-position-chip{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+  padding:9px 11px;
+  border:1px solid #dfd2ba;
+  border-radius:12px;
+  background:#fffdf8;
+  color:#705939;
+  font-size:13px;
+  font-weight:800;
+  line-height:1.35;
+}
+.school-position-arrow{
+  flex:0 0 24px;
+  display:grid;
+  place-items:center;
+  height:24px;
+  border-radius:50%;
+  color:#316a76;
+  background:#e7f2f1;
+  font-size:17px;
+}
+@media(max-width:380px){
+  .school-position-key{grid-template-columns:1fr}
+  .school-position-chip{min-height:40px}
+}
