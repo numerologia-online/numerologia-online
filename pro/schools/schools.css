@@ -116,3 +116,32 @@ a{color:inherit}
   .academy-status{font-size:8.5px}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+/* Совместимость на время обновления GitHub Pages:
+   старый HTML может оказаться в Safari вместе с новым CSS.
+   Старые длинные карточки превращаем в тот же короткий список,
+   чтобы описания не занимали автоколонки и не перекрывали заголовки. */
+.academy-headline,.academy-ending{display:none}
+.academy-school-top{display:contents}
+.academy-school>p,.academy-school-bottom{display:none}
+.academy-school-number{order:0}
+.academy-school h3{order:1;overflow-wrap:anywhere}
+.academy-status{order:2}
+.academy-arrow{order:3}
+.academy-intro h1:not([id]){font-size:0}
+.academy-intro h1:not([id])::before{
+  content:"Школа ";font:400 clamp(39px,7vw,59px)/1.06 Georgia,"Times New Roman",serif;
+  letter-spacing:-.04em;color:#263c50
+}
+.academy-intro h1:not([id]) em{font-size:clamp(39px,7vw,59px)}
+.academy-intro h1:not([id])+p{font-size:0!important;line-height:0!important}
+.academy-intro h1:not([id])+p::after{
+  content:"Выберите направление, которое хотите изучать самостоятельно.";
+  display:block;font:400 clamp(15px,2vw,17px)/1.45 Inter,system-ui,sans-serif;
+  color:#617786
+}
+@media(max-width:480px){
+  .academy-intro h1:not([id])::before{font-size:clamp(37px,9vw,43px)}
+  .academy-intro h1:not([id]) em{font-size:clamp(37px,9vw,43px)}
+  .academy-intro h1:not([id])+p::after{font-size:15px}
+}
