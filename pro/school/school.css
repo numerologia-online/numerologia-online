@@ -1,0 +1,79 @@
+:root{--cream:#f8f5ed;--paper:#fffefa;--ink:#24394e;--quiet:#61717b;--gold:#b89966;--line:#e5dfd3;--sage:#79979b;--pink:#bc91a1}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--cream)}
+body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 88% 1%,#e0ebec 0,transparent 390px),var(--cream);font:16px/1.62 Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit}button{cursor:pointer}a,button{touch-action:manipulation}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #5c969e;outline-offset:3px}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;letter-spacing:-.035em;line-height:1.16;font-weight:400}
+h1{font-size:clamp(42px,8.2vw,69px);margin:13px 0 19px}h1 em{color:#af8193;font-style:normal}
+h2{font-size:clamp(28px,5vw,40px);margin:0 0 13px}h3{font-size:clamp(24px,4vw,32px);margin:0 0 16px}
+p{margin:0 0 15px}.school-shell{width:min(100%,1120px);padding:16px clamp(15px,3.7vw,35px) 30px;margin:0 auto}
+.school-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.school-back{color:#3b5366;text-decoration:none;font-size:13px;font-weight:800;padding:10px 0}
+.school-brand{font-size:10px;letter-spacing:.17em;color:#987b52;font-weight:900;text-align:right}
+.school-hero{padding:clamp(35px,7vw,70px) 3px 34px}
+.school-overline{font-size:11px;letter-spacing:.16em;color:#9e7e50;font-weight:900;text-transform:uppercase;margin:0 0 11px}
+.school-lead{max-width:660px;color:#435e69;font-size:clamp(16px,2.5vw,19px);line-height:1.66}
+.school-metrics{display:flex;gap:9px;flex-wrap:wrap;margin-top:22px}.school-metrics span{font-size:12px;color:#735e47;border:1px solid #decfbc;padding:6px 12px;border-radius:50px;background:#fffaf4}
+.school-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:7px 0 26px;padding:6px;background:#ece8df;border:1px solid #e0d7c9;border-radius:18px;max-width:620px}
+.school-tabs button{flex:1;min-width:110px;min-height:45px;border:0;border-radius:13px;background:transparent;color:#53656b;font-weight:800}
+.school-tabs button[aria-pressed=true]{background:var(--paper);color:var(--ink);box-shadow:0 5px 15px #483b2920}
+.school-panel{scroll-margin-top:20px}.school-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px}.school-section-heading h2{margin:0}
+.school-progress{font-size:13px;color:#836a46;border:1px solid #e6d9c5;padding:7px 13px;border-radius:50px;white-space:nowrap}
+.school-layout{display:grid;grid-template-columns:300px minmax(0,1fr);align-items:start;gap:16px}.school-index{background:#fffefa;border:1px solid var(--line);border-radius:22px;padding:13px}
+.school-lesson-list{display:grid;gap:5px}.school-lesson-list button{width:100%;border:1px solid transparent;border-radius:14px;background:transparent;color:var(--ink);text-align:left;padding:12px 11px;display:grid;grid-template-columns:32px 1fr;gap:10px;align-items:center}
+.school-lesson-list button[aria-current=true]{background:#edf4f2;border-color:#bcd2cd}.school-lesson-list button:hover{background:#f5f4ef}
+.school-lesson-list button .school-index-num{width:32px;height:32px;background:#f3ebdd;border:1px solid #e7dcc8;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#8b6d47}
+.school-lesson-list button.completed .school-index-num{background:#e0eeeb;color:#29636a;border-color:#bbd4d0}
+.school-lesson-list strong{font-size:13px;line-height:1.32;display:block}.school-lesson-list small{color:#7d8586;font-size:11px;display:block;line-height:1.4;margin-top:3px}
+.school-lesson-card,.school-practice-card,.school-arcana-detail{background:var(--paper);border:1px solid var(--line);border-radius:24px;box-shadow:0 15px 48px #362f2509;padding:clamp(19px,3.2vw,30px)}
+.school-lesson-card .school-overline{margin-bottom:9px}.school-lesson-intro{font-size:16px;color:#455d66;line-height:1.74;margin:0 0 25px}
+.school-topic{border-top:1px solid #ede8de;padding:20px 0 2px}.school-topic h4{font:400 23px/1.22 Georgia,serif;margin:0 0 12px}.school-topic p{line-height:1.76;color:#394e58}
+.school-example{padding:13px 15px;background:#f6f0e4;border-left:3px solid #bea06b;border-radius:0 11px 11px 0;font-weight:750;font-size:14px;color:#644f39}
+.school-takeaway{background:#ecf3f0;border:1px solid #d7e5df;border-radius:16px;padding:15px 17px;margin:22px 0;color:#2a5456}
+.school-takeaway strong{display:block;margin:0 0 5px}.school-takeaway p{margin:0}
+.school-quiz{padding-top:13px;border-top:1px solid #e9e3d8}
+.school-quiz h4{font:400 24px/1.2 Georgia,serif;margin:0 0 10px}.school-quiz-intro{font-size:13px;color:#768387}
+.school-question{border:1px solid #e8e2d7;border-radius:15px;padding:13px 15px;margin:12px 0 16px}
+.school-question legend{font-weight:800;font-size:14px;line-height:1.48;padding:0 5px;max-width:100%}.school-question label{display:flex;gap:10px;align-items:flex-start;padding:6px 0;font-size:14px;line-height:1.55;cursor:pointer}
+.school-question input{accent-color:#568a8e;margin-top:5px}
+.school-quiz-result,.school-feedback{min-height:25px;color:#3b6569;font-size:14px;font-weight:700;margin:12px 0}
+.school-primary,.school-secondary,.school-action{display:inline-flex;align-items:center;justify-content:center;min-height:46px;border-radius:13px;padding:11px 18px;font-size:14px;font-weight:850;text-decoration:none}
+.school-primary,.school-action{border:1px solid #263f53;background:#263f53;color:white}.school-secondary{border:1px solid #c4d3d1;color:#285d61;background:#f3faf8}
+.school-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.school-controls button:disabled{opacity:.45;cursor:default}
+.school-section-lead{max-width:760px;color:#526972;margin-bottom:22px}
+.school-practice-card{max-width:650px}.school-train-date{font:400 clamp(33px,7vw,49px)/1.1 Georgia,serif;margin:0 0 24px}
+.school-practice-card form{display:grid;gap:8px}.school-practice-card label{font-weight:750;font-size:13px;margin-top:8px}
+.school-practice-card input,.school-practice-card select{display:block;max-width:100%;width:100%;min-height:48px;border:1px solid #d9d3c9;background:white;border-radius:12px;padding:11px 14px;color:#2f4858}
+.school-practice-card .school-primary{margin-top:12px}.school-practice-card .school-secondary{margin-top:7px}
+.school-arcana-buttons{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:7px;margin:14px 0 19px}
+.school-arcana-buttons button{min-height:45px;padding:5px;border:1px solid #dacfbf;background:#fffefa;color:#4b5962;border-radius:11px;font-size:14px;font-weight:850}
+.school-arcana-buttons button[aria-pressed=true]{background:#e7f0ed;border-color:#648e8c;color:#25565a}
+.school-arcana-detail{max-width:850px}.school-arcana-detail .school-arcana-title{margin:0 0 5px}
+.school-arcana-core{color:#9e7e52;font-size:16px;margin:0 0 22px}
+.school-arcana-detail dl{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin:0}.school-arcana-detail dl>div{border-radius:14px;background:#f7f5ef;padding:15px}
+.school-arcana-detail dt{font-weight:850;font-size:13px;color:#876a4b;margin-bottom:6px}
+.school-arcana-detail dd{margin:0;font-size:14px;line-height:1.64;color:#465c64}
+.school-next{display:flex;justify-content:space-between;align-items:center;gap:20px;background:#f1ebe1;border:1px solid #e1d4c4;border-radius:24px;padding:clamp(18px,3vw,29px);margin-top:30px}
+.school-next h2{font-size:clamp(25px,4vw,32px)}.school-next p:last-child{margin:0;color:#5f6770}
+.school-action{flex:none}.school-footer{text-align:center;padding:32px 10px 4px;font-size:11px;color:#8a8983}
+.school-error{color:#983c45;background:#fff4f3;border:1px solid #efc9cc;padding:14px;border-radius:15px}
+[hidden]{display:none!important}
+@media(max-width:850px){.school-layout{grid-template-columns:1fr}.school-index{padding:10px}.school-lesson-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.school-arcana-buttons{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media(max-width:560px){.school-shell{padding:12px 13px 24px}.school-hero{padding-top:32px}.school-layout{gap:12px}.school-lesson-list{grid-template-columns:1fr}.school-lesson-list button{padding:10px}.school-arcana-buttons{grid-template-columns:repeat(6,minmax(0,1fr))}.school-arcana-detail dl{grid-template-columns:1fr}.school-next{align-items:stretch;flex-direction:column}.school-action{width:100%}.school-tabs button{min-width:0;font-size:13px;padding:7px}.school-progress{font-size:11px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* Рабочая тетрадь: формулы и результаты для каждой из 28 точек. */
+.school-formula-form{max-width:770px;margin:0 0 28px;border:1px solid #e5dfd3;padding:17px 19px;background:#fffefa;border-radius:18px}
+.school-formula-form label{display:block;font-size:13px;font-weight:800;margin:0 0 8px;color:#52616a}
+.school-formula-row{display:flex;align-items:stretch;gap:9px}
+.school-formula-row input{flex:1;min-width:0;border:1px solid #dad2c7;background:white;border-radius:12px;padding:12px 15px;font-size:18px;letter-spacing:.045em;color:#24394e}
+.school-formula-form .school-error{margin:14px 0 0;font-size:13px}
+.school-formula-group{margin:0 0 28px}
+.school-formula-group h3{font-size:25px;margin:0 0 12px}
+.school-formula-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.school-formula-card{background:#fffefa;border:1px solid #e3dcd0;border-radius:16px;padding:14px 15px;min-width:0}
+.school-formula-title{display:flex;justify-content:space-between;align-items:center;gap:12px;font-weight:750;font-size:13px;line-height:1.4}
+.school-formula-title strong{font:400 29px/1 Georgia,serif;color:#916f46}
+.school-equation{color:#546c74;font-size:13px;line-height:1.5;margin:8px 0 0;overflow-wrap:anywhere}
+@media(max-width:560px){.school-formula-row{flex-direction:column}.school-formula-cards{grid-template-columns:1fr}.school-formula-form{padding:15px}}
