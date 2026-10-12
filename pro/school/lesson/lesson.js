@@ -15,6 +15,12 @@ const makeSvg = (tag, attrs = {}) => {
   return item;
 };
 const storeKey = "numerologia-online-pro-school-v1";
+function readCompleted(){
+  try{
+    const items=JSON.parse(localStorage.getItem(storeKey)||"[]");
+    return new Set(Array.isArray(items)?items.filter(item=>typeof item==="string"):[]);
+  }catch{return new Set()}
+}
 let lesson, manifest, index = -1, currentBirth = {day:14,month:7,year:1990}, step = 0;
 const params = new URLSearchParams(location.search);
 const id = params.get("id") || "start";
@@ -302,19 +308,21 @@ function renderQuiz(data) {
     if(answers.some(a=>!a)){feedback.textContent="Выберите ответ на каждый вопрос.";return}
     const score=answers.filter((a,i)=>Number(a.value)===data.questions[i].correct).length;
     if(score===data.questions.length){
+      let saved=false;
       try{
-        const items=JSON.parse(localStorage.getItem(storeKey)||"[]");
-        const done=new Set(Array.isArray(items)?items:[]);
+        const done=readCompleted();
         done.add(data.id);
         localStorage.setItem(storeKey,JSON.stringify([...done]));
-      }catch{/* Без хранилища урок всё равно работает. */}
+        saved=readCompleted().has(data.id);
+      }catch{/* Без сохранения следующий урок остаётся закрытым. */}
       feedback.classList.remove("is-incorrect");
       feedback.classList.add("is-correct");
-      feedback.textContent="Отлично! Урок пройден. Можно переходить к следующему.";
+      feedback.textContent=saved
+        ?"Отлично! Урок пройден. Можно переходить к следующему."
+        :"Ответы правильные, но браузер не сохранил прогресс. Разрешите сохранение данных сайта, чтобы открыть следующий урок.";
       retry.hidden=true;
-      submit.textContent="✓ Урок пройден";
-      // После успешного теста показываем поздравление и следующую ссылку,
-      // а не оставляем ученика среди ответов на вопросы.
+      submit.textContent=saved?"✓ Урок пройден":"✓ Ответы правильные";
+      renderNavigation();
       feedback.scrollIntoView({behavior:"smooth",block:"center"});
     }else{
       feedback.classList.remove("is-correct");
@@ -346,7 +354,13 @@ function renderNavigation() {
   if(prev)nav.append(link(prev,"← Предыдущий урок","school-secondary"));
   nav.append(link({id:"",title:""},"Вся программа","school-lesson-all"));
   nav.lastElementChild.href="pro/school/";
-  if(next)nav.append(link(next,"Следующий урок →","school-primary"));
+  if(next&&readCompleted().has(id))nav.append(link(next,"Следующий урок →","school-primary"));
+  else if(next){
+    const locked=make("span","school-lesson-locked-next","🔒 Следующий урок");
+    locked.setAttribute("aria-disabled","true");
+    locked.title="Правильно ответьте на все вопросы, чтобы открыть следующий урок";
+    nav.append(locked);
+  }
 }
 function renderLesson(data) {
   document.title=data.title+" | Школа нумерологов";
@@ -389,6 +403,25 @@ async function start() {
     manifest=meta.lessons;
     index=manifest.findIndex(item=>item.id===id);
     if(index<0)throw Error("Урок не найден");
+    const completed=readCompleted();
+    const firstMissing=manifest.slice(0,index).find(item=>!completed.has(item.id));
+    if(firstMissing){
+      document.title="Урок закрыт | Школа нумерологов";
+      $("lesson-count").textContent="УРОК "+(index+1)+" ИЗ "+manifest.length;
+      $("lesson-title").textContent="Этот урок пока закрыт";
+      $("lesson-lead").textContent="Уроки открываются по порядку после правильных ответов на тест предыдущего урока.";
+      $("lesson-content").hidden=true;
+      $("lesson-quiz").hidden=true;
+      const notice=$("lesson-error");
+      notice.hidden=false;
+      notice.textContent="🔒 Сначала успешно пройдите урок «"+firstMissing.title+"».";
+      const nav=$("lesson-navigation");
+      nav.replaceChildren();
+      const back=make("a","school-primary","Открыть нужный урок →");
+      back.href="pro/school/lesson/?id="+encodeURIComponent(firstMissing.id);
+      nav.append(back);
+      return;
+    }
     const response=await fetch(manifest[index].file+"?v=5");
     if(!response.ok)throw Error("Материал урока не найден");
     lesson=await response.json();
