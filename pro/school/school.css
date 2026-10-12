@@ -77,3 +77,19 @@ p{margin:0 0 15px}.school-shell{width:min(100%,1120px);padding:16px clamp(15px,3
 .school-formula-title strong{font:400 29px/1 Georgia,serif;color:#916f46}
 .school-equation{color:#546c74;font-size:13px;line-height:1.5;margin:8px 0 0;overflow-wrap:anywhere}
 @media(max-width:560px){.school-formula-row{flex-direction:column}.school-formula-cards{grid-template-columns:1fr}.school-formula-form{padding:15px}}
+
+
+/* Профессиональный расчёт использует существующий /pro/ без второй базы или формул. */
+.school-client-service{display:grid;grid-template-columns:54px minmax(0,1fr);gap:17px;align-items:start;margin:0 0 25px;padding:clamp(19px,3.5vw,31px);border:1px solid #d9d1c2;border-radius:25px;background:linear-gradient(120deg,#fffefa,#f3ede9);box-shadow:0 12px 30px #75655413}
+.school-client-icon{display:grid;place-items:center;width:52px;height:52px;border:1px solid #d8bfa4;border-radius:17px;background:#f4e8e0;color:#af8294;font-size:31px}
+.school-client-copy h2{font-size:clamp(27px,4.6vw,38px);margin-bottom:10px}
+.school-client-copy > p:not(.school-overline){max-width:75ch;color:#526273;font-size:14px;line-height:1.6;margin-bottom:20px}
+.school-client-cta{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:13px 20px;min-height:52px;border-radius:15px;background:#243b50;color:white;font-size:15px;font-weight:800;text-decoration:none}
+.school-client-cta:hover{background:#314d64}
+.school-client-cta:focus-visible{outline:3px solid #5c969e;outline-offset:3px}
+@media(max-width:560px){
+  .school-client-service{grid-template-columns:1fr;gap:10px;padding:18px;margin-bottom:19px}
+  .school-client-icon{width:43px;height:43px;font-size:24px}
+  .school-client-copy > p:not(.school-overline){font-size:13.5px}
+  .school-client-cta{width:100%}
+}
