@@ -321,9 +321,10 @@ const buildFullReportPdf = async () => {
     footer: (page, pages) => ({ text: `Нумерология Онлайн · ${page} / ${pages}`, alignment: "center", color: "#9A8661", fontSize: 8.5, margin: [0, 8, 0, 0] })
   };
 
-  if (typeof customizeDocument === "function") await customizeDocument(documentDefinition);
+  const schoolFile = typeof customizeDocument === "function"
+    ? await customizeDocument(documentDefinition) : null;
   const blob = await new Promise((resolve) => pdfMake.createPdf(documentDefinition).getBlob(resolve));
-  return { url: URL.createObjectURL(blob), filename: `Полный разбор ${formattedDate}.pdf` };
+  return { url: URL.createObjectURL(blob), filename: schoolFile?.filename || `Полный разбор ${formattedDate}.pdf` };
 };
 
 const getFullPdfKey = () => getReport() ? `${getReport().formattedDate}|full-pdf-9966-v1` : "";
