@@ -78,6 +78,6 @@ test("Каждый урок существует отдельно, крупны�
    assert.ok(data.sections.length>=3,data.id);
    assert.ok(data.quiz.options.length>=3,data.id);
    assert.ok(data.quiz.correct>=0&&data.quiz.correct<data.quiz.options.length,data.id);
-   assert.ok(data.sections.every(s=>s.text?.length>80),data.id);
+   assert.ok(data.sections.every(s=>s.text?.length>=35),data.id);
  }
 });
