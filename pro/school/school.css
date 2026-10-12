@@ -93,3 +93,29 @@ p{margin:0 0 15px}.school-shell{width:min(100%,1120px);padding:16px clamp(15px,3
   .school-client-copy > p:not(.school-overline){font-size:13.5px}
   .school-client-cta{width:100%}
 }
+
+/* Обновлённая школа: сначала обучение, а профессиональный инструмент ниже. */
+.school-hero{padding:clamp(28px,6vw,58px) 3px clamp(20px,4vw,30px)}
+.school-hero h1{margin:13px 0 0}
+.school-tabs{max-width:100%;margin:0 0 29px}
+.school-lesson-grid{display:grid;gap:24px}
+.school-lesson-module{min-width:0}
+.school-lesson-module-title{font:800 11px/1.5 system-ui,sans-serif;letter-spacing:.13em;color:#a08356;margin:0 0 10px}
+.school-lesson-module-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.school-lesson-link{display:grid;grid-template-columns:39px minmax(0,1fr) 20px;gap:11px;align-items:center;min-height:95px;padding:15px;border-radius:17px;background:#fffefa;color:#24394e;text-decoration:none;border:1px solid #e1d9cd;box-shadow:0 9px 24px #4e3a2710}
+.school-lesson-link:hover{border-color:#a6bbb6;background:#fafcf9}
+.school-lesson-link:focus-visible{outline:3px solid #6a979e;outline-offset:3px}
+.school-lesson-number{display:grid;place-items:center;width:39px;height:39px;border-radius:50%;background:#f2e9dc;border:1px solid #e6d5bc;color:#8d6d49;font-size:13px;font-weight:850}
+.school-lesson-link.completed .school-lesson-number{background:#e2f1ea;color:#2b746c;border-color:#b9d9d0}
+.school-lesson-summary{min-width:0;display:grid;gap:5px}
+.school-lesson-summary strong{font-size:15px;font-weight:750;line-height:1.35}
+.school-lesson-summary small{font-size:12px;color:#7a858b}
+.school-lesson-arrow{font-size:20px;color:#a28c69}
+.school-client-service{margin:45px 0 5px}
+@media(max-width:640px){
+ .school-lesson-module-list{grid-template-columns:1fr}
+ .school-lesson-link{min-height:85px}
+ .school-hero{padding-top:23px}
+ .school-tabs{gap:5px;padding:5px}
+ .school-tabs button{min-width:0;flex:1 1 42%;padding:10px 7px;font-size:13px}
+}
