@@ -287,11 +287,40 @@ document.addEventListener("keydown", event => {
 });
 document.querySelector('a[href="#pro-karmic-title"]')?.addEventListener("click", () => closeKarmicInline());
 
+// Client customization is lazy and runs only when opened from the School.
+let schoolClientPdf = null;
+let schoolClientPdfLoading = null;
+const getSchoolClientPdf = () => {
+  if (!schoolClientMode) return Promise.reject(new Error("Режим школы не активен"));
+  if (schoolClientPdf) return Promise.resolve(schoolClientPdf);
+  if (!schoolClientPdfLoading) {
+    schoolClientPdfLoading = import("./school/client-pdf.js?v=1")
+      .then(({ createSchoolClientPdf }) => {
+        schoolClientPdf = createSchoolClientPdf();
+        return schoolClientPdf;
+      }).catch((error) => {
+        schoolClientPdfLoading = null;
+        throw error;
+      });
+  }
+  return schoolClientPdfLoading;
+};
+if (schoolClientMode) {
+  const schoolPdfStyles = document.createElement("link");
+  schoolPdfStyles.rel = "stylesheet";
+  schoolPdfStyles.href = "pro/school/client-pdf.css?v=1";
+  document.head.append(schoolPdfStyles);
+}
+
 const {invalidateFullPdf, createFullReportPdfButton} = createFullReportPdfController({
   getReport: () => current?.pdfReport || null,
   reading: pdfButtons,
   extendContent: buildProPdfChapters,
-  buttonClass: "pro-pdf-button"
+  buttonClass: "pro-pdf-button",
+  beforeDownload: schoolClientMode ? async () => (await getSchoolClientPdf()).beforeDownload() : null,
+  customizeDocument: schoolClientMode ? async (documentDefinition) => {
+    (await getSchoolClientPdf()).customizeDocument(documentDefinition);
+  } : null
 });
 
 function renderQuestions(definitions) {
