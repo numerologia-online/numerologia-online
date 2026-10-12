@@ -7,8 +7,25 @@ import { createFullReportPdfController } from "../full-report-pdf.js?v=3";
 import { buildProPdfChapters } from "./pro-pdf-content.js?v=24";
 import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
 
+const schoolClientMode = new URLSearchParams(window.location.search).get("from") === "school";
+const defaultSubmitHtml = schoolClientMode
+  ? 'Рассчитать для клиента <span aria-hidden="true">→</span>'
+  : 'Открыть мой разбор <span aria-hidden="true">→</span>';
+
 const form = document.querySelector("#pro-form");
 const input = document.querySelector("#pro-birth-date");
+if (schoolClientMode) {
+  const homeLink = document.querySelector("#pro-home-link");
+  homeLink.href = "pro/school/";
+  homeLink.textContent = "← В школу";
+  homeLink.setAttribute("aria-label", "Вернуться в Школу нумерологов");
+  document.querySelector(".pro-hero .pro-eyebrow").textContent = "РАСЧЁТ ДЛЯ КЛИЕНТА";
+  document.querySelector(".pro-hero h1").textContent = "Полный разбор клиента";
+  document.querySelector(".pro-hero-lead").textContent =
+    "Введите дату рождения клиента, получите полную матрицу с подробными расшифровками и сохраните персональный PDF. Все расчёты и тексты используются из основного раздела.";
+  document.querySelector('label[for="pro-birth-date"]').textContent = "Дата рождения клиента";
+  form.querySelector('button[type="submit"]').innerHTML = defaultSubmitHtml;
+}
 const error = document.querySelector("#pro-error");
 const results = document.querySelector("#pro-results");
 const diagram = document.querySelector("#pro-diagram");
@@ -834,6 +851,6 @@ form.addEventListener("submit", async(event)=>{
     error.hidden=false;
   }finally{
     submit.disabled=false;
-    submit.innerHTML='Открыть мой разбор <span aria-hidden="true">→</span>';
+    submit.innerHTML=defaultSubmitHtml;
   }
 });
