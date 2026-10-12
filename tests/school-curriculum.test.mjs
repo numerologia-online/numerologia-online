@@ -19,7 +19,7 @@ test("Школа начинает с построения матрицы и за
   assert.ok(!script.includes('fetch("pro/school/lessons.json'));
   assert.ok(script.includes('link.href = "pro/school/lesson/?id="'));
   assert.ok(reader.includes('<base href="../../../">'));
-  assert.ok(lessonJS.includes('fetch(manifest[index].file+"?v=6")'));
+  assert.ok(lessonJS.includes('fetch(manifest[index].file+"?v=7")'));
   assert.equal(manifest.lessons.length, 12);
   assert.deepEqual(manifest.lessons.slice(0,5).map(x=>x.id), ["start","reduce","base","corners","internal"]);
   for (const meta of manifest.lessons) {
@@ -69,8 +69,8 @@ test("В уроках нет готовой даты, ученик выбира�
   assert.ok(js.includes('currentBirth=null;'));
   assert.ok(js.includes('currentBirth=birth;'));
   assert.ok(css.includes('.school-date-row input::placeholder{color:#9ca8ac;opacity:.8;letter-spacing:normal}'));
-  assert.ok(html.includes('lesson.js?v=11'));
-  assert.ok(html.includes('lesson.css?v=7'));
+  assert.ok(html.includes('lesson.js?v=12'));
+  assert.ok(html.includes('lesson.css?v=8'));
 });
 
 test("Первый урок без повторов, дата подтверждается галочкой и тест закрыт до последнего шага", async () => {
@@ -92,8 +92,8 @@ test("Первый урок без повторов, дата подтвержд
   assert.ok(script.includes('resetConfirmation()'));
   assert.ok(page.includes('id="lesson-date-submit"'));
   assert.ok(page.includes('id="lesson-date-confirmed"'));
-  assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=7"'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=11"'));
+  assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=8"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=12"'));
   assert.ok(styles.includes(".school-date-row button.is-confirmed"));
   assert.ok(styles.includes(".school-lesson-quiz.is-locked"));
   const first=JSON.parse(await src("pro/school/lessons/start.json"));
@@ -135,8 +135,8 @@ test("Неверный ответ выделен красным и возвра�
   assert.ok(css.includes(".school-quiz-result.is-incorrect"));
   assert.ok(css.includes("color:#a82d38"));
   assert.ok(css.includes(".school-quiz-retry[hidden]"));
-  assert.ok(html.includes('lesson.js?v=11'));
-  assert.ok(html.includes('lesson.css?v=7'));
+  assert.ok(html.includes('lesson.js?v=12'));
+  assert.ok(html.includes('lesson.css?v=8'));
 });
 
 test("Первый урок показывает сразу практику, без двух вступлений",async()=>{
@@ -184,7 +184,7 @@ test("В первом тесте считаем кружочки и после �
   assert.ok(success.includes('feedback.scrollIntoView({behavior:"smooth",block:"center"})'));
   assert.ok(!script.slice(script.indexOf('feedback.classList.add("is-incorrect")'),script.indexOf('retry.hidden=false')).includes("scrollIntoView"));
   assert.ok(script.includes('link(next,"Следующий урок →","school-primary")'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=11"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=12"'));
 });
 
 test("Уроки открываются строго последовательно, включая прямые ссылки",async()=>{
@@ -205,7 +205,7 @@ test("Уроки открываются строго последователь�
   assert.ok(css.includes(".school-lesson-link.is-locked"));
   assert.ok(css.includes(".school-lesson-locked-next"));
   assert.ok(homePage.includes('school.js?v=3'));
-  assert.ok(readerPage.includes('lesson.js?v=11'));
+  assert.ok(readerPage.includes('lesson.js?v=12'));
   assert.ok(readerPage.includes('school.css?v=10'));
 });
 
@@ -256,4 +256,28 @@ test("Матрица судьбы показывает программу обу
   assert.ok(css.includes('padding:10px 11px;'));
   assert.ok(css.includes('pointer-events:none;'));
   assert.ok(css.includes('opacity:.13'));
+});
+
+test("Главное правило второго урока выделено отдельной золотистой карточкой",async()=>{
+  const data=JSON.parse(await src("pro/school/lessons/reduce.json"));
+  const html=await src("pro/school/lesson/index.html");
+  const js=await src("pro/school/lesson/lesson.js");
+  const css=await src("pro/school/lesson/lesson.css");
+  assert.equal(data.lead,"Теперь, когда схема уже нарисована, учимся правильно заполнять кружки.");
+  assert.equal(data.mainRule.title,"ГЛАВНОЕ ПРАВИЛО");
+  assert.deepEqual(data.mainRule.lines,[
+    "Числа от 1 до 22 оставляем как есть.",
+    "Если число больше 22 - сокращаем его сложением цифр."
+  ]);
+  assert.ok(!data.lead.includes("Главное правило:"));
+  assert.ok(html.includes('id="lesson-main-rule"'));
+  assert.ok(html.includes('lesson.js?v=12'));
+  assert.ok(html.includes('lesson.css?v=8'));
+  assert.ok(js.includes('fetch(manifest[index].file+"?v=7")'));
+  assert.ok(js.includes('if(data.mainRule&&Array.isArray(data.mainRule.lines)'));
+  assert.ok(js.includes('mainRule.hidden=false'));
+  assert.ok(js.includes('mainRule.hidden=true'));
+  assert.ok(css.includes('.school-main-rule{'));
+  assert.ok(css.includes('border:1px solid #d8bd8b'));
+  assert.ok(css.includes('.school-main-rule-line{'));
 });
