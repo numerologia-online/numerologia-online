@@ -70,7 +70,7 @@ const getCompatibilityFeature = () => {
 const openCompatibilityFeature = async () => {
   const [feature] = await Promise.all([
     getCompatibilityFeature(),
-    compatibilityStylesLoading ??= loadStylesheet("compatibility-polish.css?v=1")
+    compatibilityStylesLoading ??= loadStylesheet("compatibility-polish.css?v=2")
   ]);
   feature.openCompatibility();
 };
