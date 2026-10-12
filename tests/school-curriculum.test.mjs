@@ -19,7 +19,7 @@ test("Школа начинает с построения матрицы и за
   assert.ok(!script.includes('fetch("pro/school/lessons.json'));
   assert.ok(script.includes('link.href = "pro/school/lesson/?id="'));
   assert.ok(reader.includes('<base href="../../../">'));
-  assert.ok(lessonJS.includes('fetch(manifest[index].file+"?v=3")'));
+  assert.ok(lessonJS.includes('fetch(manifest[index].file+"?v=4")'));
   assert.equal(manifest.lessons.length, 12);
   assert.deepEqual(manifest.lessons.slice(0,5).map(x=>x.id), ["start","reduce","base","corners","internal"]);
   for (const meta of manifest.lessons) {
@@ -74,8 +74,8 @@ test("Первый урок без повторов, дата подтвержд
   assert.ok(script.includes('resetConfirmation()'));
   assert.ok(page.includes('id="lesson-date-submit"'));
   assert.ok(page.includes('id="lesson-date-confirmed"'));
-  assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=4"'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=5"'));
+  assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=5"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=6"'));
   assert.ok(styles.includes(".school-date-row button.is-confirmed"));
   assert.ok(styles.includes(".school-lesson-quiz.is-locked"));
   const first=JSON.parse(await src("pro/school/lessons/start.json"));
@@ -85,12 +85,17 @@ test("Первый урок без повторов, дата подтвержд
   assert.ok(first.sections[3].text.includes("месяц рождения"));
   assert.ok(first.sections[3].text.includes("день рождения"));
   assert.ok(first.sections[3].text.includes("год рождения"));
-  assert.ok(script.includes('["МЕСЯЦ","РОЖДЕНИЯ"'));
-  assert.ok(script.includes('["ДЕНЬ","РОЖДЕНИЯ"'));
-  assert.ok(script.includes('["ГОД","РОЖДЕНИЯ"'));
-  assert.ok(script.includes('sum.textContent="СУММА"'));
-  assert.ok(script.includes('"Пример для "+date'));
-  assert.ok(script.includes('String(currentBirth.month).padStart(2,"0")'));
+  assert.ok(script.includes('["↑","Месяц рождения"]'));
+  assert.ok(script.includes('["←","День рождения"]'));
+  assert.ok(script.includes('["→","Год рождения"]'));
+  assert.ok(script.includes('["↓","Сумма"]'));
+  assert.ok(script.includes('diagram.append(legend)'));
+  assert.ok(!script.includes('"Пример для "+date'));
+  assert.ok(script.includes('$("lesson-date-form").hidden=true'));
+  assert.ok(script.includes('$("lesson-step-formula").hidden=true'));
+  assert.ok(styles.includes(".school-position-key"));
+  assert.ok(styles.includes(".school-drawing.is-first-lesson #lesson-date-form"));
+  assert.ok(!JSON.stringify(first).includes("09.09.1986"));
 
 });
 
@@ -129,4 +134,18 @@ test("Первый урок показывает сразу практику, б
   assert.ok(css.includes(".school-drawing.is-first-lesson .school-diagram-footnote"));
   assert.ok(js.includes('renderQuiz(data)'));
   assert.ok(js.includes('setupDiagram()'));
+});
+
+test("Пустая матрица первого урока не содержит подписей поверх линий и числовых примеров",async()=>{
+  const js=await src("pro/school/lesson/lesson.js");
+  const css=await src("pro/school/lesson/lesson.css");
+  const lesson=JSON.parse(await src("pro/school/lessons/start.json"));
+  const draw=js.slice(js.indexOf("function drawFirstLessonOutline()"),js.indexOf("const stageKeys = ["));
+  assert.ok(!draw.includes('makeSvg("text"'));
+  assert.ok(draw.includes('diagram.append(legend)'));
+  assert.ok(draw.includes('school-position-chip'));
+  assert.ok(css.includes("grid-template-columns:repeat(2,minmax(0,1fr))"));
+  assert.ok(lesson.questions.length===3);
+  assert.ok(!lesson.sections[3].text.includes("09.09.1986"));
+  assert.ok(!lesson.sections[3].example.includes("09.09.1986"));
 });
