@@ -352,7 +352,7 @@ async function start() {
     manifest=meta.lessons;
     index=manifest.findIndex(item=>item.id===id);
     if(index<0)throw Error("Урок не найден");
-    const response=await fetch(manifest[index].file+"?v=1");
+    const response=await fetch(manifest[index].file+"?v=2");
     if(!response.ok)throw Error("Материал урока не найден");
     lesson=await response.json();
     if(lesson.id!==id||!Array.isArray(lesson.sections)||!Array.isArray(lesson.questions))
