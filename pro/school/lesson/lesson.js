@@ -351,8 +351,13 @@ function renderNavigation() {
 function renderLesson(data) {
   document.title=data.title+" | Школа нумерологов";
   $("lesson-count").textContent="УРОК "+(index+1)+" ИЗ "+manifest.length+" · "+data.level;
-  $("lesson-title").textContent=data.title;
+  $("lesson-title").textContent=id==="start"?"Рисуем матрицу с нуля":data.title;
   $("lesson-lead").textContent=data.lead;
+  if(id==="start"){
+    // Объяснение начинается непосредственно в шагах: два вступления подряд не нужны.
+    $("lesson-hero").classList.add("is-compact");
+    $("lesson-drawing").classList.add("is-first-lesson");
+  }
   const root=$("lesson-content");
   // Первый урок: все объяснения находятся рядом с рисунком по шагам.
   // Не повторяем ту же информацию длинной статьёй ниже.
