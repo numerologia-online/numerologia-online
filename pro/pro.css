@@ -529,3 +529,9 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   .pro-zone-preview[data-zone="purpose"]:not(.inline) .pro-point-preview-excerpt{display:none}
   .pro-zone-preview[data-zone="lineage"]:not(.inline) .pro-point-preview-excerpt{-webkit-line-clamp:1}
 }
+
+
+/* Школа использует этот же расчёт, без второй библиотеки чисел и текстов. */
+.pro-school-shortcut{display:inline-flex;margin-top:18px;padding:9px 15px;align-items:center;min-height:40px;border:1px solid #d0c1a9;border-radius:13px;background:#fffefa;color:#4c6476;font-size:13px;font-weight:750;text-decoration:none}
+.pro-school-shortcut:hover{border-color:#a2bcb8;background:#f0f7f5}
+.pro-school-shortcut:focus-visible{outline:3px solid #729b9b;outline-offset:3px}
