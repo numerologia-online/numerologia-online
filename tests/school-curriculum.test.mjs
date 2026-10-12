@@ -226,7 +226,7 @@ test("Заголовок школы на двух строках одного р
 test("Статусы школ шире, содержат подсказку и аккуратно размещены на телефоне",async()=>{
   const html=await src("pro/schools/index.html");
   const css=await src("pro/schools/schools.css");
-  assert.ok(html.includes('schools.css?v=8'));
+  assert.ok(html.includes('schools.css?v=9'));
   assert.equal((html.match(/class="academy-status academy-status--ready"/g)||[]).length,1);
   assert.equal((html.match(/class="academy-status"/g)||[]).length,6);
   assert.equal((html.match(/academy-status-subtitle">Начать обучение/g)||[]).length,1);
@@ -247,8 +247,13 @@ test("Матрица судьбы показывает программу обу
   assert.ok(!matrix.includes('Открыта'));
   assert.ok(css.includes('.academy-school--matrix>.academy-school-description{'));
   assert.ok(css.includes('.academy-school--matrix .academy-school-cta{'));
-  assert.ok(css.includes('padding:0;min-height:0;'));
-  assert.ok(css.includes('border:0;border-radius:0;background:none;'));
+  assert.ok(matrix.includes('class="academy-matrix-watermark"'));
+  assert.ok(css.includes('background:linear-gradient(115deg,#223d52'));
+  assert.ok(css.includes('background:linear-gradient(115deg,#f4dda344'));
+  assert.ok(css.includes('padding:4px 11px;min-height:26px;'));
+  assert.ok(css.includes('.academy-matrix-watermark{'));
   assert.ok(css.includes('grid-template-columns:32px minmax(0,1fr) 13px;'));
   assert.ok(css.includes('padding:10px 11px;'));
+  assert.ok(css.includes('pointer-events:none;'));
+  assert.ok(css.includes('opacity:.13'));
 });
