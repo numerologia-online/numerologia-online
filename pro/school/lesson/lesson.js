@@ -34,7 +34,7 @@ const stepTitles = [
 ];
 const stepDescriptions = [
   "На листе нарисуйте ромб: вершины сверху, справа, снизу и слева. Наложите на ромб прямой квадрат и проведите вертикальную и горизонтальную линии через центр. Девять кружков пока пустые.",
-  "Число дня рождения ставим слева, месяца - сверху, сумму цифр года - справа. Большие числа приводим к диапазону 1-22 сложением цифр.",
+  "Слева - число дня рождения, сверху - месяца, справа - сумма цифр года. Ниже показан расчёт каждого числа именно по вашей дате.",
   "Нижняя опора - сумма трёх уже записанных чисел: левого, верхнего и правого. Если получилось больше 22, сложите цифры результата.",
   "Центр - сумма четырёх опор: левой, верхней, правой и нижней. Не путайте с центром родового квадрата.",
   "Каждый угол квадрата - сумма двух соседних вершин ромба. Теперь у вас заполнены все девять основных мест."
@@ -140,6 +140,46 @@ function drawAllPositions(matrix) {
   diagram.replaceChildren(svg);
 }
 
+
+function reduce22Formula(number){
+  let value=number;
+  const steps=[];
+  while(value>22){
+    const digits=String(value).split("").map(Number);
+    const next=digits.reduce((sum,digit)=>sum+digit,0);
+    steps.push(digits.join(" + ")+" = "+next);
+    value=next;
+  }
+  return steps;
+}
+// Все формулы ниже строятся из даты самого ученика, а не из готового примера.
+function showFirstThreeCalculations(root,matrix,birth){
+  root.replaceChildren();
+  root.classList.add("is-calculation-breakdown");
+  root.append(make("p","school-calc-overline","ОТКУДА ВЗЯЛИСЬ ЭТИ ЧИСЛА"));
+  const daySteps=reduce22Formula(birth.day);
+  const dayFormula=daySteps.length?daySteps.join(" → ")
+    :String(birth.day).padStart(2,"0")+(birth.day<10?" → "+birth.day:" - оставляем как есть");
+  const monthFormula=String(birth.month).padStart(2,"0")+(birth.month<10?" → "+birth.month:" - оставляем как есть");
+  const yearDigits=String(birth.year).split("").map(Number);
+  const yearSum=yearDigits.reduce((sum,digit)=>sum+digit,0);
+  const yearFormula=[yearDigits.join(" + ")+" = "+yearSum,...reduce22Formula(yearSum)].join(" → ");
+  const rows=[
+    ["СЛЕВА · ДЕНЬ",dayFormula,matrix.left],
+    ["СВЕРХУ · МЕСЯЦ",monthFormula,matrix.top],
+    ["СПРАВА · ГОД",yearFormula,matrix.right]
+  ];
+  const list=make("div","school-calc-list");
+  rows.forEach(([place,formula,result])=>{
+    const row=make("div","school-calc-row");
+    const explanation=make("div","school-calc-explanation");
+    explanation.append(make("span","school-calc-place",place));
+    explanation.append(make("span","school-calc-equation",formula));
+    row.append(explanation,make("strong","school-calc-result",result));
+    list.append(row);
+  });
+  root.append(list);
+}
 function drawCurrent() {
   if(id==="start"){
     const info=firstLessonSteps[step];
@@ -162,6 +202,7 @@ function drawCurrent() {
     $("lesson-step-title").textContent=stepTitles[step];
     $("lesson-step-text").textContent=stepDescriptions[step];
     $("lesson-step-formula").hidden=false;
+    $("lesson-step-formula").classList.remove("is-calculation-breakdown");
     $("lesson-step-formula").textContent="Введите дату рождения выше и нажмите «Использовать», чтобы начать расчёт.";
     $("lesson-step-back").disabled=true;
     $("lesson-step-next").disabled=true;
@@ -176,14 +217,20 @@ function drawCurrent() {
   $("lesson-step-count").textContent="ШАГ "+(step+1)+" ИЗ 5";
   $("lesson-step-title").textContent=stepTitles[step];
   $("lesson-step-text").textContent=stepDescriptions[step];
-  const examples=[
-    "Пока ничего не считаем - рисуем девять мест.",
-    "Слева "+m.left+", сверху "+m.top+", справа "+m.right+".",
-    m.left+" + "+m.top+" + "+m.right+" → "+m.bottom+".",
-    m.left+" + "+m.top+" + "+m.right+" + "+m.bottom+" → "+m.center+".",
-    "Углы: "+m.corners.topLeft+", "+m.corners.topRight+", "+m.corners.bottomRight+", "+m.corners.bottomLeft+"."
-  ];
-  $("lesson-step-formula").textContent=full?"Готовая основа. Теперь показаны все 31 позиции нашей интерактивной матрицы.":examples[step];
+  const formulaBlock=$("lesson-step-formula");
+  if(id==="reduce"&&step===1){
+    showFirstThreeCalculations(formulaBlock,m,currentBirth);
+  }else{
+    formulaBlock.classList.remove("is-calculation-breakdown");
+    const examples=[
+      "Пока ничего не считаем - рисуем девять мест.",
+      "Слева "+m.left+", сверху "+m.top+", справа "+m.right+".",
+      m.left+" + "+m.top+" + "+m.right+" → "+m.bottom+".",
+      m.left+" + "+m.top+" + "+m.right+" + "+m.bottom+" → "+m.center+".",
+      "Углы: "+m.corners.topLeft+", "+m.corners.topRight+", "+m.corners.bottomLeft+", "+m.corners.bottomRight+"."
+    ];
+    formulaBlock.textContent=full?"Готовая основа. Теперь показаны все 31 позиции нашей интерактивной матрицы.":examples[step];
+  }
   $("lesson-step-back").disabled=step===0;
   $("lesson-step-next").disabled=step===4;
   $("lesson-step-next").textContent="Следующий шаг →";
@@ -210,6 +257,8 @@ function setupDiagram(){
     $("lesson-drawing-description").textContent="Возьмите лист бумаги. Смотрите на схему, повторяйте действие и нажимайте «Следующий шаг». Числа пока считать не нужно.";
     // Первый урок - построение ПУСТОЙ схемы. Ввод даты появится в следующих уроках.
     $("lesson-date-form").hidden=true;
+  }else if(id==="reduce"){
+    $("lesson-drawing-description").textContent="Откройте тетрадь, проверяйте и записывайте каждый шаг. Обязательно введите дату рождения ниже и нажмите «Использовать» - иначе числа в кружках не появятся.";
   }
   step=id==="start"?0:([0,1,1,3,4][index]??0);
   $("lesson-step-back").addEventListener("click",()=>{
