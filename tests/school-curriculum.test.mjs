@@ -222,3 +222,16 @@ test("Заголовок школы на двух строках одного р
   assert.ok(!css.includes('.school-hero-first{'));
   assert.ok(!css.includes('.school-hero h1 em{'));
 });
+
+test("Статусы школ шире, содержат подсказку и аккуратно размещены на телефоне",async()=>{
+  const html=await src("pro/schools/index.html");
+  const css=await src("pro/schools/schools.css");
+  assert.ok(html.includes('schools.css?v=6'));
+  assert.equal((html.match(/class="academy-status academy-status--ready"/g)||[]).length,2);
+  assert.equal((html.match(/class="academy-status"/g)||[]).length,6);
+  assert.equal((html.match(/academy-status-subtitle">Начать обучение/g)||[]).length,2);
+  assert.equal((html.match(/academy-status-subtitle">Уроки готовятся/g)||[]).length,6);
+  assert.ok(css.includes('width:164px;min-height:41px'));
+  assert.ok(css.includes('.academy-status{grid-column:2;grid-row:2;'));
+  assert.ok(css.includes('.academy-arrow{grid-column:3;grid-row:1/3;'));
+});
