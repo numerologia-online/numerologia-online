@@ -164,11 +164,18 @@ function unlockFirstLessonQuiz(){
   root.querySelectorAll("fieldset").forEach(fieldset=>{fieldset.disabled=false});
   const button=root.querySelector('button[type="submit"]');
   if(button)button.disabled=false;
+  $("lesson-step-next").textContent="✓ Тест открыт";
+  $("lesson-step-next").disabled=true;
   root.scrollIntoView({behavior:"smooth",block:"start"});
 }
 function setupDiagram(){
   if(index>4)return;
   $("lesson-drawing").hidden=false;
+  if(id==="start"){
+    $("lesson-drawing-title").textContent="Рисуем матрицу шаг за шагом";
+    $("lesson-drawing-description").textContent="Возьмите лист бумаги. Смотрите на схему, повторяйте действие и нажимайте «Следующий шаг». Числа пока считать не нужно.";
+    $("lesson-date").setAttribute("aria-describedby","lesson-date-confirmed");
+  }
   step=id==="start"?0:([0,1,1,3,4][index]??0);
   $("lesson-step-back").addEventListener("click",()=>{
     step=Math.max(0,step-1);
