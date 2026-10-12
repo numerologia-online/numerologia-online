@@ -206,25 +206,21 @@
   pointer-events:none;
 }
 
-/* Урок 2: три расчёта в одной общей карточке, без вложенных окошек. */
+/* Урок 2: одна маленькая плашка под объяснением, по строке на число. */
 .school-step-formula.is-calculation-breakdown{
-  padding:17px 19px!important;border:1px solid #e3d7c2;
-  background:linear-gradient(140deg,#faf7f0,#f1eee6);
-  box-shadow:inset 0 1px 0 #fff;
-  font-size:initial!important;
+  width:fit-content;max-width:100%;
+  margin:12px 0 14px!important;
+  padding:9px 13px!important;
+  border:1px solid #e2d8c8;
+  border-radius:11px;
+  background:#f5f2eb;
+  box-shadow:none;
+  font-size:13px!important;font-weight:400;
 }
-.school-calc-overline{margin:0 0 6px;color:#987749;font-size:11px;font-weight:900;letter-spacing:.095em;line-height:1.4}
-.school-calc-list{display:block}
-.school-calc-row{
-  padding:11px 0;
-  border:0;border-bottom:1px solid #ded4c4;
-  border-radius:0;background:transparent;
-}
-.school-calc-row:first-child{padding-top:6px}
-.school-calc-row:last-child{padding-bottom:0;border-bottom:0}
-.school-calc-explanation{display:grid;gap:3px;min-width:0}
-.school-calc-place{color:#987b53;font-size:10px;letter-spacing:.09em;font-weight:850}
+.school-calc-list{display:grid;gap:5px}
+.school-calc-row{display:flex;flex-wrap:wrap;gap:4px 7px;align-items:baseline;min-width:0}
+.school-calc-place{color:#987b53;font-size:13px;font-weight:750;white-space:nowrap}
 .school-calc-equation{
-  color:#2e4757;font-size:clamp(14px,2.6vw,16px);
-  line-height:1.45;font-weight:750;overflow-wrap:anywhere;
+  color:#2e4757;font-size:13px;
+  line-height:1.4;font-weight:650;overflow-wrap:anywhere;
 }
