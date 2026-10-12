@@ -49,3 +49,14 @@
   #compatibility .compatibility-form input{min-height:44px}
   #compatibility .compatibility-submit{min-height:48px}
 }
+
+/* Центрируем приветственный блок по высоте, пока результат не рассчитан. */
+@media(max-width:600px){
+  #compatibility:has(#compatibility-result[hidden]) .compatibility-paper{
+    min-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    display:flex;
+    flex-direction:column;
+  }
+  #compatibility:has(#compatibility-result[hidden]) .compatibility-intro{margin-top:auto}
+  #compatibility:has(#compatibility-result[hidden]) .compatibility-form{margin-bottom:auto}
+}
