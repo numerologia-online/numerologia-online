@@ -26,3 +26,15 @@
 .pro-card-overline {position:relative;z-index:1;color:#e6cfa1;font-size:10px;font-weight:800;letter-spacing:.15em;}
 .product-card.pro-card .product-arrow{background:rgba(255,255,255,.16);}
 .product-card.pro-card:focus-visible{outline:3px solid #9ebfd1;outline-offset:3px;}
+
+
+/* Entrance to the existing School, below the regular consumer cards. */
+.school-home-entry{position:relative;isolation:isolate;overflow:hidden;max-width:900px;margin:28px auto 16px;padding:clamp(24px,6vw,43px);border:1px solid rgba(224,197,151,.48);border-radius:26px;background:radial-gradient(circle at 100% 0%,rgba(205,188,149,.17),transparent 52%),linear-gradient(130deg,#1d3044,#354c61);color:#fff;box-shadow:0 18px 55px #15243932}
+.school-home-entry::after{content:"✧";position:absolute;right:17px;top:5px;color:#d5bf91;opacity:.17;font:175px/1 Georgia,serif;pointer-events:none;z-index:-1}
+.school-home-eyebrow{font-size:10px;letter-spacing:.2em;font-weight:850;color:#e6cca0;margin:0 0 10px}
+.school-home-entry h2{font:400 clamp(31px,6vw,44px)/1.15 Georgia,serif;letter-spacing:-.025em;color:#fff;margin:0 0 12px}
+.school-home-entry p:not(.school-home-eyebrow){font-size:14px;line-height:1.6;color:#e1e9ec;max-width:54ch;margin:0 0 23px}
+.school-home-button{display:inline-flex;justify-content:center;align-items:center;gap:14px;min-height:54px;padding:13px 22px;border-radius:15px;background:#fff8eb;color:#263b50;text-decoration:none;font-size:15px;font-weight:850;box-shadow:0 8px 18px #101b2b24}
+.school-home-button:hover{background:#fff}
+.school-home-button:focus-visible{outline:3px solid #ddb97d;outline-offset:3px}
+@media(max-width:480px){.school-home-entry{margin:19px auto 10px;border-radius:21px;padding:25px 21px}.school-home-button{width:100%}}
