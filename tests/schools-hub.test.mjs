@@ -18,10 +18,9 @@ test("Главная ведёт в каталог школ, а Матрица с
   assert.ok(styles.includes('@media(max-width:640px)'));
 });
 
-test("Будущие направления показывают «В разработке» без неработающих ссылок", async () => {
+test("Две школы открыты, остальные направления в разработке", async () => {
   const hub = await source("pro/schools/index.html");
   const schools = [
-    "Классическая нумерология",
     "Квадрат Пифагора",
     "Кармическая нумерология",
     "Арканическая нумерология",
@@ -33,5 +32,7 @@ test("Будущие направления показывают «В разра
   assert.equal((hub.match(/class="academy-school academy-school--future"/g) || []).length, schools.length);
   assert.equal((hub.match(/В разработке/g) || []).length, schools.length);
   assert.equal((hub.match(/href="pro\/school\/"/g) || []).length, 1);
+  assert.equal((hub.match(/href="pro\/schools\/classic\/"/g) || []).length, 1);
+  assert.equal((hub.match(/class="academy-school academy-school--ready/g) || []).length, 2);
   assert.ok(hub.includes('<meta name="robots" content="noindex,nofollow">'));
 });
