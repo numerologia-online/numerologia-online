@@ -165,17 +165,17 @@ function showFirstThreeCalculations(root,matrix,birth){
   const yearSum=yearDigits.reduce((sum,digit)=>sum+digit,0);
   const yearFormula=[yearDigits.join(" + ")+" = "+yearSum,...reduce22Formula(yearSum)].join(" → ");
   const rows=[
-    ["СЛЕВА · ДЕНЬ",dayFormula,matrix.left],
-    ["СВЕРХУ · МЕСЯЦ",monthFormula,matrix.top],
-    ["СПРАВА · ГОД",yearFormula,matrix.right]
+    ["СЛЕВА · ДЕНЬ",dayFormula],
+    ["СВЕРХУ · МЕСЯЦ",monthFormula],
+    ["СПРАВА · ГОД",yearFormula]
   ];
   const list=make("div","school-calc-list");
-  rows.forEach(([place,formula,result])=>{
+  rows.forEach(([place,formula])=>{
     const row=make("div","school-calc-row");
     const explanation=make("div","school-calc-explanation");
     explanation.append(make("span","school-calc-place",place));
     explanation.append(make("span","school-calc-equation",formula));
-    row.append(explanation,make("strong","school-calc-result",result));
+    row.append(explanation);
     list.append(row);
   });
   root.append(list);
