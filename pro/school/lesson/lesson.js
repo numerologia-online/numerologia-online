@@ -33,6 +33,42 @@ const stepDescriptions = [
   "Центр - сумма четырёх опор: левой, верхней, правой и нижней. Не путайте с центром родового квадрата.",
   "Каждый угол квадрата - сумма двух соседних вершин ромба. Теперь у вас заполнены все девять основных мест."
 ];
+
+const firstLessonSteps=[
+ {title:"Нарисуйте большой ромб",text:"Отметьте сверху, справа, снизу и слева по одной точке. Соедините их линиями. Получился ромб.",hint:"На этом шаге никаких цифр. Только четыре вершины."},
+ {title:"Добавьте прямой квадрат",text:"Между вершинами ромба отметьте ещё четыре точки: сверху слева, сверху справа, снизу справа и снизу слева. Соедините их в квадрат.",hint:"Теперь снаружи восемь точек: четыре у ромба и четыре у квадрата."},
+ {title:"Найдите центр",text:"Проведите линию слева направо и линию сверху вниз. На пересечении нарисуйте девятый кружок.",hint:"Появился центр. Сами числа научимся считать в следующих уроках."},
+ {title:"Подпишите места",text:"Сверху подпишите «месяц», слева «день», справа «год», снизу «сумма». Четыре угла и центр оставьте пустыми. Пересчитайте кружки: их девять.",hint:"Рисунок готов! Нажмите «Открыть тест», чтобы проверить себя."}
+];
+function drawFirstLessonOutline(){
+  const svg=makeSvg("svg",{viewBox:"0 0 400 400",role:"img","aria-label":"Пошаговая пустая матрица"});
+  svg.append(makeSvg("polygon",{points:"200,42 358,200 200,358 42,200","class":"school-diagram-outline"}));
+  if(step>=1)svg.append(makeSvg("rect",{x:88,y:88,width:224,height:224,"class":"school-diagram-outline"}));
+  if(step>=2){
+    [[200,42,200,358],[42,200,358,200]].forEach(([x1,y1,x2,y2])=>
+      svg.append(makeSvg("line",{x1,y1,x2,y2,"class":"school-diagram-line"})));
+  }
+  const points=[
+    [200,42,"Месяц",0],[358,200,"Год",0],[200,358,"Сумма",0],[42,200,"День",0],
+    [88,88,"Угол",1],[312,88,"Угол",1],[312,312,"Угол",1],[88,312,"Угол",1],
+    [200,200,"Центр",2]
+  ];
+  for(const [x,y,label,minStep]of points){
+    if(step<minStep)continue;
+    const group=makeSvg("g",{"class":"school-graph-node is-revealed"+(label==="Центр"?" is-center":"")});
+    group.append(makeSvg("circle",{cx:x,cy:y,r:label==="Центр"?22:17}));
+    const title=makeSvg("title");title.textContent=label+" - место для числа";
+    group.append(title);svg.append(group);
+  }
+  if(step===3){
+    [["МЕСЯЦ",200,14],["ГОД",347,250],["СУММА",200,395],["ДЕНЬ",51,250]].forEach(([value,x,y])=>{
+      const t=makeSvg("text",{x,y,"text-anchor":"middle",fill:"#95764e","font-size":"12","font-weight":"800","font-family":"system-ui"});
+      t.textContent=value;svg.append(t);
+    });
+  }
+  diagram.replaceChildren(svg);
+}
+
 const stageKeys = [
   [], ["left","top","right"], ["left","top","right","bottom"],
   ["left","top","right","bottom","center"],
@@ -86,6 +122,19 @@ function drawAllPositions(matrix) {
 }
 
 function drawCurrent() {
+  if(id==="start"){
+    const info=firstLessonSteps[step];
+    drawFirstLessonOutline();
+    $("lesson-step-count").textContent="ШАГ "+(step+1)+" ИЗ "+firstLessonSteps.length;
+    $("lesson-step-title").textContent=info.title;
+    $("lesson-step-text").textContent=info.text;
+    $("lesson-step-formula").textContent=info.hint;
+    $("lesson-step-back").disabled=step===0;
+    const next=$("lesson-step-next");
+    next.disabled=false;
+    next.textContent=step===firstLessonSteps.length-1?"Открыть тест ✓":"Следующий шаг →";
+    return;
+  }
   const m=calculateMatrix(currentBirth);
   const full=id==="internal"&&step===4;
   if(full) drawAllPositions(m);
@@ -103,6 +152,7 @@ function drawCurrent() {
   $("lesson-step-formula").textContent=full?"Готовая основа. Теперь показаны все 31 позиции нашей интерактивной матрицы.":examples[step];
   $("lesson-step-back").disabled=step===0;
   $("lesson-step-next").disabled=step===4;
+  $("lesson-step-next").textContent="Следующий шаг →";
 }
 function setupDiagram() {
   if(index>4)return;
