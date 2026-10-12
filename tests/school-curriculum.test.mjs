@@ -74,8 +74,8 @@ test("Первый урок без повторов, дата подтвержд
   assert.ok(script.includes('resetConfirmation()'));
   assert.ok(page.includes('id="lesson-date-submit"'));
   assert.ok(page.includes('id="lesson-date-confirmed"'));
-  assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=3"'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=4"'));
+  assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=4"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=5"'));
   assert.ok(styles.includes(".school-date-row button.is-confirmed"));
   assert.ok(styles.includes(".school-lesson-quiz.is-locked"));
   const first=JSON.parse(await src("pro/school/lessons/start.json"));
@@ -111,6 +111,22 @@ test("Неверный ответ выделен красным и возвра�
   assert.ok(css.includes(".school-quiz-result.is-incorrect"));
   assert.ok(css.includes("color:#a82d38"));
   assert.ok(css.includes(".school-quiz-retry[hidden]"));
-  assert.ok(html.includes('lesson.js?v=4'));
-  assert.ok(html.includes('lesson.css?v=3'));
+  assert.ok(html.includes('lesson.js?v=5'));
+  assert.ok(html.includes('lesson.css?v=4'));
+});
+
+test("Первый урок показывает сразу практику, без двух вступлений",async()=>{
+  const js=await src("pro/school/lesson/lesson.js");
+  const html=await src("pro/school/lesson/index.html");
+  const css=await src("pro/school/lesson/lesson.css");
+  assert.ok(html.includes('id="lesson-hero"'));
+  assert.ok(js.includes('id==="start"?"Рисуем матрицу с нуля":data.title'));
+  assert.ok(js.includes('$("lesson-hero").classList.add("is-compact")'));
+  assert.ok(js.includes('$("lesson-drawing").classList.add("is-first-lesson")'));
+  assert.ok(css.includes(".school-lesson-hero.is-compact .school-lesson-lead{display:none!important}"));
+  assert.ok(css.includes(".school-drawing.is-first-lesson .school-drawing-intro h2"));
+  assert.ok(css.includes(".school-drawing.is-first-lesson #lesson-drawing-description"));
+  assert.ok(css.includes(".school-drawing.is-first-lesson .school-diagram-footnote"));
+  assert.ok(js.includes('renderQuiz(data)'));
+  assert.ok(js.includes('setupDiagram()'));
 });
