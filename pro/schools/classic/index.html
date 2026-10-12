@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fbf9f5">
+<meta name="robots" content="noindex,nofollow">
+<base href="../../../">
+<title>Классическая нумерология | Школа нумерологов</title>
+<meta name="description" content="Классическая нумерология с нуля: числа 1-9, мастер-числа, простые формулы, примеры и тренажёр.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="pro/schools/classic/classic.css?v=1">
+</head>
+<body>
+<div class="classic-shell">
+<header class="classic-top"><a href="pro/schools/" class="classic-back">← Все школы</a><span>ШКОЛА НУМЕРОЛОГОВ</span></header>
+<main>
+<section class="classic-hero" aria-labelledby="classic-title">
+<p class="classic-eyebrow">ПОНЯТНО С ПЕРВОГО УРОКА</p>
+<h1 id="classic-title">Классическая<br><em>нумерология</em></h1>
+<p>Девять чисел и три мастер-числа. Учимся считать, понимать значения и объяснять их обычными словами.</p>
+<a class="classic-hero-cta" href="pro/schools/classic/lesson/?id=hello">Начать с первого урока <span aria-hidden="true">→</span></a>
+<div class="classic-ribbon" aria-label="Числа нумерологии"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>11</span><span>22</span><span>33</span></div>
+</section>
+
+<nav class="classic-nav" aria-label="Разделы классической школы">
+<a href="#classic-lessons">Уроки</a>
+<a href="#classic-numbers">Числа</a>
+<a href="#classic-calc">Тренажёр</a>
+</nav>
+
+<section id="classic-lessons" class="classic-section">
+<div class="classic-section-heading"><p class="classic-eyebrow">МАЛЕНЬКИЕ ШАГИ</p><h2>Программа обучения</h2><p>Один урок - одна понятная тема. Каждый открывается на отдельной странице.</p></div>
+<div class="classic-progress"><span id="classic-progress-label">Загружаю уроки…</span><div class="classic-progress-track"><span id="classic-progress-fill"></span></div></div>
+<div id="classic-lessons-grid" class="classic-lessons-grid" aria-live="polite"></div>
+</section>
+
+<section id="classic-numbers" class="classic-section">
+<div class="classic-section-heading"><p class="classic-eyebrow">ЗАПОМИНАЕМ ЧЕРЕЗ ОБРАЗЫ</p><h2>Знакомимся с числами</h2><p>Нажмите на число и прочитайте его сильную сторону, сложность и простой совет.</p></div>
+<div id="classic-number-grid" class="classic-number-grid" role="group" aria-label="Выберите число"></div>
+<article id="classic-number-answer" class="classic-number-answer" aria-live="polite"></article>
+</section>
+
+<section id="classic-calc" class="classic-section">
+<div class="classic-section-heading"><p class="classic-eyebrow">ПРОВЕРЬТЕ СЕБЯ</p><h2>Тренажёр расчётов</h2><p>Вместо загадочного готового ответа показываем все шаги. Можно сверять их с тетрадью.</p></div>
+<div class="classic-calc-grid">
+<div class="classic-calc-card">
+<h3>По дате рождения</h3>
+<form id="classic-date-form">
+<label for="classic-date">Дата рождения</label>
+<input id="classic-date" inputmode="numeric" maxlength="10" placeholder="ДД.ММ.ГГГГ" value="14.07.1990" required>
+<label for="classic-year">Какой год разобрать?</label>
+<input id="classic-year" type="number" min="1900" max="2200" value="2026" required>
+<button type="submit">Показать расчёт →</button>
+</form>
+<p id="classic-date-error" class="classic-error" role="alert" hidden></p>
+<div id="classic-date-answer" class="classic-answer" aria-live="polite"></div>
+</div>
+<div class="classic-calc-card">
+<h3>По имени</h3>
+<form id="classic-name-form">
+<label for="classic-name">Имя или полное ФИО</label>
+<input id="classic-name" maxlength="120" value="АННА" placeholder="Например, Анна Иванова" required>
+<p class="classic-hint">Для полноценной карты введите имя, фамилию и отчество при рождении. Русский и латинский алфавиты отдельно.</p>
+<button type="submit">Разобрать по буквам →</button>
+</form>
+<p id="classic-name-error" class="classic-error" role="alert" hidden></p>
+<div id="classic-name-answer" class="classic-answer" aria-live="polite"></div>
+</div>
+</div>
+</section>
+</main>
+<footer class="classic-footer"><a href="pro/schools/">← К другим школам</a><span>Нумерология Онлайн · Классическая школа</span></footer>
+</div>
+<script type="module" src="pro/schools/classic/classic.js?v=1"></script>
+</body>
+</html>
