@@ -95,10 +95,12 @@ p{margin:0 0 15px}.school-shell{width:min(100%,1120px);padding:16px clamp(15px,3
 }
 
 /* Обновлённая школа: сначала обучение, а профессиональный инструмент ниже. */
-.school-hero{padding:clamp(28px,6vw,58px) 3px clamp(20px,4vw,30px)}
-.school-hero h1{margin:13px 0 0;text-align:center}
-.school-hero h1 em{font-size:.92em}
-.school-tabs{max-width:100%;margin:0 0 29px}
+.school-hero{padding:clamp(12px,2vw,22px) 3px 10px}
+.school-hero>.school-overline{margin-bottom:6px}
+.school-hero h1{margin:5px 0 0;text-align:center;font-size:clamp(20px,6.6vw,46px);line-height:1.12}
+.school-hero-first{display:block;white-space:nowrap}
+.school-hero h1 em{display:block;margin-top:1px;font-size:clamp(49px,14vw,82px);line-height:1.04;font-weight:700;color:#df3675;letter-spacing:-.04em}
+.school-tabs{max-width:100%;margin:0 0 17px}
 .school-lesson-grid{display:grid;gap:24px}
 .school-lesson-module{min-width:0}
 .school-lesson-module-title{font:800 11px/1.5 system-ui,sans-serif;letter-spacing:.13em;color:#a08356;margin:0 0 10px}
@@ -116,7 +118,7 @@ p{margin:0 0 15px}.school-shell{width:min(100%,1120px);padding:16px clamp(15px,3
 @media(max-width:640px){
  .school-lesson-module-list{grid-template-columns:1fr}
  .school-lesson-link{min-height:85px}
- .school-hero{padding-top:23px}
+ .school-hero{padding-top:10px}
  .school-tabs{gap:5px;padding:5px}
  .school-tabs button{min-width:0;flex:1 1 42%;padding:10px 7px;font-size:13px}
 }
