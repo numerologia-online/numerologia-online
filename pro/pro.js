@@ -294,7 +294,7 @@ const getSchoolClientPdf = () => {
   if (!schoolClientMode) return Promise.reject(new Error("Режим школы не активен"));
   if (schoolClientPdf) return Promise.resolve(schoolClientPdf);
   if (!schoolClientPdfLoading) {
-    schoolClientPdfLoading = import("./school/client-pdf.js?v=1")
+    schoolClientPdfLoading = import("./school/client-pdf.js?v=2")
       .then(({ createSchoolClientPdf }) => {
         schoolClientPdf = createSchoolClientPdf();
         return schoolClientPdf;
@@ -308,7 +308,7 @@ const getSchoolClientPdf = () => {
 if (schoolClientMode) {
   const schoolPdfStyles = document.createElement("link");
   schoolPdfStyles.rel = "stylesheet";
-  schoolPdfStyles.href = "pro/school/client-pdf.css?v=1";
+  schoolPdfStyles.href = "pro/school/client-pdf.css?v=2";
   document.head.append(schoolPdfStyles);
 }
 
@@ -319,7 +319,7 @@ const {invalidateFullPdf, createFullReportPdfButton} = createFullReportPdfContro
   buttonClass: "pro-pdf-button",
   beforeDownload: schoolClientMode ? async () => (await getSchoolClientPdf()).beforeDownload() : null,
   customizeDocument: schoolClientMode ? async (documentDefinition) => {
-    (await getSchoolClientPdf()).customizeDocument(documentDefinition);
+    return (await getSchoolClientPdf()).customizeDocument(documentDefinition);
   } : null
 });
 
