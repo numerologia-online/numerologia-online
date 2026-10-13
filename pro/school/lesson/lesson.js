@@ -102,7 +102,7 @@ function drawBasic(matrix) {
     svg.append(makeSvg("line",{x1,y1,x2,y2,"class":"school-diagram-line"})));
   const nodes = [
     ["top",200,35,matrix?.top,"Месяц"],["right",365,200,matrix?.right,"Год"],
-    ["bottom",200,365,matrix?.bottom,"Низ"],["left",35,200,matrix?.left,"День"],
+    ["bottom",200,365,matrix?.bottom,"Нижняя точка"],["left",35,200,matrix?.left,"День"],
     ["center",200,200,matrix?.center,"Центр"],
     ["topLeft",83,83,matrix?.corners?.topLeft,"Угол"],["topRight",317,83,matrix?.corners?.topRight,"Угол"],
     ["bottomRight",317,317,matrix?.corners?.bottomRight,"Угол"],["bottomLeft",83,317,matrix?.corners?.bottomLeft,"Угол"]
@@ -549,7 +549,7 @@ function renderLesson(data) {
 }
 async function start() {
   try{
-    const res=await fetch("pro/school/lessons-manifest.json?v=1");
+    const res=await fetch("pro/school/lessons-manifest.json?v=2");
     if(!res.ok)throw Error("Список уроков не найден");
     const meta=await res.json();
     if(meta.schema!=="pro-school-lessons-manifest-v1"||!Array.isArray(meta.lessons))throw Error("Некорректная программа");
