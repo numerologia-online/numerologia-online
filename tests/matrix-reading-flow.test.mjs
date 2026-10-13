@@ -12,14 +12,14 @@ test("Матрица сохраняет объяснение и сразу ра�
   assert.ok(diagram.includes("showZonePreview(zone, sectorLabelPositions, source, button)"));
   assert.ok(preview.includes("onSelectZone(zone, true)"));
   assert.ok(js.includes('content.append(paragraph(role.meaning, "pro-zone-reading-role-note"))'));
-  assert.ok(js.includes("loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title})"));
+  assert.ok(js.includes("loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title,variant})"));
   assert.ok(js.includes("loadInlineFullReading(full, point.topic)"));
   assert.ok(js.includes("loadFullReportSection(energy)"));
   assert.ok(js.includes("includeGuidance ? loadPracticalGuidance(energy) : Promise.resolve(null)"));
   assert.ok(js.includes('const authoredKey = reading.authored?.[point.key]'));
   assert.ok(!js.includes("Разобрать эту точку подробнее →"));
   assert.ok(!js.includes("Читать полный разбор по этой теме ↓"));
-  assert.ok(html.includes('src="pro/pro.js?v=89"'));
+  assert.ok(html.includes('src="pro/pro.js?v=90"'));
 });
 
 test("Для каждой вспомогательной точки и для каждой сферы есть исходное объяснение", async () => {
@@ -52,10 +52,10 @@ test("Отношения открывают авторские тексты по
   assert.ok(bank9.sections.partner.paragraphs.length>5);
   assert.ok(js.includes("Number.isInteger(pointEnergy) ? pointEnergy : definition.energy"));
   assert.ok(js.includes("loadFullReportSection(energy)"));
-  assert.ok(js.includes("loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title})"));
+  assert.ok(js.includes("loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title,variant})"));
   assert.ok(!js.includes('zone.id !== "relationships"'));
   assert.ok(js.includes('fetch("pro/zones.json?v=7")'));
-  assert.ok((await source("pro/index.html")).includes('pro/pro.js?v=89'));
+  assert.ok((await source("pro/index.html")).includes('pro/pro.js?v=90'));
 });
 
 test("Каждый пункт 13 сфер открывает исходную авторскую трактовку по выбранной энергии",async()=>{
@@ -83,12 +83,12 @@ test("Каждый пункт 13 сфер открывает исходную а
     }
   }
   assert.ok(js.includes('const authoredKey = reading.authored?.[point.key]'));
-  assert.ok(js.includes('loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title})'));
+  assert.ok(js.includes('loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title,variant})'));
   assert.ok(js.includes('content.append(paragraph(role.meaning, "pro-zone-reading-role-note"))'));
   assert.ok(!js.includes('current.previews.details?.[point.key]'));
   assert.ok(!js.includes('zone.id !== "relationships"'));
   assert.ok(js.includes('fetch("pro/zones.json?v=7")'));
-  assert.ok(html.includes('pro/pro.js?v=89'));
+  assert.ok(html.includes('pro/pro.js?v=90'));
   assert.ok(html.includes('pro/pro.css?v=38'));
   assert.ok(css.includes('.pro-zone-reading-position-content>.pro-zone-reading-role-note{'));
 });
@@ -118,9 +118,22 @@ test("56 уникальных расшифровок позиции исполь
   assert.ok(entries.every(item=>item.question.endsWith("?")));
   assert.ok(js.includes("function authorChapters(paragraphs){"));
   assert.ok(js.includes("function appendPositionReading(target,section,definition,ctx,energy){"));
-  assert.ok(js.includes("chosen.forEach(ch=>appendAuthorChapter(target,ch))"));
+  assert.ok(js.includes("combinations[(ctx.variant||0)%combinations.length]"));
   assert.ok(js.includes("Читать весь исходный авторский разбор"));
-  assert.ok(js.includes('loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title})'));
+  assert.ok(js.includes('loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title,variant})'));
   assert.ok(css.includes(".pro-position-original{"));
-  assert.ok((await source("pro/index.html")).includes('pro/pro.js?v=89'));
+  assert.ok((await source("pro/index.html")).includes('pro/pro.js?v=90'));
+});
+
+test("Повторяющиеся авторские темы внутри сферы показывают разные комбинации глав",async()=>{
+  const zones=JSON.parse(await source("pro/zones.json")).zones;
+  const js=await source("pro/pro.js");
+  assert.ok(js.includes('const variant = zone.points.filter(key=>reading.authored?.[key]===authoredKey).indexOf(point.key)'));
+  assert.ok(js.includes("combinations[(ctx.variant||0)%combinations.length]"));
+  assert.ok(js.includes('loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title,variant})'));
+  for(const zone of zones){
+    const count={};
+    for(const point of zone.points)count[zone.reading.authored[point]]=(count[zone.reading.authored[point]]||0)+1;
+    assert.ok(Object.values(count).every(n=>n<=3));
+  }
 });
