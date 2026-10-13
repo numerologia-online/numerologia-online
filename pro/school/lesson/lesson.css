@@ -351,3 +351,30 @@
 .school-workbook-checklist-items{display:grid;gap:9px;padding:8px 0}
 .school-workbook-check{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:#425969;line-height:1.45}
 .school-workbook-check input{flex:0 0 auto;width:18px;height:18px;margin:0;accent-color:#527d7a}
+
+/* Нижняя навигация всех уроков: назад слева, вперёд справа, программа снизу. */
+.school-lesson-shell .school-lesson-navigation{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:stretch;
+  gap:9px;
+  margin:19px 0;
+}
+.school-lesson-shell .school-lesson-navigation a,
+.school-lesson-shell .school-lesson-navigation .school-lesson-locked-next{
+  display:flex;align-items:center;justify-content:center;
+  box-sizing:border-box;min-width:0;max-width:none;width:100%;
+  min-height:46px;padding:11px 10px;
+  flex:none;text-align:center;white-space:normal;
+}
+.school-lesson-shell .school-lesson-navigation .school-lesson-prev{grid-column:1}
+.school-lesson-shell .school-lesson-navigation .school-lesson-next{grid-column:2}
+.school-lesson-shell .school-lesson-navigation .school-lesson-all{
+  grid-column:1/-1;grid-row:auto;
+  border:1px solid #d5ddd9;background:#f4f6f2;color:#516975;
+}
+@media(max-width:410px){
+  .school-lesson-shell .school-lesson-navigation{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
