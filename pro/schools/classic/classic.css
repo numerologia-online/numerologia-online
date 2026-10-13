@@ -9,3 +9,12 @@
 .classic-card.is-locked:hover{border-color:#e7dfd3;transform:none}
 .classic-card.is-locked .classic-card-arrow{font-size:15px}
 .classic-lesson-locked-next{display:grid;place-items:center;flex:1;min-height:46px;padding:11px 15px;border-radius:13px;border:1px solid #e1d9ce;background:#f5f2ee;color:#898783;font-weight:700;font-size:13px}
+
+.classic-practice{margin-top:10px;padding:13px 15px;border:1px solid #d9dedc;border-radius:13px;background:#f9faf6}
+.classic-practice summary{cursor:pointer;font-size:14px;font-weight:800;color:#50687c}
+.classic-practice>p{font-size:14px;line-height:1.55;color:#4b6070;margin:10px 0}
+.classic-practice-notes{display:block;width:100%;min-height:100px;border:1px solid #d2dad8;border-radius:10px;padding:11px;background:white;color:#2e435b;font-size:14px;line-height:1.5;font-family:inherit;resize:vertical}
+.classic-practice .classic-practice-save{margin:5px 0;font-size:11px;color:#788491}
+.classic-practice-checklist{margin-top:11px;border-top:1px solid #e5e8e2;padding-top:10px}
+.classic-practice-check{display:flex;gap:9px;align-items:flex-start;margin-top:9px;font-size:13px;line-height:1.45;color:#435c6e}
+.classic-practice-check input{width:18px;height:18px;margin:0;flex-shrink:0;accent-color:#507e7d}
