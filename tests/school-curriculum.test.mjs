@@ -223,17 +223,25 @@ test("Заголовок школы на двух строках одного р
   assert.ok(!css.includes('.school-hero h1 em{'));
 });
 
-test("Статусы школ шире, содержат подсказку и аккуратно размещены на телефоне",async()=>{
+test("Все школы описаны темами своих систем без больших статусных кнопок",async()=>{
   const html=await src("pro/schools/index.html");
   const css=await src("pro/schools/schools.css");
-  assert.ok(html.includes('schools.css?v=11'));
-  assert.equal((html.match(/class="academy-status academy-status--ready"/g)||[]).length,1);
-  assert.equal((html.match(/class="academy-status"/g)||[]).length,6);
-  assert.equal((html.match(/academy-status-subtitle">Начать обучение/g)||[]).length,1);
-  assert.equal((html.match(/academy-status-subtitle">Уроки готовятся/g)||[]).length,6);
-  assert.ok(css.includes('width:164px;min-height:41px'));
-  assert.ok(css.includes('.academy-status{grid-column:2;grid-row:2;'));
-  assert.ok(css.includes('.academy-arrow{grid-column:3;grid-row:1/3;'));
+  assert.ok(html.includes('schools.css?v=12'));
+  assert.equal((html.match(/class="academy-school-description"/g)||[]).length,8);
+  assert.ok(!html.includes('class="academy-status'));
+  assert.ok(!html.includes('Начать обучение'));
+  assert.ok(!html.includes('Уроки готовятся'));
+  assert.ok(html.includes('Расчёты по дате и имени · Числа 1-9 · Мастер-числа · Уроки · Тренажёр'));
+  assert.ok(html.includes('Психоматрица · Девять ячеек · Характер · Линии квадрата'));
+  assert.ok(html.includes('Кармические задачи · Уроки души'));
+  assert.ok(html.includes('22 аркана · Значения чисел'));
+  assert.ok(html.includes('Число души · Число судьбы'));
+  assert.ok(html.includes('Квадрат Ло Шу · Девять секторов'));
+  assert.ok(html.includes('Вибрации букв · Число имени'));
+  assert.equal((html.match(/class="academy-school academy-school--future"/g)||[]).length,6);
+  assert.ok(css.includes('.academy-school--classic>.academy-school-description,'));
+  assert.ok(css.includes('.academy-school--future>.academy-school-description{'));
+  assert.ok(css.includes('font-size:11.5px;line-height:1.4;'));
 });
 
 test("Матрица судьбы показывает программу обучения вместо общей плашки",async()=>{
@@ -290,7 +298,7 @@ test("Старая кнопка не возвращается при смеши�
   assert.ok(!matrix.includes('academy-school-cta'));
   assert.ok(matrix.includes('class="academy-arrow"'));
   assert.ok(css.includes('.academy-school--matrix>.academy-school-cta{display:none!important}'));
-  assert.ok(html.includes('schools.css?v=11'));
+  assert.ok(html.includes('schools.css?v=12'));
 });
 
 test("Урок 2 подробно показывает день месяц и сложение цифр года по введённой дате",async()=>{
