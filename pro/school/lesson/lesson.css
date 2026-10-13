@@ -224,3 +224,73 @@
   color:#2e4757;font-size:13px;
   line-height:1.4;font-weight:650;overflow-wrap:anywhere;
 }
+
+/* Уроки: лёгкие компактные кнопки и такие же аккуратные подсказки с формулами. */
+.school-lesson-shell .school-step-formula{
+  width:fit-content;max-width:100%;
+  margin:12px 0 14px!important;
+  padding:9px 13px!important;
+  border:1px solid #e2d8c8;border-radius:11px;
+  background:#f5f2eb;box-shadow:none;
+  font-size:13px!important;font-weight:650;
+  line-height:1.45;overflow-wrap:anywhere;
+}
+.school-lesson-shell .school-step-formula.is-calculation-breakdown{
+  margin:12px 0 14px!important;
+  padding:9px 13px!important;
+}
+.school-lesson-shell .school-step-buttons{gap:8px}
+.school-lesson-shell .school-step-buttons button,
+.school-lesson-shell .school-date-row button,
+.school-lesson-shell .school-quiz-retry,
+.school-lesson-shell .school-lesson-navigation a,
+.school-lesson-shell .school-lesson-locked-next{
+  min-height:44px;padding:9px 13px;
+  border-radius:11px;
+  font-size:13px;font-weight:750;line-height:1.3;
+  box-shadow:none;
+}
+.school-lesson-shell .school-step-buttons button{
+  flex:1 1 auto;min-width:0;white-space:nowrap;
+}
+.school-lesson-shell .school-step-buttons button:first-child{
+  border:1px solid #c9d8d5;background:#eef5f3;color:#2d5663;
+}
+.school-lesson-shell .school-step-buttons button:last-child{
+  border:1px solid #36586d;
+  background:linear-gradient(130deg,#29495b,#365c70);color:#fff;
+}
+.school-lesson-shell .school-date-row button{
+  background:linear-gradient(130deg,#29495b,#365c70);
+}
+.school-lesson-shell .school-date-row button.is-confirmed{
+  background:#187d65;font-size:19px;box-shadow:none;
+  min-width:48px;
+}
+.school-lesson-shell .school-quiz-retry{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:fit-content;max-width:100%;
+  border:1px solid #ca9b9c;background:#fff8f6;color:#a3444d;
+}
+.school-lesson-shell .school-lesson-navigation{
+  justify-content:flex-start;gap:8px;margin:19px 0;
+}
+.school-lesson-shell .school-lesson-navigation a{
+  display:inline-flex;flex:0 1 auto;width:auto;max-width:100%;
+}
+.school-lesson-shell .school-lesson-navigation .school-lesson-all{
+  border:1px solid #d5ddd9;background:#f4f6f2;color:#516975;
+}
+.school-lesson-shell .school-lesson-locked-next{
+  background:#f1efeb;border:1px solid #e0dbd2;color:#8d8a83;
+}
+@media(max-width:410px){
+  .school-lesson-shell .school-date-row button{
+    width:fit-content;align-self:flex-start;max-width:100%;
+  }
+  .school-lesson-shell .school-lesson-navigation{
+    display:flex;flex-wrap:wrap;grid-template-columns:none;
+  }
+  .school-lesson-shell .school-lesson-navigation a:last-child{grid-column:auto}
+  .school-lesson-shell .school-step-buttons button{padding:9px 10px;font-size:12px}
+}
