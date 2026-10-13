@@ -164,6 +164,33 @@ function render(data){
    if(section.example)box.append(make("p","classic-example",section.example));
    article.append(box);
  });
+ if(data.practice){
+   const details=make("details","classic-practice");
+   details.append(make("summary","","Практика в тетради"));
+   details.append(make("p","",data.practice));
+   const notes=make("textarea","classic-practice-notes");
+   notes.rows=5;notes.maxLength=8000;notes.placeholder="Мои расчёты, вопросы и выводы...";
+   notes.setAttribute("aria-label","Учебные заметки");
+   const key="numerologia-online-classic-notes-"+data.id;
+   try{notes.value=localStorage.getItem(key)||""}catch{}
+   const note=make("p","classic-practice-save","Черновик хранится только в этом браузере. Не записывайте личные данные клиентов.");
+   notes.addEventListener("input",()=>{
+     try{localStorage.setItem(key,notes.value);note.textContent="Черновик сохранён в этом браузере."}
+     catch{note.textContent="Не удалось сохранить. Скопируйте текст перед выходом."}
+   });
+   details.append(notes,note);
+   if(Array.isArray(data.rubric)&&data.rubric.length){
+     const check=make("details","classic-practice-checklist");
+     check.append(make("summary","","Критерии самопроверки"));
+     data.rubric.forEach(row=>{
+       const label=make("label","classic-practice-check");
+       const input=make("input");input.type="checkbox";
+       label.append(input,make("span","",row));check.append(label);
+     });
+     details.append(check);
+   }
+   article.append(details);
+ }
  visual(data);quiz(data);navigation();
 }
 async function start(){
@@ -185,7 +212,7 @@ async function start(){
      nav.append(linkToRequired(blocked));
      return;
    }
-   const r=await fetch(manifest[activeIndex].file+"?v=2");
+   const r=await fetch(manifest[activeIndex].file+"?v=3");
    if(!r.ok)throw Error("Lesson unavailable");
    const lesson=await r.json();
    if(lesson.id!==id||!lesson.sections?.length||!lesson.quiz||!Array.isArray(lesson.quizzes)||lesson.quizzes.length<4)throw Error("Lesson invalid");
