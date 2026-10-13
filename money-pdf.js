@@ -1,3 +1,5 @@
+import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=1";
+
 const PDF_SCRIPT = "https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/pdfmake.min.js";
 const PDF_FONTS = "https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/vfs_fonts.js";
 
@@ -586,7 +588,7 @@ export const createMoneyPdfButton = ({ birthDate, code, sections }) => {
 
     try {
       const pdfMake = await getPdfMake();
-      pdfMake.createPdf(buildDocument({ birthDate, code, sections })).download(`Код богатства ${code}.pdf`);
+      pdfMake.createPdf(appendPublicPdfOutro(buildDocument({ birthDate, code, sections }))).download(`Код богатства ${code}.pdf`);
       button.textContent = "PDF готов — скачивание началось";
     } catch (error) {
       console.error(error);
