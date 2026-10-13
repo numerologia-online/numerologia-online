@@ -47,6 +47,44 @@ const namespace = "http://www.w3.org/2000/svg";
 let current = null;
 let requestId = 0;
 let answerRequestId = 0;
+
+// One predictable landing place for every opened interpretation.
+// Safari can change the visible viewport while disclosures expand, so align
+// after layout and correct once more after its browser chrome has settled.
+let openScrollRequest = 0;
+function scrollOpenedAnswerToTop(target, stillOpen = () => true) {
+  const request = ++openScrollRequest;
+  const align = () => {
+    if (request !== openScrollRequest || !target?.isConnected ||
+        !target.getClientRects().length || !stillOpen()) return;
+    // Keep the title visible below Safari's floating address bar on iPhone.
+    const offset = window.matchMedia("(max-width: 600px)").matches ? 108 : 24;
+    const top = Math.max(0, window.scrollY + target.getBoundingClientRect().top - offset);
+    if (Math.abs(window.scrollY - top) < 2) return;
+    // html normally has scroll-behavior:smooth; prevent competing animations.
+    const root = document.documentElement;
+    const before = root.style.scrollBehavior;
+    root.style.scrollBehavior = "auto";
+    window.scrollTo(0, top);
+    root.style.scrollBehavior = before;
+  };
+  window.requestAnimationFrame(() => window.requestAnimationFrame(align));
+  window.setTimeout(align, 180);
+}
+// Never pull the screen back if the visitor has begun scrolling or tapping again.
+document.addEventListener("pointerdown", () => { openScrollRequest++; }, {passive:true,capture:true});
+document.addEventListener("wheel", () => { openScrollRequest++; }, {passive:true,capture:true});
+document.addEventListener("keydown", () => { openScrollRequest++; }, true);
+
+// <details> does not bubble toggle events, so listen in capture phase.
+// This covers all energies, purpose cards, karmic programs, and full-text reveals.
+results.addEventListener("toggle", event => {
+  const opened = event.target;
+  if (!(opened instanceof HTMLDetailsElement) || !opened.open) return;
+  if (!opened.matches(".pro-zone-reading-position, .pro-purpose-card, .pro-karma-card, .pro-position-original")) return;
+  scrollOpenedAnswerToTop(opened, () => opened.open);
+}, true);
+
 let zoneLibraryRequest;
 let previewLibraryRequest;
 const practicalEnergies = new Set([4, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]);
@@ -261,6 +299,7 @@ function openKarmicInline() {
   karmicInline.hidden = false;
   button.setAttribute("aria-expanded", "true");
   button.setAttribute("aria-controls", "pro-karmic-inline-reading");
+  scrollOpenedAnswerToTop(karmicInline, () => !karmicInline.hidden);
 }
 karmicPreview.addEventListener("click", openKarmicInline);
 closeKarmicButton.addEventListener("click", () => closeKarmicInline({restoreFocus: true}));
@@ -578,12 +617,7 @@ function openPointDetail(key) {
   }
 
   pointDetails.hidden = false;
-  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  window.requestAnimationFrame(() => {
-    if (!pointDetails.hidden) {
-      pointDetails.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
-    }
-  });
+  scrollOpenedAnswerToTop(pointDetails, () => !pointDetails.hidden);
 }
 
 function renderZoneReading(zone, shouldScroll = true) {
@@ -687,15 +721,10 @@ function renderZoneReading(zone, shouldScroll = true) {
   zoneReading.append(list);
 
   zoneReading.hidden = false;
-  if(shouldScroll){
-    const id=current.id;
-    window.requestAnimationFrame(() => {
-      if(!current || current.id !== id || current.activeZone?.id !== zone.id || zoneReading.hidden)return;
-      zoneReading.scrollIntoView({
-        behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-        block:"start"
-      });
-    });
+  if (shouldScroll) {
+    const id = current.id;
+    scrollOpenedAnswerToTop(zoneReading, () =>
+      current?.id === id && current.activeZone?.id === zone.id && !zoneReading.hidden);
   }
 }
 
@@ -704,16 +733,10 @@ function isSubheading(text) {
   return /^(Что это значит|Как проявляется|Где уходит|Что делать|Чего не делать|Стратегия|В плюсе|В минусе|Главный совет|Ваши сильные|Ваши слабые|Как включить|Где легче|Какой уровень жизни вам положен)/i.test(text) && !/[.!?]$/.test(text);
 }
 
-// Только переход из подсказки на матрице требует прокрутки к вопросу.
-// Обычное нажатие на вопрос никогда не переносит экран вниз.
+// Every opened question lands at its own heading, including direct taps.
 function scrollToSelectedQuestion(id, key, button) {
-  window.requestAnimationFrame(() => {
-    if (!current || current.id !== id || current.selected !== key || !button.isConnected) return;
-    button.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-      block: "start"
-    });
-  });
+  scrollOpenedAnswerToTop(button.parentElement, () =>
+    current?.id === id && current.selected === key && button.isConnected);
 }
 
 async function selectQuestion(key, scroll = false) {
@@ -742,9 +765,7 @@ async function selectQuestion(key, scroll = false) {
     if (!open) panel.setAttribute("aria-busy", "false");
   });
   if (current.selected !== key) return;
-  if (scroll) {
-    scrollToSelectedQuestion(id, key, button);
-  }
+  scrollToSelectedQuestion(id, key, button);
   if (alreadyOpen) return;
 
   answer.setAttribute("aria-busy", "true");
@@ -1021,7 +1042,7 @@ form.addEventListener("submit", async(event)=>{
     });
     diagram.querySelectorAll(".pro-node").forEach(node => node.classList.remove("pro-karmic-highlight"));
     results.hidden=false;
-    results.scrollIntoView({behavior:"smooth",block:"start"});
+    scrollOpenedAnswerToTop(results, () => current?.id === id && !results.hidden);
     karmic.replaceChildren(paragraph("Подбираю кармические программы…","pro-muted"));
     Promise.all([
       loadKarmicPrograms(),
