@@ -36,8 +36,8 @@ const stepDescriptions = [
   "На листе нарисуйте ромб: вершины сверху, справа, снизу и слева. Наложите на ромб прямой квадрат и проведите вертикальную и горизонтальную линии через центр. Девять кружков пока пустые.",
   "Слева - число дня рождения, сверху - месяца, справа - сумма цифр года. Ниже показан расчёт каждого числа именно по вашей дате.",
   "Нижняя точка - сумма трёх уже записанных чисел: левого, верхнего и правого. Сначала найдите полную сумму, затем проверьте: если она больше 22, сложите её цифры.",
-  "Центр - сумма четырёх опор: левой, верхней, правой и нижней. Не путайте с центром родового квадрата.",
-  "Каждый угол квадрата - сумма двух соседних вершин ромба. Теперь у вас заполнены все девять основных мест."
+  "Чтобы получить центральное число, сложите четыре числа в кружках: слева, сверху, справа и снизу. Если сумма больше 22, сложите её цифры.",
+  "Число в каждом углу квадрата - сумма двух ближайших чисел ромба. Если результат больше 22, сложите его цифры."
 ];
 
 const firstLessonSteps=[
@@ -66,7 +66,7 @@ function drawFirstLessonOutline(){
     const title=makeSvg("title");title.textContent=label+" - место для числа";
     group.append(title);svg.append(group);
   }
-  // На четвёртом шаге подписываем опоры прямо у кружков внутри рисунка.
+  // На четвёртом шаге подписываем места рождения прямо у кружков внутри рисунка.
   // Без отдельной легенды: расположение понятно с первого взгляда.
   if(step===3){
     const positions=[
@@ -95,7 +95,7 @@ const stageKeys = [
 ];
 
 function drawBasic(matrix) {
-  const svg = makeSvg("svg",{viewBox:"0 0 400 400",role:"img","aria-label":"Матрица: девять опорных мест с числами по выбранному шагу"});
+  const svg = makeSvg("svg",{viewBox:"0 0 400 400",role:"img","aria-label":"Матрица: девять основных кружков с числами по выбранному шагу"});
   svg.append(makeSvg("polygon",{points:"200,35 365,200 200,365 35,200","class":"school-diagram-outline"}));
   svg.append(makeSvg("rect",{x:83,y:83,width:234,height:234,"class":"school-diagram-outline"}));
   [[200,35,200,365],[35,200,365,200],[83,83,317,317],[317,83,83,317]].forEach(([x1,y1,x2,y2]) =>
@@ -192,6 +192,50 @@ function showBottomCalculation(root,matrix){
     :"Так как "+total+" не больше 22, оставляем его без сокращения. Внизу пишем "+matrix.bottom+".";
   root.append(make("p","school-bottom-reason",reason));
 }
+
+// Три следующих примера используются и в шагах с центром, и в углах матрицы.
+function showCompactCalculations(root,rows){
+  root.replaceChildren();
+  root.classList.remove("is-bottom-explanation");
+  root.classList.add("is-calculation-breakdown");
+  const list=make("div","school-calc-list");
+  rows.forEach(([label,formula])=>{
+    const line=make("div","school-calc-row");
+    line.append(make("span","school-calc-place",label),make("span","school-calc-equation",formula));
+    list.append(line);
+  });
+  root.append(list);
+}
+function compactSumFormula(values,result){
+  const total=values.reduce((sum,value)=>sum+value,0);
+  const base=values.join(" + ")+" = "+total;
+  return total>22?base+" → "+reduce22Formula(total).join(" → "):base;
+}
+function showCenterCalculation(root,matrix){
+  const values=[matrix.left,matrix.top,matrix.right,matrix.bottom];
+  const total=values.reduce((sum,value)=>sum+value,0);
+  showCompactCalculations(root,[["Четыре числа:",compactSumFormula(values,matrix.center)]]);
+  root.append(make("p","school-bottom-reason",total>22
+    ?"Так как "+total+" больше 22, складываем цифры и получаем "+matrix.center+"."
+    :"Сумма не больше 22 - в центре оставляем "+matrix.center+"."));
+}
+function showCornerCalculations(root,matrix){
+  const c=matrix.corners;
+  showCompactCalculations(root,[
+    ["Сверху слева:",compactSumFormula([matrix.left,matrix.top],c.topLeft)],
+    ["Сверху справа:",compactSumFormula([matrix.top,matrix.right],c.topRight)],
+    ["Снизу справа:",compactSumFormula([matrix.right,matrix.bottom],c.bottomRight)],
+    ["Снизу слева:",compactSumFormula([matrix.bottom,matrix.left],c.bottomLeft)]
+  ]);
+}
+function showInternalCalculations(root,matrix){
+  // Короткие конкретные примеры к схеме: не выдаём формулы углов за внутренние линии.
+  showCompactCalculations(root,[
+    ["Левая ось:",compactSumFormula([matrix.left,matrix.center],matrix.leftSpoke.near)],
+    ["Родовой центр:",compactSumFormula([matrix.corners.topLeft,matrix.corners.topRight,matrix.corners.bottomRight,matrix.corners.bottomLeft],matrix.lineage.ancestralCenter)],
+    ["Нижняя линия:",compactSumFormula([matrix.center,matrix.bottom],matrix.tail.first)]
+  ]);
+}
 function drawCurrent() {
   if(id==="start"){
     const info=firstLessonSteps[step];
@@ -211,8 +255,10 @@ function drawCurrent() {
     // Пока ученик не выбрал свою дату, показываем только пустую схему без чужого расчёта.
     drawBasic(null);
     $("lesson-step-count").textContent="ШАГ "+(step+1)+" ИЗ 5";
-    $("lesson-step-title").textContent=stepTitles[step];
-    $("lesson-step-text").textContent=stepDescriptions[step];
+    $("lesson-step-title").textContent=id==="internal"?"Разберите внутренние числа":stepTitles[step];
+    $("lesson-step-text").textContent=id==="internal"
+      ?"Сначала введите дату рождения. Затем изучите внутренние кружки и примеры их расчёта."
+      :stepDescriptions[step];
     $("lesson-step-formula").hidden=false;
     $("lesson-step-formula").classList.remove("is-calculation-breakdown","is-bottom-explanation");
     $("lesson-step-formula").textContent="Введите дату рождения выше и нажмите «Использовать», чтобы начать расчёт.";
@@ -227,13 +273,21 @@ function drawCurrent() {
   if(full) drawAllPositions(m);
   else drawBasic(m);
   $("lesson-step-count").textContent="ШАГ "+(step+1)+" ИЗ 5";
-  $("lesson-step-title").textContent=stepTitles[step];
-  $("lesson-step-text").textContent=stepDescriptions[step];
+  $("lesson-step-title").textContent=full?"Разберите внутренние числа":stepTitles[step];
+  $("lesson-step-text").textContent=full
+    ?"Внутренние кружки считаются из уже известных чисел. Ниже три примера; остальные позиции можно проверить в разделе «28 формул»."
+    :stepDescriptions[step];
   const formulaBlock=$("lesson-step-formula");
   if(id==="reduce"&&step===1){
     showFirstThreeCalculations(formulaBlock,m,currentBirth);
   }else if(step===2){
     showBottomCalculation(formulaBlock,m);
+  }else if(step===3){
+    showCenterCalculation(formulaBlock,m);
+  }else if(full){
+    showInternalCalculations(formulaBlock,m);
+  }else if(step===4){
+    showCornerCalculations(formulaBlock,m);
   }else{
     formulaBlock.classList.remove("is-calculation-breakdown","is-bottom-explanation");
     const examples=[
@@ -274,7 +328,7 @@ function setupDiagram(){
   }else if(id==="reduce"){
     $("lesson-drawing-description").textContent="Откройте тетрадь, проверяйте и записывайте каждый шаг. Обязательно введите дату рождения ниже и нажмите «Использовать» - иначе числа в кружках не появятся.";
   }
-  step=id==="start"?0:([0,1,1,3,4][index]??0);
+  step=id==="start"?0:([0,1,1,4,4][index]??0);
   $("lesson-step-back").addEventListener("click",()=>{
     step=Math.max(0,step-1);
     drawCurrent();
@@ -379,7 +433,7 @@ function renderQuiz(data) {
       $("lesson-drawing").scrollIntoView({behavior:"smooth",block:"start"});
     }else if(index<=4){
       // У этих уроков обучение проходит на схеме, а не в повторяющейся статье.
-      step=[0,1,1,3,4][index];
+      step=[0,1,1,4,4][index];
       drawCurrent();
       $("lesson-drawing").scrollIntoView({behavior:"smooth",block:"start"});
     }else{
