@@ -69,8 +69,8 @@ test("В уроках нет готовой даты, ученик выбира�
   assert.ok(js.includes('currentBirth=null;'));
   assert.ok(js.includes('currentBirth=birth;'));
   assert.ok(css.includes('.school-date-row input::placeholder{color:#9ca8ac;opacity:.8;letter-spacing:normal}'));
-  assert.ok(html.includes('lesson.js?v=17'));
-  assert.ok(html.includes('lesson.css?v=14'));
+  assert.ok(html.includes('lesson.js?v=18'));
+  assert.ok(html.includes('lesson.css?v=15'));
 });
 
 test("Первый урок без повторов, дата подтверждается галочкой и тест закрыт до последнего шага", async () => {
@@ -80,8 +80,8 @@ test("Первый урок без повторов, дата подтвержд
   assert.ok(script.includes('id==="start"?0:'));
   assert.ok(script.includes("const firstLessonSteps=["));
   assert.ok(script.includes("drawFirstLessonOutline()"));
-  assert.ok(script.includes('root.hidden=id==="start"'));
-  assert.ok(script.includes('if(id!=="start"){'));
+  assert.ok(script.includes("root.hidden=hasInteractiveSteps"));
+  assert.ok(script.includes("if(!hasInteractiveSteps){"));
   assert.ok(script.includes('step===max'));
   assert.ok(script.includes("unlockFirstLessonQuiz()"));
   assert.ok(script.includes('root.classList.add("is-locked")'));
@@ -92,8 +92,8 @@ test("Первый урок без повторов, дата подтвержд
   assert.ok(script.includes('resetConfirmation()'));
   assert.ok(page.includes('id="lesson-date-submit"'));
   assert.ok(page.includes('id="lesson-date-confirmed"'));
-  assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=14"'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=17"'));
+  assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=15"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=18"'));
   assert.ok(styles.includes(".school-date-row button.is-confirmed"));
   assert.ok(styles.includes(".school-lesson-quiz.is-locked"));
   const first=JSON.parse(await src("pro/school/lessons/start.json"));
@@ -135,8 +135,8 @@ test("Неверный ответ выделен красным и возвра�
   assert.ok(css.includes(".school-quiz-result.is-incorrect"));
   assert.ok(css.includes("color:#a82d38"));
   assert.ok(css.includes(".school-quiz-retry[hidden]"));
-  assert.ok(html.includes('lesson.js?v=17'));
-  assert.ok(html.includes('lesson.css?v=14'));
+  assert.ok(html.includes('lesson.js?v=18'));
+  assert.ok(html.includes('lesson.css?v=15'));
 });
 
 test("Первый урок показывает сразу практику, без двух вступлений",async()=>{
@@ -150,7 +150,7 @@ test("Первый урок показывает сразу практику, б
   assert.ok(css.includes(".school-lesson-hero.is-compact .school-lesson-lead{display:none!important}"));
   assert.ok(css.includes(".school-drawing.is-first-lesson .school-drawing-intro h2"));
   assert.ok(css.includes(".school-drawing.is-first-lesson #lesson-drawing-description"));
-  assert.ok(css.includes(".school-drawing.is-first-lesson .school-diagram-footnote"));
+  assert.ok(!html.includes("school-diagram-footnote"));
   assert.ok(js.includes('renderQuiz(data)'));
   assert.ok(js.includes('setupDiagram()'));
 });
@@ -184,7 +184,7 @@ test("В первом тесте считаем кружочки и после �
   assert.ok(success.includes('feedback.scrollIntoView({behavior:"smooth",block:"center"})'));
   assert.ok(!script.slice(script.indexOf('feedback.classList.add("is-incorrect")'),script.indexOf('retry.hidden=false')).includes("scrollIntoView"));
   assert.ok(script.includes('link(next,"Следующий урок →","school-primary")'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=17"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=18"'));
 });
 
 test("Уроки открываются строго последовательно, включая прямые ссылки",async()=>{
@@ -205,7 +205,7 @@ test("Уроки открываются строго последователь�
   assert.ok(css.includes(".school-lesson-link.is-locked"));
   assert.ok(css.includes(".school-lesson-locked-next"));
   assert.ok(homePage.includes('school.js?v=3'));
-  assert.ok(readerPage.includes('lesson.js?v=17'));
+  assert.ok(readerPage.includes('lesson.js?v=18'));
   assert.ok(readerPage.includes('school.css?v=11'));
 });
 
@@ -280,8 +280,8 @@ test("Главное правило второго урока выделено �
   ]);
   assert.ok(!data.lead.includes("Главное правило:"));
   assert.ok(html.includes('id="lesson-main-rule"'));
-  assert.ok(html.includes('lesson.js?v=17'));
-  assert.ok(html.includes('lesson.css?v=14'));
+  assert.ok(html.includes('lesson.js?v=18'));
+  assert.ok(html.includes('lesson.css?v=15'));
   assert.ok(js.includes('fetch(manifest[index].file+"?v=8")'));
   assert.ok(js.includes('if(data.mainRule&&Array.isArray(data.mainRule.lines)'));
   assert.ok(js.includes('mainRule.hidden=false'));
@@ -316,8 +316,8 @@ test("Урок 2 подробно показывает день месяц и с
   assert.ok(js.includes('["Сверху (месяц):",monthFormula]'));
   assert.ok(js.includes('["Справа (год):",yearFormula]'));
   assert.ok(html.includes('<div id="lesson-step-formula" class="school-step-formula"></div>'));
-  assert.ok(html.includes('lesson.js?v=17'));
-  assert.ok(html.includes('lesson.css?v=14'));
+  assert.ok(html.includes('lesson.js?v=18'));
+  assert.ok(html.includes('lesson.css?v=15'));
   assert.ok(css.includes('.school-step-formula.is-calculation-breakdown{'));
   assert.ok(css.includes('width:fit-content;max-width:100%'));
   assert.ok(css.includes('padding:9px 13px!important;'));
@@ -350,7 +350,7 @@ test("Все управляющие элементы школы и уроков 
   assert.ok(lessonCSS.includes('min-height:52px;padding:12px 16px;'));
   assert.ok(schoolHTML.includes('school.css?v=11'));
   assert.ok(lessonHTML.includes('school.css?v=11'));
-  assert.ok(lessonHTML.includes('lesson.css?v=14'));
+  assert.ok(lessonHTML.includes('lesson.css?v=15'));
 });
 
 test("Кнопка использования даты снова широкая на телефоне",async()=>{
@@ -360,7 +360,7 @@ test("Кнопка использования даты снова широкая
   assert.ok(css.includes('width:100%;max-width:100%;align-self:stretch;'));
   assert.ok(css.includes('min-height:52px;padding:12px 16px;'));
   assert.ok(!css.includes('width:fit-content;align-self:flex-start;max-width:100%;'));
-  assert.ok(html.includes('lesson.css?v=14'));
+  assert.ok(html.includes('lesson.css?v=15'));
 });
 
 test("Нижняя точка по введённой дате показывает сумму и объяснение правила 22",async()=>{
@@ -381,6 +381,30 @@ test("Нижняя точка по введённой дате показыва�
   assert.ok(base.sections[3].example.includes("4 + 0 = 4"));
   assert.ok(base.questions[0].prompt.includes("нижняя точка"));
   assert.ok(css.includes('.school-lesson-shell .school-step-formula.is-bottom-explanation{'));
-  assert.ok(page.includes('lesson.js?v=17'));
-  assert.ok(page.includes('lesson.css?v=14'));
+  assert.ok(page.includes('lesson.js?v=18'));
+  assert.ok(page.includes('lesson.css?v=15'));
+});
+
+test("После интерактивных шагов сразу тест, без повторного текста и технической приписки",async()=>{
+  const html=await src("pro/school/lesson/index.html");
+  const js=await src("pro/school/lesson/lesson.js");
+  const css=await src("pro/school/lesson/lesson.css");
+  const manifest=JSON.parse(await src("pro/school/lessons-manifest.json"));
+  assert.equal(manifest.lessons.length,12);
+  assert.ok(!html.includes('school-diagram-footnote'));
+  assert.ok(!html.includes('На схеме показаны позиции, а не готовые предсказания'));
+  assert.ok(!css.includes('.school-diagram-footnote{'));
+  assert.ok(html.indexOf('id="lesson-drawing"')<html.indexOf('id="lesson-content"'));
+  assert.ok(html.indexOf('id="lesson-content"')<html.indexOf('id="lesson-quiz"'));
+  assert.ok(js.includes('const hasInteractiveSteps=index<=4'));
+  assert.ok(js.includes('root.hidden=hasInteractiveSteps'));
+  assert.ok(js.includes('if(!hasInteractiveSteps){'));
+  assert.ok(js.includes('if(index<=4){'));
+  assert.ok(js.includes('step=[0,1,1,3,4][index]'));
+  assert.ok(js.includes('else $("lesson-quiz").scrollIntoView({behavior:"smooth",block:"start"})'));
+  assert.ok(js.includes('step===4?"К тесту →":"Следующий шаг →"'));
+  assert.ok(js.includes('renderQuiz(data)'));
+  assert.ok(js.includes('setupDiagram()'));
+  assert.ok(html.includes('lesson.js?v=18'));
+  assert.ok(html.includes('lesson.css?v=15'));
 });
