@@ -127,3 +127,48 @@ p{margin:0 0 15px}.school-shell{width:min(100%,1120px);padding:16px clamp(15px,3
  .school-tabs{gap:5px;padding:5px}
  .school-tabs button{min-width:0;flex:1 1 42%;padding:10px 7px;font-size:13px}
 }
+
+/* Единый лёгкий стиль управляющих элементов в школе матрицы. */
+.school-shell .school-primary,
+.school-shell .school-secondary,
+.school-shell .school-action,
+.school-shell .school-client-cta{
+  width:fit-content;max-width:100%;
+  min-height:44px;padding:9px 15px;
+  border-radius:11px;
+  font-size:13px;font-weight:750;line-height:1.35;
+  box-shadow:none;
+}
+.school-shell .school-primary,
+.school-shell .school-action,
+.school-shell .school-client-cta{
+  color:#fff;border:1px solid #36576d;
+  background:linear-gradient(130deg,#28465a,#345a70);
+}
+.school-shell .school-secondary{
+  background:#f1f7f5;border:1px solid #c5d7d4;color:#315f63;
+}
+.school-shell .school-primary:hover,
+.school-shell .school-action:hover,
+.school-shell .school-client-cta:hover{background:linear-gradient(130deg,#31546b,#3c657c)}
+.school-shell .school-secondary:hover{background:#e6f0ed}
+.school-tabs{gap:5px;padding:4px;border-radius:14px}
+.school-tabs button{min-height:44px;border-radius:10px;font-size:13px;font-weight:750}
+.school-tabs button[aria-pressed=true]{box-shadow:0 2px 8px #483b2914}
+.school-arcana-buttons button{
+  min-height:44px;border-radius:10px;font-size:13px;
+  background:#fffefa;box-shadow:none;
+}
+.school-arcana-buttons button[aria-pressed=true]{background:#e7f0ed}
+.school-lesson-link{min-height:78px;padding:12px 14px}
+.school-lesson-link:not(.is-locked){box-shadow:0 4px 15px #4e3a270b}
+.school-lesson-link.is-locked{box-shadow:none}
+.school-formula-form .school-primary{align-self:flex-start}
+@media(max-width:560px){
+  .school-shell .school-action,
+  .school-shell .school-client-cta{width:fit-content;max-width:100%}
+  .school-tabs{gap:4px;padding:4px}
+  .school-tabs button{min-height:44px;padding:8px 6px}
+  .school-lesson-link{min-height:74px;padding:11px 12px}
+  .school-formula-row .school-primary{align-self:flex-start}
+}
