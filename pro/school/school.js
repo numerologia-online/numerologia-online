@@ -108,20 +108,20 @@ function updateProgress() {
 function renderLessonList() {
   completed = readProgress();
   lessonList.replaceChildren();
-  const groups = [
-    {title:"01 · СТРОИМ МАТРИЦУ",start:0,end:5},
-    {title:"02 · ИЗУЧАЕМ ЭНЕРГИИ",start:5,end:7},
-    {title:"03 · ЧИТАЕМ ЛИНИИ И СФЕРЫ",start:7,end:10},
-    {title:"04 · УЧИМСЯ КОНСУЛЬТИРОВАТЬ",start:10,end:lessons.length}
-  ];
+  const groups = [];
+  lessons.forEach((lesson,position)=>{
+    const title=lesson.module||"ПРОГРАММА ОБУЧЕНИЯ";
+    const last=groups.at(-1);
+    if(last&&last.title===title)last.items.push({lesson,position});
+    else groups.push({title,items:[{lesson,position}]});
+  });
   for (const group of groups) {
-    const items = lessons.slice(group.start,group.end);
+    const items=group.items;
     if (!items.length) continue;
     const section = make("section","school-lesson-module");
     section.append(make("h3","school-lesson-module-title",group.title));
     const list = make("div","school-lesson-module-list");
-    items.forEach((lesson,index) => {
-      const position=group.start+index;
+    items.forEach(({lesson,position}) => {
       const unlocked=lessons.slice(0,position).every(previous=>completed.has(previous.id));
       const link=make(unlocked?"a":"div","school-lesson-link"+(unlocked?"":" is-locked"));
       if(unlocked)link.href = "pro/school/lesson/?id=" + encodeURIComponent(lesson.id);
@@ -222,7 +222,7 @@ byId("school-train-next").addEventListener("click",()=>{
 async function startSchool() {
   try {
     const [lessonResponse,arcanaResponse]=await Promise.all([
-      fetch("pro/school/lessons-manifest.json?v=2"),
+      fetch("pro/school/lessons-manifest.json?v=3"),
       fetch("pro/school/arcana.json?v=1")
     ]);
     if(!lessonResponse.ok||!arcanaResponse.ok)throw new Error("Учебная база недоступна");
