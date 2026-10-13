@@ -579,7 +579,7 @@ function renderLesson(data) {
 }
 async function start() {
   try{
-    const res=await fetch("pro/school/lessons-manifest.json?v=2");
+    const res=await fetch("pro/school/lessons-manifest.json?v=3");
     if(!res.ok)throw Error("Список уроков не найден");
     const meta=await res.json();
     if(meta.schema!=="pro-school-lessons-manifest-v1"||!Array.isArray(meta.lessons))throw Error("Некорректная программа");
@@ -605,7 +605,7 @@ async function start() {
       nav.append(back);
       return;
     }
-    const response=await fetch(manifest[index].file+"?v=10");
+    const response=await fetch(manifest[index].file+"?v=11");
     if(!response.ok)throw Error("Материал урока не найден");
     lesson=await response.json();
     if(lesson.id!==id||!Array.isArray(lesson.sections)||!Array.isArray(lesson.questions))
