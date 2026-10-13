@@ -1,7 +1,7 @@
 /** Список вопросов о паре; пользователь сам решает, какой ответ раскрыть. */
 import { parseBirthDate } from "./numerology-core.js?v=1";
 import { calculateCompatibility } from "./compatibility-engine.js?v=1";
-import { createCompatibilityPdfController } from "./compatibility-pdf.js?v=1";
+import { createCompatibilityPdfController } from "./compatibility-pdf.js?v=2";
 
 const home = document.querySelector("#home");
 const page = document.querySelector("#compatibility");
