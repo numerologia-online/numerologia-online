@@ -222,7 +222,7 @@ byId("school-train-next").addEventListener("click",()=>{
 async function startSchool() {
   try {
     const [lessonResponse,arcanaResponse]=await Promise.all([
-      fetch("pro/school/lessons-manifest.json?v=1"),
+      fetch("pro/school/lessons-manifest.json?v=2"),
       fetch("pro/school/arcana.json?v=1")
     ]);
     if(!lessonResponse.ok||!arcanaResponse.ok)throw new Error("Учебная база недоступна");
