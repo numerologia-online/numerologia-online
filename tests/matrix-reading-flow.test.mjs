@@ -85,3 +85,17 @@ test("Каждый пункт 13 сфер открывает исходную а
   assert.ok(html.includes('pro/pro.css?v=37'));
   assert.ok(css.includes('.pro-zone-reading-position-content>.pro-zone-reading-role-note{'));
 });
+
+test("Авторский банк полон: у всех 22 энергий есть трактовки для каждой сферы",async()=>{
+  const zones=JSON.parse(await source("pro/zones.json")).zones;
+  const required=new Set(zones.flatMap(zone=>Object.values(zone.reading.authored)));
+  assert.equal(zones.reduce((sum,zone)=>sum+zone.points.length,0),56);
+  for(let energy=1;energy<=22;energy++){
+    const raw=await source("knowledge/full-report/sections/energy-"+energy+".json");
+    const bank=JSON.parse(raw.replace(/^\uFEFF/,""));
+    for(const key of required){
+      assert.ok(bank.sections?.[key]?.paragraphs?.some(text=>typeof text==="string"&&text.trim()),
+        "Нет авторской трактовки "+energy+"/"+key);
+    }
+  }
+});
