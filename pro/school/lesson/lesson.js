@@ -364,7 +364,7 @@ function drawCurrent() {
   $("lesson-step-title").textContent=guidedTitle(full);
   $("lesson-step-text").textContent=guidedText(full);
   const formulaBlock=$("lesson-step-formula");
-  if(id==="reduce"&&step===1){
+  if((id==="reduce"||id==="base")&&step===1){
     showFirstThreeCalculations(formulaBlock,m,currentBirth);
   }else if(id==="reduce"&&step===2){
     showRulePractice(formulaBlock);
@@ -502,6 +502,9 @@ function renderQuiz(data) {
   feedback.setAttribute("role","status");
   feedback.setAttribute("aria-live","polite");
   form.append(feedback);
+  const review=make("div","school-quiz-review");
+  review.hidden=true;
+  form.append(review);
 
   const retry=make("button","school-quiz-retry","↻ Пройти урок ещё раз");
   retry.type="button";
@@ -509,6 +512,8 @@ function renderQuiz(data) {
   retry.addEventListener("click",()=>{
     form.querySelectorAll('input[type="radio"]').forEach(input=>{input.checked=false});
     feedback.textContent="";
+    review.hidden=true;
+    review.replaceChildren();
     feedback.classList.remove("is-incorrect","is-correct");
     retry.hidden=true;
     submit.textContent="Проверить знания";
@@ -546,6 +551,8 @@ function renderQuiz(data) {
         localStorage.setItem(storeKey,JSON.stringify([...done]));
         saved=readCompleted().has(data.id);
       }catch{/* Без сохранения следующий урок остаётся закрытым. */}
+      review.hidden=true;
+      review.replaceChildren();
       feedback.classList.remove("is-incorrect");
       feedback.classList.add("is-correct");
       feedback.textContent=saved
@@ -558,7 +565,15 @@ function renderQuiz(data) {
     }else{
       feedback.classList.remove("is-correct");
       feedback.classList.add("is-incorrect");
-      feedback.textContent="Пройдите ещё раз урок. Это займёт немного времени, зато вы точно усвоите материал.";
+      feedback.textContent="Правильно "+score+" из "+data.questions.length+". Посмотрите разбор ошибок и попробуйте снова.";
+      review.replaceChildren();
+      data.questions.forEach((question,i)=>{
+        if(Number(answers[i].value)===question.correct)return;
+        const item=make("p","school-quiz-review-item");
+        item.append(make("strong","","Вопрос "+(i+1)+": "),document.createTextNode(question.explain));
+        review.append(item);
+      });
+      review.hidden=false;
       retry.hidden=false;
     }
   });
@@ -624,6 +639,15 @@ function renderLesson(data) {
   root.replaceChildren();
   if(!hasInteractiveSteps){
     data.sections.forEach(section=>{
+      const key=section.heading.toLowerCase();
+      if(id==="case-independent"&&key.includes("контрольный ключ")){
+        const details=make("details","school-answer-key");
+        details.append(make("summary","","Проверить свой расчёт"));
+        details.append(make("p","",section.text));
+        if(section.example)details.append(make("p","school-example",section.example));
+        root.append(details);
+        return;
+      }
       const wrapper=make("section","school-topic");
       wrapper.append(make("h2","school-topic-title",section.heading));
       wrapper.append(make("p","",section.text));
@@ -634,6 +658,12 @@ function renderLesson(data) {
     takeaway.append(make("strong","","Главное, что нужно запомнить"));
     takeaway.append(make("p","",data.takeaway));
     root.append(takeaway);
+    if(data.practice){
+      const work=make("section","school-workbook");
+      work.append(make("h2","school-topic-title","Практика в тетради"));
+      work.append(make("p","",data.practice));
+      root.append(work);
+    }
   }
   renderQuiz(data);
   renderNavigation();
