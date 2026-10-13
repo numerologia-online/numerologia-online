@@ -572,3 +572,18 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-position-original[open]>summary{margin-bottom:15px}
 .pro-position-original-text{padding:2px 0}
 .pro-position-original-text .pro-inline-reading-title{margin:5px 0 13px}
+
+/* Mobile first-screen fit: keep the date field and CTA visible above Safari toolbar. */
+@media (max-width:520px){
+  .pro-shell{padding-top:9px}
+  .pro-hero{padding:18px 5px 14px}
+  .pro-hero .pro-eyebrow{font-size:10px;line-height:1.35;margin-bottom:7px}
+  .pro-hero h1{font-size:clamp(38px,10vw,43px);line-height:1.07;margin-bottom:13px}
+  .pro-hero-lead{font-size:15px;line-height:1.43}
+  .pro-hero .pro-school-shortcut{margin-top:11px;min-height:37px;padding:7px 13px;font-size:12px}
+  .pro-form{padding:15px 17px;border-radius:20px}
+  .pro-form label{margin-bottom:7px}
+  .pro-form input{min-height:49px;padding:11px 14px;font-size:18px}
+  .pro-form-row{gap:9px}
+  .pro-form button{min-height:50px;padding:11px 15px}
+}
