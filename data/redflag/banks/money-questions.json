@@ -9,7 +9,8 @@
     {
       "id": "generosity",
       "title": "Щедрый или будет считать каждую копейку?",
-      "status": "pending"
+      "status": "in-progress",
+      "textFile": "money/generosity.json"
     },
     {
       "id": "provider",
