@@ -549,3 +549,36 @@ test("Выпускной практикум: сохранение чернови
  assert.ok(css.includes('.school-workbook-checklist-items{'));
  assert.ok(css.includes('.school-workbook-textarea{'));
 });
+
+test("Классическая школа: 12 уроков, расширенные тесты и последовательный доступ",async()=>{
+  const manifest=JSON.parse(await src("pro/schools/classic/manifest.json"));
+  const main=await src("pro/schools/classic/classic.js");
+  const reader=await src("pro/schools/classic/lesson/lesson.js");
+  const page=await src("pro/schools/classic/index.html");
+  const lessonPage=await src("pro/schools/classic/lesson/index.html");
+  const css=await src("pro/schools/classic/classic.css");
+  assert.equal(manifest.lessons.length,12);
+  let questions=0;
+  for(const meta of manifest.lessons){
+    const data=JSON.parse(await src(meta.file));
+    assert.equal(data.id,meta.id);
+    assert.ok(Array.isArray(data.quizzes));
+    assert.ok(data.quizzes.length>=(data.id==="final"?6:4));
+    assert.ok(data.quizzes.every(q=>q.correct>=0&&q.correct<q.options.length&&q.options.length>=3&&q.why));
+    questions+=data.quizzes.length;
+  }
+  assert.equal(questions,50);
+  assert.ok(main.includes('bank.lessons.slice(0,i).every(previous=>completed.has(previous.id))'));
+  assert.ok(main.includes('item(unlocked?"a":"div"'));
+  assert.ok(main.includes('if(event.persisted)initLessons()'));
+  assert.ok(reader.includes('const questions=Array.isArray(data.quizzes)'));
+  assert.ok(reader.includes('const correct=answers.filter'));
+  assert.ok(reader.includes('correct===questions.length'));
+  assert.ok(reader.includes('manifest.slice(0,activeIndex).find(item=>!readProgress().has(item.id))'));
+  assert.ok(reader.includes('if(next&&readProgress().has(id))'));
+  assert.ok(reader.includes('document.createTextNode(q.why)'));
+  assert.ok(page.includes('classic.js?v=2'));
+  assert.ok(lessonPage.includes('lesson.js?v=2'));
+  assert.ok(css.includes('.classic-card.is-locked'));
+  assert.ok(css.includes('.classic-quiz-review-item'));
+});
