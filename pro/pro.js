@@ -107,7 +107,7 @@ function loadKarmicDeepening() {
 
 function loadZoneLibrary() {
   if (!zoneLibraryRequest) {
-    zoneLibraryRequest = fetch("pro/zones.json?v=5")
+    zoneLibraryRequest = fetch("pro/zones.json?v=6")
       .then((response) => {
         if (!response.ok) throw new Error("Не удалось загрузить обучающие зоны");
         return response.json();
@@ -531,48 +531,23 @@ function renderZoneReading(zone, shouldScroll = true) {
     card.append(line);
 
     const content = element("div", null, "pro-zone-reading-position-content");
-    // Тексты, утверждённые для вопросов полного разбора, берём из единого
-    // авторского банка. Справочные пояснения не подменяют эти трактовки.
-    const directKey = reading.authored?.[point.key] || null;
-    const authoredKey = directKey && current.definitions.some(definition => definition.key === directKey)
-      ? directKey
-      : point.topic && zone.questions.includes(point.topic)
-        && current.definitions.some(definition => definition.key === point.topic)
-        ? point.topic : null;
-    if (!authoredKey) content.append(paragraph(role.meaning));
-    if (authoredKey) {
+    // Короткое описание точки остаётся на виду при раскрытии.
+    // Большой текст берётся непосредственно из авторского банка этой энергии.
+    content.append(paragraph(role.meaning, "pro-zone-reading-role-note"));
+    const authoredKey = reading.authored?.[point.key];
+    if (authoredKey && current.definitions.some(definition=>definition.key===authoredKey)) {
       const full = element("section", null, "pro-inline-full-reading");
       content.append(full);
-      // Теперь одно раскрытие позиции ведёт непосредственно к полному тексту.
+      // Данные подгружаем только по нажатию, чтобы страница была лёгкой.
       card.addEventListener("toggle", () => {
         if (card.open && !card.dataset.loaded) {
           card.dataset.loaded = "true";
           loadInlineFullReading(full, authoredKey, point.value, false);
         }
       });
-    } else if(zone.id !== "relationships") {
-      // Для вспомогательных точек остальных сфер остаются их короткие подсказки.
-      // Для баланса отношений пока нет отдельного авторского текста; не выдаём
-      // общие фразы из словаря за персонально написанную расшифровку.
-      const detail = current.previews.details?.[point.key];
-      const message = current.previews.energies[String(point.value)]?.[
-        current.previews.groups.money.includes(point.key) ? "money"
-          : current.previews.groups.love.includes(point.key) ? "love" : "self"
-      ];
-      const energyText = energy[reading.energyField] || energy.shortEssence || energy.mainStrength;
-      if (detail?.meaning && detail.meaning !== role.meaning) {
-        content.append(element("h5", "Значение этой позиции", "pro-inline-reading-subheading"));
-        content.append(paragraph(detail.meaning));
-      }
-      if (message && message !== role.meaning && message !== detail?.meaning) {
-        content.append(paragraph(message, "pro-zone-reading-energy"));
-      } else if (energyText && energyText !== role.meaning) {
-        content.append(paragraph(energyText, "pro-zone-reading-energy"));
-      }
-      if (detail?.action) {
-        content.append(element("h5", "Как использовать в жизни", "pro-inline-reading-subheading"));
-        content.append(paragraph(detail.action));
-      }
+    } else {
+      // При неполном соответствии не подменяем авторскую трактовку случайным текстом.
+      content.append(paragraph("Для этой точки подробный авторский текст пока не подключён.", "pro-muted"));
     }
     card.append(content);
     card.addEventListener("toggle", () => {
