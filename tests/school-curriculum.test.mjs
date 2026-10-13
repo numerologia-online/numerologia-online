@@ -578,7 +578,26 @@ test("Классическая школа: 12 уроков, расширенны
   assert.ok(reader.includes('if(next&&readProgress().has(id))'));
   assert.ok(reader.includes('document.createTextNode(q.why)'));
   assert.ok(page.includes('classic.js?v=2'));
-  assert.ok(lessonPage.includes('lesson.js?v=2'));
+  assert.ok(lessonPage.includes('lesson.js?v=3'));
   assert.ok(css.includes('.classic-card.is-locked'));
   assert.ok(css.includes('.classic-quiz-review-item'));
+});
+
+test("Классическая школа: практические задания и локальная тетрадь",async()=>{
+  const manifest=JSON.parse(await src("pro/schools/classic/manifest.json"));
+  for(const item of manifest.lessons){
+    const data=JSON.parse(await src(item.file));
+    assert.ok(typeof data.practice==="string"&&data.practice.length>50);
+  }
+  const final=JSON.parse(await src("pro/schools/classic/lessons/final.json"));
+  const js=await src("pro/schools/classic/lesson/lesson.js");
+  const css=await src("pro/schools/classic/classic.css");
+  assert.equal(final.rubric.length,5);
+  assert.ok(js.includes('const key="numerologia-online-classic-notes-"+data.id'));
+  assert.ok(js.includes('notes.addEventListener("input"'));
+  assert.ok(js.includes('if(Array.isArray(data.rubric)&&data.rubric.length)'));
+  assert.ok(js.includes('fetch(manifest[activeIndex].file+"?v=3")'));
+  assert.ok(css.includes('.classic-practice-notes{'));
+  assert.ok((await src("pro/schools/classic/lesson/index.html")).includes('lesson.js?v=3'));
+  assert.ok((await src("pro/schools/classic/index.html")).includes('classic.css?v=3'));
 });
