@@ -3,7 +3,7 @@ import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection
 import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=31";
 import { nodesFor } from "./pro-points.js?v=2";
 import { createProDiagram } from "./pro-diagram.js?v=13";
-import { createFullReportPdfController } from "../full-report-pdf.js?v=3";
+import { createFullReportPdfController } from "../full-report-pdf.js?v=4";
 import { buildProPdfChapters } from "./pro-pdf-content.js?v=24";
 import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
 
