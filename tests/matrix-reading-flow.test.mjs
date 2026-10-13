@@ -12,14 +12,14 @@ test("Матрица сохраняет объяснение и сразу ра�
   assert.ok(diagram.includes("showZonePreview(zone, sectorLabelPositions, source, button)"));
   assert.ok(preview.includes("onSelectZone(zone, true)"));
   assert.ok(js.includes('content.append(paragraph(role.meaning, "pro-zone-reading-role-note"))'));
-  assert.ok(js.includes("loadInlineFullReading(full, authoredKey, point.value, false)"));
+  assert.ok(js.includes("loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title})"));
   assert.ok(js.includes("loadInlineFullReading(full, point.topic)"));
   assert.ok(js.includes("loadFullReportSection(energy)"));
   assert.ok(js.includes("includeGuidance ? loadPracticalGuidance(energy) : Promise.resolve(null)"));
   assert.ok(js.includes('const authoredKey = reading.authored?.[point.key]'));
   assert.ok(!js.includes("Разобрать эту точку подробнее →"));
   assert.ok(!js.includes("Читать полный разбор по этой теме ↓"));
-  assert.ok(html.includes('src="pro/pro.js?v=88"'));
+  assert.ok(html.includes('src="pro/pro.js?v=89"'));
 });
 
 test("Для каждой вспомогательной точки и для каждой сферы есть исходное объяснение", async () => {
@@ -52,10 +52,10 @@ test("Отношения открывают авторские тексты по
   assert.ok(bank9.sections.partner.paragraphs.length>5);
   assert.ok(js.includes("Number.isInteger(pointEnergy) ? pointEnergy : definition.energy"));
   assert.ok(js.includes("loadFullReportSection(energy)"));
-  assert.ok(js.includes("loadInlineFullReading(full, authoredKey, point.value, false)"));
+  assert.ok(js.includes("loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title})"));
   assert.ok(!js.includes('zone.id !== "relationships"'));
-  assert.ok(js.includes('fetch("pro/zones.json?v=6")'));
-  assert.ok((await source("pro/index.html")).includes('pro/pro.js?v=88'));
+  assert.ok(js.includes('fetch("pro/zones.json?v=7")'));
+  assert.ok((await source("pro/index.html")).includes('pro/pro.js?v=89'));
 });
 
 test("Каждый пункт 13 сфер открывает исходную авторскую трактовку по выбранной энергии",async()=>{
@@ -69,6 +69,13 @@ test("Каждый пункт 13 сфер открывает исходную а
   assert.equal(zones.reduce((sum,zone)=>sum+zone.points.length,0),56);
   for(const zone of zones){
     assert.deepEqual(Object.keys(zone.reading.authored),zone.points);
+    assert.deepEqual(Object.keys(zone.reading.depth),zone.points);
+    for(const point of zone.points){
+      const lens=zone.reading.depth[point];
+      assert.ok(lens.angle?.length>80);
+      assert.ok(lens.question?.length>35);
+      assert.ok(lens.focus?.length>=3);
+    }
     for(const point of zone.points){
       const key=zone.reading.authored[point];
       assert.ok(keys.has(key),`Неверная авторская тема для ${zone.id}/${point}`);
@@ -76,13 +83,13 @@ test("Каждый пункт 13 сфер открывает исходную а
     }
   }
   assert.ok(js.includes('const authoredKey = reading.authored?.[point.key]'));
-  assert.ok(js.includes('loadInlineFullReading(full, authoredKey, point.value, false)'));
+  assert.ok(js.includes('loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title})'));
   assert.ok(js.includes('content.append(paragraph(role.meaning, "pro-zone-reading-role-note"))'));
   assert.ok(!js.includes('current.previews.details?.[point.key]'));
   assert.ok(!js.includes('zone.id !== "relationships"'));
-  assert.ok(js.includes('fetch("pro/zones.json?v=6")'));
-  assert.ok(html.includes('pro/pro.js?v=88'));
-  assert.ok(html.includes('pro/pro.css?v=37'));
+  assert.ok(js.includes('fetch("pro/zones.json?v=7")'));
+  assert.ok(html.includes('pro/pro.js?v=89'));
+  assert.ok(html.includes('pro/pro.css?v=38'));
   assert.ok(css.includes('.pro-zone-reading-position-content>.pro-zone-reading-role-note{'));
 });
 
@@ -98,4 +105,22 @@ test("Авторский банк полон: у всех 22 энергий ес
         "Нет авторской трактовки "+energy+"/"+key);
     }
   }
+});
+
+test("56 уникальных расшифровок позиции используют выбор глав из авторского текста",async()=>{
+  const zones=JSON.parse(await source("pro/zones.json")).zones;
+  const js=await source("pro/pro.js");
+  const css=await source("pro/pro.css");
+  const entries=zones.flatMap(zone=>zone.points.map(point=>({key:zone.id+"/"+point,...zone.reading.depth[point]})));
+  assert.equal(entries.length,56);
+  assert.equal(new Set(entries.map(item=>item.key)).size,56);
+  assert.equal(new Set(entries.map(item=>item.angle)).size,56);
+  assert.ok(entries.every(item=>item.question.endsWith("?")));
+  assert.ok(js.includes("function authorChapters(paragraphs){"));
+  assert.ok(js.includes("function appendPositionReading(target,section,definition,ctx,energy){"));
+  assert.ok(js.includes("chosen.forEach(ch=>appendAuthorChapter(target,ch))"));
+  assert.ok(js.includes("Читать весь исходный авторский разбор"));
+  assert.ok(js.includes('loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title})'));
+  assert.ok(css.includes(".pro-position-original{"));
+  assert.ok((await source("pro/index.html")).includes('pro/pro.js?v=89'));
 });
