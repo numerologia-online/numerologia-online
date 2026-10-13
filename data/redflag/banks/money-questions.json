@@ -10,7 +10,7 @@
       "id": "generosity",
       "title": "Щедрый или будет считать каждую копейку?",
       "status": "in-progress",
-      "textFile": "money/generosity.json"
+      "textFile": "money/generosity.json?v=2"
     },
     {
       "id": "provider",
