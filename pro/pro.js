@@ -107,7 +107,7 @@ function loadKarmicDeepening() {
 
 function loadZoneLibrary() {
   if (!zoneLibraryRequest) {
-    zoneLibraryRequest = fetch("pro/zones.json?v=4")
+    zoneLibraryRequest = fetch("pro/zones.json?v=5")
       .then((response) => {
         if (!response.ok) throw new Error("Не удалось загрузить обучающие зоны");
         return response.json();
@@ -354,13 +354,16 @@ function renderQuestions(definitions) {
 // Один общий вывод полного авторского текста для точек схемы и сфер.
 // Берём готовый раздел из того же банка, который используется в «О чём хотите узнать?».
 // Никакой второй версии трактовок или формул.
-function loadInlineFullReading(target, key) {
+function loadInlineFullReading(target, key, pointEnergy = null, includeGuidance = true) {
   const report = current;
   const definition = report?.definitions.find(item => item.key === key);
   if (!definition) return;
   const id = report.id;
+  // Для тематических точек берём значение именно выбранного кружка,
+  // а не энергию того же вопроса из другой позиции общего PDF.
+  const energy = Number.isInteger(pointEnergy) ? pointEnergy : definition.energy;
   target.replaceChildren(paragraph("Открываю полный разбор…", "pro-muted"));
-  return Promise.all([loadFullReportSection(definition.energy), loadPracticalGuidance(definition.energy)])
+  return Promise.all([loadFullReportSection(energy), includeGuidance ? loadPracticalGuidance(energy) : Promise.resolve(null)])
     .then(([bank, guidance]) => {
       if (!current || current.id !== id || !target.isConnected) return;
       const section = bank?.sections?.[key];
@@ -528,11 +531,15 @@ function renderZoneReading(zone, shouldScroll = true) {
     card.append(line);
 
     const content = element("div", null, "pro-zone-reading-position-content");
-    // Значение роли в конкретной сфере всегда сохраняем.
-    content.append(paragraph(role.meaning));
-    const authoredKey = point.topic && zone.questions.includes(point.topic)
-      && current.definitions.some(definition => definition.key === point.topic)
-      ? point.topic : null;
+    // Тексты, утверждённые для вопросов полного разбора, берём из единого
+    // авторского банка. Справочные пояснения не подменяют эти трактовки.
+    const directKey = reading.authored?.[point.key] || null;
+    const authoredKey = directKey && current.definitions.some(definition => definition.key === directKey)
+      ? directKey
+      : point.topic && zone.questions.includes(point.topic)
+        && current.definitions.some(definition => definition.key === point.topic)
+        ? point.topic : null;
+    if (!authoredKey) content.append(paragraph(role.meaning));
     if (authoredKey) {
       const full = element("section", null, "pro-inline-full-reading");
       content.append(full);
@@ -540,12 +547,13 @@ function renderZoneReading(zone, shouldScroll = true) {
       card.addEventListener("toggle", () => {
         if (card.open && !card.dataset.loaded) {
           card.dataset.loaded = "true";
-          loadInlineFullReading(full, authoredKey);
+          loadInlineFullReading(full, authoredKey, point.value, false);
         }
       });
-    } else {
-      // Когда большого текста для позиции нет, читаем индивидуальное пояснение
-      // из существующего каталога 31 точки прямо здесь, без дополнительных переходов.
+    } else if(zone.id !== "relationships") {
+      // Для вспомогательных точек остальных сфер остаются их короткие подсказки.
+      // Для баланса отношений пока нет отдельного авторского текста; не выдаём
+      // общие фразы из словаря за персонально написанную расшифровку.
       const detail = current.previews.details?.[point.key];
       const message = current.previews.energies[String(point.value)]?.[
         current.previews.groups.money.includes(point.key) ? "money"
