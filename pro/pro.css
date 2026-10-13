@@ -555,3 +555,20 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   color:#71838a;font-size:13px;line-height:1.55;
   margin:3px 0 13px;
 }
+
+/* Индивидуальная трактовка точки плюс необязательный исходный полный текст. */
+.pro-zone-reading-position .pro-inline-full-reading .pro-position-interpretation{
+  color:#3d5966;font-size:15px;line-height:1.66;
+  margin:10px 0 15px;padding-left:12px;border-left:2px solid #c4a778;
+}
+.pro-zone-reading-position .pro-inline-full-reading .pro-position-question{
+  color:#476877;font-weight:600;font-size:14px;line-height:1.65;
+}
+.pro-position-original{margin:17px 0 5px;border-top:1px solid #e9e0d3;padding-top:13px}
+.pro-position-original>summary{
+  cursor:pointer;font-size:13px;font-weight:750;color:#6b7e86;
+  padding:6px 0;line-height:1.45;
+}
+.pro-position-original[open]>summary{margin-bottom:15px}
+.pro-position-original-text{padding:2px 0}
+.pro-position-original-text .pro-inline-reading-title{margin:5px 0 13px}
