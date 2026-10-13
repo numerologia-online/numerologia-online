@@ -1,6 +1,6 @@
 {
   "schema": "pro-school-lessons-manifest-v1",
-  "version": "2026-10-12",
+  "version": "2026-10-13-expanded",
   "lessons": [
     {
       "id": "start",
@@ -8,7 +8,8 @@
       "level": "Основы",
       "minutes": 14,
       "index": 1,
-      "file": "pro/school/lessons/start.json"
+      "file": "pro/school/lessons/start.json",
+      "module": "01 · ОСНОВЫ"
     },
     {
       "id": "reduce",
@@ -16,7 +17,8 @@
       "level": "Основы",
       "minutes": 12,
       "index": 2,
-      "file": "pro/school/lessons/reduce.json"
+      "file": "pro/school/lessons/reduce.json",
+      "module": "01 · ОСНОВЫ"
     },
     {
       "id": "base",
@@ -24,7 +26,8 @@
       "level": "Расчёты",
       "minutes": 17,
       "index": 3,
-      "file": "pro/school/lessons/base.json"
+      "file": "pro/school/lessons/base.json",
+      "module": "02 · СТРОИМ И СЧИТАЕМ"
     },
     {
       "id": "corners",
@@ -32,7 +35,8 @@
       "level": "Расчёты",
       "minutes": 14,
       "index": 4,
-      "file": "pro/school/lessons/corners.json"
+      "file": "pro/school/lessons/corners.json",
+      "module": "02 · СТРОИМ И СЧИТАЕМ"
     },
     {
       "id": "internal",
@@ -40,7 +44,8 @@
       "level": "Расчёты",
       "minutes": 22,
       "index": 5,
-      "file": "pro/school/lessons/internal.json"
+      "file": "pro/school/lessons/internal.json",
+      "module": "02 · СТРОИМ И СЧИТАЕМ"
     },
     {
       "id": "energies-a",
@@ -48,7 +53,8 @@
       "level": "Трактовки",
       "minutes": 18,
       "index": 6,
-      "file": "pro/school/lessons/energies-a.json"
+      "file": "pro/school/lessons/energies-a.json",
+      "module": "03 · ЗНАКОМИМСЯ С ЭНЕРГИЯМИ"
     },
     {
       "id": "energies-b",
@@ -56,47 +62,206 @@
       "level": "Трактовки",
       "minutes": 18,
       "index": 7,
-      "file": "pro/school/lessons/energies-b.json"
+      "file": "pro/school/lessons/energies-b.json",
+      "module": "03 · ЗНАКОМИМСЯ С ЭНЕРГИЯМИ"
+    },
+    {
+      "id": "energy-01-02",
+      "title": "Энергии 1 и 2: Маг и Верховная Жрица",
+      "level": "Практика энергий",
+      "minutes": 18,
+      "file": "pro/school/lessons/energy-01-02.json",
+      "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
+      "index": 8
+    },
+    {
+      "id": "energy-03-04",
+      "title": "Энергии 3 и 4: Императрица и Император",
+      "level": "Практика энергий",
+      "minutes": 18,
+      "file": "pro/school/lessons/energy-03-04.json",
+      "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
+      "index": 9
+    },
+    {
+      "id": "energy-05-06",
+      "title": "Энергии 5 и 6: Иерофант и Влюблённые",
+      "level": "Практика энергий",
+      "minutes": 18,
+      "file": "pro/school/lessons/energy-05-06.json",
+      "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
+      "index": 10
+    },
+    {
+      "id": "energy-07-08",
+      "title": "Энергии 7 и 8: Колесница и Справедливость",
+      "level": "Практика энергий",
+      "minutes": 18,
+      "file": "pro/school/lessons/energy-07-08.json",
+      "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
+      "index": 11
+    },
+    {
+      "id": "energy-09-10",
+      "title": "Энергии 9 и 10: Отшельник и Колесо Фортуны",
+      "level": "Практика энергий",
+      "minutes": 18,
+      "file": "pro/school/lessons/energy-09-10.json",
+      "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
+      "index": 12
+    },
+    {
+      "id": "energy-11-12",
+      "title": "Энергии 11 и 12: Сила и Повешенный",
+      "level": "Практика энергий",
+      "minutes": 18,
+      "file": "pro/school/lessons/energy-11-12.json",
+      "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
+      "index": 13
+    },
+    {
+      "id": "energy-13-14",
+      "title": "Энергии 13 и 14: Смерть и Умеренность",
+      "level": "Практика энергий",
+      "minutes": 18,
+      "file": "pro/school/lessons/energy-13-14.json",
+      "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
+      "index": 14
+    },
+    {
+      "id": "energy-15-16",
+      "title": "Энергии 15 и 16: Дьявол и Башня",
+      "level": "Практика энергий",
+      "minutes": 18,
+      "file": "pro/school/lessons/energy-15-16.json",
+      "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
+      "index": 15
+    },
+    {
+      "id": "energy-17-18",
+      "title": "Энергии 17 и 18: Звезда и Луна",
+      "level": "Практика энергий",
+      "minutes": 18,
+      "file": "pro/school/lessons/energy-17-18.json",
+      "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
+      "index": 16
+    },
+    {
+      "id": "energy-19-20",
+      "title": "Энергии 19 и 20: Солнце и Суд",
+      "level": "Практика энергий",
+      "minutes": 18,
+      "file": "pro/school/lessons/energy-19-20.json",
+      "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
+      "index": 17
+    },
+    {
+      "id": "energy-21-22",
+      "title": "Энергии 21 и 22: Мир и Шут",
+      "level": "Практика энергий",
+      "minutes": 18,
+      "file": "pro/school/lessons/energy-21-22.json",
+      "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
+      "index": 18
     },
     {
       "id": "tail",
       "title": "Кармический хвост: порядок имеет значение",
       "level": "Связки",
       "minutes": 15,
-      "index": 8,
-      "file": "pro/school/lessons/tail.json"
+      "index": 19,
+      "file": "pro/school/lessons/tail.json",
+      "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ"
     },
     {
       "id": "topics",
       "title": "Отношения, деньги, род и ресурсы",
       "level": "Сферы жизни",
       "minutes": 15,
-      "index": 9,
-      "file": "pro/school/lessons/topics.json"
+      "index": 20,
+      "file": "pro/school/lessons/topics.json",
+      "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ"
+    },
+    {
+      "id": "money-practice",
+      "title": "Денежная линия: считаем и разбираем",
+      "level": "Практика по сферам",
+      "minutes": 24,
+      "file": "pro/school/lessons/money-practice.json",
+      "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ",
+      "index": 21
+    },
+    {
+      "id": "love-practice",
+      "title": "Любовная линия и отношения: расчёт без ярлыков",
+      "level": "Практика по сферам",
+      "minutes": 23,
+      "file": "pro/school/lessons/love-practice.json",
+      "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ",
+      "index": 22
+    },
+    {
+      "id": "lineage-practice",
+      "title": "Родовые линии: отдельный центр и четыре угла",
+      "level": "Практика по сферам",
+      "minutes": 24,
+      "file": "pro/school/lessons/lineage-practice.json",
+      "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ",
+      "index": 23
+    },
+    {
+      "id": "talents-practice",
+      "title": "Таланты и потенциал: числа в разных позициях",
+      "level": "Практика по сферам",
+      "minutes": 23,
+      "file": "pro/school/lessons/talents-practice.json",
+      "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ",
+      "index": 24
     },
     {
       "id": "purpose",
       "title": "Предназначение: три уровня расчёта",
       "level": "Продвинутый уровень",
       "minutes": 16,
-      "index": 10,
-      "file": "pro/school/lessons/purpose.json"
+      "index": 25,
+      "file": "pro/school/lessons/purpose.json",
+      "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ"
     },
     {
       "id": "consult",
       "title": "Как связать числа в живой разбор",
       "level": "Практика",
       "minutes": 15,
-      "index": 11,
-      "file": "pro/school/lessons/consult.json"
+      "index": 26,
+      "file": "pro/school/lessons/consult.json",
+      "module": "06 · УЧИМСЯ КОНСУЛЬТИРОВАТЬ"
+    },
+    {
+      "id": "case-clinic",
+      "title": "Разбор клиентского кейса: от формулы до разговора",
+      "level": "Консультирование",
+      "minutes": 32,
+      "file": "pro/school/lessons/case-clinic.json",
+      "module": "06 · УЧИМСЯ КОНСУЛЬТИРОВАТЬ",
+      "index": 27
+    },
+    {
+      "id": "case-independent",
+      "title": "Практикум: самостоятельный разбор новой даты",
+      "level": "Консультирование",
+      "minutes": 35,
+      "file": "pro/school/lessons/case-independent.json",
+      "module": "06 · УЧИМСЯ КОНСУЛЬТИРОВАТЬ",
+      "index": 28
     },
     {
       "id": "final",
       "title": "Самостоятельный разбор: итоговая практика",
       "level": "Проверка знаний",
       "minutes": 20,
-      "index": 12,
-      "file": "pro/school/lessons/final.json"
+      "index": 29,
+      "file": "pro/school/lessons/final.json",
+      "module": "06 · УЧИМСЯ КОНСУЛЬТИРОВАТЬ"
     }
   ]
 }
