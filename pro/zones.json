@@ -38,7 +38,8 @@
         },
         "authored": {
           "tailFirst": "trueLove",
-          "loveHeart": "partner"
+          "loveHeart": "partner",
+          "wellbeing": "trueLove"
         }
       }
     },
@@ -77,6 +78,11 @@
             "title": "Как сохранять заработанное",
             "meaning": "Общая точка баланса показывает, что деньги должны поддерживать жизнь, а не поглощать её целиком."
           }
+        },
+        "authored": {
+          "rightNear": "moneyFlow",
+          "moneyPoint": "earning",
+          "wellbeing": "moneyBlock"
         }
       }
     },
@@ -125,6 +131,13 @@
             "title": "На чём всё соединяется",
             "meaning": "Центр матрицы показывает внутренний принцип, позволяющий соединить разные стороны вашей жизни."
           }
+        },
+        "authored": {
+          "top": "trueSelf",
+          "bottom": "lifeLesson",
+          "left": "impression",
+          "right": "growth",
+          "center": "trueSelf"
         }
       }
     },
@@ -163,6 +176,11 @@
             "title": "Что помогает таланту раскрыться",
             "meaning": "Средняя точка уточняет, как превратить врождённую склонность в полезное умение."
           }
+        },
+        "authored": {
+          "top": "trueSelf",
+          "topOuter": "impression",
+          "topNear": "growth"
         }
       }
     },
@@ -205,6 +223,12 @@
             "title": "Как женская линия влияет на выбор",
             "meaning": "Нижний левый угол помогает увидеть установки в близости и личных решениях."
           }
+        },
+        "authored": {
+          "topLeft": "parentsPain",
+          "bottomRight": "familyError",
+          "topRight": "parentsPain",
+          "bottomLeft": "familyError"
         }
       }
     },
@@ -242,6 +266,11 @@
             "title": "Где энергия уходит незаметно",
             "meaning": "Внутренняя левая позиция помогает замечать напряжение от привычных реакций и общения."
           }
+        },
+        "authored": {
+          "center": "health",
+          "topCore": "health",
+          "leftCore": "energyLeak"
         }
       }
     },
@@ -285,6 +314,12 @@
             "title": "Что вы переносите в свою семью",
             "meaning": "Показывает, какие ожидания о близости и бытовых ролях продолжают влиять на решения."
           }
+        },
+        "authored": {
+          "topLeft": "parentsPain",
+          "bottomRight": "familyError",
+          "topRight": "parentsPain",
+          "bottomLeft": "familyError"
         }
       }
     },
@@ -327,6 +362,12 @@
             "title": "К чему вы возвращаетесь",
             "meaning": "Центр отражает вашу устойчивую внутреннюю опору и способ соединять желания с действиями."
           }
+        },
+        "authored": {
+          "top": "trueSelf",
+          "topNear": "character",
+          "topCore": "energyLeak",
+          "center": "trueSelf"
         }
       }
     },
@@ -370,6 +411,12 @@
             "title": "Что помогает выйти в плюс",
             "meaning": "Центральная энергия даёт способ действовать иначе и сохранить внутреннюю опору."
           }
+        },
+        "authored": {
+          "bottom": "lifeLesson",
+          "tailSecond": "familyError",
+          "tailFirst": "lifeLesson",
+          "center": "growth"
         }
       }
     },
@@ -413,6 +460,12 @@
             "title": "Как закрепить успех",
             "meaning": "Внешняя точка уточняет, что помогает довести развитие до устойчивого результата."
           }
+        },
+        "authored": {
+          "center": "trueSelf",
+          "bottomRight": "growth",
+          "bottomRightNear": "growth",
+          "bottomRightOuter": "growth"
         }
       }
     },
@@ -470,6 +523,15 @@
             "title": "Как родовая тема влияет на реализацию",
             "meaning": "Нижний правый угол показывает итоговое проявление сценария в делах."
           }
+        },
+        "authored": {
+          "topLeft": "parentsPain",
+          "topLeftOuter": "familyError",
+          "topLeftNear": "familyError",
+          "center": "trueSelf",
+          "bottomRightNear": "growth",
+          "bottomRightOuter": "growth",
+          "bottomRight": "growth"
         }
       }
     },
@@ -527,6 +589,15 @@
             "title": "Что вы несёте дальше",
             "meaning": "Нижний угол связывает семейную историю с вашими собственными жизненными правилами."
           }
+        },
+        "authored": {
+          "topRight": "parentsPain",
+          "topRightOuter": "familyError",
+          "topRightNear": "familyError",
+          "center": "trueSelf",
+          "bottomLeftNear": "growth",
+          "bottomLeftOuter": "growth",
+          "bottomLeft": "growth"
         }
       }
     },
@@ -576,6 +647,13 @@
             "title": "Как не потерять устойчивость",
             "meaning": "Точка баланса напоминает о разумной нагрузке, договорённостях и жизни вне работы."
           }
+        },
+        "authored": {
+          "center": "character",
+          "bottomRight": "growth",
+          "moneyPoint": "earning",
+          "rightNear": "moneyFlow",
+          "wellbeing": "energyLeak"
         }
       }
     }
