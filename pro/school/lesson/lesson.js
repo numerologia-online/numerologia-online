@@ -28,14 +28,14 @@ const diagram = $("lesson-diagram");
 const stepTitles = [
   "Нарисуйте ромб и квадрат",
   "Впишите день, месяц и год",
-  "Найдите нижнюю опору",
+  "Рассчитайте нижнюю точку",
   "Посчитайте центральную энергию",
   "Заполните четыре угла"
 ];
 const stepDescriptions = [
   "На листе нарисуйте ромб: вершины сверху, справа, снизу и слева. Наложите на ромб прямой квадрат и проведите вертикальную и горизонтальную линии через центр. Девять кружков пока пустые.",
   "Слева - число дня рождения, сверху - месяца, справа - сумма цифр года. Ниже показан расчёт каждого числа именно по вашей дате.",
-  "Нижняя опора - сумма трёх уже записанных чисел: левого, верхнего и правого. Если получилось больше 22, сложите цифры результата.",
+  "Нижняя точка - сумма трёх уже записанных чисел: левого, верхнего и правого. Сначала найдите полную сумму, затем проверьте: если она больше 22, сложите её цифры.",
   "Центр - сумма четырёх опор: левой, верхней, правой и нижней. Не путайте с центром родового квадрата.",
   "Каждый угол квадрата - сумма двух соседних вершин ромба. Теперь у вас заполнены все девять основных мест."
 ];
@@ -155,6 +155,7 @@ function reduce22Formula(number){
 // Все формулы ниже строятся из даты самого ученика, а не из готового примера.
 function showFirstThreeCalculations(root,matrix,birth){
   root.replaceChildren();
+  root.classList.remove("is-bottom-explanation");
   root.classList.add("is-calculation-breakdown");
   const daySteps=reduce22Formula(birth.day);
   const dayFormula=daySteps.length?daySteps.join(" → ")
@@ -176,6 +177,20 @@ function showFirstThreeCalculations(root,matrix,birth){
     list.append(row);
   });
   root.append(list);
+}
+// Показываем и первоначальную сумму, и причину повторного сложения цифр.
+function showBottomCalculation(root,matrix){
+  root.replaceChildren();
+  root.classList.remove("is-calculation-breakdown");
+  root.classList.add("is-bottom-explanation");
+  const total=matrix.left+matrix.top+matrix.right;
+  root.append(make("strong","school-bottom-math",
+    matrix.left+" + "+matrix.top+" + "+matrix.right+" = "+total));
+  const reason=total>22
+    ?"Так как "+total+" больше 22, мы снова складываем его цифры: "+
+      String(total).split("").join(" + ")+" = "+matrix.bottom+"."
+    :"Так как "+total+" не больше 22, оставляем его без сокращения. Внизу пишем "+matrix.bottom+".";
+  root.append(make("p","school-bottom-reason",reason));
 }
 function drawCurrent() {
   if(id==="start"){
@@ -199,7 +214,7 @@ function drawCurrent() {
     $("lesson-step-title").textContent=stepTitles[step];
     $("lesson-step-text").textContent=stepDescriptions[step];
     $("lesson-step-formula").hidden=false;
-    $("lesson-step-formula").classList.remove("is-calculation-breakdown");
+    $("lesson-step-formula").classList.remove("is-calculation-breakdown","is-bottom-explanation");
     $("lesson-step-formula").textContent="Введите дату рождения выше и нажмите «Использовать», чтобы начать расчёт.";
     $("lesson-step-back").disabled=true;
     $("lesson-step-next").disabled=true;
@@ -217,8 +232,10 @@ function drawCurrent() {
   const formulaBlock=$("lesson-step-formula");
   if(id==="reduce"&&step===1){
     showFirstThreeCalculations(formulaBlock,m,currentBirth);
+  }else if(step===2){
+    showBottomCalculation(formulaBlock,m);
   }else{
-    formulaBlock.classList.remove("is-calculation-breakdown");
+    formulaBlock.classList.remove("is-calculation-breakdown","is-bottom-explanation");
     const examples=[
       "Пока ничего не считаем - рисуем девять мест.",
       "Слева "+m.left+", сверху "+m.top+", справа "+m.right+".",
@@ -497,7 +514,7 @@ async function start() {
       nav.append(back);
       return;
     }
-    const response=await fetch(manifest[index].file+"?v=7");
+    const response=await fetch(manifest[index].file+"?v=8");
     if(!response.ok)throw Error("Материал урока не найден");
     lesson=await response.json();
     if(lesson.id!==id||!Array.isArray(lesson.sections)||!Array.isArray(lesson.questions))
