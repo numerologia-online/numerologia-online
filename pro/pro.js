@@ -443,12 +443,12 @@ function appendPositionReading(target,section,definition,ctx,energy){
   }
   target.append(element("p","ЭНЕРГИЯ "+energy+" В ЭТОЙ ПОЗИЦИИ","pro-eyebrow"));
   target.append(element("h4",ctx.title||section.title,"pro-inline-reading-title"));
-  target.append(paragraph(ctx.angle,"pro-position-interpretation"));
+  // Show the matching authored paragraphs immediately, not a generic position description.
   chosen.forEach(ch=>appendAuthorChapter(target,ch));
   target.append(element("h5","Вопрос для себя","pro-inline-reading-subheading"));
   target.append(paragraph(ctx.question,"pro-position-question"));
   const original=element("details",null,"pro-position-original");
-  original.append(element("summary","Читать весь исходный авторский разбор"));
+  original.append(element("summary","Читать подробную трактовку целиком"));
   const all=element("div",null,"pro-position-original-text");
   all.append(element("h4",section.title||definition.title,"pro-inline-reading-title"));
   chapters.forEach(ch=>appendAuthorChapter(all,ch));
@@ -501,22 +501,52 @@ function loadInlineFullReading(target, key, pointEnergy = null, includeGuidance 
 
 // Every diagram point has its own contextual reading. The 14 large answers
 // remain an optional second layer and are never substituted for another point.
+// Every interactive diagram point should lead to the matching energy's approved
+// authored reading. The active sphere supplies its precise meaning; otherwise,
+// the first relevant sphere is used for points shared between several spheres.
+const additionalPointReadings = {
+  leftOuter: "impression",
+  leftNear: "character",
+  rightOuter: "moneyBlock",
+  rightCore: "moneyFlow"
+};
+
+function authoredPositionForPoint(key) {
+  if (!current) return null;
+  const matches = current.zones.filter(zone =>
+    zone.points.includes(key) && zone.reading?.authored?.[key] && zone.reading?.depth?.[key]
+  );
+  const zone = matches.find(zone => zone.id === current.activeZone?.id) || matches[0];
+  if (!zone) return null;
+  const authoredKey = zone.reading.authored[key];
+  const related = zone.points.filter(item => zone.reading.authored?.[item] === authoredKey);
+  return {
+    key: authoredKey,
+    title: zone.reading.roles[key]?.title,
+    context: {
+      ...zone.reading.depth[key],
+      title: zone.reading.roles[key]?.title,
+      variant: related.indexOf(key),
+      relatedFocus: related.map(item => zone.reading.depth[item].focus)
+    }
+  };
+}
+
 function openPointDetail(key) {
   if (!current || !pointDetails) return;
   const point = current.points.find(item => item.key === key);
-  const detail = current.previews.details?.[key];
-  if (!point || !detail) return;
+  if (!point) return;
   const energy = current.knowledge.energies[String(point.value)] || {};
-  const previews = current.previews;
-  const context = previews.groups.money.includes(key) ? "money"
-    : previews.groups.love.includes(key) ? "love" : "self";
-  const shortMessage = previews.energies[String(point.value)]?.[context];
+  const position = authoredPositionForPoint(key);
+  const authoredKey = position?.key || point.topic || additionalPointReadings[key];
+  const hasAuthoredText = Boolean(authoredKey &&
+    current.definitions.some(definition => definition.key === authoredKey));
   pointDetails.replaceChildren();
 
   const head = element("div", null, "pro-point-details-header");
   const heading = element("div");
   heading.append(element("p", "ПОДРОБНЫЙ РАЗБОР ТОЧКИ", "pro-eyebrow"));
-  heading.append(element("h3", previews.titles[key] || point.label));
+  heading.append(element("h3", position?.title || current.previews.titles[key] || point.label));
   const close = element("button", "Закрыть", "pro-point-details-close");
   close.type = "button";
   close.setAttribute("aria-label", "Закрыть подробный разбор точки");
@@ -531,32 +561,19 @@ function openPointDetail(key) {
   chips.append(element("span", "Энергия " + point.value));
   if (energy.name) chips.append(element("span", energy.name));
   pointDetails.append(chips);
-  pointDetails.append(element("h4", "Что показывает эта точка"));
-  pointDetails.append(paragraph(detail.meaning));
-  const hasAuthoredText = Boolean(point.topic &&
-    current.definitions.some(definition => definition.key === point.topic));
+
   if (hasAuthoredText) {
-    // Пояснение остаётся; полный авторский текст раскрывается сразу, без третьей кнопки.
+    // IMPORTANT: supply point.value, never the same topic's other matrix energy.
+    // No generic advice from point-previews.json is substituted for an authored answer.
     const full = element("section", null, "pro-inline-full-reading");
     pointDetails.append(full);
-    loadInlineFullReading(full, point.topic);
+    loadInlineFullReading(full, authoredKey, point.value, false, position?.context || null);
   } else {
-    // Вспомогательные точки: собственная позиционная трактовка, не чужой большой текст.
-    if (shortMessage && shortMessage.trim() !== String(detail.meaning || "").trim()) {
-      pointDetails.append(element("h4", "Как эта энергия проявляется у вас"));
-      pointDetails.append(paragraph(shortMessage));
-    }
-    if (energy.plus || energy.mainStrength) {
-      pointDetails.append(element("h4", "В плюсе"));
-      pointDetails.append(paragraph(energy.plus || energy.mainStrength));
-    }
-    if (energy.minus || energy.mainBlock) {
-      pointDetails.append(element("h4", "В минусе"));
-      pointDetails.append(paragraph(energy.minus || energy.mainBlock));
-    }
-    pointDetails.append(element("h4", "Что сделать на практике"));
-    pointDetails.append(paragraph(detail.action));
+    // Defensive fallback only if a new, unconfigured point is added later.
+    const detail = current.previews.details?.[key];
+    pointDetails.append(paragraph(detail?.meaning || "Расшифровка этой точки пока не подключена.", "pro-muted"));
   }
+
   pointDetails.hidden = false;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   window.requestAnimationFrame(() => {
@@ -565,7 +582,6 @@ function openPointDetail(key) {
     }
   });
 }
-
 
 function renderZoneReading(zone, shouldScroll = true) {
   if (!zoneReading || !current) return;
@@ -636,9 +652,7 @@ function renderZoneReading(zone, shouldScroll = true) {
     card.append(line);
 
     const content = element("div", null, "pro-zone-reading-position-content");
-    // Короткое описание точки остаётся на виду при раскрытии.
-    // Большой текст берётся непосредственно из авторского банка этой энергии.
-    content.append(paragraph(role.meaning, "pro-zone-reading-role-note"));
+    // Open straight into the authored energy-based reading, not universal hints.
     const authoredKey = reading.authored?.[point.key];
     const lens = reading.depth?.[point.key];
     if (authoredKey && lens && current.definitions.some(definition=>definition.key===authoredKey)) {
