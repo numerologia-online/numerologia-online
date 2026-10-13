@@ -4,7 +4,7 @@ import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicProgram
 import { nodesFor } from "./pro-points.js?v=2";
 import { createProDiagram } from "./pro-diagram.js?v=13";
 import { createFullReportPdfController } from "../full-report-pdf.js?v=4";
-import { buildProPdfChapters } from "./pro-pdf-content.js?v=24";
+import { buildProPdfChapters } from "./pro-pdf-content.js?v=25";
 import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
 
 const schoolClientMode = new URLSearchParams(window.location.search).get("from") === "school";
