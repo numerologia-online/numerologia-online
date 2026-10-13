@@ -686,26 +686,6 @@ function renderZoneReading(zone, shouldScroll = true) {
   });
   zoneReading.append(list);
 
-  const counts = new Map();
-  positions.forEach(point => counts.set(point.value, (counts.get(point.value) || 0) + 1));
-  const repeats = [...counts.entries()].filter(([, count]) => count > 1).map(([n]) => String(n));
-
-  const combine = element("details", null, "pro-zone-reading-extra");
-  combine.append(element("summary", "Как читать сочетание"));
-  const combineContent = element("div", null, "pro-zone-reading-extra-content");
-  combineContent.append(paragraph(reading.bridge));
-  if (repeats.length) {
-    combineContent.append(paragraph("В этой сфере повторяется энергия " + repeats.join(" и ") + ". Обратите внимание на её разные роли в каждой позиции, не смешивая значения.", "pro-zone-reading-repeat"));
-  }
-  combine.append(combineContent);
-  zoneReading.append(combine);
-
-  const practice = element("details", null, "pro-zone-reading-extra");
-  practice.append(element("summary", "Что можно сделать в жизни"));
-  const practiceContent = element("div", null, "pro-zone-reading-extra-content");
-  practiceContent.append(paragraph(reading.practice, "pro-zone-reading-practice"));
-  practice.append(practiceContent);
-  zoneReading.append(practice);
   zoneReading.hidden = false;
   if(shouldScroll){
     const id=current.id;
