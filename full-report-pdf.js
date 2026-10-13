@@ -1,4 +1,5 @@
 import { buildFullReportSections, loadFullReportSection } from "./full-report-library.js?v=4";
+import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=1";
 import { findKarmicPrograms, findKarmicTail } from "./karmic-programs.js?v=3";
 
 // Отдельный модуль PDF: документ, фон, скачивание и кэширование.
@@ -321,6 +322,8 @@ const buildFullReportPdf = async () => {
     footer: (page, pages) => ({ text: `Нумерология Онлайн · ${page} / ${pages}`, alignment: "center", color: "#9A8661", fontSize: 8.5, margin: [0, 8, 0, 0] })
   };
 
+  // A school client PDF uses its own specialist's cover and never shows our contacts.
+  if (typeof customizeDocument !== "function") appendPublicPdfOutro(documentDefinition);
   const schoolFile = typeof customizeDocument === "function"
     ? await customizeDocument(documentDefinition) : null;
   const blob = await new Promise((resolve) => pdfMake.createPdf(documentDefinition).getBlob(resolve));
