@@ -1,18 +1,24 @@
 // Тот же порядок 28 узлов, что использует pro/pro.js.
 // Значения и примеры арифметики берутся из calculateMatrix: учебник не содержит второй версии формул.
 const equation = (values, result) => {
-  const sum = values.reduce((a,b) => a + b, 0);
-  return values.join(" + ") + " = " + sum + (sum === result ? "" : " → " + result);
+  let sum = values.reduce((a,b) => a + b, 0);
+  let expression = values.join(" + ") + " = " + sum;
+  while (sum > 22) {
+    const digits = String(sum).split("").map(Number);
+    sum = digits.reduce((a,b) => a + b, 0);
+    expression += " → " + digits.join(" + ") + " = " + sum;
+  }
+  return expression;
 };
 const yearDigits = (year) => String(year).split("").map(Number);
 const point = (id, title, group, get, explanation) =>
   ({ id, title, group, get, work: (matrix,birth) => explanation(matrix,birth) });
 
 export const pointCatalog = [
-  point("top","Месяц рождения","Опорные",m=>m.top,(m,b)=>"Месяц: "+b.month+" → "+m.top),
-  point("right","Год рождения","Опорные",m=>m.right,(m,b)=>equation(yearDigits(b.year),m.right)),
-  point("bottom","Нижняя опора","Опорные",m=>m.bottom,m=>equation([m.left,m.top,m.right],m.bottom)),
-  point("left","День рождения","Опорные",m=>m.left,(m,b)=>"День: "+b.day+(b.day===m.left?"":" → "+m.left)),
+  point("top","Месяц рождения","Основные",m=>m.top,(m,b)=>"Месяц: "+b.month+" → "+m.top),
+  point("right","Год рождения","Основные",m=>m.right,(m,b)=>equation(yearDigits(b.year),m.right)),
+  point("bottom","Нижняя точка","Основные",m=>m.bottom,m=>equation([m.left,m.top,m.right],m.bottom)),
+  point("left","День рождения","Основные",m=>m.left,(m,b)=>"День: "+b.day+(b.day===m.left?"":" → "+m.left)),
   point("topLeft","Верхний левый угол","Углы",m=>m.corners.topLeft,m=>equation([m.left,m.top],m.corners.topLeft)),
   point("topRight","Верхний правый угол","Углы",m=>m.corners.topRight,m=>equation([m.top,m.right],m.corners.topRight)),
   point("bottomRight","Нижний правый угол","Углы",m=>m.corners.bottomRight,m=>equation([m.right,m.bottom],m.corners.bottomRight)),
@@ -36,5 +42,5 @@ export const pointCatalog = [
   point("bottomRightNear","Диагональ справа снизу / внутренняя","Диагонали",m=>m.diagonals.bottomRight.near,m=>equation([m.corners.bottomRight,m.lineage.ancestralCenter],m.diagonals.bottomRight.near)),
   point("bottomLeftOuter","Диагональ слева снизу / внешняя","Диагонали",m=>m.diagonals.bottomLeft.outer,m=>equation([m.corners.bottomLeft,m.diagonals.bottomLeft.near],m.diagonals.bottomLeft.outer)),
   point("bottomLeftNear","Диагональ слева снизу / внутренняя","Диагонали",m=>m.diagonals.bottomLeft.near,m=>equation([m.corners.bottomLeft,m.lineage.ancestralCenter],m.diagonals.bottomLeft.near)),
-  point("center","Центр","Опорные",m=>m.center,m=>equation([m.left,m.top,m.right,m.bottom],m.center))
+  point("center","Центр","Основные",m=>m.center,m=>equation([m.left,m.top,m.right,m.bottom],m.center))
 ];
