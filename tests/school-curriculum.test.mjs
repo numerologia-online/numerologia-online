@@ -443,11 +443,11 @@ test("Аудит всех 29 уроков: понятные названия, т
   assert.ok(lessonPage.includes('lesson.js?v=25'));
 });
 
-test("В третьем уроке три вопроса, включая способ расчёта центральной энергии",async()=>{
+test("В третьем уроке пять вопросов, включая способ расчёта центральной энергии",async()=>{
   const data=JSON.parse(await src("pro/school/lessons/base.json"));
   const reader=await src("pro/school/lesson/lesson.js");
   const page=await src("pro/school/lesson/index.html");
-  assert.equal(data.questions.length,3);
+  assert.equal(data.questions.length,5);
   const question=data.questions[2];
   assert.equal(question.prompt,"Как правильно рассчитать центральную энергию матрицы?");
   assert.equal(question.options.length,3);
@@ -465,12 +465,14 @@ test("Второй и третий уроки имеют разную практ
   const base=JSON.parse(await src("pro/school/lessons/base.json"));
   const js=await src("pro/school/lesson/lesson.js");
   const page=await src("pro/school/lesson/index.html");
-  assert.ok(reduce.questions.every(q=>/31|15/.test(q.prompt)));
-  assert.equal(base.questions.length,3);
+  assert.ok(reduce.questions.length>=4);
+  assert.ok(reduce.questions.some(q=>q.prompt.includes("31")));
+  assert.ok(reduce.questions.some(q=>q.prompt.includes("22")));
+  assert.equal(base.questions.length,5);
   assert.ok(base.questions.some(q=>q.prompt.includes("нижняя точка")));
   assert.ok(base.questions.some(q=>q.prompt.includes("центральную энергию")));
   assert.equal(reduce.questions.filter(q=>base.questions.some(q2=>q.prompt===q2.prompt)).length,0);
-  assert.ok(js.includes('id==="reduce"?2:id==="base"?3:4'));
+  assert.ok(js.includes('id==="reduce"?2:id==="base"?3:id==="corners"?3:4'));
   assert.ok(js.includes('stageKeys[id==="reduce"?1:step]'));
   assert.ok(js.includes('showRulePractice(formulaBlock)'));
   assert.ok(js.includes('showFirstThreeCalculations(formulaBlock,m,currentBirth)'));
@@ -513,4 +515,18 @@ test("Обратная связь после неверного ответа и 
   assert.ok(reader.includes('showInternalStep(formulaBlock,m)'));
   assert.ok(css.includes('.school-workbook{'));
   assert.ok(css.includes('.school-answer-key{'));
+});
+
+test("Итоговая проверка сложнее вводных уроков",async()=>{
+ const start=JSON.parse(await src("pro/school/lessons/start.json"));
+ const final=JSON.parse(await src("pro/school/lessons/final.json"));
+ const corners=JSON.parse(await src("pro/school/lessons/corners.json"));
+ const money=JSON.parse(await src("pro/school/lessons/money-practice.json"));
+ assert.equal(start.questions.length,3);
+ assert.equal(corners.questions.length,5);
+ assert.equal(money.questions.length,4);
+ assert.equal(final.questions.length,10);
+ assert.ok(final.questions.some(q=>q.prompt.includes("родовой центр")));
+ assert.ok(final.questions.some(q=>q.prompt.includes("сумма цифр года")));
+ assert.ok(final.questions.some(q=>q.prompt.includes("Клиент")||q.prompt.includes("клиентской")));
 });
