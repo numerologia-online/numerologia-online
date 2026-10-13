@@ -662,6 +662,37 @@ function renderLesson(data) {
       const work=make("section","school-workbook");
       work.append(make("h2","school-topic-title","Практика в тетради"));
       work.append(make("p","",data.practice));
+      const details=make("details","school-workbook-editor");
+      details.append(make("summary","","Мои заметки к упражнению"));
+      const notes=make("textarea","school-workbook-textarea");
+      notes.rows=5;
+      notes.maxLength=8000;
+      notes.placeholder="Запишите свои расчёты, вопросы и выводы...";
+      notes.setAttribute("aria-label","Мои заметки к уроку");
+      const saveInfo=make("p","school-workbook-save","Черновик хранится только в этом браузере. Не записывайте реальные личные данные клиентов.");
+      const noteKey="numerologia-online-school-notes-"+data.id;
+      try{notes.value=localStorage.getItem(noteKey)||""}
+      catch{saveInfo.textContent="Сохранение в браузере недоступно. Скопируйте заметки перед выходом."}
+      notes.addEventListener("input",()=>{
+        try{localStorage.setItem(noteKey,notes.value);saveInfo.textContent="Черновик сохранён в этом браузере."}
+        catch{saveInfo.textContent="Сохранение недоступно. Скопируйте текст перед выходом."}
+      });
+      details.append(notes,saveInfo);
+      work.append(details);
+      if(Array.isArray(data.rubric)&&data.rubric.length){
+        const check=make("details","school-workbook-checklist");
+        check.append(make("summary","","Самопроверка перед тестом"));
+        const list=make("div","school-workbook-checklist-items");
+        data.rubric.forEach(item=>{
+          const label=make("label","school-workbook-check");
+          const box=make("input");
+          box.type="checkbox";
+          label.append(box,make("span","",item));
+          list.append(label);
+        });
+        check.append(list);
+        work.append(check);
+      }
       root.append(work);
     }
   }
