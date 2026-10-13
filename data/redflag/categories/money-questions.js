@@ -6,7 +6,7 @@ const loadJson = async (path) => {
   return response.json();
 };
 
-const bank = await loadJson("../banks/money-questions.json");
+const bank = await loadJson("../banks/money-questions.json?v=2");
 const textBanks = await Promise.all(bank.questions.map((question) =>
   question.textFile ? loadJson(`../${question.textFile}`) : null
 ));
