@@ -8,8 +8,11 @@ const item=(tag,cls,text)=>{
   return node;
 };
 const progressKey="numerologia-online-classic-progress-v1";
-let completed=new Set();
-try{const value=JSON.parse(localStorage.getItem(progressKey)||"[]");completed=new Set(Array.isArray(value)?value:[])}catch{}
+function readProgress(){
+  try{const value=JSON.parse(localStorage.getItem(progressKey)||"[]");return new Set(Array.isArray(value)?value:[])}
+  catch{return new Set()}
+}
+let completed=readProgress();
 
 function renderNumbers(selected=1){
   const root=$("classic-number-grid");
@@ -109,8 +112,9 @@ function runName(){
   root.append(stepBox("Наша таблица букв",report.note));
 }
 async function initLessons(){
+  completed=readProgress();
   try{
-    const response=await fetch("pro/schools/classic/manifest.json?v=1");
+    const response=await fetch("pro/schools/classic/manifest.json?v=2");
     if(!response.ok)throw Error("manifest unavailable");
     const bank=await response.json();
     if(bank.schema!=="classic-school-curriculum-v1"||!Array.isArray(bank.lessons))throw Error("incomplete curriculum");
@@ -118,13 +122,18 @@ async function initLessons(){
     let lastStage="";
     bank.lessons.forEach((lesson,i)=>{
       if(lastStage!==lesson.stage){lastStage=lesson.stage;root.append(item("h3","classic-stage-title",lastStage))}
-      const link=item("a","classic-card");
-      link.href="pro/schools/classic/lesson/?id="+encodeURIComponent(lesson.id);
+      const unlocked=bank.lessons.slice(0,i).every(previous=>completed.has(previous.id));
+      const link=item(unlocked?"a":"div","classic-card"+(unlocked?"":" is-locked"));
+      if(unlocked)link.href="pro/schools/classic/lesson/?id="+encodeURIComponent(lesson.id);
+      else{
+        link.setAttribute("aria-disabled","true");
+        link.title="Откроется после прохождения предыдущих уроков";
+      }
       if(completed.has(lesson.id))link.classList.add("completed");
       link.append(item("span","classic-card-index",completed.has(lesson.id)?"✓":i+1));
       const copy=item("span","classic-card-copy");
       copy.append(item("strong","",lesson.title),item("small","",lesson.minutes+" мин · "+lesson.stage.toLowerCase()));
-      link.append(copy,item("span","classic-card-arrow","→"));
+      link.append(copy,item("span","classic-card-arrow",unlocked?"→":"🔒"));
       root.append(link);
     });
     const count=bank.lessons.filter(x=>completed.has(x.id)).length;
@@ -143,3 +152,5 @@ renderNumbers(1);
 runDate();
 runName();
 initLessons();
+window.addEventListener("pageshow",event=>{if(event.persisted)initLessons()});
+window.addEventListener("storage",event=>{if(event.key===progressKey)initLessons()});
