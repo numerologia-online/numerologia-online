@@ -108,7 +108,7 @@ function drawBasic(matrix) {
     ["bottomRight",317,317,matrix?.corners?.bottomRight,"Угол"],["bottomLeft",83,317,matrix?.corners?.bottomLeft,"Угол"]
   ];
   for (const [key,x,y,value,label] of nodes) {
-    const shown=Boolean(matrix)&&stageKeys[step].includes(key);
+    const shown=Boolean(matrix)&&stageKeys[id==="reduce"?1:step].includes(key);
     const group=makeSvg("g",{"class":shown?"school-graph-node is-revealed":"school-graph-node"});
     group.append(makeSvg("circle",{cx:x,cy:y,r:key==="center"?24:20}));
     const text=makeSvg("text",{x,y:y+1,"text-anchor":"middle","dominant-baseline":"middle"});
@@ -236,6 +236,38 @@ function showInternalCalculations(root,matrix){
     ["Нижняя линия:",compactSumFormula([matrix.center,matrix.bottom],matrix.tail.first)]
   ]);
 }
+// У каждого урока своя траектория: правило 22, основные числа, углы, внутренние числа.
+function guidedStart(){
+  return id==="start"?0:(id==="reduce"||id==="base"?1:4);
+}
+function guidedEnd(){
+  return id==="start"?firstLessonSteps.length-1:id==="reduce"?2:id==="base"?3:4;
+}
+function guidedCount(){
+  const first=guidedStart();
+  return "ШАГ "+(step-first+1)+" ИЗ "+(guidedEnd()-first+1);
+}
+function guidedTitle(isFull){
+  if(id==="reduce")return step===1?"Проверьте числа по правилу 22":"Запомните границу 22 энергий";
+  return isFull?"Разберите внутренние числа":stepTitles[step];
+}
+function guidedText(isFull){
+  if(id==="reduce"){
+    return step===1
+      ?"Посмотрите на день, месяц и год своей даты. Числа от 1 до 22 оставляем без изменений, а большие сокращаем сложением цифр. Ниже показаны ваши вычисления."
+      :"Закрепим главное: 11, 15 и 22 сохраняем, а 23, 31 и другие числа больше 22 сокращаем сложением цифр. Затем можно пройти тест.";
+  }
+  return isFull
+    ?"Внутренние кружки считаются из уже известных чисел. Ниже три примера; остальные позиции можно проверить в разделе «28 формул»."
+    :stepDescriptions[step];
+}
+function showRulePractice(root){
+  showCompactCalculations(root,[
+    ["Не сокращаем:","11 → 11 · 15 → 15 · 22 → 22"],
+    ["Сокращаем:","23 → 2 + 3 = 5 · 31 → 3 + 1 = 4"],
+    ["Почему:","24 больше 22 → 2 + 4 = 6"]
+  ]);
+}
 function drawCurrent() {
   if(id==="start"){
     const info=firstLessonSteps[step];
@@ -245,7 +277,7 @@ function drawCurrent() {
     $("lesson-step-text").textContent=info.text;
     // В первом уроке нет блока примеров: всё нужное видно на рисунке и в шаге.
     $("lesson-step-formula").hidden=true;
-    $("lesson-step-back").disabled=step===0;
+    $("lesson-step-back").disabled=step<=guidedStart();
     const next=$("lesson-step-next");
     next.disabled=false;
     next.textContent=step===firstLessonSteps.length-1?"Открыть тест ✓":"Следующий шаг →";
@@ -254,11 +286,9 @@ function drawCurrent() {
   if(!currentBirth){
     // Пока ученик не выбрал свою дату, показываем только пустую схему без чужого расчёта.
     drawBasic(null);
-    $("lesson-step-count").textContent="ШАГ "+(step+1)+" ИЗ 5";
-    $("lesson-step-title").textContent=id==="internal"?"Разберите внутренние числа":stepTitles[step];
-    $("lesson-step-text").textContent=id==="internal"
-      ?"Сначала введите дату рождения. Затем изучите внутренние кружки и примеры их расчёта."
-      :stepDescriptions[step];
+    $("lesson-step-count").textContent=guidedCount();
+    $("lesson-step-title").textContent=guidedTitle(id==="internal");
+    $("lesson-step-text").textContent=guidedText(id==="internal");
     $("lesson-step-formula").hidden=false;
     $("lesson-step-formula").classList.remove("is-calculation-breakdown","is-bottom-explanation");
     $("lesson-step-formula").textContent="Введите дату рождения выше и нажмите «Использовать», чтобы начать расчёт.";
@@ -272,14 +302,14 @@ function drawCurrent() {
   const full=id==="internal"&&step===4;
   if(full) drawAllPositions(m);
   else drawBasic(m);
-  $("lesson-step-count").textContent="ШАГ "+(step+1)+" ИЗ 5";
-  $("lesson-step-title").textContent=full?"Разберите внутренние числа":stepTitles[step];
-  $("lesson-step-text").textContent=full
-    ?"Внутренние кружки считаются из уже известных чисел. Ниже три примера; остальные позиции можно проверить в разделе «28 формул»."
-    :stepDescriptions[step];
+  $("lesson-step-count").textContent=guidedCount();
+  $("lesson-step-title").textContent=guidedTitle(full);
+  $("lesson-step-text").textContent=guidedText(full);
   const formulaBlock=$("lesson-step-formula");
   if(id==="reduce"&&step===1){
     showFirstThreeCalculations(formulaBlock,m,currentBirth);
+  }else if(id==="reduce"&&step===2){
+    showRulePractice(formulaBlock);
   }else if(step===2){
     showBottomCalculation(formulaBlock,m);
   }else if(step===3){
@@ -299,9 +329,9 @@ function drawCurrent() {
     ];
     formulaBlock.textContent=full?"Готовая основа. Теперь показаны все 31 позиции нашей интерактивной матрицы.":examples[step];
   }
-  $("lesson-step-back").disabled=step===0;
+  $("lesson-step-back").disabled=step<=guidedStart();
   $("lesson-step-next").disabled=false;
-  $("lesson-step-next").textContent=step===4?"К тесту →":"Следующий шаг →";
+  $("lesson-step-next").textContent=step===guidedEnd()?"К тесту →":"Следующий шаг →";
 }
 function unlockFirstLessonQuiz(){
   if(id!=="start")return;
@@ -330,11 +360,11 @@ function setupDiagram(){
   }
   step=id==="start"?0:([0,1,1,4,4][index]??0);
   $("lesson-step-back").addEventListener("click",()=>{
-    step=Math.max(0,step-1);
+    step=Math.max(guidedStart(),step-1);
     drawCurrent();
   });
   $("lesson-step-next").addEventListener("click",()=>{
-    const max=id==="start"?firstLessonSteps.length-1:4;
+    const max=guidedEnd();
     if(step===max){
       if(id==="start")unlockFirstLessonQuiz();
       else $("lesson-quiz").scrollIntoView({behavior:"smooth",block:"start"});
