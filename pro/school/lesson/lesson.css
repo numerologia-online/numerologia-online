@@ -335,3 +335,19 @@
 .school-answer-key{margin:13px 0;padding:11px 14px;border:1px solid #e4d8bf;border-radius:12px;background:#faf6ed}
 .school-answer-key summary{cursor:pointer;color:#78603e;font-size:14px;font-weight:750}
 .school-answer-key p{margin:9px 0 0;font-size:14px;line-height:1.55}
+
+/* Практическая тетрадь раскрывается по желанию, не утяжеляя урок. */
+.school-workbook-editor,.school-workbook-checklist{margin-top:11px}
+.school-workbook-editor summary,.school-workbook-checklist summary{
+  cursor:pointer;color:#526978;font-size:13px;font-weight:750;padding:7px 0;
+}
+.school-workbook-textarea{
+  display:block;width:100%;box-sizing:border-box;min-height:110px;
+  padding:11px;border:1px solid #c9d8d5;border-radius:10px;
+  background:#fffefa;color:#334d5b;font-size:14px;line-height:1.5;font-family:inherit;
+  resize:vertical;outline-offset:2px;
+}
+.school-workbook-save{font-size:11px!important;margin-top:5px!important;color:#7d817b!important}
+.school-workbook-checklist-items{display:grid;gap:9px;padding:8px 0}
+.school-workbook-check{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:#425969;line-height:1.45}
+.school-workbook-check input{flex:0 0 auto;width:18px;height:18px;margin:0;accent-color:#527d7a}
