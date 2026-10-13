@@ -369,7 +369,7 @@
 }
 .school-lesson-shell .school-lesson-navigation .school-lesson-prev{grid-column:1}
 .school-lesson-shell .school-lesson-navigation .school-lesson-next{grid-column:2}
-.school-lesson-shell .school-lesson-navigation .school-lesson-all{
+.school-lesson-shell .school-lesson-navigation a.school-lesson-all{
   grid-column:1/-1;grid-row:auto;
   border:1px solid #d5ddd9;background:#f4f6f2;color:#516975;
 }
