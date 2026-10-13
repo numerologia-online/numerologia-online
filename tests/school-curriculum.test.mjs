@@ -122,7 +122,9 @@ test("Неверный ответ выделен красным и возвра�
   const script=await src("pro/school/lesson/lesson.js");
   const css=await src("pro/school/lesson/lesson.css");
   const html=await src("pro/school/lesson/index.html");
-  assert.ok(script.includes("Пройдите ещё раз урок. Это займёт немного времени, зато вы точно усвоите материал."));
+  assert.ok(script.includes('"Правильно "+score+" из "+data.questions.length'));
+  assert.ok(script.includes('review.append(item)'));
+  assert.ok(script.includes('document.createTextNode(question.explain)'));
   assert.ok(script.includes('feedback.classList.add("is-incorrect")'));
   assert.ok(script.includes('feedback.classList.remove("is-incorrect")'));
   assert.ok(script.includes('retry.hidden=false'));
@@ -307,7 +309,7 @@ test("Урок 2 подробно показывает день месяц и с
   const html=await src("pro/school/lesson/index.html");
   assert.ok(js.includes('Обязательно введите дату рождения ниже'));
   assert.ok(!html.includes('Числа на схеме берутся из того же алгоритма'));
-  assert.ok(js.includes('if(id==="reduce"&&step===1)'));
+  assert.ok(js.includes('if((id==="reduce"||id==="base")&&step===1)'));
   assert.ok(js.includes('showFirstThreeCalculations(formulaBlock,m,currentBirth)'));
   assert.ok(js.includes('const daySteps=reduce22Formula(birth.day)'));
   assert.ok(js.includes('const yearDigits=String(birth.year).split("").map(Number)'));
