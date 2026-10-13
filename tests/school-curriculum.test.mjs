@@ -70,7 +70,7 @@ test("В уроках нет готовой даты, ученик выбира�
   assert.ok(js.includes('currentBirth=birth;'));
   assert.ok(css.includes('.school-date-row input::placeholder{color:#9ca8ac;opacity:.8;letter-spacing:normal}'));
   assert.ok(html.includes('lesson.js?v=16'));
-  assert.ok(html.includes('lesson.css?v=12'));
+  assert.ok(html.includes('lesson.css?v=13'));
 });
 
 test("Первый урок без повторов, дата подтверждается галочкой и тест закрыт до последнего шага", async () => {
@@ -92,7 +92,7 @@ test("Первый урок без повторов, дата подтвержд
   assert.ok(script.includes('resetConfirmation()'));
   assert.ok(page.includes('id="lesson-date-submit"'));
   assert.ok(page.includes('id="lesson-date-confirmed"'));
-  assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=12"'));
+  assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=13"'));
   assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=16"'));
   assert.ok(styles.includes(".school-date-row button.is-confirmed"));
   assert.ok(styles.includes(".school-lesson-quiz.is-locked"));
@@ -136,7 +136,7 @@ test("Неверный ответ выделен красным и возвра�
   assert.ok(css.includes("color:#a82d38"));
   assert.ok(css.includes(".school-quiz-retry[hidden]"));
   assert.ok(html.includes('lesson.js?v=16'));
-  assert.ok(html.includes('lesson.css?v=12'));
+  assert.ok(html.includes('lesson.css?v=13'));
 });
 
 test("Первый урок показывает сразу практику, без двух вступлений",async()=>{
@@ -281,7 +281,7 @@ test("Главное правило второго урока выделено �
   assert.ok(!data.lead.includes("Главное правило:"));
   assert.ok(html.includes('id="lesson-main-rule"'));
   assert.ok(html.includes('lesson.js?v=16'));
-  assert.ok(html.includes('lesson.css?v=12'));
+  assert.ok(html.includes('lesson.css?v=13'));
   assert.ok(js.includes('fetch(manifest[index].file+"?v=7")'));
   assert.ok(js.includes('if(data.mainRule&&Array.isArray(data.mainRule.lines)'));
   assert.ok(js.includes('mainRule.hidden=false'));
@@ -317,7 +317,7 @@ test("Урок 2 подробно показывает день месяц и с
   assert.ok(js.includes('["Справа (год):",yearFormula]'));
   assert.ok(html.includes('<div id="lesson-step-formula" class="school-step-formula"></div>'));
   assert.ok(html.includes('lesson.js?v=16'));
-  assert.ok(html.includes('lesson.css?v=12'));
+  assert.ok(html.includes('lesson.css?v=13'));
   assert.ok(css.includes('.school-step-formula.is-calculation-breakdown{'));
   assert.ok(css.includes('width:fit-content;max-width:100%'));
   assert.ok(css.includes('padding:9px 13px!important;'));
@@ -345,8 +345,20 @@ test("Все управляющие элементы школы и уроков 
   assert.ok(lessonCSS.includes('white-space:nowrap;'));
   assert.ok(lessonCSS.includes('.school-lesson-shell .school-date-row button.is-confirmed{'));
   assert.ok(lessonCSS.includes('.school-lesson-shell .school-quiz-retry{'));
-  assert.ok(lessonCSS.includes('width:fit-content;align-self:flex-start;max-width:100%;'));
+  assert.ok(lessonCSS.includes('.school-lesson-shell .school-date-row{flex-direction:column}'));
+  assert.ok(lessonCSS.includes('width:100%;max-width:100%;align-self:stretch;'));
+  assert.ok(lessonCSS.includes('min-height:52px;padding:12px 16px;'));
   assert.ok(schoolHTML.includes('school.css?v=11'));
   assert.ok(lessonHTML.includes('school.css?v=11'));
-  assert.ok(lessonHTML.includes('lesson.css?v=12'));
+  assert.ok(lessonHTML.includes('lesson.css?v=13'));
+});
+
+test("Кнопка использования даты снова широкая на телефоне",async()=>{
+  const css=await src("pro/school/lesson/lesson.css");
+  const html=await src("pro/school/lesson/index.html");
+  assert.ok(css.includes('@media(max-width:560px){\n  .school-lesson-shell .school-date-row{flex-direction:column}'));
+  assert.ok(css.includes('width:100%;max-width:100%;align-self:stretch;'));
+  assert.ok(css.includes('min-height:52px;padding:12px 16px;'));
+  assert.ok(!css.includes('width:fit-content;align-self:flex-start;max-width:100%;'));
+  assert.ok(html.includes('lesson.css?v=13'));
 });
