@@ -1,5 +1,5 @@
 import { calculateMatrix, parseBirthDate } from "../../numerology-core.js?v=1";
-import { pointCatalog } from "./points.js?v=1";
+import { pointCatalog } from "./points.js?v=2";
 
 const byId = (id) => document.getElementById(id);
 const error = byId("school-error");
@@ -189,7 +189,7 @@ function renderTrainer() {
 }
 trainPoint.replaceChildren();
 practicePoints.forEach((item,index)=>{
-  const option=make("option","",item.name);
+  const option=make("option","",item.title);
   option.value=String(index);
   trainPoint.append(option);
 });
