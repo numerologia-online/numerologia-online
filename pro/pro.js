@@ -417,8 +417,21 @@ function appendAuthorChapter(target,chapter){
 function appendPositionReading(target,section,definition,ctx,energy){
   const chapters=authorChapters(section.paragraphs);
   const focus=new Set(ctx.focus||[]);
-  let chosen=chapters.filter(ch=>ch.tags.some(tag=>focus.has(tag)));
-  if(chosen.length<2)chosen=chosen.concat(chapters.filter(ch=>!chosen.includes(ch)&&ch.body.length).slice(0,2-chosen.length));
+  const available=chapters.filter(ch=>ch.body.length);
+  // Если похожая тема встречается в одной сфере несколько раз,
+  // подбираем разные сочетания АВТОРСКИХ глав, а не копируем одно и то же.
+  const size=available.length>4?3:Math.min(2,available.length);
+  const combinations=[];
+  function collect(start,chosen){
+    if(chosen.length===size){combinations.push(chosen);return}
+    for(let i=start;i<=available.length-(size-chosen.length);i++)collect(i+1,[...chosen,available[i]]);
+  }
+  collect(0,[]);
+  combinations.sort((a,b)=>{
+    const score=parts=>parts.reduce((sum,ch)=>sum+ch.tags.filter(tag=>focus.has(tag)).length,0);
+    return score(b)-score(a);
+  });
+  const chosen=combinations[(ctx.variant||0)%combinations.length]||available;
   target.append(element("p","ЭНЕРГИЯ "+energy+" В ЭТОЙ ПОЗИЦИИ","pro-eyebrow"));
   target.append(element("h4",ctx.title||section.title,"pro-inline-reading-title"));
   target.append(paragraph(ctx.angle,"pro-position-interpretation"));
@@ -626,7 +639,8 @@ function renderZoneReading(zone, shouldScroll = true) {
       card.addEventListener("toggle", () => {
         if (card.open && !card.dataset.loaded) {
           card.dataset.loaded = "true";
-          loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title});
+          const variant = zone.points.filter(key=>reading.authored?.[key]===authoredKey).indexOf(point.key);
+          loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title,variant});
         }
       });
     } else {
