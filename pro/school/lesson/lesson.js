@@ -597,16 +597,17 @@ function renderNavigation() {
     a.href="pro/school/lesson/?id="+encodeURIComponent(item.id);
     return a;
   };
-  if(prev)nav.append(link(prev,"← Предыдущий урок","school-secondary"));
-  nav.append(link({id:"",title:""},"Вся программа","school-lesson-all"));
-  nav.lastElementChild.href="pro/school/";
-  if(next&&readCompleted().has(id))nav.append(link(next,"Следующий урок →","school-primary"));
+  if(prev)nav.append(link(prev,"← Предыдущий урок","school-secondary school-lesson-prev"));
+  if(next&&readCompleted().has(id))nav.append(link(next,"Следующий урок →","school-primary school-lesson-next"));
   else if(next){
-    const locked=make("span","school-lesson-locked-next","🔒 Следующий урок");
+    const locked=make("span","school-lesson-locked-next school-lesson-next","🔒 Следующий урок");
     locked.setAttribute("aria-disabled","true");
     locked.title="Правильно ответьте на все вопросы, чтобы открыть следующий урок";
     nav.append(locked);
   }
+  const all=make("a","school-lesson-all","Вся программа");
+  all.href="pro/school/";
+  nav.append(all);
 }
 function renderLesson(data) {
   document.title=data.title+" | Школа нумерологов";
@@ -728,7 +729,7 @@ async function start() {
       nav.append(back);
       return;
     }
-    const response=await fetch(manifest[index].file+"?v=11");
+    const response=await fetch(manifest[index].file+"?v=12");
     if(!response.ok)throw Error("Материал урока не найден");
     lesson=await response.json();
     if(lesson.id!==id||!Array.isArray(lesson.sections)||!Array.isArray(lesson.questions))
