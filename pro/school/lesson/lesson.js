@@ -108,7 +108,11 @@ function drawBasic(matrix) {
     ["bottomRight",317,317,matrix?.corners?.bottomRight,"Угол"],["bottomLeft",83,317,matrix?.corners?.bottomLeft,"Угол"]
   ];
   for (const [key,x,y,value,label] of nodes) {
-    const shown=Boolean(matrix)&&stageKeys[id==="reduce"?1:step].includes(key);
+    const cornerOrder=["topLeft","topRight","bottomRight","bottomLeft"];
+    const visible=id==="corners"
+      ?["left","top","right","bottom","center",...cornerOrder.slice(0,step+1)]
+      :stageKeys[id==="reduce"?1:step];
+    const shown=Boolean(matrix)&&visible.includes(key);
     const group=makeSvg("g",{"class":shown?"school-graph-node is-revealed":"school-graph-node"});
     group.append(makeSvg("circle",{cx:x,cy:y,r:key==="center"?24:20}));
     const text=makeSvg("text",{x,y:y+1,"text-anchor":"middle","dominant-baseline":"middle"});
@@ -128,7 +132,9 @@ function drawAllPositions(matrix) {
   [[310,68,310,552],[68,310,552,310],[114,114,506,506],[506,114,114,506]].forEach(([x1,y1,x2,y2]) =>
     svg.append(makeSvg("line",{x1,y1,x2,y2,"class":"school-diagram-line"})));
   for(const point of nodesFor(currentBirth,matrix)){
-    const group=makeSvg("g",{"class":"school-graph-node is-revealed"+(point.kind==="center"?" is-center":"")});
+    const focus=internalFocus[step]||[];
+    const muted=id==="internal"&&!focus.includes(point.key);
+    const group=makeSvg("g",{"class":"school-graph-node is-revealed"+(point.kind==="center"?" is-center":"")+(muted?" is-muted":"")});
     const radius=point.kind==="center"?28:point.kind==="major"?25:15;
     group.append(makeSvg("circle",{cx:point.x,cy:point.y,r:radius}));
     const text=makeSvg("text",{x:point.x,y:point.y+1,"text-anchor":"middle","dominant-baseline":"middle","font-size":radius<=15?17:22});
@@ -236,12 +242,62 @@ function showInternalCalculations(root,matrix){
     ["Нижняя линия:",compactSumFormula([matrix.center,matrix.bottom],matrix.tail.first)]
   ]);
 }
+
+const cornerStages=[
+  {title:"Верхний левый угол",text:"Сложите числа слева и сверху. Если сумма больше 22, сложите её цифры."},
+  {title:"Верхний правый угол",text:"Теперь сложите числа сверху и справа. Запишите промежуточную сумму, прежде чем сокращать."},
+  {title:"Нижний правый угол",text:"Здесь складываются числа справа и снизу. Применяйте то же правило 22 энергий."},
+  {title:"Нижний левый угол",text:"Остаются числа снизу и слева. Проверьте, что все четыре угла рассчитаны по соседним точкам."}
+];
+const internalStages=[
+  {title:"Проверьте девять основных точек",text:"На схеме много маленьких кружков. Сначала убедитесь, что известны девять основных чисел. От них строятся другие позиции."},
+  {title:"Рассчитайте три оси",text:"Найдите средние числа на верхней, левой и правой осях из соответствующей внешней точки и личного центра."},
+  {title:"Разберите родовые диагонали",text:"Для диагоналей сначала найдите родовой центр из четырёх углов - это не личный центр."},
+  {title:"Постройте нижнюю линию",text:"Два дополнительных нижних числа рассчитываются последовательно из центра и нижней точки."},
+  {title:"Считайте денежную и любовную линии",text:"Найдите вход в деньги, вход в отношения, общий баланс и точки под знаками доллара и сердца."}
+];
+const internalFocus=[
+ ["top","right","bottom","left","center","topLeft","topRight","bottomRight","bottomLeft"],
+ ["top","left","right","center","topOuter","topNear","topCore","leftOuter","leftNear","leftCore","rightOuter","rightNear","rightCore"],
+ ["topLeft","topRight","bottomRight","bottomLeft","center","topLeftNear","topLeftOuter","topRightNear","topRightOuter","bottomLeftNear","bottomLeftOuter","bottomRightNear","bottomRightOuter"],
+ ["center","bottom","tailFirst","tailSecond"],
+ ["right","bottom","center","rightNear","tailFirst","wellbeing","moneyPoint","loveHeart"]
+];
+function showCornerStep(root,matrix){
+  const pairs=[
+    ["Сверху слева:",[matrix.left,matrix.top],matrix.corners.topLeft],
+    ["Сверху справа:",[matrix.top,matrix.right],matrix.corners.topRight],
+    ["Снизу справа:",[matrix.right,matrix.bottom],matrix.corners.bottomRight],
+    ["Снизу слева:",[matrix.bottom,matrix.left],matrix.corners.bottomLeft]
+  ];
+  const [label,values,result]=pairs[step];
+  showCompactCalculations(root,[[label,compactSumFormula(values,result)]]);
+}
+function showInternalStep(root,m){
+  const examples=[
+    [["Центр:",compactSumFormula([m.left,m.top,m.right,m.bottom],m.center)],
+      ["Верхний левый угол:",compactSumFormula([m.left,m.top],m.corners.topLeft)]],
+    [["Верхняя ось:",compactSumFormula([m.top,m.center],m.topSpoke.near)],
+      ["Левая ось:",compactSumFormula([m.left,m.center],m.leftSpoke.near)],
+      ["Правая ось:",compactSumFormula([m.right,m.center],m.rightSpoke.near)]],
+    [["Родовой центр:",compactSumFormula([m.corners.topLeft,m.corners.topRight,m.corners.bottomRight,m.corners.bottomLeft],m.lineage.ancestralCenter)],
+      ["Слева сверху:",compactSumFormula([m.corners.topLeft,m.lineage.ancestralCenter],m.diagonals.topLeft.near)]],
+    [["Нижняя первая:",compactSumFormula([m.center,m.bottom],m.tail.first)],
+      ["Нижняя вторая:",compactSumFormula([m.bottom,m.tail.first],m.tail.second)]],
+    [["Вход в деньги:",compactSumFormula([m.right,m.center],m.channels.moneyEntry)],
+      ["Вход в отношения:",compactSumFormula([m.bottom,m.center],m.channels.loveEntry)],
+      ["Баланс:",compactSumFormula([m.channels.moneyEntry,m.channels.loveEntry],m.channels.balance)],
+      ["Под долларом:",compactSumFormula([m.channels.moneyEntry,m.channels.balance],m.channels.moneyPoint)],
+      ["Под сердцем:",compactSumFormula([m.channels.loveEntry,m.channels.balance],m.channels.lovePoint)]]
+  ];
+  showCompactCalculations(root,examples[step]);
+}
 // У каждого урока своя траектория: правило 22, основные числа, углы, внутренние числа.
 function guidedStart(){
-  return id==="start"?0:(id==="reduce"||id==="base"?1:4);
+  return id==="start"?0:(id==="reduce"||id==="base"?1:0);
 }
 function guidedEnd(){
-  return id==="start"?firstLessonSteps.length-1:id==="reduce"?2:id==="base"?3:4;
+  return id==="start"?firstLessonSteps.length-1:id==="reduce"?2:id==="base"?3:id==="corners"?3:4;
 }
 function guidedCount(){
   const first=guidedStart();
@@ -249,6 +305,8 @@ function guidedCount(){
 }
 function guidedTitle(isFull){
   if(id==="reduce")return step===1?"Проверьте числа по правилу 22":"Запомните границу 22 энергий";
+  if(id==="corners")return cornerStages[step].title;
+  if(id==="internal")return internalStages[step].title;
   return isFull?"Разберите внутренние числа":stepTitles[step];
 }
 function guidedText(isFull){
@@ -257,9 +315,9 @@ function guidedText(isFull){
       ?"Посмотрите на день, месяц и год своей даты. Числа от 1 до 22 оставляем без изменений, а большие сокращаем сложением цифр. Ниже показаны ваши вычисления."
       :"Закрепим главное: 11, 15 и 22 сохраняем, а 23, 31 и другие числа больше 22 сокращаем сложением цифр. Затем можно пройти тест.";
   }
-  return isFull
-    ?"Внутренние кружки считаются из уже известных чисел. Ниже три примера; остальные позиции можно проверить в разделе «28 формул»."
-    :stepDescriptions[step];
+  if(id==="corners")return cornerStages[step].text;
+  if(id==="internal")return internalStages[step].text;
+  return stepDescriptions[step];
 }
 function showRulePractice(root){
   showCompactCalculations(root,[
@@ -299,7 +357,7 @@ function drawCurrent() {
   }
   $("lesson-step-formula").hidden=false;
   const m=calculateMatrix(currentBirth);
-  const full=id==="internal"&&step===4;
+  const full=id==="internal";
   if(full) drawAllPositions(m);
   else drawBasic(m);
   $("lesson-step-count").textContent=guidedCount();
@@ -310,6 +368,10 @@ function drawCurrent() {
     showFirstThreeCalculations(formulaBlock,m,currentBirth);
   }else if(id==="reduce"&&step===2){
     showRulePractice(formulaBlock);
+  }else if(id==="corners"){
+    showCornerStep(formulaBlock,m);
+  }else if(id==="internal"){
+    showInternalStep(formulaBlock,m);
   }else if(step===2){
     showBottomCalculation(formulaBlock,m);
   }else if(step===3){
@@ -358,7 +420,7 @@ function setupDiagram(){
   }else if(id==="reduce"){
     $("lesson-drawing-description").textContent="Откройте тетрадь, проверяйте и записывайте каждый шаг. Обязательно введите дату рождения ниже и нажмите «Использовать» - иначе числа в кружках не появятся.";
   }
-  step=id==="start"?0:([0,1,1,4,4][index]??0);
+  step=id==="start"?0:([0,1,1,0,0][index]??0);
   $("lesson-step-back").addEventListener("click",()=>{
     step=Math.max(guidedStart(),step-1);
     drawCurrent();
@@ -463,7 +525,7 @@ function renderQuiz(data) {
       $("lesson-drawing").scrollIntoView({behavior:"smooth",block:"start"});
     }else if(index<=4){
       // У этих уроков обучение проходит на схеме, а не в повторяющейся статье.
-      step=[0,1,1,4,4][index];
+      step=[0,1,1,0,0][index];
       drawCurrent();
       $("lesson-drawing").scrollIntoView({behavior:"smooth",block:"start"});
     }else{
