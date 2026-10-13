@@ -19,7 +19,7 @@ test("Школа начинает с построения матрицы и за
   assert.ok(!script.includes('fetch("pro/school/lessons.json'));
   assert.ok(script.includes('link.href = "pro/school/lesson/?id="'));
   assert.ok(reader.includes('<base href="../../../">'));
-  assert.ok(lessonJS.includes('fetch(manifest[index].file+"?v=9")'));
+  assert.ok(lessonJS.includes('fetch(manifest[index].file+"?v=10")'));
   assert.equal(manifest.lessons.length, 12);
   assert.deepEqual(manifest.lessons.slice(0,5).map(x=>x.id), ["start","reduce","base","corners","internal"]);
   for (const meta of manifest.lessons) {
@@ -69,7 +69,7 @@ test("В уроках нет готовой даты, ученик выбира�
   assert.ok(js.includes('currentBirth=null;'));
   assert.ok(js.includes('currentBirth=birth;'));
   assert.ok(css.includes('.school-date-row input::placeholder{color:#9ca8ac;opacity:.8;letter-spacing:normal}'));
-  assert.ok(html.includes('lesson.js?v=20'));
+  assert.ok(html.includes('lesson.js?v=21'));
   assert.ok(html.includes('lesson.css?v=15'));
 });
 
@@ -93,7 +93,7 @@ test("Первый урок без повторов, дата подтвержд
   assert.ok(page.includes('id="lesson-date-submit"'));
   assert.ok(page.includes('id="lesson-date-confirmed"'));
   assert.ok(page.includes('href="pro/school/lesson/lesson.css?v=15"'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=20"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=21"'));
   assert.ok(styles.includes(".school-date-row button.is-confirmed"));
   assert.ok(styles.includes(".school-lesson-quiz.is-locked"));
   const first=JSON.parse(await src("pro/school/lessons/start.json"));
@@ -135,7 +135,7 @@ test("Неверный ответ выделен красным и возвра�
   assert.ok(css.includes(".school-quiz-result.is-incorrect"));
   assert.ok(css.includes("color:#a82d38"));
   assert.ok(css.includes(".school-quiz-retry[hidden]"));
-  assert.ok(html.includes('lesson.js?v=20'));
+  assert.ok(html.includes('lesson.js?v=21'));
   assert.ok(html.includes('lesson.css?v=15'));
 });
 
@@ -184,7 +184,7 @@ test("В первом тесте считаем кружочки и после �
   assert.ok(success.includes('feedback.scrollIntoView({behavior:"smooth",block:"center"})'));
   assert.ok(!script.slice(script.indexOf('feedback.classList.add("is-incorrect")'),script.indexOf('retry.hidden=false')).includes("scrollIntoView"));
   assert.ok(script.includes('link(next,"Следующий урок →","school-primary")'));
-  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=20"'));
+  assert.ok(page.includes('src="pro/school/lesson/lesson.js?v=21"'));
 });
 
 test("Уроки открываются строго последовательно, включая прямые ссылки",async()=>{
@@ -205,7 +205,7 @@ test("Уроки открываются строго последователь�
   assert.ok(css.includes(".school-lesson-link.is-locked"));
   assert.ok(css.includes(".school-lesson-locked-next"));
   assert.ok(homePage.includes('school.js?v=5'));
-  assert.ok(readerPage.includes('lesson.js?v=20'));
+  assert.ok(readerPage.includes('lesson.js?v=21'));
   assert.ok(readerPage.includes('school.css?v=11'));
 });
 
@@ -280,9 +280,9 @@ test("Главное правило второго урока выделено �
   ]);
   assert.ok(!data.lead.includes("Главное правило:"));
   assert.ok(html.includes('id="lesson-main-rule"'));
-  assert.ok(html.includes('lesson.js?v=20'));
+  assert.ok(html.includes('lesson.js?v=21'));
   assert.ok(html.includes('lesson.css?v=15'));
-  assert.ok(js.includes('fetch(manifest[index].file+"?v=9")'));
+  assert.ok(js.includes('fetch(manifest[index].file+"?v=10")'));
   assert.ok(js.includes('if(data.mainRule&&Array.isArray(data.mainRule.lines)'));
   assert.ok(js.includes('mainRule.hidden=false'));
   assert.ok(js.includes('mainRule.hidden=true'));
@@ -316,7 +316,7 @@ test("Урок 2 подробно показывает день месяц и с
   assert.ok(js.includes('["Сверху (месяц):",monthFormula]'));
   assert.ok(js.includes('["Справа (год):",yearFormula]'));
   assert.ok(html.includes('<div id="lesson-step-formula" class="school-step-formula"></div>'));
-  assert.ok(html.includes('lesson.js?v=20'));
+  assert.ok(html.includes('lesson.js?v=21'));
   assert.ok(html.includes('lesson.css?v=15'));
   assert.ok(css.includes('.school-step-formula.is-calculation-breakdown{'));
   assert.ok(css.includes('width:fit-content;max-width:100%'));
@@ -381,7 +381,7 @@ test("Нижняя точка по введённой дате показыва�
   assert.ok(base.sections[3].example.includes("4 + 0 = 4"));
   assert.ok(base.questions[0].prompt.includes("нижняя точка"));
   assert.ok(css.includes('.school-lesson-shell .school-step-formula.is-bottom-explanation{'));
-  assert.ok(page.includes('lesson.js?v=20'));
+  assert.ok(page.includes('lesson.js?v=21'));
   assert.ok(page.includes('lesson.css?v=15'));
 });
 
@@ -405,7 +405,7 @@ test("После интерактивных шагов сразу тест, бе
   assert.ok(js.includes('step===4?"К тесту →":"Следующий шаг →"'));
   assert.ok(js.includes('renderQuiz(data)'));
   assert.ok(js.includes('setupDiagram()'));
-  assert.ok(html.includes('lesson.js?v=20'));
+  assert.ok(html.includes('lesson.js?v=21'));
   assert.ok(html.includes('lesson.css?v=15'));
 });
 
@@ -440,5 +440,22 @@ test("Аудит всех 12 уроков: понятные названия, т
   assert.ok(points.includes('point("bottom","Нижняя точка","Основные"'));
   assert.ok(points.includes('digits.join(" + ") + " = " + sum'));
   assert.ok(schoolPage.includes('school.js?v=5'));
-  assert.ok(lessonPage.includes('lesson.js?v=20'));
+  assert.ok(lessonPage.includes('lesson.js?v=21'));
+});
+
+test("В третьем уроке три вопроса, включая способ расчёта центральной энергии",async()=>{
+  const data=JSON.parse(await src("pro/school/lessons/base.json"));
+  const reader=await src("pro/school/lesson/lesson.js");
+  const page=await src("pro/school/lesson/index.html");
+  assert.equal(data.questions.length,3);
+  const question=data.questions[2];
+  assert.equal(question.prompt,"Как правильно рассчитать центральную энергию матрицы?");
+  assert.equal(question.options.length,3);
+  assert.equal(question.correct,1);
+  assert.ok(question.options[1].includes("слева, сверху, справа и снизу"));
+  assert.ok(question.options[1].includes("больше 22"));
+  assert.ok(question.explain.includes("14 + 7 + 19 + 4 = 44"));
+  assert.ok(question.explain.includes("4 + 4 = 8"));
+  assert.ok(reader.includes('fetch(manifest[index].file+"?v=10")'));
+  assert.ok(page.includes("lesson.js?v=21"));
 });
