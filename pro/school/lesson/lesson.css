@@ -319,3 +319,19 @@
 @media (prefers-reduced-motion:reduce){
  .school-diagram .school-graph-node{transition:none}
 }
+
+/* Проверка знаний: небольшие объяснения вместо пустого «попробуйте ещё раз». */
+.school-quiz-review{display:grid;gap:7px;margin:8px 0 13px}
+.school-quiz-review[hidden]{display:none!important}
+.school-quiz-review-item{
+  margin:0;padding:8px 11px;
+  border-left:2px solid #c5a47d;border-radius:0 9px 9px 0;
+  background:#f7f2e8;color:#46576a;
+  font-size:13px;line-height:1.5
+}
+.school-workbook{margin:12px 0;padding:14px 15px;border:1px solid #dbd7cb;border-radius:13px;background:#f7f6f1}
+.school-workbook h2{font-size:16px;margin:0 0 8px}
+.school-workbook p{margin:0;color:#536573;font-size:14px;line-height:1.55}
+.school-answer-key{margin:13px 0;padding:11px 14px;border:1px solid #e4d8bf;border-radius:12px;background:#faf6ed}
+.school-answer-key summary{cursor:pointer;color:#78603e;font-size:14px;font-weight:750}
+.school-answer-key p{margin:9px 0 0;font-size:14px;line-height:1.55}
