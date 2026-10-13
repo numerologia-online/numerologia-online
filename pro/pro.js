@@ -427,11 +427,20 @@ function appendPositionReading(target,section,definition,ctx,energy){
     for(let i=start;i<=available.length-(size-chosen.length);i++)collect(i+1,[...chosen,available[i]]);
   }
   collect(0,[]);
-  combinations.sort((a,b)=>{
-    const score=parts=>parts.reduce((sum,ch)=>sum+ch.tags.filter(tag=>focus.has(tag)).length,0);
-    return score(b)-score(a);
-  });
-  const chosen=combinations[(ctx.variant||0)%combinations.length]||available;
+  // Последовательно выбираем наиболее подходящие неповторяющиеся сочетания
+  // для всех точек одной темы. Разные фокусы не должны давать один и тот же результат.
+  const used=new Set();
+  let chosen=available;
+  const allFocus=ctx.relatedFocus||[ctx.focus];
+  for(let ordinal=0;ordinal<=(ctx.variant||0);ordinal++){
+    const wanted=new Set(allFocus[ordinal]||ctx.focus);
+    const ranked=combinations.map((chapters,index)=>({
+      chapters,index,
+      score:chapters.reduce((sum,ch)=>sum+ch.tags.filter(tag=>wanted.has(tag)).length,0)
+    })).sort((a,b)=>b.score-a.score||a.index-b.index);
+    const picked=ranked.find(item=>!used.has(item.index))||ranked[0];
+    if(picked){used.add(picked.index);chosen=picked.chapters}
+  }
   target.append(element("p","ЭНЕРГИЯ "+energy+" В ЭТОЙ ПОЗИЦИИ","pro-eyebrow"));
   target.append(element("h4",ctx.title||section.title,"pro-inline-reading-title"));
   target.append(paragraph(ctx.angle,"pro-position-interpretation"));
@@ -639,8 +648,10 @@ function renderZoneReading(zone, shouldScroll = true) {
       card.addEventListener("toggle", () => {
         if (card.open && !card.dataset.loaded) {
           card.dataset.loaded = "true";
-          const variant = zone.points.filter(key=>reading.authored?.[key]===authoredKey).indexOf(point.key);
-          loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title,variant});
+          const related = zone.points.filter(key=>reading.authored?.[key]===authoredKey);
+          const variant=related.indexOf(point.key);
+          const relatedFocus=related.map(key=>reading.depth[key].focus);
+          loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title,variant,relatedFocus});
         }
       });
     } else {
