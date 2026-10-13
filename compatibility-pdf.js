@@ -1,3 +1,5 @@
+import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=1";
+
 /**
  * PDF совместимости: только оформление и скачивание, без авторских текстов.
  * Все 13 глав подгружаются из тех же JSON, что и ответы на сайте.
@@ -145,7 +147,7 @@ export const createCompatibilityPdfController = ({ buttons, getBank }) => {
           return block;
         }))
       ]);
-      const document = makeDocument({ ...current, readings });
+      const document = appendPublicPdfOutro(makeDocument({ ...current, readings }));
       const blob = await new Promise((resolve, reject) => {
         try { pdfMake.createPdf(document).getBlob(resolve); }
         catch (error) { reject(error); }
