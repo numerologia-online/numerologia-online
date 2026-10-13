@@ -15,6 +15,10 @@ const S=(tag,attrs={})=>{
 const progressKey="numerologia-online-classic-progress-v1";
 const id=new URLSearchParams(location.search).get("id")||"hello";
 let manifest=[],activeIndex=-1;
+function readProgress(){
+ try{const saved=JSON.parse(localStorage.getItem(progressKey)||"[]");return new Set(Array.isArray(saved)?saved:[])}
+ catch{return new Set()}
+}
 function visual(data){
  const stage=data.id;
  const root=$("classic-lesson-visual");
@@ -80,35 +84,58 @@ function visual(data){
 function quiz(data){
  const panel=$("classic-lesson-quiz");panel.replaceChildren();
  panel.append(make("h2","","Проверьте себя"));
- const form=make("form");
- const field=make("fieldset");
- field.append(make("legend","",data.quiz.question));
- data.quiz.options.forEach((choice,i)=>{
-   const label=make("label","classic-choice");
-   const radio=make("input");
-   radio.type="radio";radio.name="answer";radio.value=String(i);
-   label.append(radio,make("span","",choice));field.append(label);
+ const questions=Array.isArray(data.quizzes)&&data.quizzes.length?data.quizzes:[data.quiz];
+ const intro=make("p","classic-quiz-intro","Ответьте на все вопросы ("+questions.length+"). После правильных ответов откроется следующий урок.");
+ panel.append(intro);
+ const form=make("form");form.noValidate=true;
+ questions.forEach((question,i)=>{
+   const field=make("fieldset","classic-quiz-question");
+   field.append(make("legend","",(i+1)+". "+question.question));
+   question.options.forEach((choice,j)=>{
+     const label=make("label","classic-choice");
+     const radio=make("input");
+     radio.type="radio";radio.name="classic-answer-"+i;radio.value=String(j);
+     label.append(radio,make("span","",choice));field.append(label);
+   });
+   form.append(field);
  });
- form.append(field);
- const submit=make("button","classic-quiz-check","Проверить ответ");submit.type="submit";
+ const submit=make("button","classic-quiz-check","Проверить ответы");submit.type="submit";
  const feedback=make("p","classic-quiz-feedback");feedback.setAttribute("role","status");feedback.setAttribute("aria-live","polite");
- form.append(submit,feedback);
+ const review=make("div","classic-quiz-review");review.hidden=true;
+ form.append(submit,feedback,review);
  form.addEventListener("submit",event=>{
    event.preventDefault();
-   const answer=form.querySelector('input[name="answer"]:checked');
-   if(!answer){feedback.textContent="Сначала выберите ответ.";return}
-   if(Number(answer.value)===data.quiz.correct){
-     feedback.textContent="Верно! "+data.quiz.why+" Урок отмечен как пройденный.";
-     submit.textContent="✓ Пройдено";
-     try{const saved=JSON.parse(localStorage.getItem(progressKey)||"[]");
-       const done=new Set(Array.isArray(saved)?saved:[]);
-       done.add(data.id);localStorage.setItem(progressKey,JSON.stringify([...done]));
-     }catch{}
+   const answers=questions.map((_,i)=>form.querySelector('input[name="classic-answer-'+i+'"]:checked'));
+   if(answers.some(x=>!x)){feedback.textContent="Ответьте на все вопросы.";return}
+   const correct=answers.filter((a,i)=>Number(a.value)===questions[i].correct).length;
+   if(correct===questions.length){
+     try{
+       const done=readProgress();done.add(data.id);
+       localStorage.setItem(progressKey,JSON.stringify([...done]));
+       feedback.textContent="Отлично! "+correct+" из "+questions.length+". Урок пройден, следующий открыт.";
+       submit.textContent="✓ Урок пройден";
+       review.replaceChildren();review.hidden=true;navigation();
+     }catch{
+       feedback.textContent="Все ответы верны, но сохранение прогресса в браузере недоступно. Разрешите сохранение данных для перехода к следующему уроку.";
+     }
    }else{
-     feedback.textContent="Пока не совсем так. "+data.quiz.why+" Можете выбрать другой вариант.";
+     feedback.textContent="Правильно "+correct+" из "+questions.length+". Разберите ошибки и попробуйте снова.";
+     review.replaceChildren();
+     questions.forEach((q,i)=>{
+       if(Number(answers[i].value)===q.correct)return;
+       const row=make("p","classic-quiz-review-item");
+       row.append(make("strong","","Вопрос "+(i+1)+": "),document.createTextNode(q.why));
+       review.append(row);
+     });
+     review.hidden=false;
    }
  });
  panel.append(form);
+}
+function linkToRequired(lesson){
+ const link=make("a","","Открыть нужный урок →");
+ link.href="pro/schools/classic/lesson/?id="+encodeURIComponent(lesson.id);
+ return link;
 }
 function navigation(){
  const nav=$("classic-lesson-navigation");
@@ -119,7 +146,11 @@ function navigation(){
  const prev=manifest[activeIndex-1],next=manifest[activeIndex+1];
  if(prev)nav.append(link("pro/schools/classic/lesson/?id="+prev.id,"← Предыдущий"));
  nav.append(link("pro/schools/classic/","Все уроки"));
- if(next)nav.append(link("pro/schools/classic/lesson/?id="+next.id,"Следующий →"));
+ if(next&&readProgress().has(id))nav.append(link("pro/schools/classic/lesson/?id="+next.id,"Следующий урок →"));
+ else if(next){
+   const locked=make("span","classic-lesson-locked-next","🔒 Следующий урок");
+   locked.setAttribute("aria-disabled","true");nav.append(locked);
+ }
 }
 function render(data){
  document.title=data.title+" | Классическая нумерология";
@@ -137,17 +168,27 @@ function render(data){
 }
 async function start(){
  try{
-   const response=await fetch("pro/schools/classic/manifest.json?v=1");
+   const response=await fetch("pro/schools/classic/manifest.json?v=2");
    if(!response.ok)throw Error("Manifest unavailable");
    const data=await response.json();
    if(data.schema!=="classic-school-curriculum-v1"||!Array.isArray(data.lessons))throw Error("Invalid lessons index");
    manifest=data.lessons;
    activeIndex=manifest.findIndex(item=>item.id===id);
    if(activeIndex<0)throw Error("Unknown lesson id");
-   const r=await fetch(manifest[activeIndex].file+"?v=1");
+   const blocked=manifest.slice(0,activeIndex).find(item=>!readProgress().has(item.id));
+   if(blocked){
+     $("classic-lesson-title").textContent="Этот урок пока закрыт";
+     $("classic-lesson-lead").textContent="Чтобы пройти программу последовательно, сначала выполните задания предыдущих уроков.";
+     const msg=$("classic-lesson-error");msg.hidden=false;
+     msg.textContent="🔒 Сначала пройдите урок «"+blocked.title+"».";
+     const nav=$("classic-lesson-navigation");nav.replaceChildren();
+     nav.append(linkToRequired(blocked));
+     return;
+   }
+   const r=await fetch(manifest[activeIndex].file+"?v=2");
    if(!r.ok)throw Error("Lesson unavailable");
    const lesson=await r.json();
-   if(lesson.id!==id||!lesson.sections?.length||!lesson.quiz)throw Error("Lesson invalid");
+   if(lesson.id!==id||!lesson.sections?.length||!lesson.quiz||!Array.isArray(lesson.quizzes)||lesson.quizzes.length<4)throw Error("Lesson invalid");
    render(lesson);
  }catch(error){
    console.warn("Классический урок:",error);
