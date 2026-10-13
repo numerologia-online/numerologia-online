@@ -300,3 +300,17 @@
   .school-lesson-shell .school-lesson-navigation a:last-child{grid-column:auto}
   .school-lesson-shell .school-step-buttons button{padding:9px 10px;font-size:12px}
 }
+
+/* Третий шаг: сумма и объяснение в одной небольшой плашке. */
+.school-lesson-shell .school-step-formula.is-bottom-explanation{
+  width:fit-content;max-width:100%;
+  padding:10px 14px!important;
+}
+.school-bottom-math{
+  display:block;color:#2b4455;
+  font-size:15px;font-weight:800;line-height:1.4;
+}
+.school-bottom-reason{
+  margin:6px 0 0;
+  color:#596b73;font-size:13px;font-weight:500;line-height:1.5;
+}
