@@ -361,13 +361,13 @@ function authorChapterTag(title){
   if(t.startsWith("что это значит"))return ["meaning"];
   if(t.startsWith("в чем ваша сила"))return ["meaning","plus"];
   if(t.startsWith("как проявляется в плюсе"))return ["plus"];
-  if(t.startsWith("где вы сами себе")||t.startsWith("где уходит в минус")||t.startsWith("в минусе"))return ["shadow"];
+  if(t.startsWith("где вы сами себе")||t.startsWith("где уходит в минус")||t.startsWith("в минусе"))return ["shadow","limits"];
   if(t.startsWith("главный запрет"))return ["limits"];
   if(t.startsWith("что жизнь будет"))return ["cost"];
   if(t.startsWith("что начнет приходить"))return ["plus","reward"];
   if(t.startsWith("где вы путаете"))return ["dilemma"];
   if(t.startsWith("как перестать терять силы"))return ["resource"];
-  if(t.startsWith("что делать"))return ["action"];
+  if(t.startsWith("что делать"))return ["action","resource"];
   if(t.startsWith("какой уровень жизни")||t.startsWith("стратегия на будущее"))return ["future"];
   if(t.startsWith("в плюсе"))return ["plus","reward"];
   return ["meaning"];
@@ -420,7 +420,10 @@ function appendPositionReading(target,section,definition,ctx,energy){
   const available=chapters.filter(ch=>ch.body.length);
   // Если похожая тема встречается в одной сфере несколько раз,
   // подбираем разные сочетания АВТОРСКИХ глав, а не копируем одно и то же.
-  const size=available.length>4?3:Math.min(2,available.length);
+  // When one authored topic describes several points of a sphere, show two
+  // different substantial chapters rather than repeating three near-identical ones.
+  const sameTopicPositions=(ctx.relatedFocus||[]).length;
+  const size=Math.min(available.length,sameTopicPositions>1?2:(available.length>4?3:2));
   const combinations=[];
   function collect(start,chosen){
     if(chosen.length===size){combinations.push(chosen);return}
