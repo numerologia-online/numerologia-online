@@ -15,7 +15,8 @@
     {
       "id": "provider",
       "title": "Добытчик по жизни или философ с дивана?",
-      "status": "pending"
+      "status": "in-progress",
+      "textFile": "money/provider.json?v=1"
     },
     {
       "id": "courtship",
