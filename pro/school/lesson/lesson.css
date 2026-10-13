@@ -312,3 +312,10 @@
   margin:6px 0 0;
   color:#596b73;font-size:13px;font-weight:500;line-height:1.5;
 }
+
+/* Пошаговое знакомство с 31 точкой: остальные числа остаются тихими. */
+.school-diagram .school-graph-node.is-muted{opacity:.21}
+.school-diagram .school-graph-node.is-muted text{opacity:.48}
+@media (prefers-reduced-motion:reduce){
+ .school-diagram .school-graph-node{transition:none}
+}
