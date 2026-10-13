@@ -107,7 +107,7 @@ function loadKarmicDeepening() {
 
 function loadZoneLibrary() {
   if (!zoneLibraryRequest) {
-    zoneLibraryRequest = fetch("pro/zones.json?v=6")
+    zoneLibraryRequest = fetch("pro/zones.json?v=7")
       .then((response) => {
         if (!response.ok) throw new Error("Не удалось загрузить обучающие зоны");
         return response.json();
@@ -354,7 +354,59 @@ function renderQuestions(definitions) {
 // Один общий вывод полного авторского текста для точек схемы и сфер.
 // Берём готовый раздел из того же банка, который используется в «О чём хотите узнать?».
 // Никакой второй версии трактовок или формул.
-function loadInlineFullReading(target, key, pointEnergy = null, includeGuidance = true) {
+
+// Смысловые главы исходных авторских текстов; ни один абзац не переписываем.
+function authorChapterTag(title){
+  const t=title.toLowerCase().replaceAll("ё","е");
+  if(t.startsWith("что это значит"))return ["meaning"];
+  if(t.startsWith("в чем ваша сила"))return ["meaning","plus"];
+  if(t.startsWith("как проявляется в плюсе"))return ["plus"];
+  if(t.startsWith("где вы сами себе")||t.startsWith("где уходит в минус"))return ["shadow"];
+  if(t.startsWith("главный запрет"))return ["limits"];
+  if(t.startsWith("что жизнь будет"))return ["cost"];
+  if(t.startsWith("что начнет приходить"))return ["plus","reward"];
+  if(t.startsWith("где вы путаете"))return ["dilemma"];
+  if(t.startsWith("как перестать терять силы"))return ["resource"];
+  if(t.startsWith("что делать"))return ["action"];
+  if(t.startsWith("какой уровень жизни")||t.startsWith("стратегия на будущее"))return ["future"];
+  return ["meaning"];
+}
+function authorChapters(paragraphs){
+  const chapters=[];
+  paragraphs.filter(Boolean).forEach(text=>{
+    const heading=text.length<92&&!/[.!?…]$/.test(text)&&!text.includes("\n");
+    if(heading)chapters.push({title:text,body:[],tags:authorChapterTag(text)});
+    else{
+      if(!chapters.length)chapters.push({title:"Авторский текст",body:[],tags:["meaning"]});
+      chapters[chapters.length-1].body.push(text);
+    }
+  });
+  return chapters;
+}
+function appendAuthorChapter(target,chapter){
+  target.append(element("h5",chapter.title,"pro-inline-reading-subheading"));
+  chapter.body.forEach(item=>target.append(paragraph(item)));
+}
+function appendPositionReading(target,section,definition,ctx,energy){
+  const chapters=authorChapters(section.paragraphs);
+  const focus=new Set(ctx.focus||[]);
+  let chosen=chapters.filter(ch=>ch.tags.some(tag=>focus.has(tag)));
+  if(chosen.length<2)chosen=chosen.concat(chapters.filter(ch=>!chosen.includes(ch)&&ch.body.length).slice(0,2-chosen.length));
+  target.append(element("p","ЭНЕРГИЯ "+energy+" В ЭТОЙ ПОЗИЦИИ","pro-eyebrow"));
+  target.append(element("h4",ctx.title||section.title,"pro-inline-reading-title"));
+  target.append(paragraph(ctx.angle,"pro-position-interpretation"));
+  chosen.forEach(ch=>appendAuthorChapter(target,ch));
+  target.append(element("h5","Вопрос для себя","pro-inline-reading-subheading"));
+  target.append(paragraph(ctx.question,"pro-position-question"));
+  const original=element("details",null,"pro-position-original");
+  original.append(element("summary","Читать весь исходный авторский разбор"));
+  const all=element("div",null,"pro-position-original-text");
+  all.append(element("h4",section.title||definition.title,"pro-inline-reading-title"));
+  chapters.forEach(ch=>appendAuthorChapter(all,ch));
+  original.append(all);target.append(original);
+}
+
+function loadInlineFullReading(target, key, pointEnergy = null, includeGuidance = true, positionContext = null) {
   const report = current;
   const definition = report?.definitions.find(item => item.key === key);
   if (!definition) return;
@@ -369,6 +421,9 @@ function loadInlineFullReading(target, key, pointEnergy = null, includeGuidance 
       const section = bank?.sections?.[key];
       if (!section?.paragraphs?.length) throw new Error("Полный текст позиции не найден");
       const fragment = document.createDocumentFragment();
+      if(positionContext){
+        appendPositionReading(fragment,section,definition,positionContext,energy);
+      }else{
       fragment.append(element("p", "ПОЛНЫЙ РАЗБОР ПО ВАШЕЙ МАТРИЦЕ", "pro-eyebrow"));
       fragment.append(element("h4", section.title || definition.title, "pro-inline-reading-title"));
       section.paragraphs.filter(Boolean).forEach(text => {
@@ -376,6 +431,7 @@ function loadInlineFullReading(target, key, pointEnergy = null, includeGuidance 
           ? element("h5", text, "pro-inline-reading-subheading")
           : paragraph(text));
       });
+      }
       const practical = guidance?.sections?.[key];
       if (practical?.action && practical?.result) {
         fragment.append(element("h5", "Практика на ближайшие семь дней", "pro-inline-reading-subheading"));
@@ -535,14 +591,15 @@ function renderZoneReading(zone, shouldScroll = true) {
     // Большой текст берётся непосредственно из авторского банка этой энергии.
     content.append(paragraph(role.meaning, "pro-zone-reading-role-note"));
     const authoredKey = reading.authored?.[point.key];
-    if (authoredKey && current.definitions.some(definition=>definition.key===authoredKey)) {
+    const lens = reading.depth?.[point.key];
+    if (authoredKey && lens && current.definitions.some(definition=>definition.key===authoredKey)) {
       const full = element("section", null, "pro-inline-full-reading");
       content.append(full);
       // Данные подгружаем только по нажатию, чтобы страница была лёгкой.
       card.addEventListener("toggle", () => {
         if (card.open && !card.dataset.loaded) {
           card.dataset.loaded = "true";
-          loadInlineFullReading(full, authoredKey, point.value, false);
+          loadInlineFullReading(full, authoredKey, point.value, false, {...lens,title:role.title});
         }
       });
     } else {
