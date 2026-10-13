@@ -549,3 +549,9 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   .pro-zone-reading-position .pro-inline-full-reading p:not(.pro-eyebrow),
   .pro-point-details .pro-inline-full-reading p:not(.pro-eyebrow){font-size:15.5px;line-height:1.67}
 }
+
+/* Сфера: короткая роль точки, затем единый оригинальный авторский разбор. */
+.pro-zone-reading-position-content>.pro-zone-reading-role-note{
+  color:#71838a;font-size:13px;line-height:1.55;
+  margin:3px 0 13px;
+}
