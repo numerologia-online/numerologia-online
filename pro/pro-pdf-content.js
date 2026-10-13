@@ -1,8 +1,9 @@
 import { findKarmicPrograms, findKarmicTail } from "../karmic-programs.js?v=31";
+import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
 
-// The full PDF is intentionally focused: its original cover and 14 authored
-// readings come from full-report-pdf.js. Only the matched karmic programs are
-// added here. Interactive points, life spheres and purpose remain on the site.
+// The full PDF retains its original 14 authored readings from full-report-pdf.js.
+// Add the four EXISTING purpose interpretations and the matched karmic programs.
+// The 13 interactive life spheres and 56 points remain available only on the site.
 export async function buildProPdfChapters(report) {
   if (!report?.matrixData || !Array.isArray(report.karmicPrograms) ||
       !Array.isArray(report.karmicTails)) {
@@ -51,6 +52,22 @@ export async function buildProPdfChapters(report) {
     });
     add(text);
   };
+
+  // Reuse the four purpose banks already loaded for the on-screen interpretation.
+  // No new authored texts, calculation rules or heavy PDF dependencies.
+  const purposeReadings = await loadPurposeReadings();
+  chapter("Ваше предназначение",
+    "Четыре направления вашего жизненного пути, рассчитанные по вашей матрице.");
+  const purposeSections = [
+    ["Личное предназначение", "personal", matrix.purpose.personal],
+    ["Социальное предназначение", "social", matrix.purpose.social],
+    ["Общее предназначение", "general", matrix.purpose.general],
+    ["Планетарное предназначение", "planetary", matrix.purpose.planetary]
+  ];
+  purposeSections.forEach(([title, scope, energy]) => {
+    heading(title + " · энергия " + energy);
+    add(getPurposeReading(purposeReadings, scope, energy));
+  });
 
   chapter("Кармические программы",
     "Ваш кармический хвост и программы, обнаруженные в матрице: как они проявляются, где повторяются и с чем можно работать.");
