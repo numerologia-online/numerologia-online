@@ -361,7 +361,7 @@ function authorChapterTag(title){
   if(t.startsWith("что это значит"))return ["meaning"];
   if(t.startsWith("в чем ваша сила"))return ["meaning","plus"];
   if(t.startsWith("как проявляется в плюсе"))return ["plus"];
-  if(t.startsWith("где вы сами себе")||t.startsWith("где уходит в минус"))return ["shadow"];
+  if(t.startsWith("где вы сами себе")||t.startsWith("где уходит в минус")||t.startsWith("в минусе"))return ["shadow"];
   if(t.startsWith("главный запрет"))return ["limits"];
   if(t.startsWith("что жизнь будет"))return ["cost"];
   if(t.startsWith("что начнет приходить"))return ["plus","reward"];
@@ -369,11 +369,27 @@ function authorChapterTag(title){
   if(t.startsWith("как перестать терять силы"))return ["resource"];
   if(t.startsWith("что делать"))return ["action"];
   if(t.startsWith("какой уровень жизни")||t.startsWith("стратегия на будущее"))return ["future"];
+  if(t.startsWith("в плюсе"))return ["plus","reward"];
   return ["meaning"];
 }
+function authorParagraphTags(text,index,total){
+  const t=text.toLowerCase().replaceAll("ё","е");
+  if(t.startsWith("что это значит"))return ["meaning","plus"];
+  if(t.startsWith("в плюсе"))return ["plus","reward"];
+  if(t.startsWith("в минусе"))return ["shadow","limits"];
+  if(t.startsWith("что делать"))return ["action","resource"];
+  if(t.startsWith("стратегия")||t.startsWith("главная точка роста"))return ["future","action"];
+  if(t.startsWith("но ")||t.startsWith("однако ")||t.startsWith("главная потеря"))return ["shadow","dilemma","limits"];
+  if(index===0)return ["meaning","plus"];
+  if(index===total-1)return ["future","action","reward"];
+  if(index===1)return ["plus","dilemma"];
+  if(index===2)return ["shadow","limits"];
+  return ["action","resource","cost"];
+}
 function authorChapters(paragraphs){
+  const texts=(paragraphs||[]).filter(Boolean);
   const chapters=[];
-  paragraphs.filter(Boolean).forEach(text=>{
+  texts.forEach(text=>{
     const heading=text.length<92&&!/[.!?…]$/.test(text)&&!text.includes("\n");
     if(heading)chapters.push({title:text,body:[],tags:authorChapterTag(text)});
     else{
@@ -381,6 +397,17 @@ function authorChapters(paragraphs){
       chapters[chapters.length-1].body.push(text);
     }
   });
+  // Некоторые авторские энергии написаны сплошным рассказом или со встроенными
+  // подзаголовками. Делим по целым абзацам, не редактируя их содержания.
+  if(chapters.length<=1&&texts.length>=3){
+    const contents=chapters.flatMap(ch=>ch.body);
+    const labels=["Главная тема","Как проявляется","На что обратить внимание","Практический ориентир","Перспектива"];
+    return contents.map((text,index)=>({
+      title:labels[Math.min(index,labels.length-1)],
+      body:[text],
+      tags:authorParagraphTags(text,index,contents.length)
+    }));
+  }
   return chapters;
 }
 function appendAuthorChapter(target,chapter){
