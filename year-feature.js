@@ -1,4 +1,5 @@
 import { loadEnergies, monthNames } from "./year-content.js?v=3";
+import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=1";
 
 const year = document.querySelector("#year");
 const form = document.querySelector("#year-form");
@@ -528,7 +529,7 @@ const preparePdf = () => {
 
   pdfBuildLoading = (async () => {
     const [pdfMake, templates] = await Promise.all([getPdfMake(), getPdfTemplates()]);
-    const blob = await new Promise((resolve) => pdfMake.createPdf(buildPdfDocument(templates)).getBlob(resolve));
+    const blob = await new Promise((resolve) => pdfMake.createPdf(appendPublicPdfOutro(buildPdfDocument(templates))).getBlob(resolve));
     if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
     currentPdfUrl = URL.createObjectURL(blob);
     currentPdfFilename = `${birthInput.value} ${yearInput.value} год.pdf`;
