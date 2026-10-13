@@ -6,7 +6,7 @@ import {
   loadFullReportSection
 } from "./full-report-library.js?v=4";
 import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "./karmic-programs.js?v=3";
-import { createFullReportPdfController } from "./full-report-pdf.js?v=1";
+import { createFullReportPdfController } from "./full-report-pdf.js?v=4";
 
 const home = document.querySelector("#home");
 const matrix = document.querySelector("#matrix");
