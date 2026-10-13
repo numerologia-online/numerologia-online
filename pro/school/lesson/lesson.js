@@ -246,8 +246,8 @@ function drawCurrent() {
     formulaBlock.textContent=full?"Готовая основа. Теперь показаны все 31 позиции нашей интерактивной матрицы.":examples[step];
   }
   $("lesson-step-back").disabled=step===0;
-  $("lesson-step-next").disabled=step===4;
-  $("lesson-step-next").textContent="Следующий шаг →";
+  $("lesson-step-next").disabled=false;
+  $("lesson-step-next").textContent=step===4?"К тесту →":"Следующий шаг →";
 }
 function unlockFirstLessonQuiz(){
   if(id!=="start")return;
@@ -281,8 +281,9 @@ function setupDiagram(){
   });
   $("lesson-step-next").addEventListener("click",()=>{
     const max=id==="start"?firstLessonSteps.length-1:4;
-    if(id==="start"&&step===max){
-      unlockFirstLessonQuiz();
+    if(step===max){
+      if(id==="start")unlockFirstLessonQuiz();
+      else $("lesson-quiz").scrollIntoView({behavior:"smooth",block:"start"});
       return;
     }
     step=Math.min(max,step+1);
@@ -376,9 +377,13 @@ function renderQuiz(data) {
       root.querySelectorAll("fieldset").forEach(fieldset=>{fieldset.disabled=true});
       submit.disabled=true;
       $("lesson-drawing").scrollIntoView({behavior:"smooth",block:"start"});
+    }else if(index<=4){
+      // У этих уроков обучение проходит на схеме, а не в повторяющейся статье.
+      step=[0,1,1,3,4][index];
+      drawCurrent();
+      $("lesson-drawing").scrollIntoView({behavior:"smooth",block:"start"});
     }else{
-      const content=$("lesson-content");
-      content.scrollIntoView({behavior:"smooth",block:"start"});
+      $("lesson-content").scrollIntoView({behavior:"smooth",block:"start"});
     }
   });
   form.append(retry);
@@ -465,11 +470,13 @@ function renderLesson(data) {
     $("lesson-drawing").classList.add("is-first-lesson");
   }
   const root=$("lesson-content");
-  // Первый урок: все объяснения находятся рядом с рисунком по шагам.
-  // Не повторяем ту же информацию длинной статьёй ниже.
-  root.hidden=id==="start";
+  // Первые пять уроков проходят по интерактивным шагам матрицы.
+  // После них сразу идёт тест, без повторной статьи с теми же шагами.
+  // В остальных уроках текст сохраняем: интерактивного объяснения там ещё нет.
+  const hasInteractiveSteps=index<=4;
+  root.hidden=hasInteractiveSteps;
   root.replaceChildren();
-  if(id!=="start"){
+  if(!hasInteractiveSteps){
     data.sections.forEach(section=>{
       const wrapper=make("section","school-topic");
       wrapper.append(make("h2","school-topic-title",section.heading));
