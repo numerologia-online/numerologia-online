@@ -18,14 +18,14 @@
   const birthNote = document.querySelector("#account-birth-note");
   const warning = document.querySelector("#account-preview-warning");
   const app = window.Telegram && window.Telegram.WebApp;
-  if (!dialog || !accountButton || !loginView || !profileView || !status || !app) return;
+  if (!dialog || !accountButton || !loginView || !profileView || !status) return;
 
   let user = null;
   let loading = false;
   let mini = false;
 
   function getInitData() {
-    if (typeof app.initData === "string" && app.initData) return app.initData;
+    if (app && typeof app.initData === "string" && app.initData) return app.initData;
     // Telegram normally sets WebApp.initData, but its signed launch data may
     // also be present in the URL fragment (not the main application's hash).
     const fragment = String(location.hash || "").replace(/^#/, "");
@@ -93,7 +93,7 @@
       showProfile();
       if (!dialog.open) dialog.showModal();
     } catch (err) {
-      setMessage("Автоматический вход не удался: " + (err?.message || "Нет соединения с сервером."), true);
+      setMessage("Автоматический вход не удался: " + (err?.message || "Нет соединения с сервером."), !!raw);
       if (!dialog.open) dialog.showModal();
     } finally {
       loading = false;
@@ -135,7 +135,8 @@
 
   mini = isTelegramEnvironment();
   if (mini) {
-    try { app.ready(); app.expand(); } catch (_) {}
+    document.querySelector(".account-telegram-link").hidden = true;
+    try { app?.ready(); app?.expand(); } catch (_) {}
     identify();
   } else {
     accountButton.textContent = "Открыть в Telegram";
