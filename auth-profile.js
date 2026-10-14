@@ -6,6 +6,7 @@
   "use strict";
   const CLIENT_ID = 8814989076;
   const VERIFY_URL = "https://numerologia-online-auth-server.vercel.app/api/verify";
+  const MINIAPP_VERIFY_URL = "https://numerologia-online-auth-server.vercel.app/api/miniapp";
   const SESSION_KEY = "num-online-tg-verified-v1";
   const BIRTH_PREFIX = "num-online-birth-v1:";
   const dialog = document.querySelector("#account-dialog");
@@ -27,6 +28,7 @@
   let preview = false;
   let sdkPromise = null;
   let backendProbe = null;
+  let miniMode = false;
 
   const note = (value) => {
     status.textContent = value || "";
@@ -34,8 +36,8 @@
   };
 
   function syncHeader() {
-    signup.hidden = !!user;
-    signin.textContent = user ? "Личный кабинет" : "Войти";
+    signup.hidden = !!user || miniMode;
+    signin.textContent = user ? "Личный кабинет" : miniMode ? "Подключаем..." : "Войти";
   }
 
   function openProfile(isPreview = false) {
@@ -47,7 +49,8 @@
     previewWarning.textContent = isPreview
       ? "Это предпросмотр, не регистрация. Дата не сохраняется."
       : "Вход подтверждён Telegram. Это первая версия кабинета, без платных доступов.";
-    signout.hidden = isPreview;
+    signout.hidden = isPreview || miniMode;
+    document.querySelector("#account-back").hidden = miniMode;
     birthInput.disabled = isPreview;
     saveDate.disabled = isPreview;
     document.querySelector("#account-birth-delete").disabled = isPreview;
@@ -61,12 +64,12 @@
     preview = false;
     loginView.hidden = false;
     profileView.hidden = true;
-    prepareLogin();
+    if (!miniMode) prepareLogin();
   }
 
   function openDialog() {
     if (user) openProfile();
-    else openLogin();
+    else if (!miniMode) openLogin();
     if (!dialog.open) dialog.showModal();
   }
 
@@ -132,6 +135,55 @@
       throw new Error("Не удалось завершить проверку входа (" + code + ").");
     }
     return { id: String(data.user.id), name: String(data.user.name || "Пользователь").slice(0, 80) };
+  }
+
+  function startMiniAppLogin() {
+    const app = window.Telegram?.WebApp;
+    if (!app || typeof app.initData !== "string" || !app.initData) return false;
+
+    miniMode = true;
+    signup.hidden = true;
+    signin.textContent = "Подключаем...";
+    signin.disabled = true;
+    loginButton.hidden = true;
+    try { app.ready(); app.expand(); } catch (_) {}
+
+    (async () => {
+      try {
+        const response = await fetch(MINIAPP_VERIFY_URL, {
+          method: "POST", mode: "cors", cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ init_data: app.initData })
+        });
+        const data = await response.json();
+        if (!response.ok || !data?.ok || !data.user?.id) {
+          throw new Error("Telegram не подтвердил личность (" + String(data?.error || "UNKNOWN") + ").");
+        }
+        user = {
+          id: String(data.user.id),
+          name: String(data.user.name || "Пользователь").slice(0, 80)
+        };
+        syncHeader();
+        openProfile();
+        if (!dialog.open) dialog.showModal();
+      } catch (error) {
+        // Not authenticated: never display the user's private cabinet or
+        // pretend successful login when server verification fails.
+        user = null;
+        signup.hidden = true;
+        signin.textContent = "Личный кабинет";
+        loginView.hidden = false;
+        profileView.hidden = true;
+        document.querySelector(".account-intro").textContent =
+          "Сайт открыт внутри Telegram, но автоматический вход пока не завершён.";
+        note("Не удалось подтвердить вход внутри Telegram. " +
+             (error?.message || "Ошибка соединения."));
+        if (!dialog.open) dialog.showModal();
+      } finally {
+        signin.disabled = false;
+      }
+    })();
+    return true;
   }
 
   async function authenticate() {
@@ -214,5 +266,5 @@
     syncHeader();
     openLogin();
   });
-  restoreSession();
+  if (!startMiniAppLogin()) restoreSession();
 })();
