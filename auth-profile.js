@@ -17,7 +17,6 @@
   const retry = document.querySelector("#account-retry");
   const title = document.querySelector("#account-person-name");
   const avatarLetter = document.querySelector("#account-avatar-letter");
-  const buttonHello = document.querySelector("#auth-button-hello");
   const buttonCheck = document.querySelector("#auth-button-check");
   const buttonLabel = document.querySelector("#auth-button-label");
   const birthInput = document.querySelector("#account-birth");
@@ -30,13 +29,10 @@
   let loading = false;
   let mini = false;
 
-  // Keep the header short; the person's name already appears inside the cabinet.
+  // Do not display personal names or greeting text on the site header.
+  // Telegram-verification only adds a subtle check next to "Личный кабинет".
   function setAccountButton(label, verified = false) {
     if (buttonLabel) buttonLabel.textContent = label;
-    if (buttonHello) {
-      buttonHello.hidden = !verified;
-      buttonHello.textContent = verified ? "Вход выполнен" : "";
-    }
     if (buttonCheck) buttonCheck.hidden = !verified;
   }
 
