@@ -1,10 +1,12 @@
-/* Личный кабинет: лёгкий тестовый этап без серверного хранения.
- * Сначала задайте публичный client_id из BotFather. Никогда не указывайте Client Secret или Bot Token.
- * Для платных разделов обязательна отдельная серверная проверка прав доступа. */
+/* Telegram-кабинет: настоящий серверно подтверждённый тестовый вход.
+ * Здесь нет прав на платные материалы, базы пользователей или сохранённых PDF.
+ * ID token проверяется на Vercel по публичной подписи Telegram (без секретов бота).
+ */
 (() => {
   "use strict";
-  const TELEGRAM_CLIENT_ID = 8814989076; // Публичный Client ID из BotFather > Login Widget
-  const SESSION_KEY = "num-online-tg-session-v1";
+  const CLIENT_ID = 8814989076;
+  const VERIFY_URL = "https://numerologia-online-auth-server.vercel.app/api/verify";
+  const SESSION_KEY = "num-online-tg-verified-v1";
   const BIRTH_PREFIX = "num-online-birth-v1:";
   const dialog = document.querySelector("#account-dialog");
   if (!dialog) return;
@@ -20,200 +22,135 @@
   const signout = document.querySelector("#account-logout");
   const signup = document.querySelector('[data-account-open="register"]');
   const signin = document.querySelector('[data-account-open="login"]');
+  const saveDate = document.querySelector("#account-birth-save");
   let user = null;
-  let isPreview = false;
+  let preview = false;
   let sdkPromise = null;
 
-  function setStatus(message) {
-    status.textContent = message;
-    status.hidden = !message;
-  }
-
-  function decode64(value) {
-    const padded = value.replace(/-/g, "+").replace(/_/g, "/");
-    const binary = atob(padded + "=".repeat((4 - padded.length % 4) % 4));
-    return Uint8Array.from(binary, ch => ch.charCodeAt(0));
-  }
-
-  function parseJwtPart(value) {
-    return JSON.parse(new TextDecoder().decode(decode64(value)));
-  }
-
-  async function verifyTelegramIdToken(token, nonce) {
-    if (!Number.isSafeInteger(TELEGRAM_CLIENT_ID) || TELEGRAM_CLIENT_ID <= 0) {
-      throw new Error("Telegram ещё не настроен.");
-    }
-    const parts = String(token || "").split(".");
-    if (parts.length !== 3) throw new Error("Telegram вернул некорректный ответ.");
-    const header = parseJwtPart(parts[0]);
-    const payload = parseJwtPart(parts[1]);
-    if (header.alg !== "RS256" || !header.kid) {
-      throw new Error("Неподдерживаемый способ подписи Telegram.");
-    }
-    const response = await fetch("https://oauth.telegram.org/.well-known/jwks.json", {
-      method: "GET", cache: "no-store", mode: "cors"
-    });
-    if (!response.ok) throw new Error("Не удалось проверить подпись Telegram.");
-    const jwks = await response.json();
-    const jwk = (jwks.keys || []).find(key => key.kid === header.kid && (!key.alg || key.alg === "RS256") && key.kty === "RSA");
-    if (!jwk) throw new Error("Ключ проверки Telegram недоступен.");
-    const publicKey = await crypto.subtle.importKey(
-      "jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]
-    );
-    const valid = await crypto.subtle.verify(
-      "RSASSA-PKCS1-v1_5", publicKey, decode64(parts[2]),
-      new TextEncoder().encode(parts[0] + "." + parts[1])
-    );
-    const now = Math.floor(Date.now() / 1000);
-    const audience = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-    if (!valid || payload.iss !== "https://oauth.telegram.org" ||
-        !audience.map(String).includes(String(TELEGRAM_CLIENT_ID)) ||
-        (!Number.isSafeInteger(payload.id) || payload.id <= 0) || typeof payload.exp !== "number" || payload.exp <= now ||
-        typeof payload.iat !== "number" || payload.iat > now + 60 ||
-        (nonce && payload.nonce !== nonce)) {
-      throw new Error("Подтверждение Telegram не прошло проверку.");
-    }
-    return {
-      id: String(payload.id),
-      name: String(payload.name || payload.given_name || payload.preferred_username || "Пользователь").slice(0, 80)
-    };
-  }
+  const note = (value) => {
+    status.textContent = value || "";
+    status.hidden = !value;
+  };
 
   function syncHeader() {
-    if (user) {
-      signup.hidden = true;
-      signin.textContent = "Личный кабинет";
-    } else {
-      signup.hidden = false;
-      signin.textContent = "Войти";
-    }
+    signup.hidden = !!user;
+    signin.textContent = user ? "Личный кабинет" : "Войти";
   }
 
-  function openProfile(preview = false) {
-    isPreview = preview;
+  function openProfile(isPreview = false) {
+    preview = isPreview;
     loginView.hidden = true;
     profileView.hidden = false;
-    title.textContent = preview ? "Гостевой просмотр" : user.name;
+    title.textContent = isPreview ? "Гостевой просмотр" : user.name;
     previewWarning.hidden = false;
-    previewWarning.textContent = preview
+    previewWarning.textContent = isPreview
       ? "Это предпросмотр, не регистрация. Дата не сохраняется."
-      : "Это тестовый личный кабинет на вашем устройстве. Защищённые платные доступы ещё не подключены.";
-    signout.hidden = preview;
-    birthInput.disabled = preview;
-    document.querySelector("#account-birth-save").disabled = preview;
-    birthInput.value = preview ? "" : (localStorage.getItem(BIRTH_PREFIX + user.id) || "");
-    birthNote.textContent = preview
-      ? "В режиме просмотра данные не сохраняются."
-      : "Дата хранится только в этом браузере. Сайт не загружает её на сервер.";
+      : "Вход подтверждён Telegram. Это первая версия кабинета, без платных доступов.";
+    signout.hidden = isPreview;
+    birthInput.disabled = isPreview;
+    saveDate.disabled = isPreview;
+    document.querySelector("#account-birth-delete").disabled = isPreview;
+    birthInput.value = isPreview ? "" : (localStorage.getItem(BIRTH_PREFIX + user.id) || "");
+    birthNote.textContent = isPreview
+      ? "В режиме просмотра дата не сохраняется."
+      : "Дата хранится только в этом браузере, а не на сервере.";
   }
 
-  function showLogin() {
-    isPreview = false;
+  function openLogin() {
+    preview = false;
     loginView.hidden = false;
     profileView.hidden = true;
-    setStatus(!TELEGRAM_CLIENT_ID
-      ? "Для настоящего входа осталось подключить публичный Client ID нашего бота в BotFather. Пока можно посмотреть кабинет."
-      : "");
+    note("");
+  }
+
+  function openDialog() {
+    if (user) openProfile();
+    else openLogin();
+    if (!dialog.open) dialog.showModal();
   }
 
   async function loadSdk() {
     if (window.Telegram?.Login?.auth) return window.Telegram.Login;
     if (sdkPromise) return sdkPromise;
     sdkPromise = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "https://oauth.telegram.org/js/telegram-login.js";
-      script.async = true;
-      script.onload = () => window.Telegram?.Login?.auth
+      const tag = document.createElement("script");
+      tag.src = "https://oauth.telegram.org/js/telegram-login.js";
+      tag.async = true;
+      tag.onload = () => window.Telegram?.Login?.auth
         ? resolve(window.Telegram.Login)
-        : reject(new Error("Не удалось запустить модуль Telegram."));
-      script.onerror = () => reject(new Error("Telegram сейчас недоступен. Повторите попытку позднее."));
-      document.head.appendChild(script);
+        : reject(new Error("Telegram не загрузил модуль входа."));
+      tag.onerror = () => reject(new Error("Не удалось подключиться к Telegram."));
+      document.head.appendChild(tag);
     }).catch(error => { sdkPromise = null; throw error; });
     return sdkPromise;
   }
 
-  // Сейчас кабинет - только персональный интерфейс в браузере.
-  // JWT проверяется, если Telegram разрешает загрузку публичных ключей,
-  // но доступ к платным функциям не предоставляется ни в одном режиме.
-  function getPendingIdentity(token, expectedNonce) {
-    const parts = String(token || "").split(".");
-    if (parts.length !== 3) throw new Error("Telegram не вернул правильный токен.");
-    const claim = parseJwtPart(parts[1]);
-    const audience = Array.isArray(claim.aud) ? claim.aud : [claim.aud];
-    const now = Math.floor(Date.now() / 1000);
-    if (claim.iss !== "https://oauth.telegram.org" ||
-        !audience.map(String).includes(String(TELEGRAM_CLIENT_ID)) ||
-        !Number.isSafeInteger(claim.id) || claim.id <= 0 ||
-        typeof claim.exp !== "number" || claim.exp <= now ||
-        typeof claim.iat !== "number" || claim.iat > now + 60 ||
-        claim.nonce !== expectedNonce) {
-      throw new Error("Подтверждение Telegram не прошло проверку.");
+  async function verifyTelegram(token, nonce) {
+    const response = await fetch(VERIFY_URL, {
+      method: "POST",
+      mode: "cors",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_token: token, nonce })
+    });
+    let data;
+    try { data = await response.json(); } catch (_) {
+      throw new Error("Сервер Telegram-авторизации пока не отвечает.");
     }
-    return { id: String(claim.id), name: String(claim.name || claim.given_name || claim.preferred_username || "Пользователь").slice(0, 80) };
-  }
-
-  function enterLocalCabinet(identity, origin) {
-    user = identity;
-    syncHeader();
-    openProfile();
-    if (!dialog.open) dialog.showModal();
-    previewWarning.hidden = false;
-    previewWarning.textContent = origin === "miniapp"
-      ? "Вы открыли кабинет внутри Telegram. Пока дата рождения хранится только на этом устройстве. Платные доступы ещё не подключены."
-      : "Telegram подтвердил вход. Это тестовый личный кабинет: данные хранятся в браузере, платные доступы ещё не подключены.";
-    setStatus("");
-    loginButton.disabled = false;
+    if (!response.ok || !data?.ok || !data.user?.id) {
+      const code = String(data?.error || "UNKNOWN").slice(0, 35);
+      throw new Error("Не удалось завершить проверку входа (" + code + ").");
+    }
+    return { id: String(data.user.id), name: String(data.user.name || "Пользователь").slice(0, 80) };
   }
 
   async function authenticate() {
-    if (!window.isSecureContext || !crypto?.getRandomValues) {
-      setStatus("Откройте сайт по защищённому HTTPS-адресу.");
+    if (!window.isSecureContext || !window.crypto?.getRandomValues) {
+      note("Откройте сайт по защищённому HTTPS-адресу.");
       return;
     }
+    // Запуск login popup должен происходить непосредственно после нажатия кнопки.
     loginButton.disabled = true;
-    setStatus("Открываем подтверждение Telegram...");
+    note("Открываем Telegram...");
     try {
       const sdk = await loadSdk();
       const bytes = crypto.getRandomValues(new Uint8Array(24));
       const nonce = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
-      sdk.auth({ client_id: TELEGRAM_CLIENT_ID, scope: ["profile"], lang: "ru", nonce }, async result => {
+      sdk.auth({ client_id: CLIENT_ID, scope: ["profile"], lang: "ru", nonce }, async result => {
         try {
           if (!result?.id_token) {
-            setStatus(result?.error ? "Telegram: " + String(result.error).slice(0, 140) : "Вход отменён.");
-            loginButton.disabled = false;
+            note(result?.error ? "Telegram: " + String(result.error).slice(0, 140) : "Вход отменён.");
             return;
           }
-          // Показываем кабинет немедленно после подтверждения Telegram,
-          // не блокируя интерфейс дополнительным HTTPS-запросом из iPhone Safari.
-          const identity = getPendingIdentity(result.id_token, nonce);
+          note("Проверяем подтверждение Telegram...");
+          const verified = await verifyTelegram(result.id_token, nonce);
+          // В браузере хранится только кратковременный токен Telegram.
           sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token: result.id_token, nonce }));
-          enterLocalCabinet(identity, "login");
-          try {
-            // Дополнительная проверка криптографической подписи в браузере.
-            // Даже при успехе она не даёт прав на платные товары.
-            await verifyTelegramIdToken(result.id_token, nonce);
-          } catch (error) {
-            console.info("Telegram token verification requires a backend for protected access.", error?.message);
-          }
-        } catch (error) {
-          setStatus(error.message || "Не удалось завершить вход.");
+          user = verified;
+          syncHeader();
+          openProfile();
+          if (!dialog.open) dialog.showModal();
+          note("");
+        } catch (err) {
+          note(err?.message || "Не удалось завершить вход.");
+        } finally {
           loginButton.disabled = false;
         }
       });
-    } catch (error) {
-      setStatus(error.message || "Не удалось связаться с Telegram.");
+    } catch (err) {
+      note(err?.message || "Telegram временно недоступен.");
       loginButton.disabled = false;
     }
   }
 
-  function restoreSession() {
+  async function restoreSession() {
     try {
       const saved = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
-      if (saved?.token && saved?.nonce) {
-        const identity = getPendingIdentity(saved.token, saved.nonce);
-        user = identity;
-        syncHeader();
-      }
+      if (!saved?.token || !saved?.nonce) return;
+      const verified = await verifyTelegram(saved.token, saved.nonce);
+      user = verified;
+      syncHeader();
+      if (dialog.open && !preview) openProfile();
     } catch (_) {
       sessionStorage.removeItem(SESSION_KEY);
       user = null;
@@ -221,44 +158,22 @@
     }
   }
 
-  function checkTelegramMiniApp() {
-    const miniApp = window.Telegram?.WebApp;
-    if (!miniApp?.initData || !miniApp?.initDataUnsafe?.user) return false;
-    const member = miniApp.initDataUnsafe.user;
-    if (!Number.isSafeInteger(member.id) || member.id <= 0) return false;
-    const identity = {
-      id: String(member.id),
-      name: String([member.first_name, member.last_name].filter(Boolean).join(" ") || member.username || "Пользователь").slice(0, 80)
-    };
-    enterLocalCabinet(identity, "miniapp");
-    try { miniApp.ready(); miniApp.expand(); } catch (_) {}
-    return true;
-  }
-
-  document.querySelectorAll("[data-account-open]").forEach(button => {
-    button.addEventListener("click", () => {
-      if (user) openProfile();
-      else showLogin();
-      dialog.showModal();
-      if (TELEGRAM_CLIENT_ID && !user) loadSdk().catch(error => setStatus(error.message));
-    });
-  });
+  document.querySelectorAll("[data-account-open]").forEach(button =>
+    button.addEventListener("click", openDialog)
+  );
   document.querySelector("#account-close").addEventListener("click", () => dialog.close());
-  dialog.addEventListener("click", event => { if (event.target === dialog) dialog.close(); });
+  dialog.addEventListener("click", e => { if (e.target === dialog) dialog.close(); });
   loginButton.addEventListener("click", authenticate);
   document.querySelector("#account-preview").addEventListener("click", () => openProfile(true));
-  document.querySelector("#account-back").addEventListener("click", showLogin);
-  document.querySelector("#account-birth-save").addEventListener("click", () => {
-    if (!user || isPreview) return;
-    if (!birthInput.value) {
-      birthNote.textContent = "Сначала выберите дату рождения.";
-      return;
-    }
+  document.querySelector("#account-back").addEventListener("click", openLogin);
+  saveDate.addEventListener("click", () => {
+    if (!user || preview) return;
+    if (!birthInput.value) { birthNote.textContent = "Укажите дату рождения."; return; }
     localStorage.setItem(BIRTH_PREFIX + user.id, birthInput.value);
-    birthNote.textContent = "Сохранено на этом устройстве. На сервер ничего не отправлено.";
+    birthNote.textContent = "Дата сохранена только в вашем браузере.";
   });
   document.querySelector("#account-birth-delete").addEventListener("click", () => {
-    if (!user || isPreview) return;
+    if (!user || preview) return;
     localStorage.removeItem(BIRTH_PREFIX + user.id);
     birthInput.value = "";
     birthNote.textContent = "Дата удалена с этого устройства.";
@@ -267,10 +182,7 @@
     user = null;
     sessionStorage.removeItem(SESSION_KEY);
     syncHeader();
-    showLogin();
+    openLogin();
   });
   restoreSession();
-  if (!checkTelegramMiniApp()) {
-    window.addEventListener("pageshow", () => { if (!user) checkTelegramMiniApp(); });
-  }
 })();
