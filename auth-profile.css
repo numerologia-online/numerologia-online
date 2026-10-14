@@ -26,3 +26,6 @@
 @media(max-width:410px){.account-dialog{padding:18px}.account-tile{padding:13px 9px}.account-tile strong{font-size:12px}}
 /* Keep browser hidden-state effective even when buttons have display:block rules. */
 #account-dialog [hidden], .auth-actions [hidden] {display:none!important}
+/* The Telegram bot is an optional entry link, not a login step inside Mini App. */
+.account-telegram-link{text-decoration:none;text-align:center;box-sizing:border-box}
+.auth-actions .auth-button:disabled{opacity:.75}
