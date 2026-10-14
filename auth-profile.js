@@ -94,7 +94,10 @@
     loginView.hidden = true;
     profileView.hidden = false;
     title.textContent = preview ? "Гостевой просмотр" : user.name;
-    previewWarning.hidden = !preview;
+    previewWarning.hidden = false;
+    previewWarning.textContent = preview
+      ? "Это предпросмотр, не регистрация. Дата не сохраняется."
+      : "Это тестовый личный кабинет на вашем устройстве. Защищённые платные доступы ещё не подключены.";
     signout.hidden = preview;
     birthInput.disabled = preview;
     document.querySelector("#account-birth-save").disabled = preview;
