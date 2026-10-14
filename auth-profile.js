@@ -26,6 +26,7 @@
   let user = null;
   let preview = false;
   let sdkPromise = null;
+  let backendProbe = null;
 
   const note = (value) => {
     status.textContent = value || "";
@@ -60,7 +61,7 @@
     preview = false;
     loginView.hidden = false;
     profileView.hidden = true;
-    note("");
+    prepareLogin();
   }
 
   function openDialog() {
@@ -83,6 +84,35 @@
       document.head.appendChild(tag);
     }).catch(error => { sdkPromise = null; throw error; });
     return sdkPromise;
+  }
+
+  async function checkBackend() {
+    const reply = await fetch("https://numerologia-online-auth-server.vercel.app/api/health", {
+      method: "GET", mode: "cors", cache: "no-store"
+    });
+    if (!reply.ok) throw new Error("Сервер входа пока недоступен.");
+    const info = await reply.json();
+    if (!info?.ok || info.service !== "telegram-login-verifier") {
+      throw new Error("Сервер входа пока не готов.");
+    }
+  }
+
+  function prepareLogin() {
+    loginButton.disabled = true;
+    note("Проверяем подключение к Telegram...");
+    if (!backendProbe) {
+      backendProbe = Promise.all([checkBackend(), loadSdk()]).catch(error => {
+        backendProbe = null;
+        throw error;
+      });
+    }
+    backendProbe.then(() => {
+      loginButton.disabled = false;
+      note("");
+    }).catch(error => {
+      loginButton.disabled = true;
+      note("Сервер входа недоступен. Повторите попытку позднее. " + (error?.message || ""));
+    });
   }
 
   async function verifyTelegram(token, nonce) {
