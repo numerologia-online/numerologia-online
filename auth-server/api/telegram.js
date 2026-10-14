@@ -47,7 +47,9 @@ module.exports = async function handle(req, res) {
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Content-Type-Options", "nosniff");
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
+  // A strong webhook header secret derived from the private bot token.
+  // Only one variable, TELEGRAM_BOT_TOKEN, is required to set up this bot.
+  const secret = process.env.TELEGRAM_WEBHOOK_SECRET || (token && crypto.createHash("sha256").update("numerologia-online:webhook:v1:").update(token).digest("hex"));
   if (req.method === "GET") {
     // Bot token values and user data are never returned.
     return res.status(200).json({ ok: true, handler: "telegram-start", configured: Boolean(token && secret) });
