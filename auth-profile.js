@@ -3,7 +3,7 @@
  * Для платных разделов обязательна отдельная серверная проверка прав доступа. */
 (() => {
   "use strict";
-  const TELEGRAM_CLIENT_ID = 0; // Публичный Client ID из BotFather > Login Widget
+  const TELEGRAM_CLIENT_ID = 8814989076; // Публичный Client ID из BotFather > Login Widget
   const SESSION_KEY = "num-online-tg-session-v1";
   const BIRTH_PREFIX = "num-online-birth-v1:";
   const dialog = document.querySelector("#account-dialog");
@@ -68,13 +68,13 @@
     const audience = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
     if (!valid || payload.iss !== "https://oauth.telegram.org" ||
         !audience.map(String).includes(String(TELEGRAM_CLIENT_ID)) ||
-        !payload.sub || typeof payload.exp !== "number" || payload.exp <= now ||
+        (!Number.isSafeInteger(payload.id) || payload.id <= 0) || typeof payload.exp !== "number" || payload.exp <= now ||
         typeof payload.iat !== "number" || payload.iat > now + 60 ||
         (nonce && payload.nonce !== nonce)) {
       throw new Error("Подтверждение Telegram не прошло проверку.");
     }
     return {
-      id: String(payload.sub),
+      id: String(payload.id),
       name: String(payload.name || payload.given_name || payload.preferred_username || "Пользователь").slice(0, 80)
     };
   }
