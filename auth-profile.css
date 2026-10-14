@@ -24,3 +24,5 @@
 .account-divider{height:1px;margin:18px 0;background:#e5e0d5}
 [hidden].account-status,[hidden].account-preview-warning,[hidden]#account-profile,[hidden]#account-login{display:none!important}
 @media(max-width:410px){.account-dialog{padding:18px}.account-tile{padding:13px 9px}.account-tile strong{font-size:12px}}
+/* Keep browser hidden-state effective even when buttons have display:block rules. */
+#account-dialog [hidden], .auth-actions [hidden] {display:none!important}
