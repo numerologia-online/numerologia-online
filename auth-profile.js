@@ -6,6 +6,8 @@
 (() => {
   "use strict";
   const CHECK_URL = "https://numerologia-online-auth-server.vercel.app/api/miniapp";
+  // Opens the Main Mini App directly when it is enabled in BotFather.
+  const MAIN_APP_URL = "https://t.me/Numerologiaonline_bot?startapp";
   const BIRTH_PREFIX = "num-online-birth-v1:";
   const dialog = document.querySelector("#account-dialog");
   const accountButton = document.querySelector("[data-account-open='profile']");
@@ -147,12 +149,16 @@
   }
 
   accountButton.addEventListener("click", () => {
+    // Outside Telegram: go straight to the Main Mini App deep link in one tap.
+    // No intermediate dialog, OAuth popup or extra confirmation on our side.
+    if (!mini) {
+      window.location.assign(MAIN_APP_URL);
+      return;
+    }
     if (user) showProfile();
-    else if (mini && !loading) {
+    else if (!loading) {
       loginView.hidden = false;
       profileView.hidden = true;
-    } else {
-      setMessage("Для автоматического входа откройте сайт кнопкой нашего Telegram-бота.", false);
     }
     if (!dialog.open) dialog.showModal();
   });
@@ -192,6 +198,6 @@
     try { app?.ready(); app?.expand(); } catch (_) {}
     identify();
   } else {
-    accountButton.textContent = "Открыть в Telegram";
+    accountButton.textContent = "Войти через Telegram";
   }
 })();
