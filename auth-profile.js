@@ -14,6 +14,7 @@
   const status = document.querySelector("#account-status");
   const retry = document.querySelector("#account-retry");
   const title = document.querySelector("#account-person-name");
+  const avatarLetter = document.querySelector("#account-avatar-letter");
   const greeting = document.querySelector("#account-greeting");
   const birthInput = document.querySelector("#account-birth");
   const birthNote = document.querySelector("#account-birth-note");
@@ -53,15 +54,54 @@
     accountButton.disabled = false;
   }
 
+  // Keep dates in ISO format in existing localStorage records, but display
+  // DD.MM.YYYY to users and never summon the native iOS calendar.
+  function birthForDisplay(value) {
+    const stored = String(value || "");
+    const iso = stored.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (iso) return iso[3] + "." + iso[2] + "." + iso[1];
+    if (/^\d{2}\.\d{2}\.\d{4}$/.test(stored)) return stored;
+    return "";
+  }
+
+  function formatBirthTyping(value) {
+    const digits = String(value || "").replace(/\D/g, "").slice(0, 8);
+    return [
+      digits.slice(0, 2),
+      digits.length > 2 ? digits.slice(2, 4) : "",
+      digits.length > 4 ? digits.slice(4) : ""
+    ].filter(Boolean).join(".");
+  }
+
+  function birthToISO(value) {
+    const match = String(value || "").match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+    if (!match) return null;
+    const d = Number(match[1]), m = Number(match[2]), y = Number(match[3]);
+    if (y < 1900 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) return null;
+    const parsed = new Date(Date.UTC(y, m - 1, d));
+    if (parsed.getUTCFullYear() !== y || parsed.getUTCMonth() !== m - 1 ||
+        parsed.getUTCDate() !== d || parsed.getTime() > Date.now()) return null;
+    return match[3] + "-" + match[2] + "-" + match[1];
+  }
+
+  birthInput.addEventListener("input", () => {
+    const formatted = formatBirthTyping(birthInput.value);
+    if (birthInput.value !== formatted) birthInput.value = formatted;
+    birthInput.removeAttribute("aria-invalid");
+    birthNote.textContent = "Дата хранится только на этом устройстве.";
+  });
+
   function showProfile() {
     if (!user) return;
     loginView.hidden = true;
     profileView.hidden = false;
     title.textContent = user.name;
-    warning.textContent = "Вход подтверждён Telegram. Покупки и платные доступы пока не подключены.";
+    if (avatarLetter) avatarLetter.textContent = String(user.name || "П").trim().charAt(0).toUpperCase();
+    warning.textContent = "Вход подтверждён через Telegram.";
     warning.hidden = false;
-    birthInput.value = localStorage.getItem(BIRTH_PREFIX + user.id) || "";
-    birthNote.textContent = "Дата рождения хранится только в этом браузере.";
+    birthInput.value = birthForDisplay(localStorage.getItem(BIRTH_PREFIX + user.id));
+    birthInput.removeAttribute("aria-invalid");
+    birthNote.textContent = "Дата хранится только на этом устройстве.";
     accountButton.textContent = "Мой кабинет";
     accountButton.disabled = false;
     if (greeting) {
@@ -125,17 +165,24 @@
   });
   document.querySelector("#account-birth-save").addEventListener("click", () => {
     if (!user) return;
-    if (!birthInput.value) {
-      birthNote.textContent = "Укажите дату рождения.";
+    const iso = birthToISO(birthInput.value);
+    if (!iso) {
+      birthInput.setAttribute("aria-invalid", "true");
+      birthNote.textContent = "Проверьте дату. Нужен формат ДД.ММ.ГГГГ, например 09.09.1986.";
+      birthInput.focus();
       return;
     }
-    localStorage.setItem(BIRTH_PREFIX + user.id, birthInput.value);
-    birthNote.textContent = "Дата сохранена на этом устройстве.";
+    localStorage.setItem(BIRTH_PREFIX + user.id, iso);
+    birthInput.value = birthForDisplay(iso);
+    birthInput.removeAttribute("aria-invalid");
+    birthInput.blur();
+    birthNote.textContent = "✓ Дата рождения сохранена на этом устройстве.";
   });
   document.querySelector("#account-birth-delete").addEventListener("click", () => {
     if (!user) return;
     localStorage.removeItem(BIRTH_PREFIX + user.id);
     birthInput.value = "";
+    birthInput.removeAttribute("aria-invalid");
     birthNote.textContent = "Дата удалена с этого устройства.";
   });
 
