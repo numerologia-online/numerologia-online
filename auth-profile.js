@@ -17,7 +17,8 @@
   const retry = document.querySelector("#account-retry");
   const title = document.querySelector("#account-person-name");
   const avatarLetter = document.querySelector("#account-avatar-letter");
-  const greeting = document.querySelector("#account-greeting");
+  const buttonHello = document.querySelector("#auth-button-hello");
+  const buttonLabel = document.querySelector("#auth-button-label");
   const birthInput = document.querySelector("#account-birth");
   const birthNote = document.querySelector("#account-birth-note");
   const warning = document.querySelector("#account-preview-warning");
@@ -27,6 +28,15 @@
   let user = null;
   let loading = false;
   let mini = false;
+
+  // Single, accessible header button: a verified greeting and cabinet action.
+  function setAccountButton(label, name = "") {
+    if (buttonLabel) buttonLabel.textContent = label;
+    if (buttonHello) {
+      buttonHello.hidden = !name;
+      buttonHello.textContent = name ? "Здравствуйте, " + name + "!" : "";
+    }
+  }
 
   function getInitData() {
     if (app && typeof app.initData === "string" && app.initData) return app.initData;
@@ -52,7 +62,7 @@
     status.textContent = message;
     status.hidden = false;
     retry.hidden = !canRetry;
-    accountButton.textContent = mini ? "Личный кабинет" : "Открыть в Telegram";
+    setAccountButton(mini ? "Личный кабинет" : "Войти через Telegram");
     accountButton.disabled = false;
   }
 
@@ -104,18 +114,14 @@
     birthInput.value = birthForDisplay(localStorage.getItem(BIRTH_PREFIX + user.id));
     birthInput.removeAttribute("aria-invalid");
     birthNote.textContent = "Дата хранится только на этом устройстве.";
-    accountButton.textContent = "Мой кабинет";
+    setAccountButton("Мой кабинет", user.name);
     accountButton.disabled = false;
-    if (greeting) {
-      greeting.textContent = "Здравствуйте, " + user.name + "!";
-      greeting.hidden = false;
-    }
   }
 
   async function identify() {
     if (loading) return;
     loading = true;
-    accountButton.textContent = "Подключаем...";
+    setAccountButton("Подключаем...");
     accountButton.disabled = true;
     const raw = getInitData();
     try {
@@ -198,6 +204,6 @@
     try { app?.ready(); app?.expand(); } catch (_) {}
     identify();
   } else {
-    accountButton.textContent = "Войти через Telegram";
+    setAccountButton("Войти через Telegram");
   }
 })();
