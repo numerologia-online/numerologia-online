@@ -1,270 +1,143 @@
-/* Telegram-кабинет: настоящий серверно подтверждённый тестовый вход.
- * Здесь нет прав на платные материалы, базы пользователей или сохранённых PDF.
- * ID token проверяется на Vercel по публичной подписи Telegram (без секретов бота).
+/* Нумерология Онлайн: авторизация внутри Telegram Mini App.
+ * Никаких Telegram Login popup, переходов в Safari или отдельной регистрации.
+ * Доверяем имени и Telegram ID только после проверки подписанного initData на сервере.
+ * Платные права / платежи не реализованы: это только личный кабинет.
  */
 (() => {
   "use strict";
-  const CLIENT_ID = 8814989076;
-  const VERIFY_URL = "https://numerologia-online-auth-server.vercel.app/api/verify";
-  const MINIAPP_VERIFY_URL = "https://numerologia-online-auth-server.vercel.app/api/miniapp";
-  const SESSION_KEY = "num-online-tg-verified-v1";
+  const CHECK_URL = "https://numerologia-online-auth-server.vercel.app/api/miniapp";
   const BIRTH_PREFIX = "num-online-birth-v1:";
   const dialog = document.querySelector("#account-dialog");
-  if (!dialog) return;
-
+  const accountButton = document.querySelector("[data-account-open='profile']");
   const loginView = document.querySelector("#account-login");
   const profileView = document.querySelector("#account-profile");
   const status = document.querySelector("#account-status");
-  const loginButton = document.querySelector("#account-telegram-login");
+  const retry = document.querySelector("#account-retry");
+  const title = document.querySelector("#account-person-name");
   const birthInput = document.querySelector("#account-birth");
   const birthNote = document.querySelector("#account-birth-note");
-  const title = document.querySelector("#account-person-name");
-  const previewWarning = document.querySelector("#account-preview-warning");
-  const signout = document.querySelector("#account-logout");
-  const signup = document.querySelector('[data-account-open="register"]');
-  const signin = document.querySelector('[data-account-open="login"]');
-  const saveDate = document.querySelector("#account-birth-save");
+  const warning = document.querySelector("#account-preview-warning");
+  const app = window.Telegram && window.Telegram.WebApp;
+  if (!dialog || !accountButton || !loginView || !profileView || !status || !app) return;
+
   let user = null;
-  let preview = false;
-  let sdkPromise = null;
-  let backendProbe = null;
-  let miniMode = false;
+  let loading = false;
+  let mini = false;
 
-  const note = (value) => {
-    status.textContent = value || "";
-    status.hidden = !value;
-  };
-
-  function syncHeader() {
-    signup.hidden = !!user || miniMode;
-    signin.textContent = user ? "Личный кабинет" : miniMode ? "Подключаем..." : "Войти";
+  function getInitData() {
+    if (typeof app.initData === "string" && app.initData) return app.initData;
+    // Telegram normally sets WebApp.initData, but its signed launch data may
+    // also be present in the URL fragment (not the main application's hash).
+    const fragment = String(location.hash || "").replace(/^#/, "");
+    if (!fragment.includes("tgWebAppData=")) return "";
+    try { return new URLSearchParams(fragment).get("tgWebAppData") || ""; }
+    catch (_) { return ""; }
   }
 
-  function openProfile(isPreview = false) {
-    preview = isPreview;
-    loginView.hidden = true;
-    profileView.hidden = false;
-    title.textContent = isPreview ? "Гостевой просмотр" : user.name;
-    previewWarning.hidden = false;
-    previewWarning.textContent = isPreview
-      ? "Это предпросмотр, не регистрация. Дата не сохраняется."
-      : "Вход подтверждён Telegram. Это первая версия кабинета, без платных доступов.";
-    signout.hidden = isPreview || miniMode;
-    document.querySelector("#account-back").hidden = miniMode;
-    birthInput.disabled = isPreview;
-    saveDate.disabled = isPreview;
-    document.querySelector("#account-birth-delete").disabled = isPreview;
-    birthInput.value = isPreview ? "" : (localStorage.getItem(BIRTH_PREFIX + user.id) || "");
-    birthNote.textContent = isPreview
-      ? "В режиме просмотра дата не сохраняется."
-      : "Дата хранится только в этом браузере, а не на сервере.";
+  function isTelegramEnvironment() {
+    return !!(getInitData() ||
+      window.TelegramWebviewProxy ||
+      window.webkit?.messageHandlers?.TelegramWebviewProxy ||
+      /(?:^|[&#?])tgWebApp(?:Version|Platform|Data)=/.test(location.href));
   }
 
-  function openLogin() {
-    preview = false;
+  function setMessage(message, canRetry) {
+    user = null;
     loginView.hidden = false;
     profileView.hidden = true;
-    if (!miniMode) prepareLogin();
+    status.textContent = message;
+    status.hidden = false;
+    retry.hidden = !canRetry;
+    accountButton.textContent = mini ? "Личный кабинет" : "Открыть в Telegram";
+    accountButton.disabled = false;
   }
 
-  function openDialog() {
-    if (user) openProfile();
-    else if (!miniMode) openLogin();
-    if (!dialog.open) dialog.showModal();
+  function showProfile() {
+    if (!user) return;
+    loginView.hidden = true;
+    profileView.hidden = false;
+    title.textContent = user.name;
+    warning.textContent = "Вход подтверждён Telegram. Покупки и платные доступы пока не подключены.";
+    warning.hidden = false;
+    birthInput.value = localStorage.getItem(BIRTH_PREFIX + user.id) || "";
+    birthNote.textContent = "Дата рождения хранится только в этом браузере.";
+    accountButton.textContent = "Мой кабинет";
+    accountButton.disabled = false;
   }
 
-  async function loadSdk() {
-    if (window.Telegram?.Login?.auth) return window.Telegram.Login;
-    if (sdkPromise) return sdkPromise;
-    sdkPromise = new Promise((resolve, reject) => {
-      const tag = document.createElement("script");
-      tag.src = "https://oauth.telegram.org/js/telegram-login.js";
-      tag.async = true;
-      tag.onload = () => window.Telegram?.Login?.auth
-        ? resolve(window.Telegram.Login)
-        : reject(new Error("Telegram не загрузил модуль входа."));
-      tag.onerror = () => reject(new Error("Не удалось подключиться к Telegram."));
-      document.head.appendChild(tag);
-    }).catch(error => { sdkPromise = null; throw error; });
-    return sdkPromise;
-  }
-
-  async function checkBackend() {
-    const reply = await fetch("https://numerologia-online-auth-server.vercel.app/api/health", {
-      method: "GET", mode: "cors", cache: "no-store"
-    });
-    if (!reply.ok) throw new Error("Сервер входа пока недоступен.");
-    const info = await reply.json();
-    if (!info?.ok || info.service !== "telegram-login-verifier") {
-      throw new Error("Сервер входа пока не готов.");
-    }
-  }
-
-  function prepareLogin() {
-    loginButton.disabled = true;
-    note("Проверяем подключение к Telegram...");
-    if (!backendProbe) {
-      backendProbe = Promise.all([checkBackend(), loadSdk()]).catch(error => {
-        backendProbe = null;
-        throw error;
-      });
-    }
-    backendProbe.then(() => {
-      loginButton.disabled = false;
-      note("");
-    }).catch(error => {
-      loginButton.disabled = true;
-      note("Сервер входа недоступен. Повторите попытку позднее. " + (error?.message || ""));
-    });
-  }
-
-  async function verifyTelegram(token, nonce) {
-    const response = await fetch(VERIFY_URL, {
-      method: "POST",
-      mode: "cors",
-      cache: "no-store",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id_token: token, nonce })
-    });
-    let data;
-    try { data = await response.json(); } catch (_) {
-      throw new Error("Сервер Telegram-авторизации пока не отвечает.");
-    }
-    if (!response.ok || !data?.ok || !data.user?.id) {
-      const code = String(data?.error || "UNKNOWN").slice(0, 35);
-      throw new Error("Не удалось завершить проверку входа (" + code + ").");
-    }
-    return { id: String(data.user.id), name: String(data.user.name || "Пользователь").slice(0, 80) };
-  }
-
-  function startMiniAppLogin() {
-    const app = window.Telegram?.WebApp;
-    if (!app || typeof app.initData !== "string" || !app.initData) return false;
-
-    miniMode = true;
-    signup.hidden = true;
-    signin.textContent = "Подключаем...";
-    signin.disabled = true;
-    loginButton.hidden = true;
-    try { app.ready(); app.expand(); } catch (_) {}
-
-    (async () => {
-      try {
-        const response = await fetch(MINIAPP_VERIFY_URL, {
-          method: "POST", mode: "cors", cache: "no-store",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ init_data: app.initData })
-        });
-        const data = await response.json();
-        if (!response.ok || !data?.ok || !data.user?.id) {
-          throw new Error("Telegram не подтвердил личность (" + String(data?.error || "UNKNOWN") + ").");
-        }
-        user = {
-          id: String(data.user.id),
-          name: String(data.user.name || "Пользователь").slice(0, 80)
-        };
-        syncHeader();
-        openProfile();
-        if (!dialog.open) dialog.showModal();
-      } catch (error) {
-        // Not authenticated: never display the user's private cabinet or
-        // pretend successful login when server verification fails.
-        user = null;
-        signup.hidden = true;
-        signin.textContent = "Личный кабинет";
-        loginView.hidden = false;
-        profileView.hidden = true;
-        document.querySelector(".account-intro").textContent =
-          "Сайт открыт внутри Telegram, но автоматический вход пока не завершён.";
-        note("Не удалось подтвердить вход внутри Telegram. " +
-             (error?.message || "Ошибка соединения."));
-        if (!dialog.open) dialog.showModal();
-      } finally {
-        signin.disabled = false;
+  async function identify() {
+    if (loading) return;
+    loading = true;
+    accountButton.textContent = "Подключаем...";
+    accountButton.disabled = true;
+    const raw = getInitData();
+    try {
+      if (!raw) {
+        throw new Error("Telegram не передал данные о пользователе. Возможно, кнопку бота нужно настроить как полноценное мини-приложение.");
       }
-    })();
-    return true;
+      const res = await fetch(CHECK_URL, {
+        method: "POST",
+        mode: "cors",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ init_data: raw })
+      });
+      const data = await res.json();
+      if (!res.ok || data?.ok !== true || !data?.user?.id) {
+        throw new Error("Проверка Telegram не пройдена (" + String(data?.error || res.status).slice(0, 36) + ").");
+      }
+      user = {
+        id: String(data.user.id),
+        name: String(data.user.name || "Пользователь").slice(0, 80)
+      };
+      showProfile();
+      if (!dialog.open) dialog.showModal();
+    } catch (err) {
+      setMessage("Автоматический вход не удался: " + (err?.message || "Нет соединения с сервером."), true);
+      if (!dialog.open) dialog.showModal();
+    } finally {
+      loading = false;
+    }
   }
 
-  async function authenticate() {
-    if (!window.isSecureContext || !window.crypto?.getRandomValues) {
-      note("Откройте сайт по защищённому HTTPS-адресу.");
+  accountButton.addEventListener("click", () => {
+    if (user) showProfile();
+    else if (mini && !loading) {
+      loginView.hidden = false;
+      profileView.hidden = true;
+    } else {
+      setMessage("Для автоматического входа откройте сайт кнопкой нашего Telegram-бота.", false);
+    }
+    if (!dialog.open) dialog.showModal();
+  });
+  document.querySelector("#account-close").addEventListener("click", () => dialog.close());
+  dialog.addEventListener("click", event => {
+    if (event.target === dialog) dialog.close();
+  });
+  retry.addEventListener("click", () => {
+    if (mini) identify();
+  });
+  document.querySelector("#account-birth-save").addEventListener("click", () => {
+    if (!user) return;
+    if (!birthInput.value) {
+      birthNote.textContent = "Укажите дату рождения.";
       return;
     }
-    // Запуск login popup должен происходить непосредственно после нажатия кнопки.
-    loginButton.disabled = true;
-    note("Открываем Telegram...");
-    try {
-      const sdk = await loadSdk();
-      const bytes = crypto.getRandomValues(new Uint8Array(24));
-      const nonce = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
-      sdk.auth({ client_id: CLIENT_ID, scope: ["profile"], lang: "ru", nonce }, async result => {
-        try {
-          if (!result?.id_token) {
-            note(result?.error ? "Telegram: " + String(result.error).slice(0, 140) : "Вход отменён.");
-            return;
-          }
-          note("Проверяем подтверждение Telegram...");
-          const verified = await verifyTelegram(result.id_token, nonce);
-          // В браузере хранится только кратковременный токен Telegram.
-          sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token: result.id_token, nonce }));
-          user = verified;
-          syncHeader();
-          openProfile();
-          if (!dialog.open) dialog.showModal();
-          note("");
-        } catch (err) {
-          note(err?.message || "Не удалось завершить вход.");
-        } finally {
-          loginButton.disabled = false;
-        }
-      });
-    } catch (err) {
-      note(err?.message || "Telegram временно недоступен.");
-      loginButton.disabled = false;
-    }
-  }
-
-  async function restoreSession() {
-    try {
-      const saved = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
-      if (!saved?.token || !saved?.nonce) return;
-      const verified = await verifyTelegram(saved.token, saved.nonce);
-      user = verified;
-      syncHeader();
-      if (dialog.open && !preview) openProfile();
-    } catch (_) {
-      sessionStorage.removeItem(SESSION_KEY);
-      user = null;
-      syncHeader();
-    }
-  }
-
-  document.querySelectorAll("[data-account-open]").forEach(button =>
-    button.addEventListener("click", openDialog)
-  );
-  document.querySelector("#account-close").addEventListener("click", () => dialog.close());
-  dialog.addEventListener("click", e => { if (e.target === dialog) dialog.close(); });
-  loginButton.addEventListener("click", authenticate);
-  document.querySelector("#account-preview").addEventListener("click", () => openProfile(true));
-  document.querySelector("#account-back").addEventListener("click", openLogin);
-  saveDate.addEventListener("click", () => {
-    if (!user || preview) return;
-    if (!birthInput.value) { birthNote.textContent = "Укажите дату рождения."; return; }
     localStorage.setItem(BIRTH_PREFIX + user.id, birthInput.value);
-    birthNote.textContent = "Дата сохранена только в вашем браузере.";
+    birthNote.textContent = "Дата сохранена на этом устройстве.";
   });
   document.querySelector("#account-birth-delete").addEventListener("click", () => {
-    if (!user || preview) return;
+    if (!user) return;
     localStorage.removeItem(BIRTH_PREFIX + user.id);
     birthInput.value = "";
     birthNote.textContent = "Дата удалена с этого устройства.";
   });
-  signout.addEventListener("click", () => {
-    user = null;
-    sessionStorage.removeItem(SESSION_KEY);
-    syncHeader();
-    openLogin();
-  });
-  if (!startMiniAppLogin()) restoreSession();
+
+  mini = isTelegramEnvironment();
+  if (mini) {
+    try { app.ready(); app.expand(); } catch (_) {}
+    identify();
+  } else {
+    accountButton.textContent = "Открыть в Telegram";
+  }
 })();
