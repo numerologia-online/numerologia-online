@@ -18,6 +18,7 @@
   const title = document.querySelector("#account-person-name");
   const avatarLetter = document.querySelector("#account-avatar-letter");
   const buttonHello = document.querySelector("#auth-button-hello");
+  const buttonCheck = document.querySelector("#auth-button-check");
   const buttonLabel = document.querySelector("#auth-button-label");
   const birthInput = document.querySelector("#account-birth");
   const birthNote = document.querySelector("#account-birth-note");
@@ -29,13 +30,50 @@
   let loading = false;
   let mini = false;
 
-  // Single, accessible header button: a verified greeting and cabinet action.
-  function setAccountButton(label, name = "") {
+  // Keep the header short; the person's name already appears inside the cabinet.
+  function setAccountButton(label, verified = false) {
     if (buttonLabel) buttonLabel.textContent = label;
     if (buttonHello) {
-      buttonHello.hidden = !name;
-      buttonHello.textContent = name ? "Здравствуйте, " + name + "!" : "";
+      buttonHello.hidden = !verified;
+      buttonHello.textContent = verified ? "Вход выполнен" : "";
     }
+    if (buttonCheck) buttonCheck.hidden = !verified;
+  }
+
+  // The iOS keyboard shrinks the visual viewport but does not always shrink
+  // dialog's vh/dvh layout viewport. Use the actual visible area while typing.
+  const visualViewport = window.visualViewport;
+  function updateKeyboardDialog() {
+    if (!dialog.open || document.activeElement !== birthInput) return;
+    const visibleHeight = visualViewport?.height || window.innerHeight;
+    const visibleTop = visualViewport?.offsetTop || 0;
+    if (!Number.isFinite(visibleHeight) || visibleHeight <= 0) return;
+    dialog.style.setProperty("--account-view-height", visibleHeight + "px");
+    dialog.style.setProperty("--account-view-top", visibleTop + "px");
+    dialog.classList.add("account-dialog--editing");
+
+    // Scroll only the cabinet, never the whole site behind the modal.
+    const inputRect = birthInput.getBoundingClientRect();
+    const dialogRect = dialog.getBoundingClientRect();
+    const safeBottom = dialogRect.bottom - 74;
+    const safeTop = dialogRect.top + 16;
+    if (inputRect.bottom > safeBottom) {
+      dialog.scrollTop += inputRect.bottom - safeBottom;
+    } else if (inputRect.top < safeTop) {
+      dialog.scrollTop -= safeTop - inputRect.top;
+    }
+  }
+  function resetKeyboardDialog() {
+    dialog.classList.remove("account-dialog--editing");
+    dialog.style.removeProperty("--account-view-height");
+    dialog.style.removeProperty("--account-view-top");
+  }
+  birthInput.addEventListener("focus", () => updateKeyboardDialog());
+  birthInput.addEventListener("blur", resetKeyboardDialog);
+  dialog.addEventListener("close", resetKeyboardDialog);
+  if (visualViewport) {
+    visualViewport.addEventListener("resize", updateKeyboardDialog);
+    visualViewport.addEventListener("scroll", updateKeyboardDialog);
   }
 
   function getInitData() {
@@ -114,7 +152,7 @@
     birthInput.value = birthForDisplay(localStorage.getItem(BIRTH_PREFIX + user.id));
     birthInput.removeAttribute("aria-invalid");
     birthNote.textContent = "Дата хранится только на этом устройстве.";
-    setAccountButton("Мой кабинет", user.name);
+    setAccountButton("Личный кабинет", true);
     accountButton.disabled = false;
   }
 
