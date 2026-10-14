@@ -1,0 +1,26 @@
+/* Личный кабинет: лёгкое оформление в стиле главной страницы */
+.account-dialog{width:min(94vw,500px);max-height:min(90vh,850px);overflow-y:auto;padding:25px;border:1px solid #e8dfcc;border-radius:26px;background:#fbf9f3;color:#163f32;box-shadow:0 24px 70px #19372a35}
+.account-dialog::backdrop{background:#10291eca;backdrop-filter:blur(3px)}
+.account-header{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;margin-bottom:18px}
+.account-header h2{font:normal clamp(27px,6vw,37px)/1.13 Georgia,serif;letter-spacing:-.02em;color:#164431}
+.account-kicker{margin:0 0 8px;color:#af8541;font-size:11px;font-weight:800;letter-spacing:.15em;text-transform:uppercase}
+.account-close{width:40px;height:40px;flex:none;border:1px solid #dcdcca;border-radius:50%;background:white;color:#164431;font-size:26px;cursor:pointer}
+.account-intro{margin:10px 0 20px;font-size:14px;line-height:1.6;color:#546458}
+.account-primary{display:block;width:100%;margin-top:12px;padding:14px 17px;border:none;border-radius:15px;background:#176149;color:white;font-size:15px;font-weight:700;cursor:pointer}
+.account-primary:disabled{opacity:.45;cursor:default}
+.account-secondary{display:block;width:100%;margin-top:12px;padding:12px;border:1px solid #d9decf;border-radius:15px;background:#fff;color:#176149;font-size:14px;font-weight:700;cursor:pointer}
+.account-muted{margin:13px 0 0;font-size:12px;line-height:1.6;color:#687268}
+.account-status{margin:15px 0;padding:12px;border-radius:12px;background:#fff3da;color:#715328;font-size:13px;line-height:1.5}
+.account-preview-warning{padding:11px 14px;border-radius:13px;background:#f6e9ca;color:#785323;font-size:12px}
+.account-label{display:block;margin:18px 0 7px;font-size:13px;font-weight:700}
+.account-date{display:block;width:100%;min-height:48px;padding:9px 12px;border:1px solid #cfdbd0;border-radius:12px;background:white;color:#183a2f;font-size:16px}
+.account-actions{display:flex;flex-wrap:wrap;gap:9px}
+.account-actions button{flex:1;min-width:120px}
+.account-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.account-tile{padding:17px 13px;border:1px solid #dce0d1;border-radius:17px;background:linear-gradient(140deg,#f9f4e9,#edf3e7);text-decoration:none;color:#164431}
+.account-tile strong,.account-tile small{display:block}
+.account-tile strong{font-size:13px}
+.account-tile small{margin-top:8px;font-size:11px;line-height:1.4;color:#687568}
+.account-divider{height:1px;margin:18px 0;background:#e5e0d5}
+[hidden].account-status,[hidden].account-preview-warning,[hidden]#account-profile,[hidden]#account-login{display:none!important}
+@media(max-width:410px){.account-dialog{padding:18px}.account-tile{padding:13px 9px}.account-tile strong{font-size:12px}}
