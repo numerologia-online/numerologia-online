@@ -129,17 +129,46 @@
     return sdkPromise;
   }
 
-  async function authenticate() {
-    if (!TELEGRAM_CLIENT_ID) {
-      setStatus("Нужен публичный Client ID бота из BotFather → Login Widget. Секреты не нужны.");
-      return;
+  // Сейчас кабинет - только персональный интерфейс в браузере.
+  // JWT проверяется, если Telegram разрешает загрузку публичных ключей,
+  // но доступ к платным функциям не предоставляется ни в одном режиме.
+  function getPendingIdentity(token, expectedNonce) {
+    const parts = String(token || "").split(".");
+    if (parts.length !== 3) throw new Error("Telegram не вернул правильный токен.");
+    const claim = parseJwtPart(parts[1]);
+    const audience = Array.isArray(claim.aud) ? claim.aud : [claim.aud];
+    const now = Math.floor(Date.now() / 1000);
+    if (claim.iss !== "https://oauth.telegram.org" ||
+        !audience.map(String).includes(String(TELEGRAM_CLIENT_ID)) ||
+        !Number.isSafeInteger(claim.id) || claim.id <= 0 ||
+        typeof claim.exp !== "number" || claim.exp <= now ||
+        typeof claim.iat !== "number" || claim.iat > now + 60 ||
+        claim.nonce !== expectedNonce) {
+      throw new Error("Подтверждение Telegram не прошло проверку.");
     }
-    if (!window.isSecureContext || !crypto?.subtle) {
-      setStatus("Для входа откройте сайт по защищённому HTTPS-адресу.");
+    return { id: String(claim.id), name: String(claim.name || claim.given_name || claim.preferred_username || "Пользователь").slice(0, 80) };
+  }
+
+  function enterLocalCabinet(identity, origin) {
+    user = identity;
+    syncHeader();
+    openProfile();
+    if (!dialog.open) dialog.showModal();
+    previewWarning.hidden = false;
+    previewWarning.textContent = origin === "miniapp"
+      ? "Вы открыли кабинет внутри Telegram. Пока дата рождения хранится только на этом устройстве. Платные доступы ещё не подключены."
+      : "Telegram подтвердил вход. Это тестовый личный кабинет: данные хранятся в браузере, платные доступы ещё не подключены.";
+    setStatus("");
+    loginButton.disabled = false;
+  }
+
+  async function authenticate() {
+    if (!window.isSecureContext || !crypto?.getRandomValues) {
+      setStatus("Откройте сайт по защищённому HTTPS-адресу.");
       return;
     }
     loginButton.disabled = true;
-    setStatus("Подключаем Telegram...");
+    setStatus("Открываем подтверждение Telegram...");
     try {
       const sdk = await loadSdk();
       const bytes = crypto.getRandomValues(new Uint8Array(24));
@@ -148,38 +177,59 @@
         try {
           if (!result?.id_token) {
             setStatus(result?.error ? "Telegram: " + String(result.error).slice(0, 140) : "Вход отменён.");
+            loginButton.disabled = false;
             return;
           }
-          const verified = await verifyTelegramIdToken(result.id_token, nonce);
-          user = verified;
+          // Показываем кабинет немедленно после подтверждения Telegram,
+          // не блокируя интерфейс дополнительным HTTPS-запросом из iPhone Safari.
+          const identity = getPendingIdentity(result.id_token, nonce);
           sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token: result.id_token, nonce }));
-          syncHeader();
-          setStatus("");
-          openProfile();
+          enterLocalCabinet(identity, "login");
+          try {
+            // Дополнительная проверка криптографической подписи в браузере.
+            // Даже при успехе она не даёт прав на платные товары.
+            await verifyTelegramIdToken(result.id_token, nonce);
+          } catch (error) {
+            console.info("Telegram token verification requires a backend for protected access.", error?.message);
+          }
         } catch (error) {
-          setStatus(error.message || "Не удалось подтвердить вход.");
-        } finally {
+          setStatus(error.message || "Не удалось завершить вход.");
           loginButton.disabled = false;
         }
       });
     } catch (error) {
-      setStatus(error.message || "Не удалось подключиться к Telegram.");
+      setStatus(error.message || "Не удалось связаться с Telegram.");
       loginButton.disabled = false;
     }
   }
 
-  async function restoreSession() {
+  function restoreSession() {
     try {
-      if (!TELEGRAM_CLIENT_ID) return;
-      const session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
-      if (!session?.token || !session?.nonce) return;
-      user = await verifyTelegramIdToken(session.token, session.nonce);
-      syncHeader();
+      const saved = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
+      if (saved?.token && saved?.nonce) {
+        const identity = getPendingIdentity(saved.token, saved.nonce);
+        user = identity;
+        syncHeader();
+      }
     } catch (_) {
       sessionStorage.removeItem(SESSION_KEY);
       user = null;
       syncHeader();
     }
+  }
+
+  function checkTelegramMiniApp() {
+    const miniApp = window.Telegram?.WebApp;
+    if (!miniApp?.initData || !miniApp?.initDataUnsafe?.user) return false;
+    const member = miniApp.initDataUnsafe.user;
+    if (!Number.isSafeInteger(member.id) || member.id <= 0) return false;
+    const identity = {
+      id: String(member.id),
+      name: String([member.first_name, member.last_name].filter(Boolean).join(" ") || member.username || "Пользователь").slice(0, 80)
+    };
+    enterLocalCabinet(identity, "miniapp");
+    try { miniApp.ready(); miniApp.expand(); } catch (_) {}
+    return true;
   }
 
   document.querySelectorAll("[data-account-open]").forEach(button => {
@@ -217,4 +267,7 @@
     showLogin();
   });
   restoreSession();
+  if (!checkTelegramMiniApp()) {
+    window.addEventListener("pageshow", () => { if (!user) checkTelegramMiniApp(); });
+  }
 })();
