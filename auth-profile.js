@@ -55,7 +55,7 @@
     });
     if (!response.ok) throw new Error("Не удалось проверить подпись Telegram.");
     const jwks = await response.json();
-    const jwk = (jwks.keys || []).find(key => key.kid === header.kid && key.alg === "RS256" && key.kty === "RSA");
+    const jwk = (jwks.keys || []).find(key => key.kid === header.kid && (!key.alg || key.alg === "RS256") && key.kty === "RSA");
     if (!jwk) throw new Error("Ключ проверки Telegram недоступен.");
     const publicKey = await crypto.subtle.importKey(
       "jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]
@@ -187,6 +187,7 @@
       if (user) openProfile();
       else showLogin();
       dialog.showModal();
+      if (TELEGRAM_CLIENT_ID && !user) loadSdk().catch(error => setStatus(error.message));
     });
   });
   document.querySelector("#account-close").addEventListener("click", () => dialog.close());
