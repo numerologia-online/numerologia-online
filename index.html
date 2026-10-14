@@ -302,22 +302,36 @@
         <p class="account-muted">Номер телефона не запрашиваем. Содержимое оплаченных разборов пока не защищено личным кабинетом.</p>
       </section>
       <section id="account-profile" hidden>
-        <p id="account-preview-warning" class="account-preview-warning" hidden>Это предпросмотр, не регистрация. Чтобы сохранить дату, потребуется вход через Telegram.</p>
-        <h3 id="account-person-name"></h3>
-        <label class="account-label" for="account-birth">Моя дата рождения</label>
-        <input id="account-birth" class="account-date" type="date" min="1900-01-01" max="2100-12-31" autocomplete="bday">
-        <div class="account-actions">
-          <button type="button" class="account-primary" id="account-birth-save">Сохранить дату</button>
-          <button type="button" class="account-secondary" id="account-birth-delete">Удалить дату</button>
+        <div class="account-identity">
+          <span class="account-avatar" id="account-avatar-letter" aria-hidden="true"></span>
+          <div class="account-identity-main">
+            <p class="account-identity-label">Вы вошли как</p>
+            <h3 id="account-person-name"></h3>
+          </div>
+          <span class="account-verified" aria-label="Telegram подтверждён">✓</span>
         </div>
-        <p id="account-birth-note" class="account-muted"></p>
+        <p id="account-preview-warning" class="account-preview-warning" hidden>Вход подтверждён через Telegram.</p>
+        <div class="account-birth-section">
+          <label class="account-label" for="account-birth">Моя дата рождения</label>
+          <p class="account-field-hint">Введите дату вручную</p>
+          <input id="account-birth" class="account-date" type="text" inputmode="numeric"
+                 autocomplete="bday" autocapitalize="off" spellcheck="false"
+                 maxlength="10" placeholder="ДД.ММ.ГГГГ"
+                 aria-describedby="account-birth-note">
+          <div class="account-actions">
+            <button type="button" class="account-primary" id="account-birth-save">Сохранить дату</button>
+            <button type="button" class="account-secondary" id="account-birth-delete">Очистить</button>
+          </div>
+          <p id="account-birth-note" class="account-muted" role="status" aria-live="polite"></p>
+        </div>
+        <div class="account-section-heading">Мои разделы</div>
         <div class="account-tiles">
-          <a class="account-tile" href="./pro/"><strong>Полный разбор ↗</strong><small>Открыть личный расчёт</small></a>
-          <a class="account-tile" href="./#lichnyj-den"><strong>Мой день ↗</strong><small>Персональные подсказки</small></a>
-          <a class="account-tile" href="./pro/schools/"><strong>Моё обучение ↗</strong><small>Программы школы</small></a>
-          <a class="account-tile" href="https://t.me/Numerologiaonline_bot" target="_blank" rel="noopener noreferrer"><strong>Telegram-бот ↗</strong><small>Открыть нашего бота</small></a>
+          <a class="account-tile" href="./pro/"><strong>Полный разбор <span aria-hidden="true">↗</span></strong><small>Личный расчёт</small></a>
+          <a class="account-tile" href="./#lichnyj-den"><strong>Мой день <span aria-hidden="true">↗</span></strong><small>Подсказки на день</small></a>
+          <a class="account-tile" href="./pro/schools/"><strong>Моё обучение <span aria-hidden="true">↗</span></strong><small>Школа нумерологии</small></a>
+          <a class="account-tile" href="https://t.me/Numerologiaonline_bot" target="_blank" rel="noopener noreferrer"><strong>Telegram-бот <span aria-hidden="true">↗</span></strong><small>Открыть бота</small></a>
         </div>
-        <div class="account-divider"></div>
+        <p class="account-footer-note">Тарифы и доступ к покупкам пока в разработке.</p>
       </section>
     </dialog>
     <dialog id="pdf-preview" class="pdf-preview-dialog">
