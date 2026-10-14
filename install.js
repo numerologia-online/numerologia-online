@@ -2,6 +2,10 @@
   "use strict";
   const modal = document.getElementById("install-nudge");
   if (!modal) return;
+  // Mini App already runs as an app inside Telegram. Never show "install" prompts there.
+  if (window.Telegram?.WebApp?.initData || window.TelegramWebviewProxy ||
+      window.webkit?.messageHandlers?.TelegramWebviewProxy ||
+      /(?:^|[&#?])tgWebApp(?:Version|Platform|Data)=/.test(location.href)) return;
   const dismiss = document.getElementById("install-dismiss");
   const later = document.getElementById("install-later");
   const action = document.getElementById("install-action");
