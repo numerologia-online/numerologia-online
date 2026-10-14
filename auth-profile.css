@@ -29,3 +29,5 @@
 /* The Telegram bot is an optional entry link, not a login step inside Mini App. */
 .account-telegram-link{text-decoration:none;text-align:center;box-sizing:border-box}
 .auth-actions .auth-button:disabled{opacity:.75}
+.account-greeting{margin:0 22px 4px;color:#176149;font-size:14px;line-height:1.5;font-weight:700}
+.account-greeting[hidden]{display:none!important}
