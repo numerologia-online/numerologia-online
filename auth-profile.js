@@ -14,6 +14,7 @@
   const status = document.querySelector("#account-status");
   const retry = document.querySelector("#account-retry");
   const title = document.querySelector("#account-person-name");
+  const greeting = document.querySelector("#account-greeting");
   const birthInput = document.querySelector("#account-birth");
   const birthNote = document.querySelector("#account-birth-note");
   const warning = document.querySelector("#account-preview-warning");
@@ -63,6 +64,10 @@
     birthNote.textContent = "Дата рождения хранится только в этом браузере.";
     accountButton.textContent = "Мой кабинет";
     accountButton.disabled = false;
+    if (greeting) {
+      greeting.textContent = "Здравствуйте, " + user.name + "!";
+      greeting.hidden = false;
+    }
   }
 
   async function identify() {
@@ -91,7 +96,8 @@
         name: String(data.user.name || "Пользователь").slice(0, 80)
       };
       showProfile();
-      if (!dialog.open) dialog.showModal();
+      // No modal on success. The site welcomes the user and keeps the
+      // current Mini App page open. The cabinet opens only on request.
     } catch (err) {
       setMessage("Автоматический вход не удался: " + (err?.message || "Нет соединения с сервером."), !!raw);
       if (!dialog.open) dialog.showModal();
