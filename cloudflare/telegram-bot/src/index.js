@@ -38,7 +38,7 @@ export default {
         ok: true,
         service: 'numerologia-online-telegram-worker',
         version: '2026-10-16',
-        configured: Boolean(env.BOT_TOKEN && env.WEBHOOK_SECRET),
+        configured: Boolean(env.BOT_TOKEN),
         reg_ru: await backendHealth(),
         webhook_changed: false,
       });
@@ -46,11 +46,11 @@ export default {
     if (request.method !== 'POST' || path !== '/telegram') {
       return json({ ok: false, error: 'NOT_FOUND' }, 404);
     }
-    if (typeof env.BOT_TOKEN !== 'string' || typeof env.WEBHOOK_SECRET !== 'string'
-        || !env.BOT_TOKEN || !env.WEBHOOK_SECRET) {
+    if (typeof env.BOT_TOKEN !== 'string' || !env.BOT_TOKEN) {
       return json({ ok: false, error: 'NOT_CONFIGURED' }, 503);
     }
-    if (request.headers.get('X-Telegram-Bot-Api-Secret-Token') !== env.WEBHOOK_SECRET) {
+    const telegramSecret = await regSecret(env.BOT_TOKEN);
+    if (request.headers.get('X-Telegram-Bot-Api-Secret-Token') !== telegramSecret) {
       return json({ ok: false, error: 'FORBIDDEN' }, 403);
     }
     const body = await request.text();
@@ -71,7 +71,7 @@ export default {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Telegram-Bot-Api-Secret-Token': await regSecret(env.BOT_TOKEN),
+          'X-Telegram-Bot-Api-Secret-Token': telegramSecret,
         },
         body,
         redirect: 'manual',
