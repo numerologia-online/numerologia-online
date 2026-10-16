@@ -74,6 +74,13 @@ function updateBotNavigation(reply, update) {
     return { ...reply, text: '🫶 Открой все разделы', reply_markup: bottomMenuKeyboard() };
   }
 
+  // The REG.RU backend sends the permanent bottom button as a separate
+  // Telegram message, then returns the inline catalogue through this webhook.
+  // Do not replace its 11 inline buttons with a reply keyboard.
+  if (Array.isArray(reply.reply_markup?.inline_keyboard)) {
+    return { ...reply, reply_markup: sectionsKeyboard() };
+  }
+
   // During date registration preserve the two temporary consent choices.
   // REG.RU supplies a third "Open site" keyboard row; omit it here.
   const rows = reply.reply_markup?.keyboard;
