@@ -95,6 +95,7 @@ export default {
         configured: true,
         reg_ru: await backendHealth(),
         webhook_changed: false,
+        navigation: 'four-questions-2x2',
       });
     }
     if (request.method !== 'POST' || path !== '/telegram') {
