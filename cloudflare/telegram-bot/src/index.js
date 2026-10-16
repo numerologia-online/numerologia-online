@@ -99,15 +99,14 @@ function updateBotNavigation(reply, update) {
   const hasNo = Array.isArray(rows) && rows.some(row =>
     Array.isArray(row) && row.some(button => button?.text === '❌ Нет, спасибо'));
   if (hasYes && hasNo) {
-    // The user has just ENTERED a birth date: confirm the date and obtain
-    // informed consent for daily forecasts in the same temporary keyboard.
+    // The user has just ENTERED a birth date: ask to verify it.
+    // REG.RU keeps ownership of daily forecast subscription on confirmation.
     const saved = /^Дата рождения (\d{2}\.\d{2}\.\d{4}) сохранена!/u.exec(reply.text);
     if (saved) {
       return {
         ...reply,
         text: 'Дата рождения ' + saved[1] + ' сохранена!\n\n'
-          + 'Проверьте, пожалуйста, дату.\n\n'
-          + 'Подтверждая её, вы подключаете ежедневный личный прогноз на 10:00 по Москве.',
+          + 'Проверьте, пожалуйста, дату.',
         reply_markup: {
           keyboard: [[{ text: '✅ Да, верно' }, { text: '❌ Нет, неверно' }]],
           resize_keyboard: true,
@@ -134,6 +133,18 @@ function updateBotNavigation(reply, update) {
     return {
       ...reply,
       text: 'Добро пожаловать в Нумерологию Онлайн! ❤️\n\nНапишите вашу дату рождения в формате ДД.ММ.ГГГГ, например 09.09.1986.',
+      reply_markup: bottomMenuKeyboard(),
+    };
+  }
+
+  // Confirm the existing REG.RU subscription result in the bot's own voice.
+  // Never claim activation when the backend did not confirm success.
+  if (input === '✅ Да, верно'
+      && reply.text.startsWith('Готово!')
+      && reply.text.includes('Вы подписались на личный прогноз')) {
+    return {
+      ...reply,
+      text: 'Готово! ❤️\n\nТеперь каждое утро в 10:00 по Москве я буду присылать вам личный расчёт по вашей дате рождения.',
       reply_markup: bottomMenuKeyboard(),
     };
   }
