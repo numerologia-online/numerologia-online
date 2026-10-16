@@ -131,6 +131,7 @@ export default {
         reg_ru: await backendHealth(),
         webhook_changed: false,
         navigation: 'on-demand-site-keyboard',
+        site_sections: SITE_BUTTONS.size,
       });
     }
     if (request.method !== 'POST' || path !== '/telegram') {
