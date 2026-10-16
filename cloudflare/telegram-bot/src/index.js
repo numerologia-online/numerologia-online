@@ -86,11 +86,11 @@ function updateBotNavigation(reply, update) {
     return { ...reply, text: compactText, reply_markup: sectionsKeyboard() };
   }
 
-  // For new registrations, attach the bottom keyboard to the EXISTING
-  // birth-date prompt, then keep all 11 inline buttons on the ready message.
-  // Do not replace consent buttons or any other backend-supplied keyboard.
-  if (command === '/start' && !reply.reply_markup
-      && /дат[уые] рождения|дд[.\s-]*мм[.\s-]*гггг|введи.*дат[уые]/iu.test(reply.text)) {
+  // First-time onboarding can pass through a consent step before the date
+  // prompt. Install the persistent keyboard on the EXISTING date prompt,
+  // whether it follows /start or consent. Never change consent controls.
+  if (!reply.reply_markup
+      && /(дат[уые] рождения|дату своего рождения|дд[.\s-]*мм[.\s-]*гггг|(?:введи|укажи|отправь|напиши).{0,100}рожден)/iu.test(reply.text)) {
     return { ...reply, reply_markup: bottomMenuKeyboard() };
   }
 
