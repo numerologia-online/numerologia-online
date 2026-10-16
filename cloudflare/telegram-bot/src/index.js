@@ -55,7 +55,13 @@ function updateBotNavigation(reply, update) {
     || (reply.text.includes('Вы подписались на личный прогноз')
         && reply.text.includes('Готово!'));
   if (ready) {
-    return { ...reply, reply_markup: sectionsKeyboard() };
+    // Keep the completion message compact so the full site menu is more visible.
+    // Only remove the printed unsubscribe hint; /stop remains functional.
+    const compactText = reply.text
+      .replace(/(?:\s*Для отключения рассылки напишите \/stop\.|\s*Отключить сообщения можно командой \/stop\.)/gu, '')
+      .replace(/\n[ \t]*\n+/g, '\n')
+      .trim();
+    return { ...reply, text: compactText, reply_markup: sectionsKeyboard() };
   }
 
   // Old bottom-keyboard buttons may still be visible in earlier chat history;
