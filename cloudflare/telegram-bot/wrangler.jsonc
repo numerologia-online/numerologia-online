@@ -4,5 +4,26 @@
   "main": "src/index.js",
   "compatibility_date": "2026-10-16",
   "workers_dev": true,
-  "keep_vars": true
+  "keep_vars": true,
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "EVENING_STORE",
+        "class_name": "EveningSubscriberStore"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "evening-subscribers-v1",
+      "new_sqlite_classes": [
+        "EveningSubscriberStore"
+      ]
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "0 17 * * *"
+    ]
+  }
 }
