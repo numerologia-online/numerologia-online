@@ -1,3 +1,4 @@
+import { todayInMoscow, personalDayMessage, calendarView } from './personal-day-chat.js';
 /**
  * Telegram webhook receiver for Numerologia Online.
  * All user data and calculations remain at REG.RU.
@@ -15,7 +16,7 @@ const CATALOG_LABEL = '✨ Что ещё знают числа?';
 // Keep each button on its own row so Telegram does not truncate the labels.
 // For sections under construction, a small callback notice avoids dead links.
 const SECTION_BUTTONS = [
-  { text: 'Личный расчёт дня', route: '#lichnyj-den' },
+  { text: 'Личный расчёт дня', route: '#lichnyj-den', inChat: true },
   { text: 'Полный расчёт года', route: '#razbor-goda' },
   { text: 'Мужчина или Ред Флаг', route: '' },
   { text: 'Совместимость и любовь', route: '' },
@@ -46,9 +47,11 @@ function sectionsKeyboard() {
   return {
     inline_keyboard: SECTION_BUTTONS.map(section => [{
       text: section.text,
-      ...(section.soon
-        ? { callback_data: 'soon_' + section.soon }
-        : { web_app: { url: SITE_URL + section.route } }),
+      ...(section.inChat
+        ? { callback_data: 'pd_open' }
+        : section.soon
+          ? { callback_data: 'soon_' + section.soon }
+          : { web_app: { url: SITE_URL + section.route } }),
     }]),
   };
 }
@@ -178,6 +181,119 @@ function updateBotNavigation(reply, update) {
     .trim();
   return { ...reply, text: compact, reply_markup: bottomMenuKeyboard() };
 }
+
+// The Telegram chat/day feature is free during testing. In paid mode,
+// replace this guard with a server-side entitlement check for each date.
+// Do not decide access based on button visibility or client-side state.
+const FREE_TEST_DAY_ACCESS = true;
+function canReadPersonalDay(_userId, _iso) {
+  return FREE_TEST_DAY_ACCESS;
+}
+async function callTelegramApi(env, method, parameters) {
+  if (!env.BOT_TOKEN || typeof env.BOT_TOKEN !== 'string') throw new Error('BOT_NOT_CONFIGURED');
+  const response = await fetch('https://api.telegram.org/bot' + env.BOT_TOKEN + '/' + method, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(parameters),
+    redirect: 'manual',
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!response.ok) throw new Error('TELEGRAM_API_UNAVAILABLE');
+  const body = await response.json();
+  if (!body?.ok) throw new Error('TELEGRAM_API_UNAVAILABLE');
+  return body;
+}
+async function registeredBirthDateFromReg(callback, telegramHeader) {
+  // The existing REG.RU /status command reads the saved date from MySQL.
+  // It does not change subscription status or daily forecast CRON.
+  // Only call this after validating a genuine Telegram webhook token and
+  // the private chat user matching the original Telegram sender.
+  const chatId = callback.message.chat.id;
+  const response = await fetch(REG_HANDLER, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Telegram-Bot-Api-Secret-Token': telegramHeader,
+    },
+    body: JSON.stringify({
+      message: {
+        from: { id: callback.from.id },
+        chat: { id: chatId, type: 'private' },
+        text: '/status',
+      },
+    }),
+    redirect: 'manual',
+    signal: AbortSignal.timeout(9000),
+  });
+  if (!response.ok) throw new Error('REG_STATUS_UNAVAILABLE');
+  const reply = await response.json();
+  if (reply?.method !== 'sendMessage' || typeof reply.text !== 'string') {
+    throw new Error('REG_STATUS_INVALID');
+  }
+  const match = /Дата рождения:\s*(\d{2})\.(\d{2})\.(\d{4})\./u.exec(reply.text);
+  return match ? match[3] + '-' + match[2] + '-' + match[1] : null;
+}
+async function processPersonalDayCallback(callback, env, telegramHeader) {
+  const action = callback.data;
+  const chatId = callback.message.chat.id;
+  const messageId = callback.message.message_id;
+  try {
+    if (action === 'pd_ignore') return;
+    const today = todayInMoscow();
+    if (action.startsWith('pd_month:')) {
+      const view = calendarView(action.slice(9), today);
+      if (!view) return;
+      await callTelegramApi(env, 'editMessageText', {
+        chat_id: chatId, message_id: messageId, ...view,
+      });
+      return;
+    }
+    const birth = await registeredBirthDateFromReg(callback, telegramHeader);
+    if (!birth) {
+      await callTelegramApi(env, 'sendMessage', {
+        chat_id: chatId,
+        text: 'Чтобы я рассчитала личный день, напиши дату рождения в формате ДД.ММ.ГГГГ 🤍',
+      });
+      return;
+    }
+    const iso = action === 'pd_open' ? today : action.slice(8);
+    if (!canReadPersonalDay(callback.from.id, iso)) {
+      await callTelegramApi(env, 'sendMessage', {
+        chat_id: chatId, text: 'Эта дата пока недоступна в вашей подписке.',
+      });
+      return;
+    }
+    const forecast = personalDayMessage(birth, iso);
+    if (!forecast) {
+      await callTelegramApi(env, 'sendMessage', {
+        chat_id: chatId,
+        text: 'Не удалось рассчитать выбранную дату. Выбери другой день в календаре. 🤍',
+      });
+      return;
+    }
+    await callTelegramApi(env, 'sendMessage', {
+      chat_id: chatId, text: forecast, parse_mode: 'HTML',
+      disable_web_page_preview: true,
+    });
+    // As requested: always TWO separate messages on first tap:
+    // today's authored forecast, then a real clickable month calendar.
+    if (action === 'pd_open') {
+      const calendar = calendarView(today.slice(0, 7), today);
+      await callTelegramApi(env, 'sendMessage', {
+        chat_id: chatId, ...calendar, disable_web_page_preview: true,
+      });
+    }
+  } catch {
+    // Never log the callback, user's birthday, bot token or forecast.
+    try {
+      await callTelegramApi(env, 'sendMessage', {
+        chat_id: chatId,
+        text: 'Сейчас не удалось открыть личный расчёт. Попробуй ещё раз чуть позже. 🤍',
+      });
+    } catch {}
+  }
+}
+
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -201,7 +317,7 @@ async function backendHealth() {
   }
 }
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
     if (request.method === 'GET' && (path === '/' || path === '/health')) {
       return json({
@@ -242,6 +358,25 @@ export default {
       if (!env.BOT_TOKEN || typeof env.BOT_TOKEN !== 'string'
           || telegramHeader !== await regSecret(env.BOT_TOKEN)) {
         return json({ ok: false, error: 'FORBIDDEN' }, 403);
+      }
+      if (typeof action === 'string' && action.startsWith('pd_')) {
+        const chatId = callback.message?.chat?.id;
+        const senderId = callback.from?.id;
+        const messageId = callback.message?.message_id;
+        const isPrivate = callback.message?.chat?.type === 'private'
+          && Number.isSafeInteger(chatId) && chatId > 0
+          && Number.isSafeInteger(senderId) && senderId === chatId
+          && Number.isSafeInteger(messageId) && messageId > 0;
+        const validAction = action === 'pd_open' || action === 'pd_ignore'
+          || /^pd_month:\d{4}-(0[1-9]|1[0-2])$/.test(action)
+          || /^pd_date:\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/.test(action);
+        if (!callback.id || !isPrivate || !validAction) {
+          return json({ ok: true, ignored: true });
+        }
+        // Acknowledge the button immediately; send the two chat messages
+        // asynchronously so Telegram does not show an endless spinner.
+        ctx.waitUntil(processPersonalDayCallback(callback, env, telegramHeader));
+        return json({ method: 'answerCallbackQuery', callback_query_id: callback.id });
       }
       if (!callback.id || (!LEGACY_QUESTION_CALLBACKS.has(action) && !SOON_SECTIONS.has(action))) {
         return json({ ok: true, ignored: true });
