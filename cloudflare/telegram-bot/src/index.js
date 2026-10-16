@@ -8,6 +8,59 @@ const REG_HANDLER = 'https://xn--c1adkkdfjbp1a4l.online/api/telegram-reg-stage-1
 const MAX_UPDATE_BYTES = 32768;
 const PREFIX = 'numerologia-online:webhook:v1:';
 
+const INTRO_QUESTION = '🌙 Что сейчас тревожит твоё сердце?';
+const CHOICES = [
+  ['❤️ Почему в любви всё так сложно?', '💰 Когда закончатся денежные трудности?'],
+  ['✨ Почему я не могу найти себя?', '🔮 Какой ответ скрывают мои числа?'],
+];
+const CHOICE_TEXTS = new Set(CHOICES.flat());
+
+function personalQuestionsKeyboard() {
+  return {
+    keyboard: CHOICES.map(row => row.map(text => ({ text }))),
+    resize_keyboard: true,
+    is_persistent: true,
+  };
+}
+
+function isSubscriptionConfirmationKeyboard(markup) {
+  return Array.isArray(markup?.keyboard)
+    && markup.keyboard.some(row => Array.isArray(row)
+      && row.some(button => button?.text === '✅ Да, каждый день'));
+}
+
+function updateBotNavigation(reply, update) {
+  if (reply?.method !== 'sendMessage' || typeof reply.text !== 'string') return reply;
+  const message = update?.message;
+  if (message?.chat?.type !== 'private' || typeof message.text !== 'string'
+      || Number(reply.chat_id) !== Number(message.chat.id)) return reply;
+
+  // Keep the date-of-birth and yes/no signup flow intact.
+  if (isSubscriptionConfirmationKeyboard(reply.reply_markup)) return reply;
+
+  const input = message.text.trim();
+  const catalogRequested = input === '✨ Что ещё знают числа?'
+    || /^\\/catalog(?:ue)?(?:@\\w+)?$/i.test(input);
+  const userSelectedQuestion = CHOICE_TEXTS.has(input);
+  const result = { ...reply, reply_markup: personalQuestionsKeyboard() };
+
+  if (catalogRequested) {
+    // Replaces the old long inline catalogue with four short questions.
+    result.text = INTRO_QUESTION;
+  } else if (userSelectedQuestion) {
+    // No destinations have been agreed yet. Never send visitors to the website.
+    if (/Напишите дату рождения|Присылать личный прогноз|Хотите получать личный прогноз/u.test(reply.text)) {
+      return result; // registration must come first
+    }
+    result.text = 'Этот вопрос пока готовится. Скоро здесь появится подробный ответ. 🤍';
+  } else if (/^\\/start(?:@\\w+)?$/i.test(input)
+      && /Ваш личный кабинет готов/u.test(reply.text)) {
+    result.text = reply.text + '\\n\\n' + INTRO_QUESTION;
+  }
+
+  return result;
+}
+
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -53,8 +106,9 @@ export default {
     if (bytes < 2 || bytes > MAX_UPDATE_BYTES) {
       return json({ ok: false, error: 'INVALID_UPDATE_SIZE' }, 400);
     }
+    let update;
     try {
-      const update = JSON.parse(body);
+      update = JSON.parse(body);
       if (!update || typeof update !== 'object' || Array.isArray(update)) {
         return json({ ok: false, error: 'INVALID_JSON' }, 400);
       }
@@ -81,7 +135,7 @@ export default {
       if (reply.method && reply.method !== 'sendMessage') {
         return json({ ok: false, error: 'UNSUPPORTED_BOT_METHOD' }, 502);
       }
-      return json(reply);
+      return json(updateBotNavigation(reply, update));
     } catch {
       // Never log secret headers, Telegram updates or users' personal data.
       return json({ ok: false, error: 'BACKEND_TIMEOUT' }, 502);
