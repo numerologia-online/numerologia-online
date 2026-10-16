@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json.schemastore.org/wrangler.json",
+  "name": "numerologia-online-bot",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-16",
+  "workers_dev": true,
+  "keep_vars": true
+}
