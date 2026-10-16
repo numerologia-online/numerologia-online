@@ -134,7 +134,7 @@ export default {
         configured: true,
         reg_ru: await backendHealth(),
         webhook_changed: false,
-        navigation: 'inline-site-sections-on-ready',
+        navigation: 'permanent-bottom-menu-after-consent',
         site_sections: SECTION_BUTTONS.length,
         bottom_menu: BOTTOM_MENU_LABEL,
         bottom_menu_delivery: 'webhook-reply',
