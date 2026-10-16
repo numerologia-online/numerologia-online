@@ -42,39 +42,6 @@ function bottomMenuKeyboard() {
   };
 }
 
-async function installBottomMenu(env, chatId) {
-  // No token or chat identifiers are ever included in diagnostics.
-  const token = typeof env.BOT_TOKEN === 'string' ? env.BOT_TOKEN.trim() : '';
-  if (!token) {
-    console.warn('BOTTOM_MENU_SETUP: BOT_TOKEN_MISSING');
-    return false;
-  }
-  // The REG.RU handler authenticated the forwarded webhook request
-  // before returning the trusted account-ready response. No second,
-  // inconsistent header check is required for this outgoing bot message.
-  const response = await fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: '🫶 Разделы сайта теперь можно открыть кнопкой внизу.',
-      reply_markup: bottomMenuKeyboard(),
-      disable_notification: true,
-    }),
-    signal: AbortSignal.timeout(7000),
-  });
-  if (!response.ok) {
-    // Status only, not Telegram's full error text or any personal data.
-    console.warn('BOTTOM_MENU_SETUP: TELEGRAM_HTTP_' + response.status);
-    return false;
-  }
-  const result = await response.json();
-  if (result?.ok !== true) console.warn('BOTTOM_MENU_SETUP: TELEGRAM_RESPONSE_NOT_OK');
-  return result?.ok === true;
-}
-
-
-
 function sectionsKeyboard() {
   return {
     inline_keyboard: SECTION_BUTTONS.map(section => [{
@@ -109,6 +76,24 @@ function updateBotNavigation(reply, update) {
     return { ...reply, text: compactText, reply_markup: sectionsKeyboard() };
   }
 
+  // Telegram can install a custom reply keyboard via the existing webhook
+  // response. No direct Bot API token and no extra unsolicited message.
+  if (command === '/menu' || command === '/keyboard') {
+    return {
+      ...reply,
+      text: '🫶 Открой все разделы - кнопка теперь в нижней клавиатуре.',
+      reply_markup: bottomMenuKeyboard(),
+    };
+  }
+
+  // For new registrations, attach the bottom keyboard to the EXISTING
+  // birth-date prompt, then keep all 11 inline buttons on the ready message.
+  // Do not replace consent buttons or any other backend-supplied keyboard.
+  if (command === '/start' && !reply.reply_markup
+      && /дат[уые] рождения|дд[.\s-]*мм[.\s-]*гггг|введи.*дат[уые]/iu.test(reply.text)) {
+    return { ...reply, reply_markup: bottomMenuKeyboard() };
+  }
+
   // Old bottom-keyboard buttons may still be visible in earlier chat history;
   // their use should also show the same inline menu rather than another keyboard.
   if (input === BOTTOM_MENU_LABEL || input === CATALOG_LABEL || command === '/catalog' || command === '/catalogue') {
@@ -129,21 +114,6 @@ async function regSecret(botToken) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(PREFIX + botToken));
   return [...new Uint8Array(digest)].map(x => x.toString(16).padStart(2, '0')).join('');
 }
-async function telegramApiHealth(botToken) {
-  const token = typeof botToken === 'string' ? botToken.trim() : '';
-  if (!token) return 'TOKEN_MISSING';
-  try {
-    const res = await fetch('https://api.telegram.org/bot' + token + '/getMe', {
-      signal: AbortSignal.timeout(5500),
-    });
-    if (!res.ok) return 'HTTP_' + res.status;
-    const answer = await res.json();
-    return answer?.ok === true ? 'READY' : 'INVALID_RESPONSE';
-  } catch {
-    return 'UNREACHABLE';
-  }
-}
-
 async function backendHealth() {
   try {
     const response = await fetch(REG_HANDLER + '?health=1', {
@@ -170,8 +140,7 @@ export default {
         navigation: 'inline-site-sections-on-ready',
         site_sections: SECTION_BUTTONS.length,
         bottom_menu: BOTTOM_MENU_LABEL,
-        bottom_menu_token_configured: typeof env.BOT_TOKEN === 'string' && env.BOT_TOKEN.trim().length > 0,
-        telegram_api_health: new URL(request.url).searchParams.get('probe') === 'telegram' ? await telegramApiHealth(env.BOT_TOKEN) : undefined,
+        bottom_menu_delivery: 'webhook-reply',
       });
     }
     if (request.method !== 'POST' || path !== '/telegram') {
@@ -231,23 +200,7 @@ export default {
       if (reply.method && reply.method !== 'sendMessage') {
         return json({ ok: false, error: 'UNSUPPORTED_BOT_METHOD' }, 502);
       }
-      const outgoing = updateBotNavigation(reply, update);
-      const incoming = update.message;
-      const ready = typeof outgoing.text === 'string'
-        && (outgoing.text.includes('Ваш личный кабинет готов!')
-          || (outgoing.text.includes('Вы подписались на личный прогноз')
-            && outgoing.text.includes('Готово!')));
-      // Set the bottom keyboard after ANY completed registration, including
-      // birth-date entry, not just /start. Leave all existing inline buttons.
-      if (ready && incoming?.chat?.type === 'private'
-          && Number(outgoing.chat_id) === Number(incoming.chat.id)) {
-        try {
-          await installBottomMenu(env, incoming.chat.id);
-        } catch {
-          console.error('BOTTOM_MENU_SETUP_FAILED');
-        }
-      }
-      return json(outgoing);
+      return json(updateBotNavigation(reply, update));
     } catch {
       // Never log secret headers, Telegram updates or users' personal data.
       return json({ ok: false, error: 'BACKEND_TIMEOUT' }, 502);
