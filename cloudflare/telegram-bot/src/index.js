@@ -8,42 +8,93 @@ const REG_HANDLER = 'https://xn--c1adkkdfjbp1a4l.online/api/telegram-reg-stage-1
 const MAX_UPDATE_BYTES = 32768;
 const PREFIX = 'numerologia-online:webhook:v1:';
 
-const INTRO_QUESTION = '🌙 Что сейчас тревожит твоё сердце?';
-const CHOICES = [
-  [{ text: '❤️ Почему в любви всё так сложно?', data: 'topic_love' },
-   { text: '💰 Когда закончатся денежные трудности?', data: 'topic_money' }],
-  [{ text: '✨ Почему я не могу найти себя?', data: 'topic_self' },
-   { text: '🔮 Какой ответ скрывают мои числа?', data: 'topic_answers' }],
+const SITE_URL = 'https://numerologia-online.github.io/numerologia-online/';
+const CATALOG_LABEL = '✨ Что ещё знают числа?';
+
+// Names copied verbatim from the live site's home-page product cards
+// and its additional profile, school and reference navigation.
+const SITE_BUTTON_ROWS = [
+  [{ text: 'Полный разбор', route: 'pro/' }, { text: 'Разбор года', route: '#razbor-goda' }],
+  [{ text: 'Мужчина или Ред Флаг', route: '' }],
+  [{ text: 'Женщина или тарелочница', route: null }],
+  [{ text: 'Код богатства', route: '#moy-kod-deneg' }],
+  [{ text: 'Личный расчёт дня', route: '#lichnyj-den' }],
+  [{ text: 'Расчёт для детей', route: null }, { text: 'Деньги', route: null }],
+  [{ text: 'Совместимость', route: '' }],
+  [{ text: 'Хорарная нумерология', route: null }],
+  [{ text: 'Записаться на личный расчёт', route: null }],
+  [{ text: 'Школы нумерологии', route: 'pro/schools/' }],
+  [{ text: 'Справочник по нумерологии', route: 'guide/' }],
+  [{ text: 'Личный кабинет', route: '' }],
 ];
-const CHOICE_DATA = new Set(CHOICES.flat().map(choice => choice.data));
-const CHOICE_TEXTS = new Set(CHOICES.flat().map(choice => choice.text));
-function inlineQuestions() {
-  return { inline_keyboard: CHOICES.map(row => row.map(choice => ({
-    text: choice.text, callback_data: choice.data,
-  }))) };
+const SITE_BUTTONS = new Map(SITE_BUTTON_ROWS.flat().map(button => [button.text, button.route]));
+const LEGACY_QUESTION_CALLBACKS = new Set(['topic_love', 'topic_money', 'topic_self', 'topic_answers']);
+
+function launchKeyboard() {
+  return {
+    keyboard: [[
+      { text: '🌐 Открыть сайт', web_app: { url: SITE_URL } },
+      { text: CATALOG_LABEL },
+    ]],
+    resize_keyboard: true,
+    one_time_keyboard: true,
+    is_persistent: false,
+  };
 }
+
+function siteMenuKeyboard() {
+  return {
+    keyboard: SITE_BUTTON_ROWS.map(row => row.map(button =>
+      button.route === null
+        ? { text: button.text }
+        : { text: button.text, web_app: { url: SITE_URL + button.route } }
+    )),
+    resize_keyboard: true,
+    one_time_keyboard: true,
+    is_persistent: false,
+  };
+}
+
+function hasYesNoKeyboard(markup) {
+  return Array.isArray(markup?.keyboard)
+    && markup.keyboard.some(row => Array.isArray(row)
+      && row.some(button => button?.text === '✅ Да, каждый день'));
+}
+
 function updateBotNavigation(reply, update) {
   if (reply?.method !== 'sendMessage' || typeof reply.text !== 'string') return reply;
   const message = update?.message;
   if (message?.chat?.type !== 'private' || typeof message.text !== 'string'
       || Number(reply.chat_id) !== Number(message.chat.id)) return reply;
+
   const input = message.text.trim();
   const command = input.split(/\s+/u, 1)[0].toLowerCase().split('@')[0];
 
-  if (input === '✨ Что ещё знают числа?' || command === '/catalog' || command === '/catalogue') {
-    return { ...reply, text: INTRO_QUESTION, reply_markup: inlineQuestions() };
-  }
-  if (CHOICE_TEXTS.has(input)) {
-    return { ...reply,
-      text: 'Этот вопрос пока готовится. Скоро здесь появится подробный ответ. 🤍',
-      reply_markup: inlineQuestions(),
+  // The full site menu appears only when explicitly requested.
+  if (input === CATALOG_LABEL || command === '/catalog' || command === '/catalogue'
+      || command === '/menu') {
+    return {
+      ...reply,
+      text: 'Выбери раздел сайта:',
+      reply_markup: siteMenuKeyboard(),
     };
   }
-  // Do not interfere with /start registration and the daily consent keyboard.
-  if (command === '/start' && /Ваш личный кабинет готов/u.test(reply.text)) {
-    return { ...reply, text: reply.text + '\n\n' + INTRO_QUESTION, reply_markup: inlineQuestions() };
+
+  // Unpublished cards keep their exact site names but do not open irrelevant pages.
+  if (SITE_BUTTONS.has(input) && SITE_BUTTONS.get(input) === null) {
+    return {
+      ...reply,
+      text: 'Раздел «' + input + '» пока в разработке.',
+      reply_markup: launchKeyboard(),
+    };
   }
-  return reply;
+
+  // Respect the existing birthday/onboarding and daily-consent controls.
+  if (hasYesNoKeyboard(reply.reply_markup)) return reply;
+
+  // Replace the previous unwanted four-button keyboard on the user's next reply.
+  // No unsolicited question, inline keyboard or catalogue is added to /start.
+  return { ...reply, reply_markup: launchKeyboard() };
 }
 
 function json(body, status = 200) {
@@ -79,7 +130,7 @@ export default {
         configured: true,
         reg_ru: await backendHealth(),
         webhook_changed: false,
-        navigation: 'inline-questions-2x2',
+        navigation: 'on-demand-site-keyboard',
       });
     }
     if (request.method !== 'POST' || path !== '/telegram') {
@@ -108,7 +159,7 @@ export default {
           || telegramHeader !== await regSecret(env.BOT_TOKEN)) {
         return json({ ok: false, error: 'FORBIDDEN' }, 403);
       }
-      if (!callback.id || !CHOICE_DATA.has(action)) {
+      if (!callback.id || !LEGACY_QUESTION_CALLBACKS.has(action)) {
         return json({ ok: true, ignored: true });
       }
       return json({
