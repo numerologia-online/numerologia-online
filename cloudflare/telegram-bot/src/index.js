@@ -61,6 +61,16 @@ function updateBotNavigation(reply, update) {
   const input = message.text.trim();
   const command = input.split(/\s+/u, 1)[0].toLowerCase().split('@')[0];
 
+  // Telegram can install a custom reply keyboard via the existing webhook
+  // response. No direct Bot API token and no extra unsolicited message.
+  if (command === '/menu' || command === '/keyboard') {
+    return {
+      ...reply,
+      text: '🫶 Открой все разделы - кнопка теперь в нижней клавиатуре.',
+      reply_markup: bottomMenuKeyboard(),
+    };
+  }
+
   // The site keyboard is attached to the SAME "ready" message, not the
   // Telegram typing area and not a separately sent message.
   const ready = reply.text.includes('Ваш личный кабинет готов!')
@@ -74,16 +84,6 @@ function updateBotNavigation(reply, update) {
       .replace(/\n[ \t]*\n+/g, '\n')
       .trim();
     return { ...reply, text: compactText, reply_markup: sectionsKeyboard() };
-  }
-
-  // Telegram can install a custom reply keyboard via the existing webhook
-  // response. No direct Bot API token and no extra unsolicited message.
-  if (command === '/menu' || command === '/keyboard') {
-    return {
-      ...reply,
-      text: '🫶 Открой все разделы - кнопка теперь в нижней клавиатуре.',
-      reply_markup: bottomMenuKeyboard(),
-    };
   }
 
   // For new registrations, attach the bottom keyboard to the EXISTING
