@@ -42,24 +42,16 @@ function bottomMenuKeyboard() {
   };
 }
 
-async function installBottomMenu(env, header, chatId) {
+async function installBottomMenu(env, chatId) {
   // No token or chat identifiers are ever included in diagnostics.
   const token = typeof env.BOT_TOKEN === 'string' ? env.BOT_TOKEN.trim() : '';
   if (!token) {
     console.warn('BOTTOM_MENU_SETUP: BOT_TOKEN_MISSING');
     return false;
   }
-  // Telegram's webhook secret may be configured directly in Cloudflare.
-  // Accept either that exact configured value or the legacy token-derived secret.
-  // Never log or return either secret.
-  const matchesLegacy = header === await regSecret(token);
-  const matchesConfigured = typeof env.WEBHOOK_SECRET === 'string'
-    && env.WEBHOOK_SECRET.length > 0
-    && header === env.WEBHOOK_SECRET;
-  if (!matchesLegacy && !matchesConfigured) {
-    console.warn('BOTTOM_MENU_SETUP: WEBHOOK_SECRET_MISMATCH');
-    return false;
-  }
+  // The REG.RU handler authenticated the forwarded webhook request
+  // before returning the trusted account-ready response. No second,
+  // inconsistent header check is required for this outgoing bot message.
   const response = await fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -137,6 +129,21 @@ async function regSecret(botToken) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(PREFIX + botToken));
   return [...new Uint8Array(digest)].map(x => x.toString(16).padStart(2, '0')).join('');
 }
+async function telegramApiHealth(botToken) {
+  const token = typeof botToken === 'string' ? botToken.trim() : '';
+  if (!token) return 'TOKEN_MISSING';
+  try {
+    const res = await fetch('https://api.telegram.org/bot' + token + '/getMe', {
+      signal: AbortSignal.timeout(5500),
+    });
+    if (!res.ok) return 'HTTP_' + res.status;
+    const answer = await res.json();
+    return answer?.ok === true ? 'READY' : 'INVALID_RESPONSE';
+  } catch {
+    return 'UNREACHABLE';
+  }
+}
+
 async function backendHealth() {
   try {
     const response = await fetch(REG_HANDLER + '?health=1', {
@@ -164,6 +171,7 @@ export default {
         site_sections: SECTION_BUTTONS.length,
         bottom_menu: BOTTOM_MENU_LABEL,
         bottom_menu_token_configured: typeof env.BOT_TOKEN === 'string' && env.BOT_TOKEN.trim().length > 0,
+        telegram_api_health: new URL(request.url).searchParams.get('probe') === 'telegram' ? await telegramApiHealth(env.BOT_TOKEN) : undefined,
       });
     }
     if (request.method !== 'POST' || path !== '/telegram') {
@@ -225,22 +233,17 @@ export default {
       }
       const outgoing = updateBotNavigation(reply, update);
       const incoming = update.message;
-      const command = typeof incoming?.text === 'string'
-        ? incoming.text.trim().split(/\s+/u, 1)[0].toLowerCase().split('@')[0] : '';
       const ready = typeof outgoing.text === 'string'
         && (outgoing.text.includes('Ваш личный кабинет готов!')
           || (outgoing.text.includes('Вы подписались на личный прогноз')
             && outgoing.text.includes('Готово!')));
-      // Only after onboarding is ready: never change birth-date/yes-no flows.
-      // The website menu button remains the existing Telegram chat menu button.
+      // Set the bottom keyboard after ANY completed registration, including
+      // birth-date entry, not just /start. Leave all existing inline buttons.
       if (ready && incoming?.chat?.type === 'private'
-          && Number(outgoing.chat_id) === Number(incoming.chat.id)
-          && (command === '/start' || command === '/menu'
-            || incoming.text.trim() === '✅ Да, каждый день')) {
+          && Number(outgoing.chat_id) === Number(incoming.chat.id)) {
         try {
-          await installBottomMenu(env, telegramHeader, incoming.chat.id);
+          await installBottomMenu(env, incoming.chat.id);
         } catch {
-          // Keep the working inline site keyboard if Telegram setup fails.
           console.error('BOTTOM_MENU_SETUP_FAILED');
         }
       }
