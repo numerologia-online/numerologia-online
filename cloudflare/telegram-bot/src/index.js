@@ -49,7 +49,14 @@ async function installBottomMenu(env, header, chatId) {
     console.warn('BOTTOM_MENU_SETUP: BOT_TOKEN_MISSING');
     return false;
   }
-  if (header !== await regSecret(token)) {
+  // Telegram's webhook secret may be configured directly in Cloudflare.
+  // Accept either that exact configured value or the legacy token-derived secret.
+  // Never log or return either secret.
+  const matchesLegacy = header === await regSecret(token);
+  const matchesConfigured = typeof env.WEBHOOK_SECRET === 'string'
+    && env.WEBHOOK_SECRET.length > 0
+    && header === env.WEBHOOK_SECRET;
+  if (!matchesLegacy && !matchesConfigured) {
     console.warn('BOTTOM_MENU_SETUP: WEBHOOK_SECRET_MISMATCH');
     return false;
   }
