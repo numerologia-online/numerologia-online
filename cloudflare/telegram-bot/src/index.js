@@ -39,8 +39,9 @@ function updateBotNavigation(reply, update) {
   if (isSubscriptionConfirmationKeyboard(reply.reply_markup)) return reply;
 
   const input = message.text.trim();
+  const command = input.split(/\s+/u, 1)[0].toLowerCase().split('@')[0];
   const catalogRequested = input === '✨ Что ещё знают числа?'
-    || /^\\/catalog(?:ue)?(?:@\\w+)?$/i.test(input);
+    || command === '/catalog' || command === '/catalogue';
   const userSelectedQuestion = CHOICE_TEXTS.has(input);
   const result = { ...reply, reply_markup: personalQuestionsKeyboard() };
 
@@ -53,9 +54,9 @@ function updateBotNavigation(reply, update) {
       return result; // registration must come first
     }
     result.text = 'Этот вопрос пока готовится. Скоро здесь появится подробный ответ. 🤍';
-  } else if (/^\\/start(?:@\\w+)?$/i.test(input)
+  } else if (command === '/start'
       && /Ваш личный кабинет готов/u.test(reply.text)) {
-    result.text = reply.text + '\\n\\n' + INTRO_QUESTION;
+    result.text = reply.text + '\n\n' + INTRO_QUESTION;
   }
 
   return result;
