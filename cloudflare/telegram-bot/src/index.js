@@ -11,54 +11,34 @@ const PREFIX = 'numerologia-online:webhook:v1:';
 const SITE_URL = 'https://numerologia-online.github.io/numerologia-online/';
 const CATALOG_LABEL = '✨ Что ещё знают числа?';
 
-// Names copied verbatim from the live site's home-page product cards
-// and its additional profile, school and reference navigation.
-const SITE_BUTTON_ROWS = [
-  [{ text: 'Полный разбор', route: 'pro/' }, { text: 'Разбор года', route: '#razbor-goda' }],
-  [{ text: 'Мужчина или Ред Флаг', route: '' }],
-  [{ text: 'Женщина или тарелочница', route: null }],
-  [{ text: 'Код богатства', route: '#moy-kod-deneg' }],
-  [{ text: 'Личный расчёт дня', route: '#lichnyj-den' }],
-  [{ text: 'Расчёт для детей', route: null }, { text: 'Деньги', route: null }],
-  [{ text: 'Совместимость', route: '' }],
-  [{ text: 'Хорарная нумерология', route: null }],
-  [{ text: 'Записаться на личный расчёт', route: null }],
-  [{ text: 'Школы нумерологии', route: 'pro/schools/' }],
-  [{ text: 'Справочник по нумерологии', route: 'guide/' }],
-  [{ text: 'Личный кабинет', route: '' }],
+// Exact names from the site's home screen, in the owner's approved order.
+// Keep each button on its own row so Telegram does not truncate the labels.
+// For sections under construction, a small callback notice avoids dead links.
+const SECTION_BUTTONS = [
+  { text: 'Полный разбор', route: 'pro/' },
+  { text: 'Разбор года', route: '#razbor-goda' },
+  { text: 'Мужчина или Ред Флаг', route: '' },
+  { text: 'Женщина или тарелочница', soon: 'woman' },
+  { text: 'Код богатства', route: '#moy-kod-deneg' },
+  { text: 'Личный расчёт дня', route: '#lichnyj-den' },
+  { text: 'Расчёт для детей', soon: 'children' },
+  { text: 'Деньги', soon: 'money' },
+  { text: 'Совместимость', route: '' },
+  { text: 'Хорарная нумерология', soon: 'horary' },
+  { text: 'Школы нумерологии', route: 'pro/schools/' },
 ];
-const SITE_BUTTONS = new Map(SITE_BUTTON_ROWS.flat().map(button => [button.text, button.route]));
+const SOON_SECTIONS = new Set(SECTION_BUTTONS.filter(x => x.soon).map(x => 'soon_' + x.soon));
 const LEGACY_QUESTION_CALLBACKS = new Set(['topic_love', 'topic_money', 'topic_self', 'topic_answers']);
 
-function launchKeyboard() {
+function sectionsKeyboard() {
   return {
-    keyboard: [[
-      { text: '🌐 Открыть сайт', web_app: { url: SITE_URL } },
-      { text: CATALOG_LABEL },
-    ]],
-    resize_keyboard: true,
-    one_time_keyboard: true,
-    is_persistent: false,
+    inline_keyboard: SECTION_BUTTONS.map(section => [{
+      text: section.text,
+      ...(section.soon
+        ? { callback_data: 'soon_' + section.soon }
+        : { web_app: { url: SITE_URL + section.route } }),
+    }]),
   };
-}
-
-function siteMenuKeyboard() {
-  return {
-    keyboard: SITE_BUTTON_ROWS.map(row => row.map(button =>
-      button.route === null
-        ? { text: button.text }
-        : { text: button.text, web_app: { url: SITE_URL + button.route } }
-    )),
-    resize_keyboard: true,
-    one_time_keyboard: true,
-    is_persistent: false,
-  };
-}
-
-function hasYesNoKeyboard(markup) {
-  return Array.isArray(markup?.keyboard)
-    && markup.keyboard.some(row => Array.isArray(row)
-      && row.some(button => button?.text === '✅ Да, каждый день'));
 }
 
 function updateBotNavigation(reply, update) {
@@ -66,35 +46,26 @@ function updateBotNavigation(reply, update) {
   const message = update?.message;
   if (message?.chat?.type !== 'private' || typeof message.text !== 'string'
       || Number(reply.chat_id) !== Number(message.chat.id)) return reply;
-
   const input = message.text.trim();
   const command = input.split(/\s+/u, 1)[0].toLowerCase().split('@')[0];
 
-  // The full site menu appears only when explicitly requested.
-  if (input === CATALOG_LABEL || command === '/catalog' || command === '/catalogue'
-      || command === '/menu') {
-    return {
-      ...reply,
-      text: 'Выбери раздел сайта:',
-      reply_markup: siteMenuKeyboard(),
-    };
+  // The site keyboard is attached to the SAME "ready" message, not the
+  // Telegram typing area and not a separately sent message.
+  const ready = reply.text.includes('Ваш личный кабинет готов!')
+    || (reply.text.includes('Вы подписались на личный прогноз')
+        && reply.text.includes('Готово!'));
+  if (ready) {
+    return { ...reply, reply_markup: sectionsKeyboard() };
   }
 
-  // Unpublished cards keep their exact site names but do not open irrelevant pages.
-  if (SITE_BUTTONS.has(input) && SITE_BUTTONS.get(input) === null) {
-    return {
-      ...reply,
-      text: 'Раздел «' + input + '» пока в разработке.',
-      reply_markup: launchKeyboard(),
-    };
+  // Old bottom-keyboard buttons may still be visible in earlier chat history;
+  // their use should also show the same inline menu rather than another keyboard.
+  if (input === CATALOG_LABEL || command === '/catalog' || command === '/catalogue') {
+    return { ...reply, text: 'Разделы сайта:', reply_markup: sectionsKeyboard() };
   }
 
-  // Respect the existing birthday/onboarding and daily-consent controls.
-  if (hasYesNoKeyboard(reply.reply_markup)) return reply;
-
-  // Replace the previous unwanted four-button keyboard on the user's next reply.
-  // No unsolicited question, inline keyboard or catalogue is added to /start.
-  return { ...reply, reply_markup: launchKeyboard() };
+  // Preserve original birthday registration and yes/no subscription consent.
+  return reply;
 }
 
 function json(body, status = 200) {
@@ -130,8 +101,8 @@ export default {
         configured: true,
         reg_ru: await backendHealth(),
         webhook_changed: false,
-        navigation: 'on-demand-site-keyboard',
-        site_sections: SITE_BUTTONS.size,
+        navigation: 'inline-site-sections-on-ready',
+        site_sections: SECTION_BUTTONS.length,
       });
     }
     if (request.method !== 'POST' || path !== '/telegram') {
@@ -160,13 +131,13 @@ export default {
           || telegramHeader !== await regSecret(env.BOT_TOKEN)) {
         return json({ ok: false, error: 'FORBIDDEN' }, 403);
       }
-      if (!callback.id || !LEGACY_QUESTION_CALLBACKS.has(action)) {
+      if (!callback.id || (!LEGACY_QUESTION_CALLBACKS.has(action) && !SOON_SECTIONS.has(action))) {
         return json({ ok: true, ignored: true });
       }
       return json({
         method: 'answerCallbackQuery',
         callback_query_id: callback.id,
-        text: 'Скоро здесь появится подробный ответ. 🤍',
+        text: SOON_SECTIONS.has(action) ? 'Этот раздел пока в разработке.' : 'Скоро здесь появится подробный ответ. 🤍',
         show_alert: false,
       });
     }
