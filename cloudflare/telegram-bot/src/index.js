@@ -161,16 +161,16 @@ function updateBotNavigation(reply, update) {
       && reply.text.includes('Вы подписались на личный прогноз')) {
     return {
       ...reply,
-      // The owner's warm welcome and 11 clickable sections are one Telegram
-      // message with a single bottom reply keyboard, not an inline keyboard.
-      text: '<b>Готово! 🫶 Жди личный расчёт дня каждое утро ☀️</b>\n'
-        + 'Я создавала этот бот, чтобы каждая женщина могла получать подсказки от жизни, '
+      // The owner's approved compact welcome. The existing bottom menu remains.
+      // Full 11-section inline catalogue is available on button press.
+      text: '<b>Готово! 🫶 Каждое утро я буду присылать тебе личный расчёт дня ☀️</b>\n'
+        + 'Этот бот создан, чтобы каждая женщина могла получать подсказки от жизни, '
         + 'не упускать важные шансы и избегать ошибок.\n'
-        + 'Мне очень хочется, чтобы ваша жизнь с этим ботом стала хоть чуточку легче, '
-        + 'спокойнее и понятнее.\n'
+        + 'Мне очень хочется, чтобы ваша жизнь стала хоть чуточку легче, спокойнее и понятнее.\n'
         + '<b>Я рядом 🤍</b>\n'
-        + '<b>Откройте интересующий раздел:</b>\n'
-        + sectionsAsTextLinks(),
+        + '<b>Где тебе удобно продолжить?</b>\n'
+        + 'Нажми <b>«Открыть сайт»</b>, если хочешь получить ответы на свои вопросы через наше мини-приложение, '
+        + 'или <b>«Открой все разделы»</b>, чтобы продолжить прямо здесь, в Telegram 👇',
       parse_mode: 'HTML',
       reply_markup: bottomMenuKeyboard(),
     };
