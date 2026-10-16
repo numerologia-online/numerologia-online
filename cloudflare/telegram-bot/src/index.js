@@ -74,6 +74,16 @@ function updateBotNavigation(reply, update) {
     return { ...reply, text: '🫶 Открой все разделы', reply_markup: bottomMenuKeyboard() };
   }
 
+  // A wrong date is corrected by entering it again. The original Telegram
+  // keyboard must be removed while waiting for the replacement date.
+  if (input === '❌ Нет, неверно') {
+    return {
+      ...reply,
+      text: 'Введите вашу дату рождения в формате ДД.ММ.ГГГГ, например 09.09.1986.',
+      reply_markup: { remove_keyboard: true },
+    };
+  }
+
   // The REG.RU backend sends the permanent bottom button as a separate
   // Telegram message, then returns the inline catalogue through this webhook.
   // Do not replace its 11 inline buttons with a reply keyboard.
@@ -89,6 +99,23 @@ function updateBotNavigation(reply, update) {
   const hasNo = Array.isArray(rows) && rows.some(row =>
     Array.isArray(row) && row.some(button => button?.text === '❌ Нет, спасибо'));
   if (hasYes && hasNo) {
+    // The user has just ENTERED a birth date: confirm the date and obtain
+    // informed consent for daily forecasts in the same temporary keyboard.
+    const saved = /^Дата рождения (\d{2}\.\d{2}\.\d{4}) сохранена!/u.exec(reply.text);
+    if (saved) {
+      return {
+        ...reply,
+        text: 'Дата рождения ' + saved[1] + ' сохранена!\n\n'
+          + 'Проверьте, пожалуйста, дату.\n\n'
+          + 'Подтверждая её, вы подключаете ежедневный личный прогноз на 10:00 по Москве.',
+        reply_markup: {
+          keyboard: [[{ text: '✅ Да, верно' }, { text: '❌ Нет, неверно' }]],
+          resize_keyboard: true,
+          is_persistent: false,
+        },
+      };
+    }
+    // Preserve legacy consent prompts for users who already have a birth date.
     return {
       ...reply,
       reply_markup: {
@@ -197,13 +224,24 @@ export default {
     }
 
     try {
+      // Keep REG.RU as the only writer of birth dates and subscription status.
+      // Only translate the two NEW confirmation answers into existing,
+      // proven REG.RU commands. Even a rejected date reaches the backend
+      // first for webhook authentication; it changes no stored data.
+      const inputText = typeof update?.message?.text === 'string'
+        ? update.message.text.trim() : '';
+      const backendText = inputText === '✅ Да, верно' ? '✅ Да, каждый день'
+        : inputText === '❌ Нет, неверно' ? '/start' : null;
+      const backendBody = backendText === null ? body : JSON.stringify({
+        ...update, message: { ...update.message, text: backendText },
+      });
       const response = await fetch(REG_HANDLER, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Telegram-Bot-Api-Secret-Token': telegramHeader,
         },
-        body,
+        body: backendBody,
         redirect: 'manual',
         signal: AbortSignal.timeout(18000),
       });
