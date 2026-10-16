@@ -10,56 +10,40 @@ const PREFIX = 'numerologia-online:webhook:v1:';
 
 const INTRO_QUESTION = '🌙 Что сейчас тревожит твоё сердце?';
 const CHOICES = [
-  ['❤️ Почему в любви всё так сложно?', '💰 Когда закончатся денежные трудности?'],
-  ['✨ Почему я не могу найти себя?', '🔮 Какой ответ скрывают мои числа?'],
+  [{ text: '❤️ Почему в любви всё так сложно?', data: 'topic_love' },
+   { text: '💰 Когда закончатся денежные трудности?', data: 'topic_money' }],
+  [{ text: '✨ Почему я не могу найти себя?', data: 'topic_self' },
+   { text: '🔮 Какой ответ скрывают мои числа?', data: 'topic_answers' }],
 ];
-const CHOICE_TEXTS = new Set(CHOICES.flat());
-
-function personalQuestionsKeyboard() {
-  return {
-    keyboard: CHOICES.map(row => row.map(text => ({ text }))),
-    resize_keyboard: true,
-    is_persistent: true,
-  };
+const CHOICE_DATA = new Set(CHOICES.flat().map(choice => choice.data));
+const CHOICE_TEXTS = new Set(CHOICES.flat().map(choice => choice.text));
+function inlineQuestions() {
+  return { inline_keyboard: CHOICES.map(row => row.map(choice => ({
+    text: choice.text, callback_data: choice.data,
+  }))) };
 }
-
-function isSubscriptionConfirmationKeyboard(markup) {
-  return Array.isArray(markup?.keyboard)
-    && markup.keyboard.some(row => Array.isArray(row)
-      && row.some(button => button?.text === '✅ Да, каждый день'));
-}
-
 function updateBotNavigation(reply, update) {
   if (reply?.method !== 'sendMessage' || typeof reply.text !== 'string') return reply;
   const message = update?.message;
   if (message?.chat?.type !== 'private' || typeof message.text !== 'string'
       || Number(reply.chat_id) !== Number(message.chat.id)) return reply;
-
-  // Keep the date-of-birth and yes/no signup flow intact.
-  if (isSubscriptionConfirmationKeyboard(reply.reply_markup)) return reply;
-
   const input = message.text.trim();
   const command = input.split(/\s+/u, 1)[0].toLowerCase().split('@')[0];
-  const catalogRequested = input === '✨ Что ещё знают числа?'
-    || command === '/catalog' || command === '/catalogue';
-  const userSelectedQuestion = CHOICE_TEXTS.has(input);
-  const result = { ...reply, reply_markup: personalQuestionsKeyboard() };
 
-  if (catalogRequested) {
-    // Replaces the old long inline catalogue with four short questions.
-    result.text = INTRO_QUESTION;
-  } else if (userSelectedQuestion) {
-    // No destinations have been agreed yet. Never send visitors to the website.
-    if (/Напишите дату рождения|Присылать личный прогноз|Хотите получать личный прогноз/u.test(reply.text)) {
-      return result; // registration must come first
-    }
-    result.text = 'Этот вопрос пока готовится. Скоро здесь появится подробный ответ. 🤍';
-  } else if (command === '/start'
-      && /Ваш личный кабинет готов/u.test(reply.text)) {
-    result.text = reply.text + '\n\n' + INTRO_QUESTION;
+  if (input === '✨ Что ещё знают числа?' || command === '/catalog' || command === '/catalogue') {
+    return { ...reply, text: INTRO_QUESTION, reply_markup: inlineQuestions() };
   }
-
-  return result;
+  if (CHOICE_TEXTS.has(input)) {
+    return { ...reply,
+      text: 'Этот вопрос пока готовится. Скоро здесь появится подробный ответ. 🤍',
+      reply_markup: inlineQuestions(),
+    };
+  }
+  // Do not interfere with /start registration and the daily consent keyboard.
+  if (command === '/start' && /Ваш личный кабинет готов/u.test(reply.text)) {
+    return { ...reply, text: reply.text + '\n\n' + INTRO_QUESTION, reply_markup: inlineQuestions() };
+  }
+  return reply;
 }
 
 function json(body, status = 200) {
@@ -95,7 +79,7 @@ export default {
         configured: true,
         reg_ru: await backendHealth(),
         webhook_changed: false,
-        navigation: 'four-questions-2x2',
+        navigation: 'inline-questions-2x2',
       });
     }
     if (request.method !== 'POST' || path !== '/telegram') {
@@ -117,6 +101,24 @@ export default {
     } catch {
       return json({ ok: false, error: 'INVALID_JSON' }, 400);
     }
+    if (update.callback_query && typeof update.callback_query === 'object') {
+      const callback = update.callback_query;
+      const action = callback.data;
+      if (!env.BOT_TOKEN || typeof env.BOT_TOKEN !== 'string'
+          || telegramHeader !== await regSecret(env.BOT_TOKEN)) {
+        return json({ ok: false, error: 'FORBIDDEN' }, 403);
+      }
+      if (!callback.id || !CHOICE_DATA.has(action)) {
+        return json({ ok: true, ignored: true });
+      }
+      return json({
+        method: 'answerCallbackQuery',
+        callback_query_id: callback.id,
+        text: 'Скоро здесь появится подробный ответ. 🤍',
+        show_alert: false,
+      });
+    }
+
     try {
       const response = await fetch(REG_HANDLER, {
         method: 'POST',
