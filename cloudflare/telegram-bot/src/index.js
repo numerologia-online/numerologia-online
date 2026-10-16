@@ -180,7 +180,7 @@ export default {
         configured: true,
         reg_ru: await backendHealth(),
         webhook_changed: false,
-        navigation: 'permanent-bottom-menu-after-consent',
+        navigation: 'birth-date-confirmation-before-daily-opt-in',
         site_sections: SECTION_BUTTONS.length,
         bottom_menu: BOTTOM_MENU_LABEL,
         bottom_menu_delivery: 'webhook-reply',
