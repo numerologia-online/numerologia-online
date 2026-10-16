@@ -29,6 +29,40 @@ const SECTION_BUTTONS = [
 ];
 const SOON_SECTIONS = new Set(SECTION_BUTTONS.filter(x => x.soon).map(x => 'soon_' + x.soon));
 const LEGACY_QUESTION_CALLBACKS = new Set(['topic_love', 'topic_money', 'topic_self', 'topic_answers']);
+const BOTTOM_MENU_LABEL = '🫶 Открой все разделы';
+
+// A Telegram message may install a reply keyboard OR carry an inline
+// keyboard, not both. Install this reply keyboard in a short, silent message
+// immediately before the "account ready" reply with its inline site buttons.
+function bottomMenuKeyboard() {
+  return {
+    keyboard: [[{ text: BOTTOM_MENU_LABEL }]],
+    resize_keyboard: true,
+    is_persistent: true,
+  };
+}
+
+async function installBottomMenu(env, header, chatId) {
+  if (typeof env.BOT_TOKEN !== 'string' || !env.BOT_TOKEN ||
+      header !== await regSecret(env.BOT_TOKEN)) return false;
+  const controller = AbortSignal.timeout(7000);
+  const response = await fetch('https://api.telegram.org/bot' + env.BOT_TOKEN + '/sendMessage', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: '🫶 Разделы сайта теперь можно открыть кнопкой внизу.',
+      reply_markup: bottomMenuKeyboard(),
+      disable_notification: true,
+    }),
+    signal: controller,
+  });
+  if (!response.ok) return false;
+  const result = await response.json();
+  return result?.ok === true;
+}
+
+
 
 function sectionsKeyboard() {
   return {
@@ -66,7 +100,7 @@ function updateBotNavigation(reply, update) {
 
   // Old bottom-keyboard buttons may still be visible in earlier chat history;
   // their use should also show the same inline menu rather than another keyboard.
-  if (input === CATALOG_LABEL || command === '/catalog' || command === '/catalogue') {
+  if (input === BOTTOM_MENU_LABEL || input === CATALOG_LABEL || command === '/catalog' || command === '/catalogue') {
     return { ...reply, text: 'Разделы сайта:', reply_markup: sectionsKeyboard() };
   }
 
@@ -109,6 +143,7 @@ export default {
         webhook_changed: false,
         navigation: 'inline-site-sections-on-ready',
         site_sections: SECTION_BUTTONS.length,
+        bottom_menu: BOTTOM_MENU_LABEL,
       });
     }
     if (request.method !== 'POST' || path !== '/telegram') {
@@ -168,7 +203,28 @@ export default {
       if (reply.method && reply.method !== 'sendMessage') {
         return json({ ok: false, error: 'UNSUPPORTED_BOT_METHOD' }, 502);
       }
-      return json(updateBotNavigation(reply, update));
+      const outgoing = updateBotNavigation(reply, update);
+      const incoming = update.message;
+      const command = typeof incoming?.text === 'string'
+        ? incoming.text.trim().split(/\s+/u, 1)[0].toLowerCase().split('@')[0] : '';
+      const ready = typeof outgoing.text === 'string'
+        && (outgoing.text.includes('Ваш личный кабинет готов!')
+          || (outgoing.text.includes('Вы подписались на личный прогноз')
+            && outgoing.text.includes('Готово!')));
+      // Only after onboarding is ready: never change birth-date/yes-no flows.
+      // The website menu button remains the existing Telegram chat menu button.
+      if (ready && incoming?.chat?.type === 'private'
+          && Number(outgoing.chat_id) === Number(incoming.chat.id)
+          && (command === '/start' || command === '/menu'
+            || incoming.text.trim() === '✅ Да, каждый день')) {
+        try {
+          await installBottomMenu(env, telegramHeader, incoming.chat.id);
+        } catch {
+          // Keep the working inline site keyboard if Telegram setup fails.
+          console.error('BOTTOM_MENU_SETUP_FAILED');
+        }
+      }
+      return json(outgoing);
     } catch {
       // Never log secret headers, Telegram updates or users' personal data.
       return json({ ok: false, error: 'BACKEND_TIMEOUT' }, 502);
