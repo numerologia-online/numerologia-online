@@ -99,6 +99,18 @@ function updateBotNavigation(reply, update) {
     };
   }
 
+  // Keep the first /start response brief: the bot asks only for a birth date.
+  // Do not modify existing-account replies or date/consent handling.
+  if (command === '/start'
+      && reply.text.includes('Добро пожаловать в Нумерологию Онлайн!')
+      && reply.text.includes('Напишите вашу дату рождения')) {
+    return {
+      ...reply,
+      text: 'Напишите вашу дату рождения в формате ДД.ММ.ГГГГ, например 09.09.1986.',
+      reply_markup: bottomMenuKeyboard(),
+    };
+  }
+
   // After accepting or refusing, and on first or repeat /start, replace the
   // temporary keyboard with ONE permanent button in the same bot message.
   // REG.RU still owns birth-date storage and subscription decisions.
