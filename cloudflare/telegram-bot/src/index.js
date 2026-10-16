@@ -53,6 +53,23 @@ function sectionsKeyboard() {
   };
 }
 
+// Clickable text links can coexist with the persistent bottom reply keyboard
+// in one Telegram message. Unfinished sections are shown without dead links.
+function escapeTelegramHtml(value) {
+  return String(value).replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+function sectionsAsTextLinks() {
+  const icons = ['🔮', '📅', '🚩', '💃', '💎', '☀️', '👶', '💰', '💞', '🔭', '🎓'];
+  return SECTION_BUTTONS.map((section, index) => {
+    const title = escapeTelegramHtml(section.text);
+    if (section.soon) return icons[index] + ' ' + title + ' <i>(скоро)</i>';
+    const url = escapeTelegramHtml(SITE_URL + section.route);
+    return icons[index] + ' <a href="' + url + '">' + title + '</a>';
+  }).join('\n');
+}
+
 function updateBotNavigation(reply, update) {
   if (reply?.method !== 'sendMessage' || typeof reply.text !== 'string') return reply;
   const message = update?.message;
@@ -144,7 +161,17 @@ function updateBotNavigation(reply, update) {
       && reply.text.includes('Вы подписались на личный прогноз')) {
     return {
       ...reply,
-      text: 'Готово! ❤️\n\nТеперь каждое утро в 10:00 по Москве я буду присылать вам личный расчёт по вашей дате рождения.',
+      // The owner's warm welcome and 11 clickable sections are one Telegram
+      // message with a single bottom reply keyboard, not an inline keyboard.
+      text: '<b>Готово! 🫶 Жди личный расчёт дня каждое утро ☀️</b>\n\n'
+        + 'Я создавала этот бот, чтобы каждая женщина могла получать подсказки от жизни, '
+        + 'не упускать важные шансы и избегать ошибок.\n\n'
+        + 'Мне очень хочется, чтобы ваша жизнь с этим ботом стала хоть чуточку легче, '
+        + 'спокойнее и понятнее.\n\n'
+        + '<b>Я рядом 🤍</b>\n\n'
+        + '<b>Откройте интересующий раздел:</b>\n\n'
+        + sectionsAsTextLinks(),
+      parse_mode: 'HTML',
       reply_markup: bottomMenuKeyboard(),
     };
   }
