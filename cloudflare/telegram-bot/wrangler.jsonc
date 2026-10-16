@@ -4,5 +4,19 @@
   "main": "src/index.js",
   "compatibility_date": "2026-10-16",
   "workers_dev": true,
-  "keep_vars": true
+  "keep_vars": true,
+  "migrations": [
+    {
+      "tag": "evening-subscribers-v1",
+      "new_sqlite_classes": [
+        "EveningSubscriberStore"
+      ]
+    },
+    {
+      "tag": "evening-subscribers-removed-20261016-v2",
+      "deleted_classes": [
+        "EveningSubscriberStore"
+      ]
+    }
+  ]
 }
