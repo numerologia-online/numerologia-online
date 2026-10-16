@@ -15,17 +15,17 @@ const CATALOG_LABEL = '✨ Что ещё знают числа?';
 // Keep each button on its own row so Telegram does not truncate the labels.
 // For sections under construction, a small callback notice avoids dead links.
 const SECTION_BUTTONS = [
-  { text: 'Полный разбор', route: 'pro/' },
-  { text: 'Разбор года', route: '#razbor-goda' },
-  { text: 'Мужчина или Ред Флаг', route: '' },
-  { text: 'Женщина или тарелочница', soon: 'woman' },
-  { text: 'Код богатства', route: '#moy-kod-deneg' },
   { text: 'Личный расчёт дня', route: '#lichnyj-den' },
-  { text: 'Расчёт для детей', soon: 'children' },
-  { text: 'Деньги', soon: 'money' },
-  { text: 'Совместимость', route: '' },
-  { text: 'Хорарная нумерология', soon: 'horary' },
-  { text: 'Школы нумерологии', route: 'pro/schools/' },
+  { text: 'Полный расчёт года', route: '#razbor-goda' },
+  { text: 'Мужчина или Ред Флаг', route: '' },
+  { text: 'Совместимость и любовь', route: '' },
+  { text: 'Полный разбор', route: 'pro/' },
+  { text: 'Женщина или тарелочница', soon: 'woman' },
+  { text: 'Ваш код богатства и ритуалы', route: '#moy-kod-deneg' },
+  { text: 'Для мам - всё о ребёнке', soon: 'children' },
+  { text: 'Любой вопрос', soon: 'horary' },
+  { text: 'Школа нумерологии', route: 'pro/schools/' },
+  { text: 'Записаться на личный расчёт', soon: 'appointment' },
 ];
 const SOON_SECTIONS = new Set(SECTION_BUTTONS.filter(x => x.soon).map(x => 'soon_' + x.soon));
 const LEGACY_QUESTION_CALLBACKS = new Set(['topic_love', 'topic_money', 'topic_self', 'topic_answers']);
