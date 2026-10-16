@@ -106,7 +106,7 @@ function updateBotNavigation(reply, update) {
       && reply.text.includes('Напишите вашу дату рождения')) {
     return {
       ...reply,
-      text: 'Напишите вашу дату рождения в формате ДД.ММ.ГГГГ, например 09.09.1986.',
+      text: 'Добро пожаловать в Нумерологию Онлайн! ❤️\n\nНапишите вашу дату рождения в формате ДД.ММ.ГГГГ, например 09.09.1986.',
       reply_markup: bottomMenuKeyboard(),
     };
   }
