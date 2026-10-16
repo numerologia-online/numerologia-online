@@ -43,10 +43,17 @@ function bottomMenuKeyboard() {
 }
 
 async function installBottomMenu(env, header, chatId) {
-  if (typeof env.BOT_TOKEN !== 'string' || !env.BOT_TOKEN ||
-      header !== await regSecret(env.BOT_TOKEN)) return false;
-  const controller = AbortSignal.timeout(7000);
-  const response = await fetch('https://api.telegram.org/bot' + env.BOT_TOKEN + '/sendMessage', {
+  // No token or chat identifiers are ever included in diagnostics.
+  const token = typeof env.BOT_TOKEN === 'string' ? env.BOT_TOKEN.trim() : '';
+  if (!token) {
+    console.warn('BOTTOM_MENU_SETUP: BOT_TOKEN_MISSING');
+    return false;
+  }
+  if (header !== await regSecret(token)) {
+    console.warn('BOTTOM_MENU_SETUP: WEBHOOK_SECRET_MISMATCH');
+    return false;
+  }
+  const response = await fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -55,10 +62,15 @@ async function installBottomMenu(env, header, chatId) {
       reply_markup: bottomMenuKeyboard(),
       disable_notification: true,
     }),
-    signal: controller,
+    signal: AbortSignal.timeout(7000),
   });
-  if (!response.ok) return false;
+  if (!response.ok) {
+    // Status only, not Telegram's full error text or any personal data.
+    console.warn('BOTTOM_MENU_SETUP: TELEGRAM_HTTP_' + response.status);
+    return false;
+  }
   const result = await response.json();
+  if (result?.ok !== true) console.warn('BOTTOM_MENU_SETUP: TELEGRAM_RESPONSE_NOT_OK');
   return result?.ok === true;
 }
 
@@ -144,6 +156,7 @@ export default {
         navigation: 'inline-site-sections-on-ready',
         site_sections: SECTION_BUTTONS.length,
         bottom_menu: BOTTOM_MENU_LABEL,
+        bottom_menu_token_configured: typeof env.BOT_TOKEN === 'string' && env.BOT_TOKEN.trim().length > 0,
       });
     }
     if (request.method !== 'POST' || path !== '/telegram') {
