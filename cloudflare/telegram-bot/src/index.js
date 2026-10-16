@@ -58,52 +58,49 @@ function updateBotNavigation(reply, update) {
   const message = update?.message;
   if (message?.chat?.type !== 'private' || typeof message.text !== 'string'
       || Number(reply.chat_id) !== Number(message.chat.id)) return reply;
+
   const input = message.text.trim();
   const command = input.split(/\s+/u, 1)[0].toLowerCase().split('@')[0];
 
-  // Telegram can install a custom reply keyboard via the existing webhook
-  // response. No direct Bot API token and no extra unsolicited message.
-  if (command === '/menu' || command === '/keyboard') {
-    return {
-      ...reply,
-      text: '🫶 Открой все разделы - кнопка теперь в нижней клавиатуре.',
-      reply_markup: bottomMenuKeyboard(),
-    };
-  }
-
-  // The site keyboard is attached to the SAME "ready" message, not the
-  // Telegram typing area and not a separately sent message.
-  const ready = reply.text.includes('Ваш личный кабинет готов!')
-    || (reply.text.includes('Вы подписались на личный прогноз')
-        && reply.text.includes('Готово!'));
-  if (ready) {
-    // Keep the completion message compact so the full site menu is more visible.
-    // Only remove the printed unsubscribe hint; /stop remains functional.
-    const compactText = reply.text
-      .replace(/(?:\s*Для отключения рассылки напишите \/stop\.|\s*Отключить сообщения можно командой \/stop\.)/gu, '')
-      .replace(/\n[ \t]*\n+/g, '\n')
-      .trim();
-    return { ...reply, text: compactText, reply_markup: sectionsKeyboard() };
-  }
-
-  // First-time onboarding can pass through a consent step before the date
-  // prompt. Install the persistent keyboard on the EXISTING date prompt,
-  // whether it follows /start or consent. Never change consent controls.
-  if (!reply.reply_markup
-      && /(дат[уые] рождения|дату своего рождения|дд[.\s-]*мм[.\s-]*гггг|(?:введи|укажи|отправь|напиши).{0,100}рожден)/iu.test(reply.text)) {
-    return { ...reply, reply_markup: bottomMenuKeyboard() };
-  }
-
-  // Old bottom-keyboard buttons may still be visible in earlier chat history;
-  // their use should also show the same inline menu rather than another keyboard.
-  if (input === BOTTOM_MENU_LABEL || input === CATALOG_LABEL || command === '/catalog' || command === '/catalogue') {
+  // The full website catalogue is shown ONLY when the permanent button is pressed.
+  // Its inline buttons do not replace the already-installed reply keyboard.
+  if (input === BOTTOM_MENU_LABEL || input === CATALOG_LABEL
+      || command === '/catalog' || command === '/catalogue') {
     return { ...reply, text: 'Разделы сайта:', reply_markup: sectionsKeyboard() };
   }
 
-  // Preserve original birthday registration and yes/no subscription consent.
-  return reply;
-}
+  // A manual fallback also refreshes the one-button reply keyboard.
+  if (command === '/menu' || command === '/keyboard') {
+    return { ...reply, text: '🫶 Открой все разделы', reply_markup: bottomMenuKeyboard() };
+  }
 
+  // During date registration preserve the two temporary consent choices.
+  // REG.RU supplies a third "Open site" keyboard row; omit it here.
+  const rows = reply.reply_markup?.keyboard;
+  const hasYes = Array.isArray(rows) && rows.some(row =>
+    Array.isArray(row) && row.some(button => button?.text === '✅ Да, каждый день'));
+  const hasNo = Array.isArray(rows) && rows.some(row =>
+    Array.isArray(row) && row.some(button => button?.text === '❌ Нет, спасибо'));
+  if (hasYes && hasNo) {
+    return {
+      ...reply,
+      reply_markup: {
+        keyboard: [[{ text: '✅ Да, каждый день' }, { text: '❌ Нет, спасибо' }]],
+        resize_keyboard: true,
+        is_persistent: false,
+      },
+    };
+  }
+
+  // After accepting or refusing, and on first or repeat /start, replace the
+  // temporary keyboard with ONE permanent button in the same bot message.
+  // REG.RU still owns birth-date storage and subscription decisions.
+  const compact = reply.text
+    .replace(/(?:\s*Для отключения рассылки напишите \/stop\.|\s*Отключить сообщения можно командой \/stop\.)/gu, '')
+    .replace(/\n[ \t]*\n+/g, '\n')
+    .trim();
+  return { ...reply, text: compact, reply_markup: bottomMenuKeyboard() };
+}
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
