@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f5eced">
+  <meta name="theme-color" content="#f0f3fa">
   <meta name="description" content="Для мам - детская матрица судьбы и личный день ребёнка по дате рождения.">
   <title>Для мам - всё о ребёнке | Нумерология Онлайн</title>
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-  <link rel="stylesheet" href="./child.css?v=2">
+  <link rel="stylesheet" href="./child.css?v=3">
 </head>
 <body>
   <main class="child-page">
@@ -17,16 +17,13 @@
     </header>
 
     <section class="child-hero" aria-labelledby="child-title">
-      <div class="child-hero-art" aria-hidden="true"><span class="child-moon">☾</span><span class="child-star child-star-a">✧</span><span class="child-star child-star-b">✦</span><span class="child-star child-star-c">✧</span></div>
-      <p class="child-eyebrow">С любовью о самых важных</p>
-      <h1 id="child-title">Для мам<br><em>всё о ребёнке</em></h1>
-      <p class="child-lead">Маленькая подсказка к большому миру вашего ребёнка: характер, таланты, обучение, занятия и настроение дня.</p>
-      <div class="child-benefits"><span>✧ Матрица ребёнка</span><span>♡ День ребёнка</span></div>
+      <p class="child-eyebrow">Детская нумерология ♡</p>
+      <h1 id="child-title">Для мам <em>и пап</em></h1>
+      <p class="child-lead">Всё о ребёнке: интерактивная матрица и прогноз дня</p>
     </section>
 
     <section class="child-start" aria-labelledby="child-form-title">
-      <h2 id="child-form-title">С чего начнём?</h2>
-      <p>Введите дату рождения ребёнка. Дальше можно переключаться между матрицей и прогнозом дня.</p>
+      <h2 id="child-form-title">Узнайте своего ребёнка лучше</h2>
       <form id="child-form" novalidate>
         <label for="child-date">Дата рождения ребёнка</label>
         <div class="child-form-row">
@@ -40,8 +37,7 @@
 
     <section id="child-result" class="child-result" hidden aria-live="polite">
       <div class="child-result-heading">
-        <span class="child-eyebrow">Ваш маленький большой мир</span>
-        <h2>Познакомимся поближе?</h2>
+        <h2>Ваш расчёт готов ✦</h2>
         <p id="child-born"></p>
       </div>
       <div class="child-tabs" role="tablist" aria-label="Выберите расчёт">
@@ -50,14 +46,11 @@
       </div>
 
       <section id="child-matrix-panel" role="tabpanel" aria-labelledby="child-tab-matrix">
-        <div class="child-section-intro">
-          <p class="child-eyebrow">Детская матрица судьбы</p>
-          <h3>Каждый ребёнок особенный</h3>
-          <p>Нажмите на любой кружочек: откроется красивая карточка с трактовкой. А ниже можно раскрыть разделы по порядку.</p>
-        </div>
+        <p class="child-matrix-hint">Нажмите на любое число, чтобы узнать его значение ✦</p>
         <div id="child-matrix-visual" class="child-visual" aria-label="Интерактивная детская матрица"></div>
-        <div id="child-matrix-sections" class="child-accordions"></div>
-        <p class="child-sidenote">Подсказки для знакомства с характером. Пробуйте разное и замечайте реальные интересы ребёнка.</p>
+        <p class="child-links-label">Или выберите интересующую тему:</p>
+        <div id="child-matrix-sections" class="child-topic-grid"></div>
+
       </section>
 
       <section id="child-day-panel" role="tabpanel" aria-labelledby="child-tab-day" hidden>
@@ -84,6 +77,6 @@
     </section>
     <footer class="child-footer">С любовью, Нумерология Онлайн ♡</footer>
   </main>
-  <script type="module" src="./child.js?v=2"></script>
+  <script type="module" src="./child.js?v=3"></script>
 </body>
 </html>
