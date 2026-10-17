@@ -104,7 +104,7 @@ const addDayShareButtons = (result, report) => {
   controls.className = "personal-day-share";
   controls.setAttribute("aria-label", "Сохранить и поделиться прогнозом");
   controls.innerHTML = '<p class="personal-day-share-title">Сохрани свой прогноз ❤️</p>'
-    + '<button type="button" class="personal-day-share-save">📩 Сохранить в Telegram</button>'
+    + '<button type="button" class="personal-day-share-save">📩 Отправить расчёт в мой бот</button>'
     + '<button type="button" class="personal-day-share-send">💌 Поделиться с подругой</button>'
     + '<p class="personal-day-share-status" role="status" aria-live="polite"></p>';
   result.append(controls);
@@ -143,10 +143,23 @@ const addDayShareButtons = (result, report) => {
       const data = await response.json();
       if (!response.ok || data?.ok !== true) throw new Error(data?.error || "DELIVERY_FAILED");
       status.textContent = "✓ Прогноз отправлен в переписку с нашим ботом!";
-      save.textContent = "✓ Сохранено в Telegram";
-    } catch {
+      save.textContent = "✓ Прогноз уже в моём боте";
+    } catch (error) {
       save.disabled = false;
-      status.textContent = "Не получилось отправить. Попробуй ещё раз чуть позже.";
+      const reasons = {
+        BOT_NOT_CONFIGURED: "На сервере не подключён токен бота. Отправка пока недоступна.",
+        TELEGRAM_AUTH_REQUIRED: "Telegram не подтвердил вход. Закрой расчёт и открой его заново через меню бота.",
+        DELIVERY_FAILED: "Сервер Telegram не принял сообщение. Попробуй ещё раз чуть позже.",
+        BOT_CHAT_UNAVAILABLE: "Бот не может написать в этот чат. Открой переписку с ним и нажми /start.",
+        BOT_API_AUTH_FAILED: "Сервер Telegram отклонил настройки бота. Нужно проверить подключение.",
+        BOT_RATE_LIMIT: "Telegram временно ограничил отправку. Попробуй позже.",
+        INVALID_FORECAST: "Прогноз не подошёл для отправки. Обнови страницу и рассчитай ещё раз.",
+        ORIGIN_NOT_ALLOWED: "Открой расчёт через наше мини-приложение Telegram."
+      };
+      status.textContent = reasons[error?.message]
+        || (error?.message === "AbortError"
+          ? "Сервер не ответил за 14 секунд. Попробуй позже."
+          : "Не удалось связаться с сервером отправки. Проверь соединение и обновление Cloudflare.");
     }
   });
 
