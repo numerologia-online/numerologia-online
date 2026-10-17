@@ -1,0 +1,379 @@
+{
+  "schema": "child-day-energy-v2",
+  "energy": 14,
+  "description": "22 энергии × 31 персональная позиция. Пустые записи не показываются пользователю; вместо них остаётся прежний короткий текст.",
+  "entries": {
+    "1": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "2": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "3": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "4": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "5": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "6": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "7": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "8": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "9": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "10": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "11": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "12": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "13": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "14": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "15": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "16": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "17": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "18": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "19": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "20": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "21": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "22": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "23": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "24": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "25": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "26": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "27": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "28": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "29": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "30": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    },
+    "31": {
+      "status": "draft",
+      "text": "",
+      "todayNeed": [],
+      "todayAvoid": [],
+      "parentAttention": [],
+      "ageHints": {
+        "young": "",
+        "school": "",
+        "teen": ""
+      }
+    }
+  }
+}
