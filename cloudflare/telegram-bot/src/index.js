@@ -203,6 +203,7 @@ async function backendHealth() {
 // Read-only check that the configured token belongs to this exact bot.
 // No key, bot ID or private Telegram data is returned to the browser.
 async function botIdentityMatches(token) {
+  if (typeof token === 'string') token = token.replace(/[\s\u200B-\u200D\uFEFF]/g, '');
   if (typeof token !== 'string' || !/^[0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/.test(token)) return false;
   try {
     const response = await fetch('https://api.telegram.org/bot' + token + '/getMe', {
@@ -233,7 +234,8 @@ export default {
         navigation: 'birth-date-confirmation-before-daily-opt-in',
         site_sections: SECTION_BUTTONS.length,
         day_save_route: true,
-        day_save_bot_token_configured: typeof env.BOT_TOKEN === 'string' && /^[0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/.test(env.BOT_TOKEN),
+        day_save_bot_token_configured: typeof env.BOT_TOKEN === 'string' && /^[0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/.test(env.BOT_TOKEN.replace(/[\s\u200B-\u200D\uFEFF]/g, '')),
+        day_save_token_whitespace_detected: typeof env.BOT_TOKEN === 'string' && /[\s\u200B-\u200D\uFEFF]/.test(env.BOT_TOKEN),
         day_save_bot_identity_matches: await botIdentityMatches(env.BOT_TOKEN),
         bottom_menu: BOTTOM_MENU_LABEL,
         bottom_menu_delivery: 'webhook-reply',
