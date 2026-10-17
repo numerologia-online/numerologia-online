@@ -1,4 +1,5 @@
 import { personalDayCallback, personalDayDateReply, acknowledgePersonalDayCallback } from './personal-day-dialog.js';
+import { handleDaySave } from './day-save-endpoint.js';
 /**
  * Telegram webhook receiver for Numerologia Online.
  * All user data and calculations remain at REG.RU.
@@ -202,6 +203,7 @@ async function backendHealth() {
 export default {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
+    if (path === '/api/save-day') return handleDaySave(request, env);
     if (request.method === 'GET' && (path === '/' || path === '/health')) {
       return json({
         ok: true,
