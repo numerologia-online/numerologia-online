@@ -12,37 +12,44 @@ const dayTab = byId("child-tab-day");
 const matrixVisual = byId("child-matrix-visual");
 const matrixSections = byId("child-matrix-sections");
 
-const pointDialog = document.createElement("dialog");
-pointDialog.className = "child-point-dialog";
-pointDialog.setAttribute("aria-labelledby", "child-point-dialog-title");
-pointDialog.innerHTML = [
-  '<div class="child-point-dialog-inner">',
-  '<button class="child-point-dialog-close" type="button" aria-label="Закрыть трактовку">×</button>',
-  '<p class="child-point-dialog-eyebrow">✧ Маленькая подсказка для мамы</p>',
-  '<div id="child-point-dialog-number" class="child-point-dialog-number"></div>',
-  '<h3 id="child-point-dialog-title" class="child-point-dialog-title"></h3>',
-  '<p id="child-point-dialog-text" class="child-point-dialog-text"></p>',
-  '<button class="child-point-dialog-done" type="button">Вернуться к матрице ♡</button>',
-  '</div>'
+// A small non-modal reading card replaces the full-screen dialog.
+// The matrix stays visible and usable while a reading is open.
+const insight = document.createElement("aside");
+insight.className = "child-insight";
+insight.hidden = true;
+insight.setAttribute("aria-labelledby", "child-insight-title");
+insight.innerHTML = [
+  '<div class="child-insight-top">',
+  '<span class="child-insight-badge" id="child-insight-number"></span>',
+  '<span class="child-insight-kicker">Расшифровка матрицы</span>',
+  '<button class="child-insight-close" type="button" aria-label="Закрыть подсказку">×</button>',
+  '</div>',
+  '<h3 id="child-insight-title"></h3>',
+  '<p id="child-insight-text"></p>'
 ].join("");
-document.body.append(pointDialog);
-pointDialog.querySelectorAll(".child-point-dialog-close, .child-point-dialog-done")
-  .forEach((button) => button.addEventListener("click", () => pointDialog.close()));
-pointDialog.addEventListener("click", (event) => {
-  if (event.target !== pointDialog) return;
-  const box = pointDialog.getBoundingClientRect();
-  if (event.clientX < box.left || event.clientX > box.right ||
-      event.clientY < box.top || event.clientY > box.bottom) pointDialog.close();
+document.body.append(insight);
+let selectedPoint = null;
+const closeInsight = () => {
+  insight.hidden = true;
+  if (selectedPoint) selectedPoint.classList.remove("is-selected");
+  selectedPoint = null;
+};
+insight.querySelector(".child-insight-close").addEventListener("click", closeInsight);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !insight.hidden) closeInsight();
 });
-const openPointReading = (point) => {
+const openPointReading = (point, source = null) => {
   if (!banks?.matrix?.entries) return;
   const field = point.field || point.id;
-  const description = banks.matrix.entries[String(point.number)]?.[field];
-  byId("child-point-dialog-number").textContent = point.code || String(point.number);
-  byId("child-point-dialog-title").textContent = point.title;
-  byId("child-point-dialog-text").textContent =
-    description || "Скоро здесь появится отдельная трактовка. А пока можно изучить другие точки матрицы.";
-  if (!pointDialog.open) pointDialog.showModal();
+  const description = banks.matrix.entries[String(point.number)]?.[field]
+    || "Эта трактовка готовится. Пока можно выбрать другую тему.";
+  byId("child-insight-number").textContent = point.code || String(point.number);
+  byId("child-insight-title").textContent = point.title;
+  byId("child-insight-text").textContent = description;
+  if (selectedPoint) selectedPoint.classList.remove("is-selected");
+  selectedPoint = source;
+  if (source) source.classList.add("is-selected");
+  insight.hidden = false;
 };
 
 const currentDate = () => {
@@ -136,7 +143,7 @@ const renderMatrix = (matrix) => {
     arrow.setAttribute("aria-hidden", "true");
     arrow.textContent = "↗";
     button.append(name, energy, arrow);
-    button.addEventListener("click", () => openPointReading(definition));
+    button.addEventListener("click", () => openPointReading(definition, button));
     matrixSections.append(button);
   });
 
@@ -178,7 +185,7 @@ const renderMatrix = (matrix) => {
   matrixVisual.querySelectorAll("[data-child-point]").forEach((node) => {
     const open = () => {
       const point = allPoints.get(node.dataset.childPoint);
-      if (point) openPointReading(point);
+      if (point) openPointReading(point, node);
     };
     node.addEventListener("click", open);
     node.addEventListener("keydown", (event) => {
@@ -210,6 +217,9 @@ const setTab = (next) => {
   dayPanel.hidden = isMatrix;
   matrixTab.setAttribute("aria-selected", String(isMatrix));
   dayTab.setAttribute("aria-selected", String(!isMatrix));
+  matrixTab.tabIndex = isMatrix ? 0 : -1;
+  dayTab.tabIndex = isMatrix ? -1 : 0;
+  closeInsight();
   if (!isMatrix) updateDay();
 };
 
@@ -228,7 +238,7 @@ form.addEventListener("submit", async (event) => {
     banks = await getBanks();
     birth = entered;
     chosenDate = currentDate();
-    if (pointDialog.open) pointDialog.close();
+    closeInsight();
     renderMatrix(calculateMatrix(birth));
     byId("child-born").textContent = "Дата рождения: " + pad(birth.day) + "." + pad(birth.month) + "." + birth.year;
     updateDay();
@@ -250,6 +260,15 @@ input.addEventListener("input", () => {
 
 matrixTab.addEventListener("click", () => setTab("matrix"));
 dayTab.addEventListener("click", () => setTab("day"));
+// Keep the two actual tabs accessible by keyboard as well as touch.
+[matrixTab, dayTab].forEach((tab) => tab.addEventListener("keydown", (event) => {
+  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+  event.preventDefault();
+  const toMatrix = event.key === "ArrowLeft";
+  setTab(toMatrix ? "matrix" : "day");
+  (toMatrix ? matrixTab : dayTab).focus();
+}));
+
 
 byId("child-day-prev").addEventListener("click", () => {
   chosenDate = new Date(chosenDate.getFullYear(), chosenDate.getMonth(), chosenDate.getDate() - 1);
