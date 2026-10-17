@@ -69,7 +69,43 @@ async function verifiedTelegramUser(initData, botToken) {
   return { id: user.id };
 }
 
-export async function handleDaySave(request, env) {
+// Restore the existing incoming webhook only when Telegram reports NO webhook.
+// This action is triggered after an authenticated Mini App user successfully
+// saves a forecast. Never replace a nonempty webhook or clear queued messages.
+// The secret matches REG.RU's existing expectedWebhookSecret(token).
+async function restoreMissingInboundWebhook(botToken) {
+  const webhookUrl = 'https://numerologia-online-bot.tankraft431.workers.dev/telegram';
+  const apiBase = 'https://api.telegram.org/bot' + botToken + '/';
+  try {
+    const current = await fetch(apiBase + 'getWebhookInfo', {
+      method: 'GET',
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!current.ok) return;
+    const payload = await current.json();
+    if (payload?.ok !== true || !payload.result || payload.result.url !== '') return;
+
+    const digest = await crypto.subtle.digest('SHA-256',
+      encoder.encode('numerologia-online:webhook:v1:' + botToken));
+    const secretToken = [...new Uint8Array(digest)]
+      .map(byte => byte.toString(16).padStart(2, '0')).join('');
+    await fetch(apiBase + 'setWebhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: webhookUrl,
+        secret_token: secretToken,
+        allowed_updates: ['message', 'callback_query'],
+        drop_pending_updates: false
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch {
+    // Saving the user's report must not depend on webhook maintenance.
+  }
+}
+
+export async function handleDaySave(request, env, ctx) {
   const origin = request.headers.get('Origin');
   if (origin !== WEBSITE_ORIGIN) return reply({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403);
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: SAME_ORIGIN_HEADERS });
@@ -121,7 +157,12 @@ export async function handleDaySave(request, env) {
       signal: AbortSignal.timeout(10000),
     });
     const api = await res.json();
-    if (res.ok && api?.ok === true) return reply({ ok: true }, 200, true);
+    if (res.ok && api?.ok === true) {
+      // A legitimate signed bot interaction can self-heal an unregistered
+      // incoming webhook without changing registration, subscriptions or chats.
+      if (ctx?.waitUntil) ctx.waitUntil(restoreMissingInboundWebhook(botToken));
+      return reply({ ok: true }, 200, true);
+    }
     // Only categorical delivery diagnostics; never echo Telegram responses,
     // secrets or private chat/user details to the Mini App.
     if (res.status === 401) return reply({ ok: false, error: 'BOT_API_AUTH_FAILED' }, 502, true);
