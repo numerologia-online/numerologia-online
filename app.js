@@ -76,7 +76,7 @@ const openCompatibilityFeature = async () => {
 };
 
 const getPersonalDayFeature = () => {
-  if (!personalDayFeatureLoading) personalDayFeatureLoading = import("./personal-day-feature.js?v=52");
+  if (!personalDayFeatureLoading) personalDayFeatureLoading = import("./personal-day-feature.js?v=53");
   return personalDayFeatureLoading;
 };
 
