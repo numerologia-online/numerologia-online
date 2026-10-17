@@ -7,7 +7,7 @@
   <meta name="description" content="Для мам - детская матрица судьбы и личный день ребёнка по дате рождения.">
   <title>Для мам - всё о ребёнке | Нумерология Онлайн</title>
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-  <link rel="stylesheet" href="./child.css?v=5">
+  <link rel="stylesheet" href="./child.css?v=6">
 </head>
 <body>
   <main class="child-page">
@@ -38,6 +38,28 @@
         <p class="child-error" id="child-error" role="alert" hidden></p>
       </form>
       <p class="child-privacy">Дата используется только для расчёта на этой странице.</p>
+    </section>
+
+    <section id="child-preview" class="child-preview" aria-labelledby="child-preview-title">
+      <div class="child-preview-heading">
+        <span>Один день рождения - два открытия</span>
+        <h2 id="child-preview-title">Что вы хотите узнать?</h2>
+      </div>
+      <div class="child-preview-grid">
+        <button class="child-preview-card is-active" type="button" data-child-start="matrix" aria-pressed="true">
+          <span class="child-preview-icon" aria-hidden="true">◇</span>
+          <strong>Матрица ребёнка</strong>
+          <span class="child-preview-description">Характер, таланты, обучение и воспитание</span>
+          <span class="child-preview-cta">Выбрать <span aria-hidden="true">↗</span></span>
+        </button>
+        <button class="child-preview-card" type="button" data-child-start="day" aria-pressed="false">
+          <span class="child-preview-icon child-preview-icon-day" aria-hidden="true">♡</span>
+          <strong>День ребёнка</strong>
+          <span class="child-preview-description">Настроение, занятия и маленькие подсказки на день</span>
+          <span class="child-preview-cta">Выбрать <span aria-hidden="true">↗</span></span>
+        </button>
+      </div>
+      <p class="child-preview-note">Выберите раздел и введите дату рождения выше. Начнём с того, что интересно именно вам.</p>
     </section>
 
     <section id="child-result" class="child-result" hidden aria-live="polite">
@@ -86,6 +108,6 @@
     </section>
     <footer class="child-footer">С любовью, Нумерология Онлайн ♡</footer>
   </main>
-  <script type="module" src="./child.js?v=5"></script>
+  <script type="module" src="./child.js?v=6"></script>
 </body>
 </html>
