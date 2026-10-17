@@ -1,0 +1,14 @@
+{
+  // Dedicated Worker. Do not replace numerologia-online-bot.
+  "name": "numerologia-owner-analytics",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-17",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "numerologia-owner-analytics",
+      "database_id": "REPLACE_WITH_REAL_D1_ID"
+    }
+  ],
+  "triggers": { "crons": ["0 3 * * *"] }
+}
