@@ -24,6 +24,10 @@ function response(obj, status = 200, origin = "") {
 function clean(value, max = 80) {
   return typeof value === "string" && /^[\w\-.:/]{1,80}$/.test(value) ? value.slice(0,max) : "";
 }
+function title(value) {
+  // Only public predefined question/category labels, not visitor answers.
+  return typeof value === "string" ? value.replace(/[<>\u0000-\u001F]/g,"").slice(0,120) : "";
+}
 function isAuthorized(request, secret) {
   if (!secret || secret.length < 32) return false;
   const auth = request.headers.get("Authorization") || "";
@@ -41,7 +45,7 @@ async function insertEvent(env, data, type, paid = false) {
   const isValid = paid ? SERVER_EVENTS.has(name) : PUBLIC_EVENTS.has(name);
   if (!isValid) return false;
   const item = clean(data.item || "", 80);
-  const section = clean(data.section || "", 80);
+  const section = clean(data.section || "", 80);\n  const label = title(data.label || "");
   const source = clean(data.source || "direct", 80);
   const session = clean(data.session || "", 80);
   const eventId = paid ? clean(data.event_id || "", 80) : "";
@@ -49,8 +53,8 @@ async function insertEvent(env, data, type, paid = false) {
     && data.amount_kopecks >= 0 && data.amount_kopecks <= 100000000 ? data.amount_kopecks : 0;
   if (name === "payment_success" && (!eventId || !amount)) return false;
   await env.DB.prepare(
-    "INSERT OR IGNORE INTO analytics_events (event, item, section, source, session, amount_kopecks, event_id) VALUES (?, ?, ?, ?, ?, ?, ?)"
-  ).bind(name,item,section,source,session,amount,eventId || null).run();
+    "INSERT OR IGNORE INTO analytics_events (event, item, label, section, source, session, amount_kopecks, event_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind(name,item,label,section,source,session,amount,eventId || null).run();
   return true;
 }
 async function overview(env, days) {
@@ -58,9 +62,9 @@ async function overview(env, days) {
   const since = "-" + period + " days";
   const sql = {
     counts: "SELECT event, COUNT(*) AS total, COUNT(DISTINCT NULLIF(session,'')) AS sessions FROM analytics_events WHERE created_at >= datetime('now', ?) GROUP BY event ORDER BY total DESC",
-    questions: "SELECT item, COUNT(*) AS opens, COUNT(DISTINCT NULLIF(session,'')) AS sessions FROM analytics_events WHERE created_at >= datetime('now', ?) AND event = 'redflag_question_open' AND item != '' GROUP BY item ORDER BY opens DESC LIMIT 30",
-    categories: "SELECT item, COUNT(*) AS opens FROM analytics_events WHERE created_at >= datetime('now', ?) AND event = 'redflag_category_open' AND item != '' GROUP BY item ORDER BY opens DESC LIMIT 30",
-    shares: "SELECT item, COUNT(*) AS total FROM analytics_events WHERE created_at >= datetime('now', ?) AND event = 'redflag_share_click' AND item != '' GROUP BY item ORDER BY total DESC LIMIT 30",
+    questions: "SELECT item, MAX(label) AS label, COUNT(*) AS opens, COUNT(DISTINCT NULLIF(session,'')) AS sessions FROM analytics_events WHERE created_at >= datetime('now', ?) AND event = 'redflag_question_open' AND item != '' GROUP BY item ORDER BY opens DESC LIMIT 30",
+    categories: "SELECT item, MAX(label) AS label, COUNT(*) AS opens FROM analytics_events WHERE created_at >= datetime('now', ?) AND event = 'redflag_category_open' AND item != '' GROUP BY item ORDER BY opens DESC LIMIT 30",
+    shares: "SELECT item, MAX(label) AS label, COUNT(*) AS total FROM analytics_events WHERE created_at >= datetime('now', ?) AND event = 'redflag_share_click' AND item != '' GROUP BY item ORDER BY total DESC LIMIT 30",
     sources: "SELECT source, COUNT(*) AS visits FROM analytics_events WHERE created_at >= datetime('now', ?) AND event = 'page_view' GROUP BY source ORDER BY visits DESC LIMIT 15",
     sections: "SELECT section, COUNT(*) AS visits FROM analytics_events WHERE created_at >= datetime('now', ?) AND event = 'page_view' GROUP BY section ORDER BY visits DESC LIMIT 15",
     trend: "SELECT substr(created_at,1,10) AS date, SUM(CASE WHEN event='page_view' THEN 1 ELSE 0 END) AS visits, SUM(CASE WHEN event='redflag_question_open' THEN 1 ELSE 0 END) AS questions FROM analytics_events WHERE created_at >= datetime('now', ?) GROUP BY substr(created_at,1,10) ORDER BY date",
