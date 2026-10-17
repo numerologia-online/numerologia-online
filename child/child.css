@@ -758,3 +758,10 @@ body {
     width: 42px; height: 42px; flex-basis: 42px; font-size: 27px;
   }
 }
+
+/* Full-width karmic-tail topic; keeps the existing two-column grid and calculations. */
+.child-topic-grid > .child-topic-tail {
+  grid-column: 1 / -1;
+  background: linear-gradient(110deg, #fff7fb 0%, #f5f9ff 100%);
+  border-color: #eadbe9;
+}
