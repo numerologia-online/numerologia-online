@@ -1,3 +1,4 @@
+import { personalDayCallback, personalDayDateReply, acknowledgePersonalDayCallback } from './personal-day-dialog.js';
 /**
  * Telegram webhook receiver for Numerologia Online.
  * All user data and calculations remain at REG.RU.
@@ -203,7 +204,7 @@ async function backendHealth() {
   }
 }
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
     if (request.method === 'GET' && (path === '/' || path === '/health')) {
       return json({
@@ -242,42 +243,13 @@ export default {
       const callback = update.callback_query;
       const action = callback.data;
       if (action === 'day_intro') {
-        const chatId = callback.message?.chat?.id;
-        if (!callback.id || callback.message?.chat?.type !== 'private'
-            || !Number.isSafeInteger(chatId) || chatId <= 0
-            || callback.from?.id !== chatId) return json({ ok: true, ignored: true });
-        let authenticated = typeof env.BOT_TOKEN === 'string'
-          && env.BOT_TOKEN.length > 0
-          && telegramHeader === await regSecret(env.BOT_TOKEN);
-        if (!authenticated && typeof env.WEBHOOK_SECRET === 'string'
-            && env.WEBHOOK_SECRET.length > 0) {
-          authenticated = telegramHeader === env.WEBHOOK_SECRET;
+        // The only enhanced inline button. REG.RU validates the existing
+        // Telegram webhook secret and supplies the saved birth date.
+        const reply = await personalDayCallback(update, telegramHeader, REG_HANDLER);
+        if (ctx?.waitUntil && typeof env.BOT_TOKEN === 'string') {
+          ctx.waitUntil(acknowledgePersonalDayCallback(update, telegramHeader, env.BOT_TOKEN).catch(() => {}));
         }
-        if (!authenticated && !env.BOT_TOKEN && !env.WEBHOOK_SECRET) {
-          try {
-            const proof = await fetch(REG_HANDLER, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-Telegram-Bot-Api-Secret-Token': telegramHeader,
-              },
-              body: JSON.stringify(update),
-              redirect: 'manual',
-              signal: AbortSignal.timeout(6000),
-            });
-            if (proof.ok) {
-              const data = await proof.json();
-              authenticated = data?.ok === true && data?.ignored === true;
-            }
-          } catch {}
-        }
-        if (!authenticated) return json({ ok: false, error: 'FORBIDDEN' }, 403);
-        return json({
-          method: 'sendMessage',
-          chat_id: chatId,
-          text: "☀️ Личный расчёт дня\n\nПривет! ❤️\n\nТвоя дата рождения у меня уже сохранена, поэтому ничего повторно вводить не нужно.\n\nЗдесь мы будем разбирать, какие возможности открывает выбранный день и на что стоит обратить внимание. 🤍",
-          disable_web_page_preview: true,
-        });
+        return json(reply);
       }
       if (!env.BOT_TOKEN || typeof env.BOT_TOKEN !== 'string'
           || telegramHeader !== await regSecret(env.BOT_TOKEN)) {
@@ -295,6 +267,10 @@ export default {
     }
 
     try {
+      // Only date replies to the new personal-day prompt are handled here.
+      // All other messages keep the original REG.RU onboarding flow.
+      const personalDayReply = await personalDayDateReply(update, telegramHeader, REG_HANDLER);
+      if (personalDayReply !== null) return json(personalDayReply);
       // Keep REG.RU as the only writer of birth dates and subscription status.
       // Only translate the two NEW confirmation answers into existing,
       // proven REG.RU commands. Even a rejected date reaches the backend
