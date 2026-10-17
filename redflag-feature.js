@@ -44,7 +44,7 @@ const formatRedFlagMessage = (question, response, dateOfBirth) => {
   return parts.join("\n");
 };
 
-const addRedFlagShare = (answer, report) => {
+const addRedFlagShare = (answer, report, question) => {
   const controls = document.createElement("section");
   controls.className = "personal-day-share redflag-share";
   controls.setAttribute("aria-label", "Сохранить и поделиться ответом");
@@ -59,6 +59,7 @@ const addRedFlagShare = (answer, report) => {
   const status = controls.querySelector(".personal-day-share-status");
 
   save.addEventListener("click", async () => {
+    window.NumerologiaAnalytics?.track("redflag_save_click", { item: question.id, label: question.title, section: "redflag" });
     const signedData = window.Telegram?.WebApp?.initData;
     if (!signedData) {
       status.textContent = "Чтобы получить ответ в переписке, открой этот раздел через кнопку нашего Telegram-бота.";
@@ -116,6 +117,7 @@ const addRedFlagShare = (answer, report) => {
   });
 
   share.addEventListener("click", async () => {
+    window.NumerologiaAnalytics?.track("redflag_share_click", { item: question.id, label: question.title, section: "redflag" });
     if (navigator.share) {
       try {
         await navigator.share({ title: "Мужчина или Red Flag", text: report });
@@ -184,10 +186,11 @@ const createQuestion = (question, state) => {
     ${scalesMarkup}
     ${paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")}
     ${observationMarkup}`;
-  if (opened) addRedFlagShare(answer, formatRedFlagMessage(question, response, formattedDate));
+  if (opened) addRedFlagShare(answer, formatRedFlagMessage(question, response, formattedDate), question);
 
   button.addEventListener("click", () => {
     state.activeQuestionId = opened ? null : question.id;
+    if (!opened) window.NumerologiaAnalytics?.track("redflag_question_open", { item: question.id, label: question.title, section: "redflag" });
     renderCategories();
   });
 
@@ -222,6 +225,7 @@ const createCategory = (category, index) => {
   toggle.innerHTML = `<span><small>Блок ${index + 1} · 10 вопросов</small><strong>${category.title}</strong><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
   toggle.addEventListener("click", () => {
     state.expanded = !state.expanded;
+    if (state.expanded) window.NumerologiaAnalytics?.track("redflag_category_open", { item: category.id, label: category.title, section: "redflag" });
     renderCategories();
     if (state.expanded) ensureQuestions(category);
   });
@@ -300,6 +304,7 @@ backButton.addEventListener("click", () => {
 });
 
 export const openRedFlag = () => {
+  window.NumerologiaAnalytics?.track("redflag_open", { item: "redflag", section: "redflag" });
   home.classList.remove("is-active");
   redFlag.classList.add("is-active");
   window.scrollTo({ top: 0, behavior: "instant" });

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#f8f6f2">
+<title>Аналитика | Нумерология Онлайн</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div class="eyebrow">НУМЕРОЛОГИЯ ОНЛАЙН</div>
+    <div class="header-row"><h1>Моя аналитика</h1><span class="tag">Личный кабинет</span></div>
+    <p class="subtitle">Сайт, вопросы, Telegram и реальные оплаченные заказы.</p>
+  </header>
+  <section class="connect card" id="connect">
+    <h2>Подключение статистики</h2>
+    <p>Этот кабинет показывает только реальные события из защищённой базы. Введите адрес отдельного аналитического сервера и личный секрет доступа.</p>
+    <form id="login">
+      <label for="api">Адрес аналитического сервера</label>
+      <input id="api" type="url" placeholder="https://numerologia-owner-analytics.***.workers.dev" required autocomplete="url">
+      <label for="token">Секрет администратора</label>
+      <input id="token" type="password" placeholder="Длинный секрет из Cloudflare" required autocomplete="off">
+      <div class="row actions">
+        <button type="submit">Открыть статистику</button>
+        <span class="small">Секрет не сохраняется на устройстве.</span>
+      </div>
+    </form>
+    <p class="message" id="message" role="status" aria-live="polite">До подключения базы никакие цифры не отображаются.</p>
+  </section>
+  <section id="dashboard" hidden aria-label="Аналитика проекта">
+    <div class="toolbar"><div class="small" id="updated">Данные базы</div><div class="row">
+      <label class="sr-only" for="period">Период</label><select id="period"><option value="7">7 дней</option><option value="30" selected>30 дней</option><option value="90">90 дней</option></select>
+      <button type="button" class="secondary" id="refresh">Обновить</button>
+      <button type="button" class="secondary" id="logout">Выйти</button>
+    </div></div>
+    <div class="metrics" id="metrics"></div>
+    <div class="columns">
+      <section class="card"><h2>Какие вопросы открывают</h2><p class="hint">Частота открытий. Повторные нажатия одного человека учитываются.</p><div id="questions" class="bars"></div></section>
+      <section class="card"><h2>Чем делятся с подругами</h2><p class="hint">Нажатия «Поделиться», не доказанные отправки.</p><div id="shares" class="bars"></div></section>
+    </div>
+    <div class="columns">
+      <section class="card"><h2>Переходы по разделам</h2><div id="sections" class="bars"></div></section>
+      <section class="card"><h2>Откуда приходят</h2><div id="sources" class="bars"></div></section>
+    </div>
+    <section class="card"><h2>Динамика по дням</h2><p class="hint">Просмотры страниц и открытия вопросов Red Flag.</p><div class="trend" id="trend"></div></section>
+    <section class="card"><h2>Подробные события</h2><div id="events" class="events"></div></section>
+    <div class="row bottom"><button type="button" id="csv" class="secondary">Скачать отчёт CSV</button><span class="small">Не содержит дат рождения, сообщений и Telegram ID.</span></div>
+  </section>
+  <footer>Закрытые данные доступны только с серверным секретом. Публичная страница не содержит статистику.</footer>
+</main>
+<script src="./app.js" defer></script>
+</body>
+</html>
