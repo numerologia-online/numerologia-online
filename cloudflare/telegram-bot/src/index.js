@@ -453,12 +453,32 @@ export default {
             || message?.from?.id !== chatId) {
           return json({ ok: false, error: 'FORBIDDEN' }, 403);
         }
+        // Return instantly: Telegram has a strict webhook response deadline.
+        // The potentially slower getWebhookInfo/setWebhook runs in background.
+        ctx.waitUntil((async () => {
+          const result = await repairCalendarCallbacks(env, request.url);
+          try {
+            await callTelegramApi(env, 'sendMessage', {
+              chat_id: chatId,
+              text: result,
+              disable_notification: true,
+            });
+          } catch {}
+        })());
         return json({
           method: 'sendMessage',
           chat_id: chatId,
-          text: await repairCalendarCallbacks(env, request.url),
+          text: '🔎 Проверяю подключение календаря. Результат пришлю отдельным сообщением.',
           reply_markup: bottomMenuKeyboard(),
         });
+      }
+      // Repair the Telegram callback permission in the background when
+      // the user explicitly opens the menu. Never redirect the live webhook
+      // or drop Telegram updates; repairCalendarCallbacks verifies its URL.
+      if ((inputText === BOTTOM_MENU_LABEL || inputText === CATALOG_LABEL
+          || inputText === '/catalog' || inputText === '/catalogue')
+          && env.BOT_TOKEN && telegramHeader === await regSecret(env.BOT_TOKEN)) {
+        ctx.waitUntil(repairCalendarCallbacks(env, request.url));
       }
       const backendText = inputText === '✅ Да, верно' ? '✅ Да, каждый день'
         : inputText === '❌ Нет, неверно' ? '/start' : null;
