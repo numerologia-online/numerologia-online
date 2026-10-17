@@ -200,6 +200,24 @@ async function backendHealth() {
     return 'UNREACHABLE';
   }
 }
+// Read-only check that the configured token belongs to this exact bot.
+// No key, bot ID or private Telegram data is returned to the browser.
+async function botIdentityMatches(token) {
+  if (typeof token !== 'string' || !/^[0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/.test(token)) return false;
+  try {
+    const response = await fetch('https://api.telegram.org/bot' + token + '/getMe', {
+      method: 'GET',
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!response.ok) return false;
+    const body = await response.json();
+    return body?.ok === true
+      && String(body.result?.username || '').toLowerCase() === 'numerologiaonline_bot';
+  } catch {
+    return null;
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
@@ -216,6 +234,7 @@ export default {
         site_sections: SECTION_BUTTONS.length,
         day_save_route: true,
         day_save_bot_token_configured: typeof env.BOT_TOKEN === 'string' && /^[0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/.test(env.BOT_TOKEN),
+        day_save_bot_identity_matches: await botIdentityMatches(env.BOT_TOKEN),
         bottom_menu: BOTTOM_MENU_LABEL,
         bottom_menu_delivery: 'webhook-reply',
       });
