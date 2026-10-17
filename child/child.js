@@ -11,6 +11,40 @@ const matrixTab = byId("child-tab-matrix");
 const dayTab = byId("child-tab-day");
 const matrixVisual = byId("child-matrix-visual");
 const matrixSections = byId("child-matrix-sections");
+
+const pointDialog = document.createElement("dialog");
+pointDialog.className = "child-point-dialog";
+pointDialog.setAttribute("aria-labelledby", "child-point-dialog-title");
+pointDialog.innerHTML = [
+  '<div class="child-point-dialog-inner">',
+  '<button class="child-point-dialog-close" type="button" aria-label="Закрыть трактовку">×</button>',
+  '<p class="child-point-dialog-eyebrow">✧ Маленькая подсказка для мамы</p>',
+  '<div id="child-point-dialog-number" class="child-point-dialog-number"></div>',
+  '<h3 id="child-point-dialog-title" class="child-point-dialog-title"></h3>',
+  '<p id="child-point-dialog-text" class="child-point-dialog-text"></p>',
+  '<button class="child-point-dialog-done" type="button">Вернуться к матрице ♡</button>',
+  '</div>'
+].join("");
+document.body.append(pointDialog);
+pointDialog.querySelectorAll(".child-point-dialog-close, .child-point-dialog-done")
+  .forEach((button) => button.addEventListener("click", () => pointDialog.close()));
+pointDialog.addEventListener("click", (event) => {
+  if (event.target !== pointDialog) return;
+  const box = pointDialog.getBoundingClientRect();
+  if (event.clientX < box.left || event.clientX > box.right ||
+      event.clientY < box.top || event.clientY > box.bottom) pointDialog.close();
+});
+const openPointReading = (point) => {
+  if (!banks?.matrix?.entries) return;
+  const field = point.field || point.id;
+  const description = banks.matrix.entries[String(point.number)]?.[field];
+  byId("child-point-dialog-number").textContent = point.code || String(point.number);
+  byId("child-point-dialog-title").textContent = point.title;
+  byId("child-point-dialog-text").textContent =
+    description || "Скоро здесь появится отдельная трактовка. А пока можно изучить другие точки матрицы.";
+  if (!pointDialog.open) pointDialog.showModal();
+};
+
 const currentDate = () => {
   const date = new Date();
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -86,7 +120,6 @@ const matrixDefinitions = (matrix) => [
 const renderMatrix = (matrix) => {
   const definitions = matrixDefinitions(matrix);
   matrixSections.replaceChildren();
-  const cardMap = new Map();
   definitions.forEach((definition, index) => {
     const detail = document.createElement("details");
     detail.className = "child-accordion";
@@ -112,7 +145,6 @@ const renderMatrix = (matrix) => {
       }
     });
     matrixSections.append(detail);
-    cardMap.set(definition.id, detail);
   });
 
   const svgPieces = [
@@ -124,34 +156,39 @@ const renderMatrix = (matrix) => {
     '<path class="child-matrix-line child-line-pink" d="M260 260 L416 416 M260 260 L416 104"/>'
   ];
   const extraPoints = [
-    {x: 104, y: 416, number: matrix.corners.bottomLeft},
-    {x: 416, y: 416, number: matrix.corners.bottomRight},
-    {x: 260, y: 431, number: matrix.tail.second},
-    {x: 157, y: 260, number: matrix.leftSpoke.near},
-    {x: 363, y: 260, number: matrix.rightSpoke.near}
+    {id: "family-feelings", field: "emotions", title: "Как чувствует близких", x: 104, y: 416, number: matrix.corners.bottomLeft},
+    {id: "independence", field: "purpose", title: "Как раскрывает самостоятельность", x: 416, y: 416, number: matrix.corners.bottomRight},
+    {id: "tail-detail", field: "tail", title: "Кармический хвост ребёнка", x: 260, y: 431, number: matrix.tail.second,
+      code: [matrix.tail.first, matrix.tail.second, matrix.bottom].join(" - ")},
+    {id: "learning-help", field: "learning", title: "Как помочь освоить новое", x: 157, y: 260, number: matrix.leftSpoke.near},
+    {id: "interests", field: "activities", title: "Что может увлечь ребёнка", x: 363, y: 260, number: matrix.rightSpoke.near}
   ];
   extraPoints.forEach((point) => {
-    svgPieces.push('<g class="child-matrix-extra"><circle cx="' + point.x + '" cy="' + point.y +
-      '" r="17"/><text x="' + point.x + '" y="' + (point.y + 5) + '">' + point.number + '</text></g>');
+    svgPieces.push('<g tabindex="0" role="button" data-child-point="' + point.id +
+      '" class="child-matrix-extra child-matrix-small-button" aria-label="' + point.title +
+      ', энергия ' + point.number + '"><circle cx="' + point.x + '" cy="' + point.y +
+      '" r="17"/><circle class="child-matrix-hit" cx="' + point.x + '" cy="' + point.y +
+      '" r="24"/><text x="' + point.x + '" y="' + (point.y + 5) + '">' + point.number + '</text></g>');
   });
   definitions.forEach((point) => {
     svgPieces.push('<g tabindex="0" role="button" data-child-point="' + point.id +
       '" class="child-matrix-point child-point-' + point.color +
       '" aria-label="' + point.title + ', энергия ' + point.number +
       '"><circle cx="' + point.x + '" cy="' + point.y + '" r="' + (point.id === "character" ? 33 : 25) +
+      '"/><circle class="child-matrix-hit" cx="' + point.x + '" cy="' + point.y +
+      '" r="' + (point.id === "character" ? 35 : 30) +
       '"/><text x="' + point.x + '" y="' + (point.y + 6) + '">' + point.number + '</text></g>');
   });
   svgPieces.push("</svg>");
   matrixVisual.innerHTML = svgPieces.join("");
-  matrixVisual.querySelectorAll("[data-child-point]").forEach((point) => {
+  const allPoints = new Map([...definitions, ...extraPoints].map((point) => [point.id, point]));
+  matrixVisual.querySelectorAll("[data-child-point]").forEach((node) => {
     const open = () => {
-      const detail = cardMap.get(point.dataset.childPoint);
-      if (!detail) return;
-      detail.open = true;
-      detail.scrollIntoView({behavior: "smooth", block: "center"});
+      const point = allPoints.get(node.dataset.childPoint);
+      if (point) openPointReading(point);
     };
-    point.addEventListener("click", open);
-    point.addEventListener("keydown", (event) => {
+    node.addEventListener("click", open);
+    node.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
         open();
@@ -198,6 +235,7 @@ form.addEventListener("submit", async (event) => {
     banks = await getBanks();
     birth = entered;
     chosenDate = currentDate();
+    if (pointDialog.open) pointDialog.close();
     renderMatrix(calculateMatrix(birth));
     byId("child-born").textContent = "Дата рождения: " + pad(birth.day) + "." + pad(birth.month) + "." + birth.year;
     updateDay();
