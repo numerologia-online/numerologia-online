@@ -555,3 +555,33 @@ body {
   .child-preview { animation: none; }
   .child-preview-card { transition: none; }
 }
+
+
+/* Child-day v2: clean advice lists from independent, authored 22×31 banks. */
+.child-day-tip > ul {
+  margin: 7px 0 0;
+  padding: 0 0 0 19px;
+  color: #564d5b;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.child-day-tip > ul li { padding-left: 2px; margin: 4px 0; }
+.child-day-tip > ul li::marker { color: #b284a4; }
+.child-day-need { background: #f9f3f8; }
+.child-day-need > span { color: #91618a; }
+.child-day-avoid {
+  background: #fff6f0;
+  border: 1px solid #f0dfd1;
+}
+.child-day-avoid > span { color: #a76b56; }
+.child-day-avoid > ul li::marker { color: #bd8772; }
+.child-day-care { background: #f0f6fe; }
+.child-day-care > ul li::marker { color: #82a2c4; }
+.child-day-age-note {
+  margin: 12px 1px 0;
+  padding: 10px 12px;
+  border-left: 2px solid #b6a2c4;
+  color: #60536c;
+  font-size: 13px;
+  line-height: 1.55;
+}
