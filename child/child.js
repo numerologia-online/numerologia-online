@@ -1,4 +1,5 @@
-import { calculateMatrix, parseBirthDate, reduce9 } from "../numerology-core.js?v=2";
+import { calculateMatrix, parseBirthDate } from "../numerology-core.js?v=2";
+import { loadChildDayReading } from "./child-day-engine.js?v=1";
 
 const byId = (id) => document.getElementById(id);
 const form = byId("child-form");
@@ -99,32 +100,6 @@ const getBanks = () => {
   return banksPromise;
 };
 
-const sumDigits = (number) => String(number).split("").reduce((sum, digit) => sum + Number(digit), 0);
-const reduceTo = (value, maximum) => {
-  let number = Math.abs(Math.trunc(Number(value) || 0));
-  while (number > maximum) number -= maximum;
-  return number || maximum;
-};
-const lifePath = (date) => {
-  let number = sumDigits(date.day) + sumDigits(date.month) + sumDigits(date.year);
-  while (number > 9 && number !== 11 && number !== 22 && number !== 33) number = sumDigits(number);
-  return number;
-};
-// Separate adapter for the child's day: the existing adult personal-day feature stays untouched.
-// We keep the established combinations so child-specific 22 x 31 texts can be added later.
-const calculateChildDay = (date, target) => {
-  const d = target.getDate();
-  const m = target.getMonth() + 1;
-  const y = target.getFullYear();
-  const personalYear = reduce9(date.day + date.month + sumDigits(y));
-  const personalMonth = reduce9(personalYear + m);
-  const personalDay = reduce9(personalMonth + d);
-  const generalDay = reduce9(d + m + sumDigits(y));
-  const energy = reduceTo(personalDay + personalMonth + generalDay + date.day + m, 22);
-  const personalNumber = reduceTo(lifePath(date) + date.day + d + sumDigits(date.year), 31);
-  return {energy, personalNumber};
-};
-
 const matrixDefinitions = (matrix) => [
   {id: "character", title: "Характер и темперамент", number: matrix.center, x: 260, y: 260, color: "center"},
   {id: "talents", title: "Таланты и сильные стороны", number: matrix.top, x: 260, y: 41, color: "violet"},
@@ -220,18 +195,44 @@ const renderMatrix = (matrix) => {
   openPointReading(definitions[0], firstButton);
 };
 
-const updateDay = () => {
+// One energy-bank request per calculation; stale date requests can never overwrite a newer day.
+let childDayRequestId = 0;
+const populateList = (id, values) => {
+  const list = byId(id);
+  list.replaceChildren();
+  for (const value of values) {
+    const line = document.createElement("li");
+    line.textContent = value;
+    list.append(line);
+  }
+};
+const updateDay = async () => {
   if (!birth || !banks) return;
-  const {energy, personalNumber} = calculateChildDay(birth, chosenDate);
-  const data = banks.day.entries?.[energy + "-" + personalNumber]
-    || banks.day.fallback[String(energy)];
-  byId("child-day-date").textContent = dateLabel(chosenDate);
-  byId("child-day-text").textContent = data?.text || "Прогноз пока готовится.";
-  byId("child-day-try").textContent = data?.try || "Выберите что-нибудь приятное вместе.";
-  byId("child-day-care").textContent = data?.care || "Сохраняйте комфортный ритм ребёнка.";
+  const requestId = ++childDayRequestId;
+  const target = new Date(chosenDate.getFullYear(), chosenDate.getMonth(), chosenDate.getDate());
+  byId("child-day-date").textContent = dateLabel(target);
   const bornOn = new Date(birth.year, birth.month - 1, birth.day);
-  byId("child-day-prev").disabled = chosenDate.getTime() <= bornOn.getTime();
-  byId("child-day-today").hidden = chosenDate.getTime() === currentDate().getTime();
+  byId("child-day-prev").disabled = target.getTime() <= bornOn.getTime();
+  byId("child-day-today").hidden = target.getTime() === currentDate().getTime();
+  try {
+    const reading = await loadChildDayReading(birth, target, banks.day);
+    if (requestId !== childDayRequestId) return;
+    byId("child-day-text").textContent = reading.text;
+    populateList("child-day-need", reading.todayNeed);
+    populateList("child-day-avoid", reading.todayAvoid);
+    populateList("child-day-care", reading.parentAttention);
+    byId("child-day-need-wrap").hidden = !reading.todayNeed.length;
+    byId("child-day-avoid-wrap").hidden = !reading.todayAvoid.length;
+    byId("child-day-attention-wrap").hidden = !reading.parentAttention.length;
+    const ageNote = byId("child-day-age-note");
+    ageNote.textContent = reading.ageHint;
+    ageNote.hidden = !reading.ageHint;
+  } catch {
+    if (requestId !== childDayRequestId) return;
+    byId("child-day-text").textContent = "Не удалось получить текст. Попробуйте выбрать дату ещё раз.";
+    ["child-day-need-wrap","child-day-avoid-wrap","child-day-attention-wrap","child-day-age-note"]
+      .forEach((id) => {byId(id).hidden = true;});
+  }
 };
 
 const setTab = (next) => {
@@ -242,7 +243,8 @@ const setTab = (next) => {
   dayTab.setAttribute("aria-selected", String(!isMatrix));
   matrixTab.tabIndex = isMatrix ? 0 : -1;
   dayTab.tabIndex = isMatrix ? -1 : 0;
-  if (!isMatrix) {
+  if (isMatrix) ++childDayRequestId;
+  else {
     closeInsight();
     updateDay();
   }
