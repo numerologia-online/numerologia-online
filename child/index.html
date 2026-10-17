@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5eced">
+  <meta name="description" content="Для мам - детская матрица судьбы и личный день ребёнка по дате рождения.">
+  <title>Для мам - всё о ребёнке | Нумерология Онлайн</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="./child.css?v=1">
+</head>
+<body>
+  <main class="child-page">
+    <header class="child-topbar">
+      <a class="child-back" href="../" aria-label="Вернуться ко всем расчётам">← Все расчёты</a>
+      <span class="child-brand">Нумерология Онлайн <span aria-hidden="true">✦</span></span>
+    </header>
+
+    <section class="child-hero" aria-labelledby="child-title">
+      <div class="child-hero-art" aria-hidden="true"><span class="child-moon">☾</span><span class="child-star child-star-a">✧</span><span class="child-star child-star-b">✦</span><span class="child-star child-star-c">✧</span></div>
+      <p class="child-eyebrow">С любовью о самых важных</p>
+      <h1 id="child-title">Для мам<br><em>всё о ребёнке</em></h1>
+      <p class="child-lead">Маленькая подсказка к большому миру вашего ребёнка: характер, таланты, обучение, занятия и настроение дня.</p>
+      <div class="child-benefits"><span>✧ Матрица ребёнка</span><span>♡ День ребёнка</span></div>
+    </section>
+
+    <section class="child-start" aria-labelledby="child-form-title">
+      <h2 id="child-form-title">С чего начнём?</h2>
+      <p>Введите дату рождения ребёнка. Дальше можно переключаться между матрицей и прогнозом дня.</p>
+      <form id="child-form" novalidate>
+        <label for="child-date">Дата рождения ребёнка</label>
+        <div class="child-form-row">
+          <input id="child-date" name="birthdate" type="text" inputmode="numeric" placeholder="ДД.ММ.ГГГГ" maxlength="10" autocomplete="off" aria-describedby="child-error" required>
+          <button class="child-main-button" type="submit">Рассчитать <span aria-hidden="true">→</span></button>
+        </div>
+        <p class="child-error" id="child-error" role="alert" hidden></p>
+      </form>
+      <p class="child-privacy">Дата используется только для расчёта на этой странице.</p>
+    </section>
+
+    <section id="child-result" class="child-result" hidden aria-live="polite">
+      <div class="child-result-heading">
+        <span class="child-eyebrow">Ваш маленький большой мир</span>
+        <h2>Познакомимся поближе?</h2>
+        <p id="child-born"></p>
+      </div>
+      <div class="child-tabs" role="tablist" aria-label="Выберите расчёт">
+        <button type="button" id="child-tab-matrix" role="tab" aria-selected="true" aria-controls="child-matrix-panel">✧ Матрица ребёнка</button>
+        <button type="button" id="child-tab-day" role="tab" aria-selected="false" aria-controls="child-day-panel">♡ День ребёнка</button>
+      </div>
+
+      <section id="child-matrix-panel" role="tabpanel" aria-labelledby="child-tab-matrix">
+        <div class="child-section-intro">
+          <p class="child-eyebrow">Детская матрица судьбы</p>
+          <h3>Каждый ребёнок особенный</h3>
+          <p>Нажимайте на кружочки или раскрывайте карточки ниже. Мы оставили самое интересное для родителей, без сложных терминов.</p>
+        </div>
+        <div id="child-matrix-visual" class="child-visual" aria-label="Интерактивная детская матрица"></div>
+        <div id="child-matrix-sections" class="child-accordions"></div>
+        <p class="child-sidenote">Подсказки для знакомства с характером. Пробуйте разное и замечайте реальные интересы ребёнка.</p>
+      </section>
+
+      <section id="child-day-panel" role="tabpanel" aria-labelledby="child-tab-day" hidden>
+        <div class="child-section-intro">
+          <p class="child-eyebrow">Маленький прогноз</p>
+          <h3>Какой у нас день?</h3>
+          <p>Нежные идеи для игры, общения и отдыха. Можно посмотреть не только сегодня, но и другой день.</p>
+        </div>
+        <div class="child-day-card">
+          <div class="child-date-nav">
+            <button type="button" id="child-day-prev" aria-label="Предыдущий день">←</button>
+            <div><strong id="child-day-date"></strong><button type="button" id="child-day-today" class="child-today">Вернуться к сегодня</button></div>
+            <button type="button" id="child-day-next" aria-label="Следующий день">→</button>
+          </div>
+          <div class="child-day-reading">
+            <div class="child-day-symbol" aria-hidden="true">✦</div>
+            <h4>Настроение дня</h4><p id="child-day-text"></p>
+            <div class="child-day-tip"><span>♡ Что попробовать</span><p id="child-day-try"></p></div>
+            <div class="child-day-tip child-day-care"><span>☾ На что обратить внимание</span><p id="child-day-care"></p></div>
+          </div>
+        </div>
+        <p class="child-sidenote">Это идеи для совместного дня, а не обязательное расписание.</p>
+      </section>
+    </section>
+    <footer class="child-footer">С любовью, Нумерология Онлайн ♡</footer>
+  </main>
+  <script type="module" src="./child.js?v=1"></script>
+</body>
+</html>
