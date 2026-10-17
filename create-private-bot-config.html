@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'none'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Создать закрытый файл Telegram-бота</title>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;padding:20px 14px;background:#f7f5f1;color:#222b40;font:17px/1.5 -apple-system,BlinkMacSystemFont,Arial,sans-serif;max-width:650px;margin-inline:auto}main{background:#fff;border:1px solid #e9e2d7;border-radius:20px;box-shadow:0 10px 30px #1d294012;padding:24px 18px}h1{font:700 27px/1.2 Georgia,serif;margin:0 0 12px;color:#2c4773}p{margin:10px 0 18px}.muted{font-size:15px;color:#5a6170}label{font-weight:700;display:block;margin:20px 0 8px}input{display:block;width:100%;font:16px -apple-system,Arial,sans-serif;border:2px solid #a9bbd4;border-radius:12px;padding:16px;outline-color:#4872ad}button{margin-top:18px;width:100%;background:#496ea9;color:#fff;border:0;border-radius:14px;padding:17px;font:700 18px -apple-system,Arial,sans-serif}.status{min-height:40px;margin:14px 0 0;white-space:pre-wrap}.ok{color:#166642}.error{color:#b02a28}.secure{border-left:4px solid #b6d3bf;background:#f1faf4;border-radius:4px;padding:12px 13px;font-size:15px}.small{font-size:14px;color:#697182}
+</style>
+</head>
+<body>
+<main>
+<h1>Файл для Telegram-бота</h1>
+<p>Вставь действующий токен из BotFather, затем нажми синюю кнопку. Ничего переписывать вручную не нужно.</p>
+<p class="secure">🔒 Токен остаётся на твоём устройстве. Страница не отправляет его в интернет и не содержит внешних скриптов. Создаётся только файл для загрузки в приватную папку REG.RU.</p>
+<label for="token">Токен бота</label>
+<input id="token" type="password" placeholder="Вставь полный токен сюда" autocomplete="off" spellcheck="false" autocapitalize="off" autocorrect="off">
+<button id="generate" type="button">Создать файл bot-config.php</button>
+<p id="status" class="status" role="status" aria-live="polite">Для этой кнопки открой страницу в Safari по ссылке на нашем сайте.</p>
+<p class="muted">Готовый файл сохрани в загрузках iPhone. Его нужно будет положить <strong>только в /private/</strong> на REG.RU, не в <strong>/www/</strong>.</p>
+<p class="small">Этот файл будет содержать секретный ключ. Не присылай его в переписку и не загружай в GitHub.</p>
+</main>
+<script>
+(function(){
+  'use strict';
+  var input=document.getElementById('token');
+  var status=document.getElementById('status');
+  var button=document.getElementById('generate');
+  status.textContent='';
+  button.addEventListener('click',function(){
+    var token=input.value.replace(/[\s\u200B-\u200D\uFEFF]/g,'');
+    if(!/^8814989076:[A-Za-z0-9_-]{30,100}$/.test(token)){
+      status.textContent='Не похоже на полный токен нашего бота. Скопируй его из BotFather целиком.';
+      status.className='status error';return;
+    }
+    var php="<?php\n// Telegram bot secret; keep this file outside public www.\nreturn ['token' => '"+token+"'];\n";
+    var url=URL.createObjectURL(new Blob([php],{type:'application/octet-stream'}));
+    var a=document.createElement('a');
+    a.href=url;
+    a.download='bot-config.php';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url)},60000);
+    input.value='';
+    status.textContent='Файл создан. Найди bot-config.php в Загрузках iPhone. Никому его не отправляй.';
+    status.className='status ok';
+  });
+})();
+</script>
+</body>
+</html>
