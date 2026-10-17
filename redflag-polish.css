@@ -216,3 +216,16 @@
 @media (prefers-reduced-motion: reduce) {
   .redflag-submit:active { transform: none; }
 }
+
+/* Same proven save/share controls as the day forecast, inside one opened answer. */
+.redflag-answer .redflag-share {
+  margin: 20px 0 0;
+  padding: 17px 13px 15px;
+}
+.redflag-answer .redflag-share .personal-day-share-title {
+  margin: 0 0 6px;
+  font-size: 21px;
+}
+.redflag-answer .redflag-share .personal-day-share-status {
+  margin: 3px 0 0;
+}
