@@ -81,6 +81,94 @@ const paragraphs = (items = []) => items.filter(Boolean).map((text) => `<p>${esc
 const bullets = (items = []) => items.filter(Boolean).map((text) => `<li>${esc(text)}</li>`).join("");
 const todayLabel = () => new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date());
 const monthTitle = (date) => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(date);
+
+// One exact message is used for both Telegram inbox delivery and sharing.
+const DAY_SITE_URL = "https://numerologia-online.github.io/numerologia-online/?view=day";
+const DAY_BOT_URL = "https://t.me/Numerologiaonline_bot";
+const DAY_SAVE_URL = "https://numerologia-online-bot.tankraft431.workers.dev/api/save-day";
+const formatDayMessage = (dateOfBirth, item) => {
+  const parts = [
+    "🔮 Личный расчёт дня",
+    "📅 " + todayLabel(),
+    "Дата рождения: " + dateOfBirth,
+    "",
+    item.text.trim()
+  ];
+  if (item.todayNeed?.length) parts.push("", "✅ Сегодня нужно:", ...item.todayNeed.map(text => "• " + text));
+  if (item.todayAvoid?.length) parts.push("", "⛔ Сегодня нельзя:", ...item.todayAvoid.map(text => "• " + text));
+  parts.push("", "✨ Нумерология Онлайн", "🌐 Сайт: " + DAY_SITE_URL, "🤖 Бот: " + DAY_BOT_URL);
+  return parts.join("\n");
+};
+const addDayShareButtons = (result, report) => {
+  const controls = document.createElement("section");
+  controls.className = "personal-day-share";
+  controls.setAttribute("aria-label", "Сохранить и поделиться прогнозом");
+  controls.innerHTML = '<p class="personal-day-share-title">Сохрани свой прогноз ❤️</p>'
+    + '<button type="button" class="personal-day-share-save">📩 Сохранить в Telegram</button>'
+    + '<button type="button" class="personal-day-share-send">💌 Поделиться с подругой</button>'
+    + '<p class="personal-day-share-status" role="status" aria-live="polite"></p>';
+  result.append(controls);
+  const save = controls.querySelector(".personal-day-share-save");
+  const share = controls.querySelector(".personal-day-share-send");
+  const status = controls.querySelector(".personal-day-share-status");
+
+  save.addEventListener("click", async () => {
+    const signedData = window.Telegram?.WebApp?.initData;
+    if (!signedData) {
+      status.textContent = "Чтобы получить сообщение в переписке, открой этот расчёт через кнопку нашего Telegram-бота.";
+      return;
+    }
+    if (report.length > 3800) {
+      status.textContent = "Прогноз получился слишком длинным для одного сообщения Telegram.";
+      return;
+    }
+    save.disabled = true;
+    status.textContent = "Отправляю прогноз в твою переписку…";
+    try {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 14000);
+      let response;
+      try {
+        response = await fetch(DAY_SAVE_URL, {
+          method: "POST",
+          mode: "cors",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ init_data: signedData, text: report }),
+          signal: controller.signal
+        });
+      } finally {
+        window.clearTimeout(timer);
+      }
+      const data = await response.json();
+      if (!response.ok || data?.ok !== true) throw new Error(data?.error || "DELIVERY_FAILED");
+      status.textContent = "✓ Прогноз отправлен в переписку с нашим ботом!";
+      save.textContent = "✓ Сохранено в Telegram";
+    } catch {
+      save.disabled = false;
+      status.textContent = "Не получилось отправить. Попробуй ещё раз чуть позже.";
+    }
+  });
+
+  share.addEventListener("click", async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Мой личный расчёт дня", text: report });
+        return;
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+      }
+    }
+    const shareLink = "https://t.me/share/url?url=" + encodeURIComponent(DAY_SITE_URL)
+      + "&text=" + encodeURIComponent(report);
+    if (typeof window.Telegram?.WebApp?.openTelegramLink === "function") {
+      window.Telegram.WebApp.openTelegramLink(shareLink);
+    } else {
+      window.location.assign(shareLink);
+    }
+  });
+};
+
 const animateScroll = (node, targetTop, duration = 980) => {
   const startTop = node.scrollTop;
   const distance = targetTop - startTop;
@@ -230,6 +318,7 @@ export const openPersonalDay = () => {
     const item = await loadPersonalDay(birth);
     result.hidden = false;
     result.innerHTML = `<section class="personal-day-main"><p class="personal-day-label">ВАШ ДЕНЬ</p>${paragraphs([item.text])}${item.todayNeed?.length ? `<section class="personal-day-advice personal-day-need"><h4><span class="personal-day-advice-icon">✓</span> Сегодня нужно</h4><ul>${bullets(item.todayNeed)}</ul></section>` : ""}${item.todayAvoid?.length ? `<section class="personal-day-advice personal-day-avoid"><h4><span class="personal-day-advice-icon">×</span> Сегодня нельзя</h4><ul>${bullets(item.todayAvoid)}</ul></section>` : ""}</section>`;
+    if (!item.loadError) addDayShareButtons(result, formatDayMessage(input.value, item));
     result.insertAdjacentHTML("beforeend", monthCalendar(birth));
     const importantButton = result.querySelector(".personal-month-open");
     const importantContent = result.querySelector(".personal-month-content");
