@@ -40,7 +40,7 @@ async function readSmallJson(request) {
   if (body.length > MAX_BODY_BYTES) throw new Error("TOO_LARGE");
   return JSON.parse(body);
 }
-async function insertEvent(env, data, type, paid = false) {
+async function insertEvent(env, data, paid = false) {
   const name = clean(data.event, 50);
   const isValid = paid ? SERVER_EVENTS.has(name) : PUBLIC_EVENTS.has(name);
   if (!isValid) return false;
