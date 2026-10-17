@@ -1,5 +1,5 @@
 import { calculateMatrix, parseBirthDate } from "../numerology-core.js?v=2";
-import { loadChildDayReading } from "./child-day-engine.js?v=10";
+import { loadChildDayReading } from "./child-day-engine.js?v=11";
 
 const byId = (id) => document.getElementById(id);
 const form = byId("child-form");
