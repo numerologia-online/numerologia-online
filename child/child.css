@@ -453,6 +453,17 @@ body {
 }
 
 
+/* v7 - Clearer date form and more visible choice heading, without new assets. */
+#child-form label { font-size: 16px; font-weight: 800; color: #403145; margin-bottom: 10px; }
+#child-date { font-size: 18px; font-weight: 500; }
+.child-main-button { font-size: 16px; font-weight: 800; padding-inline: 18px; }
+.child-preview-card:focus-visible { outline: 3px solid #7d94c7; outline-offset: 2px; }
+@media (max-width:530px) {
+  #child-form label { font-size: 15px; }
+  #child-date { font-size: 17px; }
+  .child-main-button { font-size: 15px; padding-inline: 11px; }
+}
+
 /* v6 - Blend the family portrait into the hero and replace empty space with real navigation. */
 .child-page { min-height: 100svh; display: flex; flex-direction: column; }
 .child-footer { margin-top: auto; }
@@ -471,8 +482,8 @@ body {
     radial-gradient(ellipse at 79% 18%, rgba(205,232,254,.57), transparent 74%);
 }
 .child-hero-art {
-  right: -11px; bottom: -11px;
-  width: min(50%, 215px); max-width: 215px;
+  right: -9px; bottom: 18px;
+  width: min(48%, 208px); max-width: 208px;
   filter: none; opacity: .96;
 }
 .child-hero-art img {
@@ -486,24 +497,25 @@ body {
 .child-preview {
   position: relative;
   margin: 13px 12px 4px;
-  padding: 16px 0 0;
+  padding: 10px 0 0;
   animation: family-reveal .36s ease-out both;
 }
-.child-preview-heading { margin: 0 3px 13px; }
+.child-preview-heading { margin: 0 3px 17px; text-align: center; }
 .child-preview-heading > span {
   display: block; margin-bottom: 3px;
   color: #a27896; font-size: 11px; font-weight: 750;
   letter-spacing: .01em;
 }
 .child-preview-heading h2 {
-  color: #3c3048;
+  color: #251e2d;
   margin: 0;
-  font: 500 clamp(23px, 5.4vw, 28px)/1.18 var(--serif);
+  font: 600 clamp(29px, 6.8vw, 37px)/1.16 var(--serif);
+  letter-spacing: -.025em;
 }
 .child-preview-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
 .child-preview-card {
   display: flex; flex-direction: column; align-items: flex-start;
-  text-align: left; width: 100%; min-height: 169px; gap: 7px;
+  text-align: left; width: 100%; min-height: 158px; gap: 9px;
   padding: 15px 14px 13px; border-radius: 19px;
   background: linear-gradient(143deg,#fff9fc,#fff 56%,#f8fbff);
   border: 1px solid #eae0e9; color: #4b4057;
@@ -520,24 +532,24 @@ body {
   border-radius: 12px; background: #f9eaf2; color: #b57e9e; font-size: 22px;
 }
 .child-preview-icon-day { color: #7e9fca; background: #eaf4ff; }
-.child-preview-card strong { font-size: 15px; line-height: 1.16; }
+.child-preview-card strong { font-size: 18px; line-height: 1.18; color: #3c3046; }
 .child-preview-description {
-  color: #7c7181; font-size: 12px; line-height: 1.45;
+  color: #686070; font-size: 13px; line-height: 1.4;
 }
 .child-preview-cta {
-  margin-top: auto; font-size: 12px; font-weight: 750; color: #936885;
+  margin-top: auto; font-size: 14px; font-weight: 800; color: #87546f;
 }
 .child-preview-card:nth-child(2) .child-preview-cta { color: #708bb4; }
 .child-preview-cta > span { margin-left: 4px; }
 .child-preview-note { margin: 12px 4px 5px; font-size: 11px; line-height: 1.45; color: #8e8391; }
 @media (max-width: 530px) {
-  .child-hero-art { right: -13px; bottom: -10px; width: 49%; }
-  .child-preview { margin: 13px 10px 1px; padding-top: 11px; }
-  .child-preview-heading { margin-bottom: 11px; }
+  .child-hero-art { right: -5px; bottom: 18px; width: 47%; }
+  .child-preview { margin: 11px 10px 1px; padding-top: 6px; }
+  .child-preview-heading { margin-bottom: 16px; }
   .child-preview-grid { gap: 9px; }
-  .child-preview-card { min-height: 170px; padding: 14px 11px 12px; border-radius: 15px; }
-  .child-preview-card strong { font-size: 14px; }
-  .child-preview-description { font-size: 11px; }
+  .child-preview-card { min-height: 158px; padding: 13px 11px 12px; border-radius: 15px; }
+  .child-preview-card strong { font-size: 17px; line-height: 1.2; }
+  .child-preview-description { font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .child-preview { animation: none; }
