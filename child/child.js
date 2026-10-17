@@ -239,6 +239,7 @@ const setTab = (next) => {
   const isMatrix = next === "matrix";
   matrixPanel.hidden = !isMatrix;
   dayPanel.hidden = isMatrix;
+  result.classList.toggle("is-day-view", !isMatrix);
   matrixTab.setAttribute("aria-selected", String(isMatrix));
   dayTab.setAttribute("aria-selected", String(!isMatrix));
   matrixTab.tabIndex = isMatrix ? 0 : -1;
