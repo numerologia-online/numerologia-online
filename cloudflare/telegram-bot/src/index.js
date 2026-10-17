@@ -272,6 +272,7 @@ export default {
         navigation: 'birth-date-confirmation-before-daily-opt-in',
         site_sections: SECTION_BUTTONS.length,
         day_save_route: true,
+        webhook_self_heal_on_save: true,
         day_save_bot_token_configured: typeof env.BOT_TOKEN === 'string' && /^[0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/.test(env.BOT_TOKEN.replace(/[\s\u200B-\u200D\uFEFF]/g, '')),
         day_save_token_whitespace_detected: typeof env.BOT_TOKEN === 'string' && /[\s\u200B-\u200D\uFEFF]/.test(env.BOT_TOKEN),
         day_save_bot_identity_matches: await botIdentityMatches(env.BOT_TOKEN),
