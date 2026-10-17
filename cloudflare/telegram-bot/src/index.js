@@ -17,16 +17,16 @@ const CATALOG_LABEL = '✨ Что ещё знают числа?';
 // For sections under construction, a small callback notice avoids dead links.
 const SECTION_BUTTONS = [
   { text: 'Личный расчёт дня', route: '?view=day' },
-  { text: 'Полный расчёт года', route: '#razbor-goda' },
+  { text: 'Полный расчёт года', route: '?view=year' },
   { text: 'Мужчина или Ред Флаг', route: '?view=redflag' },
   { text: 'Совместимость и любовь', route: '?view=compatibility' },
-  { text: 'Полный разбор', route: 'pro/' },
-  { text: 'Женщина или тарелочница', route: '#woman-section', soon: 'woman' },
+  { text: 'Полный разбор', route: '?view=full' },
+  { text: 'Женщина или тарелочница', route: '?view=woman', soon: 'woman' },
   { text: 'Ваш код богатства и ритуалы', route: '?view=wealth' },
-  { text: 'Для мам - всё о ребёнке', route: '#children-section', soon: 'children' },
-  { text: 'Любой вопрос', route: '#horary-section', soon: 'horary' },
-  { text: 'Школа нумерологии', route: 'pro/schools/' },
-  { text: 'Записаться на личный расчёт', route: '#appointment-section', soon: 'appointment' },
+  { text: 'Для мам - всё о ребёнке', route: '?view=children', soon: 'children' },
+  { text: 'Любой вопрос', route: '?view=horary', soon: 'horary' },
+  { text: 'Школа нумерологии', route: '?view=school' },
+  { text: 'Записаться на личный расчёт', route: '?view=appointment', soon: 'appointment' },
 ];
 const SOON_SECTIONS = new Set(SECTION_BUTTONS.filter(x => x.soon).map(x => 'soon_' + x.soon));
 const LEGACY_QUESTION_CALLBACKS = new Set(['topic_love', 'topic_money', 'topic_self', 'topic_answers']);
