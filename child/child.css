@@ -231,3 +231,175 @@ a { color: inherit; }
   .child-point-dialog { width: calc(100vw - 34px); }
   .child-point-dialog-inner { padding: 35px 20px 25px; }
 }
+
+
+/* Compact family portal v3: balanced rose + airy blue, no tall reading rows. */
+body {
+  background:
+    radial-gradient(circle at 4% 20%, rgba(252,222,235,.8), transparent 37%),
+    radial-gradient(circle at 96% 52%, rgba(209,235,252,.92), transparent 42%),
+    linear-gradient(125deg,#fcf3f7 0%,#fcfcff 45%,#eaf4fb 100%);
+}
+.child-page { width: min(100% - 22px, 840px); }
+.child-topbar { padding: 12px 2px; }
+.child-hero {
+  background: linear-gradient(108deg,#fff3f7 0%,#faf6fe 44%,#edf7ff 100%);
+  border-color: #e9e7f1;
+  text-align: left;
+  padding: 18px 24px;
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(76,81,115,.06);
+}
+.child-hero .child-eyebrow { margin-bottom: 3px; font-size: 10px; letter-spacing: .1em; }
+.child-hero h1 { font-size: clamp(27px,4.6vw,37px); line-height: 1.14; letter-spacing: -.035em; }
+.child-hero h1 em { color: #b17f9c; }
+.child-lead { max-width: initial; margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: #6c6d86; }
+.child-start {
+  margin-top: 11px;
+  padding: 17px 21px 14px;
+  border-radius: 19px;
+  border-color: #e9e4f0;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 5px 22px rgba(76,81,115,.05);
+}
+.child-start h2 { font: 500 19px/1.22 Georgia,"Times New Roman",serif; margin-bottom: 12px; }
+#child-form label { margin: 0 0 6px; font-size: 12px; }
+.child-form-row { flex-direction: row; gap: 9px; align-items: stretch; }
+#child-date { padding: 11px 13px; font-size: 16px; min-height: 45px; border-radius: 11px; }
+.child-main-button {
+  padding: 9px 16px;
+  min-height: 45px;
+  border-radius: 11px;
+  background: linear-gradient(105deg,#bc8aa8 0%,#8aabd5 100%);
+  box-shadow: 0 3px 11px rgba(140,137,183,.19);
+  font-size: 14px;
+}
+.child-start .child-privacy { font-size: 10px; margin: 8px 0 0; }
+.child-result {
+  margin-top: 11px;
+  padding: 15px 14px 17px;
+  border-radius: 21px;
+  border-color: #e5e8f1;
+  box-shadow: 0 6px 22px rgba(76,81,115,.06);
+}
+.child-result-heading h2 { font-size: 20px; margin: 0; }
+.child-result-heading p { font-size: 12px; margin: 1px 0 0; }
+.child-tabs {
+  margin: 11px 0;
+  padding: 4px;
+  gap: 5px;
+  border-radius: 14px;
+  background: linear-gradient(103deg,#f8eaf2,#e9f3fc);
+}
+.child-tabs button { padding: 10px 5px; font-size: 13px; border-radius: 11px; }
+.child-tabs button[aria-selected="true"] { color: #675b85; box-shadow: 0 2px 8px rgba(78,88,132,.08); }
+.child-matrix-hint {
+  font-size: 12px;
+  font-weight: 650;
+  text-align: center;
+  color: #837a93;
+  margin: 12px auto 10px;
+}
+.child-visual {
+  max-width: 500px;
+  padding: 7px;
+  margin: 0 auto 11px;
+  border-radius: 18px;
+  border-color: #e4e6f1;
+  background: linear-gradient(125deg,#fdf2f8 0%,#ffffff 48%,#ecf5ff 100%);
+}
+.child-matrix-outline { stroke: #d9b7a8; }
+.child-outline-soft { stroke: #bbd5e8; }
+.child-matrix-line { stroke: #cfcae3; }
+.child-line-pink { stroke: #e9bfd0; }
+.child-point-blue circle:first-child { fill: #eaf4ff; stroke: #8fb7db; }
+.child-point-violet circle:first-child { fill: #f8f2ff; stroke: #9e9ccc; }
+.child-point-pink circle:first-child { fill: #fff0f5; stroke: #c993ab; }
+.child-point-center circle:first-child { fill: #fff9ee; stroke: #d0aa79; }
+.child-links-label {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 750;
+  color: #817590;
+  margin: 7px 3px 8px;
+}
+.child-topic-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.child-topic {
+  width: 100%;
+  min-height: 54px;
+  border: 1px solid #e7e1ee;
+  border-radius: 13px;
+  background: linear-gradient(115deg,#fffbfd 0%,#f6faff 100%);
+  display: flex;
+  align-items: center;
+  text-align: left;
+  padding: 9px 10px 9px 12px;
+  gap: 7px;
+  color: #51475a;
+  box-shadow: 0 2px 6px rgba(76,81,115,.025);
+  transition: background .17s, border-color .17s;
+}
+.child-topic:hover, .child-topic:focus-visible {
+  border-color: #c6b4d1;
+  background: linear-gradient(115deg,#fff2f8,#edf6ff);
+}
+.child-topic-label { flex: 1; font-weight: 700; font-size: 12px; line-height: 1.22; }
+.child-topic-energy {
+  font-size: 11px;
+  color: #906e96;
+  background: linear-gradient(115deg,#f6e8f3,#e8f2fc);
+  border-radius: 100px;
+  padding: 4px 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-weight: 700;
+}
+.child-topic-arrow { font-size: 13px; color: #ad9cb7; }
+.child-point-dialog {
+  width: min(88vw, 400px);
+  background: linear-gradient(115deg,#fff7fb,#f1f7ff);
+  border-color: #e7e3f1;
+}
+.child-point-dialog-inner {
+  background: radial-gradient(circle at top left, #fbe8f2 0, transparent 55%),
+    radial-gradient(circle at bottom right, #e7f4ff 0, transparent 58%),#fff;
+  padding: 30px 22px 24px;
+}
+.child-point-dialog-number {
+  width: fit-content; min-width: 65px; height: 65px;
+  margin-bottom: 11px;
+  font-size: 24px;
+  border-color: #d4b6bd;
+  background: linear-gradient(125deg,#ffeef5,#eef6ff);
+}
+.child-point-dialog-title { font-size: clamp(23px,5.1vw,29px); margin-bottom: 11px; }
+.child-point-dialog-text { font-size: 14px; line-height: 1.6; margin-bottom: 19px; }
+.child-point-dialog-done { background: linear-gradient(110deg,#b889a6,#8eaed1); }
+.child-point-dialog-close:focus:not(:focus-visible) { outline: none; }
+.child-day-card {
+  border-color: #e6e7f1;
+  background: linear-gradient(125deg,#fff5f9,#edf6ff);
+}
+.child-day-reading { padding: 16px; }
+.child-day-symbol { background: linear-gradient(130deg,#fae5f0,#e7f3ff); }
+.child-footer { padding: 19px 0 5px; }
+@media (max-width:560px) {
+  .child-page { width: calc(100% - 16px); }
+  .child-topbar { padding: 10px 3px; }
+  .child-hero { padding: 16px 18px; border-radius: 17px; }
+  .child-hero h1 { font-size: clamp(27px,7.3vw,34px); }
+  .child-lead { font-size: 12px; }
+  .child-start { padding: 13px; }
+  .child-start h2 { font-size: 18px; margin-bottom: 9px; }
+  .child-form-row { flex-direction: row; gap: 7px; }
+  #child-date { min-width: 0; padding: 9px 9px; font-size: 15px; }
+  .child-main-button { min-height: 44px; padding: 9px 11px; font-size: 13px; }
+  .child-main-button span { margin-left: 1px; }
+  .child-result { padding: 13px 10px 15px; }
+  .child-visual { padding: 3px; border-radius: 15px; }
+  .child-topic { min-height: 53px; padding: 8px; gap: 5px; }
+  .child-topic-label { font-size: 11.5px; }
+  .child-topic-energy { font-size: 10px; padding: 4px 5px; }
+  .child-topic-arrow { display: none; }
+  .child-point-dialog { width: calc(100vw - 40px); }
+}
