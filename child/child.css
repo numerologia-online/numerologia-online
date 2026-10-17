@@ -685,3 +685,82 @@ body {
   #child-day-panel .child-day-tip { padding: 15px 12px 16px; }
   #child-day-panel .child-day-tip .child-tip-heading { gap: 8px; }
 }
+
+
+/* v10: Approved child-day design. Pure CSS + a tiny inline heart SVG. */
+#child-day-panel .child-day-need,
+#child-day-panel .child-day-care {
+  isolation: isolate;
+  position: relative;
+  overflow: hidden;
+  border-width: 1.5px;
+  border-style: solid;
+  box-shadow: 0 5px 17px rgba(98,76,123,.055);
+}
+#child-day-panel .child-day-need > *,
+#child-day-panel .child-day-care > * {
+  position: relative;
+  z-index: 1;
+}
+#child-day-panel .child-day-need {
+  border-color: #e7bbe5;
+  background:
+    radial-gradient(ellipse at 101% 101%, rgba(145,206,249,.43), transparent 58%),
+    linear-gradient(112deg, #fff0f8 0%, #f7efff 48%, #e6f5ff 100%);
+}
+#child-day-panel .child-day-need::before,
+#child-day-panel .child-day-care::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  right: -18%; bottom: -80%;
+  width: 110%; height: 115%;
+  border-radius: 50%;
+  transform: rotate(-17deg);
+}
+#child-day-panel .child-day-need::before {
+  background: linear-gradient(115deg, rgba(253,212,237,.48), rgba(176,224,255,.65));
+}
+#child-day-panel .child-day-need .child-tip-heading { color: #243d68; }
+#child-day-panel .child-tip-heart {
+  display: inline-grid;
+  place-items: center;
+  width: 53px;
+  height: 53px;
+  flex: 0 0 53px;
+  filter: drop-shadow(0 3px 7px rgba(167,106,176,.17));
+}
+#child-day-panel .child-tip-heart svg {
+  width: 100%; height: 100%; display: block;
+}
+#child-day-panel .child-day-need > ul li::marker { color: #db77af; }
+#child-day-panel .child-day-care {
+  border-color: #f0b6b8;
+  background:
+    radial-gradient(ellipse at 98% 95%, rgba(255,213,216,.48), transparent 62%),
+    linear-gradient(115deg, #fff0f2 0%, #fff9f8 64%, #fff1f3 100%);
+}
+#child-day-panel .child-day-care::before {
+  background: linear-gradient(115deg, rgba(255,238,242,.18), rgba(253,186,196,.33));
+}
+#child-day-panel .child-day-care .child-tip-heading { color: #8a2140; }
+#child-day-panel .child-day-care .child-tip-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 47px; height: 47px;
+  flex: 0 0 47px;
+  border-radius: 50%;
+  border: 3px solid #fff4f4;
+  background: linear-gradient(145deg, #f97980, #db424e);
+  box-shadow: 0 4px 11px rgba(210,78,100,.14);
+  font: normal 850 31px/1 var(--sans);
+  color: #fff;
+}
+#child-day-panel .child-day-care > ul li::marker { color: #e06674; }
+@media (max-width: 530px) {
+  #child-day-panel .child-tip-heart { width: 48px; height: 48px; flex-basis: 48px; }
+  #child-day-panel .child-day-care .child-tip-icon {
+    width: 42px; height: 42px; flex-basis: 42px; font-size: 27px;
+  }
+}
