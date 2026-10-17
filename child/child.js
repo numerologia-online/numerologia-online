@@ -268,7 +268,6 @@ form.addEventListener("submit", async (event) => {
     closeInsight();
     renderMatrix(calculateMatrix(birth));
     byId("child-born").textContent = "Дата рождения: " + pad(birth.day) + "." + pad(birth.month) + "." + birth.year;
-    updateDay();
     setTab(startingTab);
     preview.hidden = true;
     result.hidden = false;
