@@ -440,16 +440,10 @@ body {
   from {opacity:0;transform:translateY(8px);}
   to {opacity:1;transform:translateY(0);}
 }
-@keyframes matrix-trace {
-  from {stroke-dashoffset:850;opacity:.38}
-  to {stroke-dashoffset:0;opacity:1}
-}
+/* All matrix paths remain continuous, including longer outlines and multi-part spokes.
+   The former 850px dash animation hid sections of the drawing on iPhone. */
 @media (prefers-reduced-motion:no-preference) {
   .child-hero {animation:family-reveal .45s ease-out both}
-  .child-matrix-outline,.child-matrix-line {
-    stroke-dasharray:850;
-    animation:matrix-trace 1.25s ease-out both;
-  }
 }
 
 
