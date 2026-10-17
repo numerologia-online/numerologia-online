@@ -1,0 +1,49 @@
+/* Personal day: optional save/share panel only, outside existing calculations. */
+.personal-day-share {
+  margin: 18px 0 22px;
+  padding: 22px 18px 18px;
+  border: 1px solid rgba(177,148,110,.31);
+  border-radius: 23px;
+  background: linear-gradient(140deg,rgba(255,253,249,.98),rgba(242,245,253,.96));
+  box-shadow: 0 10px 25px rgba(40,55,81,.07);
+  display: grid;
+  gap: 10px;
+}
+.personal-day-share-title {
+  margin: 0 0 5px;
+  color: #274773;
+  text-align: center;
+  font: 700 23px/1.25 Georgia, serif;
+}
+.personal-day-share button {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 15px;
+  border: 0;
+  border-radius: 17px;
+  font: 700 15px/1.25 Inter, system-ui, sans-serif;
+  cursor: pointer;
+}
+.personal-day-share-save {
+  background: linear-gradient(135deg,#254879,#516eab);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(37,72,121,.17);
+}
+.personal-day-share-send {
+  background: #fff;
+  border: 1px solid rgba(46,75,118,.23) !important;
+  color: #274773;
+}
+.personal-day-share button:disabled { opacity: .72; cursor: default; }
+.personal-day-share-status {
+  margin: 3px 0 0;
+  min-height: 18px;
+  text-align: center;
+  color: #465d7f;
+  font: 500 13px/1.45 Inter,system-ui,sans-serif;
+}
+.personal-day-share button:focus-visible { outline: 3px solid #a88c65; outline-offset: 2px; }
+@media(max-width:520px) {
+  .personal-day-share { margin: 15px 0 20px; padding: 18px 14px 16px; }
+  .personal-day-share-title { font-size: 22px; }
+}
