@@ -42,6 +42,22 @@ function bottomMenuKeyboard() {
   };
 }
 
+// These are ordinary Telegram reply-keyboard buttons: their presses arrive as
+// regular messages, just like /start. No callback_query configuration needed.
+function chatSectionsKeyboard() {
+  return {
+    keyboard: [
+      ...SECTION_BUTTONS.map(section => [{
+        text: section.text,
+        ...(!section.soon && section.text !== 'Личный расчёт дня'
+          ? { web_app: { url: SITE_URL + section.route } } : {}),
+      }]),
+      [{ text: BOTTOM_MENU_LABEL }],
+    ],
+    resize_keyboard: true,
+    is_persistent: true,
+  };
+}
 function sectionsKeyboard() {
   return {
     inline_keyboard: SECTION_BUTTONS.map(section => [{
@@ -79,11 +95,30 @@ function updateBotNavigation(reply, update) {
   const input = message.text.trim();
   const command = input.split(/\s+/u, 1)[0].toLowerCase().split('@')[0];
 
-  // The full website catalogue is shown ONLY when the permanent button is pressed.
-  // Its inline buttons do not replace the already-installed reply keyboard.
+  // Open the same 11 sections as a reply keyboard. This deliberately uses
+  // a normal message update, already verified working for /start and menus.
   if (input === BOTTOM_MENU_LABEL || input === CATALOG_LABEL
       || command === '/catalog' || command === '/catalogue') {
-    return { ...reply, text: 'Разделы сайта:', reply_markup: sectionsKeyboard() };
+    return { ...reply, text: '🫶 Выбери интересующий раздел:', reply_markup: chatSectionsKeyboard() };
+  }
+
+  // The first section must answer INSIDE this chat, not navigate to the site.
+  if (input === 'Личный расчёт дня') {
+    return {
+      ...reply,
+      text: '☀️ Личный расчёт дня\n\nПривет! ❤️\n\nХочешь узнать, какие возможности приготовил тебе сегодняшний день и на что стоит обратить внимание?\n\nЗдесь будут твои персональные расчёты прямо в переписке. Пока я подключаю их выдачу, полный расчёт можно открыть через кнопку «Открыть сайт». 🤍',
+      reply_markup: bottomMenuKeyboard(),
+    };
+  }
+
+  // Unfinished sections respond politely instead of falling through to an
+  // unrelated legacy PHP message.
+  if (SECTION_BUTTONS.some(section => section.soon && section.text === input)) {
+    return {
+      ...reply,
+      text: '🤍 Этот раздел пока готовим. Скоро здесь появятся ответы прямо в переписке.',
+      reply_markup: bottomMenuKeyboard(),
+    };
   }
 
   // A manual fallback also refreshes the one-button reply keyboard.
