@@ -92,7 +92,10 @@ export async function handleDaySave(request, env) {
   if (!body || typeof body !== 'object' || Array.isArray(body)
       || typeof body.text !== 'string'
       || body.text.length < 90 || body.text.length > 3800
-      || !body.text.startsWith('🔮 Личный расчёт дня\n')
+      || !(body.text.startsWith('🔮 Личный расчёт дня\n')
+        || (body.text.startsWith('🚩 Мужчина или Red Flag\n')
+          && body.text.includes('\nВопрос: ')
+          && body.text.includes('\nДата рождения мужчины: ')))
       || !body.text.includes('https://numerologia-online.github.io/numerologia-online/')
       || !body.text.includes('https://t.me/Numerologiaonline_bot')
       || /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(body.text)) {
