@@ -260,7 +260,7 @@ async function inboundWebhookStatus(token) {
 export default {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
-    if (path === '/api/save-day' || path === '/api/save-redflag') return handleDaySave(request, env);
+    if (path === '/api/save-day' || path === '/api/save-redflag') return handleDaySave(request, env, ctx);
     if (request.method === 'GET' && (path === '/' || path === '/health')) {
       return json({
         ok: true,
