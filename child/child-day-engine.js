@@ -60,7 +60,7 @@ const cache = new Map();
 const loadEnergyBank = (energy) => {
   if (!cache.has(energy)) {
     const name = String(energy).padStart(2, "0");
-    const request = fetch("./data/day/entries/child-day-" + name + ".json?v=5")
+    const request = fetch("./data/day/entries/child-day-" + name + ".json?v=6")
       .then((response) => {
         if (!response.ok) throw new Error("Нет детского банка для энергии " + name);
         return response.json();
