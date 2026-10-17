@@ -21,13 +21,13 @@ insight.setAttribute("aria-labelledby", "child-insight-title");
 insight.innerHTML = [
   '<div class="child-insight-top">',
   '<span class="child-insight-badge" id="child-insight-number"></span>',
-  '<span class="child-insight-kicker">Расшифровка матрицы</span>',
+  '<span class="child-insight-kicker">Ваш маленький большой мир</span>',
   '<button class="child-insight-close" type="button" aria-label="Закрыть подсказку">×</button>',
   '</div>',
   '<h3 id="child-insight-title"></h3>',
   '<p id="child-insight-text"></p>'
 ].join("");
-document.body.append(insight);
+byId("child-insight-place").append(insight);
 let selectedPoint = null;
 const closeInsight = () => {
   insight.hidden = true;
@@ -132,6 +132,12 @@ const renderMatrix = (matrix) => {
     button.type = "button";
     button.className = "child-topic";
     button.setAttribute("aria-label", "Открыть: " + definition.title);
+    const symbol = document.createElement("span");
+    symbol.className = "child-topic-symbol";
+    const symbols = {character:"✧",talents:"☆",learning:"▤",parenting:"♡",
+      activities:"◈",recovery:"❀",emotions:"◌",purpose:"⌾",tail:"∞"};
+    symbol.textContent = symbols[definition.id] || "✧";
+    symbol.setAttribute("aria-hidden", "true");
     const name = document.createElement("span");
     name.className = "child-topic-label";
     name.textContent = definition.title;
@@ -142,7 +148,7 @@ const renderMatrix = (matrix) => {
     arrow.className = "child-topic-arrow";
     arrow.setAttribute("aria-hidden", "true");
     arrow.textContent = "↗";
-    button.append(name, energy, arrow);
+    button.append(symbol, name, energy, arrow);
     button.addEventListener("click", () => openPointReading(definition, button));
     matrixSections.append(button);
   });
@@ -195,6 +201,9 @@ const renderMatrix = (matrix) => {
       }
     });
   });
+  // Open the first helpful reading inside the page, not over the screen.
+  const firstButton = matrixSections.querySelector('.child-topic');
+  openPointReading(definitions[0], firstButton);
 };
 
 const updateDay = () => {
