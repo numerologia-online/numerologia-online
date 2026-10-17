@@ -369,7 +369,7 @@ export default {
       return json({
         ok: true,
         service: 'numerologia-online-telegram-worker',
-        version: '2026-10-16',
+        version: '2026-10-17-calendar-diagnostic-9c41',
         configured: true,
         reg_ru: await backendHealth(),
         webhook_changed: false,
