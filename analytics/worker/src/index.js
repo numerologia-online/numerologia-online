@@ -22,7 +22,7 @@ function response(obj, status = 200, origin = "") {
   });
 }
 function clean(value, max = 80) {
-  return typeof value === "string" && /^[\w\-.:/]{1,80}$/.test(value) ? value.slice(0,max) : "";
+  return typeof value === "string" && new RegExp("^[a-zA-Z0-9_.:/-]{1,80}$").test(value) ? value.slice(0,max) : "";
 }
 function title(value) {
   // Only public predefined question/category labels, not visitor answers.
@@ -31,7 +31,7 @@ function title(value) {
 function isAuthorized(request, secret) {
   if (!secret || secret.length < 32) return false;
   const auth = request.headers.get("Authorization") || "";
-  // Timing-safe comparison is not available for strings; compare digest bytes.
+  // ADMIN_TOKEN and BOT_INGEST_TOKEN must be long random, server-only secrets.
   // The token is a long high-entropy secret, never embedded in site assets.
   return auth.startsWith("Bearer ") && auth.slice(7) === secret;
 }
@@ -45,7 +45,8 @@ async function insertEvent(env, data, type, paid = false) {
   const isValid = paid ? SERVER_EVENTS.has(name) : PUBLIC_EVENTS.has(name);
   if (!isValid) return false;
   const item = clean(data.item || "", 80);
-  const section = clean(data.section || "", 80);\n  const label = title(data.label || "");
+  const section = clean(data.section || "", 80);
+  const label = title(data.label || "");
   const source = clean(data.source || "direct", 80);
   const session = clean(data.session || "", 80);
   const eventId = paid ? clean(data.event_id || "", 80) : "";
