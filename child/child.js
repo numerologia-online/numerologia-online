@@ -11,6 +11,20 @@ const matrixTab = byId("child-tab-matrix");
 const dayTab = byId("child-tab-day");
 const matrixVisual = byId("child-matrix-visual");
 const matrixSections = byId("child-matrix-sections");
+const preview = byId("child-preview");
+let startingTab = "matrix";
+preview.querySelectorAll("[data-child-start]").forEach((button) => {
+  button.addEventListener("click", () => {
+    startingTab = button.dataset.childStart === "day" ? "day" : "matrix";
+    preview.querySelectorAll("[data-child-start]").forEach((item) => {
+      const active = item.dataset.childStart === startingTab;
+      item.classList.toggle("is-active", active);
+      item.setAttribute("aria-pressed", String(active));
+    });
+    input.focus({preventScroll: true});
+    form.scrollIntoView({behavior: "smooth", block: "center"});
+  });
+});
 
 // A small non-modal reading card replaces the full-screen dialog.
 // The matrix stays visible and usable while a reading is open.
@@ -253,7 +267,8 @@ form.addEventListener("submit", async (event) => {
     renderMatrix(calculateMatrix(birth));
     byId("child-born").textContent = "Дата рождения: " + pad(birth.day) + "." + pad(birth.month) + "." + birth.year;
     updateDay();
-    setTab("matrix");
+    setTab(startingTab);
+    preview.hidden = true;
     result.hidden = false;
     result.scrollIntoView({behavior: "smooth", block: "start"});
   } catch (reason) {
