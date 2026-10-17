@@ -127,9 +127,8 @@ const syncYearLink = () => {
 };
 syncYearLink();
 window.addEventListener("hashchange", syncYearLink);
-const personalDayOnly = new URLSearchParams(window.location.search).get("view") === "day";
 const syncPersonalDayLink = () => {
-  if (window.location.hash === "#lichnyj-den" || personalDayOnly) {
+  if (window.location.hash === "#lichnyj-den") {
     if (home) home.hidden = true;
     openPersonalDayFeature()
       .catch(() => alert("Не удалось открыть расчёт дня. Обновите страницу и попробуйте ещё раз."));
@@ -137,20 +136,6 @@ const syncPersonalDayLink = () => {
 };
 syncPersonalDayLink();
 window.addEventListener("hashchange", syncPersonalDayLink);
-
-// Direct links from the Telegram bot open the same feature as its homepage card.
-// Only these three additional views are handled here; old website navigation
-// and the private #moy-kod-deneg client link remain unchanged.
-const botDirectView = new URLSearchParams(window.location.search).get("view");
-const botViewOpeners = {
-  redflag: openRedFlagFeature,
-  compatibility: openCompatibilityFeature,
-  wealth: openDestinyCodeFeature
-};
-if (Object.prototype.hasOwnProperty.call(botViewOpeners, botDirectView)) {
-  botViewOpeners[botDirectView]().catch(() =>
-    alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
-}
 
 document.querySelectorAll("[data-open-year]").forEach((button) => button.addEventListener("click", () => {
   openYearFeature().catch(() => alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
@@ -188,3 +173,24 @@ document.querySelectorAll("[data-open-compatibility]").forEach((button) => butto
 
 document.querySelectorAll("[data-coming-soon]").forEach((button) => button.addEventListener("click", () => dialog.showModal()));
 document.querySelector(".dialog-close").addEventListener("click", () => dialog.close());
+// One route type for every Telegram section: /?view=<section>.
+// Reuse the real homepage card's click handler. No duplicate calculation or
+// separate chatbot action: exactly what pressing the card on the site does.
+const telegramSectionCards = Object.freeze({
+  day: '[data-open-personal-day]',
+  year: '[data-open-year]',
+  redflag: '[data-open-redflag]',
+  compatibility: '[data-open-compatibility]',
+  full: 'a.product-card.calculation',
+  woman: '#woman-section',
+  wealth: '[data-open-destiny-code]',
+  children: '#children-section',
+  horary: '#horary-section',
+  school: 'a.school-home-button',
+  appointment: '#appointment-section'
+});
+const telegramView = new URLSearchParams(window.location.search).get("view");
+if (Object.prototype.hasOwnProperty.call(telegramSectionCards, telegramView)) {
+  const card = document.querySelector(telegramSectionCards[telegramView]);
+  if (card) card.click();
+}
