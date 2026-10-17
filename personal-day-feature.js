@@ -149,6 +149,12 @@ const addDayShareButtons = (result, report) => {
       const reasons = {
         BOT_NOT_CONFIGURED: "На сервере не подключён токен бота. Отправка пока недоступна.",
         TELEGRAM_AUTH_REQUIRED: "Telegram не подтвердил вход. Закрой расчёт и открой его заново через меню бота.",
+        INIT_DATA_MISSING: "Telegram не передал данные входа. Открой расчёт через кнопку в чате с ботом.",
+        INIT_DATA_FORMAT: "Telegram передал неполные данные входа. Открой расчёт через меню бота заново.",
+        SESSION_EXPIRED: "Сессия Telegram устарела. Закрой мини-приложение и открой его заново.",
+        SIGNATURE_MISMATCH: "Ключ бота не совпадает с подписью Telegram. Проверяем подключение на сервере.",
+        USER_NOT_PRESENT: "Telegram не передал профиль пользователя. Открой расчёт из чата с ботом.",
+        AUTH_CHECK_UNAVAILABLE: "Проверка Telegram временно недоступна. Попробуй чуть позже.",
         DELIVERY_FAILED: "Сервер Telegram не принял сообщение. Попробуй ещё раз чуть позже.",
         BOT_CHAT_UNAVAILABLE: "Бот не может написать в этот чат. Открой переписку с ним и нажми /start.",
         BOT_API_AUTH_FAILED: "Сервер Telegram отклонил настройки бота. Нужно проверить подключение.",
