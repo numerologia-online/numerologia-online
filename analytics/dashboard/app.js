@@ -7,8 +7,8 @@ const money = (kopecks) => new Intl.NumberFormat("ru-RU",{style:"currency",curre
 const names = {
   page_view:"Просмотры страниц", redflag_open:"Вход в Red Flag",
   redflag_category_open:"Категории Red Flag", redflag_question_open:"Открытия вопросов",
-  redflag_share_click:"Нажатия «Поделиться»", redflag_save_click:"Отправка в бот",
-  pdf_download:"Скачивания PDF", telegram_link_click:"Переходы в Telegram",
+  redflag_share_click:"Нажатия «Поделиться»", redflag_save_click:"Нажатия «Отправить в бот»",
+  pdf_download:"Нажатия «Скачать PDF»", telegram_link_click:"Переходы в Telegram",
   bot_start:"Запуски бота", bot_button:"Нажатия в боте", bot_active:"Активность бота",
   payment_success:"Подтверждённые оплаты"
 };
@@ -52,10 +52,10 @@ function render(data) {
     metric("Сессии сайта",number(sessions("page_view")),"Анонимные сессии с согласием"),
     metric("Открытия вопросов",number(total("redflag_question_open")),"Раздел «Мужчина или Red Flag»"),
     metric("Пересылки (клики)",number(total("redflag_share_click")),"Нажатия, не подтверждённые отправки"),
-    metric("Скачивания PDF",number(total("pdf_download")),"События на кнопках скачивания"),
+    metric("Клики «Скачать PDF»",number(total("pdf_download")),"Не подтверждают успешное скачивание"),
     metric("Переходы в бот",number(total("telegram_link_click")),"С сайта в Telegram"),
-    metric("Новые запуски бота",number(total("bot_start")),"Только после серверного подключения"),
-    metric("Выручка",money(data.payments?.revenue_kopecks),"Только подтверждённые оплаты: "+number(data.payments?.orders))
+    metric("Запуски бота",number(total("bot_start")),"Не уникальные люди; сервер ещё не подключён"),
+    metric("Выручка",total("payment_success") ? money(data.payments?.revenue_kopecks) : "—","Нужно подключить подтверждённые оплаты; заказов: "+number(data.payments?.orders))
   );
   renderBars("questions",data.questions,"opens","label");
   renderBars("shares",data.shares,"total","label");
