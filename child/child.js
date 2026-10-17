@@ -119,7 +119,7 @@ const renderMatrix = (matrix) => {
   definitions.forEach((definition) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "child-topic";
+    button.className = definition.id === "tail" ? "child-topic child-topic-tail" : "child-topic";
     button.setAttribute("aria-label", "Открыть: " + definition.title);
     const symbol = document.createElement("span");
     symbol.className = "child-topic-symbol";
