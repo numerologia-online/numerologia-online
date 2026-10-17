@@ -257,9 +257,62 @@ async function inboundWebhookStatus(token) {
   }
 }
 
+// One-time recovery for the owner's explicitly requested missing webhook.
+// Never overwrite a webhook already configured at any URL and never drop updates.
+// Automatically expires after the current recovery window.
+const RESTORE_WEBHOOK_URL = 'https://numerologia-online-bot.tankraft431.workers.dev/telegram';
+function cleanBotToken(token) {
+  return typeof token === 'string' ? token.replace(/[\s\u200B-\u200D\uFEFF]/g, '') : '';
+}
+async function recoverMissingWebhook(token) {
+  if (Date.now() > Date.parse('2026-10-20T00:00:00Z'))
+    return { ok: false, state: 'RECOVERY_EXPIRED' };
+  token = cleanBotToken(token);
+  if (!/^[0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/.test(token))
+    return { ok: false, state: 'TOKEN_INVALID' };
+  try {
+    const base = 'https://api.telegram.org/bot' + token + '/';
+    const identityResponse = await fetch(base + 'getMe', {
+      method: 'GET', signal: AbortSignal.timeout(8000),
+    });
+    const identity = identityResponse.ok ? await identityResponse.json() : null;
+    if (identity?.ok !== true
+      || String(identity.result?.username || '').toLowerCase() !== 'numerologiaonline_bot')
+      return { ok: false, state: 'BOT_IDENTITY_MISMATCH' };
+    const infoResponse = await fetch(base + 'getWebhookInfo', {
+      method: 'GET', signal: AbortSignal.timeout(8000),
+    });
+    const info = infoResponse.ok ? await infoResponse.json() : null;
+    if (info?.ok !== true || typeof info.result?.url !== 'string')
+      return { ok: false, state: 'WEBHOOK_INFO_UNAVAILABLE' };
+    if (info.result.url !== '')
+      return { ok: true, state: info.result.url === RESTORE_WEBHOOK_URL ? 'ALREADY_REGISTERED' : 'OTHER_WEBHOOK_PRESERVED' };
+    const secret = await regSecret(token);
+    const setResponse = await fetch(base + 'setWebhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: RESTORE_WEBHOOK_URL,
+        secret_token: secret,
+        allowed_updates: ['message', 'callback_query'],
+        drop_pending_updates: false,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    const result = setResponse.ok ? await setResponse.json() : null;
+    return result?.ok === true
+      ? { ok: true, state: 'RESTORED' }
+      : { ok: false, state: 'TELEGRAM_REJECTED' };
+  } catch {
+    return { ok: false, state: 'TELEGRAM_UNREACHABLE' };
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
+    if (request.method === 'GET' && path === '/recover-missing-webhook')
+      return json(await recoverMissingWebhook(env.BOT_TOKEN));
     if (path === '/api/save-day' || path === '/api/save-redflag') return handleDaySave(request, env, ctx);
     if (request.method === 'GET' && (path === '/' || path === '/health')) {
       return json({
@@ -285,6 +338,15 @@ export default {
       return json({ ok: false, error: 'NOT_FOUND' }, 404);
     }
     const telegramHeader = request.headers.get('X-Telegram-Bot-Api-Secret-Token');
+    // The site catalogue is public navigation. Handle it directly after
+    // verifying the current Telegram webhook secret, independently of REG.RU.
+    // Registration, dates and daily opt-in continue to belong to REG.RU.
+    const incomingMessage = async () => {
+      const expected = await regSecret(cleanBotToken(env.BOT_TOKEN));
+      if (!telegramHeader || telegramHeader !== expected) return null;
+      return expected;
+    };
+
     if (!telegramHeader) return json({ ok: false, error: 'FORBIDDEN' }, 403);
     const body = await request.text();
     const bytes = new TextEncoder().encode(body).length;
@@ -299,6 +361,29 @@ export default {
       }
     } catch {
       return json({ ok: false, error: 'INVALID_JSON' }, 400);
+    }
+    const privateText = update?.message?.chat?.type === 'private'
+      && typeof update?.message?.text === 'string'
+      ? update.message.text.trim() : '';
+    const menuCommand = privateText.split(/\s+/u, 1)[0].toLowerCase().split('@')[0];
+    if (privateText === BOTTOM_MENU_LABEL || privateText === CATALOG_LABEL
+        || menuCommand === '/catalog' || menuCommand === '/catalogue') {
+      if (!await incomingMessage()) return json({ ok: false, error: 'FORBIDDEN' }, 403);
+      return json({
+        method: 'sendMessage',
+        chat_id: update.message.chat.id,
+        text: 'Разделы сайта:',
+        reply_markup: sectionsKeyboard(),
+      });
+    }
+    if (menuCommand === '/menu' || menuCommand === '/keyboard') {
+      if (!await incomingMessage()) return json({ ok: false, error: 'FORBIDDEN' }, 403);
+      return json({
+        method: 'sendMessage',
+        chat_id: update.message.chat.id,
+        text: BOTTOM_MENU_LABEL,
+        reply_markup: bottomMenuKeyboard(),
+      });
     }
     if (update.callback_query && typeof update.callback_query === 'object') {
       const callback = update.callback_query;
