@@ -46,9 +46,11 @@ function sectionsKeyboard() {
   return {
     inline_keyboard: SECTION_BUTTONS.map(section => [{
       text: section.text,
-      ...(section.soon
-        ? { callback_data: 'soon_' + section.soon }
-        : { web_app: { url: SITE_URL + section.route } }),
+      ...(section.text === 'Личный расчёт дня'
+        ? { callback_data: 'day_intro' }
+        : section.soon
+          ? { callback_data: 'soon_' + section.soon }
+          : { web_app: { url: SITE_URL + section.route } }),
     }]),
   };
 }
@@ -239,6 +241,44 @@ export default {
     if (update.callback_query && typeof update.callback_query === 'object') {
       const callback = update.callback_query;
       const action = callback.data;
+      if (action === 'day_intro') {
+        const chatId = callback.message?.chat?.id;
+        if (!callback.id || callback.message?.chat?.type !== 'private'
+            || !Number.isSafeInteger(chatId) || chatId <= 0
+            || callback.from?.id !== chatId) return json({ ok: true, ignored: true });
+        let authenticated = typeof env.BOT_TOKEN === 'string'
+          && env.BOT_TOKEN.length > 0
+          && telegramHeader === await regSecret(env.BOT_TOKEN);
+        if (!authenticated && typeof env.WEBHOOK_SECRET === 'string'
+            && env.WEBHOOK_SECRET.length > 0) {
+          authenticated = telegramHeader === env.WEBHOOK_SECRET;
+        }
+        if (!authenticated && !env.BOT_TOKEN && !env.WEBHOOK_SECRET) {
+          try {
+            const proof = await fetch(REG_HANDLER, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Telegram-Bot-Api-Secret-Token': telegramHeader,
+              },
+              body: JSON.stringify(update),
+              redirect: 'manual',
+              signal: AbortSignal.timeout(6000),
+            });
+            if (proof.ok) {
+              const data = await proof.json();
+              authenticated = data?.ok === true && data?.ignored === true;
+            }
+          } catch {}
+        }
+        if (!authenticated) return json({ ok: false, error: 'FORBIDDEN' }, 403);
+        return json({
+          method: 'sendMessage',
+          chat_id: chatId,
+          text: "☀️ Личный расчёт дня\n\nПривет! ❤️\n\nХочешь узнать, какие возможности принесёт сегодняшний день и на что стоит обратить внимание?\n\nТвоя дата рождения уже сохранена. Личный прогноз приходит каждое утро, а расчёт по запросу мы ещё подключаем. 🤍",
+          disable_web_page_preview: true,
+        });
+      }
       if (!env.BOT_TOKEN || typeof env.BOT_TOKEN !== 'string'
           || telegramHeader !== await regSecret(env.BOT_TOKEN)) {
         return json({ ok: false, error: 'FORBIDDEN' }, 403);
