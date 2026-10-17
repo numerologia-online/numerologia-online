@@ -22,38 +22,51 @@ function reply(body, status = 200, cors = false) {
 }
 
 async function verifiedTelegramUser(initData, botToken) {
-  if (typeof initData !== 'string' || initData.length < 60 || initData.length > 4096) return null;
-  if (typeof botToken !== 'string' || !/^[0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/.test(botToken)) return null;
+  // Return a public error category, never any signed data or user identifier.
+  if (typeof initData !== 'string' || !initData)
+    return { error: 'INIT_DATA_MISSING' };
+  if (initData.length < 60 || initData.length > 4096)
+    return { error: 'INIT_DATA_FORMAT' };
+  if (typeof botToken !== 'string' || !/^[0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/.test(botToken))
+    return { error: 'BOT_NOT_CONFIGURED' };
 
   const params = new URLSearchParams(initData);
   const pairs = [...params.entries()];
-  if (new Set(pairs.map(pair => pair[0])).size !== pairs.length) return null;
+  if (new Set(pairs.map(([key]) => key)).size !== pairs.length)
+    return { error: 'INIT_DATA_FORMAT' };
   const providedHash = params.get('hash');
-  if (!providedHash || !/^[0-9a-f]{64}$/i.test(providedHash)) return null;
+  if (!providedHash || !/^[0-9a-f]{64}$/i.test(providedHash))
+    return { error: 'INIT_DATA_FORMAT' };
 
   const authDate = Number(params.get('auth_date'));
   const elapsed = Math.floor(Date.now() / 1000) - authDate;
-  if (!Number.isSafeInteger(authDate) || elapsed < -120 || elapsed > 86400) return null;
+  if (!Number.isSafeInteger(authDate)) return { error: 'INIT_DATA_FORMAT' };
+  if (elapsed < -120 || elapsed > 86400) return { error: 'SESSION_EXPIRED' };
 
-  const checkString = pairs.filter(([key]) => key !== 'hash')
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([key, value]) => key + '=' + value).join('\n');
-
-  // Telegram Mini App HMAC verification: HMAC_SHA256("WebAppData", bot token)
-  // becomes the key for verifying the sorted initData, excluding "hash".
   const keyForToken = await crypto.subtle.importKey(
     'raw', encoder.encode('WebAppData'), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const derivedSecret = await crypto.subtle.sign('HMAC', keyForToken, encoder.encode(botToken));
   const signatureKey = await crypto.subtle.importKey(
     'raw', derivedSecret, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
   const hashBytes = Uint8Array.from(providedHash.match(/../g), hex => parseInt(hex, 16));
-  const trusted = await crypto.subtle.verify('HMAC', signatureKey, hashBytes, encoder.encode(checkString));
-  if (!trusted) return null;
+  const checked = async (excludeSignature) => {
+    const checkString = pairs.filter(([key]) => key !== 'hash' && (!excludeSignature || key !== 'signature'))
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([key, value]) => key + '=' + value).join('\n');
+    return crypto.subtle.verify('HMAC', signatureKey, hashBytes, encoder.encode(checkString));
+  };
+  // Telegram versions may include their separate third-party Ed25519 signature.
+  // Both accepted variants still REQUIRE a valid bot-token HMAC.
+  let trusted = await checked(false);
+  if (!trusted && params.has('signature')) trusted = await checked(true);
+  if (!trusted) return { error: 'SIGNATURE_MISMATCH' };
 
   let user;
-  try { user = JSON.parse(params.get('user') || 'null'); } catch { return null; }
-  if (!user || !Number.isSafeInteger(user.id) || user.id <= 0 || user.is_bot === true) return null;
-  return user.id;
+  try { user = JSON.parse(params.get('user') || 'null'); }
+  catch { return { error: 'INIT_DATA_FORMAT' }; }
+  if (!user || !Number.isSafeInteger(user.id) || user.id <= 0 || user.is_bot === true)
+    return { error: 'USER_NOT_PRESENT' };
+  return { id: user.id };
 }
 
 export async function handleDaySave(request, env) {
@@ -81,10 +94,11 @@ export async function handleDaySave(request, env) {
     return reply({ ok: false, error: 'INVALID_FORECAST' }, 400, true);
   }
 
-  let chatId;
-  try { chatId = await verifiedTelegramUser(body.init_data, env.BOT_TOKEN); }
-  catch { chatId = null; }
-  if (!chatId) return reply({ ok: false, error: 'TELEGRAM_AUTH_REQUIRED' }, 401, true);
+  let verified;
+  try { verified = await verifiedTelegramUser(body.init_data, env.BOT_TOKEN); }
+  catch { verified = { error: 'AUTH_CHECK_UNAVAILABLE' }; }
+  if (!verified?.id) return reply({ ok: false, error: verified?.error || 'AUTH_CHECK_UNAVAILABLE' }, 401, true);
+  const chatId = verified.id;
 
   try {
     // No chat_id from the browser: the recipient is ALWAYS the signed Telegram user.
