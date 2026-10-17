@@ -228,8 +228,10 @@ const setTab = (next) => {
   dayTab.setAttribute("aria-selected", String(!isMatrix));
   matrixTab.tabIndex = isMatrix ? 0 : -1;
   dayTab.tabIndex = isMatrix ? -1 : 0;
-  closeInsight();
-  if (!isMatrix) updateDay();
+  if (!isMatrix) {
+    closeInsight();
+    updateDay();
+  }
 };
 
 form.addEventListener("submit", async (event) => {
