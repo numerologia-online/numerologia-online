@@ -16,17 +16,17 @@ const CATALOG_LABEL = '✨ Что ещё знают числа?';
 // Keep each button on its own row so Telegram does not truncate the labels.
 // For sections under construction, a small callback notice avoids dead links.
 const SECTION_BUTTONS = [
-  { text: 'Личный расчёт дня', route: '#lichnyj-den' },
+  { text: 'Личный расчёт дня', route: '?view=day' },
   { text: 'Полный расчёт года', route: '#razbor-goda' },
-  { text: 'Мужчина или Ред Флаг', route: '' },
-  { text: 'Совместимость и любовь', route: '' },
+  { text: 'Мужчина или Ред Флаг', route: '?view=redflag' },
+  { text: 'Совместимость и любовь', route: '?view=compatibility' },
   { text: 'Полный разбор', route: 'pro/' },
-  { text: 'Женщина или тарелочница', soon: 'woman' },
-  { text: 'Ваш код богатства и ритуалы', route: '#moy-kod-deneg' },
-  { text: 'Для мам - всё о ребёнке', soon: 'children' },
-  { text: 'Любой вопрос', soon: 'horary' },
+  { text: 'Женщина или тарелочница', route: '#woman-section', soon: 'woman' },
+  { text: 'Ваш код богатства и ритуалы', route: '?view=wealth' },
+  { text: 'Для мам - всё о ребёнке', route: '#children-section', soon: 'children' },
+  { text: 'Любой вопрос', route: '#horary-section', soon: 'horary' },
   { text: 'Школа нумерологии', route: 'pro/schools/' },
-  { text: 'Записаться на личный расчёт', soon: 'appointment' },
+  { text: 'Записаться на личный расчёт', route: '#appointment-section', soon: 'appointment' },
 ];
 const SOON_SECTIONS = new Set(SECTION_BUTTONS.filter(x => x.soon).map(x => 'soon_' + x.soon));
 const LEGACY_QUESTION_CALLBACKS = new Set(['topic_love', 'topic_money', 'topic_self', 'topic_answers']);
@@ -47,11 +47,7 @@ function sectionsKeyboard() {
   return {
     inline_keyboard: SECTION_BUTTONS.map(section => [{
       text: section.text,
-      ...(section.text === 'Личный расчёт дня'
-        ? { callback_data: 'day_intro' }
-        : section.soon
-          ? { callback_data: 'soon_' + section.soon }
-          : { web_app: { url: SITE_URL + section.route } }),
+      web_app: { url: SITE_URL + section.route },
     }]),
   };
 }
