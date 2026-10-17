@@ -304,6 +304,52 @@ async function regSecret(botToken) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(PREFIX + botToken));
   return [...new Uint8Array(digest)].map(x => x.toString(16).padStart(2, '0')).join('');
 }
+// One-time, explicitly user-triggered repair. Never switch webhook
+// destinations, touch REG.RU data, or drop queued Telegram updates.
+// This command only adds callback_query to allowed_updates when the live
+// webhook is confirmed to point at this exact Worker endpoint.
+async function repairCalendarCallbacks(env, requestUrl) {
+  const token = env.BOT_TOKEN;
+  if (typeof token !== 'string' || !token) {
+    return 'Не удалось проверить настройки Telegram. Секрет бота недоступен.';
+  }
+  const api = async (method, args) => {
+    const response = await fetch('https://api.telegram.org/bot' + token + '/' + method, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(args ?? {}),
+      redirect: 'manual',
+      signal: AbortSignal.timeout(9500),
+    });
+    if (!response.ok) throw new Error('TELEGRAM_API_UNAVAILABLE');
+    const body = await response.json();
+    if (!body?.ok) throw new Error('TELEGRAM_API_UNAVAILABLE');
+    return body.result;
+  };
+  try {
+    const webhook = await api('getWebhookInfo');
+    const expected = new URL('/telegram', requestUrl).href;
+    if (webhook?.url !== expected) {
+      return 'Календарь пока не активирован: текущий адрес получения сообщений отличается от адреса нашего бота. Ничего не переключала.';
+    }
+    const allowed = webhook.allowed_updates;
+    if (!Array.isArray(allowed) || allowed.length === 0 || allowed.includes('callback_query')) {
+      return '✅ Telegram уже разрешает нажатия на кнопки календаря. Если он не открылся, проверим публикацию обработчика.';
+    }
+    const updated = [...new Set([...allowed, 'callback_query'])];
+    const ok = await api('setWebhook', {
+      url: expected,
+      secret_token: await regSecret(token),
+      allowed_updates: updated,
+      drop_pending_updates: false,
+    });
+    if (ok !== true) throw new Error('TELEGRAM_WEBHOOK_UPDATE_FAILED');
+    return '✅ Кнопки календаря подключены! Нажми «🫶 Открой все разделы», затем «Личный расчёт дня».';
+  } catch {
+    return 'Пока не удалось проверить или обновить настройки Telegram. Ничего не переключала.';
+  }
+}
+
 async function backendHealth() {
   try {
     const response = await fetch(REG_HANDLER + '?health=1', {
@@ -396,6 +442,24 @@ export default {
       // first for webhook authentication; it changes no stored data.
       const inputText = typeof update?.message?.text === 'string'
         ? update.message.text.trim() : '';
+      // Explicit setup command is restricted to an authenticated private
+      // Telegram chat. No user database or daily forecast changes are made.
+      if (inputText === '/repair_calendar') {
+        const message = update?.message;
+        const chatId = message?.chat?.id;
+        if (!env.BOT_TOKEN || telegramHeader !== await regSecret(env.BOT_TOKEN)
+            || message?.chat?.type !== 'private'
+            || !Number.isSafeInteger(chatId) || chatId <= 0
+            || message?.from?.id !== chatId) {
+          return json({ ok: false, error: 'FORBIDDEN' }, 403);
+        }
+        return json({
+          method: 'sendMessage',
+          chat_id: chatId,
+          text: await repairCalendarCallbacks(env, request.url),
+          reply_markup: bottomMenuKeyboard(),
+        });
+      }
       const backendText = inputText === '✅ Да, верно' ? '✅ Да, каждый день'
         : inputText === '❌ Нет, неверно' ? '/start' : null;
       const backendBody = backendText === null ? body : JSON.stringify({
