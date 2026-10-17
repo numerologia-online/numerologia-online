@@ -100,6 +100,13 @@ export async function handleDaySave(request, env) {
     });
     const api = await res.json();
     if (res.ok && api?.ok === true) return reply({ ok: true }, 200, true);
+    // Only categorical delivery diagnostics; never echo Telegram responses,
+    // secrets or private chat/user details to the Mini App.
+    if (res.status === 401) return reply({ ok: false, error: 'BOT_API_AUTH_FAILED' }, 502, true);
+    if (res.status === 403) return reply({ ok: false, error: 'BOT_CHAT_UNAVAILABLE' }, 502, true);
+    if (res.status === 429) return reply({ ok: false, error: 'BOT_RATE_LIMIT' }, 503, true);
+    if (res.status === 400 && /chat not found/i.test(String(api?.description || '')))
+      return reply({ ok: false, error: 'BOT_CHAT_UNAVAILABLE' }, 502, true);
     return reply({ ok: false, error: 'DELIVERY_FAILED' }, 502, true);
   } catch {
     return reply({ ok: false, error: 'DELIVERY_FAILED' }, 502, true);
