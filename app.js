@@ -138,6 +138,20 @@ const syncPersonalDayLink = () => {
 syncPersonalDayLink();
 window.addEventListener("hashchange", syncPersonalDayLink);
 
+// Direct links from the Telegram bot open the same feature as its homepage card.
+// Only these three additional views are handled here; old website navigation
+// and the private #moy-kod-deneg client link remain unchanged.
+const botDirectView = new URLSearchParams(window.location.search).get("view");
+const botViewOpeners = {
+  redflag: openRedFlagFeature,
+  compatibility: openCompatibilityFeature,
+  wealth: openDestinyCodeFeature
+};
+if (Object.prototype.hasOwnProperty.call(botViewOpeners, botDirectView)) {
+  botViewOpeners[botDirectView]().catch(() =>
+    alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
+}
+
 document.querySelectorAll("[data-open-year]").forEach((button) => button.addEventListener("click", () => {
   openYearFeature().catch(() => alert("Не удалось открыть раздел. Обновите страницу и попробуйте ещё раз."));
 }));
