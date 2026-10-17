@@ -214,6 +214,8 @@ export default {
         webhook_changed: false,
         navigation: 'birth-date-confirmation-before-daily-opt-in',
         site_sections: SECTION_BUTTONS.length,
+        day_save_route: true,
+        day_save_bot_token_configured: typeof env.BOT_TOKEN === 'string' && /^[0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/.test(env.BOT_TOKEN),
         bottom_menu: BOTTOM_MENU_LABEL,
         bottom_menu_delivery: 'webhook-reply',
       });
