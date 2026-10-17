@@ -120,31 +120,24 @@ const matrixDefinitions = (matrix) => [
 const renderMatrix = (matrix) => {
   const definitions = matrixDefinitions(matrix);
   matrixSections.replaceChildren();
-  definitions.forEach((definition, index) => {
-    const detail = document.createElement("details");
-    detail.className = "child-accordion";
-    detail.id = "child-read-" + definition.id;
-    detail.open = index === 0;
-    const heading = document.createElement("summary");
-    const title = document.createElement("span");
-    title.textContent = definition.title;
+  definitions.forEach((definition) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "child-topic";
+    button.setAttribute("aria-label", "Открыть: " + definition.title);
+    const name = document.createElement("span");
+    name.className = "child-topic-label";
+    name.textContent = definition.title;
     const energy = document.createElement("span");
-    energy.className = "child-accordion-energy";
+    energy.className = "child-topic-energy";
     energy.textContent = definition.code || String(definition.number);
-    heading.append(title, energy);
-
-    const text = document.createElement("p");
-    text.textContent = banks.matrix.entries?.[String(definition.number)]?.[definition.id]
-      || "Эта трактовка готовится. Попробуйте другие разделы.";
-    detail.append(heading, text);
-    detail.addEventListener("toggle", () => {
-      if (detail.open) {
-        matrixSections.querySelectorAll("details").forEach((item) => {
-          if (item !== detail) item.open = false;
-        });
-      }
-    });
-    matrixSections.append(detail);
+    const arrow = document.createElement("span");
+    arrow.className = "child-topic-arrow";
+    arrow.setAttribute("aria-hidden", "true");
+    arrow.textContent = "↗";
+    button.append(name, energy, arrow);
+    button.addEventListener("click", () => openPointReading(definition));
+    matrixSections.append(button);
   });
 
   const svgPieces = [
