@@ -74,7 +74,12 @@ export async function handleDaySave(request, env) {
   if (origin !== WEBSITE_ORIGIN) return reply({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403);
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: SAME_ORIGIN_HEADERS });
   if (request.method !== 'POST') return reply({ ok: false, error: 'METHOD_NOT_ALLOWED' }, 405, true);
-  if (!env?.BOT_TOKEN) return reply({ ok: false, error: 'BOT_NOT_CONFIGURED' }, 503, true);
+  // Telegram bot tokens never contain whitespace. iOS paste may add hidden
+  // whitespace characters; normalize only for this independent save endpoint.
+  const botToken = typeof env?.BOT_TOKEN === 'string'
+    ? env.BOT_TOKEN.replace(/[\s\u200B-\u200D\uFEFF]/g, '') : '';
+  if (!/^[0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/.test(botToken))
+    return reply({ ok: false, error: 'BOT_NOT_CONFIGURED' }, 503, true);
 
   let body;
   try {
@@ -95,14 +100,14 @@ export async function handleDaySave(request, env) {
   }
 
   let verified;
-  try { verified = await verifiedTelegramUser(body.init_data, env.BOT_TOKEN); }
+  try { verified = await verifiedTelegramUser(body.init_data, botToken); }
   catch { verified = { error: 'AUTH_CHECK_UNAVAILABLE' }; }
   if (!verified?.id) return reply({ ok: false, error: verified?.error || 'AUTH_CHECK_UNAVAILABLE' }, 401, true);
   const chatId = verified.id;
 
   try {
     // No chat_id from the browser: the recipient is ALWAYS the signed Telegram user.
-    const res = await fetch('https://api.telegram.org/bot' + env.BOT_TOKEN + '/sendMessage', {
+    const res = await fetch('https://api.telegram.org/bot' + botToken + '/sendMessage', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
