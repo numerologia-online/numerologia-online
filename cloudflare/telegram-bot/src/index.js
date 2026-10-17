@@ -379,6 +379,41 @@ export default {
         bottom_menu_delivery: 'webhook-reply',
       });
     }
+    if (request.method === 'GET' && path === '/calendar-status') {
+      const token = env.BOT_TOKEN;
+      if (typeof token !== 'string' || !token) {
+        return json({ ok: false, issue: 'BOT_TOKEN_MISSING' });
+      }
+      try {
+        const check = async method => {
+          const response = await fetch('https://api.telegram.org/bot' + token + '/' + method, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: '{}',
+            signal: AbortSignal.timeout(5000),
+          });
+          if (!response.ok) return null;
+          const result = await response.json();
+          return result.ok ? result.result : null;
+        };
+        const [me, info] = await Promise.all([check('getMe'), check('getWebhookInfo')]);
+        const valid = Boolean(me?.is_bot);
+        const expected = new URL('/telegram', request.url).href;
+        const webhookMatches = info?.url === expected;
+        const allowed = info?.allowed_updates;
+        const callbacksAllowed = info
+          ? (!Array.isArray(allowed) || allowed.length === 0 || allowed.includes('callback_query'))
+          : null;
+        return json({
+          ok: valid && webhookMatches && callbacksAllowed === true,
+          token: valid ? 'VALID' : 'INVALID_OR_UNAVAILABLE',
+          webhook: !info ? 'UNAVAILABLE' : webhookMatches ? 'MATCHES' : 'DIFFERENT',
+          callbacks: callbacksAllowed === null ? 'UNKNOWN' : callbacksAllowed ? 'ALLOWED' : 'BLOCKED',
+        });
+      } catch {
+        return json({ ok: false, issue: 'TELEGRAM_API_UNAVAILABLE' });
+      }
+    }
     if (request.method !== 'POST' || path !== '/telegram') {
       return json({ ok: false, error: 'NOT_FOUND' }, 404);
     }
