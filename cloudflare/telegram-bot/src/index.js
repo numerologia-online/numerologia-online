@@ -457,7 +457,7 @@ export default {
         // Acknowledge the button immediately; send the two chat messages
         // asynchronously so Telegram does not show an endless spinner.
         ctx.waitUntil(processPersonalDayCallback(callback, env, telegramHeader));
-        return json({ method: 'answerCallbackQuery', callback_query_id: callback.id });
+        return json({ method: 'answerCallbackQuery', callback_query_id: callback.id, text: '☀️ Открываю твой расчёт…', show_alert: false });
       }
       if (!callback.id || (!LEGACY_QUESTION_CALLBACKS.has(action) && !SOON_SECTIONS.has(action))) {
         return json({ ok: true, ignored: true });
