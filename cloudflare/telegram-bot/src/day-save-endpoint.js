@@ -36,7 +36,7 @@ async function verifiedTelegramUser(initData, botToken) {
   if (!Number.isSafeInteger(authDate) || elapsed < -120 || elapsed > 86400) return null;
 
   const checkString = pairs.filter(([key]) => key !== 'hash')
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([key, value]) => key + '=' + value).join('\n');
 
   // Telegram Mini App HMAC verification: HMAC_SHA256("WebAppData", bot token)
