@@ -222,7 +222,7 @@ async function botIdentityMatches(token) {
 export default {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
-    if (path === '/api/save-day') return handleDaySave(request, env);
+    if (path === '/api/save-day' || path === '/api/save-redflag') return handleDaySave(request, env);
     if (request.method === 'GET' && (path === '/' || path === '/health')) {
       return json({
         ok: true,
