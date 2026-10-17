@@ -470,6 +470,31 @@ export default {
       });
     }
 
+    // Show the public 11-section catalogue directly from the Worker.
+    // Do not wait for REG.RU or change webhook settings just to open the menu.
+    const menuText = typeof update?.message?.text === 'string'
+      ? update.message.text.trim() : '';
+    const menuCommand = menuText.split(/\s+/u, 1)[0].toLowerCase().split('@')[0];
+    const isMenu = menuText === BOTTOM_MENU_LABEL || menuText === CATALOG_LABEL
+      || menuCommand === '/catalog' || menuCommand === '/catalogue';
+    if (isMenu && update?.message?.chat?.type === 'private'
+        && update.message.from?.id === update.message.chat?.id
+        && Number.isSafeInteger(update.message.chat.id)
+        && update.message.chat.id > 0) {
+      // Require real Telegram webhook authentication before responding
+      // directly, rather than relying on REG.RU's previous validation.
+      const secret = typeof env.BOT_TOKEN === 'string'
+        ? await regSecret(env.BOT_TOKEN) : env.WEBHOOK_SECRET;
+      if (typeof secret === 'string' && secret.length > 0
+          && telegramHeader === secret) {
+        return json({
+          method: 'sendMessage',
+          chat_id: update.message.chat.id,
+          text: 'Разделы сайта:',
+          reply_markup: sectionsKeyboard(),
+        });
+      }
+    }
     try {
       // Keep REG.RU as the only writer of birth dates and subscription status.
       // Only translate the two NEW confirmation answers into existing,
@@ -506,14 +531,6 @@ export default {
           text: '🔎 Проверяю подключение календаря. Результат пришлю отдельным сообщением.',
           reply_markup: bottomMenuKeyboard(),
         });
-      }
-      // Repair the Telegram callback permission in the background when
-      // the user explicitly opens the menu. Never redirect the live webhook
-      // or drop Telegram updates; repairCalendarCallbacks verifies its URL.
-      if ((inputText === BOTTOM_MENU_LABEL || inputText === CATALOG_LABEL
-          || inputText === '/catalog' || inputText === '/catalogue')
-          && env.BOT_TOKEN && telegramHeader === await regSecret(env.BOT_TOKEN)) {
-        ctx.waitUntil(repairCalendarCallbacks(env, request.url));
       }
       const backendText = inputText === '✅ Да, верно' ? '✅ Да, каждый день'
         : inputText === '❌ Нет, неверно' ? '/start' : null;
