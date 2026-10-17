@@ -219,6 +219,44 @@ async function botIdentityMatches(token) {
   }
 }
 
+// Read-only webhook diagnosis for the live bot token. Never publish the webhook
+// URL, bot token or full Telegram error text in this public health response.
+async function inboundWebhookStatus(token) {
+  if (typeof token !== 'string') return { state: 'TOKEN_MISSING' };
+  token = token.replace(/[\s\u200B-\u200D\uFEFF]/g, '');
+  if (!/^[0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/.test(token))
+    return { state: 'TOKEN_INVALID' };
+  try {
+    const response = await fetch('https://api.telegram.org/bot' + token + '/getWebhookInfo', {
+      method: 'GET',
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) return { state: response.status === 401 ? 'TOKEN_REJECTED' : 'TELEGRAM_HTTP_' + response.status };
+    const body = await response.json();
+    if (!body?.ok || !body.result) return { state: 'API_UNAVAILABLE' };
+    const info = body.result;
+    const actual = String(info.url || '');
+    const target = actual === ''
+      ? 'NOT_REGISTERED'
+      : actual === 'https://numerologia-online-bot.tankraft431.workers.dev/telegram'
+        ? 'OUR_CLOUDFLARE'
+        : actual === REG_HANDLER ? 'REG_RU_DIRECT' : 'OTHER';
+    const lastError = String(info.last_error_message || '');
+    const httpCode = /(?:returned\s+)?(?:HTTP\s+)?(4\d\d|5\d\d)/i.exec(lastError);
+    return {
+      state: 'OK',
+      target,
+      pending_updates: Number(info.pending_update_count) || 0,
+      last_error_http: httpCode ? Number(httpCode[1]) : null,
+      error_reported: Boolean(lastError),
+      allowed_message_updates: !Array.isArray(info.allowed_updates)
+        || info.allowed_updates.length === 0 || info.allowed_updates.includes('message'),
+    };
+  } catch {
+    return { state: 'TELEGRAM_TIMEOUT' };
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
@@ -237,6 +275,7 @@ export default {
         day_save_bot_token_configured: typeof env.BOT_TOKEN === 'string' && /^[0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/.test(env.BOT_TOKEN.replace(/[\s\u200B-\u200D\uFEFF]/g, '')),
         day_save_token_whitespace_detected: typeof env.BOT_TOKEN === 'string' && /[\s\u200B-\u200D\uFEFF]/.test(env.BOT_TOKEN),
         day_save_bot_identity_matches: await botIdentityMatches(env.BOT_TOKEN),
+        telegram_inbound_webhook: await inboundWebhookStatus(env.BOT_TOKEN),
         bottom_menu: BOTTOM_MENU_LABEL,
         bottom_menu_delivery: 'webhook-reply',
       });
