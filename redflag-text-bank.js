@@ -6,17 +6,29 @@ const loadJson = async (path) => {
   return response.json();
 };
 
-// The money block used to have a separate loader with a different date rule.
-// Now all authored texts follow the same exact-date JSON format.
+
+// Only question titles, IDs, and JSON paths are needed. Old 3-variant
+// question banks remain archived in the repository but are never loaded.
+let questionIndexPromise;
+const getQuestionIndex = () => {
+  questionIndexPromise ??= loadJson("./data/redflag/question-index.json?v=1")
+    .catch((error) => {
+      questionIndexPromise = undefined;
+      throw error;
+    });
+  return questionIndexPromise;
+};
+
 export const loadQuestionBank = async (bankName) => {
-  const bankFile = bankName === "money" ? "money-questions.json?v=14" : `${bankName}.json`;
-  const bank = await loadJson(`./data/redflag/banks/${bankFile}`);
-  const questionTexts = await Promise.all(bank.questions.map((question) =>
+  const index = await getQuestionIndex();
+  const questions = index.byCategory?.[bankName];
+  if (!Array.isArray(questions)) throw new Error(`Не найдена категория Red Flag: ${bankName}`);
+  const questionTexts = await Promise.all(questions.map((question) =>
     question.textFile ? loadJson(`./data/redflag/${question.textFile}`) : null
   ));
 
   return {
-    QUESTIONS: bank.questions.map((question, index) => {
+    QUESTIONS: questions.map((question, index) => {
       const textBank = questionTexts[index];
       if (textBank) {
         // Validate ONCE when loading each question, not on every user's click.
