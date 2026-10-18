@@ -21,8 +21,8 @@
     {
       "id": "courtship",
       "title": "Ухаживает или ждёт, что всё случится само?",
-      "status": "in-progress",
-      "textFile": "money/courtship.json?v=8"
+      "status": "ready",
+      "textFile": "money/courtship.json?v=9"
     },
     {
       "id": "words-or-deeds",
