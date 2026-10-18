@@ -7,7 +7,8 @@
   const key = "noa_analytics_consent";
   const events = new Set([
     "page_view","redflag_open","redflag_category_open","redflag_question_open",
-    "redflag_share_click","redflag_save_click","pdf_download","telegram_link_click"
+    "redflag_share_click","redflag_save_click","pdf_download","telegram_link_click",
+    "cta_impression","cta_click","subscription_offer_view","subscription_cta_click","checkout_started"
   ]);
   let sessionId = "";
   function consented() {
@@ -16,14 +17,20 @@
   function value(v,limit=80) {
     return String(v || "").replace(/[^a-zA-Z0-9_\-.:/]/g,"").slice(0,limit);
   }
-  function source() {
-    const u = new URL(location.href);
-    const utm = value(u.searchParams.get("utm_source") || "");
-    if(utm) return utm;
+  function acquisition() {
+    // First-touch acquisition for this browser tab. Only used with consent.
     try {
-      const r = document.referrer ? new URL(document.referrer).hostname : "";
-      return value(r || "direct");
-    } catch { return "direct"; }
+      const saved = sessionStorage.getItem("noa_analytics_attribution");
+      if(saved) return JSON.parse(saved);
+      const u = new URL(location.href);
+      const referer = document.referrer ? new URL(document.referrer).hostname : "";
+      const source = value(u.searchParams.get("utm_source") || referer || "direct");
+      const medium = value(u.searchParams.get("utm_medium") || (source === "direct" ? "direct" : "referral"));
+      const campaign = value(u.searchParams.get("utm_campaign") || "");
+      const attribution = {source,medium,campaign};
+      sessionStorage.setItem("noa_analytics_attribution",JSON.stringify(attribution));
+      return attribution;
+    } catch {return {source:"direct",medium:"",campaign:""};}
   }
   function track(event, details={}) {
     if(!api || !consented() || !events.has(event)) return;
@@ -38,7 +45,7 @@
       item:value(details.item || ""),
       label:String(details.label || "").slice(0,120),
       section:value(details.section || (location.pathname.includes("/pro/") ? "pro" : "home")),
-      source:source(),
+      ...acquisition(),
       session:value(sessionId)
     });
     try {
@@ -78,6 +85,7 @@
     }
     accept.addEventListener("click",()=>{
       localStorage.setItem(key,"yes");box.remove();track("page_view");
+      setupImpressionObserver();
     });
     deny.addEventListener("click",()=>{
       localStorage.setItem(key,"no");box.remove();
@@ -85,12 +93,45 @@
     box.append(text,buttons);
     document.body.append(box);
   }
+  let observer;
+  const seen = new WeakSet();
+  const observed = new WeakSet();
+  function setupImpressionObserver() {
+    if(!consented() || observer || typeof IntersectionObserver === "undefined") return;
+    observer = new IntersectionObserver((entries) => {
+      entries.forEach(({target,isIntersecting,intersectionRatio}) => {
+        if(!isIntersecting || intersectionRatio < 0.5 || seen.has(target)) return;
+        seen.add(target);observer.unobserve(target);
+        const item = value(target.dataset.analyticsCta || "");
+        if(item) track("cta_impression", {item,label:target.dataset.analyticsLabel || "", section:target.dataset.analyticsSection || ""});
+        if(target.dataset.analyticsSubscriptionCta === "yes") track("subscription_offer_view", {item,label:target.dataset.analyticsLabel || "",section:target.dataset.analyticsSection || ""});
+      });
+    },{threshold:0.5});
+    const register=()=>{
+      document.querySelectorAll("[data-analytics-cta]").forEach(node=>{
+        if(observed.has(node)) return;
+        observed.add(node);observer.observe(node);
+      });
+    };
+    register();
+    if(typeof MutationObserver !== "undefined") {
+      const changes = new MutationObserver(register);
+      changes.observe(document.body,{childList:true,subtree:true});
+    }
+  }
   const start=()=>{
     try {makeConsent();} catch{}
     track("page_view");
+    setupImpressionObserver();
     document.addEventListener("click",(e)=>{
       const target=e.target.closest("a,button");
       if(!target)return;
+      const id=value(target.dataset.analyticsCta || "");
+      if(id) {
+        const params={item:id,label:target.dataset.analyticsLabel||"",section:target.dataset.analyticsSection||""};
+        track("cta_click",params);
+        if(target.dataset.analyticsSubscriptionCta === "yes") track("subscription_cta_click",params);
+      }
       const href=target.getAttribute("href") || "";
       if(/(?:t\.me|telegram\.me)\//i.test(href)) track("telegram_link_click",{item:"telegram"});
       if(target.matches("#pdf-download-button, a[download], .pdf-download-button")) {
