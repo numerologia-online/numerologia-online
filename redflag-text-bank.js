@@ -25,7 +25,7 @@ export const loadQuestionBank = async (bankName) => {
           id: question.id,
           title: question.title,
           answer: (profile) => {
-            const key = getRedFlagDateKey(profile.classic.birthDate);
+            const key = getRedFlagDateKey(profile.birthDate);
             const text = entries[key];
             if (typeof text !== "string" || !text.trim()) {
               throw new Error(`Ответ для ${question.id} и ${key} не найден`);
@@ -35,23 +35,12 @@ export const loadQuestionBank = async (bankName) => {
         };
       }
 
-      // Questions not yet supplied with 366 unique JSON texts keep their
-      // existing behavior until the user approves a complete text bank.
-      if (!question.variants) {
-        return {
-          id: question.id,
-          title: question.title,
-          answer: () => ({ answer: "Готовим новую авторскую трактовку для этого вопроса." })
-        };
-      }
+      //      // No approximation: until 366 authored readings exist, do not present
+      // one of three generic old variants as a personalised interpretation.
       return {
         id: question.id,
         title: question.title,
-        answer: (profile) => {
-          const variant = question.variants[profile[question.aspect]] ?? Object.values(question.variants)[0];
-          const answer = `${variant.answer}${question.usePeriod ? ` ${profile.periodNote}` : ""}`;
-          return { verdict: variant.verdict, answer, observation: question.observation };
-        }
+        answer: () => ({ answer: "Готовим новую авторскую трактовку для этого вопроса." })
       };
     })
   };
