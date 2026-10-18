@@ -29,7 +29,8 @@
       {
         "id": "words-or-deeds",
         "title": "Красиво говорит или реально делает?",
-        "status": "pending"
+        "status": "ready",
+        "textFile": "money/words-or-deeds.json?v=1"
       },
       {
         "id": "family-load",
