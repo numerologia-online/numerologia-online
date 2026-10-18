@@ -10,6 +10,10 @@ const names = {
   redflag_share_click:"Нажатия «Поделиться»", redflag_save_click:"Нажатия «Отправить в бот»",
   pdf_download:"Нажатия «Скачать PDF»", telegram_link_click:"Переходы в Telegram",
   bot_start:"Запуски бота", bot_button:"Нажатия в боте", bot_active:"Активность бота",
+  cta_impression:"Фактические показы кнопок", cta_click:"Нажатия кнопок",
+  subscription_offer_view:"Показы подписки", subscription_cta_click:"Клики на подписку",
+  checkout_started:"Начало оплаты", subscription_renewed:"Продления подписки",
+  subscription_activated:"Активации подписки",payment_refunded:"Возвраты",
   payment_success:"Подтверждённые оплаты"
 };
 function el(tag, className, value) {
@@ -37,6 +41,43 @@ function renderBars(id, rows, valueField, labelField) {
     bg.append(fill);box.append(head,bg);root.append(box);
   });
 }
+function renderCta(rows) {
+  const root=$("cta");root.replaceChildren();
+  if(!Array.isArray(rows) || rows.length===0) return empty(root,"Показов кнопок пока нет");
+  rows.forEach(x=>{
+    if(!Number(x.impressions)) return;
+    const item=el("div","bar-item");const head=el("div","bar-head");
+    const title=el("span","bar-label",x.label || x.item);
+    const value=el("span","bar-num",(x.ctr===null?"—":number(x.ctr)+"%"));
+    head.append(title,value);
+    const details=el("div","hint",number(x.clicks)+" сессий с кликом / "+number(x.impressions)+" с показом");
+    details.style.margin="0";
+    const bg=el("div","bar-bg"),fill=el("div","bar-fill");
+    fill.style.width=Math.max(1,Math.min(100,Number(x.ctr)||0))+"%";
+    bg.append(fill);item.append(head,bg,details);root.append(item);
+  });
+}
+function renderFunnel(data) {
+  const root=$("funnel");root.replaceChildren();
+  const f=data.funnel||{};
+  const steps=[
+    ["Открыли сайт",Number(f.visitors)||0],
+    ["Увидели предложение",Number(f.offers)||0],
+    ["Нажали на подписку",Number(f.clicks)||0],
+    ["Начали оформление",Number(f.checkouts)||0]
+  ];
+  if(!steps[0][1]) return empty(root,"Пока нет измеренных визитов");
+  steps.forEach(([name,count],i)=>{
+    const wrap=el("div","bar-item"),head=el("div","bar-head");
+    const label=el("span","bar-label",name);
+    const percent=i===0?"100%":steps[i-1][1]>0?
+      (Math.round(1000*count/steps[i-1][1])/10)+"% от прошлого этапа":"—";
+    head.append(label,el("span","bar-num",number(count)+" · "+percent));
+    const bg=el("div","bar-bg"),fill=el("div","bar-fill");
+    fill.style.width=Math.max(1,Math.min(100,100*count/steps[0][1]))+"%";
+    bg.append(fill);wrap.append(head,bg);root.append(wrap);
+  });
+}
 function metric(name,value,note) {
   const box=el("article","metric");
   box.append(el("div","metric-name",name),el("div","metric-value",value),el("div","metric-note",note));
@@ -61,6 +102,12 @@ function render(data) {
   renderBars("shares",data.shares,"total","label");
   renderBars("sections",data.sections,"visits","section");
   renderBars("sources",data.sources,"visits","source");
+  renderCta(data.cta);
+  renderFunnel(data);
+  renderBars("campaigns",(data.campaigns||[]).map(c=>({
+    title:[c.source,c.medium,c.campaign].filter(Boolean).join(" / "),
+    sessions:c.sessions
+  })),"sessions","title");
   const chart=$("trend");chart.replaceChildren();
   const trend=data.trend||[];
   if (!trend.length) empty(chart); else {
@@ -126,11 +173,14 @@ $("csv").addEventListener("click",()=>{
   if(!state.data) return;
   const data=state.data;
   const lines=[["Раздел","Название","Значение"], ...((data.counts||[]).map(x=>["События",names[x.event]||x.event,x.total]))];
-  [["questions","Вопросы","opens"],["shares","Поделились","total"],["sources","Источники","visits"],["sections","Разделы","visits"]].forEach(([key,name,field])=>{
-    (data[key]||[]).forEach(x=>lines.push([name,x.label||x.item||x.source||x.section||"",x[field]]));
+  [["questions","Вопросы","opens"],["shares","Поделились","total"],["sources","Источники","visits"],["sections","Разделы","visits"],["campaigns","Кампании","sessions"]].forEach(([key,name,field])=>{
+    (data[key]||[]).forEach(x=>lines.push([name,x.label||x.item||x.title||x.source||x.section||"",x[field]]));
   });
   lines.push(["Продажи","Выручка в рублях",(Number(data.payments?.revenue_kopecks)||0)/100]);
   lines.push(["Продажи","Заказы",data.payments?.orders||0]);
+  (data.cta||[]).forEach(x=>lines.push(["CTR кнопок",(x.label||x.item)+" (клики/показы)",(x.clicks||0)+"/"+(x.impressions||0)]));
+  const funnel=data.funnel||{};
+  [["visitors","Открыли сайт"],["offers","Увидели оффер"],["clicks","Нажали подписку"],["checkouts","Начали оплату"]].forEach(([k,label])=>lines.push(["Воронка",label,funnel[k]||0]));
   const blob=new Blob(["\ufeff"+lines.map(row=>row.map(csvCell).join(";")).join("\r\n")],{type:"text/csv;charset=utf-8"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");a.href=url;a.download="numerologia-analytics-"+data.period+"d.csv";
