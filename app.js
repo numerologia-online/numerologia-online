@@ -57,7 +57,7 @@ const getRedFlagFeature = () => {
 const openRedFlagFeature = async () => {
   const [feature] = await Promise.all([
     getRedFlagFeature(),
-    redFlagStylesLoading ??= loadStylesheet("redflag-polish.css?v=6")
+    redFlagStylesLoading ??= loadStylesheet("redflag-polish.css?v=7")
   ]);
   feature.openRedFlag();
 };
