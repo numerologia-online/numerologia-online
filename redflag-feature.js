@@ -1,5 +1,5 @@
 import { parseRedFlagBirthDate } from "./redflag-date-keys.js?v=2";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=21";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=22";
 
 const home = document.querySelector("#home");
 const redFlag = document.querySelector("#redflag");
