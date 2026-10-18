@@ -6,7 +6,7 @@ const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 // Validate the original date as DD.MM.YYYY, without calculating any energies.
 // The year is retained only to check that the entered date exists.
 export const parseRedFlagBirthDate = (value) => {
-  const match = /^(\\d{2})\\.(\\d{2})\\.(\\d{4})$/.exec(value);
+  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
   if (!match) return null;
   const day = Number(match[1]);
   const month = Number(match[2]);
