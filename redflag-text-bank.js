@@ -30,7 +30,7 @@ export const loadQuestionBank = async (bankName) => {
             if (typeof text !== "string" || !text.trim()) {
               throw new Error(`Ответ для ${question.id} и ${key} не найден`);
             }
-            return { paragraphs: text.split(/\\n\\s*\\n/).filter(Boolean) };
+            return { paragraphs: text.split(/\n\s*\n/).filter(Boolean) };
           }
         };
       }
