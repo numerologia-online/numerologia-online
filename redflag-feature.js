@@ -1,5 +1,4 @@
-import { parseBirthDate } from "./numerology-core.js?v=1";
-import { buildRelationshipProfile } from "./redflag-engine.js?v=3";
+import { parseRedFlagBirthDate } from "./redflag-date-keys.js?v=2";
 import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=21";
 
 const home = document.querySelector("#home");
@@ -17,7 +16,7 @@ const categoryStates = new Map(REDFLAG_CATEGORIES.map((category) => [category.id
   activeQuestionId: null
 }]));
 
-let activeProfile;
+let activeProfile; // Contains only birthDate, no numerology calculations.
 let formattedDate;
 
 // Share the exact currently calculated answer, not a second calculation.
@@ -253,7 +252,7 @@ const createCategory = (category, index) => {
   toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · 10 вопросов</small><strong>${category.title}</strong><small class="redflag-category-count">10 вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
   toggle.addEventListener("click", () => {
     if (!activeProfile) {
-      showError(parseBirthDate(birthDateInput.value)
+      showError(parseRedFlagBirthDate(birthDateInput.value)
         ? "Нажмите «Проверить мужчину», чтобы открыть вопросы."
         : "Введите дату рождения мужчины.");
       form.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -316,7 +315,7 @@ birthDateInput.addEventListener("input", () => {
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const date = parseBirthDate(birthDateInput.value);
+  const date = parseRedFlagBirthDate(birthDateInput.value);
   if (!date) {
     showError(birthDateInput.value.trim()
       ? "Введите существующую дату в формате ДД.ММ.ГГГГ."
@@ -326,7 +325,7 @@ form.addEventListener("submit", async (event) => {
   }
 
   try {
-    activeProfile = buildRelationshipProfile(date);
+    activeProfile = { birthDate: date };
     formattedDate = birthDateInput.value;
     const firstCategory = REDFLAG_CATEGORIES[0];
     const firstState = categoryStates.get(firstCategory.id);
