@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS analytics_events (
   item TEXT NOT NULL DEFAULT '',\n  label TEXT NOT NULL DEFAULT '',
   section TEXT NOT NULL DEFAULT '',
   source TEXT NOT NULL DEFAULT 'direct',
+  medium TEXT NOT NULL DEFAULT '',
+  campaign TEXT NOT NULL DEFAULT '',
   session TEXT NOT NULL DEFAULT '',
   amount_kopecks INTEGER NOT NULL DEFAULT 0,
   event_id TEXT,
