@@ -14,7 +14,10 @@ const categoryStates = new Map(REDFLAG_CATEGORIES.map((category) => [category.id
   expanded: false,
   loading: false,
   questions: null,
-  activeQuestionId: null
+  activeQuestionId: null,
+  answers: new Map(),
+  answerRequests: new Map(),
+  answerErrors: new Map()
 }]));
 
 let activeProfile;
@@ -210,6 +213,25 @@ const clearError = () => {
   birthDateInput.removeAttribute("aria-invalid");
 };
 
+// Resolve only the opened question. Cache its result for this calculated date.
+const ensureAnswer = (question, state) => {
+  const id = question.id;
+  if (state.answers.has(id) || state.answerRequests.has(id)) return;
+  const profile = activeProfile;
+  if (!profile) return;
+  state.answerErrors.delete(id);
+  const request = Promise.resolve().then(() => question.answer(profile));
+  state.answerRequests.set(id, request);
+  void request.then((response) => {
+    if (profile === activeProfile) state.answers.set(id, response);
+  }, () => {
+    if (profile === activeProfile) state.answerErrors.set(id, "Не удалось загрузить ответ. Закрой и открой вопрос ещё раз.");
+  }).finally(() => {
+    if (state.answerRequests.get(id) === request) state.answerRequests.delete(id);
+    if (profile === activeProfile && state.expanded && state.activeQuestionId === id) renderCategories();
+  });
+};
+
 const createQuestion = (question, state) => {
   const opened = state.activeQuestionId === question.id;
   const article = document.createElement("article");
@@ -223,7 +245,7 @@ const createQuestion = (question, state) => {
     return article;
   }
 
-  const response = question.answer(activeProfile);
+  const response = state.answers.get(question.id);
   const button = document.createElement("button");
   button.className = "redflag-question-toggle";
   button.type = "button";
@@ -233,12 +255,13 @@ const createQuestion = (question, state) => {
   const answer = document.createElement("div");
   answer.className = "redflag-answer";
   answer.hidden = !opened;
-  const paragraphs = response.paragraphs ?? [response.answer];
-  const scales = (response.scales ?? []).map(({ label, value }) => ({
-    label,
-    value: Math.max(0, Math.min(10, Math.round(Number(value) || 0)))
-  }));
-  const scalesMarkup = scales.length ? `
+  if (opened && response) {
+    const paragraphs = response.paragraphs ?? [response.answer];
+    const scales = (response.scales ?? []).map(({ label, value }) => ({
+      label,
+      value: Math.max(0, Math.min(10, Math.round(Number(value) || 0)))
+    }));
+    const scalesMarkup = scales.length ? `
     <div class="redflag-scales" aria-label="Шкалы ответа">
       ${scales.map(({ label, value }) => `
         <div class="redflag-scale">
@@ -246,20 +269,27 @@ const createQuestion = (question, state) => {
           <div class="redflag-scale-track" aria-hidden="true"><i style="width: ${value * 10}%"></i></div>
         </div>`).join("")}
     </div>` : "";
-  const verdictMarkup = response.verdict
-    ? `<p class="redflag-verdict">${response.verdict}</p>` : "";
-  const observationMarkup = response.observation
-    ? `<p class="redflag-observation"><strong>На что смотреть:</strong> ${response.observation}</p>` : "";
-  answer.innerHTML = `
+    const verdictMarkup = response.verdict
+      ? `<p class="redflag-verdict">${response.verdict}</p>` : "";
+    const observationMarkup = response.observation
+      ? `<p class="redflag-observation"><strong>На что смотреть:</strong> ${response.observation}</p>` : "";
+    answer.innerHTML = `
     ${verdictMarkup}
     ${scalesMarkup}
     ${paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")}
     ${observationMarkup}`;
-  if (opened) addRedFlagShare(answer, formatRedFlagMessage(question, response, formattedDate));
+    addRedFlagShare(answer, formatRedFlagMessage(question, response, formattedDate));
+  } else if (opened) {
+    const waiting = document.createElement("p");
+    waiting.className = "redflag-loading";
+    waiting.textContent = state.answerErrors.get(question.id) || "Открываю ответ…";
+    answer.append(waiting);
+  }
 
   button.addEventListener("click", () => {
     state.activeQuestionId = opened ? null : question.id;
     renderCategories();
+    if (!opened) ensureAnswer(question, state);
   });
 
   article.append(button, answer);
@@ -349,6 +379,9 @@ birthDateInput.addEventListener("input", () => {
     for (const state of categoryStates.values()) {
       state.expanded = false;
       state.activeQuestionId = null;
+      state.answers.clear();
+      state.answerRequests.clear();
+      state.answerErrors.clear();
     }
     renderCategories();
   }
@@ -368,6 +401,11 @@ form.addEventListener("submit", async (event) => {
   try {
     activeProfile = buildRelationshipProfile(date);
     formattedDate = birthDateInput.value;
+    for (const state of categoryStates.values()) {
+      state.answers.clear();
+      state.answerRequests.clear();
+      state.answerErrors.clear();
+    }
     const firstCategory = REDFLAG_CATEGORIES[0];
     const firstState = categoryStates.get(firstCategory.id);
     firstState.expanded = true;
