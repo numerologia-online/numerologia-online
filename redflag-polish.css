@@ -255,3 +255,36 @@
 .redflag-answer .redflag-share .personal-day-share-status {
   margin: 3px 0 0;
 }
+
+/* Red Flag: browser visitors can copy an answer or open Telegram without
+   pretending their unsigned Safari session can send a bot message. */
+.redflag-answer .redflag-save-hint {
+  margin: 0 0 4px;
+  color: #526079;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.redflag-answer .redflag-save-telegram {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 15px;
+  border-radius: 17px;
+  background: linear-gradient(135deg, #254879, #516eab);
+  box-shadow: 0 8px 18px rgba(37,72,121,.17);
+  color: #fff;
+  font: 700 15px/1.3 Inter, system-ui, sans-serif;
+  text-align: center;
+  text-decoration: none;
+}
+.redflag-answer .redflag-save-copy {
+  background: #fff;
+  border: 1px solid rgba(46,75,118,.23);
+  color: #274773;
+}
+.redflag-answer .redflag-save-telegram:focus-visible {
+  outline: 3px solid #a88c65;
+  outline-offset: 2px;
+}

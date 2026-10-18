@@ -48,22 +48,36 @@ const addRedFlagShare = (answer, report) => {
   const controls = document.createElement("section");
   controls.className = "personal-day-share redflag-share";
   controls.setAttribute("aria-label", "Сохранить и поделиться ответом");
+  // A Safari visit cannot prove the user's Telegram identity, even when they
+  // previously used the bot. Only signed Mini App initData enables delivery.
+  const signedData = window.Telegram?.WebApp?.initData;
+  const inBot = typeof signedData === "string" && signedData.length > 0;
+
   controls.innerHTML = '<p class="personal-day-share-title">Сохрани этот ответ ❤️</p>'
-    + '<button type="button" class="personal-day-share-save">📩 Отправить расчёт в мой бот</button>'
+    + (inBot
+      ? '<button type="button" class="personal-day-share-save">📩 Отправить расчёт в мой бот</button>'
+      : '<p class="redflag-save-hint">Ты открыла сайт в браузере. Чтобы отправлять расчёты в свой Telegram, открой наш бот и запусти сайт из его меню. Даже если ты уже пользовалась ботом, из Safari мы не можем определить твой аккаунт. Этот ответ автоматически не перенесётся - сначала скопируй его.</p>'
+        + '<button type="button" class="redflag-save-copy">📋 Скопировать этот ответ</button>'
+        + '<a class="redflag-save-telegram" href="https://t.me/Numerologiaonline_bot" target="_blank" rel="noopener noreferrer">🤖 Открыть Telegram-бота</a>')
     + '<button type="button" class="personal-day-share-send">💌 Поделиться с подругой</button>'
     + '<p class="personal-day-share-status" role="status" aria-live="polite"></p>';
   answer.append(controls);
 
-  const save = controls.querySelector(".personal-day-share-save");
+  const save = controls.querySelector("button.personal-day-share-save");
+  const copy = controls.querySelector(".redflag-save-copy");
   const share = controls.querySelector(".personal-day-share-send");
   const status = controls.querySelector(".personal-day-share-status");
 
-  save.addEventListener("click", async () => {
-    const signedData = window.Telegram?.WebApp?.initData;
-    if (!signedData) {
-      status.textContent = "Чтобы получить ответ в переписке, открой этот раздел через кнопку нашего Telegram-бота.";
-      return;
+  if (copy) copy.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(report);
+      status.textContent = "✓ Ответ скопирован. Можно вставить его в «Избранное» Telegram.";
+    } catch {
+      status.textContent = "Не удалось скопировать автоматически. Используй кнопку «Поделиться с подругой», чтобы сохранить текст.";
     }
+  });
+
+  if (save) save.addEventListener("click", async () => {
     if (report.length > 3800) {
       status.textContent = "Ответ слишком длинный для одного сообщения Telegram.";
       return;
