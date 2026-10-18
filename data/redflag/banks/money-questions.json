@@ -3,8 +3,8 @@
     {
       "id": "gift",
       "title": "Дарит без повода или считает, что его присутствия уже достаточно?",
-      "textFile": "money/gift.json",
-      "status": "in-progress"
+      "textFile": "money/gift.json?v=2",
+      "status": "ready"
     },
     {
       "id": "generosity",
