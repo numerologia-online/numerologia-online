@@ -48,8 +48,13 @@ const addRedFlagShare = (answer, report) => {
   const controls = document.createElement("section");
   controls.className = "personal-day-share redflag-share";
   controls.setAttribute("aria-label", "Сохранить и поделиться ответом");
-  controls.innerHTML = '<p class="personal-day-share-title">Сохрани этот ответ ❤️</p>'
-    + '<button type="button" class="personal-day-share-save">📩 Отправить расчёт в Telegram</button>'
+  const openedFromBot = Boolean(window.Telegram?.WebApp?.initData);
+  controls.innerHTML = '<p class="personal-day-share-title">Не потеряй свой ответ ❤️</p>'
+    + '<p class="personal-day-share-status">Чтобы не потерять разбор, сохрани его в нашем Telegram-боте. Сможешь перечитать в любой момент.</p>'
+    + '<button type="button" class="personal-day-share-save">'
+    + (openedFromBot ? '❤️ Сохранить ответ в Telegram' : '🤖 Открыть бота для сохранения')
+    + '</button>'
+    + (openedFromBot ? '' : '<p class="redflag-save-hint">В Safari ответ нельзя отправить в бота автоматически. Открой бота, нажми «Открыть сайт» и сохрани ответ там.</p>')
     + '<button type="button" class="personal-day-share-send">💌 Поделиться с подругой</button>'
     + '<div class="redflag-save-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>';
   answer.append(controls);
@@ -83,21 +88,18 @@ const addRedFlagShare = (answer, report) => {
   save.addEventListener("click", async () => {
     const signedData = window.Telegram?.WebApp?.initData;
     if (typeof signedData !== "string" || !signedData) {
-      showFeedback("is-error",
-        "⚠️ Сообщение не отправлено",
-        "Чтобы сохранять расчёты в Telegram, откройте наш сайт через Telegram-бота.",
-        true);
+      window.location.assign(REDFLAG_BOT_URL);
       return;
     }
     if (report.length > 3800) {
       showFeedback("is-error",
-        "⚠️ Не удалось отправить",
+        "⚠️ Не удалось сохранить",
         "Этот ответ слишком длинный для одного сообщения Telegram.");
       return;
     }
 
     save.disabled = true;
-    showFeedback("is-pending", "Отправляем расчёт…", "Пожалуйста, подождите.");
+    showFeedback("is-pending", "Сохраняем ответ…", "Пожалуйста, подождите.");
     try {
       const controller = new AbortController();
       const timer = window.setTimeout(() => controller.abort(), 14000);
@@ -116,10 +118,10 @@ const addRedFlagShare = (answer, report) => {
       }
       const data = await response.json();
       if (!response.ok || data?.ok !== true) throw new Error(data?.error || "DELIVERY_FAILED");
-      save.textContent = "✓ Сохранено в Telegram";
+      save.textContent = "✓ Ответ сохранён";
       showFeedback("is-success",
-        "✅ Расчёт сохранён!",
-        "Ваш ответ уже в переписке с нашим Telegram-ботом ❤️");
+        "✅ Ответ сохранён в боте!",
+        "Ты сможешь перечитать его в любой момент ❤️");
     } catch (error) {
       save.disabled = false;
       const reconnectErrors = new Set([
@@ -129,12 +131,12 @@ const addRedFlagShare = (answer, report) => {
       ]);
       if (reconnectErrors.has(error?.message)) {
         showFeedback("is-error",
-          "⚠️ Сообщение не отправлено",
-          "Откройте наш сайт через Telegram-бота и повторите отправку.",
+          "⚠️ Не удалось сохранить",
+          "Открой сайт через нашего Telegram-бота и попробуй снова.",
           true);
       } else {
         showFeedback("is-error",
-          "⚠️ Не удалось отправить",
+          "⚠️ Не удалось сохранить",
           "Попробуйте ещё раз.");
       }
     }
