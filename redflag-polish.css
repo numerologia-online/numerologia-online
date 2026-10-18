@@ -18,7 +18,7 @@
   box-shadow: 0 20px 45px rgba(42, 46, 77, .14);
 }
 
-.redflag-topbar { display: flex; align-items: center; justify-content: space-between; }
+.redflag-topbar { display: flex; align-items: center; justify-content: flex-end; }
 .redflag-topbar .eyebrow, .redflag-result-heading .eyebrow { color: #8e5f6b; }
 
 .redflag-close {
@@ -35,7 +35,7 @@
   line-height: 1;
 }
 
-.redflag-intro { padding: 7px 7px 17px; }
+.redflag-intro { padding: 4px 7px 14px; }
 .redflag-intro h1, .redflag-result-heading h2 {
   margin: 0;
   color: #283762;
@@ -44,34 +44,17 @@
 }
 .redflag-intro h1 { font-size: clamp(33px, 9vw, 52px); line-height: .98; }
 .redflag-intro > p {
-  margin: 14px 0 0;
-  color: #576078;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 17px;
-  line-height: 1.38;
+  margin: 12px 0 0;
+  color: #55445b;
+  font-family: inherit;
+  font-size: clamp(16px, 4.4vw, 18px);
+  line-height: 1.43;
 }
-
-.redflag-promise { display: grid; gap: 7px; margin-top: 16px; }
-.redflag-promise span {
-  position: relative;
-  padding: 9px 12px 9px 29px;
-  border: 1px solid rgba(59, 70, 112, .11);
-  border-radius: 15px;
-  background: rgba(255, 255, 255, .62);
-  color: #3d4564;
-  font-size: 14px;
-  font-weight: 750;
-}
-.redflag-promise span::before {
-  position: absolute;
-  top: 50%;
-  left: 12px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #bd8b43;
-  content: "";
-  transform: translateY(-50%);
+.redflag-intro > p strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #8b4d67;
+  font-weight: 850;
 }
 
 .redflag-category {
