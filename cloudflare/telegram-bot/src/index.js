@@ -370,7 +370,7 @@ export default {
 
     // Bearer deep link for saving a Red Flag answer. ONLY this /start payload
     // bypasses the REG.RU onboarding; plain /start remains unchanged.
-    const redFlagTicketStart = /^\\/start(?:@numerologiaonline_bot)?\\s+(r_[A-Za-z0-9_-]{32})$/i.exec(privateText);
+    const redFlagTicketStart = new RegExp('^/start(?:@numerologiaonline_bot)? +(r_[A-Za-z0-9_-]{32})$', 'i').exec(privateText);
     if (redFlagTicketStart) {
       if (!await incomingMessage()) return json({ ok: false, error: 'FORBIDDEN' }, 403);
       return json(await deliverRedFlagTicket(update, redFlagTicketStart[1], env));
