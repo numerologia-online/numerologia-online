@@ -173,7 +173,7 @@ test("Развёрнутые ответы не дублируют формулы
   assert.ok(!js.includes("pro-equation"));
   assert.ok(!js.includes('answer.append(paragraph("Точка матрицы:'));
   assert.ok(!css.includes(".pro-equation"));
-  assert.ok(html.includes('src="pro/pro.js?v=21"'));
+  assert.ok(html.includes('src="pro/pro.js?v=98"'));
   assert.ok(html.includes('pro/pro.css?v=16'));
   assert.ok(js.includes('loadFullReportSection(definition.energy)'));
 });
@@ -225,7 +225,7 @@ test("Первая страница совместимости умещаетс�
   assert.ok(css.includes(".compatibility-form{margin-bottom:auto}"));
   assert.ok(html.includes("Говорят, души выбирают друг друга ещё на небесах."));
   assert.ok(html.includes("13 глубоких ответов по двум датам рождения."));
-  assert.ok(html.includes('src="app.js?v=168"'));
+  assert.ok(html.includes('src="app.js?v=179"'));
   assert.ok(app.includes('loadStylesheet("compatibility-polish.css?v=4")'));
 });
 

@@ -1,5 +1,5 @@
-import { calculateMatrix, parseBirthDate } from "../../../numerology-core.js?v=4";
-import { nodesFor } from "../../pro-points.js?v=2";
+import { calculateMatrix, parseBirthDate } from "../../../numerology-core.js?v=5";
+import { nodesFor } from "../../pro-points.js?v=3";
 
 const $ = (id) => document.getElementById(id);
 const make = (tag, className, value) => {
@@ -238,7 +238,7 @@ function showInternalCalculations(root,matrix){
   // Короткие конкретные примеры к схеме: не выдаём формулы углов за внутренние линии.
   showCompactCalculations(root,[
     ["Левая ось:",compactSumFormula([matrix.left,matrix.center],matrix.leftSpoke.near)],
-    ["Родовой центр:",compactSumFormula([matrix.corners.topLeft,matrix.corners.topRight,matrix.corners.bottomRight,matrix.corners.bottomLeft],matrix.lineage.ancestralCenter)],
+    ["Родовая диагональ:",compactSumFormula([matrix.corners.topLeft,matrix.center],matrix.diagonals.topLeft.near)],
     ["Нижняя линия:",compactSumFormula([matrix.center,matrix.bottom],matrix.tail.first)]
   ]);
 }
@@ -252,7 +252,7 @@ const cornerStages=[
 const internalStages=[
   {title:"Проверьте девять основных точек",text:"На схеме много маленьких кружков. Сначала убедитесь, что известны девять основных чисел. От них строятся другие позиции."},
   {title:"Рассчитайте три оси",text:"Найдите средние числа на верхней, левой и правой осях из соответствующей внешней точки и личного центра."},
-  {title:"Разберите родовые диагонали",text:"Для диагоналей сначала найдите родовой центр из четырёх углов - это не личный центр."},
+  {title:"Разберите родовые диагонали",text:"Для родовых диагоналей используйте основной центр матрицы. Сумма четырёх углов - отдельный показатель."},
   {title:"Постройте нижнюю линию",text:"Два дополнительных нижних числа рассчитываются последовательно из центра и нижней точки."},
   {title:"Считайте денежную и любовную линии",text:"Найдите вход в деньги, вход в отношения, общий баланс и точки под знаками доллара и сердца."}
 ];
@@ -280,8 +280,8 @@ function showInternalStep(root,m){
     [["Верхняя ось:",compactSumFormula([m.top,m.center],m.topSpoke.near)],
       ["Левая ось:",compactSumFormula([m.left,m.center],m.leftSpoke.near)],
       ["Правая ось:",compactSumFormula([m.right,m.center],m.rightSpoke.near)]],
-    [["Родовой центр:",compactSumFormula([m.corners.topLeft,m.corners.topRight,m.corners.bottomRight,m.corners.bottomLeft],m.lineage.ancestralCenter)],
-      ["Слева сверху:",compactSumFormula([m.corners.topLeft,m.lineage.ancestralCenter],m.diagonals.topLeft.near)]],
+    [["Слева сверху / внутренняя:",compactSumFormula([m.corners.topLeft,m.center],m.diagonals.topLeft.near)],
+      ["Слева сверху / внешняя:",compactSumFormula([m.corners.topLeft,m.diagonals.topLeft.near],m.diagonals.topLeft.outer)]],
     [["Нижняя первая:",compactSumFormula([m.center,m.bottom],m.tail.first)],
       ["Нижняя вторая:",compactSumFormula([m.bottom,m.tail.first],m.tail.second)]],
     [["Вход в деньги:",compactSumFormula([m.right,m.center],m.channels.moneyEntry)],
@@ -703,7 +703,7 @@ function renderLesson(data) {
 }
 async function start() {
   try{
-    const res=await fetch("pro/school/lessons-manifest.json?v=3");
+    const res=await fetch("pro/school/lessons-manifest.json?v=4");
     if(!res.ok)throw Error("Список уроков не найден");
     const meta=await res.json();
     if(meta.schema!=="pro-school-lessons-manifest-v1"||!Array.isArray(meta.lessons))throw Error("Некорректная программа");
@@ -729,7 +729,7 @@ async function start() {
       nav.append(back);
       return;
     }
-    const response=await fetch(manifest[index].file+"?v=12");
+    const response=await fetch(manifest[index].file+"?v=13");
     if(!response.ok)throw Error("Материал урока не найден");
     lesson=await response.json();
     if(lesson.id!==id||!Array.isArray(lesson.sections)||!Array.isArray(lesson.questions))

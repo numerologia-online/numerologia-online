@@ -1,5 +1,5 @@
-import { calculateMatrix, parseBirthDate } from "../../numerology-core.js?v=1";
-import { pointCatalog } from "./points.js?v=2";
+import { calculateMatrix, parseBirthDate } from "../../numerology-core.js?v=5";
+import { pointCatalog } from "./points.js?v=3";
 
 const byId = (id) => document.getElementById(id);
 const error = byId("school-error");
@@ -222,7 +222,7 @@ byId("school-train-next").addEventListener("click",()=>{
 async function startSchool() {
   try {
     const [lessonResponse,arcanaResponse]=await Promise.all([
-      fetch("pro/school/lessons-manifest.json?v=3"),
+      fetch("pro/school/lessons-manifest.json?v=4"),
       fetch("pro/school/arcana.json?v=1")
     ]);
     if(!lessonResponse.ok||!arcanaResponse.ok)throw new Error("Учебная база недоступна");

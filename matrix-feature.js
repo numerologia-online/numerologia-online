@@ -1,4 +1,4 @@
-import { calculateMatrix, parseBirthDate } from "./numerology-core.js?v=2";
+import { calculateMatrix, parseBirthDate } from "./numerology-core.js?v=5";
 import {
   buildFullReportPreview,
   buildFullReportSections,

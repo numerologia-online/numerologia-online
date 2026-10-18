@@ -1,6 +1,6 @@
 {
   "schema": "pro-school-lessons-manifest-v1",
-  "version": "2026-10-13-expanded",
+  "version": "2026-10-18-unified-ancestral-diagonals",
   "lessons": [
     {
       "id": "start",
@@ -202,7 +202,7 @@
     },
     {
       "id": "lineage-practice",
-      "title": "Родовые линии: отдельный центр и четыре угла",
+      "title": "Родовые линии: основной центр и четыре угла",
       "level": "Практика по сферам",
       "minutes": 24,
       "file": "pro/school/lessons/lineage-practice.json",

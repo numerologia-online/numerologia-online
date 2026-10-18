@@ -41,13 +41,13 @@ export const calculateMatrix = ({ day, month, year }) => {
     const near = reduce22(base + center);
     return { outer: reduce22(base + near), near, core: reduce22(near + center) };
   };
-  // Ancestral diagonals are derived from the ancestral square's own
-  // central point, which is distinct from the main personal centre.
+  // The ancestral square has an additional lineage-strength indicator.
+  // Internal ancestral diagonals instead use the main personal centre.
   const ancestralCenter = reduce22(
     corners.topLeft + corners.topRight + corners.bottomRight + corners.bottomLeft
   );
   const diagonal = (corner) => {
-    const near = reduce22(corner + ancestralCenter);
+    const near = reduce22(corner + center);
     return { outer: reduce22(corner + near), near };
   };
   const tailFirst = reduce22(center + bottom);

@@ -1,4 +1,4 @@
-import { calculateMatrix, parseBirthDate } from "../numerology-core.js?v=2";
+import { calculateMatrix, parseBirthDate } from "../numerology-core.js?v=5";
 import { loadChildDayReading } from "./child-day-engine.js?v=13";
 
 const byId = (id) => document.getElementById(id);
