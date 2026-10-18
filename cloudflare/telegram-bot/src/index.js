@@ -1,5 +1,6 @@
 import { personalDayCallback, personalDayDateReply, acknowledgePersonalDayCallback } from './personal-day-dialog.js';
 import { handleDaySave } from './day-save-endpoint.js';
+import { deliverRedFlagTicket } from './redflag-delivery.js';
 /**
  * Telegram webhook receiver for Numerologia Online.
  * All user data and calculations remain at REG.RU.
@@ -366,6 +367,15 @@ export default {
       && typeof update?.message?.text === 'string'
       ? update.message.text.trim() : '';
     const menuCommand = privateText.split(/\s+/u, 1)[0].toLowerCase().split('@')[0];
+
+    // Bearer deep link for saving a Red Flag answer. ONLY this /start payload
+    // bypasses the REG.RU onboarding; plain /start remains unchanged.
+    const redFlagTicketStart = /^\\/start(?:@numerologiaonline_bot)?\\s+(r_[A-Za-z0-9_-]{32})$/i.exec(privateText);
+    if (redFlagTicketStart) {
+      if (!await incomingMessage()) return json({ ok: false, error: 'FORBIDDEN' }, 403);
+      return json(await deliverRedFlagTicket(update, redFlagTicketStart[1], env));
+    }
+
     if (privateText === BOTTOM_MENU_LABEL || privateText === CATALOG_LABEL
         || menuCommand === '/catalog' || menuCommand === '/catalogue') {
       if (!await incomingMessage()) return json({ ok: false, error: 'FORBIDDEN' }, 403);
