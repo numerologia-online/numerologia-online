@@ -6,17 +6,30 @@ const loadJson = async (path) => {
   return response.json();
 };
 
+// Only titles and file paths are loaded when the category opens.
+// The chosen question's text bank is fetched once, on demand.
 const bank = await loadJson("../banks/money-questions.json?v=14");
-const textBanks = await Promise.all(bank.questions.map((question) =>
-  question.textFile ? loadJson(`../${question.textFile}`) : null
-));
+const textBankRequests = new Map();
 
-export const QUESTIONS = bank.questions.map((question, index) => ({
+const loadTextBank = (question) => {
+  if (!textBankRequests.has(question.id)) {
+    const request = loadJson(`../${question.textFile}`).catch((error) => {
+      textBankRequests.delete(question.id); // Allow retry after network failure.
+      throw error;
+    });
+    textBankRequests.set(question.id, request);
+  }
+  return textBankRequests.get(question.id);
+};
+
+export const QUESTIONS = bank.questions.map((question) => ({
   id: question.id,
   title: question.title,
-  answer: (profile) => {
-    const textBank = textBanks[index];
-    if (!textBank) return { answer: "Готовим новую авторскую трактовку для этого вопроса." };
+  answer: async (profile) => {
+    if (!question.textFile) {
+      return { answer: "Готовим новую авторскую трактовку для этого вопроса." };
+    }
+    const textBank = await loadTextBank(question);
     if (textBank.questionId !== question.id || !["reduce22(day)-month", "day-month"].includes(textBank.keyRule)) {
       throw new Error(`Некорректная база ответов: ${question.id}`);
     }
