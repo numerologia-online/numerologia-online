@@ -3,9 +3,10 @@
 const SITE_ORIGINS = new Set(["https://numerologia-online.github.io"]);
 const PUBLIC_EVENTS = new Set([
   "page_view", "redflag_open", "redflag_category_open", "redflag_question_open",
-  "redflag_share_click", "redflag_save_click", "pdf_download", "telegram_link_click"
+  "redflag_share_click", "redflag_save_click", "pdf_download", "telegram_link_click",
+  "cta_impression", "cta_click", "subscription_offer_view", "subscription_cta_click", "checkout_started"
 ]);
-const SERVER_EVENTS = new Set(["bot_start", "bot_button", "bot_active", "payment_success"]);
+const SERVER_EVENTS = new Set(["bot_start", "bot_button", "bot_active", "payment_success", "subscription_activated", "subscription_renewed", "payment_refunded"]);
 const MAX_BODY_BYTES = 2048;
 
 function cors(origin) {
@@ -48,14 +49,18 @@ async function insertEvent(env, data, paid = false) {
   const section = clean(data.section || "", 80);
   const label = title(data.label || "");
   const source = clean(data.source || "direct", 80);
+  const medium = clean(data.medium || "", 80);
+  const campaign = clean(data.campaign || "", 80);
   const session = clean(data.session || "", 80);
   const eventId = paid ? clean(data.event_id || "", 80) : "";
-  const amount = paid && name === "payment_success" && Number.isSafeInteger(data.amount_kopecks)
-    && data.amount_kopecks >= 0 && data.amount_kopecks <= 100000000 ? data.amount_kopecks : 0;
-  if (name === "payment_success" && (!eventId || !amount)) return false;
+  const paymentEvent = ["payment_success","payment_refunded","subscription_renewed"].includes(name);
+  const amount = paid && paymentEvent && Number.isSafeInteger(data.amount_kopecks)
+    && data.amount_kopecks > 0 && data.amount_kopecks <= 100000000 ? data.amount_kopecks : 0;
+  if (paid && !eventId) return false;
+  if (paymentEvent && (!eventId || !amount)) return false;
   await env.DB.prepare(
-    "INSERT OR IGNORE INTO analytics_events (event, item, label, section, source, session, amount_kopecks, event_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-  ).bind(name,item,label,section,source,session,amount,eventId || null).run();
+    "INSERT OR IGNORE INTO analytics_events (event, item, label, section, source, medium, campaign, session, amount_kopecks, event_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind(name,item,label,section,source,medium,campaign,session,amount,eventId || null).run();
   return true;
 }
 async function overview(env, days) {
@@ -66,15 +71,18 @@ async function overview(env, days) {
     questions: "SELECT item, MAX(label) AS label, COUNT(*) AS opens, COUNT(DISTINCT NULLIF(session,'')) AS sessions FROM analytics_events WHERE created_at >= datetime('now', ?) AND event = 'redflag_question_open' AND item != '' GROUP BY item ORDER BY opens DESC LIMIT 30",
     categories: "SELECT item, MAX(label) AS label, COUNT(*) AS opens FROM analytics_events WHERE created_at >= datetime('now', ?) AND event = 'redflag_category_open' AND item != '' GROUP BY item ORDER BY opens DESC LIMIT 30",
     shares: "SELECT item, MAX(label) AS label, COUNT(*) AS total FROM analytics_events WHERE created_at >= datetime('now', ?) AND event = 'redflag_share_click' AND item != '' GROUP BY item ORDER BY total DESC LIMIT 30",
-    sources: "SELECT source, COUNT(*) AS visits FROM analytics_events WHERE created_at >= datetime('now', ?) AND event = 'page_view' GROUP BY source ORDER BY visits DESC LIMIT 15",
+    sources: "SELECT source, COUNT(*) AS visits, COUNT(DISTINCT NULLIF(session,'')) AS sessions FROM analytics_events WHERE created_at >= datetime('now', ?) AND event = 'page_view' GROUP BY source ORDER BY visits DESC LIMIT 15",
+    campaigns: "SELECT source, medium, campaign, COUNT(DISTINCT NULLIF(session,'')) AS sessions FROM analytics_events WHERE created_at >= datetime('now', ?) AND event='page_view' AND campaign != '' GROUP BY source, medium, campaign ORDER BY sessions DESC LIMIT 30",
+    cta: "WITH clicks AS (SELECT item, session, MAX(label) AS label, MAX(CASE WHEN event='cta_impression' THEN 1 ELSE 0 END) AS impressed, MAX(CASE WHEN event='cta_click' THEN 1 ELSE 0 END) AS clicked FROM analytics_events WHERE created_at >= datetime('now', ?) AND event IN ('cta_impression','cta_click') AND session != '' AND item != '' GROUP BY item, session) SELECT item, MAX(label) AS label, SUM(impressed) AS impressions, SUM(CASE WHEN impressed=1 AND clicked=1 THEN 1 ELSE 0 END) AS clicks, ROUND(100.0*SUM(CASE WHEN impressed=1 AND clicked=1 THEN 1 ELSE 0 END)/NULLIF(SUM(impressed),0),1) AS ctr FROM clicks GROUP BY item ORDER BY impressions DESC LIMIT 30",
+    funnel: "WITH steps AS (SELECT session, MIN(CASE WHEN event='page_view' THEN id END) AS view_id, MIN(CASE WHEN event='subscription_offer_view' THEN id END) AS offer_id, MIN(CASE WHEN event='subscription_cta_click' THEN id END) AS click_id, MIN(CASE WHEN event='checkout_started' THEN id END) AS checkout_id FROM analytics_events WHERE created_at >= datetime('now', ?) AND session != '' GROUP BY session) SELECT SUM(CASE WHEN view_id IS NOT NULL THEN 1 ELSE 0 END) AS visitors, SUM(CASE WHEN offer_id > view_id THEN 1 ELSE 0 END) AS offers, SUM(CASE WHEN click_id > offer_id AND offer_id > view_id THEN 1 ELSE 0 END) AS clicks, SUM(CASE WHEN checkout_id > click_id AND click_id > offer_id AND offer_id > view_id THEN 1 ELSE 0 END) AS checkouts FROM steps",
     sections: "SELECT section, COUNT(*) AS visits FROM analytics_events WHERE created_at >= datetime('now', ?) AND event = 'page_view' GROUP BY section ORDER BY visits DESC LIMIT 15",
     trend: "SELECT substr(created_at,1,10) AS date, SUM(CASE WHEN event='page_view' THEN 1 ELSE 0 END) AS visits, SUM(CASE WHEN event='redflag_question_open' THEN 1 ELSE 0 END) AS questions FROM analytics_events WHERE created_at >= datetime('now', ?) GROUP BY substr(created_at,1,10) ORDER BY date",
-    payments: "SELECT COUNT(*) AS orders, COALESCE(SUM(amount_kopecks),0) AS revenue_kopecks FROM analytics_events WHERE created_at >= datetime('now', ?) AND event='payment_success'"
+    payments: "SELECT SUM(CASE WHEN event='payment_success' THEN 1 ELSE 0 END) AS orders, COALESCE(SUM(CASE WHEN event IN ('payment_success','subscription_renewed') THEN amount_kopecks WHEN event='payment_refunded' THEN -amount_kopecks ELSE 0 END),0) AS revenue_kopecks, SUM(CASE WHEN event='payment_refunded' THEN 1 ELSE 0 END) AS refunds FROM analytics_events WHERE created_at >= datetime('now', ?) AND event IN ('payment_success','subscription_renewed','payment_refunded')"
   };
   const out = {};
   for (const [key,query] of Object.entries(sql)) {
     const result = await env.DB.prepare(query).bind(since).all();
-    out[key] = key === "payments" ? (result.results[0] || {orders:0,revenue_kopecks:0}) : result.results;
+    out[key] = (key === "payments" || key === "funnel") ? (result.results[0] || {}) : result.results;
   }
   return {period, collected_at:new Date().toISOString(), ...out};
 }
