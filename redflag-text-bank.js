@@ -1,4 +1,4 @@
-import { getRedFlagDateKey, assertCompleteRedFlagBank } from "./redflag-date-keys.js?v=1";
+import { getRedFlagDateKey, assertCompleteRedFlagBank } from "./redflag-date-keys.js?v=2";
 
 const loadJson = async (path) => {
   const response = await fetch(new URL(path, import.meta.url));
@@ -35,7 +35,7 @@ export const loadQuestionBank = async (bankName) => {
         };
       }
 
-      //      // No approximation: until 366 authored readings exist, do not present
+      // No approximation: until 366 authored readings exist, do not present
       // one of three generic old variants as a personalised interpretation.
       return {
         id: question.id,
