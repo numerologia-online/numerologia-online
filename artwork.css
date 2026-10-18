@@ -12,21 +12,10 @@
 
 .product-card::after { content: none; }
 
-.calculation { background-image: url("assets/full-calculation.webp"); }
-.red-flag { background-image: url("assets/red-flag.webp"); color: #882f35; }
-.woman { background-image: url("assets/woman.webp"); }
-.code { background-image: url("assets/code.webp"); }
-.day { background-image: url("assets/day.webp"); }
-.year-card { background-image: url("assets/year.webp"); }
-.child { background-image: url("assets/children.webp"); }
-.money { background-image: url("assets/money.webp"); }
-.compatibility { background-image: url("assets/compatibility.webp"); }
-.horary { background-image: url("assets/horary.webp"); }
-
-.appointment {
-  background-image: url("assets/appointment.jpg");
-  color: #104b3b;
-}
+/* Illustrations are applied by artwork-loader.js only as cards approach the screen.
+   This avoids fetching all background images immediately on mobile. */
+.red-flag { color: #882f35; }
+.appointment { color: #104b3b; }
 
 /* Главная: ссылка «Полный разбор» визуально такая же, как соседние карточки. */
 .products > a.product-card.calculation {
