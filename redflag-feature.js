@@ -48,43 +48,56 @@ const addRedFlagShare = (answer, report) => {
   const controls = document.createElement("section");
   controls.className = "personal-day-share redflag-share";
   controls.setAttribute("aria-label", "Сохранить и поделиться ответом");
-  // A Safari visit cannot prove the user's Telegram identity, even when they
-  // previously used the bot. Only signed Mini App initData enables delivery.
-  const signedData = window.Telegram?.WebApp?.initData;
-  const inBot = typeof signedData === "string" && signedData.length > 0;
-
   controls.innerHTML = '<p class="personal-day-share-title">Сохрани этот ответ ❤️</p>'
-    + (inBot
-      ? '<button type="button" class="personal-day-share-save">📩 Отправить расчёт в мой бот</button>'
-      : '<p class="redflag-save-hint">Ты открыла сайт в браузере. Чтобы отправлять расчёты в свой Telegram, открой наш бот и запусти сайт из его меню. Даже если ты уже пользовалась ботом, из Safari мы не можем определить твой аккаунт. Этот ответ автоматически не перенесётся - сначала скопируй его.</p>'
-        + '<button type="button" class="redflag-save-copy">📋 Скопировать этот ответ</button>'
-        + '<a class="redflag-save-telegram" href="https://t.me/Numerologiaonline_bot" target="_blank" rel="noopener noreferrer">🤖 Открыть Telegram-бота</a>')
+    + '<button type="button" class="personal-day-share-save">📩 Отправить расчёт в Telegram</button>'
     + '<button type="button" class="personal-day-share-send">💌 Поделиться с подругой</button>'
-    + '<p class="personal-day-share-status" role="status" aria-live="polite"></p>';
+    + '<div class="redflag-save-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>';
   answer.append(controls);
 
-  const save = controls.querySelector("button.personal-day-share-save");
-  const copy = controls.querySelector(".redflag-save-copy");
+  const save = controls.querySelector(".personal-day-share-save");
   const share = controls.querySelector(".personal-day-share-send");
-  const status = controls.querySelector(".personal-day-share-status");
+  const feedback = controls.querySelector(".redflag-save-feedback");
 
-  if (copy) copy.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(report);
-      status.textContent = "✓ Ответ скопирован. Можно вставить его в «Избранное» Telegram.";
-    } catch {
-      status.textContent = "Не удалось скопировать автоматически. Используй кнопку «Поделиться с подругой», чтобы сохранить текст.";
+  // Only show an extra bot link when browser delivery is impossible.
+  // Success must follow a real {ok: true} response from the server.
+  const showFeedback = (type, title, description, withBotLink = false) => {
+    const heading = document.createElement("strong");
+    heading.className = "redflag-save-feedback-title";
+    heading.textContent = title;
+    const detail = document.createElement("p");
+    detail.textContent = description;
+    feedback.className = "redflag-save-feedback " + type;
+    feedback.replaceChildren(heading, detail);
+    if (withBotLink) {
+      const link = document.createElement("a");
+      link.className = "redflag-save-feedback-link";
+      link.href = REDFLAG_BOT_URL;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "Открыть Telegram-бота →";
+      feedback.append(link);
     }
-  });
+    feedback.hidden = false;
+  };
 
-  if (save) save.addEventListener("click", async () => {
+  save.addEventListener("click", async () => {
+    const signedData = window.Telegram?.WebApp?.initData;
+    if (typeof signedData !== "string" || !signedData) {
+      showFeedback("is-error",
+        "⚠️ Сообщение не отправлено",
+        "Чтобы сохранять расчёты в Telegram, откройте наш сайт через Telegram-бота.",
+        true);
+      return;
+    }
     if (report.length > 3800) {
-      status.textContent = "Ответ слишком длинный для одного сообщения Telegram.";
+      showFeedback("is-error",
+        "⚠️ Не удалось отправить",
+        "Этот ответ слишком длинный для одного сообщения Telegram.");
       return;
     }
 
     save.disabled = true;
-    status.textContent = "Отправляю ответ в твою переписку…";
+    showFeedback("is-pending", "Отправляем расчёт…", "Пожалуйста, подождите.");
     try {
       const controller = new AbortController();
       const timer = window.setTimeout(() => controller.abort(), 14000);
@@ -103,29 +116,27 @@ const addRedFlagShare = (answer, report) => {
       }
       const data = await response.json();
       if (!response.ok || data?.ok !== true) throw new Error(data?.error || "DELIVERY_FAILED");
-      status.textContent = "✓ Ответ отправлен в переписку с нашим ботом!";
-      save.textContent = "✓ Ответ уже в моём боте";
+      save.textContent = "✓ Сохранено в Telegram";
+      showFeedback("is-success",
+        "✅ Расчёт сохранён!",
+        "Ваш ответ уже в переписке с нашим Telegram-ботом ❤️");
     } catch (error) {
       save.disabled = false;
-      const reasons = {
-        BOT_NOT_CONFIGURED: "На сервере не подключён токен бота.",
-        INIT_DATA_MISSING: "Telegram не передал данные входа. Открой раздел через меню бота.",
-        INIT_DATA_FORMAT: "Telegram передал неполные данные входа. Открой раздел через меню бота заново.",
-        SESSION_EXPIRED: "Сессия Telegram устарела. Закрой мини-приложение и открой его заново.",
-        SIGNATURE_MISMATCH: "Не удалось проверить вход через Telegram. Попробуй заново открыть раздел в боте.",
-        USER_NOT_PRESENT: "Telegram не передал профиль. Открой раздел из чата с ботом.",
-        AUTH_CHECK_UNAVAILABLE: "Проверка Telegram временно недоступна.",
-        BOT_CHAT_UNAVAILABLE: "Бот не может написать в этот чат. Открой переписку и нажми /start.",
-        BOT_API_AUTH_FAILED: "Сервер Telegram отклонил настройки бота.",
-        BOT_RATE_LIMIT: "Telegram временно ограничил отправку.",
-        INVALID_FORECAST: "Ответ не подошёл для отправки. Обнови страницу и открой вопрос снова.",
-        ORIGIN_NOT_ALLOWED: "Открой раздел через наше мини-приложение Telegram.",
-        DELIVERY_FAILED: "Сервер Telegram не принял сообщение. Попробуй позже."
-      };
-      status.textContent = reasons[error?.message]
-        || (error?.name === "AbortError"
-          ? "Сервер не ответил за 14 секунд. Попробуй позже."
-          : "Не удалось связаться с сервером отправки. Попробуй позже.");
+      const reconnectErrors = new Set([
+        "INIT_DATA_MISSING", "INIT_DATA_FORMAT", "SESSION_EXPIRED",
+        "SIGNATURE_MISMATCH", "USER_NOT_PRESENT", "BOT_CHAT_UNAVAILABLE",
+        "ORIGIN_NOT_ALLOWED"
+      ]);
+      if (reconnectErrors.has(error?.message)) {
+        showFeedback("is-error",
+          "⚠️ Сообщение не отправлено",
+          "Откройте наш сайт через Telegram-бота и повторите отправку.",
+          true);
+      } else {
+        showFeedback("is-error",
+          "⚠️ Не удалось отправить",
+          "Попробуйте ещё раз.");
+      }
     }
   });
 

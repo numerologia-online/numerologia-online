@@ -256,35 +256,57 @@
   margin: 3px 0 0;
 }
 
-/* Red Flag: browser visitors can copy an answer or open Telegram without
-   pretending their unsigned Safari session can send a bot message. */
-.redflag-answer .redflag-save-hint {
-  margin: 0 0 4px;
-  color: #526079;
-  font-size: 14px;
-  line-height: 1.5;
-}
-.redflag-answer .redflag-save-telegram {
-  display: flex;
-  width: 100%;
-  min-height: 52px;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 15px;
+/* Red Flag save: one main button; feedback is shown only after a tap. */
+.redflag-answer .redflag-save-feedback[hidden] { display: none !important; }
+.redflag-answer .redflag-save-feedback {
+  display: grid;
+  gap: 8px;
+  padding: 17px 14px;
+  border: 2px solid transparent;
   border-radius: 17px;
-  background: linear-gradient(135deg, #254879, #516eab);
-  box-shadow: 0 8px 18px rgba(37,72,121,.17);
-  color: #fff;
-  font: 700 15px/1.3 Inter, system-ui, sans-serif;
   text-align: center;
-  text-decoration: none;
+  font: 500 14px/1.45 Inter, system-ui, sans-serif;
 }
-.redflag-answer .redflag-save-copy {
-  background: #fff;
-  border: 1px solid rgba(46,75,118,.23);
+.redflag-answer .redflag-save-feedback-title {
+  font: 850 19px/1.24 Inter, system-ui, sans-serif;
+}
+.redflag-answer .redflag-save-feedback p {
+  margin: 0;
+  font-size: 14px;
+}
+.redflag-answer .redflag-save-feedback.is-success {
+  border-color: #60bc8a;
+  background: #e9f9ef;
+  color: #14603d;
+}
+.redflag-answer .redflag-save-feedback.is-error {
+  border-color: #e9a7ad;
+  background: #fff0f1;
+  color: #a32b40;
+}
+.redflag-answer .redflag-save-feedback.is-pending {
+  border-color: #c6d6ee;
+  background: #f0f5fd;
   color: #274773;
 }
-.redflag-answer .redflag-save-telegram:focus-visible {
+.redflag-answer .redflag-save-feedback-link {
+  display: flex;
+  min-height: 49px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 3px;
+  padding: 11px 12px;
+  border-radius: 13px;
+  background: #31558b;
+  color: #fff;
+  font: 800 15px/1.3 Inter, system-ui, sans-serif;
+  text-decoration: none;
+}
+.redflag-answer .redflag-save-feedback-link:focus-visible {
   outline: 3px solid #a88c65;
   outline-offset: 2px;
+}
+.redflag-answer .redflag-share .personal-day-share-save:disabled {
+  opacity: 1;
+  background: #18774d;
 }
