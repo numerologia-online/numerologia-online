@@ -1,7 +1,23 @@
 // Единое правило для всех готовых авторских трактовок Red Flag:
 // 366 разных дат (включая 29 февраля), ключ: реальный день-месяц.
-// Числа и энергии рассчитываются отдельно и НЕ заменяют исходную дату.
+// Никаких нумерологических расчётов для выбора готового текста.
 const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+// Validate the original date as DD.MM.YYYY, without calculating any energies.
+// The year is retained only to check that the entered date exists.
+export const parseRedFlagBirthDate = (value) => {
+  const match = /^(\\d{2})\\.(\\d{2})\\.(\\d{4})$/.exec(value);
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const today = new Date();
+  if (year < 1900 || year > today.getFullYear()) return null;
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 ||
+      date.getDate() !== day) return null;
+  return { day, month, year };
+};
 
 export const getRedFlagDateKey = ({ day, month }) => {
   if (!Number.isInteger(month) || month < 1 || month > 12 ||
