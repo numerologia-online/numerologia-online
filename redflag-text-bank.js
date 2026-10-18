@@ -1,4 +1,4 @@
-import { reduce22 } from "./redflag-profile.js?v=1";
+import { getRedFlagDateKey, assertCompleteRedFlagBank } from "./redflag-date-keys.js?v=1";
 
 const loadJson = async (path) => {
   const response = await fetch(new URL(path, import.meta.url));
@@ -16,15 +16,13 @@ export const loadQuestionBank = async (bankName) => {
     QUESTIONS: bank.questions.map((question, index) => {
       const textBank = questionTexts[index];
       if (textBank) {
-        if (textBank.questionId !== question.id || !["reduce22(day)-month", "day-month"].includes(textBank.keyRule)) {
-          throw new Error(`Неверный формат текстовой базы: ${question.id}`);
-        }
+        assertCompleteRedFlagBank(textBank, question.id);
         return {
           id: question.id,
           title: question.title,
           answer: (profile) => {
             const { day, month } = profile.classic.birthDate;
-            const key = `${textBank.keyRule === "day-month" ? day : reduce22(day)}-${month}`;
+            const key = getRedFlagDateKey({ day, month });
             const answer = textBank.entries[key];
             if (typeof answer !== "string" || !answer.trim()) {
               throw new Error(`Ответ для ${question.id} и ${key} не найден`);
