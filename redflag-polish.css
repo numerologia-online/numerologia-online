@@ -253,7 +253,17 @@
   font-size: 21px;
 }
 .redflag-answer .redflag-share .personal-day-share-status {
-  margin: 3px 0 0;
+  margin: 0 0 13px;
+  color: #636473;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.redflag-answer .redflag-save-hint {
+  margin: 7px 1px 13px;
+  color: #6b6a75;
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: center;
 }
 
 /* Red Flag save: one main button; feedback is shown only after a tap. */
