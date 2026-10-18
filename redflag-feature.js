@@ -25,6 +25,7 @@ let formattedDate;
 const REDFLAG_SITE_URL = "https://numerologia-online.github.io/numerologia-online/?view=redflag";
 const REDFLAG_BOT_URL = "https://t.me/Numerologiaonline_bot";
 const REDFLAG_SAVE_URL = "https://numerologia-online-bot.tankraft431.workers.dev/api/save-redflag";
+const REDFLAG_TICKET_URL = "https://xn--c1adkkdfjbp1a4l.online/api/redflag-save.php";
 const formatRedFlagMessage = (question, response, dateOfBirth) => {
   const paragraphs = response.paragraphs ?? [response.answer];
   const parts = [
@@ -52,9 +53,9 @@ const addRedFlagShare = (answer, report) => {
   controls.innerHTML = '<p class="personal-day-share-title">Не потеряй свой ответ ❤️</p>'
     + '<p class="personal-day-share-status">Чтобы не потерять разбор, сохрани его в нашем Telegram-боте. Сможешь перечитать в любой момент.</p>'
     + '<button type="button" class="personal-day-share-save">'
-    + (openedFromBot ? '❤️ Сохранить ответ в Telegram' : '🤖 Открыть бота для сохранения')
+    + (openedFromBot ? '❤️ Сохранить ответ в Telegram' : '❤️ Сохранить мой ответ')
     + '</button>'
-    + (openedFromBot ? '' : '<p class="redflag-save-hint">В Safari ответ нельзя отправить в бота автоматически. Открой бота, нажми «Открыть сайт» и сохрани ответ там.</p>')
+    + (openedFromBot ? '' : '<p class="redflag-save-hint">Сохраним готовый ответ и откроем его в Telegram. Если ты впервые в боте, нажми «Начать».</p>')
     + '<button type="button" class="personal-day-share-send">💌 Поделиться с подругой</button>'
     + '<div class="redflag-save-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>';
   answer.append(controls);
@@ -85,16 +86,54 @@ const addRedFlagShare = (answer, report) => {
     feedback.hidden = false;
   };
 
+  let preparedBotLink = null;
   save.addEventListener("click", async () => {
-    const signedData = window.Telegram?.WebApp?.initData;
-    if (typeof signedData !== "string" || !signedData) {
-      window.location.assign(REDFLAG_BOT_URL);
+    if (preparedBotLink) {
+      window.location.assign(preparedBotLink);
       return;
     }
+    const signedData = window.Telegram?.WebApp?.initData;
     if (report.length > 3800) {
       showFeedback("is-error",
         "⚠️ Не удалось сохранить",
         "Этот ответ слишком длинный для одного сообщения Telegram.");
+      return;
+    }
+
+    if (typeof signedData !== "string" || !signedData) {
+      save.disabled = true;
+      showFeedback("is-pending", "Готовим ссылку для сохранения…", "Ответ остаётся на этой странице. Подожди немного.");
+      try {
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), 14000);
+        let response;
+        try {
+          response = await fetch(REDFLAG_TICKET_URL, {
+            method: "POST",
+            mode: "cors",
+            cache: "no-store",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "create", text: report }),
+            signal: controller.signal
+          });
+        } finally {
+          window.clearTimeout(timer);
+        }
+        const data = await response.json();
+        if (!response.ok || data?.ok !== true || !/^r_[A-Za-z0-9_-]{32}$/.test(data?.ticket || "")) {
+          throw new Error("TICKET_CREATE_FAILED");
+        }
+        preparedBotLink = REDFLAG_BOT_URL + "?start=" + encodeURIComponent(data.ticket);
+        save.textContent = "🤖 Открыть бота с ответом";
+        save.disabled = false;
+        showFeedback("is-success", "❤️ Ссылка на ответ готова",
+          "Если Telegram не открылся, нажми кнопку ещё раз. В новом боте нажми «Начать», и тебе придёт именно этот ответ.");
+        window.location.assign(preparedBotLink);
+      } catch {
+        save.disabled = false;
+        showFeedback("is-error", "Не удалось подготовить сохранение",
+          "Ответ остаётся на странице. Проверь интернет и нажми «Сохранить» ещё раз.");
+      }
       return;
     }
 
