@@ -157,6 +157,9 @@ const createQuestion = (question, state) => {
   const response = question.answer(activeProfile);
   const button = document.createElement("button");
   button.className = "redflag-question-toggle";
+  button.dataset.analyticsCta = "redflag_" + question.id;
+  button.dataset.analyticsLabel = question.title;
+  button.dataset.analyticsSection = "redflag";
   button.type = "button";
   button.setAttribute("aria-expanded", String(opened));
   button.innerHTML = `<span>${question.title}</span><b aria-hidden="true">+</b>`;
