@@ -137,6 +137,12 @@ const addRedFlagShare = (answer, report) => {
 const showError = (message) => {
   error.textContent = message;
   error.hidden = false;
+  birthDateInput.setAttribute("aria-invalid", "true");
+};
+
+const clearError = () => {
+  error.hidden = true;
+  birthDateInput.removeAttribute("aria-invalid");
 };
 
 const createQuestion = (question, state) => {
@@ -219,8 +225,15 @@ const createCategory = (category, index) => {
   toggle.className = "redflag-category-toggle";
   toggle.type = "button";
   toggle.setAttribute("aria-expanded", String(state.expanded));
-  toggle.innerHTML = `<span><small>Блок ${index + 1} · 10 вопросов</small><strong>${category.title}</strong><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
+  toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · 10 вопросов</small><strong>${category.title}</strong><small class="redflag-category-count">10 вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
   toggle.addEventListener("click", () => {
+    if (!activeProfile) {
+      showError(parseBirthDate(birthDateInput.value)
+        ? "Нажмите «Проверить мужчину», чтобы открыть вопросы."
+        : "Введите дату рождения мужчины.");
+      form.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     state.expanded = !state.expanded;
     renderCategories();
     if (state.expanded) ensureQuestions(category);
@@ -264,14 +277,25 @@ birthDateInput.addEventListener("input", () => {
   const digits = birthDateInput.value.replace(/\D/g, "").slice(0, 8);
   const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
   birthDateInput.value = parts.join(".");
-  error.hidden = true;
+  clearError();
+  if (activeProfile) {
+    activeProfile = undefined;
+    formattedDate = undefined;
+    for (const state of categoryStates.values()) {
+      state.expanded = false;
+      state.activeQuestionId = null;
+    }
+    renderCategories();
+  }
 });
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const date = parseBirthDate(birthDateInput.value);
   if (!date) {
-    showError("Введите существующую дату в формате ДД.ММ.ГГГГ.");
+    showError(birthDateInput.value.trim()
+      ? "Введите существующую дату в формате ДД.ММ.ГГГГ."
+      : "Введите дату рождения мужчины.");
     birthDateInput.focus();
     return;
   }
@@ -285,7 +309,7 @@ form.addEventListener("submit", async (event) => {
     await ensureQuestions(firstCategory);
     // After every calculation, let the visitor choose which question to open.
     for (const state of categoryStates.values()) state.activeQuestionId = null;
-    error.hidden = true;
+    clearError();
     renderCategories();
     categoriesRoot.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch {
