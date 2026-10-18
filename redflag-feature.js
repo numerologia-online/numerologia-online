@@ -55,7 +55,6 @@ const addRedFlagShare = (answer, report) => {
     + '<button type="button" class="personal-day-share-save">'
     + (openedFromBot ? '❤️ Сохранить ответ в Telegram' : '❤️ Сохранить мой ответ')
     + '</button>'
-    + (openedFromBot ? '' : '<p class="redflag-save-hint">Сохраним готовый ответ и откроем его в Telegram. Если ты впервые в боте, нажми «Начать».</p>')
     + '<button type="button" class="personal-day-share-send">💌 Поделиться с подругой</button>'
     + '<div class="redflag-save-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>';
   answer.append(controls);
