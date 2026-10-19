@@ -19,4 +19,4 @@ jobs:
         with:
           node-version: '22'
       - name: Check lazy question loading, small artwork and Telegram save routes
-        run: node --test tests/site-loading-smoke.test.mjs tests/redflag-lazy-runtime.test.mjs
+        run: node --test tests/site-loading-smoke.test.mjs tests/redflag-lazy-runtime.test.mjs tests/redflag-calendar-coverage.test.mjs
