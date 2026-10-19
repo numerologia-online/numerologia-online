@@ -250,7 +250,7 @@ const createQuestion = (question, state) => {
   button.className = "redflag-question-toggle";
   button.type = "button";
   button.setAttribute("aria-expanded", String(opened));
-  button.innerHTML = `<span>${question.title}</span><b aria-hidden="true">+</b>`;
+  button.innerHTML = `<span>${question.id === "family-load" ? "😂 " : ""}${question.title}</span><b aria-hidden="true">+</b>`;
 
   const answer = document.createElement("div");
   answer.className = "redflag-answer";
