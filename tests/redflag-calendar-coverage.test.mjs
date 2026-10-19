@@ -59,7 +59,9 @@ test("Completed date-based Red Flag banks have exactly 366 distinct answers", as
       complete++;
     }
   }
-  assert.equal(migrating, 1, "All legacy Red Flag banks must be migrated, never hidden");
-  assert.equal(complete, 5, "Track fully populated personal-text banks explicitly");
+  assert.ok(migrating === 0 || migrating === 1, "Only the documented gift bank may migrate");
+  assert.equal(complete + migrating, 6, "Track all six date-based banks explicitly");
+  assert.equal(complete, migrating === 0 ? 6 : 5,
+    "A completed gift bank must pass all 366-date checks");
   t.diagnostic(`Complete: ${complete}, in documented migration: ${migrating}, target: 80 × 366`);
 });
