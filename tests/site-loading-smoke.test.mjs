@@ -32,6 +32,11 @@ test("Red Flag loads an individual answer only when its question opens", async (
   }
 });
 
+test("Telegram SDK never blocks the initial HTML paint", async () => {
+  const html = await source("index.html");
+  assert.match(html, /<script src="https:\/\/telegram\.org\/js\/telegram-web-app\.js" defer><\/script>/);
+});
+
 test("Home card pictures exist and are downloaded only near viewport", async () => {
   const [html, css, loader] = await Promise.all([
     source("index.html"), source("artwork.css"), source("artwork-loader.js")
