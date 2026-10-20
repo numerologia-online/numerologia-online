@@ -55,8 +55,12 @@ const familyMode = (value) => {
 };
 
 export const buildRelationshipProfile = (birthDate) => {
-  const matrix = calculateMatrix(birthDate);
-  const personalYear = calculatePersonalYear(birthDate);
+  // Red Flag is based only on the exact birth day and month.
+  // A fixed leap year keeps February 29 valid and prevents the entered birth year
+  // from changing the matrix-based answers for the same day-month pair.
+  const dayMonthBasis = { day: birthDate.day, month: birthDate.month, year: 2000 };
+  const matrix = calculateMatrix(dayMonthBasis);
+  const personalYear = calculatePersonalYear(dayMonthBasis);
   const classic = buildClassicProfile(birthDate);
 
   return {
