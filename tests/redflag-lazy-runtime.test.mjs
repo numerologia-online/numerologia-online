@@ -37,18 +37,22 @@ test("Opening one Red Flag question never downloads the other big banks", async 
     const { buildRelationshipProfile } = await import("../redflag-engine.js?smoke=day-month");
     const aspects = ["initiative", "affection", "commitment", "communication", "support",
       "money", "boundaries", "intimacy", "family", "language"];
-    for (const { day, month, firstYear, secondYear } of [
-      { day: 1, month: 1, firstYear: 1980, secondYear: 2004 },
-      { day: 15, month: 7, firstYear: 1970, secondYear: 1999 },
-      { day: 29, month: 2, firstYear: 2000, secondYear: 2024 },
-      { day: 31, month: 12, firstYear: 1965, secondYear: 2005 }
-    ]) {
-      const first = buildRelationshipProfile({ day, month, year: firstYear });
-      const second = buildRelationshipProfile({ day, month, year: secondYear });
-      for (const aspect of aspects) {
-        assert.equal(first[aspect], second[aspect], `Different Red Flag answer for ${day}-${month}, aspect ${aspect}`);
+    // Check the actual 366 calendar combinations, not just a few examples.
+    // Both test years are leap years, so February 29 stays valid.
+    let checkedDates = 0;
+    for (let month = 1; month <= 12; month++) {
+      const days = new Date(Date.UTC(2024, month, 0)).getUTCDate();
+      for (let day = 1; day <= days; day++) {
+        const first = buildRelationshipProfile({ day, month, year: 2000 });
+        const second = buildRelationshipProfile({ day, month, year: 2024 });
+        for (const aspect of aspects) {
+          assert.equal(first[aspect], second[aspect],
+            `Different Red Flag answer for ${day}-${month}, aspect ${aspect}`);
+        }
+        checkedDates++;
       }
     }
+    assert.equal(checkedDates, 366);
   } finally {
     globalThis.fetch = originalFetch;
   }
