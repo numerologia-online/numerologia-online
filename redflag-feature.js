@@ -1,4 +1,4 @@
-import { parseBirthDate } from "./numerology-core.js?v=1";
+// Red Flag deliberately needs only day and month, with no birth-year dependence.
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
 import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=22";
 
@@ -22,6 +22,16 @@ const categoryStates = new Map(REDFLAG_CATEGORIES.map((category) => [category.id
 
 let activeProfile;
 let formattedDate;
+
+const parseRedFlagDate = (value) => {
+  const match = /^(\d{2})\.(\d{2})$/.exec(value);
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const date = new Date(2000, month - 1, day); // Leap-year basis makes 29 February valid.
+  if (date.getFullYear() !== 2000 || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  return { day, month, year: 2000 };
+};
 
 // Share the exact currently calculated answer, not a second calculation.
 // The server route reuses the verified sender used by "Личный расчёт дня".
@@ -323,7 +333,7 @@ const createCategory = (category, index) => {
   toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · 10 вопросов</small><strong>${category.title}</strong><small class="redflag-category-count">10 вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
   toggle.addEventListener("click", () => {
     if (!activeProfile) {
-      showError(parseBirthDate(birthDateInput.value)
+      showError(parseRedFlagDate(birthDateInput.value)
         ? "Нажмите «Проверить мужчину», чтобы открыть вопросы."
         : "Введите дату рождения мужчины.");
       form.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -369,8 +379,8 @@ const renderCategories = () => {
 };
 
 birthDateInput.addEventListener("input", () => {
-  const digits = birthDateInput.value.replace(/\D/g, "").slice(0, 8);
-  const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
+  const digits = birthDateInput.value.replace(/\D/g, "").slice(0, 4);
+  const parts = [digits.slice(0, 2), digits.slice(2, 4)].filter(Boolean);
   birthDateInput.value = parts.join(".");
   clearError();
   if (activeProfile) {
@@ -389,10 +399,10 @@ birthDateInput.addEventListener("input", () => {
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const date = parseBirthDate(birthDateInput.value);
+  const date = parseRedFlagDate(birthDateInput.value);
   if (!date) {
     showError(birthDateInput.value.trim()
-      ? "Введите существующую дату в формате ДД.ММ.ГГГГ."
+      ? "Введите существующий день и месяц в формате ДД.ММ."
       : "Введите дату рождения мужчины.");
     birthDateInput.focus();
     return;
