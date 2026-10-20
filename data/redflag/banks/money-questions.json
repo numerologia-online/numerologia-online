@@ -3,7 +3,7 @@
     {
       "id": "gift",
       "title": "Дарит без повода или считает, что его присутствия уже достаточно?",
-      "textFile": "money/gift.json?v=2",
+      "textFile": "money/gift.json?v=3",
       "status": "ready"
     },
     {
@@ -22,7 +22,7 @@
       "id": "courtship",
       "title": "Ухаживает или ждёт, что всё случится само?",
       "status": "ready",
-      "textFile": "money/courtship.json?v=10"
+      "textFile": "money/courtship.json?v=11"
     },
     {
       "id": "words-or-deeds",
@@ -34,7 +34,7 @@
       "id": "family-load",
       "title": "Семью потянет или опять всё окажется на женщине?",
       "status": "in-review",
-      "textFile": "money/family-load.json?v=2"
+      "textFile": "money/family-load.json?v=3"
     },
     {
       "id": "solve-or-create",
