@@ -56,12 +56,16 @@ test("Completed date-based Red Flag banks have exactly 366 distinct answers", as
       assert.ok(calendarDates.every((key) => typeof entries[key] === "string" && entries[key].trim().length > 200),
         "Empty or unfinished text: " + name);
       assert.equal(new Set(Object.values(entries)).size, 366, "Duplicated interpretations: " + name);
+      if (question.id === "family-load") {
+        assert.ok(calendarDates.every((key) => entries[key].split(/\n\s*\n/).filter(Boolean).length >= 2),
+          "Family-load must have a full answer and a separate next-question paragraph");
+      }
       complete++;
     }
   }
   assert.ok(migrating === 0 || migrating === 1, "Only the documented gift bank may migrate");
-  assert.equal(complete + migrating, 6, "Track all six date-based banks explicitly");
-  assert.equal(complete, migrating === 0 ? 6 : 5,
+  assert.equal(complete + migrating, 7, "Track all six date-based banks explicitly");
+  assert.equal(complete, migrating === 0 ? 7 : 6,
     "A completed gift bank must pass all 366-date checks");
-  t.diagnostic(`Complete: ${complete}, in documented migration: ${migrating}, target: 80 × 366`);
+  t.diagnostic(`Complete: ${complete}, in documented migration: ${migrating}, target: 80 × 366 (7 complete)`);
 });
