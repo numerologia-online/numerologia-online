@@ -33,7 +33,8 @@
     {
       "id": "family-load",
       "title": "Семью потянет или опять всё окажется на женщине?",
-      "status": "pending"
+      "status": "in-review",
+      "textFile": "money/family-load.json?v=2"
     },
     {
       "id": "solve-or-create",
