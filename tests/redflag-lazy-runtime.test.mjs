@@ -31,6 +31,24 @@ test("Opening one Red Flag question never downloads the other big banks", async 
     await gift.answer(profile);
     assert.equal(requests.length, 3, "A second bank loads only when its question opens");
     assert.match(requests[2], /gift\.json$/);
+
+    // Legacy categorical answers must not depend on the birth year:
+    // a man's day and month always select the same Red Flag profile.
+    const { buildRelationshipProfile } = await import("../redflag-engine.js?smoke=day-month");
+    const aspects = ["initiative", "affection", "commitment", "communication", "support",
+      "money", "boundaries", "intimacy", "family", "language"];
+    for (const { day, month, firstYear, secondYear } of [
+      { day: 1, month: 1, firstYear: 1980, secondYear: 2004 },
+      { day: 15, month: 7, firstYear: 1970, secondYear: 1999 },
+      { day: 29, month: 2, firstYear: 2000, secondYear: 2024 },
+      { day: 31, month: 12, firstYear: 1965, secondYear: 2005 }
+    ]) {
+      const first = buildRelationshipProfile({ day, month, year: firstYear });
+      const second = buildRelationshipProfile({ day, month, year: secondYear });
+      for (const aspect of aspects) {
+        assert.equal(first[aspect], second[aspect], `Different Red Flag answer for ${day}-${month}, aspect ${aspect}`);
+      }
+    }
   } finally {
     globalThis.fetch = originalFetch;
   }
