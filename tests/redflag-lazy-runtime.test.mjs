@@ -18,6 +18,12 @@ test("Opening one Red Flag question never downloads the other big banks", async 
     assert.equal(requests.length, 1, "Opening category should load only question metadata");
     assert.match(requests[0], /money-questions\.json$/);
     assert.equal(money.QUESTIONS.length, 10);
+    assert.deepEqual(money.QUESTIONS.map((question) => question.priceRub),
+      [10, 10, 10, 29, 29, 29, 29, 49, 49, 49],
+      "Money questions must retain the approved tier order");
+    assert.deepEqual(money.QUESTIONS.slice(0, 3).map((question) => question.id),
+      ["gift", "generosity", "courtship"],
+      "Existing finished answer banks must remain attached to their question ids");
     const words = money.QUESTIONS.find((q) => q.id === "words-or-deeds");
     const profile = { classic: { birthDate: { day: 29, month: 2 } } };
     const result = await words.answer(profile);
