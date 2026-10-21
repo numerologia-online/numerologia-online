@@ -3,8 +3,8 @@
   "questions": [
     {
       "id": "first-step",
-      "title": "Сам добивается или любит, когда за ним бегают?",
-      "textFile": "love/first-step.json?v=1",
+      "title": "Пишет первым или ждёт инициативы от женщины?",
+      "textFile": "love/first-step.json?v=2",
       "priceRub": 10
     },
     {
