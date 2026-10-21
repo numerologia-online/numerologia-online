@@ -24,13 +24,15 @@ let activeProfile;
 let formattedDate;
 
 const parseRedFlagDate = (value) => {
-  const match = /^(\d{2})\.(\d{2})$/.exec(value);
+  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
   if (!match) return null;
   const day = Number(match[1]);
   const month = Number(match[2]);
-  const date = new Date(2000, month - 1, day); // Leap-year basis makes 29 February valid.
-  if (date.getFullYear() !== 2000 || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
-  return { day, month, year: 2000 };
+  const year = Number(match[3]);
+  if (year < 1900 || year > new Date().getFullYear()) return null;
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  return { day, month, year };
 };
 
 // Share the exact currently calculated answer, not a second calculation.
@@ -248,9 +250,24 @@ const createQuestion = (question, state) => {
   article.className = `redflag-question${opened ? " is-open" : ""}${activeProfile ? " is-calculated" : " is-preview"}`;
 
   if (!activeProfile) {
-    const preview = document.createElement("p");
-    preview.className = "redflag-question-preview";
+    const preview = document.createElement("button");
+    preview.type = "button";
+    preview.className = "redflag-question-toggle redflag-question-preview";
     preview.textContent = question.title;
+    preview.addEventListener("click", () => {
+      const date = parseRedFlagDate(birthDateInput.value);
+      if (!date) {
+        showError("Введите дату рождения мужчины в формате ДД.ММ.ГГГГ.");
+        form.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+      activeProfile = buildRelationshipProfile(date);
+      formattedDate = birthDateInput.value;
+      state.activeQuestionId = question.id;
+      clearError();
+      renderCategories();
+      ensureAnswer(question, state);
+    });
     article.append(preview);
     return article;
   }
@@ -332,13 +349,6 @@ const createCategory = (category, index) => {
   toggle.setAttribute("aria-expanded", String(state.expanded));
   toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · 10 вопросов</small><strong>${category.title}</strong><small class="redflag-category-count">10 вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
   toggle.addEventListener("click", () => {
-    if (!activeProfile) {
-      showError(parseRedFlagDate(birthDateInput.value)
-        ? "Нажмите «Проверить мужчину», чтобы открыть вопросы."
-        : "Введите дату рождения мужчины.");
-      form.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
-    }
     state.expanded = !state.expanded;
     renderCategories();
     if (state.expanded) ensureQuestions(category);
@@ -379,15 +389,14 @@ const renderCategories = () => {
 };
 
 birthDateInput.addEventListener("input", () => {
-  const digits = birthDateInput.value.replace(/\D/g, "").slice(0, 4);
-  const parts = [digits.slice(0, 2), digits.slice(2, 4)].filter(Boolean);
+  const digits = birthDateInput.value.replace(/\D/g, "").slice(0, 8);
+  const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
   birthDateInput.value = parts.join(".");
   clearError();
   if (activeProfile) {
     activeProfile = undefined;
     formattedDate = undefined;
     for (const state of categoryStates.values()) {
-      state.expanded = false;
       state.activeQuestionId = null;
       state.answers.clear();
       state.answerRequests.clear();
@@ -402,7 +411,7 @@ form.addEventListener("submit", async (event) => {
   const date = parseRedFlagDate(birthDateInput.value);
   if (!date) {
     showError(birthDateInput.value.trim()
-      ? "Введите существующий день и месяц в формате ДД.ММ."
+      ? "Введите существующую дату в формате ДД.ММ.ГГГГ."
       : "Введите дату рождения мужчины.");
     birthDateInput.focus();
     return;
