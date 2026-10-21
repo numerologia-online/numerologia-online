@@ -30,7 +30,7 @@
     },
     {
       "id": "words-or-deeds",
-      "title": "Поможет деньгами в трудный момент или скажет «разбирайся сама»?",
+      "title": "Держит слово или опять одни красивые разговоры?",
       "status": "ready",
       "textFile": "money/words-or-deeds.json?v=1",
       "priceRub": 29
