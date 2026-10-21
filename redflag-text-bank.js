@@ -7,7 +7,7 @@ const loadJson = async (path) => {
 };
 
 export const loadQuestionBank = async (bankName) => {
-  const bank = await loadJson(`./data/redflag/banks/${bankName}.json`);
+  const bank = await loadJson(`./data/redflag/banks/${bankName}.json${bankName === "love" ? "?v=2" : ""}`);
   const textBankRequests = new Map();
 
   const loadTextBank = (question) => {
