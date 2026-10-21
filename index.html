@@ -117,7 +117,7 @@
           <form id="redflag-form" class="redflag-form" novalidate>
             <label>
               <span>Дата рождения мужчины</span>
-              <input id="redflag-birth-date" aria-describedby="redflag-error" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ" pattern="[0-9]{2}\.[0-9]{2}" maxlength="5" required />
+              <input id="redflag-birth-date" aria-describedby="redflag-error" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}" maxlength="10" required />
             </label>
             <p id="redflag-error" class="redflag-error" hidden aria-live="polite"></p>
             <button class="redflag-submit" type="submit">Проверить мужчину <span aria-hidden="true">→</span></button>
