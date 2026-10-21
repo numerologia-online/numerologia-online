@@ -244,6 +244,26 @@ const ensureAnswer = (question, state) => {
   });
 };
 
+// Keep pricing in compact question metadata; never fetch the large answer JSON here.
+const fillQuestionButton = (button, question, showExpand = false) => {
+  const label = document.createElement("span");
+  label.className = "redflag-question-label";
+  label.textContent = (showExpand && question.id === "family-load" ? "😂 " : "") + question.title;
+  button.append(label);
+  if (Number.isInteger(question.priceRub)) {
+    const price = document.createElement("span");
+    price.className = "redflag-question-price";
+    price.textContent = question.priceRub + " ₽";
+    button.append(price);
+  }
+  if (showExpand) {
+    const plus = document.createElement("b");
+    plus.setAttribute("aria-hidden", "true");
+    plus.textContent = "+";
+    button.append(plus);
+  }
+};
+
 const createQuestion = (question, state) => {
   const opened = state.activeQuestionId === question.id;
   const article = document.createElement("article");
@@ -253,7 +273,7 @@ const createQuestion = (question, state) => {
     const preview = document.createElement("button");
     preview.type = "button";
     preview.className = "redflag-question-toggle redflag-question-preview";
-    preview.textContent = question.title;
+    fillQuestionButton(preview, question);
     preview.addEventListener("click", () => {
       const date = parseRedFlagDate(birthDateInput.value);
       if (!date) {
@@ -277,7 +297,7 @@ const createQuestion = (question, state) => {
   button.className = "redflag-question-toggle";
   button.type = "button";
   button.setAttribute("aria-expanded", String(opened));
-  button.innerHTML = `<span>${question.id === "family-load" ? "😂 " : ""}${question.title}</span><b aria-hidden="true">+</b>`;
+  fillQuestionButton(button, question, true);
 
   const answer = document.createElement("div");
   answer.className = "redflag-answer";
