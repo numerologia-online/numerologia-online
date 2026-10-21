@@ -8,7 +8,7 @@ const loadJson = async (path) => {
 
 // Only titles and file paths are loaded when the category opens.
 // The chosen question's text bank is fetched once, on demand.
-const bank = await loadJson("../banks/money-questions.json?v=16");
+const bank = await loadJson("../banks/money-questions.json?v=17");
 const textBankRequests = new Map();
 
 const loadTextBank = (question) => {
@@ -25,6 +25,7 @@ const loadTextBank = (question) => {
 export const QUESTIONS = bank.questions.map((question) => ({
   id: question.id,
   title: question.title,
+  priceRub: question.priceRub,
   answer: async (profile) => {
     if (!question.textFile) {
       return { answer: "Готовим новую авторскую трактовку для этого вопроса." };
