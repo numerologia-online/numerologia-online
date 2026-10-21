@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "section": "money",
   "questionId": "family-load",
-  "question": "Семью потянет или опять всё окажется на женщине?",
+  "question": "Будет опорой для семьи или всё снова окажется на твоих плечах?",
   "status": "in-progress",
   "keyRule": "day-month",
   "entries": {
