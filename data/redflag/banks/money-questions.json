@@ -2,59 +2,69 @@
   "questions": [
     {
       "id": "gift",
-      "title": "Дарит без повода или считает, что его присутствия уже достаточно?",
+      "title": "Будет дарить подарки или даже цветы придётся выпрашивать?",
       "textFile": "money/gift.json?v=3",
-      "status": "ready"
+      "status": "ready",
+      "priceRub": 10
     },
     {
       "id": "generosity",
-      "title": "Щедрый или будет считать каждую копейку?",
+      "title": "Щедрый мужчина или считает каждую копейку?",
       "status": "in-progress",
-      "textFile": "money/generosity.json?v=2"
-    },
-    {
-      "id": "provider",
-      "title": "Добытчик по жизни или философ с дивана?",
-      "status": "in-progress",
-      "textFile": "money/provider.json?v=1"
+      "textFile": "money/generosity.json?v=2",
+      "priceRub": 10
     },
     {
       "id": "courtship",
-      "title": "Ухаживает или ждёт, что всё случится само?",
+      "title": "Будет красиво ухаживать или максимум кофе и прогулка?",
       "status": "ready",
-      "textFile": "money/courtship.json?v=11"
+      "textFile": "money/courtship.json?v=11",
+      "priceRub": 10
+    },
+    {
+      "id": "provider",
+      "title": "Умеет зарабатывать или всю жизнь будет искать себя?",
+      "status": "in-progress",
+      "textFile": "money/provider.json?v=1",
+      "priceRub": 29
     },
     {
       "id": "words-or-deeds",
-      "title": "Красиво говорит или реально делает?",
+      "title": "Поможет деньгами в трудный момент или скажет «разбирайся сама»?",
       "status": "ready",
-      "textFile": "money/words-or-deeds.json?v=1"
+      "textFile": "money/words-or-deeds.json?v=1",
+      "priceRub": 29
     },
     {
       "id": "family-load",
-      "title": "Семью потянет или опять всё окажется на женщине?",
+      "title": "Будет обеспечивать семью или предложит всё пополам?",
       "status": "in-review",
-      "textFile": "money/family-load.json?v=3"
-    },
-    {
-      "id": "solve-or-create",
-      "title": "Решает вопросы или сам их создаёт?",
-      "status": "pending"
-    },
-    {
-      "id": "responsibility",
-      "title": "Берёт ответственность или красиво скидывает её на женщину?",
-      "status": "pending"
+      "textFile": "money/family-load.json?v=3",
+      "priceRub": 29
     },
     {
       "id": "resource",
-      "title": "Вкладывается в отношения или только пользуется чужим ресурсом?",
-      "status": "pending"
+      "title": "Рядом с ним ты будешь жить лучше или начнёшь экономить на себе?",
+      "status": "pending",
+      "priceRub": 29
+    },
+    {
+      "id": "solve-or-create",
+      "title": "Есть ли у него потенциал стать богатым мужчиной?",
+      "status": "pending",
+      "priceRub": 49
+    },
+    {
+      "id": "responsibility",
+      "title": "С ним ты будешь в достатке или всю жизнь тащить всё на себе?",
+      "status": "pending",
+      "priceRub": 49
     },
     {
       "id": "celebration",
-      "title": "На свидании он создаёт настроение или ждёт, что праздник сделают за него?",
-      "status": "pending"
+      "title": "Он приумножит ваши деньги или может оставить тебя с долгами?",
+      "status": "pending",
+      "priceRub": 49
     }
   ]
 }
