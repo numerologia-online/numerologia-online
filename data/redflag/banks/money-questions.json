@@ -47,28 +47,28 @@
       "title": "Рядом с ним ты будешь жить лучше или начнёшь экономить на себе?",
       "status": "in-progress",
       "priceRub": 29,
-      "textFile": "money/resource.json?v=5"
+      "textFile": "money/resource.json?v=6"
     },
     {
       "id": "solve-or-create",
       "title": "Есть ли у него потенциал стать богатым мужчиной?",
       "status": "in-progress",
       "priceRub": 49,
-      "textFile": "money/solve-or-create.json?v=5"
+      "textFile": "money/solve-or-create.json?v=6"
     },
     {
       "id": "responsibility",
       "title": "Будет ли мужчина жить за твой счёт?",
       "status": "in-progress",
       "priceRub": 49,
-      "textFile": "money/responsibility.json?v=5"
+      "textFile": "money/responsibility.json?v=6"
     },
     {
       "id": "celebration",
       "title": "Он приумножит ваши деньги или может оставить тебя с долгами?",
       "status": "in-progress",
       "priceRub": 49,
-      "textFile": "money/celebration.json?v=5"
+      "textFile": "money/celebration.json?v=6"
     }
   ]
 }
