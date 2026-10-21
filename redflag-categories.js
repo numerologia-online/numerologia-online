@@ -5,6 +5,6 @@ const catalog = await loadCategoryCatalog();
 export const REDFLAG_CATEGORIES = catalog.map((category) => ({
   ...category,
   load: () => category.bank === "money"
-    ? import("./data/redflag/categories/money-questions.js?v=21")
+    ? import("./data/redflag/categories/money-questions.js?v=22")
     : loadQuestionBank(category.bank)
 }));
