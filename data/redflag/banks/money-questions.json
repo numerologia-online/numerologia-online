@@ -10,8 +10,8 @@
     {
       "id": "generosity",
       "title": "Щедрый мужчина или считает каждую копейку?",
-      "status": "in-progress",
-      "textFile": "money/generosity.json?v=2",
+      "status": "ready",
+      "textFile": "money/generosity.json?v=3",
       "priceRub": 10
     },
     {
