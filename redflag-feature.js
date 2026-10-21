@@ -248,7 +248,7 @@ const ensureAnswer = (question, state) => {
 const fillQuestionButton = (button, question, showExpand = false) => {
   const label = document.createElement("span");
   label.className = "redflag-question-label";
-  label.textContent = (showExpand && question.id === "family-load" ? "😂 " : "") + question.title;
+  label.textContent = question.title;
   button.append(label);
   if (Number.isInteger(question.priceRub)) {
     const price = document.createElement("span");
