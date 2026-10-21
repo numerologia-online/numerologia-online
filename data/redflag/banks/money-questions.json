@@ -3,7 +3,7 @@
     {
       "id": "gift",
       "title": "Будет дарить подарки или даже цветы придётся выпрашивать?",
-      "textFile": "money/gift.json?v=3",
+      "textFile": "money/gift.json?v=4",
       "status": "ready",
       "priceRub": 10
     },
