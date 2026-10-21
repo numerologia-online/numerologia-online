@@ -27,6 +27,7 @@ export const loadQuestionBank = async (bankName) => {
         return {
           id: question.id,
           title: question.title,
+          priceRub: question.priceRub,
           answer: async (profile) => {
             const textBank = await loadTextBank(question);
             if (textBank.questionId !== question.id || !["reduce22(day)-month", "day-month"].includes(textBank.keyRule)) {
@@ -46,6 +47,7 @@ export const loadQuestionBank = async (bankName) => {
       return {
         id: question.id,
         title: question.title,
+        priceRub: question.priceRub,
         answer: (profile) => {
           if (!question.variants) return { answer: "Готовим новую авторскую трактовку для этого вопроса." };
           const variant = question.variants[profile[question.aspect]] ?? Object.values(question.variants)[0];
