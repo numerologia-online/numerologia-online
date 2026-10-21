@@ -8,7 +8,7 @@ const loadJson = async (path) => {
 
 // Only titles and file paths are loaded when the category opens.
 // The chosen question's text bank is fetched once, on demand.
-const bank = await loadJson("../banks/money-questions.json?v=27");
+const bank = await loadJson("../banks/money-questions.json?v=28");
 const textBankRequests = new Map();
 
 const loadTextBank = (question) => {
