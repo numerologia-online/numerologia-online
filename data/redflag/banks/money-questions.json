@@ -11,7 +11,7 @@
       "id": "generosity",
       "title": "Щедрый мужчина или считает каждую копейку?",
       "status": "ready",
-      "textFile": "money/generosity.json?v=3",
+      "textFile": "money/generosity.json?v=4",
       "priceRub": 10
     },
     {
