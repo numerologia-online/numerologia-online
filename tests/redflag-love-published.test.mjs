@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const dates = ["31-1", "1-2", "2-2", "3-2", "4-2", "5-2", "6-2", "7-2", "8-2", "9-2"];
+const dates = ["31-1", "1-2", "2-2", "3-2", "4-2", "5-2", "6-2", "7-2", "8-2", "9-2", "10-2";
 const load = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
 
 test("Each published love date has ten distinct, two-paragraph readings", async () => {
@@ -47,7 +47,7 @@ test("Opening approved Love questions loads one date, without the 366-entry base
     assert.match(requests[1], /love\/published\/5-2\.json$/);
 
     const legacy = await bank.QUESTIONS.find((x) => x.id === "romance").answer({
-      classic: { birthDate: { day: 10, month: 2 } },
+      classic: { birthDate: { day: 11, month: 2 } },
       affection: "warm"
     });
     assert.ok(legacy.answer.length > 20, "Other dates still receive the original answer");
