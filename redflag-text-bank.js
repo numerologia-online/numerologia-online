@@ -11,6 +11,11 @@ export const loadQuestionBank = async (bankName) => {
   const bank = await loadJson(`./data/redflag/banks/${bankName}.json${bankVersion}`);
   const textBankRequests = new Map();
 
+  // Publish five approved texts without rewriting the 366-date active JSON file.
+  const approvedFirstStepDates = new Set(["31-1", "1-2", "2-2", "3-2", "4-2"]);
+  let approvedFirstStepRequest;
+
+
   const loadTextBank = (question) => {
     if (!textBankRequests.has(question.id)) {
       const request = loadJson(`./data/redflag/${question.textFile}`).catch((error) => {
@@ -36,7 +41,15 @@ export const loadQuestionBank = async (bankName) => {
             }
             const { day, month } = profile.classic.birthDate;
             const key = `${textBank.keyRule === "day-month" ? day : reduce22(day)}-${month}`;
-            const answer = textBank.entries[key];
+            let answer = textBank.entries[key];
+            if (bankName === "love" && question.id === "first-step" && approvedFirstStepDates.has(key)) {
+              approvedFirstStepRequest ??= loadJson("./data/redflag/love/approved-first-step-jan31-feb04.json?v=1");
+              const approved = await approvedFirstStepRequest;
+              if (approved.questionId !== "first-step" || approved.keyRule !== "day-month") {
+                throw new Error("Неверный формат утверждённых трактовок первого вопроса");
+              }
+              answer = approved.entries[key];
+            }
             if (typeof answer !== "string" || !answer.trim()) {
               throw new Error(`Ответ для ${question.id} и ${key} не найден`);
             }
