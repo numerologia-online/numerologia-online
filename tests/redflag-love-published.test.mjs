@@ -47,7 +47,7 @@ test("Opening approved Love questions loads one date, without the 366-entry base
     assert.match(requests[1], /love\/published\/5-2\.json$/);
 
     const legacy = await bank.QUESTIONS.find((x) => x.id === "romance").answer({
-      classic: { birthDate: { day: 6, month: 2 } },
+      classic: { birthDate: { day: 10, month: 2 } },
       affection: "warm"
     });
     assert.ok(legacy.answer.length > 20, "Other dates still receive the original answer");
