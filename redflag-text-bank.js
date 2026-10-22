@@ -12,7 +12,7 @@ export const loadQuestionBank = async (bankName) => {
   const textBankRequests = new Map();
 
   // Publish five approved texts without rewriting the 366-date active JSON file.
-  const approvedFirstStepDates = new Set(["31-1", "1-2", "2-2", "3-2", "4-2"]);
+  const approvedFirstStepDates = new Set(["31-1", "1-2", "2-2", "3-2", "4-2", "5-2"]);
   let approvedFirstStepRequest;
 
 
@@ -43,7 +43,7 @@ export const loadQuestionBank = async (bankName) => {
             const key = `${textBank.keyRule === "day-month" ? day : reduce22(day)}-${month}`;
             let answer = textBank.entries[key];
             if (bankName === "love" && question.id === "first-step" && approvedFirstStepDates.has(key)) {
-              approvedFirstStepRequest ??= loadJson("./data/redflag/love/approved-first-step-jan31-feb04.json?v=1");
+              approvedFirstStepRequest ??= loadJson("./data/redflag/love/approved-first-step-jan31-feb04.json?v=2");
               const approved = await approvedFirstStepRequest;
               if (approved.questionId !== "first-step" || approved.keyRule !== "day-month") {
                 throw new Error("Неверный формат утверждённых трактовок первого вопроса");
