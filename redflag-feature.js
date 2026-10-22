@@ -1,6 +1,6 @@
 // Red Flag deliberately needs only day and month, with no birth-year dependence.
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=40";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=41";
 
 const home = document.querySelector("#home");
 const redFlag = document.querySelector("#redflag");
@@ -367,7 +367,7 @@ const createCategory = (category, index) => {
   toggle.className = "redflag-category-toggle";
   toggle.type = "button";
   toggle.setAttribute("aria-expanded", String(state.expanded));
-  toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · 10 вопросов</small><strong>${category.title}</strong><small class="redflag-category-count">10 вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
+  toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · 10 вопросов</small><strong>${category.title}</strong>${category.id === "intimacy" ? '<span class="redflag-age-label" aria-label="Для взрослых, 18 плюс">18+</span>' : ""}<small class="redflag-category-count">10 вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
   toggle.addEventListener("click", () => {
     state.expanded = !state.expanded;
     renderCategories();
