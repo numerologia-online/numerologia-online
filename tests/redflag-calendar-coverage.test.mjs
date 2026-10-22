@@ -64,8 +64,9 @@ test("Completed date-based Red Flag banks have exactly 366 distinct answers", as
     }
   }
   assert.ok(migrating === 0 || migrating === 1, "Only the documented gift bank may migrate");
-  assert.equal(complete + migrating, 7, "Track all six date-based banks explicitly");
-  assert.equal(complete, migrating === 0 ? 7 : 6,
-    "A completed gift bank must pass all 366-date checks");
-  t.diagnostic(`Complete: ${complete}, in documented migration: ${migrating}, target: 80 × 366 (7 complete)`);
+  // New completed banks must not break the test just because an old total was hardcoded.
+  // The full validation above still checks every registered date-based bank.
+  assert.ok(complete + migrating >= 11, "Do not lose any of the eleven registered date-based banks");
+  assert.ok(complete >= 10, "At least ten date-based banks must contain 366 full interpretations");
+  t.diagnostic(`Complete: ${complete}, in documented migration: ${migrating}, target: 80 × 366`);
 });
