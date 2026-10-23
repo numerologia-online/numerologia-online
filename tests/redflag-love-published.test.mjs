@@ -81,12 +81,40 @@ test("Opening approved Love questions loads one date, without the 366-entry base
     assert.equal(requests.length, 7, "Leap day February 29 loads exactly once");
     assert.match(requests[6], /love\/published\/29-2\.json$/);
 
+    const march1Profile = { classic: { birthDate: { day: 1, month: 3 } } };
+    const march1Answer = await bank.QUESTIONS.find((x) => x.id === "first-step").answer(march1Profile);
+    const march1Expected = JSON.parse(await load("data/redflag/love/published/1-3.json"));
+    assert.equal(march1Answer.answer, march1Expected.entries["first-step"]);
+    assert.equal(requests.length, 8, "Approved March 1 loads exactly once");
+    assert.match(requests[7], /love\/published\/1-3\.json$/);
+
+    const march2Profile = { classic: { birthDate: { day: 2, month: 3 } } };
+    const march2Answer = await bank.QUESTIONS.find((x) => x.id === "romance").answer(march2Profile);
+    const march2Expected = JSON.parse(await load("data/redflag/love/published/2-3.json"));
+    assert.equal(march2Answer.answer, march2Expected.entries["romance"]);
+    assert.equal(requests.length, 9, "Approved March 2 loads exactly once");
+    assert.match(requests[8], /love\/published\/2-3\.json$/);
+
+    const march3Profile = { classic: { birthDate: { day: 3, month: 3 } } };
+    const march3Answer = await bank.QUESTIONS.find((x) => x.id === "relationship-or-comfort").answer(march3Profile);
+    const march3Expected = JSON.parse(await load("data/redflag/love/published/3-3.json"));
+    assert.equal(march3Answer.answer, march3Expected.entries["relationship-or-comfort"]);
+    assert.equal(requests.length, 10, "Approved March 3 loads exactly once");
+    assert.match(requests[9], /love\/published\/3-3\.json$/);
+
+    const march4Profile = { classic: { birthDate: { day: 4, month: 3 } } };
+    const march4Answer = await bank.QUESTIONS.find((x) => x.id === "adult-partner").answer(march4Profile);
+    const march4Expected = JSON.parse(await load("data/redflag/love/published/4-3.json"));
+    assert.equal(march4Answer.answer, march4Expected.entries["adult-partner"]);
+    assert.equal(requests.length, 11, "Approved March 4 loads exactly once");
+    assert.match(requests[10], /love\/published\/4-3\.json$/);
+
     const legacy = await bank.QUESTIONS.find((x) => x.id === "romance").answer({
       classic: { birthDate: { day: 14, month: 2 } },
       affection: "warm"
     });
     assert.ok(legacy.answer.length > 20, "Other dates still receive the original answer");
-    assert.equal(requests.length, 7, "Unpublished date does not download a Love file");
+    assert.equal(requests.length, 11, "Unpublished date does not download a Love file");
   } finally {
     globalThis.fetch = originalFetch;
   }
