@@ -1,4 +1,4 @@
-import { loadCategoryCatalog, loadQuestionBank } from "./redflag-text-bank.js?v=25";
+import { loadCategoryCatalog, loadQuestionBank } from "./redflag-text-bank.js?v=26";
 
 const catalog = await loadCategoryCatalog();
 
