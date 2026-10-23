@@ -8,6 +8,7 @@ import { deliverRedFlagTicket } from './redflag-delivery.js';
  * Does not register or change Telegram webhook by itself.
  */
 const REG_HANDLER = 'https://xn--c1adkkdfjbp1a4l.online/api/telegram-reg-stage-15-10-2026.php';
+const OWNER_MAILING_HANDLER = 'https://xn--c1adkkdfjbp1a4l.online/api/owner-mailing.php';
 const MAX_UPDATE_BYTES = 32768;
 const PREFIX = 'numerologia-online:webhook:v1:';
 
@@ -367,6 +368,38 @@ export default {
       && typeof update?.message?.text === 'string'
       ? update.message.text.trim() : '';
     const menuCommand = privateText.split(/\s+/u, 1)[0].toLowerCase().split('@')[0];
+
+    // Isolated owner broadcasts and optional news subscriptions.
+    // The REG.RU service checks the owner's one-time claim and manages its
+    // own subscriber/queue tables; the morning forecast is untouched.
+    const ownerMailsCommand = /^\/(?:owner|broadcast|news_on|news_off)(?:@\w+)?(?:\s|$)/iu.test(privateText);
+    const ownerMailsReply = privateText !== ''
+      && update?.message?.reply_to_message?.from?.is_bot === true
+      && String(update.message.reply_to_message.text || '').startsWith('📣 Напиши текст рассылки одним сообщением:');
+    const ownerMailsCallback = typeof update?.callback_query?.data === 'string'
+      && update.callback_query.data.startsWith('bc:');
+    if (ownerMailsCommand || ownerMailsReply || ownerMailsCallback) {
+      if (!await incomingMessage()) return json({ ok: false, error: 'FORBIDDEN' }, 403);
+      try {
+        const response = await fetch(OWNER_MAILING_HANDLER, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Telegram-Bot-Api-Secret-Token': telegramHeader,
+          },
+          body,
+          redirect: 'manual',
+          signal: AbortSignal.timeout(16000),
+        });
+        if (!response.ok) return json({ ok: false, error: 'OWNER_MAILING_UNAVAILABLE' }, 502);
+        const reply = await response.json();
+        if (!reply || !['sendMessage', 'editMessageText'].includes(reply.method))
+          return json({ ok: false, error: 'OWNER_MAILING_REPLY_INVALID' }, 502);
+        return json(reply);
+      } catch {
+        return json({ ok: false, error: 'OWNER_MAILING_TIMEOUT' }, 502);
+      }
+    }
 
     // Bearer deep link for saving a Red Flag answer. ONLY this /start payload
     // bypasses the REG.RU onboarding; plain /start remains unchanged.
