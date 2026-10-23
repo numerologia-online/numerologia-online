@@ -1,6 +1,6 @@
 // Red Flag deliberately needs only day and month, with no birth-year dependence.
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=56";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=57";
 
 const home = document.querySelector("#home");
 const redFlag = document.querySelector("#redflag");
