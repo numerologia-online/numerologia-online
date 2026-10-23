@@ -13,7 +13,7 @@ export const loadQuestionBank = async (bankName) => {
 
   // Load approved full-length love answers for the explicitly approved dates only.
   // All other dates keep their previous lookup or variant-based answer.
-  const publishedLoveDates = new Set(["31-1", "1-2", "2-2", "3-2", "4-2", "5-2", "6-2", "7-2", "8-2", "9-2", "10-2", "11-2", "12-2", "13-2", "15-2", "16-2", "17-2", "18-2", "23-2", "24-2", "25-2", "26-2", "27-2"]);
+  const publishedLoveDates = new Set(["31-1", "1-2", "2-2", "3-2", "4-2", "5-2", "6-2", "7-2", "8-2", "9-2", "10-2", "11-2", "12-2", "13-2", "15-2", "16-2", "17-2", "18-2", "23-2", "24-2", "25-2", "26-2", "27-2", "28-2"]);
   const publishedLoveRequests = new Map();
 
   const loadPublishedLoveAnswer = async (question, profile) => {
