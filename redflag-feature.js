@@ -23,6 +23,13 @@ const categoryStates = new Map(REDFLAG_CATEGORIES.map((category) => [category.id
 let activeProfile;
 let formattedDate;
 
+// One consistent deep link for Telegram mini-app question buttons.
+// Example: ?view=redflag&question=love:honest-or-disappear
+const deepLinkParams = new URLSearchParams(window.location.search);
+const requestedQuestion = deepLinkParams.get("view") === "redflag"
+  ? /^([a-z0-9-]+):([a-z0-9-]+)$/.exec(deepLinkParams.get("question") || "")
+  : null;
+
 const parseRedFlagDate = (value) => {
   const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
   if (!match) return null;
@@ -268,6 +275,7 @@ const createQuestion = (question, state) => {
   const opened = state.activeQuestionId === question.id;
   const article = document.createElement("article");
   article.className = `redflag-question${opened ? " is-open" : ""}${activeProfile ? " is-calculated" : " is-preview"}`;
+  article.dataset.questionId = question.id;
 
   if (!activeProfile) {
     const preview = document.createElement("button");
@@ -445,15 +453,28 @@ form.addEventListener("submit", async (event) => {
       state.answerRequests.clear();
       state.answerErrors.clear();
     }
-    const firstCategory = REDFLAG_CATEGORIES[0];
+    const linkedCategory = requestedQuestion
+      ? REDFLAG_CATEGORIES.find((category) => category.id === requestedQuestion[1])
+      : null;
+    const firstCategory = linkedCategory || REDFLAG_CATEGORIES[0];
     const firstState = categoryStates.get(firstCategory.id);
     firstState.expanded = true;
     await ensureQuestions(firstCategory);
-    // After every calculation, let the visitor choose which question to open.
     for (const state of categoryStates.values()) state.activeQuestionId = null;
+    // Keep a directly linked question selected after the date is entered.
+    const linkedQuestion = linkedCategory
+      ? firstState.questions?.find((question) => question.id === requestedQuestion[2])
+      : null;
+    if (linkedQuestion) {
+      firstState.activeQuestionId = linkedQuestion.id;
+      ensureAnswer(linkedQuestion, firstState);
+    }
     clearError();
     renderCategories();
-    categoriesRoot.scrollIntoView({ behavior: "smooth", block: "start" });
+    const target = linkedQuestion
+      ? [...categoriesRoot.querySelectorAll("[data-question-id]")].find((item) => item.dataset.questionId === linkedQuestion.id)
+      : null;
+    (target || categoriesRoot).scrollIntoView({ behavior: "smooth", block: "center" });
   } catch {
     showError("Не удалось подготовить вопросы. Обновите страницу и попробуйте ещё раз.");
   }
@@ -470,5 +491,26 @@ export const openRedFlag = () => {
   redFlag.classList.add("is-active");
   window.scrollTo({ top: 0, behavior: "instant" });
   renderCategories();
-  window.setTimeout(() => birthDateInput.focus(), 220);
+
+  // A broadcast deep link opens the exact named question, not just the section.
+  // Date input remains optional until the question is actually requested.
+  const category = requestedQuestion
+    ? REDFLAG_CATEGORIES.find((item) => item.id === requestedQuestion[1])
+    : null;
+  if (category) {
+    const state = categoryStates.get(category.id);
+    state.expanded = true;
+    renderCategories();
+    void ensureQuestions(category).then(() => {
+      const question = state.questions?.find((item) => item.id === requestedQuestion[2]);
+      if (!question) return;
+      state.activeQuestionId = question.id;
+      renderCategories();
+      const article = [...categoriesRoot.querySelectorAll("[data-question-id]")]
+        .find((item) => item.dataset.questionId === question.id);
+      article?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }).catch(() => { /* The normal category UI still permits manual selection. */ });
+  } else {
+    window.setTimeout(() => birthDateInput.focus(), 220);
+  }
 };
