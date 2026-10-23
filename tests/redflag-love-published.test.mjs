@@ -74,12 +74,19 @@ test("Opening approved Love questions loads one date, without the 366-entry base
     assert.equal(requests.length, 6, "Approved February 28 loads exactly once");
     assert.match(requests[5], /love\/published\/28-2\.json$/);
 
+    const profile29 = { classic: { birthDate: { day: 29, month: 2 } } };
+    const published29 = await bank.QUESTIONS.find((x) => x.id === "love-or-attention").answer(profile29);
+    const expected29 = JSON.parse(await load("data/redflag/love/published/29-2.json"));
+    assert.equal(published29.answer, expected29.entries["love-or-attention"]);
+    assert.equal(requests.length, 7, "Leap day February 29 loads exactly once");
+    assert.match(requests[6], /love\/published\/29-2\.json$/);
+
     const legacy = await bank.QUESTIONS.find((x) => x.id === "romance").answer({
       classic: { birthDate: { day: 14, month: 2 } },
       affection: "warm"
     });
     assert.ok(legacy.answer.length > 20, "Other dates still receive the original answer");
-    assert.equal(requests.length, 6, "Unpublished date does not download a Love file");
+    assert.equal(requests.length, 7, "Unpublished date does not download a Love file");
   } finally {
     globalThis.fetch = originalFetch;
   }
