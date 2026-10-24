@@ -40,11 +40,33 @@ insight.innerHTML = [
   '<button class="child-insight-close" type="button" aria-label="Закрыть подсказку">×</button>',
   '</div>',
   '<h3 id="child-insight-title"></h3>',
-  '<p id="child-insight-text"></p>'
+  '<div id="child-insight-text" class="child-insight-body"></div>'
 ].join("");
 byId("child-insight-place").append(insight);
 let selectedPoint = null;
+let insightRequestId = 0;
+let firstEnergyBankRequest = null;
+// Авторский банк хранится отдельно по числу, как во взрослом полном разборе.
+// Прочие числа продолжают использовать существующие короткие тексты.
+const getFirstEnergyBank = () => {
+  if (!firstEnergyBankRequest) {
+    firstEnergyBankRequest = fetch("./data/matrix/sections/energy-1.json?v=1")
+      .then((response) => {
+        if (!response.ok) throw new Error("Детский банк пока не загружен");
+        return response.json();
+      })
+      .catch(() => null);
+  }
+  return firstEnergyBankRequest;
+};
+const firstEnergyKeys = {
+  "family-feelings": "familyFeelings",
+  "learning-help": "learningHelp",
+  independence: "independence",
+  interests: "interests"
+};
 const closeInsight = () => {
+  ++insightRequestId;
   insight.hidden = true;
   if (selectedPoint) selectedPoint.classList.remove("is-selected");
   selectedPoint = null;
@@ -53,18 +75,39 @@ insight.querySelector(".child-insight-close").addEventListener("click", closeIns
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !insight.hidden) closeInsight();
 });
-const openPointReading = (point, source = null) => {
+const openPointReading = async (point, source = null) => {
   if (!banks?.matrix?.entries) return;
+  const requestId = ++insightRequestId;
   const field = point.field || point.id;
   const description = banks.matrix.entries[String(point.number)]?.[field]
     || "Эта трактовка готовится. Пока можно выбрать другую тему.";
+  const body = byId("child-insight-text");
   byId("child-insight-number").textContent = point.code || String(point.number);
   byId("child-insight-title").textContent = point.title;
-  byId("child-insight-text").textContent = description;
   if (selectedPoint) selectedPoint.classList.remove("is-selected");
   selectedPoint = source;
   if (source) source.classList.add("is-selected");
   insight.hidden = false;
+  // Кармический хвост трактуется отдельно по полной комбинации, а не по одной цифре.
+  const isKarmic = point.id === "tail" || point.id === "tail-detail";
+  if (Number(point.number) === 1 && !isKarmic) {
+    body.textContent = "Открываю подробный разбор…";
+    const bank = await getFirstEnergyBank();
+    if (requestId !== insightRequestId || insight.hidden) return;
+    const sectionKey = firstEnergyKeys[point.id] || field;
+    const lines = bank?.sections?.[sectionKey]?.paragraphs;
+    if (Array.isArray(lines) && lines.length) {
+      body.replaceChildren();
+      lines.forEach((line, index) => {
+        if (typeof line !== "string" || !line.trim()) return;
+        const element = document.createElement(index % 2 === 0 ? "h4" : "p");
+        element.textContent = line;
+        body.append(element);
+      });
+      return;
+    }
+  }
+  body.textContent = description;
 };
 
 const currentDate = () => {
