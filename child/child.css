@@ -765,3 +765,10 @@ body {
   background: linear-gradient(110deg, #fff7fb 0%, #f5f9ff 100%);
   border-color: #eadbe9;
 }
+
+/* Развёрнутый авторский детский разбор: связные абзацы, без дробления фраз. */
+.child-insight-body { margin-top: 12px; }
+.child-insight-body h4 { font: 700 14px/1.4 var(--sans); color:#875d7a; margin: 21px 0 8px; }
+.child-insight-body h4:first-child { margin-top: 0; }
+.child-insight-body p { margin:0 0 15px; font:400 15px/1.72 var(--sans); color:#504856; }
+.child-insight-body p:last-child { margin-bottom:0; }
