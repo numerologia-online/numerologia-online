@@ -90,7 +90,11 @@ const openPointReading = async (point, source = null) => {
   insight.hidden = false;
   // Кармический хвост трактуется отдельно по полной комбинации, а не по одной цифре.
   const isKarmic = point.id === "tail" || point.id === "tail-detail";
-  if (Number(point.number) === 1 && !isKarmic) {
+  if (isKarmic) {
+    body.textContent = "Этот раздел будет собираться по полному сочетанию трёх чисел. Отдельное число здесь не даёт полной трактовки.";
+    return;
+  }
+  if (Number(point.number) === 1) {
     body.textContent = "Открываю подробный разбор…";
     const bank = await getFirstEnergyBank();
     if (requestId !== insightRequestId || insight.hidden) return;
