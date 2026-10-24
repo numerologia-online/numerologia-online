@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const dates = ["31-1", "1-2", "2-2", "3-2", "4-2", "5-2", "6-2", "7-2", "8-2", "9-2", "10-2", "11-2", "12-2", "13-2", "14-2", "15-2", "16-2", "17-2", "18-2", "19-2", "20-2", "21-2", "22-2", "23-2", "24-2", "25-2", "26-2", "27-2", "28-2", "29-2", "1-3", "2-3", "3-3", "4-3", "5-3", "6-3", "7-3", "8-3", "9-3", "10-3", "11-3", "12-3", "13-3", "14-3", "15-3", "16-3", "17-3", "18-3", "19-3", "20-3", "21-3", "22-3", "23-3", "24-3", "25-3", "26-3", "27-3", "28-3", "29-3", "30-3", "31-3", "1-4", "2-4", "3-4", "4-4"];
+const dates = ["31-1", "1-2", "2-2", "3-2", "4-2", "5-2", "6-2", "7-2", "8-2", "9-2", "10-2", "11-2", "12-2", "13-2", "14-2", "15-2", "16-2", "17-2", "18-2", "19-2", "20-2", "21-2", "22-2", "23-2", "24-2", "25-2", "26-2", "27-2", "28-2", "29-2", "1-3", "2-3", "3-3", "4-3", "5-3", "6-3", "7-3", "8-3", "9-3", "10-3", "11-3", "12-3", "13-3", "14-3", "15-3", "16-3", "17-3", "18-3", "19-3", "20-3", "21-3", "22-3", "23-3", "24-3", "25-3", "26-3", "27-3", "28-3", "29-3", "30-3", "31-3", "1-4", "2-4", "3-4", "4-4", "5-4", "6-4", "7-4", "8-4"];
 const load = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
 
 test("Each published love date has ten distinct, two-paragraph readings", async () => {
@@ -361,12 +361,40 @@ test("Opening approved Love questions loads one date, without the 366-entry base
     assert.equal(requests.length, 47, "Approved April 4 loads exactly once");
     assert.match(requests[46], /love\/published\/4-4\.json$/);
 
+    const apr5Profile = { classic: { birthDate: { day: 5, month: 4 } } };
+    const apr5Answer = await bank.QUESTIONS.find((x) => x.id === "adult-partner").answer(apr5Profile);
+    const apr5Expected = JSON.parse(await load("data/redflag/love/published/5-4.json"));
+    assert.equal(apr5Answer.answer, apr5Expected.entries["adult-partner"]);
+    assert.equal(requests.length, 48, "Approved April 5 loads exactly once");
+    assert.match(requests[47], /love\/published\/5-4\.json$/);
+
+    const apr6Profile = { classic: { birthDate: { day: 6, month: 4 } } };
+    const apr6Answer = await bank.QUESTIONS.find((x) => x.id === "family-or-triangle").answer(apr6Profile);
+    const apr6Expected = JSON.parse(await load("data/redflag/love/published/6-4.json"));
+    assert.equal(apr6Answer.answer, apr6Expected.entries["family-or-triangle"]);
+    assert.equal(requests.length, 49, "Approved April 6 loads exactly once");
+    assert.match(requests[48], /love\/published\/6-4\.json$/);
+
+    const apr7Profile = { classic: { birthDate: { day: 7, month: 4 } } };
+    const apr7Answer = await bank.QUESTIONS.find((x) => x.id === "hard-moment").answer(apr7Profile);
+    const apr7Expected = JSON.parse(await load("data/redflag/love/published/7-4.json"));
+    assert.equal(apr7Answer.answer, apr7Expected.entries["hard-moment"]);
+    assert.equal(requests.length, 50, "Approved April 7 loads exactly once");
+    assert.match(requests[49], /love\/published\/7-4\.json$/);
+
+    const apr8Profile = { classic: { birthDate: { day: 8, month: 4 } } };
+    const apr8Answer = await bank.QUESTIONS.find((x) => x.id === "relationship-or-comfort").answer(apr8Profile);
+    const apr8Expected = JSON.parse(await load("data/redflag/love/published/8-4.json"));
+    assert.equal(apr8Answer.answer, apr8Expected.entries["relationship-or-comfort"]);
+    assert.equal(requests.length, 51, "Approved April 8 loads exactly once");
+    assert.match(requests[50], /love\/published\/8-4\.json$/);
+
     const legacy = await bank.QUESTIONS.find((x) => x.id === "romance").answer({
       classic: { birthDate: { day: 1, month: 1 } },
       affection: "warm"
     });
     assert.ok(legacy.answer.length > 20, "Other dates still receive the original answer");
-    assert.equal(requests.length, 47, "Unpublished date does not download a Love file");
+    assert.equal(requests.length, 51, "Unpublished date does not download a Love file");
   } finally {
     globalThis.fetch = originalFetch;
   }
