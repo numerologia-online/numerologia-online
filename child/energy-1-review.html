@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#fbf5f9"><title>Проверка детских трактовок | Нумерология Онлайн</title>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#fbf2f8,#f5f9fd 48%,#faf9f5);color:#392f3b;font:16px/1.68 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+main{width:min(100% - 28px,780px);margin:auto;padding:22px 0 80px}.nav{font-size:14px;text-decoration:none;color:#6e5976;font-weight:650}.intro{padding:24px 22px;border:1px solid #ebdde8;border-radius:18px;background:#fff9;box-shadow:0 5px 18px #57465d0c;margin:20px 0 16px}.eyebrow{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:#9b7290;font-weight:700;margin:0 0 4px}h1{font:500 clamp(28px,7vw,40px)/1.2 Georgia,serif;margin:5px 0 12px;color:#543653}.intro p{margin:0 0 9px}.actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:20px 0 15px}.actions button{border:1px solid #dfcbdc;border-radius:12px;background:#fff;padding:10px 14px;color:#654765;font-size:14px;font-weight:650}.counter{margin-left:auto;color:#827486;font-size:13px}.topic{background:#fff;border:1px solid #e7dae5;border-radius:15px;margin:11px 0;box-shadow:0 3px 12px #56405709;overflow:hidden}.topic summary{padding:17px 20px;cursor:pointer;font-weight:700;line-height:1.35;list-style:none;display:flex;gap:14px;align-items:center}.topic summary::-webkit-details-marker{display:none}.topic summary:after{content:"⌄";font-size:23px;font-weight:400;color:#9a7b9a;margin-left:auto}.topic[open] summary:after{transform:rotate(180deg)}.num{font-size:12px;color:#99738d;background:#faf0f7;border-radius:100px;padding:3px 9px}.content{border-top:1px solid #f1eaf0;padding:19px 21px 12px}.content h3{font-size:15px;color:#8c637d;margin:24px 0 8px}.content h3:first-child{margin-top:0}.content p{margin:0 0 15px;font-size:16px;line-height:1.73}.small{font-size:13px;color:#817385}.error{color:#af3b5b}a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #95b3de;outline-offset:3px}@media(max-width:520px){main{width:calc(100% - 22px)}.intro{padding:18px 16px}.topic summary{padding:15px}.content{padding:17px 15px}.content p{font-size:15px}.counter{width:100%;margin-left:0}}
+</style></head>
+<body><main><a class="nav" href="./">← На страницу «Всё о ребёнке»</a><header class="intro"><p class="eyebrow">Авторская редакция для согласования</p><h1>Всё о ребёнке</h1><p>Здесь собраны большие трактовки по всем вопросам для первой позиции нашей текстовой базы. Это отдельная страница для чтения и проверки, без необходимости подбирать дату рождения.</p><p class="small">Пока тексты не утверждены. Кармический хвост из одной цифры не трактуем, его будем собирать по полной комбинации.</p></header><div class="actions"><button id="expand" type="button">Развернуть всё</button><button id="collapse" type="button">Свернуть всё</button><span id="counter" class="counter">Загружаю разделы…</span></div><div id="topics" aria-live="polite"></div></main>
+<script>
+(async()=>{
+const target=document.getElementById("topics");
+try{
+const response=await fetch("./data/matrix/sections/energy-1.json?v=1",{cache:"no-store"});
+if(!response.ok)throw Error("Не получилось загрузить авторские тексты");
+const data=await response.json();
+const sections=Object.values(data.sections||{});
+sections.forEach((section,index)=>{
+const wrap=document.createElement("details");wrap.className="topic";wrap.open=index===0;
+const summary=document.createElement("summary");
+const n=document.createElement("span");n.className="num";n.textContent=String(index+1);
+const t=document.createElement("span");t.textContent=section.title;summary.append(n,t);
+const content=document.createElement("div");content.className="content";
+(section.paragraphs||[]).forEach((line,i)=>{
+const node=document.createElement(i%2===0?"h3":"p");node.textContent=line;content.append(node);
+});
+wrap.append(summary,content);target.append(wrap);
+});
+document.getElementById("counter").textContent="Разделов: "+sections.length;
+document.getElementById("expand").onclick=()=>target.querySelectorAll("details").forEach(node=>node.open=true);
+document.getElementById("collapse").onclick=()=>target.querySelectorAll("details").forEach(node=>node.open=false);
+}catch(e){const message=document.createElement("p");message.className="error";message.textContent="Не удалось открыть трактовки. Обновите страницу.";target.append(message);document.getElementById("counter").textContent="Ошибка загрузки";}
+})();
+</script></body></html>
