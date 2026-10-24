@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const dates = ["31-1", "1-2", "2-2", "3-2", "4-2", "5-2", "6-2", "7-2", "8-2", "9-2", "10-2", "11-2", "12-2", "13-2", "15-2", "16-2", "17-2", "18-2", "23-2", "24-2", "25-2", "26-2", "27-2", "28-2", "29-2", "1-3", "2-3", "3-3", "4-3", "5-3", "6-3", "7-3", "8-3", "9-3", "10-3", "11-3", "12-3", "13-3", "14-3", "15-3", "16-3", "17-3", "18-3", "19-3", "20-3", "21-3", "22-3", "23-3", "24-3", "25-3", "26-3", "27-3", "28-3", "29-3", "30-3", "31-3"];
+const dates = ["31-1", "1-2", "2-2", "3-2", "4-2", "5-2", "6-2", "7-2", "8-2", "9-2", "10-2", "11-2", "12-2", "13-2", "14-2", "15-2", "16-2", "17-2", "18-2", "19-2", "20-2", "21-2", "22-2", "23-2", "24-2", "25-2", "26-2", "27-2", "28-2", "29-2", "1-3", "2-3", "3-3", "4-3", "5-3", "6-3", "7-3", "8-3", "9-3", "10-3", "11-3", "12-3", "13-3", "14-3", "15-3", "16-3", "17-3", "18-3", "19-3", "20-3", "21-3", "22-3", "23-3", "24-3", "25-3", "26-3", "27-3", "28-3", "29-3", "30-3", "31-3"];
 const load = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
 
 test("Each published love date has ten distinct, two-paragraph readings", async () => {
@@ -298,12 +298,47 @@ test("Opening approved Love questions loads one date, without the 366-entry base
     assert.equal(requests.length, 38, "Approved March 31 loads exactly once");
     assert.match(requests[37], /love\/published\/31-3\.json$/);
 
+    const feb14Profile = { classic: { birthDate: { day: 14, month: 2 } } };
+    const feb14Answer = await bank.QUESTIONS.find((x) => x.id === "romance").answer(feb14Profile);
+    const feb14Expected = JSON.parse(await load("data/redflag/love/published/14-2.json"));
+    assert.equal(feb14Answer.answer, feb14Expected.entries["romance"]);
+    assert.equal(requests.length, 39, "Approved February 14 loads exactly once");
+    assert.match(requests[38], /love\/published\/14-2\.json$/);
+
+    const feb19Profile = { classic: { birthDate: { day: 19, month: 2 } } };
+    const feb19Answer = await bank.QUESTIONS.find((x) => x.id === "adult-partner").answer(feb19Profile);
+    const feb19Expected = JSON.parse(await load("data/redflag/love/published/19-2.json"));
+    assert.equal(feb19Answer.answer, feb19Expected.entries["adult-partner"]);
+    assert.equal(requests.length, 40, "Approved February 19 loads exactly once");
+    assert.match(requests[39], /love\/published\/19-2\.json$/);
+
+    const feb20Profile = { classic: { birthDate: { day: 20, month: 2 } } };
+    const feb20Answer = await bank.QUESTIONS.find((x) => x.id === "relationship-or-comfort").answer(feb20Profile);
+    const feb20Expected = JSON.parse(await load("data/redflag/love/published/20-2.json"));
+    assert.equal(feb20Answer.answer, feb20Expected.entries["relationship-or-comfort"]);
+    assert.equal(requests.length, 41, "Approved February 20 loads exactly once");
+    assert.match(requests[40], /love\/published\/20-2\.json$/);
+
+    const feb21Profile = { classic: { birthDate: { day: 21, month: 2 } } };
+    const feb21Answer = await bank.QUESTIONS.find((x) => x.id === "honest-or-disappear").answer(feb21Profile);
+    const feb21Expected = JSON.parse(await load("data/redflag/love/published/21-2.json"));
+    assert.equal(feb21Answer.answer, feb21Expected.entries["honest-or-disappear"]);
+    assert.equal(requests.length, 42, "Approved February 21 loads exactly once");
+    assert.match(requests[41], /love\/published\/21-2\.json$/);
+
+    const feb22Profile = { classic: { birthDate: { day: 22, month: 2 } } };
+    const feb22Answer = await bank.QUESTIONS.find((x) => x.id === "love-or-attention").answer(feb22Profile);
+    const feb22Expected = JSON.parse(await load("data/redflag/love/published/22-2.json"));
+    assert.equal(feb22Answer.answer, feb22Expected.entries["love-or-attention"]);
+    assert.equal(requests.length, 43, "Approved February 22 loads exactly once");
+    assert.match(requests[42], /love\/published\/22-2\.json$/);
+
     const legacy = await bank.QUESTIONS.find((x) => x.id === "romance").answer({
-      classic: { birthDate: { day: 14, month: 2 } },
+      classic: { birthDate: { day: 1, month: 1 } },
       affection: "warm"
     });
     assert.ok(legacy.answer.length > 20, "Other dates still receive the original answer");
-    assert.equal(requests.length, 38, "Unpublished date does not download a Love file");
+    assert.equal(requests.length, 43, "Unpublished date does not download a Love file");
   } finally {
     globalThis.fetch = originalFetch;
   }
