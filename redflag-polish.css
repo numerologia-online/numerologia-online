@@ -415,3 +415,12 @@
 @media (prefers-reduced-motion: reduce) {
   .redflag-question { transition: none; }
 }
+
+/* Stronger tactile press, held until the opened question replaces the row. */
+.redflag-question.is-pressing,
+.redflag-question:has(.redflag-question-toggle:active) {
+  transform: translateY(5px) scale(.992);
+  box-shadow: 0 0 0 rgba(117,82,107,.2), inset 0 4px 10px rgba(88,57,79,.18);
+  background: linear-gradient(180deg,#eee0e7,#faf1f4);
+  border-color: rgba(125,72,105,.48);
+}
