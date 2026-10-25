@@ -9,7 +9,7 @@
   <base href="../">
   <title>Полный личный расчёт | Нумерология Онлайн</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="pro/pro.css?v=39">
+  <link rel="stylesheet" href="pro/pro.css?v=40">
 </head>
 <body>
   <main class="pro-shell">
@@ -22,6 +22,14 @@
       <h1>Полный личный<br>расчёт</h1>
       <p class="pro-hero-lead">Введите дату рождения и откройте свой полный личный разбор. Сейчас перед вами начнёт раскрываться то, что долго оставалось без слов: ваши сильные стороны, любовь, деньги, предназначение и важные кармические уроки. Этот разбор поможет глубже понять себя и увидеть путь яснее.</p>
       <a class="pro-school-shortcut" href="pro/schools/">Все школы нумерологии →</a>
+    </section>
+    <section id="pro-paywall-preview" class="pro-paywall-preview" hidden aria-label="Демонстрация платного доступа">
+      <strong>Режим просмотра оплаты</strong>
+      <p>Это демонстрация интерфейса, не настоящая покупка. Переключайте состояния, чтобы проверить все разделы.</p>
+      <div class="pro-paywall-preview-actions" role="group" aria-label="Что видит посетитель">
+        <button type="button" data-paywall-view="before" aria-pressed="true">🔒 До оплаты</button>
+        <button type="button" data-paywall-view="after" aria-pressed="false">✓ После оплаты</button>
+      </div>
     </section>
     <form id="pro-form" class="pro-form" novalidate>
       <label for="pro-birth-date">Ваша дата рождения</label>
@@ -38,6 +46,13 @@
         <a href="#pro-purpose">Предназначение</a>
         <a href="#pro-karmic-title">Кармические программы</a>
       </nav>
+      <section id="pro-paywall-banner" class="pro-paywall-banner" hidden>
+        <span class="pro-paywall-banner-eyebrow">ВАШИ ЧИСЛА УЖЕ РАССЧИТАНЫ</span>
+        <h2>Откройте всё, что стоит за ними</h2>
+        <p>Схема и числа доступны бесплатно. Подробные трактовки всех точек и сфер, 14 больших ответов, предназначение, кармические программы и PDF входят в полный разбор.</p>
+        <button id="pro-paywall-buy" type="button">Открыть весь разбор · 490 ₽</button>
+        <small>Оплата пока не подключена. Сейчас доступен просмотр оформления.</small>
+      </section>
       <section id="pro-pdf-controls" class="pro-pdf-controls" aria-label="Сохранить персональный полный разбор" hidden>
         <div class="pro-pdf-intro"><p class="pro-eyebrow">ВАШ ПЕРСОНАЛЬНЫЙ ДОКУМЕНТ</p><h2>Ваш разбор можно сохранить</h2></div>
         <div id="pro-pdf-buttons" class="pro-pdf-buttons"></div>
@@ -51,7 +66,7 @@
         <div id="pro-diagram" class="pro-diagram"></div>
         <section id="pro-point-details" class="pro-point-details" role="region" aria-label="Подробный разбор выбранной точки" tabindex="-1" hidden></section>
         <section id="pro-zone-reading" class="pro-zone-reading" role="region" aria-labelledby="pro-zone-reading-title" tabindex="-1" hidden></section>
-        <p class="pro-diagram-caption">Нажмите на название темы, чтобы увидеть выделенные энергии и подробную расшифровку их сочетания.</p>
+        <p class="pro-diagram-caption">Нажмите на название темы, чтобы увидеть выделенные числа. Подробные трактовки открываются после покупки.</p>
         <section class="pro-zone-picker" aria-labelledby="pro-zone-picker-title">
           <p class="pro-eyebrow">УЧИМСЯ ЧИТАТЬ МАТРИЦУ</p>
           <h3 id="pro-zone-picker-title">Выберите интересующую сферу</h3>
@@ -62,7 +77,7 @@
       <section class="pro-paper" aria-labelledby="pro-question-title">
         <p class="pro-eyebrow">КОНСУЛЬТАЦИЯ ПО ТЕМАМ</p>
         <h2 id="pro-question-title">О чём хотите узнать?</h2>
-        <p class="pro-muted">Нажмите на вопрос - ответ раскроется прямо под ним. При выборе следующего предыдущий закроется.</p>
+        <p class="pro-muted">Выберите интересующий вопрос. Полные ответы доступны после покупки разбора.</p>
         <div id="pro-question-buttons" class="pro-question-buttons"></div>
       </section>
       <section id="pro-purpose" class="pro-paper" aria-label="Расчёт предназначения"></section>
@@ -72,7 +87,12 @@
       </section>
     </div>
     <footer class="pro-footer">Нумерология Онлайн · Полный личный разбор по дате рождения</footer>
+    <dialog id="pro-paywall-dialog" class="pro-paywall-dialog" aria-labelledby="pro-paywall-dialog-title">
+      <h2 id="pro-paywall-dialog-title">Полный разбор · 490 ₽</h2>
+      <p>Оплата пока не подключена. Мы показываем, как будет выглядеть платный доступ. Сейчас деньги не списываются.</p>
+      <form method="dialog"><button type="submit">Понятно</button></form>
+    </dialog>
   </main>
-  <script type="module" src="pro/pro.js?v=98"></script>
+  <script type="module" src="pro/pro.js?v=99"></script>
 </body>
 </html>
