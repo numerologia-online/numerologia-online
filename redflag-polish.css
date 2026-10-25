@@ -355,3 +355,17 @@
 .redflag-joke-banner span { font-size:clamp(19px,5vw,24px); font-weight:900; line-height:1.24; }
 .redflag-joke-banner small { color:#855e6b; font-size:11px; }
 .redflag-question-price.is-free { background:#e7f6ed; border-color:#8fc9a7; color:#23633f; }
+
+/* Compact horizontal question buttons on phones. */
+.redflag-questions { gap: 7px; }
+.redflag-question { border-radius: 16px; }
+.redflag-question-toggle { min-height: 69px; padding: 11px 12px; gap: 7px; }
+.redflag-question-label { font-size: 15px; line-height: 1.2; }
+.redflag-question-price { padding: 5px 7px; font-size: 12px; }
+.redflag-question-toggle b { font-size: 21px; min-width: 16px; text-align: center; }
+@media (max-width: 430px) {
+  .redflag-question-toggle { padding: 11px 10px; gap: 6px; }
+  .redflag-question-label { font-size: 14px; line-height: 1.2; }
+  .redflag-question-price { padding: 5px 6px; font-size: 11px; }
+  .redflag-question-toggle b { font-size: 20px; min-width: 14px; }
+}
