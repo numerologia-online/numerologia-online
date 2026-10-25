@@ -49,9 +49,19 @@ const hasPaidAccess = () => verifiedOwner && !ownerSeeFree;
 const paywallBanner = document.querySelector("#pro-paywall-banner");
 const paywallDialog = document.querySelector("#pro-paywall-dialog");
 const oldPreviewParam = new URL(location.href);
-if (oldPreviewParam.searchParams.has("paywall_preview")) {
-  oldPreviewParam.searchParams.delete("paywall_preview");
+const startBrowserLogin = oldPreviewParam.searchParams.get("sign_in") === "telegram";
+let cleanedUrl = false;
+for (const key of ["paywall_preview", "sign_in"]) {
+  if (!oldPreviewParam.searchParams.has(key)) continue;
+  oldPreviewParam.searchParams.delete(key);
+  cleanedUrl = true;
+}
+if (cleanedUrl) {
   history.replaceState(null, "", oldPreviewParam.pathname + oldPreviewParam.search + oldPreviewParam.hash);
+}
+if (startBrowserLogin) {
+  // Sign-in link only starts normal Telegram OAuth; it never grants paid access.
+  location.assign(AUTH_SERVER + "/api/start?return_to=pro");
 }
 function showPaymentInfo() {
   if (paywallDialog?.showModal) paywallDialog.showModal();
