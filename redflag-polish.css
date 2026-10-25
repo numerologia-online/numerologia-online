@@ -440,3 +440,17 @@
 @media (prefers-reduced-motion: reduce) {
   .redflag-question { transition: none; }
 }
+
+/* Keep opened answers aligned at their heading; no intrusive loading copy. */
+.redflag-question { scroll-margin-top: 14px; }
+.redflag-loading-dots { min-height: 14px; padding: 5px 0; }
+.redflag-loading-dots::after {
+  content: "";
+  display: block;
+  width: 24px;
+  height: 4px;
+  margin: 0 auto;
+  border-radius: 99px;
+  background: #bda7b4;
+  opacity: .5;
+}
