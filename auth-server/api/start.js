@@ -6,9 +6,14 @@ module.exports = async (req, res) => {
   if (req.method !== "GET") return res.status(405).end();
   try {
     const config = getConfig();
+    // The optional return route is an allowlisted relative page, never an arbitrary URL.
+    if (req.query?.return_to && req.query.return_to !== "pro") {
+      return res.status(400).json({ error: "Unsupported return path" });
+    }
+    const next = req.query?.return_to === "pro" ? "pro" : "";
     const verifier = nonce(32), state = nonce(), oidcNonce = nonce();
     const challenge = crypto.createHash("sha256").update(verifier).digest("base64url");
-    const flow = signed({ verifier, state, oidcNonce, exp: Math.floor(Date.now() / 1000) + 600 }, config.signing);
+    const flow = signed({ verifier, state, oidcNonce, next, exp: Math.floor(Date.now() / 1000) + 600 }, config.signing);
     res.setHeader("Set-Cookie", FLOW_COOKIE + "=" + flow + "; Path=/api; Max-Age=600; HttpOnly; Secure; SameSite=Lax");
     const redirect = new URL(PROVIDER + "/auth");
     redirect.searchParams.set("client_id", AUTH_CLIENT_ID);
