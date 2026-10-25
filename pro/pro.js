@@ -37,6 +37,59 @@ const karmic = document.querySelector("#pro-karma");
 const purpose = document.querySelector("#pro-purpose");
 const pdfControls = document.querySelector("#pro-pdf-controls");
 const pdfButtons = document.querySelector("#pro-pdf-buttons");
+
+// Visual paywall preview only. Production purchases must be verified by the server.
+const paywallPreviewMode = new URLSearchParams(location.search).get("paywall_preview") === "1" && !schoolClientMode;
+let previewUnlocked = false;
+const hasPaidAccess = () => schoolClientMode || (paywallPreviewMode && previewUnlocked);
+const paywallBanner = document.querySelector("#pro-paywall-banner");
+const paywallPreviewToolbar = document.querySelector("#pro-paywall-preview");
+const paywallDialog = document.querySelector("#pro-paywall-dialog");
+function showPaymentInfo() {
+  if (paywallDialog?.showModal) paywallDialog.showModal();
+  else alert("Оплата пока не подключена. Это предварительный просмотр платного раздела.");
+}
+function makePaywallLock(title, description = "Подробная трактовка откроется после покупки полного разбора.") {
+  const panel = element("div", null, "pro-paid-lock");
+  panel.append(element("span", "🔒 ПЛАТНЫЙ РАЗДЕЛ", "pro-paid-lock-eyebrow"));
+  panel.append(element("strong", title, "pro-paid-lock-title"));
+  panel.append(paragraph(description, "pro-paid-lock-note"));
+  const button = element("button", "Открыть весь разбор · 490 ₽", "pro-paid-lock-button");
+  button.type = "button";
+  button.addEventListener("click", showPaymentInfo);
+  panel.append(button);
+  return panel;
+}
+function makeLockedPdfButton() {
+  const button = element("button", "🔒 Скачать PDF · после оплаты", "pro-pdf-button pro-pdf-button--top");
+  button.type = "button";
+  button.addEventListener("click", showPaymentInfo);
+  return button;
+}
+function syncPaywallUi() {
+  document.body.classList.toggle("pro-paywall-locked", !hasPaidAccess());
+  if (paywallBanner) paywallBanner.hidden = hasPaidAccess();
+  if (paywallPreviewToolbar) {
+    paywallPreviewToolbar.hidden = !paywallPreviewMode;
+    paywallPreviewToolbar.querySelectorAll("[data-paywall-view]").forEach(button => {
+      const selected = (button.dataset.paywallView === "after") === previewUnlocked;
+      button.classList.toggle("is-selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+  }
+}
+document.querySelector("#pro-paywall-buy")?.addEventListener("click", showPaymentInfo);
+paywallPreviewToolbar?.querySelectorAll("[data-paywall-view]").forEach(button => {
+  button.addEventListener("click", () => {
+    if (!paywallPreviewMode) return;
+    const next = button.dataset.paywallView === "after";
+    if (previewUnlocked === next) return;
+    previewUnlocked = next;
+    syncPaywallUi();
+    if (current && input.value) form.requestSubmit();
+  });
+});
+syncPaywallUi();
 const zoneReadingHome = zoneReading.nextElementSibling; // caption after the unchanged matrix
 let selectedZoneFrom = "diagram";
 diagram.addEventListener("click", () => { selectedZoneFrom = "diagram"; }, true);
@@ -292,6 +345,14 @@ function openKarmicInline() {
   hideKarmicPreview();
   clearZone();
   hideZonePreview();
+  // The free preview never reveals the full karmic interpretation.
+  if (!hasPaidAccess()) {
+    karmicInline.replaceChildren(karmicInlineHead, makePaywallLock("Кармические программы"));
+    button.after(karmicInline);
+    karmicInline.hidden = false;
+    scrollOpenedAnswerToTop(karmicInline, () => !karmicInline.hidden);
+    return;
+  }
   // Retain the real, interactive reading and all its event listeners.
   karmicInline.append(karmic);
   karmicHome.hidden = true;
@@ -604,6 +665,13 @@ function openPointDetail(key) {
   if (energy.name) chips.append(element("span", energy.name));
   pointDetails.append(chips);
 
+  if (!hasPaidAccess()) {
+    pointDetails.append(makePaywallLock("Разбор точки: " + (position?.title || current.previews.titles[key] || point.label)));
+    pointDetails.hidden = false;
+    scrollOpenedAnswerToTop(pointDetails, () => !pointDetails.hidden);
+    return;
+  }
+
   if (hasAuthoredText) {
     // IMPORTANT: supply point.value, never the same topic's other matrix energy.
     // No generic advice from point-previews.json is substituted for an authored answer.
@@ -648,6 +716,14 @@ function renderZoneReading(zone, shouldScroll = true) {
   }
   const {reading} = zone;
   const positions = zone.points.map(key => current.points.find(point => point.key === key)).filter(Boolean);
+  if (!hasPaidAccess()) {
+    zoneReading.append(element("h3", zone.title));
+    zoneReading.append(paragraph("Ваши числа: " + positions.map(point => point.value).join(" · "), "pro-paid-zone-values"));
+    zoneReading.append(makePaywallLock("Подробный разбор сферы «" + zone.title + "»"));
+    zoneReading.hidden = false;
+    if (shouldScroll) scrollOpenedAnswerToTop(zoneReading, () => !zoneReading.hidden);
+    return;
+  }
   const top = element("div", null, "pro-zone-reading-header");
   const heading = element("div");
   heading.append(element("p", "ВАША МАТРИЦА · РАЗБОР СФЕРЫ", "pro-eyebrow"));
@@ -748,6 +824,25 @@ async function selectQuestion(key, scroll = false) {
   const answer = button?.parentElement?.querySelector(".pro-answer");
   if (!button || !answer) return;
 
+  if (!hasPaidAccess()) {
+    const next = current.selected === key ? null : key;
+    current.selected = next;
+    questionButtons.querySelectorAll(".pro-question-item").forEach(card => {
+      const trigger = card.querySelector("button[data-question]");
+      const panel = card.querySelector(".pro-answer");
+      const open = trigger.dataset.question === next;
+      card.classList.toggle("expanded", open);
+      trigger.setAttribute("aria-expanded", String(open));
+      trigger.setAttribute("aria-pressed", String(open));
+      panel.hidden = !open;
+    });
+    if (next) {
+      answer.replaceChildren(makePaywallLock("Ответ «" + definition.title + "»"));
+      scrollToSelectedQuestion(current.id, key, button);
+    }
+    return;
+  }
+
   const id = current.id;
   const request = ++answerRequestId;
   const alreadyOpen = current.selected === key;
@@ -804,6 +899,22 @@ async function selectQuestion(key, scroll = false) {
 
 async function renderPurpose(matrix) {
   if (!purpose) return;
+  if (!hasPaidAccess()) {
+    purpose.replaceChildren(element("h2", "Ваше предназначение"));
+    [
+      ["Личное предназначение", matrix.purpose.personal],
+      ["Социальное предназначение", matrix.purpose.social],
+      ["Общее предназначение", matrix.purpose.general],
+      ["Планетарное предназначение", matrix.purpose.planetary]
+    ].forEach(([name, number]) => {
+      const row = element("div", null, "pro-paid-purpose-row");
+      row.append(element("span", name + " · " + number));
+      row.append(element("span", "🔒"));
+      purpose.append(row);
+    });
+    purpose.append(makePaywallLock("Расшифровка вашего предназначения"));
+    return;
+  }
   const id = current?.id;
   purpose.replaceChildren(paragraph("Подбираю персональные трактовки предназначения…", "pro-muted"));
   const readings = await loadPurposeReadings();
@@ -911,6 +1022,12 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
   karmic.replaceChildren();
   const tailValues = [matrix.tail.first, matrix.tail.second, matrix.bottom];
   const code = tailValues.join("-");
+  if (!hasPaidAccess()) {
+    karmic.append(paragraph("Ваш кармический хвост: " + code, "pro-karmic-current-code"));
+    karmic.append(paragraph("Найдено кармических программ: " + programs.length, "pro-muted"));
+    karmic.append(makePaywallLock("Подробные кармические трактовки"));
+    return;
+  }
   const tailKey = karmicTripleKey(tailValues);
   const tailPlaces = getMatrixTriples(matrix).filter(item => karmicTripleKey(item.values) === tailKey);
   karmic.append(paragraph("Кармический хвост " + code, "pro-karmic-current-code"));
@@ -1011,6 +1128,11 @@ form.addEventListener("submit", async(event)=>{
   invalidateFullPdf();
   pdfControls.hidden = true;
   pdfButtons.replaceChildren();
+  syncPaywallUi();
+  if (!hasPaidAccess()) {
+    pdfButtons.replaceChildren(makeLockedPdfButton());
+    pdfControls.hidden = false;
+  }
   const formattedDate = input.value;
   const id=++requestId;
   hidePointPreview();
@@ -1055,7 +1177,7 @@ form.addEventListener("submit", async(event)=>{
         formattedDate, matrixData: matrix, karmicPrograms: programs, karmicTails: tails,
         points, zones, previews, knowledge, deepening
       };
-      pdfButtons.replaceChildren(createFullReportPdfButton("top"));
+      pdfButtons.replaceChildren(hasPaidAccess() ? createFullReportPdfButton("top") : makeLockedPdfButton());
       pdfControls.hidden = false;
     })
       .catch(()=>{if(current?.id===id)karmic.replaceChildren(paragraph("Не получилось загрузить кармические программы. Попробуйте обновить страницу.","pro-muted"));});
