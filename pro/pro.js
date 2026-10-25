@@ -38,13 +38,21 @@ const purpose = document.querySelector("#pro-purpose");
 const pdfControls = document.querySelector("#pro-pdf-controls");
 const pdfButtons = document.querySelector("#pro-pdf-buttons");
 
-// Visual paywall preview only. Production purchases must be verified by the server.
-const paywallPreviewMode = new URLSearchParams(location.search).get("paywall_preview") === "1" && !schoolClientMode;
-let previewUnlocked = false;
-const hasPaidAccess = () => schoolClientMode || (paywallPreviewMode && previewUnlocked);
+// Owner-only interface. Never grant access from the URL, local state, or school mode.
+// Only a verified response from the authentication server can activate these controls.
+const AUTH_SERVER = "https://numerologia-online-auth-server.vercel.app";
+const OWNER_TICKET_KEY = "numerologia-owner-oidc-ticket-v1";
+let verifiedOwner = false;
+let ownerSeeFree = false;
+let ownerToolbar = null;
+const hasPaidAccess = () => verifiedOwner && !ownerSeeFree;
 const paywallBanner = document.querySelector("#pro-paywall-banner");
-const paywallPreviewToolbar = document.querySelector("#pro-paywall-preview");
 const paywallDialog = document.querySelector("#pro-paywall-dialog");
+const oldPreviewParam = new URL(location.href);
+if (oldPreviewParam.searchParams.has("paywall_preview")) {
+  oldPreviewParam.searchParams.delete("paywall_preview");
+  history.replaceState(null, "", oldPreviewParam.pathname + oldPreviewParam.search + oldPreviewParam.hash);
+}
 function showPaymentInfo() {
   if (paywallDialog?.showModal) paywallDialog.showModal();
   else alert("Оплата пока не подключена. Это предварительный просмотр платного раздела.");
@@ -70,27 +78,100 @@ function makeLockedPdfButton() {
 function syncPaywallUi() {
   document.body.classList.toggle("pro-paywall-locked", !hasPaidAccess());
   if (paywallBanner) paywallBanner.hidden = hasPaidAccess();
-  if (paywallPreviewToolbar) {
-    paywallPreviewToolbar.hidden = !paywallPreviewMode;
-    paywallPreviewToolbar.querySelectorAll("[data-paywall-view]").forEach(button => {
-      const selected = (button.dataset.paywallView === "after") === previewUnlocked;
-      button.classList.toggle("is-selected", selected);
-      button.setAttribute("aria-pressed", String(selected));
+  ownerToolbar?.querySelectorAll("[data-paywall-view]").forEach(button => {
+    const selected = (button.dataset.paywallView === "after") === !ownerSeeFree;
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+}
+function showOwnerControls() {
+  if (!verifiedOwner || ownerToolbar) return;
+  ownerToolbar = document.createElement("section");
+  ownerToolbar.className = "pro-paywall-preview";
+  ownerToolbar.setAttribute("aria-label", "Управление владельца сайта");
+  const heading = document.createElement("strong");
+  heading.textContent = "Проверка сайта · доступ владельца";
+  const note = document.createElement("p");
+  note.textContent = "Только для подтверждённого владельца. Оплата не требуется.";
+  const actions = document.createElement("div");
+  actions.className = "pro-paywall-preview-actions";
+  for (const [value, label] of [
+    ["before", "🔒 Как видит посетитель"],
+    ["after", "✓ Мой полный доступ"]
+  ]) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.paywallView = value;
+    button.textContent = label;
+    button.addEventListener("click", () => {
+      if (!verifiedOwner) return;
+      const next = value === "before";
+      if (ownerSeeFree === next) return;
+      ownerSeeFree = next;
+      syncPaywallUi();
+      if (current && input.value) form.requestSubmit();
     });
+    actions.append(button);
+  }
+  ownerToolbar.append(heading, note, actions);
+  form.before(ownerToolbar);
+  syncPaywallUi();
+}
+function readSignedMiniAppData() {
+  const direct = window.Telegram?.WebApp?.initData;
+  if (typeof direct === "string" && direct) return direct;
+  const fragment = location.hash.replace(/^#/, "");
+  if (!fragment.includes("tgWebAppData=")) return "";
+  try { return new URLSearchParams(fragment).get("tgWebAppData") || ""; }
+  catch (_) { return ""; }
+}
+async function verifyOwnerAccess() {
+  try {
+    const initData = readSignedMiniAppData();
+    let response;
+    if (initData) {
+      response = await fetch(AUTH_SERVER + "/api/miniapp", {
+        method: "POST",
+        mode: "cors",
+        cache: "no-store",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({init_data: initData})
+      });
+    } else {
+      const fragment = location.hash.replace(/^#/, "");
+      let ticket = "";
+      if (fragment.startsWith("tg_session=")) {
+        ticket = new URLSearchParams(fragment).get("tg_session") || "";
+        history.replaceState(null, "", location.pathname + location.search);
+        try { sessionStorage.setItem(OWNER_TICKET_KEY, ticket); } catch (_) {}
+      } else {
+        try { ticket = sessionStorage.getItem(OWNER_TICKET_KEY) || ""; } catch (_) {}
+      }
+      if (!/^[A-Za-z0-9_.-]{16,5000}$/.test(ticket)) return;
+      response = await fetch(AUTH_SERVER + "/api/session", {
+        method: "GET",
+        mode: "cors",
+        cache: "no-store",
+        headers: {Authorization: "Bearer " + ticket}
+      });
+      if (!response.ok) {
+        try { sessionStorage.removeItem(OWNER_TICKET_KEY); } catch (_) {}
+      }
+    }
+    if (!response?.ok) return;
+    const answer = await response.json();
+    if (answer?.owner !== true || !answer?.user?.id) return;
+    verifiedOwner = true;
+    ownerSeeFree = false;
+    showOwnerControls();
+    if (current && input.value) form.requestSubmit();
+  } catch (err) {
+    console.warn("Проверка владельца пока недоступна", err);
   }
 }
 document.querySelector("#pro-paywall-buy")?.addEventListener("click", showPaymentInfo);
-paywallPreviewToolbar?.querySelectorAll("[data-paywall-view]").forEach(button => {
-  button.addEventListener("click", () => {
-    if (!paywallPreviewMode) return;
-    const next = button.dataset.paywallView === "after";
-    if (previewUnlocked === next) return;
-    previewUnlocked = next;
-    syncPaywallUi();
-    if (current && input.value) form.requestSubmit();
-  });
-});
 syncPaywallUi();
+void verifyOwnerAccess();
 const zoneReadingHome = zoneReading.nextElementSibling; // caption after the unchanged matrix
 let selectedZoneFrom = "diagram";
 diagram.addEventListener("click", () => { selectedZoneFrom = "diagram"; }, true);
