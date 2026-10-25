@@ -80,3 +80,19 @@ test("The open reading keeps the point title, number and full matching text toge
   await openPointReading({id:"talents",number:13,title:"Таланты и сильные стороны"});
   assert.match(elems["child-insight-text"].textContent, /пока не написана/);
 });
+
+test("No numeric energy labels are exposed inside child reading paragraphs", async () => {
+  // Numeric energies choose files; the displayed prose speaks directly about the child.
+  const forbiddenTerms = /энерг[а-яё]*|аркан[а-яё]*|одиннадцатк[а-яё]*|двенадцатк[а-яё]*/iu;
+  for (let n = 1; n <= 22; n++) {
+    const reading = await bank(n);
+    for (const [sectionKey, section] of Object.entries(reading.sections)) {
+      for (const paragraph of section.paragraphs || []) {
+        assert.doesNotMatch(paragraph, forbiddenTerms, `energy ${n}, section ${sectionKey}`);
+        if (n === 10) {
+          assert.doesNotMatch(paragraph, /десятк[а-яё]*/iu, `numeric nickname in energy ${n}, section ${sectionKey}`);
+        }
+      }
+    }
+  }
+});
