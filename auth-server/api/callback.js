@@ -30,6 +30,7 @@ module.exports = async (req, res) => {
     const issued = Math.floor(Date.now() / 1000);
     const ticket = signed({ id: user.id, name: user.name, iat: issued, exp: issued + 3600 }, config.signing);
     const site = new URL(config.site);
+    if (flow.next === "pro") site.pathname = site.pathname.replace(/\/?$/, "/") + "pro/";
     site.hash = "tg_session=" + encodeURIComponent(ticket);
     res.setHeader("Referrer-Policy", "no-referrer");
     res.setHeader("Location", site.toString());
