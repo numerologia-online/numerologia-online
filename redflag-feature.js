@@ -364,7 +364,15 @@ const ensureQuestions = async (category) => {
   renderCategories();
   try {
     const content = await category.load();
-    state.questions = content.QUESTIONS.map((question, index) => ({ ...question, isFree: index === 0, priceRub: index === 0 ? 0 : question.priceRub }));
+    state.questions = [
+      ...content.QUESTIONS.map((question, index) => ({ ...question, isFree: index === 0, priceRub: index === 0 ? 0 : question.priceRub })),
+      {
+        id: "comic-verdict-" + category.id,
+        title: "😂 Шуточный вердикт",
+        priceRub: 49,
+        answer: async () => ({ answer: "Шуточный вердикт для этого раздела пока готовится. Мы напишем его отдельно." })
+      }
+    ];
   } finally {
     state.loading = false;
     renderCategories();
@@ -380,7 +388,7 @@ const createCategory = (category, index) => {
   toggle.className = "redflag-category-toggle";
   toggle.type = "button";
   toggle.setAttribute("aria-expanded", String(state.expanded));
-  toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · 10 вопросов</small><strong>${category.title}</strong>${category.id === "intimacy" ? '<span class="redflag-age-label" aria-label="Для взрослых, 18 плюс">18+</span>' : ""}<small class="redflag-category-count">10 вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
+  toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · 11 вопросов</small><strong>${category.title}</strong>${category.id === "intimacy" ? '<span class="redflag-age-label" aria-label="Для взрослых, 18 плюс">18+</span>' : ""}<small class="redflag-category-count">11 вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
   toggle.addEventListener("click", () => {
     state.expanded = !state.expanded;
     renderCategories();
