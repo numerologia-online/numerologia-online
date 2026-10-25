@@ -369,3 +369,12 @@
   .redflag-question-price { padding: 5px 6px; font-size: 11px; }
   .redflag-question-toggle b { font-size: 20px; min-width: 14px; }
 }
+
+/* Mobile question layout: price beneath the centered title, not beside it. */
+@media (max-width: 600px) {
+ .redflag-question-toggle { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; justify-items:center; column-gap:8px; row-gap:8px; padding:13px 14px; min-height:0; }
+ .redflag-question-label { grid-column:1 / -1; width:100%; text-align:center; font-size:15px; line-height:1.26; }
+ .redflag-question-price { grid-column:1 / -1; justify-self:center; font-size:12px; padding:5px 10px; }
+ .redflag-question-toggle > b { display:none; }
+ .redflag-question { border-radius:15px; }
+}
