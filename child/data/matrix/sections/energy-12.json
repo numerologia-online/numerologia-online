@@ -1,0 +1,84 @@
+{
+  "id": 12,
+  "status": "draft",
+  "schema": "child-matrix-energy-v1",
+  "description": "Детская матрица. 12 энергия, Повешенный.",
+  "sections": {
+    "character": {
+      "title": "Характер и темперамент",
+      "paragraphs": []
+    },
+    "talents": {
+      "title": "Таланты и природные способности",
+      "paragraphs": []
+    },
+    "learning": {
+      "title": "Обучение и усвоение знаний",
+      "paragraphs": []
+    },
+    "parenting": {
+      "title": "Воспитание и отношения с родителями",
+      "paragraphs": []
+    },
+    "activities": {
+      "title": "Подходящие занятия и кружки",
+      "paragraphs": []
+    },
+    "recovery": {
+      "title": "Отдых и восстановление",
+      "paragraphs": []
+    },
+    "emotions": {
+      "title": "Эмоции и переживания",
+      "paragraphs": []
+    },
+    "purpose": {
+      "title": "Предназначение и жизненный путь",
+      "paragraphs": []
+    },
+    "mistakes": {
+      "title": "Ошибки и слабые стороны",
+      "paragraphs": []
+    },
+    "lifeLessons": {
+      "title": "Главные жизненные уроки",
+      "paragraphs": []
+    },
+    "parentMistakes": {
+      "title": "Ошибки родителей",
+      "paragraphs": []
+    },
+    "comfort": {
+      "title": "Зона комфорта",
+      "paragraphs": []
+    },
+    "gifts": {
+      "title": "Подарки и поощрения",
+      "paragraphs": []
+    },
+    "games": {
+      "title": "Игры и развитие",
+      "paragraphs": []
+    },
+    "parentChildLessons": {
+      "title": "Уроки отношений между родителями и ребёнком",
+      "paragraphs": []
+    },
+    "familyFeelings": {
+      "title": "Чувства и атмосфера в семье",
+      "paragraphs": []
+    },
+    "independence": {
+      "title": "Самостоятельность и ответственность",
+      "paragraphs": []
+    },
+    "learningHelp": {
+      "title": "Как помогать ребёнку в учёбе",
+      "paragraphs": []
+    },
+    "interests": {
+      "title": "Интересы и будущие направления",
+      "paragraphs": []
+    }
+  }
+}
