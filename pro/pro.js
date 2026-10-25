@@ -49,11 +49,12 @@ function showPaymentInfo() {
   if (paywallDialog?.showModal) paywallDialog.showModal();
   else alert("Оплата пока не подключена. Это предварительный просмотр платного раздела.");
 }
-function makePaywallLock(title, description = "Подробная трактовка откроется после покупки полного разбора.") {
+function makePaywallLock() {
   const panel = element("div", null, "pro-paid-lock");
-  panel.append(element("span", "🔒 ПЛАТНЫЙ РАЗДЕЛ", "pro-paid-lock-eyebrow"));
-  panel.append(element("strong", title, "pro-paid-lock-title"));
-  panel.append(paragraph(description, "pro-paid-lock-note"));
+  const line = element("div", null, "pro-paid-lock-line");
+  line.append(element("span", "🔒", "pro-paid-lock-icon"));
+  line.append(paragraph("Подробная трактовка откроется после покупки полного разбора.", "pro-paid-lock-note"));
+  panel.append(line);
   const button = element("button", "Открыть весь разбор · 490 ₽", "pro-paid-lock-button");
   button.type = "button";
   button.addEventListener("click", showPaymentInfo);
