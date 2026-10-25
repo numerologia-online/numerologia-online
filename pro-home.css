@@ -38,3 +38,14 @@
 .school-home-button:hover{background:#fff}
 .school-home-button:focus-visible{outline:3px solid #ddb97d;outline-offset:3px}
 @media(max-width:480px){.school-home-entry{margin:19px auto 10px;border-radius:21px;padding:25px 21px}.school-home-button{width:100%}}
+
+
+/* Price label on the full report home card. */
+.product-card.calculation .product-paywall-price{
+  position:absolute;top:13px;right:14px;z-index:2;
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:28px;padding:4px 10px;border:1px solid #f4dcad9c;
+  border-radius:25px;background:#f6e9c8;color:#493c27;
+  box-shadow:0 4px 10px #121b2533;font-size:12px;font-weight:850;
+  white-space:nowrap;line-height:1.2
+}
