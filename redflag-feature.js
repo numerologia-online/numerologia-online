@@ -56,7 +56,6 @@ const formatRedFlagMessage = (question, response, dateOfBirth) => {
     "Дата рождения мужчины: " + dateOfBirth,
     ""
   ];
-  if (response.jokeVerdict) parts.push("😂 ШУТОЧНЫЙ ВЕРДИКТ: " + response.jokeVerdict, "");
   if (response.verdict) parts.push(String(response.verdict).trim(), "");
   if (response.scales?.length) {
     parts.push(...response.scales.map(({ label, value }) =>
@@ -233,25 +232,6 @@ const clearError = () => {
   birthDateInput.removeAttribute("aria-invalid");
 };
 
-// Playful satire: deterministic by date and question, never a factual accusation.
-const JOKES = {
- money: ["Кошелёк на свидание пришёл, но притворяется туристом.", "Щедрость в отпуске. Уточни дату возвращения.", "Финансовый рыцарь. Конь пока в рассрочку."],
- love: ["Принц найден. Инструкция по эксплуатации утеряна.", "Сердце занято. Самолюбие просит отдельную комнату.", "Романтик на минималках. Обновление пока не вышло."],
- flags: ["Красный флаг машет сам собой. Не путай с парадом.", "Тревожный звоночек уже купил громкоговоритель.", "Диплом по перекладыванию ответственности - с отличием."],
- infidelity: ["Верность на собеседовании. Рекомендации проверяй.", "Фан-клуб открыт. Директор делает вид, что ни при чём.", "Мистер «мы просто общаемся» получил отдельную номинацию."],
- intimacy: ["Казанова на испытательном сроке. Медаль не выдаём.", "Герой романтического фронта. Устав ещё не прочитал.", "Страсть обещали. Проверка качества обязательна."],
- family: ["Домашний лев. Пылесос пока его не признал.", "Глава семьи на словах. Посуда ждёт собеседования.", "Семейный герой. Носки снова ушли в самоволку."],
- language: ["Переводчик с мужского временно недоступен.", "Слова любви в пути. Курьер не отвечает.", "Нежность есть в проекте. Дата запуска уточняется."],
- verdict: ["Принц на проверке. Корону пока не выдаём.", "Рыцарь с нюансами. Лошадь просит выходной.", "Экземпляр интересный. Гарантия не прилагается."]
-};
-const makeJokeVerdict = (question, profile) => {
-  const category = REDFLAG_CATEGORIES.find((item) => categoryStates.get(item.id)?.questions?.some((q) => q.id === question.id));
-  const jokes = JOKES[category?.id] || JOKES.verdict;
-  const { day, month } = profile.classic.birthDate;
-  const seed = [...question.id].reduce((n, c) => n + c.charCodeAt(0), day * 31 + month * 17);
-  return jokes[seed % jokes.length];
-};
-
 // Resolve only the opened question. Cache its result for this calculated date.
 const ensureAnswer = (question, state) => {
   const id = question.id;
@@ -262,7 +242,7 @@ const ensureAnswer = (question, state) => {
   const request = Promise.resolve().then(() => question.answer(profile));
   state.answerRequests.set(id, request);
   void request.then((response) => {
-    if (profile === activeProfile) state.answers.set(id, { ...response, jokeVerdict: makeJokeVerdict(question, profile) });
+    if (profile === activeProfile) state.answers.set(id, response);
   }, () => {
     if (profile === activeProfile) state.answerErrors.set(id, "Не удалось загрузить ответ. Закрой и открой вопрос ещё раз.");
   }).finally(() => {
@@ -349,14 +329,11 @@ const createQuestion = (question, state) => {
           <div class="redflag-scale-track" aria-hidden="true"><i style="width: ${value * 10}%"></i></div>
         </div>`).join("")}
     </div>` : "";
-    const jokeMarkup = response.jokeVerdict
-      ? `<div class="redflag-joke-banner"><strong>😂 ШУТОЧНЫЙ ВЕРДИКТ</strong><span>${response.jokeVerdict}</span><small>Это шутка, а не факт о человеке</small></div>` : "";
     const verdictMarkup = response.verdict
       ? `<p class="redflag-verdict">${response.verdict}</p>` : "";
     const observationMarkup = response.observation
       ? `<p class="redflag-observation"><strong>На что смотреть:</strong> ${response.observation}</p>` : "";
     answer.innerHTML = `
-    ${jokeMarkup}
     ${verdictMarkup}
     ${scalesMarkup}
     ${paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")}
