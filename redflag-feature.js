@@ -405,9 +405,17 @@ const createCategory = (category, index) => {
   toggle.setAttribute("aria-expanded", String(state.expanded));
   toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · 11 вопросов</small><strong>${category.title}</strong>${category.id === "intimacy" ? '<span class="redflag-age-label" aria-label="Для взрослых, 18 плюс">18+</span>' : ""}<small class="redflag-category-count">11 вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
   toggle.addEventListener("click", () => {
-    state.expanded = !state.expanded;
+    const opening = !state.expanded;
+    const topBefore = toggle.getBoundingClientRect().top;
+    state.expanded = opening;
     renderCategories();
-    if (state.expanded) ensureQuestions(category);
+    if (opening) ensureQuestions(category);
+    // Preserve the category heading's screen position when expanding/collapsing.
+    const current = categoriesRoot.querySelectorAll(".redflag-category-toggle")[index];
+    if (current) {
+      const shift = current.getBoundingClientRect().top - topBefore;
+      if (Math.abs(shift) > 1) window.scrollBy({ top: shift, behavior: "instant" });
+    }
   });
   section.append(toggle);
 
