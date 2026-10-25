@@ -419,7 +419,9 @@ const createCategory = (category, index) => {
   if (state.loading) {
     const loading = document.createElement("p");
     loading.className = "redflag-loading";
-    loading.textContent = "Открываю вопросы…";
+    loading.textContent = ""; 
+    loading.classList.add("redflag-loading-dots");
+    loading.setAttribute("aria-label", "Загрузка вопросов");
     content.append(loading);
   } else if (state.questions) {
     if (activeProfile) {
