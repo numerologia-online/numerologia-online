@@ -587,3 +587,37 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   .pro-form-row{gap:9px}
   .pro-form button{min-height:50px;padding:11px 15px}
 }
+
+
+/* Visual preview of the future 490 ₽ paid full report. No payment processing. */
+#pro-paywall-preview[hidden],#pro-paywall-banner[hidden]{display:none!important}
+.pro-paywall-preview{margin:0 0 17px;padding:18px 20px;background:#eaf1ef;border:1px solid #9db7b1;border-radius:19px;color:#304c4d}
+.pro-paywall-preview strong{display:block;font-size:14px;font-weight:850}
+.pro-paywall-preview p{font-size:13px;line-height:1.5;margin:5px 0 12px;color:#536a6a}
+.pro-paywall-preview-actions{display:flex;gap:8px;flex-wrap:wrap}
+.pro-paywall-preview-actions button{padding:10px 15px;flex:1;min-height:45px;border-radius:12px;border:1px solid #a9c0bc;background:#fff;color:#2f5356;font-size:13px;font-weight:800}
+.pro-paywall-preview-actions button.is-selected{background:#244956;color:white;border-color:#244956}
+.pro-paywall-banner{padding:24px clamp(18px,4vw,29px);border-radius:23px;border:1px solid #dac39c;background:linear-gradient(133deg,#fffdf8,#f5efe5);box-shadow:0 11px 32px #493c2910;margin:0 0 19px}
+.pro-paywall-banner-eyebrow,.pro-paid-lock-eyebrow{font-size:10px;letter-spacing:.13em;color:#9b7945;font-weight:850}
+.pro-paywall-banner h2{margin:10px 0 11px;font-size:clamp(28px,5vw,36px)}
+.pro-paywall-banner p{font-size:14px;line-height:1.6;color:#52616b;margin:0 0 18px}
+.pro-paywall-banner button,.pro-paid-lock-button{border:0;background:#294558;color:#fff;border-radius:14px;padding:12px 19px;min-height:49px;font-size:14px;font-weight:800}
+.pro-paywall-banner small{display:block;margin-top:11px;color:#7e756a;font-size:11px}
+.pro-paid-lock{display:flex;flex-direction:column;align-items:flex-start;gap:10px;background:#f9f6ef;border:1px solid #e4d7bf;border-radius:16px;padding:20px;margin:9px 0;color:#324b5d}
+.pro-paid-lock-title{font:500 clamp(21px,4vw,26px)/1.2 Georgia,serif;color:#31485a}
+.pro-paid-lock-note{font-size:13px!important;line-height:1.6!important;color:#63747c!important;margin:0!important}
+.pro-paid-lock-button{width:100%;max-width:390px;margin-top:4px}
+.pro-paid-zone-values{font-weight:750;color:#7a6849}
+.pro-paid-purpose-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 2px;border-bottom:1px solid #eae2d5;font-size:14px;font-weight:700;color:#445b6a}
+.pro-paid-purpose-row span:last-child{flex:none}
+.pro-paywall-locked .pro-question-item > button::after{content:"🔒";font-size:14px;transform:translateY(-50%);opacity:.75}
+.pro-paywall-locked .pro-question-item > button[aria-expanded="true"]::after{transform:translateY(-50%)}
+.pro-paywall-locked .pro-zone-button[data-zone]::after,.pro-paywall-locked .pro-zone-button[data-karmic]::after{content:"🔒";font-size:12px;margin-left:auto;opacity:.7}
+.pro-paywall-locked .pro-zone-button{padding-right:9px}
+.pro-paywall-locked .pro-pdf-note{font-size:12px;color:#81715b}
+.pro-paywall-dialog{width:min(420px,calc(100vw - 32px));border:1px solid #d9c8a9;border-radius:20px;box-shadow:0 25px 75px #172a3e38;padding:26px;background:#fffefa;color:#344b5d}
+.pro-paywall-dialog::backdrop{background:#15263682}
+.pro-paywall-dialog h2{font-size:28px}
+.pro-paywall-dialog p{font-size:14px;line-height:1.6}
+.pro-paywall-dialog button{border:0;background:#294558;border-radius:12px;color:white;min-height:45px;padding:10px 23px;font-weight:750}
+@media(max-width:480px){.pro-paywall-banner{padding:20px 17px}.pro-paywall-banner button{width:100%}.pro-paid-lock{padding:16px}.pro-paid-lock-button{max-width:none}}
