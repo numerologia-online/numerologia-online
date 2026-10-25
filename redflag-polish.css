@@ -397,3 +397,21 @@
   .redflag-question-price { font-size: 11px; padding: 5px 6px; }
   .redflag-question-toggle > b { font-size: 20px; flex-basis: 14px; min-width: 14px; }
 }
+
+/* Tactile raised buttons, CSS-only. Preserve size and layout. */
+.redflag-question {
+  border-color: rgba(132, 105, 128, .28);
+  background: linear-gradient(180deg, #fffefd 0%, #fffdfb 54%, #f6f0f2 100%);
+  box-shadow: 0 4px 0 rgba(117, 82, 107, .22), 0 9px 16px rgba(71, 53, 77, .09), inset 0 1px 0 #fff;
+  transition: box-shadow 120ms ease, transform 120ms ease, background 120ms ease;
+}
+.redflag-question:has(.redflag-question-toggle:active) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(117, 82, 107, .22), 0 2px 5px rgba(71, 53, 77, .08), inset 0 2px 5px rgba(88, 57, 79, .10);
+  background: linear-gradient(180deg, #f5edf0, #fffaf9);
+}
+.redflag-question-toggle { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.redflag-question-toggle:focus-visible { outline: 3px solid #9a6888; outline-offset: -3px; border-radius: 13px; }
+@media (prefers-reduced-motion: reduce) {
+  .redflag-question { transition: none; }
+}
