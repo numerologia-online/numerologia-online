@@ -45,26 +45,81 @@ insight.innerHTML = [
 byId("child-insight-place").append(insight);
 let selectedPoint = null;
 let insightRequestId = 0;
-let firstEnergyBankRequest = null;
-// Авторский банк хранится отдельно по числу, как во взрослом полном разборе.
-// Прочие числа продолжают использовать существующие короткие тексты.
-const getFirstEnergyBank = () => {
-  if (!firstEnergyBankRequest) {
-    firstEnergyBankRequest = fetch("./data/matrix/sections/energy-1.json?v=1")
+// Load every approved child energy, not just energy 1. Cache by energy number.
+const energyBankRequests = new Map();
+const lastCompletedEnergy = 12;
+const getEnergyBank = (energy) => {
+  const number = Number(energy);
+  if (!Number.isInteger(number) || number < 1 || number > lastCompletedEnergy) {
+    return Promise.resolve(null);
+  }
+  if (!energyBankRequests.has(number)) {
+    const request = fetch(`./data/matrix/sections/energy-${number}.json?v=2`)
       .then((response) => {
-        if (!response.ok) throw new Error("Детский банк пока не загружен");
+        if (!response.ok) throw new Error("Не удалось получить подробный детский разбор");
         return response.json();
       })
-      .catch(() => null);
+      .catch(() => {
+        energyBankRequests.delete(number); // Permit a retry after a network error.
+        return null;
+      });
+    energyBankRequests.set(number, request);
   }
-  return firstEnergyBankRequest;
+  return energyBankRequests.get(number);
 };
-const firstEnergyKeys = {
+
+// Small matrix circles have dedicated sections in the 19-part author bank.
+const childSectionKeys = {
   "family-feelings": "familyFeelings",
   "learning-help": "learningHelp",
+  "tail-detail": "tail",
   independence: "independence",
   interests: "interests"
 };
+
+const showChildParagraphs = (container, paragraphs) => {
+  container.replaceChildren();
+  for (const line of paragraphs) {
+    if (typeof line !== "string" || !line.trim()) continue;
+    const paragraph = document.createElement("p");
+    paragraph.textContent = line;
+    container.append(paragraph);
+  }
+};
+
+// As in the adult matrix, each long section can be opened independently.
+// Here the selected point comes first; the other 18 authored topics remain accessible.
+const appendOtherChildSections = (container, bank, sectionKey, energy) => {
+  const items = Object.entries(bank.sections || {})
+    .filter(([key, value]) => key !== sectionKey && Array.isArray(value?.paragraphs) && value.paragraphs.length);
+  if (!items.length) return;
+  const chooser = document.createElement("details");
+  chooser.className = "child-energy-more";
+  const summary = document.createElement("summary");
+  summary.textContent = `Другие темы энергии ${energy} (${items.length})`;
+  chooser.append(summary);
+  const list = document.createElement("div");
+  list.className = "child-energy-more-list";
+  for (const [, section] of items) {
+    const item = document.createElement("details");
+    item.className = "child-energy-more-item";
+    const heading = document.createElement("summary");
+    heading.textContent = section.title;
+    const content = document.createElement("div");
+    content.className = "child-energy-more-content";
+    for (const line of section.paragraphs) {
+      if (typeof line !== "string" || !line.trim()) continue;
+      const paragraph = document.createElement("p");
+      paragraph.textContent = line;
+      content.append(paragraph);
+    }
+    item.append(heading, content);
+    list.append(item);
+  }
+  chooser.append(list);
+  container.append(chooser);
+};
+
 const closeInsight = () => {
   ++insightRequestId;
   insight.hidden = true;
@@ -79,49 +134,54 @@ const openPointReading = async (point, source = null) => {
   if (!banks?.matrix?.entries) return;
   const requestId = ++insightRequestId;
   const field = point.field || point.id;
-  const description = banks.matrix.entries[String(point.number)]?.[field]
-    || "Эта трактовка готовится. Пока можно выбрать другую тему.";
+  const sectionKey = childSectionKeys[point.id] || field;
+  const energy = Number(point.number);
+  const entry = banks.matrix.entries[String(energy)];
   const body = byId("child-insight-text");
-  if (point.id === "money") {
-    const item = banks.matrix.entries[String(point.number)]?.money;
-    body.replaceChildren();
-    for (const line of item?.paragraphs || []) {
-      const p = document.createElement("p");
-      p.textContent = line;
-      body.append(p);
-    }
-    return;
-  }
-  byId("child-insight-number").textContent = point.code || String(point.number);
+
+  byId("child-insight-number").textContent = point.code || String(energy);
   byId("child-insight-title").textContent = point.title;
   if (selectedPoint) selectedPoint.classList.remove("is-selected");
   selectedPoint = source;
   if (source) source.classList.add("is-selected");
   insight.hidden = false;
-  // Кармический хвост трактуется отдельно по полной комбинации, а не по одной цифре.
-  const isKarmic = point.id === "tail" || point.id === "tail-detail";
-  if (isKarmic) {
+
+  // Money has a separate short bank; it must open an actual visible reading.
+  if (point.id === "money") {
+    const paragraphs = entry?.money?.paragraphs;
+    showChildParagraphs(body, Array.isArray(paragraphs) && paragraphs.length
+      ? paragraphs : ["Этот финансовый разбор пока готовится."]);
+    return;
+  }
+
+  // A karmic tail requires three energies, not an isolated energy-file entry.
+  if (point.id === "tail" || point.id === "tail-detail") {
     body.textContent = "Этот раздел будет собираться по полному сочетанию трёх чисел. Отдельное число здесь не даёт полной трактовки.";
     return;
   }
-  if (Number(point.number) === 1) {
+
+  if (energy >= 1 && energy <= lastCompletedEnergy) {
     body.textContent = "Открываю подробный разбор…";
-    const bank = await getFirstEnergyBank();
+    const bank = await getEnergyBank(energy);
     if (requestId !== insightRequestId || insight.hidden) return;
-    const sectionKey = firstEnergyKeys[point.id] || field;
-    const lines = bank?.sections?.[sectionKey]?.paragraphs;
-    if (Array.isArray(lines) && lines.length) {
-      body.replaceChildren();
-      lines.forEach((line, index) => {
-        if (typeof line !== "string" || !line.trim()) return;
-        const element = document.createElement(index % 2 === 0 ? "h4" : "p");
-        element.textContent = line;
-        body.append(element);
-      });
+    const paragraphs = bank?.sections?.[sectionKey]?.paragraphs;
+    if (Array.isArray(paragraphs) && paragraphs.length) {
+      showChildParagraphs(body, paragraphs);
+      appendOtherChildSections(body, bank, sectionKey, energy);
       return;
     }
+    body.textContent = bank
+      ? "Этот раздел пока не заполнен. Выберите другую тему."
+      : "Подробная трактовка не загрузилась. Проверьте подключение и попробуйте выбрать число ещё раз.";
+    return;
   }
-  body.textContent = description;
+
+  // Energies 13-22 have only short previews so far, never present them as full readings.
+  const description = entry?.[field];
+  showChildParagraphs(body, [
+    "Полная трактовка этой энергии пока готовится.",
+    typeof description === "string" && description.trim() ? description : "Можно выбрать другое число матрицы."
+  ]);
 };
 
 const currentDate = () => {
@@ -209,12 +269,12 @@ const renderMatrix = (matrix) => {
     '<path class="child-matrix-line child-line-pink" d="M260 260 L416 416 M260 260 L416 104"/>'
   ];
   const extraPoints = [
-    {id: "family-feelings", field: "emotions", title: "Как чувствует близких", x: 104, y: 416, number: matrix.corners.bottomLeft},
-    {id: "independence", field: "purpose", title: "Как раскрывает самостоятельность", x: 416, y: 416, number: matrix.corners.bottomRight},
+    {id: "family-feelings", field: "familyFeelings", title: "Как чувствует близких", x: 104, y: 416, number: matrix.corners.bottomLeft},
+    {id: "independence", field: "independence", title: "Как раскрывает самостоятельность", x: 416, y: 416, number: matrix.corners.bottomRight},
     {id: "tail-detail", field: "tail", title: "Кармический хвост ребёнка", x: 260, y: 431, number: matrix.tail.second,
       code: [matrix.tail.first, matrix.tail.second, matrix.bottom].join(" - ")},
-    {id: "learning-help", field: "learning", title: "Как помочь освоить новое", x: 157, y: 260, number: matrix.leftSpoke.near},
-    {id: "interests", field: "activities", title: "Что может увлечь ребёнка", x: 363, y: 260, number: matrix.rightSpoke.near}
+    {id: "learning-help", field: "learningHelp", title: "Как помочь освоить новое", x: 157, y: 260, number: matrix.leftSpoke.near},
+    {id: "interests", field: "interests", title: "Что может увлечь ребёнка", x: 363, y: 260, number: matrix.rightSpoke.near}
   ];
   extraPoints.forEach((point) => {
     svgPieces.push('<g tabindex="0" role="button" data-child-point="' + point.id +
