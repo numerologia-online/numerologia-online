@@ -82,6 +82,16 @@ const openPointReading = async (point, source = null) => {
   const description = banks.matrix.entries[String(point.number)]?.[field]
     || "Эта трактовка готовится. Пока можно выбрать другую тему.";
   const body = byId("child-insight-text");
+  if (point.id === "money") {
+    const item = banks.matrix.entries[String(point.number)]?.money;
+    body.replaceChildren();
+    for (const line of item?.paragraphs || []) {
+      const p = document.createElement("p");
+      p.textContent = line;
+      body.append(p);
+    }
+    return;
+  }
   byId("child-insight-number").textContent = point.code || String(point.number);
   byId("child-insight-title").textContent = point.title;
   if (selectedPoint) selectedPoint.classList.remove("is-selected");
@@ -156,6 +166,7 @@ const matrixDefinitions = (matrix) => [
   {id: "recovery", title: "Отдых и восстановление", number: matrix.bottom, x: 260, y: 479, color: "pink"},
   {id: "emotions", title: "Эмоции и общение", number: matrix.corners.topRight, x: 416, y: 104, color: "blue"},
   {id: "purpose", title: "Предназначение и потенциал", number: matrix.purpose.personal, x: 260, y: 157, color: "gold"},
+  {id: "money", title: "Отношения с деньгами", number: matrix.center, color: "gold"},
   {id: "tail", title: "Кармический хвост", number: matrix.tail.first, x: 260, y: 385, color: "gold",
     code: [matrix.tail.first, matrix.tail.second, matrix.bottom].join(" - ")}
 ];
@@ -171,7 +182,7 @@ const renderMatrix = (matrix) => {
     const symbol = document.createElement("span");
     symbol.className = "child-topic-symbol";
     const symbols = {character:"✧",talents:"☆",learning:"▤",parenting:"♡",
-      activities:"◈",recovery:"❀",emotions:"◌",purpose:"⌾",tail:"∞"};
+      activities:"◈",recovery:"❀",emotions:"◌",purpose:"⌾",money:"₽",tail:"∞"};
     symbol.textContent = symbols[definition.id] || "✧";
     symbol.setAttribute("aria-hidden", "true");
     const name = document.createElement("span");
@@ -212,7 +223,7 @@ const renderMatrix = (matrix) => {
       '" r="17"/><circle class="child-matrix-hit" cx="' + point.x + '" cy="' + point.y +
       '" r="24"/><text x="' + point.x + '" y="' + (point.y + 5) + '">' + point.number + '</text></g>');
   });
-  definitions.forEach((point) => {
+  definitions.filter((point) => point.id !== "money").forEach((point) => {
     svgPieces.push('<g tabindex="0" role="button" data-child-point="' + point.id +
       '" class="child-matrix-point child-point-' + point.color +
       '" aria-label="' + point.title + ', энергия ' + point.number +
