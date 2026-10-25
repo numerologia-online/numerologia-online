@@ -247,7 +247,11 @@ const ensureAnswer = (question, state) => {
     if (profile === activeProfile) state.answerErrors.set(id, "Не удалось загрузить ответ. Закрой и открой вопрос ещё раз.");
   }).finally(() => {
     if (state.answerRequests.get(id) === request) state.answerRequests.delete(id);
-    if (profile === activeProfile && state.expanded && state.activeQuestionId === id) renderCategories();
+    if (profile === activeProfile && state.expanded && state.activeQuestionId === id) {
+      renderCategories();
+      const target = [...categoriesRoot.querySelectorAll("[data-question-id]")].find((item) => item.dataset.questionId === id);
+      if (target) window.requestAnimationFrame(() => target.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
   });
 };
 
@@ -342,7 +346,11 @@ const createQuestion = (question, state) => {
   } else if (opened) {
     const waiting = document.createElement("p");
     waiting.className = "redflag-loading";
-    waiting.textContent = state.answerErrors.get(question.id) || "Открываю ответ…";
+    waiting.textContent = state.answerErrors.get(question.id) || "";
+    if (!waiting.textContent) {
+      waiting.classList.add("redflag-loading-dots");
+      waiting.setAttribute("aria-label", "Загрузка");
+    }
     answer.append(waiting);
   }
 
