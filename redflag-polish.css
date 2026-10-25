@@ -348,3 +348,10 @@
   opacity: 1;
   background: #18774d;
 }
+
+/* Playful verdict appears above each answer. */
+.redflag-joke-banner { display:grid; gap:7px; margin:2px 0 17px; padding:17px 14px; border:2px solid #a64d72; border-radius:16px; background:linear-gradient(135deg,#fff0f4,#ffe5d8); color:#632541; text-align:center; box-shadow:0 7px 17px rgba(122,45,77,.1); }
+.redflag-joke-banner strong { font-size:16px; letter-spacing:.045em; }
+.redflag-joke-banner span { font-size:clamp(19px,5vw,24px); font-weight:900; line-height:1.24; }
+.redflag-joke-banner small { color:#855e6b; font-size:11px; }
+.redflag-question-price.is-free { background:#e7f6ed; border-color:#8fc9a7; color:#23633f; }
