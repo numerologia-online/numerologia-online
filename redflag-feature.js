@@ -346,10 +346,17 @@ const createQuestion = (question, state) => {
     answer.append(waiting);
   }
 
+  // Hold the pressed visual state briefly before re-rendering the button.
+  button.addEventListener("pointerdown", () => article.classList.add("is-pressing"));
+  button.addEventListener("pointercancel", () => article.classList.remove("is-pressing"));
   button.addEventListener("click", () => {
-    state.activeQuestionId = opened ? null : question.id;
-    renderCategories();
-    if (!opened) ensureAnswer(question, state);
+    article.classList.add("is-pressing");
+    button.disabled = true;
+    window.setTimeout(() => {
+      state.activeQuestionId = opened ? null : question.id;
+      renderCategories();
+      if (!opened) ensureAnswer(question, state);
+    }, 145);
   });
 
   article.append(button, answer);
