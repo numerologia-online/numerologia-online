@@ -356,25 +356,44 @@
 .redflag-joke-banner small { color:#855e6b; font-size:11px; }
 .redflag-question-price.is-free { background:#e7f6ed; border-color:#8fc9a7; color:#23633f; }
 
-/* Compact horizontal question buttons on phones. */
-.redflag-questions { gap: 7px; }
-.redflag-question { border-radius: 16px; }
-.redflag-question-toggle { min-height: 69px; padding: 11px 12px; gap: 7px; }
-.redflag-question-label { font-size: 15px; line-height: 1.2; }
-.redflag-question-price { padding: 5px 7px; font-size: 12px; }
-.redflag-question-toggle b { font-size: 21px; min-width: 16px; text-align: center; }
-@media (max-width: 430px) {
-  .redflag-question-toggle { padding: 11px 10px; gap: 6px; }
-  .redflag-question-label { font-size: 14px; line-height: 1.2; }
-  .redflag-question-price { padding: 5px 6px; font-size: 11px; }
-  .redflag-question-toggle b { font-size: 20px; min-width: 14px; }
-}
 
-/* Mobile question layout: price beneath the centered title, not beside it. */
-@media (max-width: 600px) {
- .redflag-question-toggle { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; justify-items:center; column-gap:8px; row-gap:8px; padding:13px 14px; min-height:0; }
- .redflag-question-label { grid-column:1 / -1; width:100%; text-align:center; font-size:15px; line-height:1.26; }
- .redflag-question-price { grid-column:1 / -1; justify-self:center; font-size:12px; padding:5px 10px; }
- .redflag-question-toggle > b { display:none; }
- .redflag-question { border-radius:15px; }
+/* Question rows: compact like category buttons; title uses remaining width. */
+.redflag-questions { gap: 7px; }
+.redflag-question { border-radius: 15px; }
+.redflag-question-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  min-height: 58px;
+  padding: 10px 11px;
+}
+.redflag-question-label {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  text-align: left;
+  font-size: 15px;
+  line-height: 1.2;
+}
+.redflag-question-price {
+  display: inline-block;
+  flex: 0 0 auto;
+  padding: 5px 7px;
+  font-size: 12px;
+}
+.redflag-question-toggle > b {
+  display: block;
+  flex: 0 0 15px;
+  min-width: 15px;
+  text-align: center;
+  font-size: 21px;
+}
+@media (max-width: 430px) {
+  .redflag-question-toggle { gap: 6px; padding: 9px 10px; }
+  .redflag-question-label { font-size: 14px; line-height: 1.2; }
+  .redflag-question-price { font-size: 11px; padding: 5px 6px; }
+  .redflag-question-toggle > b { font-size: 20px; flex-basis: 14px; min-width: 14px; }
 }
