@@ -772,3 +772,48 @@ body {
 .child-insight-body h4:first-child { margin-top: 0; }
 .child-insight-body p { margin:0 0 15px; font:400 15px/1.72 var(--sans); color:#504856; }
 .child-insight-body p:last-child { margin-bottom:0; }
+
+/* Expanded readings: keep the selected point visible, with 18 more authored topics. */
+.child-energy-more {
+  margin-top: 20px;
+  padding: 11px 12px;
+  border: 1px solid #e9d4e4;
+  border-radius: 13px;
+  background: #fffafd;
+}
+.child-energy-more > summary {
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 750;
+  color: #8c557e;
+}
+.child-energy-more-list {
+  display: grid;
+  gap: 7px;
+  margin-top: 13px;
+}
+.child-energy-more-item {
+  border: 1px solid #eee1eb;
+  border-radius: 10px;
+  padding: 9px 11px;
+  background: #fff;
+}
+.child-energy-more-item > summary {
+  cursor: pointer;
+  color: #57435b;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 700;
+}
+.child-energy-more-content {
+  margin-top: 12px;
+}
+.child-insight-body .child-energy-more-content p {
+  font-size: 14px;
+  line-height: 1.65;
+  margin-bottom: 12px;
+}
+.child-energy-more-item[open] {
+  border-color: #dab6d0;
+}
