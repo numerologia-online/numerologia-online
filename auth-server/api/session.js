@@ -19,7 +19,13 @@ module.exports = (req, res) => {
     if (!value) return res.status(401).json({ error: "Not signed in" });
     const payload = unpack(value[1], getConfig().signing);
     if (!payload.id || !payload.name) return res.status(401).json({ error: "Invalid session" });
-    return res.status(200).json({ user: { id: payload.id, name: payload.name } });
+    const ownerId = String(process.env.SITE_OWNER_TELEGRAM_ID || "").trim();
+    const owner = /^[1-9][0-9]{4,19}$/.test(ownerId) &&
+      String(payload.id) === ownerId;
+    return res.status(200).json({
+      user: { id: payload.id, name: payload.name },
+      owner
+    });
   } catch (_) {
     return res.status(401).json({ error: "Session expired" });
   }
