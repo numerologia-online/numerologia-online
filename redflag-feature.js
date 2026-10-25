@@ -381,12 +381,12 @@ const ensureQuestions = async (category) => {
     const content = await category.load();
     state.questions = [
       ...content.QUESTIONS.map((question, index) => ({ ...question, isFree: index === 0, priceRub: index === 0 ? 0 : question.priceRub })),
-      {
+      ...(category.id === "money" ? [] : [{
         id: "comic-verdict-" + category.id,
         title: "😂 Шуточный вердикт",
         priceRub: 49,
         answer: async () => ({ answer: "Шуточный вердикт для этого раздела пока готовится. Мы напишем его отдельно." })
-      }
+      }])
     ];
   } finally {
     state.loading = false;
