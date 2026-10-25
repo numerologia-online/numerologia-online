@@ -67,10 +67,16 @@ module.exports = (req, res) => {
       .filter(value => typeof value === "string" && value.length > 0).join(" ")
       || (typeof account.username === "string" && account.username)
       || "Пользователь";
-    // Note: no paid permissions or purchases are granted by this endpoint.
+    // Owner status is granted ONLY after Telegram signature validation AND
+    // comparison with a server-only allowlist. A missing ID fails closed.
+    // This flag grants no payment rights by itself; paid data must be server gated.
+    const ownerId = String(process.env.SITE_OWNER_TELEGRAM_ID || "").trim();
+    const owner = /^[1-9][0-9]{4,19}$/.test(ownerId) &&
+      String(account.id) === ownerId;
     return reply(res, 200, {
       ok: true,
-      user: { id: String(account.id), name: String(name).slice(0, 80) }
+      user: { id: String(account.id), name: String(name).slice(0, 80) },
+      owner
     });
   } catch (_) {
     return reply(res, 401, { ok: false, error: "DATA_INVALID" });
