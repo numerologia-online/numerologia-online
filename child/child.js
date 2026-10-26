@@ -224,6 +224,7 @@ const renderMatrix = (matrix) => {
     '<radialGradient id="childGemPink" cx="32%" cy="20%" r="87%"><stop stop-color="#fff"/><stop offset=".3" stop-color="#fff5fd"/><stop offset=".73" stop-color="#ffd2eb"/><stop offset="1" stop-color="#e18abc"/></radialGradient>'+
     '<radialGradient id="childGemGold" cx="32%" cy="18%" r="87%"><stop stop-color="#fff"/><stop offset=".3" stop-color="#fffdf2"/><stop offset=".73" stop-color="#ffebb3"/><stop offset="1" stop-color="#dfa852"/></radialGradient>'+
     '<radialGradient id="childGemSmall" cx="30%" cy="20%" r="86%"><stop stop-color="#fff"/><stop offset=".4" stop-color="#fff9ff"/><stop offset=".84" stop-color="#efdcf9"/><stop offset="1" stop-color="#cb9cde"/></radialGradient>'+
+    '<linearGradient id="childGemIridescentRim" x1="0%" y1="0%" x2="100%" y2="100%"><stop stop-color="#ffffff"/><stop offset=".19" stop-color="#ffe8b8"/><stop offset=".41" stop-color="#e9cbff"/><stop offset=".66" stop-color="#9deaff"/><stop offset=".84" stop-color="#ffd2ed"/><stop offset="1" stop-color="#ffffff"/></linearGradient>'+
     '<linearGradient id="childCaptionGlassViolet" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff" stop-opacity=".98"/><stop offset=".58" stop-color="#fffbff" stop-opacity=".95"/><stop offset="1" stop-color="#f5eafa" stop-opacity=".92"/></linearGradient>'+
     '<linearGradient id="childCaptionGlassBlue" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".98"/><stop offset="1" stop-color="#e7f4ff" stop-opacity=".93"/></linearGradient>'+
     '<linearGradient id="childCaptionGlassPink" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".98"/><stop offset="1" stop-color="#ffeaf5" stop-opacity=".94"/></linearGradient>'+
@@ -253,15 +254,29 @@ const renderMatrix = (matrix) => {
     {id: "tail-detail", title: "Кармический хвост ребёнка", x: 260, y: 431, number: matrix.tail.second,
       code: [matrix.tail.first, matrix.tail.second, matrix.bottom].join(" - ")}
   ];
-  const gemDetails = (point, radius) => [
-    '<circle class="child-gem-rim" cx="' + point.x + '" cy="' + point.y +
-      '" r="' + (radius + 3.5) + '"/>',
-    '<circle class="child-gem-inner" cx="' + point.x + '" cy="' + point.y +
-      '" r="' + (radius - 3.5) + '"/>',
-    '<ellipse class="child-gem-sheen" cx="' + (point.x - radius * .2) +
-      '" cy="' + (point.y - radius * .47) + '" rx="' + (radius * .47) +
-      '" ry="' + (radius * .20) + '"/>'
-  ].join("");
+  // Static pearl/iridescent ring: lightweight SVG strokes, no looping effects.
+  const gemDetails = (point, radius) => {
+    const x = point.x, y = point.y;
+    return [
+      '<circle class="child-gem-color-halo" cx="' + x + '" cy="' + y +
+        '" r="' + (radius + 4.4) + '"/>',
+      '<circle class="child-gem-rainbow-rim" cx="' + x + '" cy="' + y +
+        '" r="' + (radius + 2.5) + '"/>',
+      '<circle class="child-gem-rim" cx="' + x + '" cy="' + y +
+        '" r="' + (radius + 1.1) + '"/>',
+      '<circle class="child-gem-inner" cx="' + x + '" cy="' + y +
+        '" r="' + (radius - 3.6) + '"/>',
+      '<path class="child-gem-lustre" d="M' + (x - radius*.72) + ' ' + (y - radius*.69) +
+        ' A' + radius + ' ' + radius + ' 0 0 1 ' + (x + radius*.42) + ' ' + (y - radius*.91) + '"/>',
+      '<path class="child-gem-side-glint" d="M' + (x + radius*.92) + ' ' + (y + radius*.38) +
+        ' A' + radius + ' ' + radius + ' 0 0 1 ' + (x + radius*.62) + ' ' + (y + radius*.78) + '"/>',
+      '<ellipse class="child-gem-sheen" cx="' + (x - radius*.17) +
+        '" cy="' + (y - radius*.47) + '" rx="' + (radius*.47) +
+        '" ry="' + (radius*.19) + '"/>',
+      '<path class="child-gem-glint-star" d="M' + (x + radius*.67) + ' ' + (y - radius*.78 - 3.5) +
+        ' v7 m-3.5 -3.5 h7"/>'
+    ].join("");
+  };
   extraPoints.forEach((point) => {
     svgPieces.push('<g tabindex="0" role="button" data-child-point="' + point.id +
       '" class="child-matrix-extra child-matrix-small-button" aria-label="' + point.title +
