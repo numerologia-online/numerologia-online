@@ -63,13 +63,43 @@
         <section class="products" aria-label="Запись на личный расчёт" style="grid-template-columns:1fr; margin-top:14px;">
           <button class="product-card appointment" id="appointment-section" type="button" data-coming-soon data-artwork="assets/appointment.jpg"><span class="product-title">Записаться на личный расчёт</span><span class="product-arrow" aria-hidden="true">→</span></button>
         </section>
-        <section class="founder-note" aria-labelledby="founder-note-title" style="max-width:720px;margin:36px auto 20px;padding:30px 24px;border:1px solid #e6d9b9;border-radius:28px;background:linear-gradient(145deg,#fffdf7,#f5f5ed);color:#204d3d;box-sizing:border-box">
-          <p style="font-size:12px;letter-spacing:.18em;color:#a88949;margin:0 0 12px">ОТ СОЗДАТЕЛЯ</p>
-          <h2 id="founder-note-title" style="font-family:Georgia,serif;font-size:clamp(27px,7vw,40px);font-weight:400;line-height:1.12;margin:0 0 20px">Давайте знакомиться</h2>
-          <p style="font-size:16px;line-height:1.65;margin:0 0 14px">Я создала «Нумерологию онлайн» для женщин, которым нужны не загадочные предсказания, а ответы на настоящие жизненные вопросы. Об отношениях, деньгах, выборе и будущем.</p>
-          <p style="font-size:16px;line-height:1.65;margin:0 0 24px">Я хотела, чтобы сложные расчёты превратились в понятные ответы, а нумерология стала доступной каждой женщине.</p>
-          <p style="margin:0;font-family:Georgia,serif;font-size:28px;color:#a88949">Татьяна</p>
-          <p style="font-size:13px;line-height:1.5;margin:5px 0 0">Основатель проекта «Нумерология онлайн»</p>
+        <style>
+          .founder-feature{max-width:860px;margin:32px auto 20px;padding:0;box-sizing:border-box}
+          .founder-feature-card{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);align-items:center;gap:24px;padding:16px;background:linear-gradient(130deg,#fffefa 0%,#f8f4eb 64%,#eff3ed 100%);border:1px solid #e8dabb;border-radius:30px;box-shadow:0 12px 32px rgba(28,65,49,.065)}
+          .founder-feature-photo{margin:0;min-width:0;overflow:hidden;border-radius:22px;background:#efe7dd;box-shadow:0 10px 25px rgba(60,48,29,.12)}
+          .founder-feature-photo img{display:block;width:100%;height:auto;aspect-ratio:260/487;object-fit:cover}
+          .founder-feature-content{padding:16px 8px 16px 0;min-width:0}
+          .founder-feature-kicker{margin:0 0 14px;font-size:11px;letter-spacing:.2em;font-weight:600;color:#ac8946}
+          .founder-feature-title{margin:0 0 18px;font:400 clamp(29px,5.5vw,41px)/1.1 Georgia,'Times New Roman',serif;color:#174f3c}
+          .founder-feature-content>p:not(.founder-feature-kicker){margin:0 0 15px;font-size:15px;line-height:1.65;color:#334d42}
+          .founder-feature-signature{margin-top:24px;padding-top:14px;border-top:1px solid #e6d6ba}
+          .founder-feature-name{display:block;font:italic 30px/1.15 Georgia,'Times New Roman',serif;color:#a68542}
+          .founder-feature-role{display:block;margin-top:7px;font-size:12px;line-height:1.4;color:#5e7066}
+          @media(max-width:620px){
+            .founder-feature{margin:28px auto 16px}
+            .founder-feature-card{grid-template-columns:1fr;gap:0;padding:13px}
+            .founder-feature-photo{width:min(100%,285px);margin:0 auto}
+            .founder-feature-content{padding:24px 9px 13px}
+            .founder-feature-title{font-size:34px}
+            .founder-feature-content>p:not(.founder-feature-kicker){font-size:16px}
+          }
+        </style>
+        <section class="founder-feature" aria-labelledby="founder-note-title">
+          <div class="founder-feature-card">
+            <figure class="founder-feature-photo">
+              <img src="assets/founder-tatyana.webp" width="260" height="487" loading="lazy" decoding="async" alt="Татьяна — основатель проекта «Нумерология онлайн»">
+            </figure>
+            <div class="founder-feature-content">
+              <p class="founder-feature-kicker">ОТ ОСНОВАТЕЛЯ</p>
+              <h2 id="founder-note-title" class="founder-feature-title">Давайте знакомиться</h2>
+              <p>Я создала «Нумерологию онлайн» для женщин, которым нужны не загадочные предсказания, а ответы на настоящие жизненные вопросы. Об отношениях, деньгах, выборе и будущем.</p>
+              <p>Я хотела, чтобы сложные расчёты превратились в понятные ответы, а нумерология стала доступной каждой женщине.</p>
+              <div class="founder-feature-signature">
+                <span class="founder-feature-name">Татьяна</span>
+                <span class="founder-feature-role">Основатель проекта «Нумерология онлайн»</span>
+              </div>
+            </div>
+          </div>
         </section>
         <p style="text-align:center;margin:20px auto 5px;font-size:13px;opacity:.75"><a style="color:inherit;text-underline-offset:4px" href="./guide/">Справочник по нумерологии</a></p>
       </section>
