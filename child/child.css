@@ -773,3 +773,19 @@ body {
 .child-insight-body p { margin:0 0 15px; font:400 15px/1.72 var(--sans); color:#504856; }
 .child-insight-body p:last-child { margin-bottom:0; }
 
+
+/* Gentle labels around the child matrix points */
+.child-matrix-caption {
+  fill: #886f8b;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12px;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgba(255,255,255,.94);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+  pointer-events: none;
+  user-select: none;
+}
