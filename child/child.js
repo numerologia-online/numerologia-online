@@ -83,13 +83,14 @@ const closeInsight = () => {
   selectedElements.forEach((node) => node.classList.remove("is-selected"));
   selectedElements = [];
   selectedPoint = null;
+  matrixVisual.classList.remove("has-focused-point");
 };
 insight.querySelector(".child-insight-close").addEventListener("click", closeInsight);
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !insight.hidden) closeInsight();
 });
 // Adult-style routing: point.number -> energy-N.json -> sections[point.id].
-const openPointReading = async (point, source = null) => {
+const openPointReading = async (point, source = null, focusPoint = true) => {
   const requestId = ++insightRequestId;
   const energy = Number(point.number);
   const body = byId("child-insight-text");
@@ -103,6 +104,10 @@ const openPointReading = async (point, source = null) => {
     ...matrixSections.querySelectorAll('[data-child-topic="' + point.id + '"]')
   ].filter(Boolean))];
   selectedElements.forEach((node) => node.classList.add("is-selected"));
+  // Only soften the surrounding diagram after an explicit selection in the matrix.
+  // Topics without an SVG point keep the full diagram readable.
+  const selectedInDiagram = selectedElements.some((node) => matrixVisual.contains(node));
+  matrixVisual.classList.toggle("has-focused-point", focusPoint && selectedInDiagram);
   insight.hidden = false;
 
   // Karmic tail requires three energies, not one isolated number.
@@ -297,20 +302,21 @@ const renderMatrix = (matrix) => {
   // Positions are tuned for the 520x520 responsive mobile diagram.
   // Lightweight fairytale labels. Their ids stay linked to the original point readings.
   // Jewel-glass labels. All 13 IDs continue opening their original authored readings.
+  // Compact caption capsules; labels stay connected to their original matrix sections.
   const matrixCaptions = [
-    {id:"talents",x:260,y:94,w:156,h:41,icon:"star",lines:["Таланты","и сильные стороны"],tone:"violet"},
-    {id:"parenting",x:104,y:55,w:141,h:39,icon:"crown",lines:["Поддержка","рода"],tone:"gold"},
-    {id:"emotions",x:416,y:55,w:145,h:39,icon:"chat",lines:["Общение","и окружение"],tone:"blue"},
-    {id:"character",x:99,y:209,w:143,h:37,icon:"person",lines:["Характер","и темперамент"],tone:"pink"},
-    {id:"activities",x:421,y:209,w:142,h:37,icon:"target",lines:["Увлечения","и интересы"],tone:"pink"},
-    {id:"games",x:260,y:205,w:150,h:33,icon:"game",lines:["Игры и интересы"],tone:"gold"},
-    {id:"innerNature",x:260,y:333,w:179,h:39,icon:"heart",lines:["Внутренний мир","и душевный комфорт"],tone:"pink"},
-    {id:"learningHelp",x:152,y:297,w:127,h:33,icon:"book",lines:["Обучение"],tone:"violet"},
-    {id:"interests",x:369,y:297,w:121,h:33,icon:"sparkle",lines:["Интересы"],tone:"violet"},
-    {id:"familyFeelings",x:108,y:369,w:141,h:39,icon:"home",lines:["Близкие","и семья"],tone:"blue"},
-    {id:"independence",x:411,y:371,w:176,h:39,icon:"diamond",lines:["Самостоятельность","и развитие"],tone:"violet"},
-    {id:"tail",x:154,y:450,w:159,h:32,icon:"infinity",lines:["Кармический хвост"],tone:"pink"},
-    {id:"recovery",x:382,y:480,w:177,h:39,icon:"leaf",lines:["Восстановление","и ресурс"],tone:"gold"}
+    {id:"talents",x:260,y:94,w:144,h:37,icon:"star",lines:["Таланты","и сильные стороны"],tone:"violet"},
+    {id:"parenting",x:104,y:55,w:130,h:35,icon:"crown",lines:["Поддержка","рода"],tone:"gold"},
+    {id:"emotions",x:416,y:55,w:134,h:35,icon:"chat",lines:["Общение","и окружение"],tone:"blue"},
+    {id:"character",x:99,y:209,w:133,h:35,icon:"person",lines:["Характер","и темперамент"],tone:"pink"},
+    {id:"activities",x:421,y:209,w:131,h:35,icon:"target",lines:["Увлечения","и интересы"],tone:"pink"},
+    {id:"games",x:260,y:205,w:140,h:30,icon:"game",lines:["Игры и интересы"],tone:"gold"},
+    {id:"innerNature",x:260,y:333,w:168,h:36,icon:"heart",lines:["Внутренний мир","и душевный комфорт"],tone:"pink"},
+    {id:"learningHelp",x:152,y:297,w:116,h:30,icon:"book",lines:["Обучение"],tone:"violet"},
+    {id:"interests",x:369,y:297,w:110,h:30,icon:"sparkle",lines:["Интересы"],tone:"violet"},
+    {id:"familyFeelings",x:108,y:369,w:131,h:35,icon:"home",lines:["Близкие","и семья"],tone:"blue"},
+    {id:"independence",x:411,y:371,w:166,h:36,icon:"diamond",lines:["Самостоятельность","и развитие"],tone:"violet"},
+    {id:"tail",x:154,y:450,w:150,h:30,icon:"infinity",lines:["Кармический хвост"],tone:"pink"},
+    {id:"recovery",x:382,y:480,w:166,h:36,icon:"leaf",lines:["Восстановление","и ресурс"],tone:"gold"}
   ];
   // Hand-drawn outline pictograms stay vector-sharp on iPhone and require zero network requests.
   const captionIcons = {
@@ -330,10 +336,10 @@ const renderMatrix = (matrix) => {
   };
   matrixCaptions.forEach(({id,x,y,w,h,icon,lines,tone}) => {
     const left=x-w/2, top=y-h/2, twoLines=lines.length>1;
-    const lineY=twoLines ? h/2-2.1 : h/2+4.4;
-    const textX=w/2+11, badgeX=20, badgeY=twoLines ? 0 : h/2;
+    const lineY=twoLines ? h/2-2.7 : h/2+4.5;
+    const textX=w/2+(twoLines ? 8 : 11), badgeX=twoLines ? 19 : 14, badgeY=twoLines ? 0 : h/2;
     const spans=lines.map((line,i)=>
-      '<tspan x="' + textX + '" y="' + (lineY+12.8*i) + '">' + line + '</tspan>'
+      '<tspan x="' + textX + '" y="' + (lineY+13.2*i) + '">' + line + '</tspan>'
     ).join("");
     svgPieces.push(
       '<g tabindex="0" role="button" data-child-point="' + id +
@@ -375,7 +381,7 @@ const renderMatrix = (matrix) => {
   });
   // Open the first helpful reading inside the page, not over the screen.
   const firstButton = matrixSections.querySelector('.child-topic');
-  openPointReading(definitions[0], firstButton);
+  openPointReading(definitions[0], firstButton, false);
 };
 
 // One energy-bank request per calculation; stale date requests can never overwrite a newer day.
