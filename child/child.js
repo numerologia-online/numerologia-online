@@ -312,12 +312,12 @@ const renderMatrix = (matrix) => {
   // Compact caption capsules; labels stay connected to their original matrix sections.
   const matrixCaptions = [
     {id:"talents",x:260,y:94,w:144,h:37,icon:"star",lines:["Таланты","и сильные стороны"],tone:"violet"},
-    {id:"parenting",x:104,y:55,w:130,h:35,icon:"crown",lines:["Поддержка","рода"],tone:"gold"},
+    {id:"parenting",x:70,y:53,w:116,h:35,icon:"crown",lines:["Поддержка","рода"],tone:"gold"},
     {id:"emotions",x:416,y:55,w:134,h:35,icon:"chat",lines:["Общение","и окружение"],tone:"blue"},
     {id:"character",x:99,y:209,w:133,h:35,icon:"person",lines:["Характер","и темперамент"],tone:"pink"},
     {id:"activities",x:421,y:209,w:131,h:35,icon:"target",lines:["Увлечения","и интересы"],tone:"pink"},
     {id:"games",x:260,y:205,w:140,h:30,icon:"game",lines:["Игры и интересы"],tone:"gold"},
-    {id:"innerNature",x:260,y:333,w:168,h:36,icon:"heart",lines:["Внутренний мир","и душевный комфорт"],tone:"pink"},
+    {id:"innerNature",x:260,y:333,w:149,h:34,icon:"heart",lines:["Внутренний мир","и душевный комфорт"],tone:"pink"},
     {id:"learningHelp",x:152,y:297,w:116,h:30,icon:"book",lines:["Обучение"],tone:"violet"},
     {id:"interests",x:369,y:297,w:110,h:30,icon:"sparkle",lines:["Интересы"],tone:"violet"},
     {id:"familyFeelings",x:108,y:369,w:131,h:35,icon:"home",lines:["Близкие","и семья"],tone:"blue"},
@@ -344,7 +344,10 @@ const renderMatrix = (matrix) => {
   matrixCaptions.forEach(({id,x,y,w,h,icon,lines,tone}) => {
     const left=x-w/2, top=y-h/2, twoLines=lines.length>1;
     const lineY=twoLines ? h/2-2.7 : h/2+4.5;
-    const textX=w/2+(twoLines ? 4 : 9), badgeX=twoLines ? 19 : 0, badgeY=twoLines ? 0 : h/2;
+    // The ancestry pill clears the girl's face. The heart sits outside its compact pill.
+    const textX=id==="innerNature" ? w/2+7 : id==="parenting" ? w/2+17 : w/2+(twoLines ? 4 : 9);
+    const badgeX=id==="innerNature" ? -3 : twoLines ? 19 : 0;
+    const badgeY=id==="innerNature" ? h/2 : twoLines ? 0 : h/2;
     const spans=lines.map((line,i)=>
       '<tspan x="' + textX + '" y="' + (lineY+13.2*i) + '">' + line + '</tspan>'
     ).join("");
