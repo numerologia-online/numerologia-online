@@ -1326,3 +1326,64 @@ body {
 #child-matrix-panel .child-matrix-line{opacity:.78}
 #child-matrix-panel .child-matrix-glow{opacity:.49}
 #child-matrix-panel .child-matrix-lightray{opacity:.46}
+
+
+/* Child matrix compact captions and touch focus v24 */
+#child-matrix-panel .child-matrix-label .child-matrix-label-copy{
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:-.13px;
+  fill:#45364d;
+}
+#child-matrix-panel .child-matrix-label .child-caption-glass{
+  stroke:rgba(255,255,255,.98);
+  filter:drop-shadow(0 1px 2px rgba(120,82,125,.11));
+}
+#child-matrix-panel .child-matrix-label .child-caption-halo{
+  opacity:.34;
+}
+#child-matrix-panel .child-matrix-label .child-caption-highlight{
+  opacity:.72;
+}
+/* Once someone taps a point, its matching number + caption stay luminous.
+   Other numbers and labels soften while remaining easy to tap. */
+#child-matrix-panel .child-matrix-point,
+#child-matrix-panel .child-matrix-extra,
+#child-matrix-panel .child-matrix-label{
+  transition:opacity .19s ease-out;
+}
+#child-matrix-panel .child-visual.has-focused-point .child-matrix-point:not(.is-selected),
+#child-matrix-panel .child-visual.has-focused-point .child-matrix-extra:not(.is-selected){
+  opacity:.33;
+}
+#child-matrix-panel .child-visual.has-focused-point .child-matrix-label:not(.is-selected){
+  opacity:.55;
+}
+#child-matrix-panel .child-visual.has-focused-point .child-matrix-point.is-selected,
+#child-matrix-panel .child-visual.has-focused-point .child-matrix-extra.is-selected,
+#child-matrix-panel .child-visual.has-focused-point .child-matrix-label.is-selected{
+  opacity:1;
+}
+#child-matrix-panel .child-visual.has-focused-point .child-matrix-line{
+  opacity:.45;
+}
+#child-matrix-panel .child-visual.has-focused-point .child-matrix-outline{
+  opacity:.64;
+}
+#child-matrix-panel .child-visual.has-focused-point .child-matrix-glow,
+#child-matrix-panel .child-visual.has-focused-point .child-matrix-lightray{
+  opacity:.22;
+}
+#child-matrix-panel .child-visual.has-focused-point .child-matrix-point.is-selected > circle:first-child,
+#child-matrix-panel .child-visual.has-focused-point .child-matrix-extra.is-selected > circle:first-child{
+  stroke:#edaf58;
+  filter:drop-shadow(0 0 8px rgba(255,204,112,.9));
+}
+#child-matrix-panel .child-visual.has-focused-point .child-matrix-label.is-selected .child-caption-glass{
+  stroke:#dcaaee;stroke-width:2.1;
+}
+@media(prefers-reduced-motion:reduce){
+  #child-matrix-panel .child-matrix-point,
+  #child-matrix-panel .child-matrix-extra,
+  #child-matrix-panel .child-matrix-label{transition:none}
+}
