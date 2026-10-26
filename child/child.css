@@ -1448,3 +1448,105 @@ body {
   stroke-width:5;
 }
 /* Keep the jewel numerals and all caption controls in the foreground. */
+
+
+/* Active jewel beacon v27 - bold unmistakable selected point.
+   Only active nodes draw these rings; no videos, images or animation loops. */
+#child-matrix-panel .child-gem-active-aura,
+#child-matrix-panel .child-gem-active-ring,
+#child-matrix-panel .child-gem-active-ring-inner,
+#child-matrix-panel .child-gem-active-check,
+#child-matrix-panel .child-gem-active-checkmark{
+  display:none;
+  pointer-events:none;
+}
+#child-matrix-panel .child-matrix-point.is-selected .child-gem-active-aura,
+#child-matrix-panel .child-matrix-point.is-selected .child-gem-active-ring,
+#child-matrix-panel .child-matrix-point.is-selected .child-gem-active-ring-inner,
+#child-matrix-panel .child-matrix-point.is-selected .child-gem-active-check,
+#child-matrix-panel .child-matrix-point.is-selected .child-gem-active-checkmark,
+#child-matrix-panel .child-matrix-extra.is-selected .child-gem-active-aura,
+#child-matrix-panel .child-matrix-extra.is-selected .child-gem-active-ring,
+#child-matrix-panel .child-matrix-extra.is-selected .child-gem-active-ring-inner,
+#child-matrix-panel .child-matrix-extra.is-selected .child-gem-active-check,
+#child-matrix-panel .child-matrix-extra.is-selected .child-gem-active-checkmark{
+  display:block;
+}
+#child-matrix-panel .child-gem-active-aura{
+  fill:none;
+  stroke:#f984de;
+  stroke-width:7.5;
+  opacity:.9;
+  filter:drop-shadow(0 0 5px rgba(220,56,194,.82));
+}
+#child-matrix-panel .child-gem-active-ring{
+  fill:none;
+  stroke:#843091;
+  stroke-width:4.3;
+  filter:drop-shadow(0 0 3px rgba(255,255,255,.95));
+}
+#child-matrix-panel .child-gem-active-ring-inner{
+  fill:none;
+  stroke:#fffefa;
+  stroke-width:3.1;
+  filter:drop-shadow(0 0 2px rgba(255,255,255,.9));
+}
+#child-matrix-panel .child-gem-active-check{
+  fill:#9c398f;
+  stroke:#ffffff;
+  stroke-width:2.6;
+  filter:drop-shadow(0 1px 4px rgba(115,33,118,.65));
+}
+#child-matrix-panel .child-gem-active-checkmark{
+  fill:none;
+  stroke:white;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  stroke-width:2.7;
+}
+#child-matrix-panel .child-matrix-point.is-selected > circle:first-child,
+#child-matrix-panel .child-matrix-extra.is-selected > circle:first-child{
+  stroke:#9b2e9e;
+  stroke-width:5.6;
+  filter:drop-shadow(0 0 10px rgba(233,89,195,.94))
+         drop-shadow(0 0 5px rgba(255,255,255,.94));
+}
+#child-matrix-panel .child-matrix-point.is-selected > text,
+#child-matrix-panel .child-matrix-extra.is-selected > text{
+  fill:#291034;
+  font-weight:850;
+  stroke:#ffffff;
+  stroke-width:1.3;
+  paint-order:stroke fill;
+}
+#child-matrix-panel .child-point-center.is-selected > text{fill:#542817}
+#child-matrix-panel .child-matrix-label.is-selected .child-caption-glass{
+  stroke:#a343ad;
+  stroke-width:3.1;
+  filter:drop-shadow(0 0 6px rgba(218,111,216,.7));
+}
+#child-matrix-panel .child-matrix-label.is-selected .child-caption-halo{
+  opacity:.86;
+}
+#child-matrix-panel .child-matrix-label.is-selected .child-caption-medallion{
+  stroke:#aa50b4;
+  stroke-width:2.3;
+}
+#child-matrix-panel .child-matrix-label.is-selected .child-matrix-label-copy{
+  fill:#51225b;
+  font-weight:800;
+}
+#child-matrix-panel .child-topic.is-selected{
+  border:2px solid #a449ac;
+  background:linear-gradient(115deg,#fff0f9,#f6edff);
+  box-shadow:0 0 0 2px rgba(255,255,255,.95),
+             0 0 0 4px rgba(178,85,190,.27);
+  color:#69266e;
+}
+#child-matrix-panel .child-topic.is-selected .child-topic-label{
+  font-weight:800;
+}
+#child-matrix-panel .child-topic.is-selected .child-topic-energy{
+  color:#8f288d;
+  font-weight:800;
+}
