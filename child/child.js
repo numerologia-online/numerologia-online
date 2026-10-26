@@ -234,6 +234,26 @@ const renderMatrix = (matrix) => {
       '" r="' + (point.id === "innerNature" ? 35 : 30) +
       '"/><text x="' + point.x + '" y="' + (point.y + 6) + '">' + point.number + '</text></g>');
   });
+  // Small, readable captions for every visible circle. The captions do not intercept taps.
+  const matrixCaptions = [
+    {x:260,y:87,label:"Таланты"},
+    {x:153,y:90,label:"Поддержка"},
+    {x:367,y:90,label:"Общение"},
+    {x:88,y:230,label:"Характер"},
+    {x:432,y:230,label:"Увлечения"},
+    {x:260,y:324,label:"Внутренний мир"},
+    {x:260,y:201,label:"Игры и интерес"},
+    {x:260,y:452,label:"Восстановление"},
+    {x:153,y:402,label:"Близкие"},
+    {x:367,y:402,label:"Самостоятельность"},
+    {x:156,y:304,label:"Обучение"},
+    {x:364,y:304,label:"Интересы"},
+    {x:260,y:362,label:"Уроки прошлого"},
+    {x:260,y:416,label:"Хвост: 2-я точка"}
+  ];
+  matrixCaptions.forEach(({x,y,label}) => {
+    svgPieces.push('<text class="child-matrix-caption" x="' + x + '" y="' + y + '">' + label + '</text>');
+  });
   svgPieces.push("</svg>");
   matrixVisual.innerHTML = svgPieces.join("");
   const allPoints = new Map([...definitions, ...extraPoints].map((point) => [point.id, point]));
