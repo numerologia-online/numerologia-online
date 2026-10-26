@@ -83,14 +83,13 @@ const closeInsight = () => {
   selectedElements.forEach((node) => node.classList.remove("is-selected"));
   selectedElements = [];
   selectedPoint = null;
-  matrixVisual.classList.remove("has-focused-point");
 };
 insight.querySelector(".child-insight-close").addEventListener("click", closeInsight);
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !insight.hidden) closeInsight();
 });
 // Adult-style routing: point.number -> energy-N.json -> sections[point.id].
-const openPointReading = async (point, source = null, focusPoint = true) => {
+const openPointReading = async (point, source = null) => {
   const requestId = ++insightRequestId;
   const energy = Number(point.number);
   const body = byId("child-insight-text");
@@ -104,10 +103,6 @@ const openPointReading = async (point, source = null, focusPoint = true) => {
     ...matrixSections.querySelectorAll('[data-child-topic="' + point.id + '"]')
   ].filter(Boolean))];
   selectedElements.forEach((node) => node.classList.add("is-selected"));
-  // Only soften the surrounding diagram after an explicit selection in the matrix.
-  // Topics without an SVG point keep the full diagram readable.
-  const selectedInDiagram = selectedElements.some((node) => matrixVisual.contains(node));
-  matrixVisual.classList.toggle("has-focused-point", focusPoint && selectedInDiagram);
   insight.hidden = false;
 
   // Karmic tail requires three energies, not one isolated number.
@@ -381,7 +376,7 @@ const renderMatrix = (matrix) => {
   });
   // Open the first helpful reading inside the page, not over the screen.
   const firstButton = matrixSections.querySelector('.child-topic');
-  openPointReading(definitions[0], firstButton, false);
+  openPointReading(definitions[0], firstButton);
 };
 
 // One energy-bank request per calculation; stale date requests can never overwrite a newer day.
