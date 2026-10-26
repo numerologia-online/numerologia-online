@@ -1390,3 +1390,61 @@ body {
   fill:#392640;
   font-weight:700;
 }
+
+
+/* High-contrast enchanted matrix geometry v26.
+   SVG strokes only: zero new images, fonts, animation loops or libraries. */
+#child-matrix-panel .child-matrix-glow{
+  stroke-width:11;
+  opacity:.82;
+  pointer-events:none;
+}
+#child-matrix-panel .child-matrix-glow-gold{
+  stroke:#ffd47e;
+  filter:drop-shadow(0 0 4px rgba(250,177,69,.73));
+}
+#child-matrix-panel .child-matrix-glow-blue{
+  stroke:#85dfff;
+  filter:drop-shadow(0 0 4px rgba(93,185,246,.75));
+}
+#child-matrix-panel .child-matrix-outline{
+  stroke-width:3.8;
+  opacity:1;
+  filter:drop-shadow(0 0 2.3px rgba(255,255,255,.97))
+         drop-shadow(0 0 3.4px rgba(232,168,93,.73));
+}
+#child-matrix-panel .child-outline-outer{
+  stroke:url(#childLineGold);
+  stroke-width:4;
+}
+#child-matrix-panel .child-outline-square{
+  stroke:url(#childLineBlue);
+  stroke-width:3.7;
+  filter:drop-shadow(0 0 2px rgba(255,255,255,.95))
+         drop-shadow(0 0 4px rgba(77,169,239,.73));
+}
+#child-matrix-panel .child-outline-inner{
+  stroke:#d9a8ee;
+  stroke-width:3.1;
+  filter:drop-shadow(0 0 2px rgba(255,255,255,.96))
+         drop-shadow(0 0 3.2px rgba(205,135,229,.74));
+}
+#child-matrix-panel .child-matrix-line{
+  stroke:#aa8cd9;
+  stroke-width:2.9;
+  opacity:1;
+  filter:drop-shadow(0 0 1.8px rgba(255,255,255,.96))
+         drop-shadow(0 0 2.8px rgba(168,130,211,.67));
+}
+#child-matrix-panel .child-matrix-line.child-line-pink{
+  stroke:#e887bc;
+  stroke-width:3.5;
+  opacity:1;
+  filter:drop-shadow(0 0 1.9px rgba(255,255,255,.95))
+         drop-shadow(0 0 3.2px rgba(234,121,183,.73));
+}
+#child-matrix-panel .child-matrix-lightray{
+  opacity:.64;
+  stroke-width:5;
+}
+/* Keep the jewel numerals and all caption controls in the foreground. */
