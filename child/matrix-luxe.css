@@ -1,0 +1,183 @@
+/* Child Matrix • luminous couture edition. Visual changes only; calculations and readings remain untouched. */
+#child-matrix-panel .child-visual {
+  isolation:isolate;
+  border:1px solid rgba(249,228,247,.97);
+  border-radius:30px;
+  padding:9px;
+  box-shadow:0 18px 46px rgba(170,111,151,.17),0 0 0 1px rgba(231,196,220,.38),inset 0 0 26px rgba(255,255,255,.3);
+}
+#child-matrix-panel .child-visual::before {
+  opacity:.24;
+  background-image:radial-gradient(circle,#fff 1px,transparent 2px);
+  background-size:41px 43px;
+}
+#child-matrix-panel .child-visual::after {opacity:.5;pointer-events:none;}
+#child-matrix-panel .child-matrix-svg {z-index:1;position:relative;overflow:visible;filter:none;}
+.child-matrix-glow {fill:none;stroke-width:7;opacity:.52;pointer-events:none;filter:blur(2.2px);}
+.child-matrix-glow-gold {stroke:#fbe2ab;}
+.child-matrix-glow-blue {stroke:#b4e6ff;stroke-width:5;}
+#child-matrix-panel .child-matrix-outline {stroke:url(#childLineGold);stroke-width:2.65;opacity:.94;filter:drop-shadow(0 0 3px rgba(255,215,137,.86));}
+#child-matrix-panel .child-outline-soft {stroke:url(#childLineBlue);stroke-width:1.65;filter:drop-shadow(0 0 2px rgba(115,200,255,.6));}
+#child-matrix-panel .child-matrix-line {stroke:#d2b5de;stroke-width:1.8;filter:drop-shadow(0 0 2px rgba(255,255,255,.98));}
+#child-matrix-panel .child-line-pink {stroke:#f3a4c5;stroke-width:2.1;filter:drop-shadow(0 0 3px rgba(255,179,212,.82));}
+.child-matrix-point, .child-matrix-extra {cursor:pointer;outline:none;}
+#child-matrix-panel .child-matrix-point > circle:first-child,
+#child-matrix-panel .child-matrix-extra > circle:first-child {
+  stroke-width:3.1;
+  fill:url(#childGemViolet);
+  stroke:#b688ed;
+  filter:drop-shadow(0 0 6px rgba(180,124,241,.7)) drop-shadow(0 4px 5px rgba(113,73,144,.25));
+  transition:stroke .22s,fill .22s,filter .22s,transform .22s;
+  transform-origin:center;transform-box:fill-box;
+}
+#child-matrix-panel .child-point-blue > circle:first-child {
+  fill:url(#childGemBlue);stroke:#6ec2f2;
+  filter:drop-shadow(0 0 7px rgba(82,190,255,.84)) drop-shadow(0 3px 4px rgba(64,134,205,.24));
+}
+#child-matrix-panel .child-point-pink > circle:first-child {
+  fill:url(#childGemPink);stroke:#e981b8;
+  filter:drop-shadow(0 0 7px rgba(245,123,189,.82)) drop-shadow(0 3px 4px rgba(178,84,135,.24));
+}
+#child-matrix-panel .child-point-gold > circle:first-child {
+  fill:url(#childGemGold);stroke:#d5a358;
+  filter:drop-shadow(0 0 8px rgba(249,185,70,.8)) drop-shadow(0 3px 4px rgba(158,114,45,.28));
+}
+#child-matrix-panel .child-point-center > circle:first-child {
+  fill:url(#childGemGold);stroke:#dfac59;stroke-width:4.4;
+  filter:drop-shadow(0 0 10px rgba(255,203,90,.96)) drop-shadow(0 0 19px rgba(255,193,90,.63));
+}
+#child-matrix-panel .child-matrix-extra > circle:first-child {
+  fill:url(#childGemSmall);stroke:#cda5e3;stroke-width:2.5;
+  filter:drop-shadow(0 0 5px rgba(203,147,228,.63));
+}
+#child-matrix-panel .child-gem-rim {
+  fill:none;stroke:rgba(255,255,255,.8);stroke-width:1.35;pointer-events:none;
+  filter:drop-shadow(0 0 3px rgba(255,244,218,.86));
+}
+#child-matrix-panel .child-point-center .child-gem-rim {stroke:#ffdb8c;stroke-width:2.2;filter:drop-shadow(0 0 6px rgba(252,193,68,.9));}
+#child-matrix-panel .child-gem-inner {
+  fill:none;stroke:rgba(255,255,255,.92);stroke-width:1.7;pointer-events:none;
+}
+#child-matrix-panel .child-gem-sheen {
+  fill:#fff;opacity:.49;pointer-events:none;filter:blur(.35px);
+}
+#child-matrix-panel .child-matrix-point > text,
+#child-matrix-panel .child-matrix-extra > text {
+  fill:#46304d;
+  paint-order:stroke;
+  stroke:rgba(255,255,255,.22);
+  stroke-width:.7;
+  filter:drop-shadow(0 1px 1px rgba(255,255,255,.75));
+}
+#child-matrix-panel .child-point-center > text {fill:#77502e;font-weight:750;font-size:28px;}
+#child-matrix-panel .child-matrix-point.is-selected > circle:first-child,
+#child-matrix-panel .child-matrix-extra.is-selected > circle:first-child,
+#child-matrix-panel .child-matrix-point:focus-visible > circle:first-child,
+#child-matrix-panel .child-matrix-extra:focus-visible > circle:first-child {
+  fill:url(#childGemGold);stroke:#d89631;stroke-width:4;
+  filter:drop-shadow(0 0 9px rgba(255,205,83,.95)) drop-shadow(0 0 20px rgba(250,189,82,.73));
+}
+#child-matrix-panel .child-matrix-point.is-selected .child-gem-rim,
+#child-matrix-panel .child-matrix-extra.is-selected .child-gem-rim {stroke:#ffefbf;stroke-width:2.5;}
+#child-matrix-panel .child-matrix-point:active > circle:first-child,
+#child-matrix-panel .child-matrix-extra:active > circle:first-child {transform:scale(1.05);}
+#child-matrix-panel .child-matrix-label {pointer-events:all;cursor:pointer;outline:none;}
+#child-matrix-panel .child-matrix-label rect {
+  fill:rgba(255,255,255,.91);stroke:rgba(255,247,255,.97);stroke-width:1.35;
+  filter:drop-shadow(0 3px 6px rgba(132,90,144,.2));
+  transition:fill .18s,stroke .18s,filter .18s;
+}
+#child-matrix-panel .child-matrix-label .child-matrix-label-icon {
+  fill:#d682ab;font-family:Georgia,serif;font-size:16px;font-weight:650;
+  text-anchor:middle;filter:drop-shadow(0 1px 1px rgba(255,255,255,.95));pointer-events:none;
+}
+#child-matrix-panel .child-matrix-label-blue .child-matrix-label-icon {fill:#669edc;}
+#child-matrix-panel .child-matrix-label-gold .child-matrix-label-icon {fill:#c79746;}
+#child-matrix-panel .child-matrix-label-violet .child-matrix-label-icon {fill:#9f75c1;}
+#child-matrix-panel .child-matrix-label .child-matrix-label-copy {
+  fill:#4d3654;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  font-size:11.5px;font-weight:680;letter-spacing:0;text-anchor:middle;
+  pointer-events:none;
+}
+#child-matrix-panel .child-matrix-label.is-selected rect,
+#child-matrix-panel .child-matrix-label:focus-visible rect,
+#child-matrix-panel .child-matrix-label:hover rect {
+  fill:#fffaf1;stroke:#e9c98f;stroke-width:1.7;
+  filter:drop-shadow(0 0 6px rgba(251,198,104,.65));
+}
+#child-matrix-panel .child-matrix-label.is-selected .child-matrix-label-icon {fill:#bc8538;}
+#child-matrix-panel .child-insight {
+  position:relative;isolation:isolate;
+  display:grid;grid-template-columns:72px minmax(0,1fr);
+  column-gap:16px;row-gap:5px;
+  overflow:hidden;
+  padding:23px 20px 19px;
+  border:1px solid rgba(245,228,241,.98);
+  border-radius:27px;
+  background:
+    radial-gradient(circle at 7% 5%,rgba(255,227,192,.64),transparent 37%),
+    radial-gradient(circle at 91% 88%,rgba(226,229,255,.55),transparent 47%),
+    linear-gradient(130deg,#fffafd 0%,#fff8f5 53%,#f7f6ff 100%);
+  box-shadow:0 12px 34px rgba(152,103,143,.12),inset 0 1px 0 rgba(255,255,255,.97);
+}
+#child-matrix-panel .child-insight::after {
+  content:"✧";position:absolute;right:15px;bottom:2px;
+  font:normal 46px/1 Georgia,serif;color:rgba(208,160,189,.22);
+  pointer-events:none;
+}
+#child-matrix-panel .child-insight-top {display:contents;}
+#child-matrix-panel .child-insight-badge {
+  grid-column:1;grid-row:1 / span 2;
+  width:72px;height:72px;min-width:72px;min-height:72px;padding:5px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;
+  border:3px solid rgba(255,255,255,.98);
+  outline:2px solid rgba(223,165,176,.59);
+  outline-offset:-7px;
+  background:radial-gradient(circle at 30% 24%,#fff 0%,#fff6f8 32%,#fad3e0 74%,#e3add0 100%);
+  color:#743d58;font:650 26px/1.05 Georgia,serif;
+  text-align:center;white-space:normal;overflow-wrap:anywhere;
+  box-shadow:0 0 0 3px rgba(255,244,239,.88),0 0 16px rgba(238,158,153,.48),0 8px 19px rgba(169,106,137,.18);
+}
+#child-matrix-panel .child-insight-kicker {
+  grid-column:2;grid-row:1;align-self:end;
+  padding:4px 24px 0 0;
+  color:#a76b8f;font:750 11px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  letter-spacing:.6px;text-transform:uppercase;
+}
+#child-matrix-panel .child-insight-close {
+  position:absolute;top:13px;right:13px;
+  width:35px;height:35px;min-width:35px;min-height:35px;
+  border:1px solid #eed8e6;border-radius:50%;
+  background:rgba(255,255,255,.8);
+  color:#a4789e;font-size:23px;
+  box-shadow:0 3px 9px rgba(143,105,144,.07);
+}
+#child-matrix-panel .child-insight h3 {
+  grid-column:2;grid-row:2;align-self:start;
+  margin:0;padding:0 15px 0 0;
+  font:500 23px/1.13 Georgia,"Times New Roman",serif;
+  color:#3b2845;letter-spacing:-.35px;
+}
+#child-matrix-panel .child-insight-body {
+  grid-column:1 / -1;grid-row:3;margin-top:13px;padding-top:13px;
+  border-top:1px solid rgba(229,207,223,.64);
+}
+#child-matrix-panel .child-insight-body p {
+  font:400 15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:#554959;
+}
+#child-matrix-panel .child-insight-close:hover,
+#child-matrix-panel .child-insight-close:focus-visible {color:#805278;border-color:#d6acc4;outline:2px solid rgba(160,120,198,.28);}
+@media (max-width:390px) {
+  #child-matrix-panel .child-visual {padding:5px;border-radius:24px;}
+  #child-matrix-panel .child-insight {padding:18px 15px 17px;grid-template-columns:62px minmax(0,1fr);column-gap:12px;}
+  #child-matrix-panel .child-insight-badge {width:62px;height:62px;min-width:62px;min-height:62px;font-size:24px;}
+  #child-matrix-panel .child-insight h3 {font-size:21px;}
+  #child-matrix-panel .child-insight-kicker {font-size:10px;}
+}
+@media (prefers-reduced-motion:reduce) {
+  #child-matrix-panel .child-matrix-point > circle:first-child,
+  #child-matrix-panel .child-matrix-extra > circle:first-child,
+  #child-matrix-panel .child-matrix-label rect {transition:none;}
+}
