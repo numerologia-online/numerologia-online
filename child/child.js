@@ -207,6 +207,10 @@ const renderMatrix = (matrix) => {
 
   const svgPieces = [
     '<svg class="child-matrix-svg" viewBox="0 0 520 520" role="group" aria-label="Нажмите на круг с числом, чтобы прочитать трактовку">',
+    '<defs><linearGradient id="childLineGold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d9a965"/><stop offset=".5" stop-color="#fff0d1"/><stop offset="1" stop-color="#c897d1"/></linearGradient><radialGradient id="childAura"><stop stop-color="#fff4d9" stop-opacity=".85"/><stop offset=".52" stop-color="#f4dafa" stop-opacity=".32"/><stop offset="1" stop-color="#dceeff" stop-opacity="0"/></radialGradient><filter id="childGlow" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="5"/></filter></defs>',
+    '<circle class="child-matrix-aura" cx="260" cy="258" r="246" fill="url(#childAura)"/>',
+    '<circle class="child-matrix-orbit" cx="260" cy="258" r="212"/>',
+    '<circle class="child-matrix-orbit child-matrix-orbit-inner" cx="260" cy="258" r="148"/>',
     '<path class="child-matrix-outline" d="M260 20 L500 260 L260 500 L20 260 Z"/>',
     '<path class="child-matrix-outline child-outline-soft" d="M104 104 H416 V416 H104 Z"/>',
     '<path class="child-matrix-outline child-outline-soft" d="M260 20 L416 104 L500 260 L416 416 L260 500 L104 416 L20 260 L104 104 Z"/>',
@@ -234,25 +238,25 @@ const renderMatrix = (matrix) => {
       '" r="' + (point.id === "innerNature" ? 35 : 30) +
       '"/><text x="' + point.x + '" y="' + (point.y + 6) + '">' + point.number + '</text></g>');
   });
-  // Small, readable captions for every visible circle. The captions do not intercept taps.
+  // Glass-pill labels are placed in free space; never over the numbers.
   const matrixCaptions = [
-    {x:260,y:87,label:"Таланты"},
-    {x:153,y:90,label:"Поддержка"},
-    {x:367,y:90,label:"Общение"},
-    {x:88,y:230,label:"Характер"},
-    {x:432,y:230,label:"Увлечения"},
-    {x:260,y:324,label:"Внутренний мир"},
-    {x:260,y:201,label:"Игры и интерес"},
-    {x:260,y:452,label:"Восстановление"},
-    {x:153,y:402,label:"Близкие"},
-    {x:367,y:402,label:"Самостоятельность"},
-    {x:156,y:304,label:"Обучение"},
-    {x:364,y:304,label:"Интересы"},
-    {x:260,y:362,label:"Уроки прошлого"},
-    {x:260,y:416,label:"Хвост: 2-я точка"}
+    {x:260,y:91,w:112,label:"✦ Таланты"},
+    {x:111,y:91,w:124,label:"♡ Поддержка"},
+    {x:409,y:91,w:124,label:"✧ Общение"},
+    {x:99,y:219,w:126,label:"Характер"},
+    {x:421,y:219,w:126,label:"Увлечения"},
+    {x:260,y:325,w:142,label:"♡ Внутренний мир"},
+    {x:260,y:204,w:126,label:"✧ Игры и интерес"},
+    {x:260,y:454,w:146,label:"Восстановление"},
+    {x:124,y:391,w:104,label:"♡ Близкие"},
+    {x:396,y:391,w:148,label:"Самостоятельность"},
+    {x:166,y:302,w:114,label:"Обучение"},
+    {x:354,y:302,w:106,label:"Интересы"},
+    {x:260,y:361,w:132,label:"Уроки прошлого"},
+    {x:260,y:417,w:126,label:"Кармический хвост"}
   ];
-  matrixCaptions.forEach(({x,y,label}) => {
-    svgPieces.push('<text class="child-matrix-caption" x="' + x + '" y="' + y + '">' + label + '</text>');
+  matrixCaptions.forEach(({x,y,w,label}) => {
+    svgPieces.push('<g class="child-matrix-label" aria-hidden="true" transform="translate(' + (x-w/2) + ' ' + (y-13) + ')"><rect width="' + w + '" height="26" rx="13"/><text x="' + (w/2) + '" y="17">' + label + '</text></g>');
   });
   svgPieces.push("</svg>");
   matrixVisual.innerHTML = svgPieces.join("");
