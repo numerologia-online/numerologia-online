@@ -181,3 +181,16 @@
   #child-matrix-panel .child-matrix-extra > circle:first-child,
   #child-matrix-panel .child-matrix-label rect {transition:none;}
 }
+
+/* Brief, tactile selection glow; never runs continuously. */
+@keyframes childGemSelectGlow {
+  0% {filter:drop-shadow(0 0 2px rgba(255,227,139,.55));}
+  48% {filter:drop-shadow(0 0 16px rgba(255,211,102,.98)) drop-shadow(0 0 22px rgba(255,214,141,.63));}
+  100% {filter:drop-shadow(0 0 9px rgba(255,205,83,.95)) drop-shadow(0 0 20px rgba(250,189,82,.73));}
+}
+@media (prefers-reduced-motion:no-preference) {
+ #child-matrix-panel .child-matrix-point.is-selected > circle:first-child,
+ #child-matrix-panel .child-matrix-extra.is-selected > circle:first-child {
+   animation:childGemSelectGlow .58s ease-out 1;
+ }
+}

@@ -278,8 +278,8 @@ const renderMatrix = (matrix) => {
     {id:"innerNature",x:260,y:334,w:169,h:35,icon:"♡",lines:["Внутренний мир","и комфорт"],tone:"pink"},
     {id:"learningHelp",x:152,y:297,w:124,h:29,icon:"▤",lines:["Обучение"],tone:"violet"},
     {id:"interests",x:369,y:297,w:118,h:29,icon:"✧",lines:["Интересы"],tone:"violet"},
-    {id:"familyFeelings",x:108,y:363,w:136,h:35,icon:"⌂",lines:["Близкие","и семья"],tone:"blue"},
-    {id:"independence",x:411,y:363,w:169,h:35,icon:"◇",lines:["Самостоятельность","и развитие"],tone:"violet"},
+    {id:"familyFeelings",x:108,y:369,w:136,h:35,icon:"⌂",lines:["Близкие","и семья"],tone:"blue"},
+    {id:"independence",x:411,y:371,w:169,h:35,icon:"◇",lines:["Самостоятельность","и развитие"],tone:"violet"},
     {id:"tail",x:154,y:450,w:150,h:29,icon:"∞",lines:["Кармический хвост"],tone:"pink"},
     {id:"recovery",x:382,y:480,w:169,h:35,icon:"✿",lines:["Восстановление","и ресурс"],tone:"gold"}
   ];
