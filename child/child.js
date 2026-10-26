@@ -274,7 +274,19 @@ const renderMatrix = (matrix) => {
         '" cy="' + (y - radius*.47) + '" rx="' + (radius*.47) +
         '" ry="' + (radius*.19) + '"/>',
       '<path class="child-gem-glint-star" d="M' + (x + radius*.67) + ' ' + (y - radius*.78 - 3.5) +
-        ' v7 m-3.5 -3.5 h7"/>'
+        ' v7 m-3.5 -3.5 h7"/>',
+      // Unmistakable static active-state rings + a small pearl checkmark.
+      // CSS hides these on unselected points: the full matrix stays colorful.
+      '<circle class="child-gem-active-aura" cx="' + x + '" cy="' + y +
+        '" r="' + (radius + 10.5) + '"/>',
+      '<circle class="child-gem-active-ring" cx="' + x + '" cy="' + y +
+        '" r="' + (radius + 7.5) + '"/>',
+      '<circle class="child-gem-active-ring-inner" cx="' + x + '" cy="' + y +
+        '" r="' + (radius + 4.5) + '"/>',
+      '<circle class="child-gem-active-check" cx="' + (x + radius*.74) +
+        '" cy="' + (y - radius*.75) + '" r="' + (radius < 20 ? 7.6 : 9.4) + '"/>',
+      '<path class="child-gem-active-checkmark" d="M' + (x + radius*.74 - 3.6) +
+        ' ' + (y - radius*.75) + ' l2.6 2.7 4.8 -5.5"/>'
     ].join("");
   };
   extraPoints.forEach((point) => {
