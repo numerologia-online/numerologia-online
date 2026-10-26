@@ -887,3 +887,15 @@ body {
  filter:drop-shadow(0 2px 6px rgba(129,80,147,.14));
 }
 .child-matrix-label text {fill:#654573;}
+
+/* Optimized photographic artwork layer. Existing SVG stays as fallback until WebP is uploaded. */
+.child-visual {
+  background-image:
+    url("./matrix_bg_760_62.webp"),
+    url("./matrix-magic.svg"),
+    radial-gradient(ellipse at 50% 46%,rgba(255,226,160,.58),transparent 55%),
+    linear-gradient(135deg,#fff8fb,#f9f3ff 58%,#edf7ff);
+  background-size:100% 100%,cover,cover,cover;
+  background-position:center;
+  background-repeat:no-repeat;
+}
