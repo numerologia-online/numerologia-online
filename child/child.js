@@ -268,35 +268,45 @@ const renderMatrix = (matrix) => {
   });
   // Elegant glass capsules: every label opens the same real numeric position.
   // Positions are tuned for the 520x520 responsive mobile diagram.
+  // Lightweight fairytale labels. Their ids stay linked to the original point readings.
   const matrixCaptions = [
-    {id:"talents",x:260,y:92,w:148,h:39,icon:"✦",lines:["Таланты","и сильные стороны"],tone:"violet"},
-    {id:"parenting",x:104,y:55,w:136,h:37,icon:"♕",lines:["Поддержка","и воспитание"],tone:"gold"},
-    {id:"emotions",x:416,y:55,w:138,h:37,icon:"♡",lines:["Эмоции","и общение"],tone:"blue"},
-    {id:"character",x:99,y:209,w:135,h:34,icon:"✧",lines:["Характер","и темперамент"],tone:"pink"},
-    {id:"activities",x:421,y:209,w:136,h:34,icon:"◎",lines:["Спорт","и увлечения"],tone:"pink"},
-    {id:"games",x:260,y:205,w:149,h:30,icon:"✿",lines:["Игры и интерес"],tone:"gold"},
-    {id:"innerNature",x:260,y:334,w:169,h:35,icon:"♡",lines:["Внутренний мир","и комфорт"],tone:"pink"},
-    {id:"learningHelp",x:152,y:297,w:124,h:29,icon:"▤",lines:["Обучение"],tone:"violet"},
-    {id:"interests",x:369,y:297,w:118,h:29,icon:"✧",lines:["Интересы"],tone:"violet"},
-    {id:"familyFeelings",x:108,y:369,w:136,h:35,icon:"⌂",lines:["Близкие","и семья"],tone:"blue"},
-    {id:"independence",x:411,y:371,w:169,h:35,icon:"◇",lines:["Самостоятельность","и развитие"],tone:"violet"},
-    {id:"tail",x:154,y:450,w:150,h:29,icon:"∞",lines:["Кармический хвост"],tone:"pink"},
-    {id:"recovery",x:382,y:480,w:169,h:35,icon:"✿",lines:["Восстановление","и ресурс"],tone:"gold"}
+    {id:"talents",x:260,y:92,w:152,h:40,icon:"☆",lines:["Таланты","и сильные стороны"],tone:"violet"},
+    {id:"parenting",x:104,y:55,w:138,h:38,icon:"♕",lines:["Поддержка","рода"],tone:"gold"},
+    {id:"emotions",x:416,y:55,w:142,h:38,icon:"♡",lines:["Общение","и окружение"],tone:"blue"},
+    {id:"character",x:99,y:209,w:139,h:36,icon:"♧",lines:["Характер","и темперамент"],tone:"pink"},
+    {id:"activities",x:421,y:209,w:140,h:36,icon:"◎",lines:["Увлечения","и интересы"],tone:"pink"},
+    {id:"games",x:260,y:205,w:149,h:31,icon:"✿",lines:["Игры и интересы"],tone:"gold"},
+    {id:"innerNature",x:260,y:334,w:176,h:38,icon:"♡",lines:["Внутренний мир","и душевный комфорт"],tone:"pink"},
+    {id:"learningHelp",x:152,y:297,w:126,h:31,icon:"▤",lines:["Обучение"],tone:"violet"},
+    {id:"interests",x:369,y:297,w:118,h:31,icon:"✧",lines:["Интересы"],tone:"violet"},
+    {id:"familyFeelings",x:108,y:369,w:138,h:37,icon:"⌂",lines:["Близкие","и семья"],tone:"blue"},
+    {id:"independence",x:411,y:371,w:173,h:38,icon:"◇",lines:["Самостоятельность","и развитие"],tone:"violet"},
+    {id:"tail",x:154,y:450,w:154,h:31,icon:"∞",lines:["Кармический хвост"],tone:"pink"},
+    {id:"recovery",x:382,y:480,w:175,h:38,icon:"✿",lines:["Восстановление","и ресурс"],tone:"gold"}
   ];
   matrixCaptions.forEach(({id,x,y,w,h,icon,lines,tone}) => {
-    const left = x - w / 2, top = y - h / 2;
-    const lineY = lines.length === 1 ? h / 2 + 4.7 : h / 2 - 1.4;
-    const textX = w / 2 + 8;
-    const parts = lines.map((line,i) =>
-      '<tspan x="' + textX + '" y="' + (lineY + 12.6 * i) + '">' + line + '</tspan>'
+    const left=x-w/2, top=y-h/2;
+    const twoLines=lines.length>1;
+    const lineY=twoLines ? h/2-1.7 : h/2+4.4;
+    const textX=w/2+10;
+    const parts=lines.map((line,i) =>
+      '<tspan x="' + textX + '" y="' + (lineY+12.7*i) + '">' + line + '</tspan>'
     ).join("");
-    svgPieces.push('<g tabindex="0" role="button" data-child-point="' + id +
+    const medallionY=twoLines ? 2 : h/2;
+    svgPieces.push(
+      '<g tabindex="0" role="button" data-child-point="' + id +
       '" class="child-matrix-label child-matrix-label-' + tone +
       '" aria-label="Открыть: ' + lines.join(" ") +
       '" transform="translate(' + left + ' ' + top + ')">' +
-      '<rect width="' + w + '" height="' + h + '" rx="' + (h / 2) + '"/>' +
-      '<text class="child-matrix-label-icon" x="17" y="' + (h/2+5) + '">' + icon + '</text>' +
-      '<text class="child-matrix-label-copy">' + parts + '</text></g>');
+        '<ellipse class="child-matrix-label-aura" cx="' + (w/2) +
+          '" cy="' + (h/2) + '" rx="' + (w/2+4) + '" ry="' + (h/2+4) + '"/>' +
+        '<rect width="' + w + '" height="' + h + '" rx="' + (h/2) + '"/>' +
+        '<circle class="child-matrix-label-medallion" cx="20" cy="' +
+          medallionY + '" r="15"/>' +
+        '<text class="child-matrix-label-icon" x="20" y="' +
+          (medallionY+5.6) + '">' + icon + '</text>' +
+        '<text class="child-matrix-label-copy">' + parts + '</text></g>'
+    );
   });
   svgPieces.push("</svg>");
   matrixVisual.innerHTML = svgPieces.join("");
