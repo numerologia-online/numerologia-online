@@ -1,0 +1,8 @@
+{
+  "schema": "child-karmic-tail-index-v1",
+  "category": "child-matrix-karmic-tail",
+  "expectedPrograms": 26,
+  "available": {
+    "3-7-22": "3-7-22.json"
+  }
+}
