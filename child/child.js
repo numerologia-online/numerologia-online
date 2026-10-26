@@ -216,8 +216,8 @@ const renderMatrix = (matrix) => {
   const svgPieces = [
     '<svg class="child-matrix-svg" viewBox="0 0 520 520" role="group" aria-label="Нажмите на круг с числом, чтобы прочитать трактовку">',
     '<defs>'+
-    '<linearGradient id="childLineGold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#daaa62"/><stop offset=".43" stop-color="#fff7dc"/><stop offset="1" stop-color="#ca91c1"/></linearGradient>'+
-    '<linearGradient id="childLineBlue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#80ccf7"/><stop offset=".5" stop-color="#d9f4ff"/><stop offset="1" stop-color="#8ebafa"/></linearGradient>'+
+    '<linearGradient id="childLineGold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c48e3f"/><stop offset=".44" stop-color="#ffdc8b"/><stop offset=".77" stop-color="#f6b859"/><stop offset="1" stop-color="#ce8fba"/></linearGradient>'+
+    '<linearGradient id="childLineBlue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4aa9ec"/><stop offset=".5" stop-color="#a7eaff"/><stop offset="1" stop-color="#6b9bea"/></linearGradient>'+
     '<radialGradient id="childAura"><stop stop-color="#fff7cf" stop-opacity=".84"/><stop offset=".5" stop-color="#f4dafa" stop-opacity=".32"/><stop offset="1" stop-color="#dceeff" stop-opacity="0"/></radialGradient>'+
     '<radialGradient id="childGemViolet" cx="32%" cy="22%" r="82%"><stop stop-color="#fff"/><stop offset=".31" stop-color="#fcf6ff"/><stop offset=".72" stop-color="#eecbff"/><stop offset="1" stop-color="#c998f1"/></radialGradient>'+
     '<radialGradient id="childGemBlue" cx="32%" cy="20%" r="87%"><stop stop-color="#fff"/><stop offset=".3" stop-color="#f1fcff"/><stop offset=".73" stop-color="#c8efff"/><stop offset="1" stop-color="#7dbcef"/></radialGradient>'+
@@ -243,9 +243,9 @@ const renderMatrix = (matrix) => {
     '<path class="child-matrix-lightray child-matrix-lightray-gold" d="M260 260 L260 41 M260 260 L260 479"/>',
     '<path class="child-matrix-lightray child-matrix-lightray-blue" d="M260 260 L104 104 M260 260 L416 416"/>',
     '<path class="child-matrix-lightray child-matrix-lightray-pink" d="M260 260 L416 104 M260 260 L104 416"/>',
-    '<path class="child-matrix-outline" d="M260 20 L500 260 L260 500 L20 260 Z"/>',
-    '<path class="child-matrix-outline child-outline-soft" d="M104 104 H416 V416 H104 Z"/>',
-    '<path class="child-matrix-outline child-outline-soft" d="M260 20 L416 104 L500 260 L416 416 L260 500 L104 416 L20 260 L104 104 Z"/>',
+    '<path class="child-matrix-outline child-outline-outer" d="M260 20 L500 260 L260 500 L20 260 Z"/>',
+    '<path class="child-matrix-outline child-outline-soft child-outline-square" d="M104 104 H416 V416 H104 Z"/>',
+    '<path class="child-matrix-outline child-outline-soft child-outline-inner" d="M260 20 L416 104 L500 260 L416 416 L260 500 L104 416 L20 260 L104 104 Z"/>',
     '<path class="child-matrix-line" d="M260 20 V500 M20 260 H500 M104 104 L416 416 M416 104 L104 416"/>',
     '<path class="child-matrix-line child-line-pink" d="M260 260 L416 416 M260 260 L416 104"/>'
   ];
