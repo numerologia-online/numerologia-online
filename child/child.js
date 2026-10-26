@@ -159,11 +159,11 @@ const matrixDefinitions = (matrix) => [
   {id: "activities", title: "Спорт, кружки и увлечения", number: matrix.right, x: 479, y: 260, color: "pink"},
   {id: "recovery", title: "Отдых и восстановление", number: matrix.bottom, x: 260, y: 479, color: "pink"},
   {id: "emotions", title: "Эмоции, дружба и общение", number: matrix.corners.topRight, x: 416, y: 104, color: "blue"},
-  {id: "purpose", title: "Предназначение и потенциал", number: matrix.purpose.personal, x: 260, y: 157, color: "gold"},
+  {id: "purpose", title: "Личное предназначение и потенциал", number: matrix.purpose.personal, x: 260, y: 157, color: "gold"},
   {id: "mistakes", title: "Главные ошибки ребёнка", number: matrix.leftSpoke.outer},
-  {id: "lifeLessons", title: "Главные жизненные уроки", number: matrix.purpose.general},
+  {id: "lifeLessons", title: "Главные жизненные уроки (общее предназначение)", number: matrix.purpose.general},
   {id: "parentMistakes", title: "Главные ошибки родителей", number: matrix.corners.topLeft},
-  {id: "comfort", title: "Точка душевного комфорта", number: matrix.leftSpoke.core},
+  {id: "comfort", title: "Точка душевного комфорта", number: matrix.center},
   {id: "gifts", title: "Идеальный подарок", number: matrix.rightSpoke.core},
   {id: "games", title: "Как играть и увлекать ребёнка", number: matrix.topSpoke.near},
   {id: "parentChildLessons", title: "Детско-родительские уроки", number: matrix.corners.bottomLeft},
@@ -171,7 +171,7 @@ const matrixDefinitions = (matrix) => [
   {id: "independence", title: "Как раскрывает самостоятельность", number: matrix.corners.bottomRight, x: 416, y: 416, small: true},
   {id: "learningHelp", title: "Как помочь освоить новое", number: matrix.leftSpoke.near, x: 157, y: 260, small: true},
   {id: "interests", title: "Что может увлечь ребёнка", number: matrix.rightSpoke.near, x: 363, y: 260, small: true},
-  {id: "money", title: "Отношения с деньгами", number: matrix.center, color: "gold"},
+  {id: "money", title: "Отношения с деньгами", number: matrix.channels.moneyPoint, color: "gold"},
   {id: "tail", title: "Кармический хвост", number: matrix.tail.first, x: 260, y: 385, color: "gold",
     code: [matrix.tail.first, matrix.tail.second, matrix.bottom].join(" - ")}
 ];
