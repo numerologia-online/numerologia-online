@@ -1470,7 +1470,7 @@ body {
 #child-matrix-panel .child-matrix-extra.is-selected .child-gem-active-ring-inner,
 #child-matrix-panel .child-matrix-extra.is-selected .child-gem-active-check,
 #child-matrix-panel .child-matrix-extra.is-selected .child-gem-active-checkmark{
-  display:block;
+  display:inline;
 }
 #child-matrix-panel .child-gem-active-aura{
   fill:none;
