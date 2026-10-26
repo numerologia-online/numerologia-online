@@ -111,7 +111,7 @@ const openPointReading = async (point, source = null) => {
     body.textContent = "Не удалось загрузить текст. Проверьте подключение и нажмите на число ещё раз.";
     return;
   }
-  const paragraphs = bank.sections?.[point.id]?.paragraphs;
+  const paragraphs = bank.sections?.[point.section || point.id]?.paragraphs;
   if (!Array.isArray(paragraphs) || !paragraphs.length) {
     body.textContent = "Полная трактовка этого раздела пока не написана.";
     return;
@@ -151,9 +151,10 @@ const getDayBank = () => {
 
 // 19 topics read from their own matrix position; money is in the same JSON energy file.
 const matrixDefinitions = (matrix) => [
-  {id: "character", title: "Характер и темперамент", number: matrix.center, x: 260, y: 260, color: "center"},
+  {id: "character", title: "Характер и темперамент", number: matrix.left, x: 41, y: 260, color: "violet"},
+  {id: "innerNature", section: "character", title: "Внутренние особенности ребёнка", number: matrix.center, x: 260, y: 260, color: "center"},
   {id: "talents", title: "Таланты и сильные стороны", number: matrix.top, x: 260, y: 41, color: "violet"},
-  {id: "learning", title: "Как ребёнку легче учиться", number: matrix.left, x: 41, y: 260, color: "violet"},
+  {id: "learning", title: "Как ребёнку легче учиться", number: matrix.left},
   {id: "parenting", title: "Как воспитывать и поддерживать", number: matrix.corners.topLeft, x: 104, y: 104, color: "blue"},
   {id: "activities", title: "Спорт, кружки и увлечения", number: matrix.right, x: 479, y: 260, color: "pink"},
   {id: "recovery", title: "Отдых и восстановление", number: matrix.bottom, x: 260, y: 479, color: "pink"},
@@ -228,9 +229,9 @@ const renderMatrix = (matrix) => {
     svgPieces.push('<g tabindex="0" role="button" data-child-point="' + point.id +
       '" class="child-matrix-point child-point-' + point.color +
       '" aria-label="' + point.title + ', энергия ' + point.number +
-      '"><circle cx="' + point.x + '" cy="' + point.y + '" r="' + (point.id === "character" ? 33 : 25) +
+      '"><circle cx="' + point.x + '" cy="' + point.y + '" r="' + (point.id === "innerNature" ? 33 : 25) +
       '"/><circle class="child-matrix-hit" cx="' + point.x + '" cy="' + point.y +
-      '" r="' + (point.id === "character" ? 35 : 30) +
+      '" r="' + (point.id === "innerNature" ? 35 : 30) +
       '"/><text x="' + point.x + '" y="' + (point.y + 6) + '">' + point.number + '</text></g>');
   });
   svgPieces.push("</svg>");
