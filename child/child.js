@@ -337,7 +337,7 @@ const renderMatrix = (matrix) => {
   matrixCaptions.forEach(({id,x,y,w,h,icon,lines,tone}) => {
     const left=x-w/2, top=y-h/2, twoLines=lines.length>1;
     const lineY=twoLines ? h/2-2.7 : h/2+4.5;
-    const textX=w/2+(twoLines ? 8 : 11), badgeX=twoLines ? 19 : 14, badgeY=twoLines ? 0 : h/2;
+    const textX=w/2+(twoLines ? 4 : 9), badgeX=twoLines ? 19 : 0, badgeY=twoLines ? 0 : h/2;
     const spans=lines.map((line,i)=>
       '<tspan x="' + textX + '" y="' + (lineY+13.2*i) + '">' + line + '</tspan>'
     ).join("");
