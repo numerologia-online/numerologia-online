@@ -64,50 +64,38 @@
           <button class="product-card appointment" id="appointment-section" type="button" data-coming-soon data-artwork="assets/appointment.jpg"><span class="product-title">Записаться на личный расчёт</span><span class="product-arrow" aria-hidden="true">→</span></button>
         </section>
         <style>
-          .founder-feature{max-width:740px;margin:24px auto 15px}
-          .founder-feature-card{box-sizing:border-box;border:1px solid #eadbbf;border-radius:24px;padding:21px 20px 20px;background:linear-gradient(140deg,#fffefa 0%,#faf7ef 68%,#f6f6ef 100%);box-shadow:0 8px 24px rgba(40,65,50,.035)}
-          .founder-feature-top{display:grid;grid-template-columns:minmax(0,1fr) 127px;align-items:center;gap:14px}
-          .founder-feature-intro{min-width:0}
-          .founder-feature-kicker{font-size:10px;font-weight:600;color:#b39552;letter-spacing:.17em;margin:0 0 13px}
-          .founder-feature-title{font:400 28px/1.06 Georgia,'Times New Roman',serif;letter-spacing:-.04em;color:#154b38;margin:0 0 16px}
-          .founder-feature-name{display:block;font:italic 25px/1.1 Georgia,'Times New Roman',serif;color:#b08d48;margin-bottom:4px}
-          .founder-feature-role{display:block;font-size:11px;line-height:1.4;color:#68756c}
-          .founder-feature-photo{margin:0;border-radius:17px;overflow:hidden;aspect-ratio:127/170;box-shadow:0 5px 16px rgba(55,42,28,.12)}
-          .founder-feature-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 22%}
-          .founder-feature-divider{height:1px;background:linear-gradient(90deg,#caad75,rgba(204,179,125,.16));margin:18px 0}
-          .founder-feature-text{margin:0 0 11px;color:#334c43;font-size:14px;line-height:1.55;letter-spacing:.005em}
-          .founder-feature-text:last-child{margin-bottom:0}
-          @media(min-width:680px){
-            .founder-feature-card{padding:28px 34px}
-            .founder-feature-top{grid-template-columns:minmax(0,1fr) 165px;gap:30px}
-            .founder-feature-photo{aspect-ratio:165/205}
-            .founder-feature-title{font-size:40px}
-            .founder-feature-text{font-size:16px}
-          }
-          @media(max-width:350px){
-            .founder-feature-top{grid-template-columns:minmax(0,1fr) 95px;gap:10px}
-            .founder-feature-title{font-size:23px}
-            .founder-feature-kicker{font-size:9px;letter-spacing:.11em}
-            .founder-feature-photo{aspect-ratio:95/132}
-            .founder-feature-card{padding:17px 14px}
+          .founder-story{max-width:760px;margin:30px auto 20px;border:1px solid #dfc18d;border-radius:28px;overflow:hidden;background:#fffdf7;box-shadow:0 14px 38px rgba(71,57,33,.06);box-sizing:border-box}
+          .founder-story-cover{display:block;width:100%;height:auto;aspect-ratio:600/494;object-fit:cover;background:#f6eee2}
+          .founder-story-body{position:relative;margin-top:-5px;padding:28px clamp(20px,5.5vw,48px) 27px;background:linear-gradient(180deg,#fffdf9 0%,#f9f7ee 100%);border-radius:30px 30px 0 0}
+          .founder-story-rule{display:flex;align-items:center;justify-content:center;gap:13px;margin:0 0 21px;color:#c4a260;font:26px/1 Georgia,serif}
+          .founder-story-rule:before,.founder-story-rule:after{content:"";display:block;height:1px;flex:1;background:#dfc79c}
+          .founder-story-body p{font-family:Georgia,'Times New Roman',serif;font-size:clamp(15px,2.45vw,17px);line-height:1.62;letter-spacing:.002em;color:#345044;margin:0 0 19px}
+          .founder-story-body p:last-child{margin-bottom:0}
+          .founder-story-body strong{color:#174b39;font-weight:600}
+          .founder-story-body .founder-story-important{padding:16px 18px;background:rgba(236,228,206,.43);border-left:2px solid #b78e45;border-radius:3px 12px 12px 3px}
+          .founder-story-body .founder-story-important strong{color:#a17b35}
+          .founder-story-body .founder-story-closing{font-style:italic;color:#a18041;margin-top:22px}
+          @media(max-width:480px){
+            .founder-story{margin:24px auto 17px;border-radius:24px}
+            .founder-story-body{padding:23px 19px 24px;border-radius:25px 25px 0 0}
+            .founder-story-body p{font-size:15.5px;line-height:1.6;margin-bottom:16px}
+            .founder-story-body .founder-story-important{padding:13px 14px}
+            .founder-story-rule{margin-bottom:18px}
           }
         </style>
-        <section class="founder-feature" aria-labelledby="founder-note-title">
-          <div class="founder-feature-card">
-            <div class="founder-feature-top">
-              <div class="founder-feature-intro">
-                <p class="founder-feature-kicker">ОТ ОСНОВАТЕЛЯ</p>
-                <h2 id="founder-note-title" class="founder-feature-title">Давайте знакомиться</h2>
-                <span class="founder-feature-name">Татьяна</span>
-                <span class="founder-feature-role">Основатель проекта «Нумерология онлайн»</span>
-              </div>
-              <figure class="founder-feature-photo">
-                <img src="assets/founder-tatyana.webp" width="260" height="487" loading="lazy" decoding="async" alt="Татьяна — основатель проекта «Нумерология онлайн»">
-              </figure>
-            </div>
-            <div class="founder-feature-divider" aria-hidden="true"></div>
-            <p class="founder-feature-text">Я создала «Нумерологию онлайн» для женщин, которым нужны не загадочные предсказания, а ответы на настоящие жизненные вопросы. Об отношениях, деньгах, выборе и будущем.</p>
-            <p class="founder-feature-text">Я хотела, чтобы сложные расчёты превратились в понятные ответы, а нумерология стала доступной каждой женщине.</p>
+        <section class="founder-story" aria-labelledby="founder-note-title">
+          <h2 id="founder-note-title" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap">Давайте знакомиться. Татьяна, основатель проекта «Нумерология онлайн»</h2>
+          <img class="founder-story-cover" src="assets/founder-story-hero.webp" width="600" height="494" loading="lazy" decoding="async" alt="Татьяна сидит за столом в светлом интерьере. На фото: «От основателя. Давайте знакомиться. Татьяна»">
+          <div class="founder-story-body">
+            <div class="founder-story-rule" aria-hidden="true">✦</div>
+            <p>Я создала «Нумерологию онлайн» для женщин, которым нужны не загадочные предсказания, а ответы на настоящие жизненные вопросы. Не долгие эзотерические тексты, а чёткие рекомендации в жизни, отношениях, деньгах, выборе и будущем. Я хотела, чтобы сложные расчёты превратились в понятные ответы, а нумерология стала доступной каждой женщине.</p>
+            <p>Много лет я посвятила изучению разных школ нумерологии, практическим исследованиям и работе с людьми. Со временем даже разработала собственную методику - «Нумерологию момента», которая помогает находить ответы на срочные вопросы здесь и сейчас.</p>
+            <p>Клиентов становилось всё больше: почти каждая девушка, заказавшая расчёт себе или ребёнку, возвращалась снова и рекомендовала меня подругам, сёстрам, мамам. Сарафанное радио оказалось сильнее любой рекламы. Я повышала цены, но поток людей продолжал расти. Однажды всего за две недели ко мне записались 100 человек.</p>
+            <p>Я поняла, что могу бесконечно повышать цены, но тогда моя помощь станет доступна не каждой. А если оставить цену 10 000 рублей, запись растянется на годы вперёд и смысл помощи «здесь и сейчас» просто пропадёт. Мне же хотелось помогать и тем, кто может заплатить 100 000, и тем, кому сейчас трудно найти даже 1 000 рублей.</p>
+            <p><strong>Так родилась «Нумерология онлайн»</strong> - сервис, за которым стоят годы моей практики, глубокое изучение нумерологии и собственная авторская методика.</p>
+            <p class="founder-story-important"><strong>ВАЖНО - здесь ваши ответы не придумывает и не пишет искусственный интеллект!</strong> Каждую трактовку я пишу и проверяю вручную, опираясь на свои знания и опыт. Сайт лишь выполняет расчёты и подбирает подготовленные мной тексты. Вы получаете не случайный ответ от нейросети, а настоящую авторскую работу нумеролога. Я работаю над сайтом каждый день, лично наполняя его новыми материалами.</p>
+            <p><strong>Я не популярный блогер.</strong> Я просто люблю своё дело и хочу, чтобы мои знания были доступны каждой женщине - без долгого ожидания и больших расходов.</p>
+            <p class="founder-story-closing">С любовью, Татьяна ♡</p>
           </div>
         </section>
         <p style="text-align:center;margin:20px auto 5px;font-size:13px;opacity:.75"><a style="color:inherit;text-underline-offset:4px" href="./guide/">Справочник по нумерологии</a></p>
