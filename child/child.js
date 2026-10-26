@@ -224,12 +224,24 @@ const renderMatrix = (matrix) => {
     '<radialGradient id="childGemPink" cx="32%" cy="20%" r="87%"><stop stop-color="#fff"/><stop offset=".3" stop-color="#fff5fd"/><stop offset=".73" stop-color="#ffd2eb"/><stop offset="1" stop-color="#e18abc"/></radialGradient>'+
     '<radialGradient id="childGemGold" cx="32%" cy="18%" r="87%"><stop stop-color="#fff"/><stop offset=".3" stop-color="#fffdf2"/><stop offset=".73" stop-color="#ffebb3"/><stop offset="1" stop-color="#dfa852"/></radialGradient>'+
     '<radialGradient id="childGemSmall" cx="30%" cy="20%" r="86%"><stop stop-color="#fff"/><stop offset=".4" stop-color="#fff9ff"/><stop offset=".84" stop-color="#efdcf9"/><stop offset="1" stop-color="#cb9cde"/></radialGradient>'+
+    '<linearGradient id="childCaptionGlassViolet" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff" stop-opacity=".98"/><stop offset=".58" stop-color="#fffbff" stop-opacity=".95"/><stop offset="1" stop-color="#f5eafa" stop-opacity=".92"/></linearGradient>'+
+    '<linearGradient id="childCaptionGlassBlue" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".98"/><stop offset="1" stop-color="#e7f4ff" stop-opacity=".93"/></linearGradient>'+
+    '<linearGradient id="childCaptionGlassPink" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".98"/><stop offset="1" stop-color="#ffeaf5" stop-opacity=".94"/></linearGradient>'+
+    '<linearGradient id="childCaptionGlassGold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fffefa" stop-opacity=".98"/><stop offset="1" stop-color="#fff3df" stop-opacity=".94"/></linearGradient>'+
+    '<radialGradient id="childMatrixCorona"><stop stop-color="#fffad3" stop-opacity=".64"/><stop offset=".45" stop-color="#ffe7b4" stop-opacity=".38"/><stop offset="1" stop-color="#fff6dc" stop-opacity="0"/></radialGradient>'+
+    '<linearGradient id="childRayGold"><stop stop-color="#efb55e"/><stop offset=".5" stop-color="#fff6d7"/><stop offset="1" stop-color="#efb766"/></linearGradient>'+
+    '<linearGradient id="childRayBlue"><stop stop-color="#7ac4ec"/><stop offset=".5" stop-color="#efffff"/><stop offset="1" stop-color="#7cc8ee"/></linearGradient>'+
+    '<linearGradient id="childRayPink"><stop stop-color="#f2a0c8"/><stop offset=".5" stop-color="#fff6fc"/><stop offset="1" stop-color="#eda0cb"/></linearGradient>'+
     '</defs>',
     '<circle class="child-matrix-aura" cx="260" cy="258" r="246" fill="url(#childAura)"/>',
     '<circle class="child-matrix-orbit" cx="260" cy="258" r="212"/>',
     '<circle class="child-matrix-orbit child-matrix-orbit-inner" cx="260" cy="258" r="148"/>',
     '<path class="child-matrix-glow child-matrix-glow-gold" d="M260 20 L500 260 L260 500 L20 260 Z"/>',
     '<path class="child-matrix-glow child-matrix-glow-blue" d="M104 104 H416 V416 H104 Z"/>',
+    '<circle class="child-matrix-corona" cx="260" cy="260" r="138" fill="url(#childMatrixCorona)"/>',
+    '<path class="child-matrix-lightray child-matrix-lightray-gold" d="M260 260 L260 41 M260 260 L260 479"/>',
+    '<path class="child-matrix-lightray child-matrix-lightray-blue" d="M260 260 L104 104 M260 260 L416 416"/>',
+    '<path class="child-matrix-lightray child-matrix-lightray-pink" d="M260 260 L416 104 M260 260 L104 416"/>',
     '<path class="child-matrix-outline" d="M260 20 L500 260 L260 500 L20 260 Z"/>',
     '<path class="child-matrix-outline child-outline-soft" d="M104 104 H416 V416 H104 Z"/>',
     '<path class="child-matrix-outline child-outline-soft" d="M260 20 L416 104 L500 260 L416 416 L260 500 L104 416 L20 260 L104 104 Z"/>',
