@@ -1082,3 +1082,69 @@ body {
 @media(prefers-reduced-motion:reduce){
   .child-matrix-point > circle:first-child{transition:none}
 }
+
+
+/* Fairytale SVG captions v21 - reuse existing art, no image or font downloads */
+#child-matrix-panel .child-matrix-label{
+  cursor:pointer;pointer-events:auto;outline:none;user-select:none;
+}
+#child-matrix-panel .child-matrix-label .child-matrix-label-aura{
+  fill:rgba(230,195,251,.45);stroke:none;pointer-events:none;
+}
+#child-matrix-panel .child-matrix-label-pink .child-matrix-label-aura{
+  fill:rgba(255,192,226,.52);
+}
+#child-matrix-panel .child-matrix-label-blue .child-matrix-label-aura{
+  fill:rgba(167,224,255,.56);
+}
+#child-matrix-panel .child-matrix-label-gold .child-matrix-label-aura{
+  fill:rgba(255,226,167,.60);
+}
+#child-matrix-panel .child-matrix-label rect{
+  fill:rgba(255,252,255,.94);
+  stroke:rgba(255,255,255,.98);stroke-width:1.4;
+  pointer-events:all;
+  filter:drop-shadow(0 2px 3px rgba(125,84,130,.16));
+}
+#child-matrix-panel .child-matrix-label-violet rect{
+  fill:rgba(255,250,255,.95);
+}
+#child-matrix-panel .child-matrix-label-pink rect{
+  fill:rgba(255,249,253,.95);
+}
+#child-matrix-panel .child-matrix-label-blue rect{
+  fill:rgba(249,253,255,.95);
+}
+#child-matrix-panel .child-matrix-label-gold rect{
+  fill:rgba(255,253,246,.96);
+}
+#child-matrix-panel .child-matrix-label .child-matrix-label-medallion{
+  fill:rgba(255,251,255,.98);
+  stroke:#dfbbeb;stroke-width:1.35;
+  pointer-events:none;
+}
+#child-matrix-panel .child-matrix-label-pink .child-matrix-label-medallion{stroke:#f1b1d1;fill:#fff3f9}
+#child-matrix-panel .child-matrix-label-blue .child-matrix-label-medallion{stroke:#aed8f6;fill:#f2fbff}
+#child-matrix-panel .child-matrix-label-gold .child-matrix-label-medallion{stroke:#f1d6a1;fill:#fffaf0}
+#child-matrix-panel .child-matrix-label .child-matrix-label-icon{
+  font-family:"Apple Symbols","Segoe UI Symbol",system-ui,sans-serif;
+  font-weight:500;font-size:21px;
+  fill:#ad73cf;text-anchor:middle;stroke:none;
+  pointer-events:none;
+}
+#child-matrix-panel .child-matrix-label-pink .child-matrix-label-icon{fill:#d76f9f}
+#child-matrix-panel .child-matrix-label-blue .child-matrix-label-icon{fill:#639acb}
+#child-matrix-panel .child-matrix-label-gold .child-matrix-label-icon{fill:#c99943}
+#child-matrix-panel .child-matrix-label .child-matrix-label-copy{
+  fill:#322741;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:11.9px;font-weight:570;letter-spacing:-.08px;
+  text-anchor:middle;pointer-events:none;
+}
+#child-matrix-panel .child-matrix-label.is-selected rect,
+#child-matrix-panel .child-matrix-label:focus-visible rect{
+  stroke:#d8a3d9;stroke-width:2.3;
+}
+#child-matrix-panel .child-matrix-label:focus-visible .child-matrix-label-medallion{stroke:#597bc8;stroke-width:2.3}
+@media(prefers-reduced-motion:reduce){
+  #child-matrix-panel .child-matrix-label{transition:none}
+}
