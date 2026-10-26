@@ -44,6 +44,7 @@ insight.innerHTML = [
 ].join("");
 byId("child-insight-place").append(insight);
 let selectedPoint = null;
+let selectedElements = [];
 let insightRequestId = 0;
 // Load every approved child energy, not just energy 1. Cache by energy number.
 // One reading source: one JSON file per energy, all topics in its sections.
@@ -79,7 +80,8 @@ const showChildParagraphs = (container, paragraphs) => {
 const closeInsight = () => {
   ++insightRequestId;
   insight.hidden = true;
-  if (selectedPoint) selectedPoint.classList.remove("is-selected");
+  selectedElements.forEach((node) => node.classList.remove("is-selected"));
+  selectedElements = [];
   selectedPoint = null;
 };
 insight.querySelector(".child-insight-close").addEventListener("click", closeInsight);
@@ -93,9 +95,14 @@ const openPointReading = async (point, source = null) => {
   const body = byId("child-insight-text");
   byId("child-insight-number").textContent = point.code || String(energy);
   byId("child-insight-title").textContent = point.title;
-  if (selectedPoint) selectedPoint.classList.remove("is-selected");
+  selectedElements.forEach((node) => node.classList.remove("is-selected"));
   selectedPoint = source;
-  if (source) source.classList.add("is-selected");
+  selectedElements = [...new Set([
+    source,
+    ...matrixVisual.querySelectorAll('[data-child-point="' + point.id + '"]'),
+    ...matrixSections.querySelectorAll('[data-child-topic="' + point.id + '"]')
+  ].filter(Boolean))];
+  selectedElements.forEach((node) => node.classList.add("is-selected"));
   insight.hidden = false;
 
   // Karmic tail requires three energies, not one isolated number.
@@ -182,6 +189,7 @@ const renderMatrix = (matrix) => {
   definitions.forEach((definition) => {
     const button = document.createElement("button");
     button.type = "button";
+    button.dataset.childTopic = definition.id;
     button.className = definition.id === "tail" ? "child-topic child-topic-tail" : "child-topic";
     button.setAttribute("aria-label", "Открыть: " + definition.title);
     const symbol = document.createElement("span");
@@ -207,10 +215,21 @@ const renderMatrix = (matrix) => {
 
   const svgPieces = [
     '<svg class="child-matrix-svg" viewBox="0 0 520 520" role="group" aria-label="Нажмите на круг с числом, чтобы прочитать трактовку">',
-    '<defs><linearGradient id="childLineGold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d9a965"/><stop offset=".5" stop-color="#fff0d1"/><stop offset="1" stop-color="#c897d1"/></linearGradient><radialGradient id="childAura"><stop stop-color="#fff4d9" stop-opacity=".85"/><stop offset=".52" stop-color="#f4dafa" stop-opacity=".32"/><stop offset="1" stop-color="#dceeff" stop-opacity="0"/></radialGradient><filter id="childGlow" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="5"/></filter></defs>',
+    '<defs>'+
+    '<linearGradient id="childLineGold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#daaa62"/><stop offset=".43" stop-color="#fff7dc"/><stop offset="1" stop-color="#ca91c1"/></linearGradient>'+
+    '<linearGradient id="childLineBlue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#80ccf7"/><stop offset=".5" stop-color="#d9f4ff"/><stop offset="1" stop-color="#8ebafa"/></linearGradient>'+
+    '<radialGradient id="childAura"><stop stop-color="#fff7cf" stop-opacity=".84"/><stop offset=".5" stop-color="#f4dafa" stop-opacity=".32"/><stop offset="1" stop-color="#dceeff" stop-opacity="0"/></radialGradient>'+
+    '<radialGradient id="childGemViolet" cx="32%" cy="22%" r="82%"><stop stop-color="#fff"/><stop offset=".31" stop-color="#fcf6ff"/><stop offset=".72" stop-color="#eecbff"/><stop offset="1" stop-color="#c998f1"/></radialGradient>'+
+    '<radialGradient id="childGemBlue" cx="32%" cy="20%" r="87%"><stop stop-color="#fff"/><stop offset=".3" stop-color="#f1fcff"/><stop offset=".73" stop-color="#c8efff"/><stop offset="1" stop-color="#7dbcef"/></radialGradient>'+
+    '<radialGradient id="childGemPink" cx="32%" cy="20%" r="87%"><stop stop-color="#fff"/><stop offset=".3" stop-color="#fff5fd"/><stop offset=".73" stop-color="#ffd2eb"/><stop offset="1" stop-color="#e18abc"/></radialGradient>'+
+    '<radialGradient id="childGemGold" cx="32%" cy="18%" r="87%"><stop stop-color="#fff"/><stop offset=".3" stop-color="#fffdf2"/><stop offset=".73" stop-color="#ffebb3"/><stop offset="1" stop-color="#dfa852"/></radialGradient>'+
+    '<radialGradient id="childGemSmall" cx="30%" cy="20%" r="86%"><stop stop-color="#fff"/><stop offset=".4" stop-color="#fff9ff"/><stop offset=".84" stop-color="#efdcf9"/><stop offset="1" stop-color="#cb9cde"/></radialGradient>'+
+    '</defs>',
     '<circle class="child-matrix-aura" cx="260" cy="258" r="246" fill="url(#childAura)"/>',
     '<circle class="child-matrix-orbit" cx="260" cy="258" r="212"/>',
     '<circle class="child-matrix-orbit child-matrix-orbit-inner" cx="260" cy="258" r="148"/>',
+    '<path class="child-matrix-glow child-matrix-glow-gold" d="M260 20 L500 260 L260 500 L20 260 Z"/>',
+    '<path class="child-matrix-glow child-matrix-glow-blue" d="M104 104 H416 V416 H104 Z"/>',
     '<path class="child-matrix-outline" d="M260 20 L500 260 L260 500 L20 260 Z"/>',
     '<path class="child-matrix-outline child-outline-soft" d="M104 104 H416 V416 H104 Z"/>',
     '<path class="child-matrix-outline child-outline-soft" d="M260 20 L416 104 L500 260 L416 416 L260 500 L104 416 L20 260 L104 104 Z"/>',
@@ -222,11 +241,20 @@ const renderMatrix = (matrix) => {
     {id: "tail-detail", title: "Кармический хвост ребёнка", x: 260, y: 431, number: matrix.tail.second,
       code: [matrix.tail.first, matrix.tail.second, matrix.bottom].join(" - ")}
   ];
+  const gemDetails = (point, radius) => [
+    '<circle class="child-gem-rim" cx="' + point.x + '" cy="' + point.y +
+      '" r="' + (radius + 3.5) + '"/>',
+    '<circle class="child-gem-inner" cx="' + point.x + '" cy="' + point.y +
+      '" r="' + (radius - 3.5) + '"/>',
+    '<ellipse class="child-gem-sheen" cx="' + (point.x - radius * .2) +
+      '" cy="' + (point.y - radius * .47) + '" rx="' + (radius * .47) +
+      '" ry="' + (radius * .20) + '"/>'
+  ].join("");
   extraPoints.forEach((point) => {
     svgPieces.push('<g tabindex="0" role="button" data-child-point="' + point.id +
       '" class="child-matrix-extra child-matrix-small-button" aria-label="' + point.title +
       ', энергия ' + point.number + '"><circle cx="' + point.x + '" cy="' + point.y +
-      '" r="17"/><circle class="child-matrix-hit" cx="' + point.x + '" cy="' + point.y +
+      '" r="17"/>' + gemDetails(point, 17) + '<circle class="child-matrix-hit" cx="' + point.x + '" cy="' + point.y +
       '" r="24"/><text x="' + point.x + '" y="' + (point.y + 5) + '">' + point.number + '</text></g>');
   });
   definitions.filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y) && !point.small).forEach((point) => {
@@ -234,29 +262,41 @@ const renderMatrix = (matrix) => {
       '" class="child-matrix-point child-point-' + point.color +
       '" aria-label="' + point.title + ', энергия ' + point.number +
       '"><circle cx="' + point.x + '" cy="' + point.y + '" r="' + (point.id === "innerNature" ? 33 : 25) +
-      '"/><circle class="child-matrix-hit" cx="' + point.x + '" cy="' + point.y +
+      '"/>' + gemDetails(point, point.id === "innerNature" ? 33 : 25) + '<circle class="child-matrix-hit" cx="' + point.x + '" cy="' + point.y +
       '" r="' + (point.id === "innerNature" ? 35 : 30) +
       '"/><text x="' + point.x + '" y="' + (point.y + 6) + '">' + point.number + '</text></g>');
   });
-  // Glass-pill labels are placed in free space; never over the numbers.
+  // Elegant glass capsules: every label opens the same real numeric position.
+  // Positions are tuned for the 520x520 responsive mobile diagram.
   const matrixCaptions = [
-    {x:260,y:91,w:112,label:"✦ Таланты"},
-    {x:104,y:57,w:124,label:"♡ Поддержка"},
-    {x:416,y:57,w:124,label:"✧ Общение"},
-    {x:99,y:219,w:126,label:"Характер"},
-    {x:421,y:219,w:126,label:"Увлечения"},
-    {x:260,y:325,w:142,label:"♡ Внутренний мир"},
-    {x:260,y:204,w:126,label:"✧ Игры и интерес"},
-    {x:350,y:474,w:146,label:"Восстановление"},
-    {x:124,y:391,w:104,label:"♡ Близкие"},
-    {x:396,y:391,w:148,label:"Самостоятельность"},
-    {x:166,y:302,w:114,label:"Обучение"},
-    {x:354,y:302,w:106,label:"Интересы"},
-    {x:365,y:350,w:132,label:"Уроки прошлого"},
-    {x:150,y:442,w:126,label:"Кармический хвост"}
+    {id:"talents",x:260,y:92,w:148,h:39,icon:"✦",lines:["Таланты","и сильные стороны"],tone:"violet"},
+    {id:"parenting",x:104,y:55,w:136,h:37,icon:"♕",lines:["Поддержка","и воспитание"],tone:"gold"},
+    {id:"emotions",x:416,y:55,w:138,h:37,icon:"♡",lines:["Эмоции","и общение"],tone:"blue"},
+    {id:"character",x:99,y:209,w:135,h:34,icon:"✧",lines:["Характер","и темперамент"],tone:"pink"},
+    {id:"activities",x:421,y:209,w:136,h:34,icon:"◎",lines:["Спорт","и увлечения"],tone:"pink"},
+    {id:"games",x:260,y:205,w:149,h:30,icon:"✿",lines:["Игры и интерес"],tone:"gold"},
+    {id:"innerNature",x:260,y:334,w:169,h:35,icon:"♡",lines:["Внутренний мир","и комфорт"],tone:"pink"},
+    {id:"learningHelp",x:152,y:297,w:124,h:29,icon:"▤",lines:["Обучение"],tone:"violet"},
+    {id:"interests",x:369,y:297,w:118,h:29,icon:"✧",lines:["Интересы"],tone:"violet"},
+    {id:"familyFeelings",x:108,y:363,w:136,h:35,icon:"⌂",lines:["Близкие","и семья"],tone:"blue"},
+    {id:"independence",x:411,y:363,w:169,h:35,icon:"◇",lines:["Самостоятельность","и развитие"],tone:"violet"},
+    {id:"tail",x:154,y:450,w:150,h:29,icon:"∞",lines:["Кармический хвост"],tone:"pink"},
+    {id:"recovery",x:382,y:480,w:169,h:35,icon:"✿",lines:["Восстановление","и ресурс"],tone:"gold"}
   ];
-  matrixCaptions.forEach(({x,y,w,label}) => {
-    svgPieces.push('<g class="child-matrix-label" aria-hidden="true" transform="translate(' + (x-w/2) + ' ' + (y-13) + ')"><rect width="' + w + '" height="26" rx="13"/><text x="' + (w/2) + '" y="17">' + label + '</text></g>');
+  matrixCaptions.forEach(({id,x,y,w,h,icon,lines,tone}) => {
+    const left = x - w / 2, top = y - h / 2;
+    const lineY = lines.length === 1 ? h / 2 + 4.7 : h / 2 - 1.4;
+    const textX = w / 2 + 8;
+    const parts = lines.map((line,i) =>
+      '<tspan x="' + textX + '" y="' + (lineY + 12.6 * i) + '">' + line + '</tspan>'
+    ).join("");
+    svgPieces.push('<g tabindex="0" role="button" data-child-point="' + id +
+      '" class="child-matrix-label child-matrix-label-' + tone +
+      '" aria-label="Открыть: ' + lines.join(" ") +
+      '" transform="translate(' + left + ' ' + top + ')">' +
+      '<rect width="' + w + '" height="' + h + '" rx="' + (h / 2) + '"/>' +
+      '<text class="child-matrix-label-icon" x="17" y="' + (h/2+5) + '">' + icon + '</text>' +
+      '<text class="child-matrix-label-copy">' + parts + '</text></g>');
   });
   svgPieces.push("</svg>");
   matrixVisual.innerHTML = svgPieces.join("");
