@@ -241,19 +241,19 @@ const renderMatrix = (matrix) => {
   // Glass-pill labels are placed in free space; never over the numbers.
   const matrixCaptions = [
     {x:260,y:91,w:112,label:"✦ Таланты"},
-    {x:111,y:91,w:124,label:"♡ Поддержка"},
-    {x:409,y:91,w:124,label:"✧ Общение"},
+    {x:104,y:57,w:124,label:"♡ Поддержка"},
+    {x:416,y:57,w:124,label:"✧ Общение"},
     {x:99,y:219,w:126,label:"Характер"},
     {x:421,y:219,w:126,label:"Увлечения"},
     {x:260,y:325,w:142,label:"♡ Внутренний мир"},
     {x:260,y:204,w:126,label:"✧ Игры и интерес"},
-    {x:260,y:454,w:146,label:"Восстановление"},
+    {x:350,y:474,w:146,label:"Восстановление"},
     {x:124,y:391,w:104,label:"♡ Близкие"},
     {x:396,y:391,w:148,label:"Самостоятельность"},
     {x:166,y:302,w:114,label:"Обучение"},
     {x:354,y:302,w:106,label:"Интересы"},
-    {x:260,y:361,w:132,label:"Уроки прошлого"},
-    {x:260,y:417,w:126,label:"Кармический хвост"}
+    {x:365,y:350,w:132,label:"Уроки прошлого"},
+    {x:150,y:442,w:126,label:"Кармический хвост"}
   ];
   matrixCaptions.forEach(({x,y,w,label}) => {
     svgPieces.push('<g class="child-matrix-label" aria-hidden="true" transform="translate(' + (x-w/2) + ' ' + (y-13) + ')"><rect width="' + w + '" height="26" rx="13"/><text x="' + (w/2) + '" y="17">' + label + '</text></g>');
