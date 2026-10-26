@@ -269,43 +269,65 @@ const renderMatrix = (matrix) => {
   // Elegant glass capsules: every label opens the same real numeric position.
   // Positions are tuned for the 520x520 responsive mobile diagram.
   // Lightweight fairytale labels. Their ids stay linked to the original point readings.
+  // Jewel-glass labels. All 13 IDs continue opening their original authored readings.
   const matrixCaptions = [
-    {id:"talents",x:260,y:92,w:152,h:40,icon:"☆",lines:["Таланты","и сильные стороны"],tone:"violet"},
-    {id:"parenting",x:104,y:55,w:138,h:38,icon:"♕",lines:["Поддержка","рода"],tone:"gold"},
-    {id:"emotions",x:416,y:55,w:142,h:38,icon:"♡",lines:["Общение","и окружение"],tone:"blue"},
-    {id:"character",x:99,y:209,w:139,h:36,icon:"♧",lines:["Характер","и темперамент"],tone:"pink"},
-    {id:"activities",x:421,y:209,w:140,h:36,icon:"◎",lines:["Увлечения","и интересы"],tone:"pink"},
-    {id:"games",x:260,y:205,w:149,h:31,icon:"✿",lines:["Игры и интересы"],tone:"gold"},
-    {id:"innerNature",x:260,y:334,w:176,h:38,icon:"♡",lines:["Внутренний мир","и душевный комфорт"],tone:"pink"},
-    {id:"learningHelp",x:152,y:297,w:126,h:31,icon:"▤",lines:["Обучение"],tone:"violet"},
-    {id:"interests",x:369,y:297,w:118,h:31,icon:"✧",lines:["Интересы"],tone:"violet"},
-    {id:"familyFeelings",x:108,y:369,w:138,h:37,icon:"⌂",lines:["Близкие","и семья"],tone:"blue"},
-    {id:"independence",x:411,y:371,w:173,h:38,icon:"◇",lines:["Самостоятельность","и развитие"],tone:"violet"},
-    {id:"tail",x:154,y:450,w:154,h:31,icon:"∞",lines:["Кармический хвост"],tone:"pink"},
-    {id:"recovery",x:382,y:480,w:175,h:38,icon:"✿",lines:["Восстановление","и ресурс"],tone:"gold"}
+    {id:"talents",x:260,y:94,w:156,h:41,icon:"star",lines:["Таланты","и сильные стороны"],tone:"violet"},
+    {id:"parenting",x:104,y:55,w:141,h:39,icon:"crown",lines:["Поддержка","рода"],tone:"gold"},
+    {id:"emotions",x:416,y:55,w:145,h:39,icon:"chat",lines:["Общение","и окружение"],tone:"blue"},
+    {id:"character",x:99,y:209,w:143,h:37,icon:"person",lines:["Характер","и темперамент"],tone:"pink"},
+    {id:"activities",x:421,y:209,w:142,h:37,icon:"target",lines:["Увлечения","и интересы"],tone:"pink"},
+    {id:"games",x:260,y:205,w:150,h:33,icon:"game",lines:["Игры и интересы"],tone:"gold"},
+    {id:"innerNature",x:260,y:333,w:179,h:39,icon:"heart",lines:["Внутренний мир","и душевный комфорт"],tone:"pink"},
+    {id:"learningHelp",x:152,y:297,w:127,h:33,icon:"book",lines:["Обучение"],tone:"violet"},
+    {id:"interests",x:369,y:297,w:121,h:33,icon:"sparkle",lines:["Интересы"],tone:"violet"},
+    {id:"familyFeelings",x:108,y:369,w:141,h:39,icon:"home",lines:["Близкие","и семья"],tone:"blue"},
+    {id:"independence",x:411,y:371,w:176,h:39,icon:"diamond",lines:["Самостоятельность","и развитие"],tone:"violet"},
+    {id:"tail",x:154,y:450,w:159,h:32,icon:"infinity",lines:["Кармический хвост"],tone:"pink"},
+    {id:"recovery",x:382,y:480,w:177,h:39,icon:"leaf",lines:["Восстановление","и ресурс"],tone:"gold"}
   ];
+  // Hand-drawn outline pictograms stay vector-sharp on iPhone and require zero network requests.
+  const captionIcons = {
+    star:'<path d="m12 2.5 2.7 6.8 6.8 2.7-6.8 2.7-2.7 6.8-2.7-6.8-6.8-2.7 6.8-2.7z"/>',
+    crown:'<path d="m2.7 8 4.9 4.4L12 4.8l4.4 7.6L21.3 8l-2 10.5H4.7L2.7 8z"/><path d="M5 21h14"/>',
+    chat:'<path d="M5 5.5h14a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H10l-5.5 3v-3.1A2 2 0 0 1 3 16V7.5a2 2 0 0 1 2-2z"/><path d="M8 11h8"/>',
+    person:'<circle cx="12" cy="8" r="3.25"/><path d="M5.2 20c.2-4.2 2.6-6.5 6.8-6.5s6.6 2.3 6.8 6.5"/>',
+    target:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.1"/>',
+    game:'<rect x="2.5" y="6.5" width="19" height="12" rx="5.1"/><path d="M7.5 10v5m-2.5-2.5h5"/><circle cx="16.6" cy="10.8" r=".65"/><circle cx="18.5" cy="13.2" r=".65"/>',
+    heart:'<path d="M20.4 5.7c-2.5-2.6-6.4-1.7-8.4 1.2-2-2.9-5.9-3.8-8.4-1.2-3 3.1-1.8 6.7.9 9.4L12 21l7.5-5.9c2.7-2.7 3.9-6.3.9-9.4z"/>',
+    book:'<path d="M12 5.8C9.1 3.8 5.5 4 3 4.9v13.4c3-.9 6.2-.5 9 1.5 2.8-2 6-2.4 9-1.5V4.9c-2.5-.9-6.1-1.1-9 .9z"/><path d="M12 5.8v14"/>',
+    sparkle:'<path d="m12 2.8 2.2 7 7 2.2-7 2.2-2.2 7-2.2-7-7-2.2 7-2.2z"/>',
+    home:'<path d="m3 11 9-7 9 7v9H3z"/><path d="M9 20v-6h6v6"/>',
+    diamond:'<path d="m7 4-4.5 6 9.5 11 9.5-11L17 4z"/><path d="M2.5 10h19M7 4l-2 6 7 11 7-11-2-6"/>',
+    infinity:'<path d="M12 12c-2.3-2.6-4.2-5.1-7-4.2-4.8 1.5-2.4 8.5 1.5 8.5 2.6 0 4.3-2.2 5.5-4.3 1.2 2.1 2.9 4.3 5.5 4.3 3.9 0 6.3-7 1.5-8.5-2.8-.9-4.7 1.6-7 4.2z"/>',
+    leaf:'<path d="M20.5 3.5C11 3.1 4 7.1 4 14c0 4.1 2.8 6.4 6.1 6.4 7 0 11-7.5 10.4-16.9z"/><path d="M4 21c3-5.3 7.4-8.4 13-11"/>'
+  };
   matrixCaptions.forEach(({id,x,y,w,h,icon,lines,tone}) => {
-    const left=x-w/2, top=y-h/2;
-    const twoLines=lines.length>1;
-    const lineY=twoLines ? h/2-1.7 : h/2+4.4;
-    const textX=w/2+10;
-    const parts=lines.map((line,i) =>
-      '<tspan x="' + textX + '" y="' + (lineY+12.7*i) + '">' + line + '</tspan>'
+    const left=x-w/2, top=y-h/2, twoLines=lines.length>1;
+    const lineY=twoLines ? h/2-2.1 : h/2+4.4;
+    const textX=w/2+11, badgeX=20, badgeY=twoLines ? 0 : h/2;
+    const spans=lines.map((line,i)=>
+      '<tspan x="' + textX + '" y="' + (lineY+12.8*i) + '">' + line + '</tspan>'
     ).join("");
-    const medallionY=twoLines ? 2 : h/2;
     svgPieces.push(
       '<g tabindex="0" role="button" data-child-point="' + id +
       '" class="child-matrix-label child-matrix-label-' + tone +
       '" aria-label="Открыть: ' + lines.join(" ") +
       '" transform="translate(' + left + ' ' + top + ')">' +
-        '<ellipse class="child-matrix-label-aura" cx="' + (w/2) +
-          '" cy="' + (h/2) + '" rx="' + (w/2+4) + '" ry="' + (h/2+4) + '"/>' +
-        '<rect width="' + w + '" height="' + h + '" rx="' + (h/2) + '"/>' +
-        '<circle class="child-matrix-label-medallion" cx="20" cy="' +
-          medallionY + '" r="15"/>' +
-        '<text class="child-matrix-label-icon" x="20" y="' +
-          (medallionY+5.6) + '">' + icon + '</text>' +
-        '<text class="child-matrix-label-copy">' + parts + '</text></g>'
+      '<ellipse class="child-caption-halo" cx="' + w/2 + '" cy="' + h/2 +
+      '" rx="' + (w/2+3) + '" ry="' + (h/2+4) + '"/>' +
+      '<rect class="child-caption-glass" width="' + w + '" height="' + h +
+      '" rx="' + h/2 + '"/>' +
+      '<rect class="child-caption-highlight" x="1.7" y="1.5" width="' + (w-3.4) +
+      '" height="' + (h-3) + '" rx="' + (h-3)/2 + '"/>' +
+      '<circle class="child-caption-medallion-halo" cx="' + badgeX +
+      '" cy="' + badgeY + '" r="15.8"/>' +
+      '<circle class="child-caption-medallion" cx="' + badgeX +
+      '" cy="' + badgeY + '" r="12.9"/>' +
+      '<svg class="child-caption-symbol" x="' + (badgeX-10.5) +
+      '" y="' + (badgeY-10.5) +
+      '" width="21" height="21" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+      captionIcons[icon] + '</svg>' +
+      '<text class="child-matrix-label-copy">' + spans + '</text></g>'
     );
   });
   svgPieces.push("</svg>");
