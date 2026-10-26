@@ -789,3 +789,57 @@ body {
   pointer-events: none;
   user-select: none;
 }
+
+/* Child matrix: luminous editorial design, crisp glass captions and tactile points */
+.child-visual {
+  position: relative;
+  max-width: 680px;
+  padding: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(220,190,216,.56);
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse at 52% 45%, rgba(255,241,216,.74), transparent 52%),
+    radial-gradient(ellipse at 4% 10%, rgba(252,214,234,.56), transparent 53%),
+    radial-gradient(ellipse at 96% 89%, rgba(197,226,255,.63), transparent 56%),
+    linear-gradient(135deg,#fffafd 0%,#fdf8ff 49%,#f1f8ff 100%);
+  box-shadow: 0 16px 46px rgba(114,78,119,.12), inset 0 1px 0 #fff;
+}
+.child-visual::before {
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.43;
+  background-image:radial-gradient(#fff 1.2px,transparent 1.6px);
+  background-size:29px 31px;
+}
+.child-matrix-svg {position:relative; overflow:visible; filter:drop-shadow(0 3px 6px rgba(135,99,143,.06));}
+.child-matrix-orbit {fill:none;stroke:#fff;stroke-width:1;stroke-dasharray:2 8;opacity:.86;}
+.child-matrix-orbit-inner {stroke:#cbb5df;opacity:.5;}
+.child-matrix-outline {stroke:url(#childLineGold);stroke-width:2.3;opacity:.88;}
+.child-outline-soft {stroke:#b7d3e7;stroke-width:1.7;opacity:.86;}
+.child-matrix-line {stroke:#c4bddb;stroke-width:1.6;opacity:.86;}
+.child-line-pink {stroke:#e4afc8;stroke-width:2.2;}
+.child-matrix-point > circle:first-child {
+  fill:#fbf7ff;stroke:#b69bdc;stroke-width:2.6;
+  filter:drop-shadow(0 3px 5px rgba(122,80,152,.22));
+  transition:fill .2s,stroke .2s,filter .2s,transform .2s;
+  transform-box:fill-box;transform-origin:center;
+}
+.child-point-center > circle:first-child {fill:#fff9ed;stroke:#d5aa68;stroke-width:3.8;filter:drop-shadow(0 0 10px rgba(237,187,102,.6));}
+.child-point-blue > circle:first-child {fill:#f2fbff;stroke:#77bde4;}
+.child-point-pink > circle:first-child {fill:#fff0f8;stroke:#d991b9;}
+.child-point-gold > circle:first-child {fill:#fff8e8;stroke:#d6aa64;}
+.child-matrix-extra > circle:first-child {fill:#fffafc;stroke:#d7b9d6;stroke-width:2;filter:drop-shadow(0 2px 4px rgba(143,104,150,.12));}
+.child-matrix-point:hover > circle:first-child,
+.child-matrix-point.is-selected > circle:first-child,
+.child-matrix-extra:hover > circle:first-child,
+.child-matrix-extra.is-selected > circle:first-child {
+  fill:#fff;stroke:#bd72cf;stroke-width:4;
+  filter:drop-shadow(0 0 12px rgba(197,115,220,.66));
+  transform:scale(1.10);
+}
+.child-matrix-label {pointer-events:none;user-select:none;}
+.child-matrix-label rect {fill:rgba(255,255,255,.88);stroke:rgba(233,215,236,.95);stroke-width:1;filter:drop-shadow(0 2px 5px rgba(103,72,124,.10));}
+.child-matrix-label text {font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:10.6px;font-weight:700;fill:#755c7f;text-anchor:middle;letter-spacing:.04px;}
+.child-matrix-caption {display:none;}
+@media (prefers-reduced-motion: reduce) {
+ .child-matrix-point > circle:first-child {transition:none;}
+}
