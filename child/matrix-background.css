@@ -1,0 +1,9 @@
+/* Magical child matrix artwork: independently cached background layer. */
+.child-visual {
+  background-image: url("./matrix-background.svg?v=1"), url("./matrix-magic.svg"), linear-gradient(135deg, #fff8fb, #f7f2ff 55%, #eaf5ff);
+  background-size: cover, cover, cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+.child-visual::before { opacity: .12; }
+.child-visual::after { opacity: .32; }
