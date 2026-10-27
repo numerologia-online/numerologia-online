@@ -146,15 +146,20 @@ test("Child PDF is warmed and cached after calculation just like the annual repo
 });
 
 
-test("The cover, contents, chapters and closing text flow without forced blank pages",async()=>{
+test("The standalone cover starts the PDF, then the contents and chapters flow naturally",async()=>{
   const report=await collectChildPdf(born,definitions,async()=>energyBank(),tail);
   const document=childPdfDefinition(report);
   assert.ok(document.content[0].stack.some(part=>
     typeof part.svg==="string" && part.svg.includes("Georgia") && part.svg.includes("Всё о ребёнке")
   ),"Cover uses expressive vector serif heading");
   assert.equal(document.content[1].text,"Содержание","Contents follow the cover immediately");
-  assert.equal(document.content.filter(item=>item.pageBreak).length,0,
-    "Do not force new pages after cover, after contents, or before closing");
+  assert.equal(document.content.filter(item=>item.pageBreak).length,1,
+    "Only the cover may force a new page; chapters must keep flowing");
+  assert.equal(document.content[0].pageBreak,"after",
+    "The cover must occupy page one by itself");
+  assert.ok(document.content[0].unbreakable,"Cover lettering stays together");
+  assert.ok(document.styles.paragraph.fontSize>=20,"Body text must be legible without zooming");
+  assert.ok(document.styles.coverSubtitle.fontSize>=24,"Cover subtitles must be prominent");
   assert.equal(document.content.filter(item=>item.stack?.[0]?.style==="chapterKicker").length,22);
   assert.ok(document.content.filter(item=>item.stack?.[0]?.style==="chapterKicker")
     .every(item=>item.unbreakable===true),"Chapter labels and titles must stay together");
