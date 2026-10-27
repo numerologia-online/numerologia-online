@@ -459,14 +459,14 @@ const renderMatrix = (matrix) => {
       '<text class="child-matrix-label-copy">' + spans + '</text></g>'
     );
   });
-  // Oversized, high-contrast pointer ends just above the character point
-  // (41,260), so the first number stays fully visible and clickable.
+  // A large yet graceful curve in the quiet left margin leads to the
+  // character gem (41,260), leaving the labels and clickable number clear.
   svgPieces.push(
     '<g class="child-start-arrow" aria-hidden="true" pointer-events="none">' +
-    '<path class="child-start-arrow-border" d="M102 9 C48 8 9 45 9 111 C9 168 8 200 35 228" />' +
-    '<path class="child-start-arrow-border" d="M6 207 L35 228 L46 191" />' +
-    '<path class="child-start-arrow-line" d="M102 9 C48 8 9 45 9 111 C9 168 8 200 35 228" />' +
-    '<path class="child-start-arrow-line" d="M6 207 L35 228 L46 191" />' +
+    '<path class="child-start-arrow-border" d="M75 127 C35 141 16 164 17 194 C18 213 25 224 35 232" />' +
+    '<path class="child-start-arrow-border" d="M20 221 Q29 230 35 232 Q39 221 45 211" />' +
+    '<path class="child-start-arrow-line" d="M75 127 C35 141 16 164 17 194 C18 213 25 224 35 232" />' +
+    '<path class="child-start-arrow-line" d="M20 221 Q29 230 35 232 Q39 221 45 211" />' +
     '</g>'
   );
   svgPieces.push("</svg>");
