@@ -465,9 +465,7 @@ const renderMatrix = (matrix) => {
       }
     });
   });
-  // Open the first helpful reading inside the page, not over the screen.
-  const firstButton = matrixSections.querySelector('.child-topic');
-  openPointReading(definitions[0], firstButton);
+  // Show the complete topic list first; readings open only on explicit selection.
 };
 
 // One energy-bank request per calculation; stale date requests can never overwrite a newer day.
