@@ -3,6 +3,7 @@
   "category": "child-matrix-karmic-tail",
   "expectedPrograms": 26,
   "available": {
-    "3-7-22": "3-7-22.json"
+    "3-7-22": "3-7-22.json",
+    "3-13-10": "3-13-10.json"
   }
 }
