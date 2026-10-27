@@ -275,26 +275,29 @@ const childGuide = byId("child-matrix-guide");
 const updateChildGuide = () => {
   if (childGuide.hidden || matrixVisual.classList.contains("has-started")) return;
   const panel = byId("child-matrix-panel");
-  const heading = panel.querySelector(".child-matrix-start-heading h3");
+  const callout = panel.querySelector(".child-matrix-start-heading");
   const matrixSvg = matrixVisual.querySelector(".child-matrix-svg");
-  if (!heading || !matrixSvg || panel.hidden) return;
+  if (!callout || !matrixSvg || panel.hidden) return;
   const outer = panel.getBoundingClientRect();
-  const headingRect = heading.getBoundingClientRect();
+  const cardRect = callout.getBoundingClientRect();
   const diagram = matrixSvg.getBoundingClientRect();
-  if (!outer.width || !diagram.width || !headingRect.width) return;
-  const x0 = Math.max(22, Math.min(outer.width - 25, headingRect.left - outer.left - 7));
-  const y0 = headingRect.bottom - outer.top - 4;
-  // The number is at (41,260) in the existing 520x520 matrix SVG.
-  // Stop by its upper-left rim rather than obscuring its numeral.
-  const x1 = diagram.left - outer.left + diagram.width * (41 / 520) - 19;
+  if (!outer.width || !diagram.width || !cardRect.width) return;
+  // Begin BELOW the card's lower-left border, never over its lettering.
+  const x0 = cardRect.left - outer.left + Math.min(42, cardRect.width * .11);
+  const y0 = cardRect.bottom - outer.top + 11;
+  // The first (character) number is at 41,260 in the 520x520 SVG.
+  // End at its upper-left rim without obscuring the number or its label.
+  const x1 = diagram.left - outer.left + diagram.width * (41 / 520) - 18;
   const y1 = diagram.top - outer.top + diagram.height * (260 / 520) - 20;
-  if (y1 <= y0 + 20) return;
-  const c1x = Math.max(9, x0 - 51), c1y = y0 + 30;
-  const c2x = Math.max(8, x1 - 53), c2y = y1 - Math.min(100, (y1 - y0) * .34);
+  if (y1 <= y0 + 30) return;
+  // Bow gently into the empty left margin; avoid a vertical thick line.
+  const length = y1 - y0;
+  const c1x = Math.max(10, x0 - 41), c1y = y0 + Math.min(80, length * .39);
+  const c2x = Math.max(8, x1 - 30), c2y = y1 - Math.min(75, length * .38);
   const angle = Math.atan2(y1 - c2y, x1 - c2x);
   const wing = (direction) => {
-    const a = angle + direction * .56;
-    return [x1 - 17 * Math.cos(a), y1 - 17 * Math.sin(a)];
+    const a = angle + direction * .58;
+    return [x1 - 14 * Math.cos(a), y1 - 14 * Math.sin(a)];
   };
   const [leftX,leftY] = wing(-1), [rightX,rightY] = wing(1);
   const path = [
