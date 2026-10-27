@@ -120,3 +120,27 @@ test("Two real birthdays generate complete 22-chapter reports without draft plac
     assert.doesNotMatch(JSON.stringify(pdf.content),/Этот раздел пока не готов|В РАБОТЕ/);
   }
 });
+
+
+test("Child PDFs use the premium year-report styling and readable text",async()=>{
+  const report=await collectChildPdf(born,definitions,async()=>energyBank(),tail);
+  const document=childPdfDefinition(report);
+  const paper=document.background();
+  assert.ok(paper.svg.includes('radialGradient'));
+  assert.ok(paper.svg.includes('x="19" y="19"'));
+  assert.ok(paper.svg.includes('x="27" y="27"'));
+  assert.ok(document.styles.coverTitle.fontSize>=40);
+  assert.ok(document.styles.chapterTitle.fontSize>=26);
+  assert.ok(document.styles.paragraph.fontSize>=17);
+  assert.ok(document.content[0].stack.some(part=>typeof part.svg==="string"),"Premium vector title motif is on the cover");
+  assert.equal(document.content.filter(part=>part.columns?.length===2).length,22);
+});
+
+test("Child PDF is warmed and cached after calculation just like the annual report",async()=>{
+  const client=await source("child/child.js");
+  assert.match(client,/warmChildPdf\(\)/);
+  assert.match(client,/preparedChildPdf\?\.key===key/);
+  assert.match(client,/preloadChildPdfEngine\(\)/);
+  assert.match(client,/invalidateChildPdf\(\)/);
+  assert.match(client,/link\.target="_blank"/);
+});
