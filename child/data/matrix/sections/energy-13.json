@@ -1,6 +1,6 @@
 {
   "id": 13,
-  "status": "draft",
+  "status": "ready",
   "schema": "child-matrix-energy-v1",
   "description": "Детская матрица. Полный персональный разбор из 19 разделов.",
   "sections": {

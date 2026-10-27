@@ -1,6 +1,6 @@
 {
   "id": 2,
-  "status": "draft",
+  "status": "ready",
   "schema": "child-matrix-energy-v1",
   "description": "Детская матрица: авторские трактовки второй энергии по 19 разделам",
   "sections": {

@@ -1,6 +1,6 @@
 {
   "id": 10,
-  "status": "draft",
+  "status": "ready",
   "schema": "child-matrix-energy-v1",
   "description": "Детская матрица. 10 энергия, Колесо Фортуны.",
   "sections": {

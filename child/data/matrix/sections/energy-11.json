@@ -1,6 +1,6 @@
 {
   "id": 11,
-  "status": "draft",
+  "status": "ready",
   "schema": "child-matrix-energy-v1",
   "description": "Детская матрица. 11 энергия, Сила.",
   "sections": {

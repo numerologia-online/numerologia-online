@@ -1,6 +1,6 @@
 {
   "id": 12,
-  "status": "draft",
+  "status": "ready",
   "schema": "child-matrix-energy-v1",
   "description": "Детская матрица. 12 энергия, Повешенный.",
   "sections": {
