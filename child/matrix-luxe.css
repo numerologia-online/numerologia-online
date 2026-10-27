@@ -268,19 +268,18 @@
   color:#82235e;
   font-weight:850;
 }
-/* Oversized hand-drawn pointer running down the left edge to the exact
-   character gem (41,260). It never covers the hit target or catches taps. */
+/* The introduction stays bright, while the pointer is a graceful
+   sweeping accent that remains visible without overpowering the diagram. */
 #child-matrix-panel .child-start-arrow{
   fill:none;pointer-events:none;
   stroke-linecap:round;stroke-linejoin:round;
 }
 #child-matrix-panel .child-start-arrow-border{
-  stroke:#fffdfb;stroke-width:13;
-  filter:drop-shadow(0 3px 3px rgba(97,31,83,.18));
+  stroke:rgba(255,253,250,.97);stroke-width:8.5;
+  filter:drop-shadow(0 2px 2px rgba(90,37,75,.11));
 }
 #child-matrix-panel .child-start-arrow-line{
-  stroke:#bd257b;stroke-width:7;
-  filter:drop-shadow(0 1px 1px rgba(115,37,83,.22));
+  stroke:#b53a85;stroke-width:4.5;
 }
 #child-matrix-panel .child-visual.has-started .child-start-arrow{display:none}
 #child-matrix-panel .child-visual:not(.has-started) .child-matrix-point[data-child-point="character"] .child-gem-rainbow-rim{
