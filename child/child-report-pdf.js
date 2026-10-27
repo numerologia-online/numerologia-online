@@ -48,89 +48,145 @@ export async function collectChildPdf(birth, definitions, loadEnergy, loadTail) 
   return {birthday, chapters, topics, missing, total:definitions.length, ready:chapters.length===definitions.length};
 }
 
+// Minimal vector stationery: cream paper, paired gold borders, tiny brand motif.
+// No photos, fonts, or raster backgrounds are embedded on individual pages.
+const childPaperSvg = String.raw`<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842">
+  <defs>
+    <radialGradient id="childPaper" cx="43%" cy="19%" r="92%">
+      <stop offset="0%" stop-color="#FFFEFA"/>
+      <stop offset="70%" stop-color="#FCFAF5"/>
+      <stop offset="100%" stop-color="#F8F2E9"/>
+    </radialGradient>
+  </defs>
+  <rect width="595" height="842" fill="url(#childPaper)"/>
+  <rect x="19" y="19" width="557" height="804" rx="8" fill="none" stroke="#C5A15D" stroke-width=".78"/>
+  <rect x="27" y="27" width="541" height="788" rx="6" fill="none" stroke="#E4D7BB" stroke-width=".32"/>
+  <g fill="none" stroke="#C5A15D" stroke-width=".7" opacity=".37">
+    <path d="M35 50H128 M467 50H560 M35 792H128 M467 792H560"/>
+    <path d="M46 73Q48 48 76 44 M549 73Q546 48 519 44"/>
+    <path d="M46 769Q48 793 76 798 M549 769Q546 793 519 798"/>
+    <circle cx="75" cy="117" r="27" opacity=".17"/>
+    <circle cx="75" cy="117" r="39" opacity=".11" stroke-dasharray="3 6"/>
+  </g>
+  <g fill="#BA9A61" opacity=".42">
+    <circle cx="297.5" cy="34" r="1.8"/>
+    <circle cx="289" cy="34" r=".9"/>
+    <circle cx="306" cy="34" r=".9"/>
+    <circle cx="297.5" cy="808" r="1.8"/>
+  </g>
+  <g fill="#B89B6A" font-family="Arial,sans-serif" text-anchor="middle" opacity=".19">
+    <text x="297.5" y="808" font-size="10" letter-spacing="5">9 · 9 · 6 · 6</text>
+  </g>
+</svg>`;
+
+const childCoverOrnament = String.raw`<svg xmlns="http://www.w3.org/2000/svg" width="104" height="74" viewBox="0 0 104 74">
+  <g fill="none" stroke="#BC9A62">
+    <circle cx="52" cy="37" r="31" stroke-width=".85" opacity=".63"/>
+    <circle cx="52" cy="37" r="25" stroke-width=".45" stroke-dasharray="2 5" opacity=".65"/>
+    <path d="M52 12 L58 37 L52 62 L46 37Z" stroke-width=".7"/>
+    <path d="M27 37 H77 M52 7 V17 M52 57 V67" stroke-width=".55"/>
+  </g>
+  <g fill="#BA9561">
+    <circle cx="52" cy="37" r="3.5"/>
+    <circle cx="52" cy="4" r="1.5"/>
+    <circle cx="20" cy="37" r="1.5"/>
+    <circle cx="84" cy="37" r="1.5"/>
+  </g>
+</svg>`;
+
 export function childPdfDefinition(report, {preview=false}={}) {
   const draft = Boolean(preview && report && !report.ready);
   if (!report?.ready && !draft) throw new Error("Полный PDF пока не готов: не все главы доступны.");
   if (draft && !report.topics?.length) throw new Error("Нет данных для предварительного PDF.");
-  const ink="#343041",forest="#294E42",gold="#B79B70",soft="#976E8D";
-  const textBlocks=lines=>lines.map(t=>({text:t,style:"paragraph"}));
+  const ink="#304052",forest="#24473D",gold="#AA854D",soft="#976E8D",muted="#65717C";
+  const paragraphsOfChapter = lines => lines.map(line => ({text:line,style:"paragraph"}));
   const byId=new Map(report.chapters.map(chapter=>[chapter.id,chapter]));
   const displayedChapters=draft ? report.topics.map(topic=>byId.get(topic.id) || {
     id:topic.id,title:topic.title,subtitle:"В РАБОТЕ",lead:"",
     paragraphs:["Этот раздел пока не готов. Его авторская трактовка появится в окончательном разборе."],
     parts:[],pending:true
   }) : report.chapters;
-  const allChapters=displayedChapters.flatMap((chapter,i)=>[
+  const chapterContents=displayedChapters.flatMap((chapter,index)=>[
     {stack:[
-      {text:"ГЛАВА "+String(i+1).padStart(2,"0"),style:"chapterKicker"},
+      {text:"ГЛАВА "+String(index+1).padStart(2,"0"),style:"chapterKicker"},
       {text:chapter.title,style:"chapterTitle"},
-      ...(chapter.subtitle?[{text:chapter.subtitle,style:"chapterSubtitle"}]:[])
-    ],margin:[0,i===0?9:22,0,12]},
+      ...(chapter.subtitle?[{text:chapter.subtitle,style:"chapterSubtitle"}]:[]),
+      {canvas:[{type:"line",x1:0,y1:0,x2:445,y2:0,lineWidth:.65,lineColor:"#D6BF92"}],
+       margin:[0,7,0,4]}
+    ],margin:[0,index===0?13:28,0,12]},
     ...(chapter.lead?[{text:chapter.lead,style:"chapterLead"}]:[]),
-    ...textBlocks(chapter.paragraphs),
+    ...paragraphsOfChapter(chapter.paragraphs),
     ...chapter.parts.flatMap(part=>[
       {text:part.title,style:"partTitle"},
-      ...textBlocks(part.paragraphs)
+      ...paragraphsOfChapter(part.paragraphs)
     ])
   ]);
+  const tocItems=displayedChapters.map((chapter,index)=>({
+    columns:[
+      {text:String(index+1).padStart(2,"0"),width:39,color:gold,bold:true,fontSize:12.5},
+      {text:chapter.title+(chapter.pending?"  · В РАБОТЕ":""),color:ink,fontSize:14.5}
+    ],
+    columnGap:4,margin:[0,0,0,9]
+  }));
   return {
-    pageSize:"A4",pageMargins:[57,68,57,66],
-    info:{title:(draft ? "ЧЕРНОВИК - " : "")+"Всё о ребёнке - "+report.birthday,author:"Нумерология Онлайн"},
-    background:()=>({canvas:[
-      {type:"rect",x:0,y:0,w:595,h:842,color:"#FFFCF7",lineColor:"#FFFCF7",lineWidth:0},
-      {type:"rect",x:21,y:21,w:553,h:800,lineWidth:.6,lineColor:"#D0B994"}
-    ]}),
-    watermark:{text:draft ? "ЧЕРНОВИК" : "9966",opacity:draft ? .09 : .045,color:"#DCC7BA",angle:0,fontSize:draft ? 54 : 75},
-    defaultStyle:{font:"Roboto",fontSize:11.4,color:ink,lineHeight:1.38},
+    pageSize:"A4",
+    pageMargins:[62,80,62,73],
+    info:{title:(draft?"ЧЕРНОВИК - ":"")+"Всё о ребёнке - "+report.birthday,author:"Нумерология Онлайн"},
+    background:()=>({svg:childPaperSvg}),
+    watermark:{text:draft?"ЧЕРНОВИК":"9966",opacity:draft?.08:.027,color:"#D7C8B0",angle:0,fontSize:draft?54:65},
+    defaultStyle:{font:"Roboto",fontSize:17.2,color:ink,lineHeight:1.34},
     styles:{
-      coverBrand:{fontSize:11,bold:true,color:gold,characterSpacing:2,alignment:"center",margin:[0,0,0,28]},
-      coverTitle:{fontSize:38,bold:true,color:forest,alignment:"center",margin:[0,0,0,18]},
-      coverSubtitle:{fontSize:15.5,color:soft,alignment:"center",lineHeight:1.25,margin:[0,0,0,30]},
-      coverDate:{fontSize:15,bold:true,color:forest,alignment:"center"},
-      coverNote:{fontSize:11,italics:true,color:"#64606C",alignment:"center",margin:[0,24,0,0]},
-      draftWarning:{fontSize:13,bold:true,color:"#9A336F",alignment:"center",lineHeight:1.3,margin:[0,23,0,0]},
-      toc:{fontSize:28,bold:true,color:forest,margin:[0,0,0,18]},
-      tocItem:{fontSize:12.3,color:ink,margin:[0,0,0,9]},
-      chapterKicker:{fontSize:10,bold:true,color:gold,characterSpacing:1.6,margin:[0,0,0,7]},
-      chapterTitle:{fontSize:21,bold:true,color:forest,margin:[0,0,0,8]},
-      chapterSubtitle:{fontSize:12.5,color:soft,margin:[0,0,0,10]},
-      chapterLead:{fontSize:11.7,italics:true,color:soft,margin:[0,0,0,13]},
-      partTitle:{fontSize:14,bold:true,color:soft,margin:[0,17,0,8]},
-      paragraph:{fontSize:11.4,color:ink,lineHeight:1.4,margin:[0,0,0,12]},
-      endTitle:{fontSize:22,bold:true,color:forest,alignment:"center",margin:[0,0,0,26]}
+      coverBrand:{fontSize:13.3,bold:true,color:gold,characterSpacing:2.4,alignment:"center",margin:[0,0,0,25]},
+      coverTitle:{fontSize:43,bold:true,color:forest,alignment:"center",lineHeight:1.07,margin:[0,0,0,17]},
+      coverSubtitle:{fontSize:20,color:soft,alignment:"center",lineHeight:1.25,margin:[0,0,0,28]},
+      coverDate:{fontSize:18.5,bold:true,color:forest,alignment:"center",margin:[0,0,0,14]},
+      coverNote:{fontSize:13.3,italics:true,color:muted,alignment:"center",margin:[6,0,6,0]},
+      coverFoot:{fontSize:11,bold:true,color:gold,characterSpacing:1.35,alignment:"center",margin:[0,0,0,0]},
+      draftWarning:{fontSize:13,bold:true,color:"#9A336F",alignment:"center",lineHeight:1.3,margin:[0,22,0,0]},
+      tocTitle:{fontSize:32,bold:true,color:forest,margin:[0,0,0,14]},
+      tocIntro:{fontSize:14.8,color:soft,lineHeight:1.34,margin:[0,0,0,24]},
+      chapterKicker:{fontSize:12.5,bold:true,color:gold,characterSpacing:1.7,margin:[0,0,0,10]},
+      chapterTitle:{fontSize:27,bold:true,color:forest,lineHeight:1.12,margin:[0,0,0,8]},
+      chapterSubtitle:{fontSize:16,color:soft,margin:[0,0,0,7]},
+      chapterLead:{fontSize:17,italics:true,color:soft,lineHeight:1.35,margin:[0,0,0,17]},
+      partTitle:{fontSize:21,bold:true,color:soft,lineHeight:1.17,margin:[0,22,0,12]},
+      paragraph:{fontSize:17.2,color:ink,lineHeight:1.35,margin:[0,0,0,16]},
+      endTitle:{fontSize:28,bold:true,color:forest,alignment:"center",lineHeight:1.14,margin:[0,0,0,25]}
     },
     content:[
       {stack:[
+        {svg:childCoverOrnament,width:104,height:74,alignment:"center",margin:[0,0,0,26]},
         {text:"НУМЕРОЛОГИЯ ОНЛАЙН",style:"coverBrand"},
         {text:"Всё о ребёнке",style:"coverTitle"},
         {text:"Характер, таланты, воспитание,\nчувства и жизненные задачи",style:"coverSubtitle"},
         {text:"Дата рождения: "+report.birthday,style:"coverDate"},
         {text:"Персональный путеводитель по миру вашего ребёнка",style:"coverNote"},
-        ...(draft ? [{text:"ЧЕРНОВИК ДЛЯ ПРОВЕРКИ ОФОРМЛЕНИЯ\nНе отправлять клиентам как полный разбор.",style:"draftWarning"}] : [])
-      ],margin:[0,155,0,0],pageBreak:"after"},
-      {text:"Содержание",style:"toc"},
-      {text:draft ? ("Готово "+report.chapters.length+" из "+report.total+" глав. Остальные главы отмечены как находящиеся в работе.") : (report.chapters.length+" главы о вашем ребёнке"),margin:[0,0,0,18],color:soft},
-      ...displayedChapters.map((chapter,index)=>({
-        text:String(index+1).padStart(2,"0")+"   "+chapter.title+(chapter.pending ? "  · В РАБОТЕ" : ""),style:"tocItem"
-      })),
+        ...(draft?[{text:"ЧЕРНОВИК ДЛЯ ПРОВЕРКИ ОФОРМЛЕНИЯ\nНе отправлять клиентам как полный разбор.",style:"draftWarning"}]:[])
+      ],margin:[0,82,0,0],pageBreak:"after"},
+      {text:"Содержание",style:"tocTitle"},
+      {text:draft
+        ? "Готово "+report.chapters.length+" из "+report.total+" глав. Остальные главы отмечены как находящиеся в работе."
+        : report.chapters.length+" главы о вашем ребёнке. Возвращайтесь к нужным разделам в любое время.",
+        style:"tocIntro"},
+      ...tocItems,
       {text:"",pageBreak:"after"},
-      ...allChapters,
+      ...chapterContents,
       {stack:[
         {text:"НУМЕРОЛОГИЯ ОНЛАЙН",style:"coverBrand"},
         {text:"Ваш ребёнок - целый мир, который стоит узнавать",style:"endTitle"},
         {text:"Возвращайтесь к этому разбору по мере взросления ребёнка. Пусть он помогает замечать сильные стороны, понимать потребности и сохранять доверие в семье.",style:"paragraph"},
-        {text:"С любовью, Татьяна ♡",color:soft,italics:true,margin:[0,25,0,22]},
+        {text:"С любовью, Татьяна",color:soft,italics:true,fontSize:18,margin:[0,27,0,25]},
         {text:"Наш сайт",style:"partTitle"},
         {text:"numerologia-online.github.io/numerologia-online/",color:forest,
-          link:"https://numerologia-online.github.io/numerologia-online/",margin:[0,0,0,15]},
-        {text:"Техподдержка: @Kod_9966",color:forest,link:"https://t.me/Kod_9966"}
-      ],pageBreak:"before",margin:[0,50,0,0]}
+         fontSize:14.5,link:"https://numerologia-online.github.io/numerologia-online/",margin:[0,0,0,18]},
+        {text:"Техподдержка: @Kod_9966",fontSize:14.5,color:forest,link:"https://t.me/Kod_9966"}
+      ],pageBreak:"before",margin:[0,72,0,0]}
     ],
-    footer:(n,total)=>n===1?null:{
+    footer:(page,total)=>page===1?null:{
       columns:[
-        {text:"НУМЕРОЛОГИЯ ОНЛАЙН",fontSize:8,color:gold},
-        {text:n+" / "+total,alignment:"right",fontSize:8,color:gold}
-      ],margin:[57,20,57,0]
+        {text:"НУМЕРОЛОГИЯ ОНЛАЙН",fontSize:9.2,color:gold},
+        {text:page+" / "+total,alignment:"right",fontSize:9.2,color:gold}
+      ],margin:[62,23,62,0]
     }
   };
 }
