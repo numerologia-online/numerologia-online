@@ -54,7 +54,7 @@ const getEnergyBank = (energy) => {
   if (!Number.isInteger(number) || number < 1 || number > 22) return Promise.resolve(null);
   if (!energyBankRequests.has(number)) {
     energyBankRequests.set(number,
-      fetch(`./data/matrix/sections/energy-${number}.json?v=11`)
+      fetch(`./data/matrix/sections/energy-${number}.json?v=12`)
         .then((response) => {
           if (!response.ok) throw new Error("Детская энергия не загрузилась");
           return response.json();
