@@ -208,6 +208,9 @@ function getPdfMake() {
     .catch(error=>{pdfMakeLoading=null;throw error;});
   return pdfMakeLoading;
 }
+// As in the annual report, load PDFMake while the reader is viewing the result.
+export const preloadChildPdfEngine = () => getPdfMake();
+
 export async function buildChildPdfBlob(report, options={}) {
   const pdfMake=await getPdfMake();
   if (!pdfMake?.createPdf) throw new Error("PDF-модуль не загрузился.");
