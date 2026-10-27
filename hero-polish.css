@@ -104,87 +104,97 @@
 }
 
 
-/* Compact founder introduction: portrait separate from all headings.
-   The original photograph remains unchanged in the full founder story. */
+/* Tatyana's real supplied photo on the RIGHT; no lettering obscures the face. */
 .hero.hero-founder{
-  display:block;
-  min-height:0;
-  margin:5px -8px 16px;
-  padding:15px 17px 18px;
-  border:1px solid rgba(179,145,85,.24);
-  border-radius:25px;
-  background:linear-gradient(140deg,#f9f9f3 0%,#f9f5ea 67%,#f7efe3 100%);
-  box-shadow:0 10px 26px rgba(64,75,57,.055);
+  display:block;min-height:0;
+  margin:4px -8px 13px;
+  padding:10px 13px 15px;
+  border:1px solid rgba(184,147,76,.29);border-radius:25px;
+  background:linear-gradient(135deg,#fcfaf5,#f9f5eb 80%);
+  box-shadow:0 12px 28px rgba(48,63,41,.075);
   text-align:center;
 }
-.hero.hero-founder::before{
-  z-index:0;inset:9px;border-color:rgba(183,149,87,.19);border-radius:19px;
+.hero.hero-founder::before{z-index:3;inset:9px;border-color:rgba(190,155,91,.16);border-radius:18px;pointer-events:none}
+.hero.hero-founder::after{display:none}
+.hero-founder-top{
+  position:relative;isolation:isolate;overflow:hidden;
+  display:flex;align-items:center;min-height:169px;
+  margin:-10px -13px 0;padding:20px 16px 13px;
+  border-radius:24px 24px 0 0;
+  background:linear-gradient(100deg,#fcfaf5 28%,#f9f3e9);
 }
-.hero.hero-founder::after{content:none}
+.hero-founder-photo{
+  position:absolute;inset:0 0 0 auto;z-index:-1;
+  display:block;width:61%;height:100%;
+  object-fit:cover;object-position:56% 28%;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.52) 22%,#000 53%);
+  mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.52) 22%,#000 53%);
+}
 .hero-founder-intro{
-  position:relative;z-index:1;
-  display:flex;align-items:center;justify-content:center;gap:15px;
-  max-width:340px;margin:0 auto 12px;text-align:left;
-}
-.hero-founder-portrait{
-  display:block;flex:0 0 102px;width:102px;height:108px;
-  border:2px solid #fff;border-radius:17px;
-  background-color:#eee7d8;
-  background-image:url("assets/founder-story-hero.webp");
-  background-repeat:no-repeat;background-size:auto 245%;
-  background-position:87% 43%;
-  box-shadow:0 5px 18px rgba(70,65,45,.13);
-}
-.hero-founder-identity{
-  display:flex;flex:1;min-width:0;flex-direction:column;align-items:flex-start;gap:4px;
-  font-family:Georgia,"Times New Roman",serif;
+  position:relative;z-index:1;width:60%;min-width:0;
+  margin:0;padding:0;text-align:left;
 }
 .hero-founder-label{
-  color:#987b46;font:750 10px/1.3 system-ui,-apple-system,"Segoe UI",sans-serif;
+  margin:0 0 5px;color:#967440;
+  font:750 9px/1.3 system-ui,-apple-system,"Segoe UI",sans-serif;
   letter-spacing:.12em;
 }
-.hero-founder-identity strong{
-  color:#214a3a;font:400 clamp(29px,7vw,37px)/1 Georgia,"Times New Roman",serif;
+.hero-founder-name{
+  margin:0 0 4px;color:#194936;
+  font:400 clamp(27px,7.1vw,38px)/1 Georgia,"Times New Roman",serif;
+  letter-spacing:-.045em;
 }
-.hero-founder-identity>span:last-child{
-  color:#657365;font:400 14px/1.3 Georgia,"Times New Roman",serif;
+.hero-founder-role{
+  margin:0;color:#566b5e;
+  font:400 clamp(11px,3vw,14px)/1.28 Georgia,"Times New Roman",serif;
 }
-.hero-founder-content{position:relative;z-index:1;width:100%;text-align:center}
-.hero.hero-founder h1{margin:0;font-size:clamp(29px,7.8vw,44px);line-height:1.01}
-.hero.hero-founder h1 span{color:#183e32}
-.hero.hero-founder h1 em{margin-top:7px;font-size:.56em;line-height:1.04}
-.hero.hero-founder .hero-symbols{margin:10px 0 6px;gap:10px;font-size:15px}
-.hero.hero-founder .hero-copy{margin:0;color:#2e4033;font-size:clamp(12px,3.3vw,14px);line-height:1.35}
 .hero-founder-button{
-  display:inline-flex;align-items:center;justify-content:center;gap:9px;
-  width:auto;max-width:100%;min-height:40px;
-  margin:13px auto 0;padding:9px 15px;
-  border:1px solid rgba(164,126,63,.28);border-radius:12px;
-  background:#174d3b;color:#fff;
-  font:750 clamp(12px,3.25vw,14px)/1.2 system-ui,-apple-system,"Segoe UI",sans-serif;
-  text-decoration:none;
-  box-shadow:0 5px 14px rgba(23,77,59,.13);
+  display:inline-flex;align-items:center;justify-content:flex-start;gap:9px;
+  width:auto;max-width:100%;min-height:35px;margin:13px 0 0;
+  padding:7px 9px;border:1px solid rgba(168,131,65,.6);
+  border-radius:10px;background:rgba(251,249,244,.88);
+  color:#235440;text-align:left;text-decoration:none;
+  font:650 clamp(10px,2.6vw,12px)/1.26 system-ui,-apple-system,"Segoe UI",sans-serif;
+  box-shadow:0 4px 12px rgba(52,72,50,.045);
 }
-.hero-founder-button span{font-size:17px;line-height:1}
-.hero-founder-button:hover,.hero-founder-button:focus-visible{background:#24674f}
-.hero-founder-button:focus-visible{outline:3px solid #c8a775;outline-offset:3px}
-@media(max-width:480px){
-  .hero.hero-founder{min-height:0;padding:13px 15px 16px;margin-bottom:12px}
-  .hero-founder-intro{gap:12px;margin-bottom:12px;max-width:290px}
-  .hero-founder-portrait{flex-basis:90px;width:90px;height:99px}
-  .hero-founder-identity strong{font-size:31px}
-  .hero-founder-identity>span:last-child{font-size:13px}
-  .hero.hero-founder h1{font-size:clamp(28px,7.9vw,36px)}
-  .hero.hero-founder h1 em{font-size:.53em}
-  .hero-founder-button{min-height:40px;margin-top:12px;padding:9px 13px}
+.hero-founder-button span{margin-left:auto;flex:none;font-size:17px}
+.hero-founder-button:hover,.hero-founder-button:focus-visible{background:#f6ead3}
+.hero-founder-button:focus-visible{outline:2px solid #b99960;outline-offset:2px}
+.hero-founder-content{
+  position:relative;z-index:1;
+  padding:11px 3px 0;border-top:1px solid rgba(180,145,77,.3);
+  text-align:center;
 }
-@media(max-width:350px){
-  .hero.hero-founder{padding:13px 11px 15px}
-  .hero-founder-portrait{flex-basis:78px;width:78px;height:88px}
-  .hero-founder-intro{gap:9px}
-  .hero.hero-founder h1{font-size:27px}
+.hero.hero-founder h1{margin:0;line-height:1.06}
+.hero.hero-founder h1 span{
+  display:block;color:#1b4738;
+  font-size:clamp(21px,5.7vw,36px);
+  font-weight:400;letter-spacing:-.055em;
 }
-@media(prefers-reduced-motion:no-preference){
-  .hero-founder-button{transition:background .2s ease,transform .2s ease}
-  .hero-founder-button:active{transform:translateY(1px)}
+.hero.hero-founder h1 em{
+  display:block;margin:5px auto 0;color:#99793c;
+  background:none;-webkit-text-fill-color:currentColor;
+  font-size:clamp(14px,4vw,21px);
+  font-weight:400;letter-spacing:-.025em;line-height:1.03;
+}
+.hero.hero-founder .hero-copy{
+  margin:9px 0 0;color:#44554a;
+  font-size:clamp(11px,3.05vw,14px);line-height:1.3;
+}
+@media(min-width:700px){
+  .hero.hero-founder{margin-left:0;margin-right:0}
+  .hero-founder-top{min-height:210px}
+  .hero-founder-name{font-size:42px}
+  .hero-founder-content{padding:17px 3px 4px}
+}
+@media(max-width:385px){
+  .hero.hero-founder{padding:9px 10px 12px}
+  .hero-founder-top{margin:-9px -10px 0;min-height:154px;padding:16px 13px 10px}
+  .hero-founder-intro{width:61%}
+  .hero-founder-photo{width:63%}
+  .hero-founder-name{font-size:29px}
+  .hero-founder-button{margin-top:9px;padding:6px 8px;font-size:10px}
+  .hero.hero-founder h1 span{font-size:clamp(20px,5.7vw,26px)}
+  .hero.hero-founder h1 em{font-size:clamp(13px,3.9vw,16px)}
+  .hero.hero-founder .hero-copy{font-size:11.5px}
 }

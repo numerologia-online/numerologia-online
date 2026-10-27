@@ -1,24 +1,22 @@
-/* Shared, discreet but clearly visible customer support entry. */
+/* One-tap support without covering the product card titles. */
 .site-support-link{
-  position:fixed;z-index:850;
-  right:max(14px,env(safe-area-inset-right));
-  bottom:calc(14px + env(safe-area-inset-bottom));
-  display:inline-flex;align-items:center;justify-content:center;gap:9px;
-  min-height:48px;padding:8px 16px 8px 10px;
-  border:1px solid rgba(234,206,154,.65);border-radius:999px;
+  position:fixed;z-index:850;right:max(13px,env(safe-area-inset-right));
+  bottom:calc(16px + env(safe-area-inset-bottom));
+  display:grid;place-items:center;width:47px;height:47px;
+  padding:0;border:1px solid rgba(203,170,110,.72);border-radius:50%;
   background:#174d3c;color:#fff;text-decoration:none;
-  box-shadow:0 9px 28px rgba(19,58,44,.26),inset 0 1px rgba(255,255,255,.12);
-  font:750 13px/1.15 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  letter-spacing:0;white-space:nowrap;
+  box-shadow:0 6px 20px rgba(19,58,44,.22);
   -webkit-tap-highlight-color:transparent;
 }
 .site-support-mark{
-  display:grid;place-items:center;flex:none;width:29px;height:29px;
+  display:grid;place-items:center;width:33px;height:33px;flex:none;
   border-radius:50%;background:#f4e6ca;color:#174d3c;
-  font:800 18px/1 Georgia,serif;
+  font:800 20px/1 Georgia,serif;
 }
-.site-support-link:hover,.site-support-link:focus-visible{background:#216249}
+.site-support-link>span:last-child{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+.site-support-link:hover,.site-support-link:focus-visible{background:#226349}
 .site-support-link:focus-visible{outline:3px solid #cfad72;outline-offset:3px}
-.site-support-link:active{transform:translateY(1px)}
-@media(max-width:370px){.site-support-link{padding-right:12px;font-size:12px}}
 @media print{.site-support-link{display:none!important}}
