@@ -683,23 +683,24 @@ pdfSave.addEventListener("click", async () => {
       currentBirth, matrixDefinitions(calculateMatrix(currentBirth)),
       getEnergyBank, getChildKarmicTail
     );
-    const preview = !report.ready;
-    pdfSave.textContent = preview ? "Собираю черновик PDF…" : "Собираю PDF…";
-    pdfStatus.textContent = preview
-      ? "Готово " + report.chapters.length + " из " + report.total + " глав. В черновом PDF остальные главы будут помечены «В работе»."
-      : "Все главы готовы. Создаю лёгкий PDF без фоновых фотографий.";
-    const file = await buildChildPdfBlob(report, {preview});
+    if (!report.ready) {
+      // All author texts are published. An incomplete result here means a
+      // data download failed; never silently replace it with fake empty pages.
+      pdfStatus.textContent = "Не удалось загрузить все разделы. Проверьте интернет и нажмите «Скачать PDF» ещё раз.";
+      return;
+    }
+    pdfSave.textContent = "Собираю PDF…";
+    pdfStatus.textContent = "Все " + report.total + " глав загружены. Создаю лёгкий PDF.";
+    const file = await buildChildPdfBlob(report);
     const url = URL.createObjectURL(file);
     const link = document.createElement("a");
     link.href = url;
-    link.download = (preview ? "ЧЕРНОВИК разбора ребёнка " : "Полный разбор ребёнка ") + report.birthday + ".pdf";
+    link.download = "Полный разбор ребёнка " + report.birthday + ".pdf";
     document.body.append(link);
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 60000);
-    pdfStatus.textContent = preview
-      ? "Черновик PDF подготовлен. В нём только утверждённые тексты; остальные разделы обозначены «В работе»."
-      : "Полный PDF подготовлен. Если Safari не начал скачивание, нажмите кнопку ещё раз.";
+    pdfStatus.textContent = "Полный PDF подготовлен. Если Safari не начал скачивание, нажмите кнопку ещё раз.";
   } catch (error) {
     pdfStatus.textContent = error?.message || "Не удалось собрать PDF. Попробуйте ещё раз.";
   } finally {
