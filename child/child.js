@@ -453,12 +453,14 @@ const renderMatrix = (matrix) => {
       '<text class="child-matrix-label-copy">' + spans + '</text></g>'
     );
   });
-  // Gentle vector arrow to the actual character node (41,260).
-  // No extra hit targets: the arrow never intercepts clicks on any number.
+  // Oversized, high-contrast pointer ends just above the character point
+  // (41,260), so the first number stays fully visible and clickable.
   svgPieces.push(
     '<g class="child-start-arrow" aria-hidden="true" pointer-events="none">' +
-    '<path d="M55 145 C16 159 8 181 13 209 C15 220 20 227 25 233" />' +
-    '<path d="M12 226 L25 233 L24 219" />' +
+    '<path class="child-start-arrow-border" d="M102 9 C48 8 9 45 9 111 C9 168 8 200 35 228" />' +
+    '<path class="child-start-arrow-border" d="M6 207 L35 228 L46 191" />' +
+    '<path class="child-start-arrow-line" d="M102 9 C48 8 9 45 9 111 C9 168 8 200 35 228" />' +
+    '<path class="child-start-arrow-line" d="M6 207 L35 228 L46 191" />' +
     '</g>'
   );
   svgPieces.push("</svg>");
