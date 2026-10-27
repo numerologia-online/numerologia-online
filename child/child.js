@@ -595,6 +595,7 @@ form.addEventListener("submit", async (event) => {
   submit.disabled = true;
   try {
     birth = entered;
+    invalidateChildPdf();
     chosenDate = currentDate();
     closeInsight();
     renderMatrix(calculateMatrix(birth));
@@ -603,6 +604,7 @@ form.addEventListener("submit", async (event) => {
     preview.hidden = true;
     result.hidden = false;
     result.scrollIntoView({behavior: "smooth", block: "start"});
+    if (startingTab==="matrix") warmChildPdf();
   } catch (reason) {
     error.textContent = "Не удалось загрузить расчёт. Проверьте подключение и попробуйте ещё раз.";
     error.hidden = false;
@@ -648,12 +650,58 @@ const pdfClose = byId("child-pdf-close");
 const pdfSave = byId("child-pdf-save");
 const pdfChapters = byId("child-pdf-list");
 const pdfStatus = byId("child-pdf-status");
+let preparedChildPdf=null;
+let preparingChildPdf=null;
+let childPdfGeneration=0;
+const childPdfKey = date => date ? [date.day,date.month,date.year].map((v,i)=>i<2?String(v).padStart(2,"0"):v).join(".") : "";
+const invalidateChildPdf = () => {
+  ++childPdfGeneration;
+  preparedChildPdf=null;
+  preparingChildPdf=null;
+};
 let childPdfModulePromise = null;
 const pdfModule = () => {
-  if (!childPdfModulePromise) childPdfModulePromise = import("./child-report-pdf.js?v=3")
+  if (!childPdfModulePromise) childPdfModulePromise = import("./child-report-pdf.js?v=4")
     .catch(error => { childPdfModulePromise = null; throw error; });
   return childPdfModulePromise;
 };
+// Keep the PDF warm and cached, as in the annual report.
+const prepareChildPdf=(date)=>{
+  const key=childPdfKey(date);
+  if (!key) return Promise.reject(new Error("Сначала рассчитайте матрицу ребёнка."));
+  if (preparedChildPdf?.key===key) return Promise.resolve(preparedChildPdf);
+  if (preparingChildPdf?.key===key) return preparingChildPdf.promise;
+  const generation=childPdfGeneration;
+  const promise=(async()=>{
+    const {collectChildPdf,buildChildPdfBlob,preloadChildPdfEngine}=await pdfModule();
+    const [report]=await Promise.all([
+      collectChildPdf(date,matrixDefinitions(calculateMatrix(date)),getEnergyBank,getChildKarmicTail),
+      preloadChildPdfEngine()
+    ]);
+    if (!report.ready) throw new Error("Не удалось загрузить все главы. Проверьте соединение и попробуйте ещё раз.");
+    const blob=await buildChildPdfBlob(report);
+    if (generation!==childPdfGeneration || childPdfKey(birth)!==key) throw new Error("Дата рождения изменилась.");
+    preparedChildPdf={key,blob,filename:"Полный разбор ребёнка "+report.birthday+".pdf"};
+    if (pdfDialog.open) pdfStatus.textContent="Полный PDF готов. Все 22 главы собраны.";
+    return preparedChildPdf;
+  })();
+  preparingChildPdf={key,promise};
+  promise.finally(()=>{
+    if (preparingChildPdf?.promise===promise) preparingChildPdf=null;
+  }).catch(()=>{});
+  return promise;
+};
+const warmChildPdf=()=>{
+  if(!birth) return;
+  const date={...birth},key=childPdfKey(date);
+  const warm=()=>{
+    if(childPdfKey(birth)!==key || preparedChildPdf?.key===key) return;
+    prepareChildPdf(date).catch(()=>{});
+  };
+  if("requestIdleCallback" in window) window.requestIdleCallback(warm,{timeout:1250});
+  else window.setTimeout(warm,320);
+};
+
 pdfOpen.addEventListener("click", () => {
   if (!birth) return;
   const chapters = matrixDefinitions(calculateMatrix(birth));
@@ -663,7 +711,11 @@ pdfOpen.addEventListener("click", () => {
     item.textContent = chapter.title;
     pdfChapters.append(item);
   }
-  pdfStatus.textContent = "Все " + chapters.length + " темы в оглавлении. Если тексты ещё в работе, можно скачать черновик для проверки оформления.";
+  pdfStatus.textContent = preparedChildPdf?.key===childPdfKey(birth)
+    ? "Полный PDF уже готов к скачиванию."
+    : preparingChildPdf?.key===childPdfKey(birth)
+      ? "PDF собирается. Готовый файл появится здесь."
+      : "Все 22 главы будут собраны в один файл.";
   pdfDialog.showModal();
 });
 pdfClose.addEventListener("click", () => { if (!pdfSave.disabled) pdfDialog.close(); });
@@ -671,41 +723,29 @@ pdfDialog.addEventListener("click", event => {
   if (event.target === pdfDialog && !pdfSave.disabled) pdfDialog.close();
 });
 pdfSave.addEventListener("click", async () => {
-  if (!birth) return;
-  const currentBirth = { ...birth };
-  const normalLabel = pdfSave.innerHTML;
-  pdfSave.disabled = true;
-  pdfSave.textContent = "Проверяю разделы…";
-  pdfStatus.textContent = "Проверяю готовность всех глав полного разбора.";
+  if (!birth || pdfSave.disabled) return;
+  const date={...birth};
+  const normalLabel=pdfSave.innerHTML;
+  pdfSave.disabled=true;
+  pdfSave.textContent=preparedChildPdf?.key===childPdfKey(date) ? "Открываю PDF…" : "Готовлю PDF…";
   try {
-    const { collectChildPdf, buildChildPdfBlob } = await pdfModule();
-    const report = await collectChildPdf(
-      currentBirth, matrixDefinitions(calculateMatrix(currentBirth)),
-      getEnergyBank, getChildKarmicTail
-    );
-    if (!report.ready) {
-      // All author texts are published. An incomplete result here means a
-      // data download failed; never silently replace it with fake empty pages.
-      pdfStatus.textContent = "Не удалось загрузить все разделы. Проверьте интернет и нажмите «Скачать PDF» ещё раз.";
-      return;
-    }
-    pdfSave.textContent = "Собираю PDF…";
-    pdfStatus.textContent = "Все " + report.total + " глав загружены. Создаю лёгкий PDF.";
-    const file = await buildChildPdfBlob(report);
-    const url = URL.createObjectURL(file);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "Полный разбор ребёнка " + report.birthday + ".pdf";
+    const {blob,filename}=await prepareChildPdf(date);
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement("a");
+    link.href=url;
+    link.download=filename;
+    link.target="_blank";
+    link.rel="noopener";
     document.body.append(link);
     link.click();
     link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 60000);
-    pdfStatus.textContent = "Полный PDF подготовлен. Если Safari не начал скачивание, нажмите кнопку ещё раз.";
+    window.setTimeout(()=>URL.revokeObjectURL(url),120000);
+    pdfStatus.textContent="PDF готов. Повторное скачивание не потребует новой сборки.";
   } catch (error) {
-    pdfStatus.textContent = error?.message || "Не удалось собрать PDF. Попробуйте ещё раз.";
+    pdfStatus.textContent=error?.message || "Не удалось создать PDF. Попробуйте ещё раз.";
   } finally {
-    pdfSave.disabled = false;
-    pdfSave.innerHTML = normalLabel;
+    pdfSave.disabled=false;
+    pdfSave.innerHTML=normalLabel;
   }
 });
 
