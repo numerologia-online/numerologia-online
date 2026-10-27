@@ -168,9 +168,15 @@ const openPointReading = async (point, source = null) => {
     ...matrixSections.querySelectorAll('[data-child-topic="' + point.id + '"]')
   ].filter(Boolean))];
   selectedElements.forEach((node) => node.classList.add("is-selected"));
-  // Hide the onboarding cue once the mother selects any reading.
+  // Hide the onboarding cue and take the reader directly to the
+  // requested chapter after her own tap, never on initial calculation.
   matrixVisual.classList.add("has-started");
   insight.hidden = false;
+  window.requestAnimationFrame(() => {
+    if (requestId === insightRequestId && !insight.hidden) {
+      insight.scrollIntoView({behavior:"smooth",block:"start"});
+    }
+  });
 
   // A karmic tail is a three-energy combination, never a generic energy text.
   if (point.id === "tail" || point.id === "tail-detail") {
