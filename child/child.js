@@ -647,7 +647,7 @@ const pdfChapters = byId("child-pdf-list");
 const pdfStatus = byId("child-pdf-status");
 let childPdfModulePromise = null;
 const pdfModule = () => {
-  if (!childPdfModulePromise) childPdfModulePromise = import("./child-report-pdf.js?v=2")
+  if (!childPdfModulePromise) childPdfModulePromise = import("./child-report-pdf.js?v=3")
     .catch(error => { childPdfModulePromise = null; throw error; });
   return childPdfModulePromise;
 };
