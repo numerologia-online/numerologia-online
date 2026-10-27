@@ -27,9 +27,13 @@ export async function collectChildPdf(birth, definitions, loadEnergy, loadTail) 
       chapters.push({title:point.title, subtitle:bank.title || "", lead:bank.lead || "", parts, paragraphs:[]});
       continue;
     }
-    const section = energy.get(Number(point.number))?.sections?.[point.section || point.id];
+    const bank = energy.get(Number(point.number));
+    const section = bank?.sections?.[point.section || point.id];
     const lines = paragraphsOf(section?.paragraphs);
-    if (!lines.length) { missing.push(point.title); continue; }
+    // Draft banks are still being edited; never publish them as a finished report.
+    if (bank?.status !== "ready" || !lines.length) {
+      missing.push(point.title); continue;
+    }
     const key = lines.join("\n");
     const earlier = uniqueTexts.get(key);
     chapters.push({
