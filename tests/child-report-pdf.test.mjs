@@ -51,6 +51,11 @@ test("Never issue a finished report with draft or missing readings",async()=>{
   assert.ok(!draft.ready);
   assert.ok(draft.missing.length>0);
   assert.throws(()=>childPdfDefinition(draft));
+  const preview=childPdfDefinition(draft,{preview:true});
+  assert.match(preview.info.title,/ЧЕРНОВИК/);
+  assert.match(JSON.stringify(preview.content),/В РАБОТЕ/);
+  assert.equal(preview.watermark.text,"ЧЕРНОВИК");
+  assert.match(JSON.stringify(preview.content),/ГЛАВА 22/);
   const missingTail=await collectChildPdf(born,definitions,async()=>energyBank(),async()=>({state:"missing"}));
   assert.ok(!missingTail.ready);
   assert.ok(missingTail.missing.includes("Кармический хвост"));

@@ -24,7 +24,7 @@ export async function collectChildPdf(birth, definitions, loadEnergy, loadTail) 
       if (!parts.length || parts.some(p => !p.title || !p.paragraphs.length)) {
         missing.push(point.title); continue;
       }
-      chapters.push({title:point.title, subtitle:bank.title || "", lead:bank.lead || "", parts, paragraphs:[]});
+      chapters.push({id:point.id, title:point.title, subtitle:bank.title || "", lead:bank.lead || "", parts, paragraphs:[]});
       continue;
     }
     const bank = energy.get(Number(point.number));
@@ -37,21 +37,30 @@ export async function collectChildPdf(birth, definitions, loadEnergy, loadTail) 
     const key = lines.join("\n");
     const earlier = uniqueTexts.get(key);
     chapters.push({
-      title:point.title,
+      id:point.id, title:point.title,
       paragraphs:earlier ? ["Подробная трактовка этой темы приведена в главе «" + earlier + "»."] : lines,
       subtitle:"", lead:"", parts:[]
     });
     if (!earlier) uniqueTexts.set(key, point.title);
   }
   const birthday = [birth.day,birth.month].map(n=>String(n).padStart(2,"0")).join(".") + "." + birth.year;
-  return {birthday, chapters, missing, total:definitions.length, ready:chapters.length===definitions.length};
+  const topics = definitions.map(point => ({id:point.id, title:point.title}));
+  return {birthday, chapters, topics, missing, total:definitions.length, ready:chapters.length===definitions.length};
 }
 
-export function childPdfDefinition(report) {
-  if (!report?.ready) throw new Error("Полный PDF пока не готов: не все главы доступны.");
+export function childPdfDefinition(report, {preview=false}={}) {
+  const draft = Boolean(preview && report && !report.ready);
+  if (!report?.ready && !draft) throw new Error("Полный PDF пока не готов: не все главы доступны.");
+  if (draft && !report.topics?.length) throw new Error("Нет данных для предварительного PDF.");
   const ink="#343041",forest="#294E42",gold="#B79B70",soft="#976E8D";
   const textBlocks=lines=>lines.map(t=>({text:t,style:"paragraph"}));
-  const allChapters=report.chapters.flatMap((chapter,i)=>[
+  const byId=new Map(report.chapters.map(chapter=>[chapter.id,chapter]));
+  const displayedChapters=draft ? report.topics.map(topic=>byId.get(topic.id) || {
+    id:topic.id,title:topic.title,subtitle:"В РАБОТЕ",lead:"",
+    paragraphs:["Этот раздел пока не готов. Его авторская трактовка появится в окончательном разборе."],
+    parts:[],pending:true
+  }) : report.chapters;
+  const allChapters=displayedChapters.flatMap((chapter,i)=>[
     {stack:[
       {text:"ГЛАВА "+String(i+1).padStart(2,"0"),style:"chapterKicker"},
       {text:chapter.title,style:"chapterTitle"},
@@ -66,12 +75,12 @@ export function childPdfDefinition(report) {
   ]);
   return {
     pageSize:"A4",pageMargins:[57,68,57,66],
-    info:{title:"Всё о ребёнке - "+report.birthday,author:"Нумерология Онлайн"},
+    info:{title:(draft ? "ЧЕРНОВИК - " : "")+"Всё о ребёнке - "+report.birthday,author:"Нумерология Онлайн"},
     background:()=>({canvas:[
       {type:"rect",x:0,y:0,w:595,h:842,color:"#FFFCF7",lineColor:"#FFFCF7",lineWidth:0},
       {type:"rect",x:21,y:21,w:553,h:800,lineWidth:.6,lineColor:"#D0B994"}
     ]}),
-    watermark:{text:"9966",opacity:.045,color:"#DCC7BA",angle:0,fontSize:75},
+    watermark:{text:draft ? "ЧЕРНОВИК" : "9966",opacity:draft ? .09 : .045,color:"#DCC7BA",angle:0,fontSize:draft ? 54 : 75},
     defaultStyle:{font:"Roboto",fontSize:11.4,color:ink,lineHeight:1.38},
     styles:{
       coverBrand:{fontSize:11,bold:true,color:gold,characterSpacing:2,alignment:"center",margin:[0,0,0,28]},
@@ -79,6 +88,7 @@ export function childPdfDefinition(report) {
       coverSubtitle:{fontSize:15.5,color:soft,alignment:"center",lineHeight:1.25,margin:[0,0,0,30]},
       coverDate:{fontSize:15,bold:true,color:forest,alignment:"center"},
       coverNote:{fontSize:11,italics:true,color:"#64606C",alignment:"center",margin:[0,24,0,0]},
+      draftWarning:{fontSize:13,bold:true,color:"#9A336F",alignment:"center",lineHeight:1.3,margin:[0,23,0,0]},
       toc:{fontSize:28,bold:true,color:forest,margin:[0,0,0,18]},
       tocItem:{fontSize:12.3,color:ink,margin:[0,0,0,9]},
       chapterKicker:{fontSize:10,bold:true,color:gold,characterSpacing:1.6,margin:[0,0,0,7]},
@@ -95,12 +105,13 @@ export function childPdfDefinition(report) {
         {text:"Всё о ребёнке",style:"coverTitle"},
         {text:"Характер, таланты, воспитание,\nчувства и жизненные задачи",style:"coverSubtitle"},
         {text:"Дата рождения: "+report.birthday,style:"coverDate"},
-        {text:"Персональный путеводитель по миру вашего ребёнка",style:"coverNote"}
+        {text:"Персональный путеводитель по миру вашего ребёнка",style:"coverNote"},
+        ...(draft ? [{text:"ЧЕРНОВИК ДЛЯ ПРОВЕРКИ ОФОРМЛЕНИЯ\nНе отправлять клиентам как полный разбор.",style:"draftWarning"}] : [])
       ],margin:[0,155,0,0],pageBreak:"after"},
       {text:"Содержание",style:"toc"},
-      {text:report.chapters.length+" главы о вашем ребёнке",margin:[0,0,0,18],color:soft},
-      ...report.chapters.map((chapter,index)=>({
-        text:String(index+1).padStart(2,"0")+"   "+chapter.title,style:"tocItem"
+      {text:draft ? ("Готово "+report.chapters.length+" из "+report.total+" глав. Остальные главы отмечены как находящиеся в работе.") : (report.chapters.length+" главы о вашем ребёнке"),margin:[0,0,0,18],color:soft},
+      ...displayedChapters.map((chapter,index)=>({
+        text:String(index+1).padStart(2,"0")+"   "+chapter.title+(chapter.pending ? "  · В РАБОТЕ" : ""),style:"tocItem"
       })),
       {text:"",pageBreak:"after"},
       ...allChapters,
@@ -141,11 +152,11 @@ function getPdfMake() {
     .catch(error=>{pdfMakeLoading=null;throw error;});
   return pdfMakeLoading;
 }
-export async function buildChildPdfBlob(report) {
+export async function buildChildPdfBlob(report, options={}) {
   const pdfMake=await getPdfMake();
   if (!pdfMake?.createPdf) throw new Error("PDF-модуль не загрузился.");
   return new Promise((resolve,reject)=>{
-    try { pdfMake.createPdf(childPdfDefinition(report)).getBlob(resolve); }
+    try { pdfMake.createPdf(childPdfDefinition(report, options)).getBlob(resolve); }
     catch(err) { reject(err); }
   });
 }

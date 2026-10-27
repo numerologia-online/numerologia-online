@@ -647,7 +647,7 @@ const pdfChapters = byId("child-pdf-list");
 const pdfStatus = byId("child-pdf-status");
 let childPdfModulePromise = null;
 const pdfModule = () => {
-  if (!childPdfModulePromise) childPdfModulePromise = import("./child-report-pdf.js?v=1")
+  if (!childPdfModulePromise) childPdfModulePromise = import("./child-report-pdf.js?v=2")
     .catch(error => { childPdfModulePromise = null; throw error; });
   return childPdfModulePromise;
 };
@@ -660,7 +660,7 @@ pdfOpen.addEventListener("click", () => {
     item.textContent = chapter.title;
     pdfChapters.append(item);
   }
-  pdfStatus.textContent = chapters.length + " главы. Готовые тексты будут взяты из базы сайта.";
+  pdfStatus.textContent = "Все " + chapters.length + " темы в оглавлении. Если тексты ещё в работе, можно скачать черновик для проверки оформления.";
   pdfDialog.showModal();
 });
 pdfClose.addEventListener("click", () => { if (!pdfSave.disabled) pdfDialog.close(); });
@@ -680,24 +680,23 @@ pdfSave.addEventListener("click", async () => {
       currentBirth, matrixDefinitions(calculateMatrix(currentBirth)),
       getEnergyBank, getChildKarmicTail
     );
-    if (!report.ready) {
-      pdfStatus.textContent = "Готово " + report.chapters.length + " из " + report.total +
-        " глав. Пока дописываются: " + report.missing.join(", ") +
-        ". Не будем выдавать незавершённый PDF за полный разбор.";
-      return;
-    }
-    pdfSave.textContent = "Собираю PDF…";
-    pdfStatus.textContent = "Все главы готовы. Создаю лёгкий PDF без фоновых фотографий.";
-    const file = await buildChildPdfBlob(report);
+    const preview = !report.ready;
+    pdfSave.textContent = preview ? "Собираю черновик PDF…" : "Собираю PDF…";
+    pdfStatus.textContent = preview
+      ? "Готово " + report.chapters.length + " из " + report.total + " глав. В черновом PDF остальные главы будут помечены «В работе»."
+      : "Все главы готовы. Создаю лёгкий PDF без фоновых фотографий.";
+    const file = await buildChildPdfBlob(report, {preview});
     const url = URL.createObjectURL(file);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "Полный разбор ребёнка " + report.birthday + ".pdf";
+    link.download = (preview ? "ЧЕРНОВИК разбора ребёнка " : "Полный разбор ребёнка ") + report.birthday + ".pdf";
     document.body.append(link);
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 60000);
-    pdfStatus.textContent = "PDF подготовлен. Если Safari не начал скачивание, нажмите кнопку ещё раз.";
+    pdfStatus.textContent = preview
+      ? "Черновик PDF подготовлен. В нём только утверждённые тексты; остальные разделы обозначены «В работе»."
+      : "Полный PDF подготовлен. Если Safari не начал скачивание, нажмите кнопку ещё раз.";
   } catch (error) {
     pdfStatus.textContent = error?.message || "Не удалось собрать PDF. Попробуйте ещё раз.";
   } finally {
