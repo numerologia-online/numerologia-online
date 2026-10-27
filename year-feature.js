@@ -1,4 +1,4 @@
-import { loadEnergies, monthNames } from "./year-content.js?v=3";
+import { createMonthlyLinkSelector, loadEnergies, monthNames } from "./year-content.js?v=4";
 import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=1";
 
 const year = document.querySelector("#year");
@@ -135,8 +135,12 @@ form.addEventListener("submit", async (event) => {
   const energyBeforeBirthday = personalYear(birthDate, reportYearValue - 1);
   const energyAfterBirthday = personalYear(birthDate, reportYearValue);
   let energyContent;
+  let alternateEnergyContent;
   try {
-    energyContent = await loadEnergies([energyBeforeBirthday, energyAfterBirthday], textVariant);
+    [energyContent, alternateEnergyContent] = await Promise.all([
+      loadEnergies([energyBeforeBirthday, energyAfterBirthday], textVariant),
+      loadEnergies([energyBeforeBirthday, energyAfterBirthday], textVariant === "even" ? "odd" : "even")
+    ]);
   } catch (error) {
     showCalculationError();
     yearInput.setCustomValidity("Не удалось открыть тексты года. Обновите страницу и попробуйте ещё раз.");
@@ -191,6 +195,7 @@ form.addEventListener("submit", async (event) => {
 
   monthContainer.innerHTML = "";
   calculatedPdfMonths = [];
+  const monthlyLinkFor = createMonthlyLinkSelector(energyContent, alternateEnergyContent);
   for (const [index, monthName] of monthNames.entries()) {
     await showMonthProgress(monthName, index);
     const calendarMonth = index + 1;
@@ -199,7 +204,6 @@ form.addEventListener("submit", async (event) => {
     const monthYearEnergy = isBeforeBirthdayMonth ? energyBeforeBirthday : energyAfterBirthday;
     const monthEnergy = personalMonth(monthYearEnergy, calendarMonth);
     const month = { title: `Энергия ${monthEnergy}`, text: "Авторская карточка этой связки ещё готовится." };
-    const fullLink = energyContent[monthYearEnergy]?.links[monthEnergy] ?? null;
     const item = document.createElement("details");
     item.className = "month-card";
     if (isBirthdayMonth) {
@@ -207,8 +211,8 @@ form.addEventListener("submit", async (event) => {
       const afterMonthEnergy = personalMonth(energyAfterBirthday, calendarMonth);
       const beforeMonth = { title: `Энергия ${beforeMonthEnergy}`, text: "Авторская карточка этой связки ещё готовится." };
       const afterMonth = { title: `Энергия ${afterMonthEnergy}`, text: "Авторская карточка этой связки ещё готовится." };
-      const beforeFullLink = energyContent[energyBeforeBirthday]?.links[beforeMonthEnergy] ?? null;
-      const afterFullLink = energyContent[energyAfterBirthday]?.links[afterMonthEnergy] ?? null;
+      const beforeFullLink = monthlyLinkFor(energyBeforeBirthday, beforeMonthEnergy);
+      const afterFullLink = monthlyLinkFor(energyAfterBirthday, afterMonthEnergy);
       const beforeContent = beforeFullLink ? fullLinkMarkup(beforeFullLink, energyBeforeBirthday, beforeMonthEnergy) : `<p class="month-kicker">До ${formatDate(birthdayInReportYear)} · связка ${energyBeforeBirthday} × ${beforeMonthEnergy}</p><h3>${beforeMonth.title}</h3><p>${beforeMonth.text}</p>`;
       const afterContent = afterFullLink ? fullLinkMarkup(afterFullLink, energyAfterBirthday, afterMonthEnergy) : `<p class="month-kicker">С ${formatDate(birthdayInReportYear)} · связка ${energyAfterBirthday} × ${afterMonthEnergy}</p><h3>${afterMonth.title}</h3><p>${afterMonth.text}</p>`;
       item.innerHTML = `<summary><span><small>Переход</small>${monthName}</span><strong>${beforeMonthEnergy}→${afterMonthEnergy}</strong><i>+</i></summary><div class="month-content"><div class="month-period">${beforeContent}</div><div class="month-period">${afterContent}</div></div>`;
@@ -217,6 +221,7 @@ form.addEventListener("submit", async (event) => {
         pdfLinkEntry(afterFullLink, `С ${formatDate(birthdayInReportYear)} · связка ${energyAfterBirthday} × ${afterMonthEnergy}`, afterMonth.title, afterMonth.text)
       ]));
     } else {
+      const fullLink = monthlyLinkFor(monthYearEnergy, monthEnergy);
       item.innerHTML = `<summary><span>${monthName}</span><strong>${monthEnergy}</strong><i>+</i></summary><div class="month-content">${fullLink ? fullLinkMarkup(fullLink, monthYearEnergy, monthEnergy) : `<p class="month-kicker">Связка ${monthYearEnergy} × ${monthEnergy}</p><h3>${month.title}</h3><p>${month.text}</p><p class="draft-note">Это короткий черновик. Здесь появится отдельная авторская карточка для связки ${monthYearEnergy} × ${monthEnergy}: деньги, работа, отношения, ресурс, опасность и главный совет.</p>`}</div>`;
       calculatedPdfMonths.push(pdfMonthBlock(monthName, [
         pdfLinkEntry(fullLink, `Связка ${monthYearEnergy} × ${monthEnergy}`, month.title, month.text)

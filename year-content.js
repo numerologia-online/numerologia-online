@@ -74,6 +74,18 @@ export const parseEnergyText = (text, expectedEnergy) => {
   return result;
 };
 
+// Reuse the independently authored second text bank only when a pair repeats.
+export const createMonthlyLinkSelector = (primaryContent, alternateContent) => {
+  const seen = new Set();
+  return (yearEnergy, monthEnergy) => {
+    const key = `${yearEnergy}-${monthEnergy}`;
+    const isRepeat = seen.has(key);
+    seen.add(key);
+    const source = isRepeat ? alternateContent : primaryContent;
+    return source[yearEnergy]?.links[monthEnergy] ?? null;
+  };
+};
+
 export const loadEnergy = (energy, variant = "even") => {
   const cacheKey = `${variant}:${energy}`;
   if (!cache.has(cacheKey)) {
