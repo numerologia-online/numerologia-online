@@ -11,10 +11,8 @@ const matrixJs=await source("child/child.js");
 const calculateMatrix=new Function(
   (await source("numerology-core.js")).replace(/^export /gm,"")+"\nreturn calculateMatrix;"
 )();
-const definitionSource=matrixJs.slice(
-  matrixJs.indexOf("const matrixDefinitions = (matrix) => ["),
-  matrixJs.indexOf("const renderMatrix = (matrix) =>")
-);
+const definitionStart=matrixJs.indexOf("const matrixDefinitions = (matrix) => [");
+const definitionSource=matrixJs.slice(definitionStart,matrixJs.indexOf("\n];",definitionStart)+3);
 const definitions=new Function("matrix",definitionSource+"\nreturn matrixDefinitions(matrix);")(
   calculateMatrix({day:2,month:2,year:2024})
 );
@@ -71,4 +69,54 @@ test("Repeated text is not printed twice as two full chapters",async()=>{
   const repeated=report.chapters.filter(ch=>ch.paragraphs[0]?.includes("Подробная трактовка"));
   assert.ok(repeated.length>0);
   assert.equal(report.chapters.length,22);
+});
+
+test("All 22 authored child energy files are populated and marked as finished",async()=>{
+  for (let number=1;number<=22;number++) {
+    const bank=JSON.parse(await source(`child/data/matrix/sections/energy-${number}.json`));
+    assert.ok(["ready","complete"].includes(bank.status),`Energy ${number} wrongly marked ${bank.status}`);
+    const sections=Object.entries(bank.sections || {});
+    assert.equal(sections.length,20,`Energy ${number} must contain all 20 authored topics`);
+    for (const [topic,section] of sections) {
+      assert.ok(Array.isArray(section.paragraphs) && section.paragraphs.length &&
+        section.paragraphs.every(text=>typeof text==="string"&&text.trim()),`Energy ${number}: ${topic} missing text`);
+    }
+  }
+});
+
+test("All 26 listed karmic programs have full ready text",async()=>{
+  const index=JSON.parse(await source("child/data/matrix/karmic-tail/index.json"));
+  const codes=Object.keys(index.available);
+  assert.equal(codes.length,index.expectedPrograms);
+  for (const code of codes) {
+    const bank=JSON.parse(await source("child/data/matrix/karmic-tail/"+index.available[code]));
+    assert.equal(bank.status,"ready",`Karmic program ${code} not ready`);
+    assert.equal(bank.code,code);
+    assert.ok(Array.isArray(bank.sections) && bank.sections.length>=1);
+    assert.ok(bank.sections.every(part=>part.title &&
+      part.paragraphs?.length>0 &&
+      part.paragraphs.every(text=>typeof text==="string"&&text.trim())),
+      `Karmic program ${code} has unfinished content`);
+  }
+});
+
+test("Two real birthdays generate complete 22-chapter reports without draft placeholders",async()=>{
+  const index=JSON.parse(await source("child/data/matrix/karmic-tail/index.json"));
+  for (const date of [{day:2,month:2,year:2024},{day:2,month:1,year:2025}]) {
+    const points=new Function("matrix",definitionSource+"\nreturn matrixDefinitions(matrix);")(
+      calculateMatrix(date)
+    );
+    const report=await collectChildPdf(date,points,
+      async number=>JSON.parse(await source(`child/data/matrix/sections/energy-${number}.json`)),
+      async code=>({state:"ready",bank:JSON.parse(await source(
+        "child/data/matrix/karmic-tail/"+index.available[code]
+      ))})
+    );
+    assert.equal(report.chapters.length,22);
+    assert.equal(report.missing.length,0);
+    assert.equal(report.ready,true);
+    const pdf=childPdfDefinition(report);
+    assert.equal(pdf.watermark.text,"9966");
+    assert.doesNotMatch(JSON.stringify(pdf.content),/Этот раздел пока не готов|В РАБОТЕ/);
+  }
 });
