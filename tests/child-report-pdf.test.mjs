@@ -144,3 +144,18 @@ test("Child PDF is warmed and cached after calculation just like the annual repo
   assert.match(client,/invalidateChildPdf\(\)/);
   assert.match(client,/link\.target="_blank"/);
 });
+
+
+test("The cover, contents, chapters and closing text flow without forced blank pages",async()=>{
+  const report=await collectChildPdf(born,definitions,async()=>energyBank(),tail);
+  const document=childPdfDefinition(report);
+  assert.ok(document.content[0].stack.some(part=>
+    typeof part.svg==="string" && part.svg.includes("Georgia") && part.svg.includes("Всё о ребёнке")
+  ),"Cover uses expressive vector serif heading");
+  assert.equal(document.content[1].text,"Содержание","Contents follow the cover immediately");
+  assert.equal(document.content.filter(item=>item.pageBreak).length,0,
+    "Do not force new pages after cover, after contents, or before closing");
+  assert.equal(document.content.filter(item=>item.stack?.[0]?.style==="chapterKicker").length,22);
+  assert.ok(document.content.filter(item=>item.stack?.[0]?.style==="chapterKicker")
+    .every(item=>item.unbreakable===true),"Chapter labels and titles must stay together");
+});
