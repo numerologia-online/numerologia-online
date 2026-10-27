@@ -223,3 +223,33 @@
 #child-matrix-panel .child-matrix-orbit-inner { opacity: .28; }
 #child-matrix-panel .child-matrix-glow { opacity: .30; }
 #child-matrix-panel .child-matrix-lightray { opacity: .38; }
+
+/* Clear first-step cue, scaled together with the existing responsive SVG.
+   No changes to matrix calculations, captions or interactive hit targets. */
+#child-matrix-panel .child-start-arrow {
+  fill:none;
+  stroke:#ae6c99;
+  stroke-width:2.4;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  opacity:.9;
+  filter:drop-shadow(0 0 2px rgba(255,255,255,.95));
+  pointer-events:none;
+}
+#child-matrix-panel .child-visual.has-started .child-start-arrow {
+  display:none;
+}
+#child-matrix-panel .child-visual:not(.has-started) .child-matrix-point[data-child-point="character"] .child-gem-rainbow-rim {
+  stroke:#c77ab7;
+  stroke-width:3.4;
+  filter:drop-shadow(0 0 5px rgba(198,112,185,.58));
+}
+#child-matrix-panel .child-matrix-heading h3 {
+  max-width:100%;
+  font-size:clamp(24px,6.4vw,37px);
+  line-height:1.15;
+}
+#child-matrix-panel .child-matrix-heading p {
+  color:#916383;
+  font-weight:550;
+}

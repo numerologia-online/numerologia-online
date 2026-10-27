@@ -168,6 +168,8 @@ const openPointReading = async (point, source = null) => {
     ...matrixSections.querySelectorAll('[data-child-topic="' + point.id + '"]')
   ].filter(Boolean))];
   selectedElements.forEach((node) => node.classList.add("is-selected"));
+  // Hide the onboarding cue once the mother selects any reading.
+  matrixVisual.classList.add("has-started");
   insight.hidden = false;
 
   // A karmic tail is a three-energy combination, never a generic energy text.
@@ -261,6 +263,8 @@ const matrixDefinitions = (matrix) => [
 
 const renderMatrix = (matrix) => {
   const definitions = matrixDefinitions(matrix);
+  // Every fresh calculation starts without an open reading.
+  matrixVisual.classList.remove("has-started");
   matrixSections.replaceChildren();
   definitions.forEach((definition) => {
     const button = document.createElement("button");
@@ -449,6 +453,14 @@ const renderMatrix = (matrix) => {
       '<text class="child-matrix-label-copy">' + spans + '</text></g>'
     );
   });
+  // Gentle vector arrow to the actual character node (41,260).
+  // No extra hit targets: the arrow never intercepts clicks on any number.
+  svgPieces.push(
+    '<g class="child-start-arrow" aria-hidden="true" pointer-events="none">' +
+    '<path d="M55 145 C16 159 8 181 13 209 C15 220 20 227 25 233" />' +
+    '<path d="M12 226 L25 233 L24 219" />' +
+    '</g>'
+  );
   svgPieces.push("</svg>");
   matrixVisual.innerHTML = svgPieces.join("");
   const allPoints = new Map([...definitions, ...extraPoints].map((point) => [point.id, point]));
