@@ -94,6 +94,19 @@ const childCoverOrnament = String.raw`<svg xmlns="http://www.w3.org/2000/svg" wi
   </g>
 </svg>`;
 
+// Serif vector lettering uses the same refined headline treatment as the year PDF.
+// Remains lightweight and requires no extra font download.
+const childCoverLettering = String.raw`<svg xmlns="http://www.w3.org/2000/svg" width="472" height="112" viewBox="0 0 472 112">
+  <g text-anchor="middle">
+    <text x="236.8" y="66" font-family="Georgia, 'Times New Roman', serif" font-size="51" font-weight="700" fill="#CDBB9A" opacity=".50">Всё о ребёнке</text>
+    <text x="235.5" y="64.5" font-family="Georgia, 'Times New Roman', serif" font-size="51" font-weight="700" fill="#24473D">Всё о ребёнке</text>
+  </g>
+  <g stroke="#BE9A5F" stroke-width=".82" fill="none" opacity=".8">
+    <path d="M65 93H207 M265 93H407"/>
+    <path d="M236 87L241 93L236 99L231 93Z"/>
+  </g>
+</svg>`;
+
 export function childPdfDefinition(report, {preview=false}={}) {
   const draft = Boolean(preview && report && !report.ready);
   if (!report?.ready && !draft) throw new Error("Полный PDF пока не готов: не все главы доступны.");
@@ -113,7 +126,7 @@ export function childPdfDefinition(report, {preview=false}={}) {
       ...(chapter.subtitle?[{text:chapter.subtitle,style:"chapterSubtitle"}]:[]),
       {canvas:[{type:"line",x1:0,y1:0,x2:445,y2:0,lineWidth:.65,lineColor:"#D6BF92"}],
        margin:[0,7,0,4]}
-    ],margin:[0,index===0?13:28,0,12]},
+    ],unbreakable:true,margin:[0,index===0?12:21,0,11]},
     ...(chapter.lead?[{text:chapter.lead,style:"chapterLead"}]:[]),
     ...paragraphsOfChapter(chapter.paragraphs),
     ...chapter.parts.flatMap(part=>[
@@ -136,17 +149,17 @@ export function childPdfDefinition(report, {preview=false}={}) {
     watermark:{text:draft?"ЧЕРНОВИК":"9966",opacity:draft?.08:.027,color:"#D7C8B0",angle:0,fontSize:draft?54:65},
     defaultStyle:{font:"Roboto",fontSize:17.2,color:ink,lineHeight:1.34},
     styles:{
-      coverBrand:{fontSize:13.3,bold:true,color:gold,characterSpacing:2.4,alignment:"center",margin:[0,0,0,25]},
+      coverBrand:{fontSize:13.3,bold:true,color:gold,characterSpacing:2.4,alignment:"center",margin:[0,0,0,12]},
       coverTitle:{fontSize:43,bold:true,color:forest,alignment:"center",lineHeight:1.07,margin:[0,0,0,17]},
-      coverSubtitle:{fontSize:20,color:soft,alignment:"center",lineHeight:1.25,margin:[0,0,0,28]},
-      coverDate:{fontSize:18.5,bold:true,color:forest,alignment:"center",margin:[0,0,0,14]},
+      coverSubtitle:{fontSize:19,color:soft,alignment:"center",lineHeight:1.24,margin:[0,0,0,17]},
+      coverDate:{fontSize:18.5,bold:true,color:forest,alignment:"center",margin:[0,0,0,8]},
       coverNote:{fontSize:13.3,italics:true,color:muted,alignment:"center",margin:[6,0,6,0]},
       coverFoot:{fontSize:11,bold:true,color:gold,characterSpacing:1.35,alignment:"center",margin:[0,0,0,0]},
       draftWarning:{fontSize:13,bold:true,color:"#9A336F",alignment:"center",lineHeight:1.3,margin:[0,22,0,0]},
-      tocTitle:{fontSize:32,bold:true,color:forest,margin:[0,0,0,14]},
-      tocIntro:{fontSize:14.8,color:soft,lineHeight:1.34,margin:[0,0,0,24]},
+      tocTitle:{fontSize:33,bold:true,color:forest,margin:[0,0,0,12]},
+      tocIntro:{fontSize:14.4,color:soft,lineHeight:1.30,margin:[0,0,0,15]},
       chapterKicker:{fontSize:12.5,bold:true,color:gold,characterSpacing:1.7,margin:[0,0,0,10]},
-      chapterTitle:{fontSize:27,bold:true,color:forest,lineHeight:1.12,margin:[0,0,0,8]},
+      chapterTitle:{fontSize:30,bold:true,color:forest,lineHeight:1.10,margin:[0,0,0,8]},
       chapterSubtitle:{fontSize:16,color:soft,margin:[0,0,0,7]},
       chapterLead:{fontSize:17,italics:true,color:soft,lineHeight:1.35,margin:[0,0,0,17]},
       partTitle:{fontSize:21,bold:true,color:soft,lineHeight:1.17,margin:[0,22,0,12]},
@@ -155,21 +168,22 @@ export function childPdfDefinition(report, {preview=false}={}) {
     },
     content:[
       {stack:[
-        {svg:childCoverOrnament,width:104,height:74,alignment:"center",margin:[0,0,0,26]},
         {text:"НУМЕРОЛОГИЯ ОНЛАЙН",style:"coverBrand"},
-        {text:"Всё о ребёнке",style:"coverTitle"},
+        {svg:childCoverOrnament,width:86,height:61,alignment:"center",margin:[0,0,0,4]},
+        {svg:childCoverLettering,width:470,height:112,alignment:"center",margin:[0,0,0,5]},
         {text:"Характер, таланты, воспитание,\nчувства и жизненные задачи",style:"coverSubtitle"},
         {text:"Дата рождения: "+report.birthday,style:"coverDate"},
         {text:"Персональный путеводитель по миру вашего ребёнка",style:"coverNote"},
-        ...(draft?[{text:"ЧЕРНОВИК ДЛЯ ПРОВЕРКИ ОФОРМЛЕНИЯ\nНе отправлять клиентам как полный разбор.",style:"draftWarning"}]:[])
-      ],margin:[0,82,0,0],pageBreak:"after"},
+        ...(draft?[{text:"ЧЕРНОВИК ДЛЯ ПРОВЕРКИ ОФОРМЛЕНИЯ\nНе отправлять клиентам как полный разбор.",style:"draftWarning"}]:[]),
+        {canvas:[{type:"line",x1:52,y1:0,x2:419,y2:0,lineColor:"#D8C19B",lineWidth:.7}],
+         margin:[0,20,0,0]}
+      ],unbreakable:true,margin:[0,4,0,28]},
       {text:"Содержание",style:"tocTitle"},
       {text:draft
         ? "Готово "+report.chapters.length+" из "+report.total+" глав. Остальные главы отмечены как находящиеся в работе."
         : report.chapters.length+" главы о вашем ребёнке. Возвращайтесь к нужным разделам в любое время.",
         style:"tocIntro"},
       ...tocItems,
-      {text:"",pageBreak:"after"},
       ...chapterContents,
       {stack:[
         {text:"НУМЕРОЛОГИЯ ОНЛАЙН",style:"coverBrand"},
@@ -180,7 +194,7 @@ export function childPdfDefinition(report, {preview=false}={}) {
         {text:"numerologia-online.github.io/numerologia-online/",color:forest,
          fontSize:14.5,link:"https://numerologia-online.github.io/numerologia-online/",margin:[0,0,0,18]},
         {text:"Техподдержка: @Kod_9966",fontSize:14.5,color:forest,link:"https://t.me/Kod_9966"}
-      ],pageBreak:"before",margin:[0,72,0,0]}
+      ],margin:[0,26,0,0]}
     ],
     footer:(page,total)=>page===1?null:{
       columns:[
