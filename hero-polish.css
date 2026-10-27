@@ -102,3 +102,61 @@
   .product-card::after { right: -39px; bottom: -50px; width: 118px; height: 118px; box-shadow: 0 0 0 15px rgba(255,255,255,.16), 0 0 0 31px rgba(117,151,124,.08); }
   .appointment { min-height: 92px; }
 }
+
+
+/* Author photograph: the same original asset used below in the founder story.
+   Preserve natural detail; never enlarge the portrait in an isolated crop. */
+.hero.hero-founder{
+  display:flex;align-items:flex-end;justify-content:center;
+  min-height:clamp(450px,83vw,540px);
+  padding:28px clamp(20px,5.8vw,34px) 28px;
+  background:#f1eade;border-color:rgba(168,134,80,.28);
+  box-shadow:0 17px 40px rgba(62,66,47,.12);
+}
+.hero-founder-photo{
+  display:block;position:absolute;inset:0;z-index:-2;
+  width:100%;height:100%;object-fit:cover;object-position:center 26%;
+}
+.hero.hero-founder::before{
+  z-index:3;inset:12px;
+  border-color:rgba(169,133,68,.3);
+  pointer-events:none;
+}
+.hero.hero-founder::after{
+  z-index:-1;inset:0;width:auto;height:auto;opacity:1;
+  background:linear-gradient(180deg,
+    rgba(251,249,244,.07) 0%,
+    rgba(251,249,244,.08) 20%,
+    rgba(251,249,244,.61) 43%,
+    rgba(251,249,244,.96) 67%,
+    rgba(251,249,244,.98) 100%);
+  pointer-events:none;
+}
+.hero-founder-content{position:relative;z-index:2;width:100%;text-align:center}
+.hero.hero-founder h1{font-size:clamp(32px,8vw,52px);line-height:1.03}
+.hero.hero-founder h1 span{color:#173f31}
+.hero.hero-founder h1 em{font-size:.58em;line-height:1.07}
+.hero.hero-founder .hero-symbols{margin:15px 0 10px}
+.hero.hero-founder .hero-copy{margin:0;color:#2e4033;font-size:clamp(13px,3.6vw,16px)}
+.hero-founder-button{
+  display:flex;justify-content:center;align-items:center;gap:10px;
+  width:fit-content;max-width:100%;min-height:54px;
+  margin:22px auto 0;padding:14px 20px;
+  border:1px solid rgba(164,126,63,.32);border-radius:17px;
+  background:#174d3b;color:#fff;
+  font:750 clamp(12px,3.4vw,15px)/1.3 system-ui,-apple-system,"Segoe UI",sans-serif;
+  text-decoration:none;box-shadow:0 8px 22px rgba(23,77,59,.18);
+}
+.hero-founder-button span{font-size:21px;line-height:1}
+.hero-founder-button:hover,.hero-founder-button:focus-visible{background:#24674f}
+.hero-founder-button:focus-visible{outline:3px solid #c8a775;outline-offset:4px}
+@media(max-width:480px){
+  .hero.hero-founder{min-height:475px;padding:27px 18px 24px}
+  .hero-founder-photo{object-position:center 19%}
+  .hero.hero-founder h1{font-size:clamp(32px,8.5vw,39px)}
+  .hero-founder-button{width:100%;padding:13px 12px}
+}
+@media(prefers-reduced-motion:no-preference){
+  .hero-founder-button{transition:background .2s ease,transform .2s ease}
+  .hero-founder-button:active{transform:translateY(1px)}
+}

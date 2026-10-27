@@ -17,10 +17,11 @@
     <link rel="stylesheet" href="day-share.css?v=1" />
     <link rel="stylesheet" href="theme.css" />
     <link rel="stylesheet" href="artwork.css?v=6" />
-    <link rel="stylesheet" href="hero-polish.css" />
+    <link rel="stylesheet" href="hero-polish.css?v=2" />
+    <link rel="stylesheet" href="site-support.css?v=1" />
     <link rel="stylesheet" href="pro-home.css?v=3" />
     <link rel="stylesheet" href="install.css?v=3" />
-    <link rel="stylesheet" href="auth-profile.css?v=9" />
+    <link rel="stylesheet" href="auth-profile.css?v=10" />
   </head>
   <body>
     <main class="app-shell">
@@ -37,10 +38,14 @@
           </div>
         </header>
 
-        <div class="hero">
-          <h1 id="home-title"><span>Персональная<br />нумерология</span><em>Для важных решений<br />и долгожданных<br />перемен</em></h1>
-          <div class="hero-symbols" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span></div>
-          <p class="hero-copy">Без эзотерической чуши и сладкой лжи.</p>
+        <div class="hero hero-founder">
+          <img class="hero-founder-photo" src="assets/founder-story-hero.webp" width="600" height="494" alt="" aria-hidden="true" fetchpriority="high" decoding="async">
+          <div class="hero-founder-content">
+            <h1 id="home-title"><span>Персональная<br />нумерология</span><em>Для важных решений<br />и долгожданных<br />перемен</em></h1>
+            <div class="hero-symbols" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span></div>
+            <p class="hero-copy">Без эзотерической чуши и сладкой лжи.</p>
+            <a class="hero-founder-button" href="#about-founder">Познакомиться с Татьяной и её методом <span aria-hidden="true">↓</span></a>
+          </div>
         </div>
 
         <section class="products" aria-label="Направления расчётов">
@@ -64,13 +69,15 @@
           <button class="product-card appointment" id="appointment-section" type="button" data-coming-soon data-artwork="assets/appointment.jpg"><span class="product-title">Записаться на личный расчёт</span><span class="product-arrow" aria-hidden="true">→</span></button>
         </section>
         <style>
-          .founder-story{max-width:760px;margin:30px auto 20px;border:1px solid #dfc18d;border-radius:28px;overflow:hidden;background:#fffdf7;box-shadow:0 14px 38px rgba(71,57,33,.06);box-sizing:border-box}
+          .founder-story{scroll-margin-top:20px;max-width:760px;margin:30px auto 20px;border:1px solid #dfc18d;border-radius:28px;overflow:hidden;background:#fffdf7;box-shadow:0 14px 38px rgba(71,57,33,.06);box-sizing:border-box}
           .founder-story-cover{display:block;width:100%;height:auto;aspect-ratio:600/494;object-fit:cover;background:#f6eee2}
           .founder-story-body{position:relative;margin-top:-5px;padding:28px clamp(20px,5.5vw,48px) 27px;background:linear-gradient(180deg,#fffdf9 0%,#f9f7ee 100%);border-radius:30px 30px 0 0}
           .founder-story-rule{display:flex;align-items:center;justify-content:center;gap:13px;margin:0 0 21px;color:#c4a260;font:26px/1 Georgia,serif}
           .founder-story-rule:before,.founder-story-rule:after{content:"";display:block;height:1px;flex:1;background:#dfc79c}
           .founder-story-body p{font-family:Georgia,'Times New Roman',serif;font-size:clamp(15px,2.45vw,17px);line-height:1.62;letter-spacing:.002em;color:#345044;margin:0 0 19px}
           .founder-story-body p:last-child{margin-bottom:0}
+          .founder-story-title{margin:0 0 20px;color:#254e3e;font:400 clamp(28px,6vw,41px)/1.15 Georgia,"Times New Roman",serif;letter-spacing:-.04em}
+          .founder-story-title em{font-style:normal;color:#a4834a}
           .founder-story-body strong{color:#174b39;font-weight:600}
           .founder-story-body .founder-story-important{padding:16px 18px;background:rgba(236,228,206,.43);border-left:2px solid #b78e45;border-radius:3px 12px 12px 3px}
           .founder-story-body .founder-story-important strong{color:#a17b35}
@@ -83,11 +90,11 @@
             .founder-story-rule{margin-bottom:18px}
           }
         </style>
-        <section class="founder-story" aria-labelledby="founder-note-title">
-          <h2 id="founder-note-title" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap">Давайте знакомиться. Татьяна, основатель проекта «Нумерология онлайн»</h2>
+        <section class="founder-story" id="about-founder" aria-labelledby="founder-note-title">
           <img class="founder-story-cover" src="assets/founder-story-hero.webp" width="600" height="494" loading="lazy" decoding="async" alt="Татьяна сидит за столом в светлом интерьере. На фото: «От основателя. Давайте знакомиться. Татьяна»">
           <div class="founder-story-body">
             <div class="founder-story-rule" aria-hidden="true">✦</div>
+            <h2 class="founder-story-title" id="founder-note-title">Давайте знакомиться. <em>Я Татьяна.</em></h2>
             <p>Я создала «Нумерологию онлайн» для женщин, которым нужны не загадочные предсказания, а ответы на настоящие жизненные вопросы. Не долгие эзотерические тексты, а чёткие рекомендации в жизни, отношениях, деньгах, выборе и будущем. Я хотела, чтобы сложные расчёты превратились в понятные ответы, а нумерология стала доступной каждой женщине.</p>
             <p>Много лет я посвятила изучению разных школ нумерологии, практическим исследованиям и работе с людьми. Со временем даже разработала собственную методику - «Нумерологию момента», которая помогает находить ответы на срочные вопросы здесь и сейчас.</p>
             <p>Клиентов становилось всё больше: почти каждая девушка, заказавшая расчёт себе или ребёнку, возвращалась снова и рекомендовала меня подругам, сёстрам, мамам. Сарафанное радио оказалось сильнее любой рекламы. Я повышала цены, но поток людей продолжал расти. Однажды всего за две недели ко мне записались 100 человек.</p>
@@ -293,6 +300,8 @@
       </section>
     </main>
 
+    <a class="site-support-link" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer" aria-label="Техподдержка: написать сообщение в Telegram"><span class="site-support-mark" aria-hidden="true">?</span><span>Техподдержка</span></a>
+
     <div class="install-nudge" id="install-nudge" hidden>
       <section class="install-card" role="dialog" aria-modal="true" aria-labelledby="install-title">
         <button class="install-x" id="install-dismiss" type="button" aria-label="Закрыть">×</button>
@@ -365,6 +374,7 @@
           <a class="account-tile" href="./#lichnyj-den"><strong>Мой день <span aria-hidden="true">↗</span></strong><small>Подсказки на день</small></a>
           <a class="account-tile" href="./pro/schools/"><strong>Моё обучение <span aria-hidden="true">↗</span></strong><small>Школа нумерологии</small></a>
           <a class="account-tile" href="https://t.me/Numerologiaonline_bot" target="_blank" rel="noopener noreferrer"><strong>Telegram-бот <span aria-hidden="true">↗</span></strong><small>Открыть бота</small></a>
+          <a class="account-tile account-support-tile" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer"><strong>Техподдержка <span aria-hidden="true">↗</span></strong><small>Проблема с доступом или разбором? Напишите нам</small></a>
         </div>
         <p class="account-footer-note">Тарифы и доступ к покупкам пока в разработке.</p>
       </section>

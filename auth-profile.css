@@ -228,3 +228,8 @@
   .account-actions button{padding:10px 7px;font-size:13px}
   .account-tile{padding:11px 9px}
 }
+
+/* Support is visible as a dedicated action in the signed-in cabinet. */
+.account-support-tile{grid-column:1/-1;min-height:70px;border-color:#d8c297;background:linear-gradient(130deg,#faf1dc,#f6f6ed)}
+.account-support-tile strong{font-size:15px;color:#174d3b}
+.account-support-tile small{font-size:12px}
