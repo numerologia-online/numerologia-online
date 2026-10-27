@@ -74,7 +74,7 @@ const karmicTailRequests = new Map();
 const getChildKarmicTail = async (code) => {
   if (!/^[0-9]{1,2}-[0-9]{1,2}-[0-9]{1,2}$/.test(code)) return {state:"missing"};
   if (!karmicTailCatalogPromise) {
-    karmicTailCatalogPromise = fetch("./data/matrix/karmic-tail/index.json?v=8")
+    karmicTailCatalogPromise = fetch("./data/matrix/karmic-tail/index.json?v=9")
       .then((response) => {
         if (!response.ok) throw new Error("Каталог кармических программ недоступен");
         return response.json();
