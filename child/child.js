@@ -171,6 +171,7 @@ const openPointReading = async (point, source = null) => {
   // Hide the onboarding cue and take the reader directly to the
   // requested chapter after her own tap, never on initial calculation.
   matrixVisual.classList.add("has-started");
+  childGuide.hidden = true;
   insight.hidden = false;
   window.requestAnimationFrame(() => {
     if (requestId === insightRequestId && !insight.hidden) {
@@ -267,10 +268,51 @@ const matrixDefinitions = (matrix) => [
     code: [matrix.tail.first, matrix.tail.second, matrix.bottom].join(" - ")}
 ];
 
+
+/* Draw the onboarding arrow from the heading down to the actual character
+   circle, respecting mobile widths and font wrapping. Decorative only. */
+const childGuide = byId("child-matrix-guide");
+const updateChildGuide = () => {
+  if (childGuide.hidden || matrixVisual.classList.contains("has-started")) return;
+  const panel = byId("child-matrix-panel");
+  const heading = panel.querySelector(".child-matrix-start-heading h3");
+  const matrixSvg = matrixVisual.querySelector(".child-matrix-svg");
+  if (!heading || !matrixSvg || panel.hidden) return;
+  const outer = panel.getBoundingClientRect();
+  const headingRect = heading.getBoundingClientRect();
+  const diagram = matrixSvg.getBoundingClientRect();
+  if (!outer.width || !diagram.width || !headingRect.width) return;
+  const x0 = Math.max(22, Math.min(outer.width - 25, headingRect.left - outer.left - 7));
+  const y0 = headingRect.bottom - outer.top - 4;
+  // The number is at (41,260) in the existing 520x520 matrix SVG.
+  // Stop by its upper-left rim rather than obscuring its numeral.
+  const x1 = diagram.left - outer.left + diagram.width * (41 / 520) - 19;
+  const y1 = diagram.top - outer.top + diagram.height * (260 / 520) - 20;
+  if (y1 <= y0 + 20) return;
+  const c1x = Math.max(9, x0 - 51), c1y = y0 + 30;
+  const c2x = Math.max(8, x1 - 53), c2y = y1 - Math.min(100, (y1 - y0) * .34);
+  const angle = Math.atan2(y1 - c2y, x1 - c2x);
+  const wing = (direction) => {
+    const a = angle + direction * .56;
+    return [x1 - 17 * Math.cos(a), y1 - 17 * Math.sin(a)];
+  };
+  const [leftX,leftY] = wing(-1), [rightX,rightY] = wing(1);
+  const path = [
+    "M",x0,y0,"C",c1x,c1y,c2x,c2y,x1,y1,
+    "M",leftX,leftY,"L",x1,y1,"L",rightX,rightY
+  ].join(" ");
+  childGuide.style.height = Math.ceil(y1 + 20) + "px";
+  childGuide.setAttribute("viewBox", "0 0 " + Math.ceil(outer.width) + " " + Math.ceil(y1 + 20));
+  childGuide.querySelectorAll("path").forEach(node => node.setAttribute("d", path));
+};
+window.addEventListener("resize", () => window.requestAnimationFrame(updateChildGuide), {passive:true});
+document.fonts?.ready.then(() => window.requestAnimationFrame(updateChildGuide));
+
 const renderMatrix = (matrix) => {
   const definitions = matrixDefinitions(matrix);
   // Every fresh calculation starts without an open reading.
   matrixVisual.classList.remove("has-started");
+  childGuide.hidden = false;
   matrixSections.replaceChildren();
   definitions.forEach((definition) => {
     const button = document.createElement("button");
@@ -459,18 +501,11 @@ const renderMatrix = (matrix) => {
       '<text class="child-matrix-label-copy">' + spans + '</text></g>'
     );
   });
-  // A large yet graceful curve in the quiet left margin leads to the
-  // character gem (41,260), leaving the labels and clickable number clear.
-  svgPieces.push(
-    '<g class="child-start-arrow" aria-hidden="true" pointer-events="none">' +
-    '<path class="child-start-arrow-border" d="M75 127 C35 141 16 164 17 194 C18 213 25 224 35 232" />' +
-    '<path class="child-start-arrow-border" d="M20 221 Q29 230 35 232 Q39 221 45 211" />' +
-    '<path class="child-start-arrow-line" d="M75 127 C35 141 16 164 17 194 C18 213 25 224 35 232" />' +
-    '<path class="child-start-arrow-line" d="M20 221 Q29 230 35 232 Q39 221 45 211" />' +
-    '</g>'
-  );
+  // The introductory arrow is an overlay across the heading and diagram;
+  // no extra SVG elements are embedded in the interactive matrix.
   svgPieces.push("</svg>");
   matrixVisual.innerHTML = svgPieces.join("");
+  window.requestAnimationFrame(updateChildGuide);
   const allPoints = new Map([...definitions, ...extraPoints].map((point) => [point.id, point]));
   matrixVisual.querySelectorAll("[data-child-point]").forEach((node) => {
     const open = () => {
