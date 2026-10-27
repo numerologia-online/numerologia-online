@@ -594,3 +594,72 @@ byId("child-day-today").addEventListener("click", () => {
   chosenDate = currentDate();
   updateDay();
 });
+
+// Full child report: create the PDF only after the parent requests it.
+const pdfDialog = byId("child-pdf-dialog");
+const pdfOpen = byId("child-pdf-open");
+const pdfClose = byId("child-pdf-close");
+const pdfSave = byId("child-pdf-save");
+const pdfChapters = byId("child-pdf-list");
+const pdfStatus = byId("child-pdf-status");
+let childPdfModulePromise = null;
+const pdfModule = () => {
+  if (!childPdfModulePromise) childPdfModulePromise = import("./child-report-pdf.js?v=1")
+    .catch(error => { childPdfModulePromise = null; throw error; });
+  return childPdfModulePromise;
+};
+pdfOpen.addEventListener("click", () => {
+  if (!birth) return;
+  const chapters = matrixDefinitions(calculateMatrix(birth));
+  pdfChapters.replaceChildren();
+  for (const chapter of chapters) {
+    const item = document.createElement("li");
+    item.textContent = chapter.title;
+    pdfChapters.append(item);
+  }
+  pdfStatus.textContent = chapters.length + " главы. Готовые тексты будут взяты из базы сайта.";
+  pdfDialog.showModal();
+});
+pdfClose.addEventListener("click", () => { if (!pdfSave.disabled) pdfDialog.close(); });
+pdfDialog.addEventListener("click", event => {
+  if (event.target === pdfDialog && !pdfSave.disabled) pdfDialog.close();
+});
+pdfSave.addEventListener("click", async () => {
+  if (!birth) return;
+  const currentBirth = { ...birth };
+  const normalLabel = pdfSave.innerHTML;
+  pdfSave.disabled = true;
+  pdfSave.textContent = "Проверяю разделы…";
+  pdfStatus.textContent = "Проверяю готовность всех глав полного разбора.";
+  try {
+    const { collectChildPdf, buildChildPdfBlob } = await pdfModule();
+    const report = await collectChildPdf(
+      currentBirth, matrixDefinitions(calculateMatrix(currentBirth)),
+      getEnergyBank, getChildKarmicTail
+    );
+    if (!report.ready) {
+      pdfStatus.textContent = "Готово " + report.chapters.length + " из " + report.total +
+        " глав. Пока дописываются: " + report.missing.join(", ") +
+        ". Не будем выдавать незавершённый PDF за полный разбор.";
+      return;
+    }
+    pdfSave.textContent = "Собираю PDF…";
+    pdfStatus.textContent = "Все главы готовы. Создаю лёгкий PDF без фоновых фотографий.";
+    const file = await buildChildPdfBlob(report);
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "Полный разбор ребёнка " + report.birthday + ".pdf";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+    pdfStatus.textContent = "PDF подготовлен. Если Safari не начал скачивание, нажмите кнопку ещё раз.";
+  } catch (error) {
+    pdfStatus.textContent = error?.message || "Не удалось собрать PDF. Попробуйте ещё раз.";
+  } finally {
+    pdfSave.disabled = false;
+    pdfSave.innerHTML = normalLabel;
+  }
+});
+
