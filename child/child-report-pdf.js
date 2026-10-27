@@ -96,14 +96,14 @@ const childCoverOrnament = String.raw`<svg xmlns="http://www.w3.org/2000/svg" wi
 
 // Serif vector lettering uses the same refined headline treatment as the year PDF.
 // Remains lightweight and requires no extra font download.
-const childCoverLettering = String.raw`<svg xmlns="http://www.w3.org/2000/svg" width="472" height="112" viewBox="0 0 472 112">
+const childCoverLettering = String.raw`<svg xmlns="http://www.w3.org/2000/svg" width="472" height="131" viewBox="0 0 472 131">
   <g text-anchor="middle">
-    <text x="236.8" y="66" font-family="Georgia, 'Times New Roman', serif" font-size="51" font-weight="700" fill="#CDBB9A" opacity=".50">Всё о ребёнке</text>
-    <text x="235.5" y="64.5" font-family="Georgia, 'Times New Roman', serif" font-size="51" font-weight="700" fill="#24473D">Всё о ребёнке</text>
+    <text x="236.8" y="82" font-family="Georgia, 'Times New Roman', serif" font-size="61" font-weight="700" fill="#CDBB9A" opacity=".50">Всё о ребёнке</text>
+    <text x="235.5" y="80.5" font-family="Georgia, 'Times New Roman', serif" font-size="61" font-weight="700" fill="#24473D">Всё о ребёнке</text>
   </g>
   <g stroke="#BE9A5F" stroke-width=".82" fill="none" opacity=".8">
-    <path d="M65 93H207 M265 93H407"/>
-    <path d="M236 87L241 93L236 99L231 93Z"/>
+    <path d="M65 110H207 M265 110H407"/>
+    <path d="M236 104L241 110L236 116L231 110Z"/>
   </g>
 </svg>`;
 
@@ -136,10 +136,10 @@ export function childPdfDefinition(report, {preview=false}={}) {
   ]);
   const tocItems=displayedChapters.map((chapter,index)=>({
     columns:[
-      {text:String(index+1).padStart(2,"0"),width:39,color:gold,bold:true,fontSize:12.5},
-      {text:chapter.title+(chapter.pending?"  · В РАБОТЕ":""),color:ink,fontSize:14.5}
+      {text:String(index+1).padStart(2,"0"),width:40,color:gold,bold:true,fontSize:16.8},
+      {text:chapter.title+(chapter.pending?"  · В РАБОТЕ":""),color:ink,fontSize:17.2}
     ],
-    columnGap:4,margin:[0,0,0,9]
+    columnGap:4,margin:[0,0,0,5]
   }));
   return {
     pageSize:"A4",
@@ -147,37 +147,37 @@ export function childPdfDefinition(report, {preview=false}={}) {
     info:{title:(draft?"ЧЕРНОВИК - ":"")+"Всё о ребёнке - "+report.birthday,author:"Нумерология Онлайн"},
     background:()=>({svg:childPaperSvg}),
     watermark:{text:draft?"ЧЕРНОВИК":"9966",opacity:draft?.08:.027,color:"#D7C8B0",angle:0,fontSize:draft?54:65},
-    defaultStyle:{font:"Roboto",fontSize:17.2,color:ink,lineHeight:1.34},
+    defaultStyle:{font:"Roboto",fontSize:20.8,color:ink,lineHeight:1.38},
     styles:{
-      coverBrand:{fontSize:13.3,bold:true,color:gold,characterSpacing:2.4,alignment:"center",margin:[0,0,0,12]},
+      coverBrand:{fontSize:16.5,bold:true,color:gold,characterSpacing:2.5,alignment:"center",margin:[0,0,0,20]},
       coverTitle:{fontSize:43,bold:true,color:forest,alignment:"center",lineHeight:1.07,margin:[0,0,0,17]},
-      coverSubtitle:{fontSize:19,color:soft,alignment:"center",lineHeight:1.24,margin:[0,0,0,17]},
-      coverDate:{fontSize:18.5,bold:true,color:forest,alignment:"center",margin:[0,0,0,8]},
-      coverNote:{fontSize:13.3,italics:true,color:muted,alignment:"center",margin:[6,0,6,0]},
+      coverSubtitle:{fontSize:24,color:soft,alignment:"center",lineHeight:1.23,margin:[0,0,0,26]},
+      coverDate:{fontSize:22.5,bold:true,color:forest,alignment:"center",margin:[0,0,0,16]},
+      coverNote:{fontSize:17.4,italics:true,color:muted,alignment:"center",lineHeight:1.23,margin:[10,0,10,0]},
       coverFoot:{fontSize:11,bold:true,color:gold,characterSpacing:1.35,alignment:"center",margin:[0,0,0,0]},
       draftWarning:{fontSize:13,bold:true,color:"#9A336F",alignment:"center",lineHeight:1.3,margin:[0,22,0,0]},
-      tocTitle:{fontSize:33,bold:true,color:forest,margin:[0,0,0,12]},
-      tocIntro:{fontSize:14.4,color:soft,lineHeight:1.30,margin:[0,0,0,15]},
-      chapterKicker:{fontSize:12.5,bold:true,color:gold,characterSpacing:1.7,margin:[0,0,0,10]},
-      chapterTitle:{fontSize:30,bold:true,color:forest,lineHeight:1.10,margin:[0,0,0,8]},
-      chapterSubtitle:{fontSize:16,color:soft,margin:[0,0,0,7]},
-      chapterLead:{fontSize:17,italics:true,color:soft,lineHeight:1.35,margin:[0,0,0,17]},
-      partTitle:{fontSize:21,bold:true,color:soft,lineHeight:1.17,margin:[0,22,0,12]},
-      paragraph:{fontSize:17.2,color:ink,lineHeight:1.35,margin:[0,0,0,16]},
-      endTitle:{fontSize:28,bold:true,color:forest,alignment:"center",lineHeight:1.14,margin:[0,0,0,25]}
+      tocTitle:{fontSize:36,bold:true,color:forest,margin:[0,0,0,12]},
+      tocIntro:{fontSize:16.8,color:soft,lineHeight:1.28,margin:[0,0,0,18]},
+      chapterKicker:{fontSize:14.5,bold:true,color:gold,characterSpacing:1.7,margin:[0,0,0,10]},
+      chapterTitle:{fontSize:34,bold:true,color:forest,lineHeight:1.12,margin:[0,0,0,10]},
+      chapterSubtitle:{fontSize:19,color:soft,margin:[0,0,0,9]},
+      chapterLead:{fontSize:20.8,italics:true,color:soft,lineHeight:1.37,margin:[0,0,0,21]},
+      partTitle:{fontSize:25,bold:true,color:soft,lineHeight:1.18,margin:[0,24,0,14]},
+      paragraph:{fontSize:20.8,color:ink,lineHeight:1.40,margin:[0,0,0,19]},
+      endTitle:{fontSize:31,bold:true,color:forest,alignment:"center",lineHeight:1.14,margin:[0,0,0,25]}
     },
     content:[
       {stack:[
         {text:"НУМЕРОЛОГИЯ ОНЛАЙН",style:"coverBrand"},
-        {svg:childCoverOrnament,width:86,height:61,alignment:"center",margin:[0,0,0,4]},
-        {svg:childCoverLettering,width:470,height:112,alignment:"center",margin:[0,0,0,5]},
+        {svg:childCoverOrnament,width:100,height:72,alignment:"center",margin:[0,0,0,15]},
+        {svg:childCoverLettering,width:470,height:131,alignment:"center",margin:[0,0,0,16]},
         {text:"Характер, таланты, воспитание,\nчувства и жизненные задачи",style:"coverSubtitle"},
         {text:"Дата рождения: "+report.birthday,style:"coverDate"},
         {text:"Персональный путеводитель по миру вашего ребёнка",style:"coverNote"},
         ...(draft?[{text:"ЧЕРНОВИК ДЛЯ ПРОВЕРКИ ОФОРМЛЕНИЯ\nНе отправлять клиентам как полный разбор.",style:"draftWarning"}]:[]),
         {canvas:[{type:"line",x1:52,y1:0,x2:419,y2:0,lineColor:"#D8C19B",lineWidth:.7}],
          margin:[0,20,0,0]}
-      ],unbreakable:true,margin:[0,4,0,28]},
+      ],unbreakable:true,margin:[0,95,0,0],pageBreak:"after"},
       {text:"Содержание",style:"tocTitle"},
       {text:draft
         ? "Готово "+report.chapters.length+" из "+report.total+" глав. Остальные главы отмечены как находящиеся в работе."
@@ -189,11 +189,11 @@ export function childPdfDefinition(report, {preview=false}={}) {
         {text:"НУМЕРОЛОГИЯ ОНЛАЙН",style:"coverBrand"},
         {text:"Ваш ребёнок - целый мир, который стоит узнавать",style:"endTitle"},
         {text:"Возвращайтесь к этому разбору по мере взросления ребёнка. Пусть он помогает замечать сильные стороны, понимать потребности и сохранять доверие в семье.",style:"paragraph"},
-        {text:"С любовью, Татьяна",color:soft,italics:true,fontSize:18,margin:[0,27,0,25]},
+        {text:"С любовью, Татьяна",color:soft,italics:true,fontSize:22,margin:[0,27,0,25]},
         {text:"Наш сайт",style:"partTitle"},
         {text:"numerologia-online.github.io/numerologia-online/",color:forest,
-         fontSize:14.5,link:"https://numerologia-online.github.io/numerologia-online/",margin:[0,0,0,18]},
-        {text:"Техподдержка: @Kod_9966",fontSize:14.5,color:forest,link:"https://t.me/Kod_9966"}
+         fontSize:17.5,link:"https://numerologia-online.github.io/numerologia-online/",margin:[0,0,0,18]},
+        {text:"Техподдержка: @Kod_9966",fontSize:17.5,color:forest,link:"https://t.me/Kod_9966"}
       ],margin:[0,26,0,0]}
     ],
     footer:(page,total)=>page===1?null:{
