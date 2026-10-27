@@ -285,10 +285,15 @@ const getPdfMake = () => {
 
 const asParagraphs = (text, style = "paragraph") => text.split(/\n+/).map((line) => line.trim()).filter(Boolean).map((line) => ({ text: line, style }));
 
+// These numeric combinations are internal calculation keys, not customer PDF headings.
+const clientPdfLabel = (value = "") => String(value)
+  .replace(/(?:\s*·\s*)?связка\s+\d+\s*[×xх-]\s*\d+/giu, "")
+  .trim();
+
 const pdfLinkEntry = (link, kicker, fallbackTitle, fallbackText) => ({
-  kicker,
+  kicker: clientPdfLabel(kicker),
   title: link?.title || fallbackTitle,
-  general: link?.general || fallbackText,
+  general: link?.general || fallbackText.replace("этой связки", "этого месяца"),
   sections: link ? [["Деньги", link.money], ["Работа и дело", link.work], ["Отношения", link.relationships], ["Здоровье и ресурс", link.health], ["Опасность", link.danger], ["Что очень важно сделать", link.do], ["Чего категорически не делать", link.dont], ["Главный совет", link.advice]] : []
 });
 
@@ -456,7 +461,7 @@ const buildPdfDocument = (templates) => {
   const months = calculatedPdfMonths.length ? calculatedPdfMonths : [...document.querySelectorAll("#months details")].map((month) => {
     const title = month.querySelector("summary")?.innerText.replace(/\+/g, "").trim() || "";
     const content = month.querySelector(".month-content");
-    const kicker = content?.querySelector(".month-kicker")?.textContent?.trim() || "";
+    const kicker = clientPdfLabel(content?.querySelector(".month-kicker")?.textContent || "");
     const heading = content?.querySelector("h3")?.textContent?.trim() || "";
     const intro = [...(content?.querySelectorAll(":scope > p") || [])]
       .filter((paragraph) => !paragraph.classList.contains("month-kicker") && !paragraph.classList.contains("draft-note"))
@@ -471,7 +476,7 @@ const buildPdfDocument = (templates) => {
     });
     // A closed <details> hides its children from innerText in mobile browsers.
     // textContent keeps the monthly report available to the downloadable PDF.
-    const fallback = !intro.length && !sections.length ? asParagraphs(content?.textContent || "") : [];
+    const fallback = !intro.length && !sections.length ? asParagraphs(clientPdfLabel(content?.textContent || "").replace("этой связки", "этого месяца")) : [];
 
     return {
       stack: [
@@ -563,6 +568,16 @@ const renderMobilePdfPreview = () => {
   preview.removeAttribute("id");
   preview.classList.add("pdf-mobile-preview");
   preview.querySelectorAll("details").forEach((month) => { month.open = true; });
+  preview.querySelectorAll(".month-kicker").forEach((label) => {
+    const clientLabel = clientPdfLabel(label.textContent);
+    if (clientLabel) label.textContent = clientLabel;
+    else label.remove();
+  });
+  // The preview should show the same client-facing headings as the downloaded PDF.
+  preview.querySelectorAll(".month-card summary strong").forEach((number) => number.remove());
+  preview.querySelectorAll(".month-content p").forEach((paragraph) => {
+    paragraph.textContent = paragraph.textContent.replace("Авторская карточка этой связки ещё готовится.", "Авторская карточка этого месяца ещё готовится.");
+  });
   preview.querySelectorAll(".draft-note").forEach((note) => note.remove());
   preview.querySelectorAll("#pdf-button, #pdf-button-top").forEach((button) => button.remove());
   pdfPreviewPages.replaceChildren(preview);
