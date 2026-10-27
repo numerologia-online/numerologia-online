@@ -68,6 +68,7 @@ export function childPdfDefinition(report) {
     pageSize:"A4",pageMargins:[57,68,57,66],
     info:{title:"Всё о ребёнке - "+report.birthday,author:"Нумерология Онлайн"},
     background:()=>({canvas:[
+      {type:"rect",x:0,y:0,w:595,h:842,color:"#FFFCF7",lineColor:"#FFFCF7",lineWidth:0},
       {type:"rect",x:21,y:21,w:553,h:800,lineWidth:.6,lineColor:"#D0B994"}
     ]}),
     watermark:{text:"9966",opacity:.045,color:"#DCC7BA",angle:0,fontSize:75},
