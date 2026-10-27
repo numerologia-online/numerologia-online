@@ -67,6 +67,71 @@ const getEnergyBank = (energy) => {
   }
   return energyBankRequests.get(number);
 };
+// Child karmic programs live in their own catalog, separate from single-energy readings.
+// Index prevents requests for unwritten combinations; finished JSON is lazy-loaded on tap.
+let karmicTailCatalogPromise = null;
+const karmicTailRequests = new Map();
+const getChildKarmicTail = async (code) => {
+  if (!/^\\d{1,2}-\\d{1,2}-\\d{1,2}$/.test(code)) return {state:"missing"};
+  if (!karmicTailCatalogPromise) {
+    karmicTailCatalogPromise = fetch("./data/matrix/karmic-tail/index.json?v=1")
+      .then((response) => {
+        if (!response.ok) throw new Error("Каталог кармических программ недоступен");
+        return response.json();
+      }).catch(() => {
+        karmicTailCatalogPromise = null;
+        return null;
+      });
+  }
+  const catalog = await karmicTailCatalogPromise;
+  if (!catalog || catalog.schema !== "child-karmic-tail-index-v1") return {state:"error"};
+  const filename = Object.hasOwn(catalog.available || {}, code) ? catalog.available[code] : null;
+  if (filename !== code + ".json") return {state:"missing"};
+  if (!karmicTailRequests.has(code)) {
+    karmicTailRequests.set(code,
+      fetch("./data/matrix/karmic-tail/" + filename + "?v=2")
+        .then((response) => {
+          if (!response.ok) throw new Error("Кармический разбор недоступен");
+          return response.json();
+        })
+        .then((bank) => {
+          if (bank.schema !== "child-karmic-tail-v1" || bank.code !== code ||
+              bank.status !== "ready" || !Array.isArray(bank.sections)) {
+            throw new Error("Неверный формат кармической программы");
+          }
+          return bank;
+        })
+        .catch(() => {
+          karmicTailRequests.delete(code);
+          return null;
+        })
+    );
+  }
+  const bank = await karmicTailRequests.get(code);
+  return bank ? {state:"ready",bank} : {state:"error"};
+};
+const showChildKarmicTail = (container, bank) => {
+  const fragment = document.createDocumentFragment();
+  if (typeof bank.lead === "string" && bank.lead.trim()) {
+    const intro = document.createElement("p");
+    intro.textContent = bank.lead;
+    fragment.append(intro);
+  }
+  for (const section of bank.sections) {
+    if (!section || !Array.isArray(section.paragraphs)) continue;
+    const heading = document.createElement("h4");
+    heading.textContent = section.title || "";
+    fragment.append(heading);
+    for (const line of section.paragraphs) {
+      if (typeof line !== "string" || !line.trim()) continue;
+      const paragraph = document.createElement("p");
+      paragraph.textContent = line;
+      fragment.append(paragraph);
+    }
+  }
+  container.replaceChildren(fragment);
+};
+
 const showChildParagraphs = (container, paragraphs) => {
   container.replaceChildren();
   for (const line of paragraphs) {
@@ -105,9 +170,20 @@ const openPointReading = async (point, source = null) => {
   selectedElements.forEach((node) => node.classList.add("is-selected"));
   insight.hidden = false;
 
-  // Karmic tail requires three energies, not one isolated number.
+  // A karmic tail is a three-energy combination, never a generic energy text.
   if (point.id === "tail" || point.id === "tail-detail") {
-    body.textContent = "Кармический хвост рассчитывается по сочетанию трёх чисел. Полная трактовка этого сочетания ещё готовится.";
+    body.textContent = "Открываю кармический разбор…";
+    const code = String(point.code || "").replace(/\\s*-\\s*/g, "-").trim();
+    const reading = await getChildKarmicTail(code);
+    if (requestId !== insightRequestId || insight.hidden) return;
+    if (reading.state === "ready") {
+      byId("child-insight-title").textContent = reading.bank.title;
+      showChildKarmicTail(body, reading.bank);
+    } else if (reading.state === "missing") {
+      body.textContent = "Трактовка сочетания " + (point.code || code) + " ещё готовится.";
+    } else {
+      body.textContent = "Не удалось загрузить кармический разбор. Проверьте подключение и нажмите ещё раз.";
+    }
     return;
   }
 
