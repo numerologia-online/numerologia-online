@@ -1559,3 +1559,37 @@ body {
   letter-spacing:-.16px;
   font-weight:620;
 }
+
+
+/* Compact child PDF actions - no effect on the interactive matrix. */
+.child-pdf-actions{max-width:680px;margin:16px auto 22px;text-align:center}
+.child-pdf-button,.child-pdf-save{
+  display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+  min-height:46px;padding:12px 16px;border:1px solid #d8b4ce;border-radius:16px;
+  background:linear-gradient(110deg,#faeaf3,#e5f2ff);color:#724b70;
+  font:750 14px/1.35 var(--sans);text-align:center;cursor:pointer;
+}
+.child-pdf-actions>p{color:#84778c;font:12px/1.4 var(--sans);margin:8px 0 0}
+.child-pdf-dialog{
+  width:min(calc(100% - 26px),520px);max-height:min(85dvh,750px);overflow:auto;
+  padding:20px 17px 18px;border:1px solid #e6cde0;border-radius:24px;
+  background:linear-gradient(140deg,#fffbfd,#f7f6fe 70%,#eff7ff);
+  box-shadow:0 20px 65px rgba(48,31,60,.24);color:#392943;
+}
+.child-pdf-dialog::backdrop{background:rgba(38,28,51,.47)}
+.child-pdf-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.child-pdf-top p{font:750 10px/1.3 var(--sans);letter-spacing:.1em;color:#a27c92;margin:0 0 6px}
+.child-pdf-top h2{font:500 clamp(22px,6vw,30px)/1.2 var(--serif);margin:0;color:#38253d}
+#child-pdf-close{flex:none;width:35px;height:35px;border:1px solid #e9d6e3;border-radius:50%;
+  background:#fff;color:#946c86;font:24px/1 var(--sans);cursor:pointer}
+.child-pdf-intro{color:#756a7e;font:13px/1.5 var(--sans);margin:13px 0 11px}
+.child-pdf-list{
+  padding:11px 13px 11px 38px;margin:0 0 10px;columns:2;column-gap:21px;
+  background:rgba(255,255,255,.78);border:1px solid #eee4ed;border-radius:12px;
+  color:#51475a;font:500 12px/1.4 var(--sans)
+}
+.child-pdf-list li{break-inside:avoid;padding:0 0 8px 0}
+.child-pdf-status{margin:11px 1px;color:#805e7a;font:500 12.5px/1.5 var(--sans)}
+.child-pdf-save{background:#265745;color:#fff;border-color:#265745}
+.child-pdf-save:disabled{opacity:.62;cursor:wait}
+@media(max-width:420px){.child-pdf-list{columns:1;max-height:30dvh;overflow:auto}}
