@@ -1,21 +1,23 @@
-/* One-tap support without covering the product card titles. */
+/* Compact, readable support label. Avoid covering card titles. */
 .site-support-link{
   position:fixed;z-index:850;right:max(13px,env(safe-area-inset-right));
   bottom:calc(16px + env(safe-area-inset-bottom));
-  display:grid;place-items:center;width:47px;height:47px;
-  padding:0;border:1px solid rgba(203,170,110,.72);border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-height:43px;padding:6px 12px 6px 7px;
+  border:1px solid rgba(203,170,110,.72);border-radius:999px;
   background:#174d3c;color:#fff;text-decoration:none;
   box-shadow:0 6px 20px rgba(19,58,44,.22);
-  -webkit-tap-highlight-color:transparent;
+  font:750 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  white-space:nowrap;-webkit-tap-highlight-color:transparent;
 }
 .site-support-mark{
-  display:grid;place-items:center;width:33px;height:33px;flex:none;
+  display:grid;place-items:center;width:27px;height:27px;flex:none;
   border-radius:50%;background:#f4e6ca;color:#174d3c;
-  font:800 20px/1 Georgia,serif;
+  font:800 17px/1 Georgia,serif;
 }
 .site-support-link>span:last-child{
-  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
-  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  position:static;width:auto;height:auto;padding:0;margin:0;
+  overflow:visible;clip:auto;white-space:nowrap;border:0;
 }
 .site-support-link:hover,.site-support-link:focus-visible{background:#226349}
 .site-support-link:focus-visible{outline:3px solid #cfad72;outline-offset:3px}
