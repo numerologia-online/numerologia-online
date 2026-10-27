@@ -194,3 +194,32 @@
    animation:childGemSelectGlow .58s ease-out 1;
  }
 }
+
+/* Clean pastel matrix background v2.
+   Intentional: no artwork image behind the interactive diagram.
+   The matrix points, captions, links, calculation, and selection states
+   remain exactly as authored above. */
+#child-matrix-panel .child-visual {
+  background-color: #f8f5fc;
+  background-image:
+    radial-gradient(ellipse at 18% 14%, rgba(250,214,232,.73), transparent 58%),
+    radial-gradient(ellipse at 84% 18%, rgba(208,229,255,.74), transparent 59%),
+    radial-gradient(ellipse at 50% 68%, rgba(255,250,242,.78), transparent 57%),
+    linear-gradient(125deg, #fff2f8 0%, #fbf6fd 47%, #ebf5ff 100%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-color: rgba(223,195,221,.73);
+  box-shadow: 0 12px 30px rgba(116,87,132,.10), inset 0 1px 0 rgba(255,255,255,.95);
+}
+#child-matrix-panel .child-visual::before,
+#child-matrix-panel .child-visual::after {
+  content: none;
+  display: none;
+}
+#child-matrix-panel .child-matrix-aura { opacity: .48; }
+#child-matrix-panel .child-matrix-corona { opacity: .63; }
+#child-matrix-panel .child-matrix-orbit { opacity: .42; }
+#child-matrix-panel .child-matrix-orbit-inner { opacity: .28; }
+#child-matrix-panel .child-matrix-glow { opacity: .30; }
+#child-matrix-panel .child-matrix-lightray { opacity: .38; }
