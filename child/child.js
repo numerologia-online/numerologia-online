@@ -72,7 +72,7 @@ const getEnergyBank = (energy) => {
 let karmicTailCatalogPromise = null;
 const karmicTailRequests = new Map();
 const getChildKarmicTail = async (code) => {
-  if (!/^\\d{1,2}-\\d{1,2}-\\d{1,2}$/.test(code)) return {state:"missing"};
+  if (!/^[0-9]{1,2}-[0-9]{1,2}-[0-9]{1,2}$/.test(code)) return {state:"missing"};
   if (!karmicTailCatalogPromise) {
     karmicTailCatalogPromise = fetch("./data/matrix/karmic-tail/index.json?v=1")
       .then((response) => {
@@ -173,7 +173,7 @@ const openPointReading = async (point, source = null) => {
   // A karmic tail is a three-energy combination, never a generic energy text.
   if (point.id === "tail" || point.id === "tail-detail") {
     body.textContent = "Открываю кармический разбор…";
-    const code = String(point.code || "").replace(/\\s*-\\s*/g, "-").trim();
+    const code = String(point.code || "").replace(/\s*-\s*/g, "-").trim();
     const reading = await getChildKarmicTail(code);
     if (requestId !== insightRequestId || insight.hidden) return;
     if (reading.state === "ready") {
