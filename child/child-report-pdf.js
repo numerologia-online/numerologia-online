@@ -31,7 +31,7 @@ export async function collectChildPdf(birth, definitions, loadEnergy, loadTail) 
     const section = bank?.sections?.[point.section || point.id];
     const lines = paragraphsOf(section?.paragraphs);
     // Draft banks are still being edited; never publish them as a finished report.
-    if (bank?.status !== "ready" || !lines.length) {
+    if (!["ready", "complete"].includes(bank?.status) || !lines.length) {
       missing.push(point.title); continue;
     }
     const key = lines.join("\n");
