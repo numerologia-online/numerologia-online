@@ -224,32 +224,71 @@
 #child-matrix-panel .child-matrix-glow { opacity: .30; }
 #child-matrix-panel .child-matrix-lightray { opacity: .38; }
 
-/* Clear first-step cue, scaled together with the existing responsive SVG.
-   No changes to matrix calculations, captions or interactive hit targets. */
-#child-matrix-panel .child-start-arrow {
-  fill:none;
-  stroke:#ae6c99;
-  stroke-width:2.4;
-  stroke-linecap:round;
-  stroke-linejoin:round;
-  opacity:.9;
-  filter:drop-shadow(0 0 2px rgba(255,255,255,.95));
-  pointer-events:none;
+/* A deliberate, high-contrast first-step callout, not decorative fine print. */
+#child-matrix-panel .child-matrix-start-heading{
+  position:relative;
+  display:block;
+  margin:13px 2px 13px;
+  padding:13px 17px 15px;
+  border:2px solid #d88ab4;
+  border-radius:21px;
+  background:linear-gradient(112deg,#fffafd 0%,#ffe9f3 58%,#f2eefd 100%);
+  box-shadow:0 9px 22px rgba(151,65,122,.10),inset 0 1px 0 #fff;
 }
-#child-matrix-panel .child-visual.has-started .child-start-arrow {
-  display:none;
+#child-matrix-panel .child-matrix-start-kicker{
+  display:block;
+  margin:0 0 5px;
+  color:#9b3a78;
+  font:800 12px/1.2 var(--sans);
+  letter-spacing:.11em;
 }
-#child-matrix-panel .child-visual:not(.has-started) .child-matrix-point[data-child-point="character"] .child-gem-rainbow-rim {
-  stroke:#c77ab7;
-  stroke-width:3.4;
-  filter:drop-shadow(0 0 5px rgba(198,112,185,.58));
+#child-matrix-panel .child-matrix-start-heading h3{
+  max-width:none;
+  margin:0;
+  color:#8a1d64;
+  font:750 clamp(31px,8.1vw,46px)/1.05 var(--serif);
+  letter-spacing:-.025em;
+  text-transform:uppercase;
 }
-#child-matrix-panel .child-matrix-heading h3 {
-  max-width:100%;
-  font-size:clamp(24px,6.4vw,37px);
-  line-height:1.15;
+#child-matrix-panel .child-matrix-start-heading h3 span{
+  color:#b42478;
+  font-family:var(--sans);
+  font-size:.95em;
+  font-weight:900;
+  vertical-align:baseline;
 }
-#child-matrix-panel .child-matrix-heading p {
-  color:#916383;
-  font-weight:550;
+#child-matrix-panel .child-matrix-start-heading p{
+  max-width:none;
+  margin:8px 0 0;
+  color:#6d3f62;
+  font:500 clamp(14px,3.7vw,16px)/1.38 var(--sans);
+  text-align:left;
+}
+#child-matrix-panel .child-matrix-start-heading p strong{
+  color:#82235e;
+  font-weight:850;
+}
+/* Oversized hand-drawn pointer running down the left edge to the exact
+   character gem (41,260). It never covers the hit target or catches taps. */
+#child-matrix-panel .child-start-arrow{
+  fill:none;pointer-events:none;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+#child-matrix-panel .child-start-arrow-border{
+  stroke:#fffdfb;stroke-width:13;
+  filter:drop-shadow(0 3px 3px rgba(97,31,83,.18));
+}
+#child-matrix-panel .child-start-arrow-line{
+  stroke:#bd257b;stroke-width:7;
+  filter:drop-shadow(0 1px 1px rgba(115,37,83,.22));
+}
+#child-matrix-panel .child-visual.has-started .child-start-arrow{display:none}
+#child-matrix-panel .child-visual:not(.has-started) .child-matrix-point[data-child-point="character"] .child-gem-rainbow-rim{
+  stroke:#a91677;stroke-width:5;
+  filter:drop-shadow(0 0 8px rgba(191,39,132,.74));
+}
+@media(max-width:390px){
+  #child-matrix-panel .child-matrix-start-heading{padding:12px 13px 13px}
+  #child-matrix-panel .child-matrix-start-heading h3{font-size:clamp(28px,8vw,34px)}
+  #child-matrix-panel .child-matrix-start-heading p{font-size:14px}
 }
