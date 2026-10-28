@@ -14,6 +14,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Нумерология" />
     <link rel="stylesheet" href="styles.css?v=213" />
+    <link rel="stylesheet" href="year-paywall.css?v=1" />
     <link rel="stylesheet" href="day-share.css?v=2" />
     <link rel="stylesheet" href="theme.css" />
     <link rel="stylesheet" href="artwork.css?v=6" />
@@ -244,17 +245,18 @@
           </section>
 
           <section id="report" class="report" hidden aria-live="polite">
-            <button id="pdf-button-top" class="pdf-button pdf-button-top" type="button">Сохранить разбор в PDF <span>↓</span></button>
+            <button id="pdf-button-top" class="pdf-button pdf-button-top" type="button">🔒 Скачать полный PDF</button>
             <div class="report-lead">
               <p class="eyebrow" id="report-period">Ваш личный период</p>
               <h2 id="report-title"></h2>
               <p class="report-meta" id="report-meta"></p>
               <p id="report-copy"></p>
+              <p id="year-free-month-note" class="year-free-month-note" role="status"></p>
             </div>
             <div id="year-transition" class="year-transition" aria-label="Периоды личного года"></div>
             <div class="birthday-note" id="birthday-note"></div>
             <div id="months" class="months" aria-label="Месяцы разбора"></div>
-            <button id="pdf-button" class="pdf-button" type="button">Посмотреть PDF <span>↓</span></button>
+            <button id="pdf-button" class="pdf-button" type="button">🔒 Скачать полный PDF</button>
           </section>
         </div>
       </section>
@@ -385,6 +387,14 @@
         <p class="account-footer-note">Тарифы и доступ к покупкам пока в разработке.</p>
       </section>
     </dialog>
+    <dialog id="year-paywall-dialog" class="year-paywall-dialog" aria-labelledby="year-paywall-title">
+  <header class="year-paywall-top"><span>НУМЕРОЛОГИЯ ОНЛАЙН</span><button id="year-paywall-close" type="button" aria-label="Закрыть">×</button></header>
+  <h2 id="year-paywall-title">Откройте весь год</h2>
+  <p>Прошедшие месяцы можно читать бесплатно. Текущий и будущие месяцы, а также полный PDF доступны после покупки годового разбора.</p>
+  <div class="year-paywall-price-note">🔒 Полный год и PDF</div>
+  <p class="year-paywall-unavailable">Оплата пока не подключена. До её запуска платные месяцы и PDF закрыты.</p>
+  <button class="year-paywall-back" type="button">Вернуться к месяцам</button>
+</dialog>
     <dialog id="pdf-preview" class="pdf-preview-dialog">
       <div class="pdf-preview-topbar">
         <p>ВАШ PDF-РАЗБОР</p>
@@ -396,6 +406,6 @@
   <script src="artwork-loader.js?v=1" defer></script>
   <script src="install.js?v=4" defer></script>
   <script src="auth-profile.js?v=15" defer></script>
-  <script type="module" src="app.js?v=257"></script>
+  <script type="module" src="app.js?v=258"></script>
   </body>
 </html>
