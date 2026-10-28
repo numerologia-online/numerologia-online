@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="styles.css?v=209">
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="year-polish.css?v=25">
+  <link rel="stylesheet" href="year-paywall.css?v=1">
 </head>
 <body>
   <main class="app-shell">
@@ -53,21 +54,30 @@
           </section>
 
           <section id="report" class="report" hidden aria-live="polite">
-            <button id="pdf-button-top" class="pdf-button pdf-button-top" type="button">Сохранить разбор в PDF <span>↓</span></button>
+            <button id="pdf-button-top" class="pdf-button pdf-button-top" type="button">🔒 Скачать полный PDF</button>
             <div class="report-lead">
               <p class="eyebrow" id="report-period">Ваш личный период</p>
               <h2 id="report-title"></h2>
               <p class="report-meta" id="report-meta"></p>
               <p id="report-copy"></p>
+              <p id="year-free-month-note" class="year-free-month-note" role="status"></p>
             </div>
             <div id="year-transition" class="year-transition" aria-label="Периоды личного года"></div>
             <div class="birthday-note" id="birthday-note"></div>
             <div id="months" class="months" aria-label="Месяцы разбора"></div>
-            <button id="pdf-button" class="pdf-button" type="button">Посмотреть PDF <span>↓</span></button>
+            <button id="pdf-button" class="pdf-button" type="button">🔒 Скачать полный PDF</button>
           </section>
         </div>
       </section>
   </main>
+    <dialog id="year-paywall-dialog" class="year-paywall-dialog" aria-labelledby="year-paywall-title">
+  <header class="year-paywall-top"><span>НУМЕРОЛОГИЯ ОНЛАЙН</span><button id="year-paywall-close" type="button" aria-label="Закрыть">×</button></header>
+  <h2 id="year-paywall-title">Откройте весь год</h2>
+  <p>Прошедшие месяцы можно читать бесплатно. Текущий и будущие месяцы, а также полный PDF доступны после покупки годового разбора.</p>
+  <div class="year-paywall-price-note">🔒 Полный год и PDF</div>
+  <p class="year-paywall-unavailable">Оплата пока не подключена. До её запуска платные месяцы и PDF закрыты.</p>
+  <button class="year-paywall-back" type="button">Вернуться к месяцам</button>
+</dialog>
     <dialog id="pdf-preview" class="pdf-preview-dialog">
       <div class="pdf-preview-topbar">
         <p>ВАШ PDF-РАЗБОР</p>
@@ -81,7 +91,7 @@
   </p>
   <noscript>Для расчёта года необходимо разрешить JavaScript в браузере.</noscript>
   <script type="module">
-    import("./year-feature.js?v=29").catch((error) => {
+    import("./year-feature.js?v=33").catch((error) => {
       console.error("Не удалось загрузить годовой разбор", error);
       document.querySelector("#standalone-year-error").hidden = false;
     });
