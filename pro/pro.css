@@ -805,18 +805,27 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   font-size:clamp(30px,6.6vw,43px);line-height:1.09;letter-spacing:-.035em
 }
 .pro-matrix-start{
-  display:flex;align-items:center;gap:9px;
-  width:max-content;max-width:100%;margin:8px 0 0 8px;
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  max-width:100%;margin:8px 0 0 8px;
   color:#ab8554
 }
 .pro-matrix-start strong{
   font:850 clamp(18px,4.1vw,23px)/1.2 Inter,system-ui,sans-serif;
   letter-spacing:.055em
 }
+.pro-matrix-free-label{
+  display:inline-block;padding:5px 9px;border-radius:7px;
+  background:#cb332e;color:#fff;
+  font:900 clamp(11px,2.9vw,14px)/1.15 Inter,system-ui,sans-serif;
+  letter-spacing:.035em;box-shadow:0 2px 5px rgba(157,33,28,.13)
+}
 .pro-diagram .pro-free-start-arrow{pointer-events:none}
 .pro-diagram .pro-free-start-arrow path{
-  fill:none;stroke:#b18b54;stroke-width:4.4;stroke-linecap:round;stroke-linejoin:round;
+  fill:none;stroke:#cb332e;stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round;
   pointer-events:none
+}
+.pro-diagram .pro-free-start-arrow polygon{
+  fill:#cb332e;stroke:#cb332e;stroke-width:2;stroke-linejoin:round;pointer-events:none
 }
 .pro-diagram .pro-node[data-node-key="left"].major circle{
   stroke:#3d9181;stroke-width:4.2;fill:#ddf2eb
@@ -853,6 +862,7 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   .pro-title-row #pro-matrix-title{font-size:clamp(29px,7.7vw,36px)}
   .pro-matrix-start{margin:6px 0 0 7px;gap:7px}
   .pro-matrix-start strong{font-size:19px}
+  .pro-matrix-free-label{padding:5px 7px;font-size:11px}
   .pro-free-impression{padding:9px 8px;gap:7px}
   .pro-free-impression-icon{width:30px;height:32px;font-size:18px}
   .pro-free-impression-name strong{font-size:12px}
