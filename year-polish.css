@@ -484,3 +484,17 @@
     background: transparent;
   }
 }
+/* Standalone /year/: visible, keyboard-accessible return to the home screen. */
+.year-panel-topbar .year-back-link{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:42px;padding:8px 13px;border:1px solid #cfdae6;
+  border-radius:13px;background:#edf2f8;color:#294b70;
+  font:750 13px/1.2 Inter,system-ui,sans-serif;text-decoration:none;
+  white-space:nowrap;touch-action:manipulation;
+}
+.year-panel-topbar .year-back-link:hover{background:#e0ebf5}
+.year-panel-topbar .year-back-link:focus-visible{outline:3px solid #668bb6;outline-offset:3px}
+@media(max-width:440px){
+  .year-panel-topbar .year-back-link{min-height:40px;padding:8px 11px;font-size:12px}
+  .year-panel-topbar .eyebrow{font-size:10px;letter-spacing:.11em}
+}
