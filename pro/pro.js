@@ -97,16 +97,32 @@ if (startBrowserLogin) {
   location.assign(AUTH_SERVER + "/api/start?return_to=pro");
 }
 function showPaymentInfo() {
-  if (paywallDialog?.showModal) paywallDialog.showModal();
-  else alert("Оплата пока не подключена. Это предварительный просмотр платного раздела.");
+  if (!paywallDialog) return;
+  const note = paywallDialog.querySelector("#pro-paywall-checkout-note");
+  if (note) {
+    note.textContent = "";
+    note.hidden = true;
+  }
+  if (paywallDialog.showModal && !paywallDialog.open) paywallDialog.showModal();
 }
+function previewCheckout(choice) {
+  const note = paywallDialog?.querySelector("#pro-paywall-checkout-note");
+  if (!note) return;
+  note.textContent = choice === "club"
+    ? "Вы выбрали клуб: подписка 499 ₽ в месяц + первый полный разбор за 490 ₽, итого 989 ₽ при первом оформлении. Оплата и клубные возможности ещё не подключены."
+    : "Вы выбрали разовый полный разбор за 999 ₽ без подписки. Оплата пока не подключена.";
+  note.hidden = false;
+  note.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+paywallDialog?.querySelector("#pro-paywall-one-time")?.addEventListener("click", () => previewCheckout("once"));
+paywallDialog?.querySelector("#pro-paywall-club")?.addEventListener("click", () => previewCheckout("club"));
 function makePaywallLock() {
   const panel = element("div", null, "pro-paid-lock");
   const line = element("div", null, "pro-paid-lock-line");
   line.append(element("span", "🔒", "pro-paid-lock-icon"));
   line.append(paragraph("Подробная трактовка откроется после покупки полного разбора.", "pro-paid-lock-note"));
   panel.append(line);
-  const button = element("button", "Открыть весь разбор · 490 ₽", "pro-paid-lock-button");
+  const button = element("button", "Посмотреть варианты доступа", "pro-paid-lock-button");
   button.type = "button";
   button.addEventListener("click", showPaymentInfo);
   panel.append(button);
