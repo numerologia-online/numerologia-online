@@ -1,6 +1,6 @@
 import { createMonthlyLinkSelector, loadEnergies, monthNames } from "./year-content.js?v=4";
 import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=1";
-import { freeYearMonthLimit, isFreeYearMonth } from "./year-access.js?v=1";
+import { isFreeYearMonth } from "./year-access.js?v=1";
 
 const year = document.querySelector("#year");
 const form = document.querySelector("#year-form");
@@ -171,12 +171,6 @@ form.addEventListener("submit", async (event) => {
   document.querySelector("#report-title").textContent = `Ваш ${reportYearValue} год`;
   document.querySelector("#report-meta").textContent = `Дата рождения: ${birthInput.value} · Год разбора: ${reportYearValue}`;
   document.querySelector("#report-copy").textContent = "Год состоит из двух периодов, которые соединяются в один личный цикл.";
-  const freeLimit = freeYearMonthLimit(reportYearValue);
-  document.querySelector("#year-free-month-note").textContent = freeLimit === 12
-    ? "Все месяцы прошедшего года доступны бесплатно."
-    : freeLimit === 0
-      ? "Завершённых месяцев пока нет. Текущий и будущие прогнозы доступны после покупки."
-      : "Бесплатно: январь - " + monthNames[freeLimit - 1].toLowerCase() + ". Текущий и будущие месяцы доступны после покупки.";
   const sensitivePeriodStart = new Date(Date.UTC(reportYearValue, birthDate.getUTCMonth(), birthDate.getUTCDate() - 30));
   document.querySelector("#year-transition").innerHTML = storyBeforeBirthday && storyAfterBirthday ? `
     <article class="year-cycle-story">
