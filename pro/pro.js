@@ -116,6 +116,8 @@ function previewCheckout(choice) {
 }
 paywallDialog?.querySelector("#pro-paywall-one-time")?.addEventListener("click", () => previewCheckout("once"));
 paywallDialog?.querySelector("#pro-paywall-club")?.addEventListener("click", () => previewCheckout("club"));
+// Preview link opens only the offer dialog. Never grants paid access or triggers a payment.
+if (new URLSearchParams(location.search).get("show_offer") === "1") showPaymentInfo();
 function makePaywallLock() {
   const panel = element("div", null, "pro-paid-lock");
   const line = element("div", null, "pro-paid-lock-line");
