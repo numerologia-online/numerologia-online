@@ -1,5 +1,6 @@
 import { createMonthlyLinkSelector, loadEnergies, monthNames } from "./year-content.js?v=4";
 import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=1";
+import { freeYearMonthLimit, isFreeYearMonth } from "./year-access.js?v=1";
 
 const year = document.querySelector("#year");
 const form = document.querySelector("#year-form");
@@ -11,6 +12,15 @@ const loaderMessage = document.querySelector("#loader-message");
 const loaderTrack = calculationLoader.querySelector(".loader-track");
 const loaderProgress = document.querySelector("#loader-progress");
 const submitButton = form.querySelector(".primary-button");
+const yearPaywallDialog = document.querySelector("#year-paywall-dialog");
+const showYearPaywall = () => { if (!yearPaywallDialog.open) yearPaywallDialog.showModal(); };
+document.querySelector("#year-paywall-close")?.addEventListener("click", () => yearPaywallDialog.close());
+document.querySelector(".year-paywall-back")?.addEventListener("click", () => yearPaywallDialog.close());
+yearPaywallDialog.addEventListener("click", event => {
+  if (event.target === yearPaywallDialog) yearPaywallDialog.close();
+});
+// Paid access will require verified server entitlement; not yet connected.
+const hasVerifiedYearAccess = () => false;
 let reportRevealTimer;
 
 const showCalculationLoading = () => {
@@ -161,6 +171,12 @@ form.addEventListener("submit", async (event) => {
   document.querySelector("#report-title").textContent = `Ваш ${reportYearValue} год`;
   document.querySelector("#report-meta").textContent = `Дата рождения: ${birthInput.value} · Год разбора: ${reportYearValue}`;
   document.querySelector("#report-copy").textContent = "Год состоит из двух периодов, которые соединяются в один личный цикл.";
+  const freeLimit = freeYearMonthLimit(reportYearValue);
+  document.querySelector("#year-free-month-note").textContent = freeLimit === 12
+    ? "Все месяцы прошедшего года доступны бесплатно."
+    : freeLimit === 0
+      ? "Завершённых месяцев пока нет. Текущий и будущие прогнозы доступны после покупки."
+      : "Бесплатно: январь - " + monthNames[freeLimit - 1].toLowerCase() + ". Текущий и будущие месяцы доступны после покупки.";
   const sensitivePeriodStart = new Date(Date.UTC(reportYearValue, birthDate.getUTCMonth(), birthDate.getUTCDate() - 30));
   document.querySelector("#year-transition").innerHTML = storyBeforeBirthday && storyAfterBirthday ? `
     <article class="year-cycle-story">
@@ -206,6 +222,21 @@ form.addEventListener("submit", async (event) => {
     const month = { title: `Энергия ${monthEnergy}`, text: "Авторская карточка этой связки ещё готовится." };
     const item = document.createElement("details");
     item.className = "month-card";
+    if (!isFreeYearMonth(reportYearValue, calendarMonth)) {
+      item.classList.add("month-card--locked");
+      const energyLabel = isBirthdayMonth
+        ? personalMonth(energyBeforeBirthday, calendarMonth) + "→" + personalMonth(energyAfterBirthday, calendarMonth)
+        : String(monthEnergy);
+      item.innerHTML = `<summary><span>${monthName}</span><strong>${energyLabel}</strong><i aria-hidden="true">🔒</i></summary>
+        <div class="month-content"><div class="year-month-lock">
+          <p class="year-month-lock-title">🔒 Прогноз на ${monthName.toLowerCase()} закрыт</p>
+          <p>Прошедшие месяцы доступны бесплатно. Чтобы узнать о текущем и будущих месяцах, откройте полный разбор года.</p>
+          <button class="year-paywall-open" type="button">Открыть полный разбор года</button>
+        </div></div>`;
+      item.querySelector(".year-paywall-open").addEventListener("click", showYearPaywall);
+      monthContainer.append(item);
+      continue;
+    }
     if (isBirthdayMonth) {
       const beforeMonthEnergy = personalMonth(energyBeforeBirthday, calendarMonth);
       const afterMonthEnergy = personalMonth(energyAfterBirthday, calendarMonth);
@@ -231,7 +262,7 @@ form.addEventListener("submit", async (event) => {
   }
 
   showCalculatedReport();
-  warmPdfInBackground();
+  if (hasVerifiedYearAccess()) warmPdfInBackground();
 });
 
 const pdfButton = document.querySelector("#pdf-button");
@@ -533,6 +564,7 @@ const buildPdfDocument = (templates) => {
 };
 
 const preparePdf = () => {
+  if (!hasVerifiedYearAccess()) return Promise.reject(new Error("PDF закрыт до покупки."));
   const pdfKey = getPdfKey();
   if (currentPdfUrl && preparedPdfKey === pdfKey) return Promise.resolve({ url: currentPdfUrl, filename: currentPdfFilename });
   if (pdfBuildLoading) return pdfBuildLoading;
@@ -591,6 +623,7 @@ const renderMobilePdfPreview = () => {
 };
 
 const openPdfPreview = async () => {
+  if (!hasVerifiedYearAccess()) return showYearPaywall();
   pdfPreviewDialog.showModal();
   renderMobilePdfPreview();
   pdfDownloadButton.disabled = true;
@@ -606,6 +639,7 @@ const openPdfPreview = async () => {
 };
 
 const downloadPdf = async () => {
+  if (!hasVerifiedYearAccess()) return showYearPaywall();
   const originalDownloadLabel = pdfDownloadButton.innerHTML;
   pdfDownloadButton.disabled = true;
   pdfDownloadButton.textContent = currentPdfUrl ? "Скачиваю PDF..." : "Готовлю PDF...";
@@ -632,8 +666,8 @@ const downloadPdf = async () => {
   }
 };
 
-pdfButton.addEventListener("click", downloadPdf);
-pdfButtonTop.addEventListener("click", downloadPdf);
+pdfButton.addEventListener("click", showYearPaywall);
+pdfButtonTop.addEventListener("click", showYearPaywall);
 pdfPreviewClose.addEventListener("click", () => pdfPreviewDialog.close());
 pdfDownloadButton.addEventListener("click", downloadPdf);
 pdfPreviewDialog.addEventListener("close", () => {
