@@ -28,6 +28,13 @@ try{
     await page.locator("#pro-birth-date").fill(sample.date);
     await page.locator("#pro-form button[type=submit]").click();
     await page.locator("#pro-question-impression").waitFor({state:"visible",timeout:35000});
+    // A refreshed page must preserve the last calculated date and reopen the result.
+    await page.reload({waitUntil:"domcontentloaded",timeout:25000});
+    await page.locator("#pro-results").waitFor({state:"visible",timeout:35000});
+    assert.equal(await page.locator("#pro-birth-date").inputValue(),sample.date,
+      "date should survive reload after opening a calculation");
+    assert.equal(await page.locator("#pro-diagram .pro-node").count(),31,
+      "restored calculation should regenerate all matrix points");
     await page.locator("#pro-question-impression").click();
     await page.locator("#pro-answer-impression .pro-inline-reading-title, #pro-answer-impression h3").first().waitFor({state:"visible",timeout:20000});
     const first=await page.locator("#pro-answer-impression").innerText();
@@ -92,6 +99,16 @@ try{
     await page.locator("#pro-pdf-buttons .pro-pdf-button").first().click();
     await page.locator("#pro-paywall-dialog").waitFor({state:"visible"});
     await page.locator('#pro-paywall-dialog form button[type="submit"]').click();
+    if (sample.date === "09.09.1986") {
+      // Recalculation for a different birthday must replace (not mix) saved data.
+      await page.locator("#pro-birth-date").fill("15.08.1992");
+      await page.locator("#pro-form button[type=submit]").click();
+      await page.locator("#pro-results").waitFor({state:"visible",timeout:35000});
+      await page.reload({waitUntil:"domcontentloaded",timeout:25000});
+      await page.locator("#pro-results").waitFor({state:"visible",timeout:35000});
+      assert.equal(await page.locator("#pro-birth-date").inputValue(),"15.08.1992",
+        "later calculation should replace the remembered birthday");
+    }
     assert.deepEqual(errors,[],"no JavaScript exceptions");
     assert.deepEqual(paidUrls,[],"free visitor must not fetch full paid energy files");
     console.log("PASS "+sample.date+": first question, left circle open; paid answer, right circle and PDF locked; no full paid bank requests");
