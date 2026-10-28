@@ -799,10 +799,12 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 #pro-question-impression{border-color:#b7d5c0;background:linear-gradient(115deg,#f2faf3,#fffef8)}
 #pro-question-impression small{color:#18624a;font-weight:900;letter-spacing:.04em}
 
-/* Calm matrix introduction: one strong instruction, one arrow, no overlapping callout. */
+/* Compact result entry: give the actual matrix, not decorative text, screen space. */
+#pro-form{margin-bottom:8px}
+#pro-results > .pro-paper:first-child{padding-top:14px}
 .pro-title-row #pro-matrix-title{
-  max-width:660px;margin:0;color:#253e56;
-  font-size:clamp(30px,6.6vw,43px);line-height:1.09;letter-spacing:-.035em
+  max-width:100%;margin:0;color:#253e56;
+  font-size:clamp(22px,3.2vw,28px);line-height:1.16;letter-spacing:-.02em
 }
 .pro-matrix-start{
   display:flex;flex-wrap:wrap;align-items:center;gap:8px;
@@ -859,9 +861,10 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   font-weight:900;margin:0 0 3px
 }
 @media(max-width:520px){
-  .pro-title-row #pro-matrix-title{font-size:clamp(29px,7.7vw,36px)}
-  .pro-matrix-start{margin:6px 0 0 7px;gap:7px}
-  .pro-matrix-start strong{font-size:19px}
+  #pro-results > .pro-paper:first-child{padding-top:12px}
+  .pro-title-row #pro-matrix-title{font-size:clamp(19px,5.3vw,23px);line-height:1.17;letter-spacing:-.02em}
+  .pro-matrix-start{margin:4px 0 0 7px;gap:6px}
+  .pro-matrix-start strong{font-size:16px}
   .pro-matrix-free-label{padding:5px 7px;font-size:11px}
   .pro-free-impression{padding:9px 8px;gap:7px}
   .pro-free-impression-icon{width:30px;height:32px;font-size:18px}
