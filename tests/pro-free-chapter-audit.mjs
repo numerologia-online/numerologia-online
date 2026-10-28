@@ -49,6 +49,14 @@ try{
     assert.match(await page.locator("#pro-matrix-start").innerText(), /НАЧНИТЕ ЗДЕСЬ/);
     assert.equal(await page.locator(".pro-free-node-guide").count(), 0,
       "matrix is unobstructed by the old green note");
+    assert.equal(await page.locator(".pro-quick-nav").count(), 0,
+      "redundant top section-navigation chips must be removed");
+    const freeGuide = page.locator(".pro-free-start-arrow");
+    await freeGuide.waitFor({state:"visible"});
+    assert.equal(await freeGuide.evaluate(el => getComputedStyle(el).pointerEvents), "none",
+      "decorative arrow must not intercept any matrix taps");
+    assert.match(await freeGuide.locator("path").first().getAttribute("d"), /52 281$/,
+      "arrow should land exactly on the top edge of the free left big circle");
     const left=page.locator('.pro-node[data-node-key="left"]');
     await left.click();
     // Matrix UI deliberately opens a small preview first, then full reading.
