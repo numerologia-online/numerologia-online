@@ -2,7 +2,7 @@ import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js
 import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
 import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=31";
 import { nodesFor } from "./pro-points.js?v=3";
-import { createProDiagram } from "./pro-diagram.js?v=13";
+import { createProDiagram } from "./pro-diagram.js?v=14";
 import { createFullReportPdfController } from "../full-report-pdf.js?v=4";
 import { buildProPdfChapters } from "./pro-pdf-content.js?v=25";
 import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
@@ -834,6 +834,15 @@ function openPointDetail(key) {
   pointDetails.hidden = false;
   scrollOpenedAnswerToTop(pointDetails, () => !pointDetails.hidden);
 }
+
+// Free entry in the sphere picker opens the SAME authored text as the left matrix circle.
+document.querySelector("#pro-free-impression")?.addEventListener("click", () => {
+  if (!current) return;
+  hidePointPreview();
+  hideZonePreview();
+  clearZone();
+  openPointDetail(FREE_PRO_POINT);
+});
 
 function renderZoneReading(zone, shouldScroll = true) {
   if (!zoneReading || !current) return;
