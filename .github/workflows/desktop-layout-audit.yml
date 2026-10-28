@@ -1,0 +1,21 @@
+name: Desktop layout inspection
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/desktop-layout-audit.yml'
+      - 'tests/desktop-layout-audit.mjs'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Inspect desktop layouts and capture public screenshots
+        run: node tests/desktop-layout-audit.mjs
