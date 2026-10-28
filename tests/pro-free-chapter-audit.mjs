@@ -40,9 +40,14 @@ try{
     await page.locator("#pro-answer-trueSelf .pro-paid-lock").waitFor({state:"visible"});
     const left=page.locator('.pro-node[data-node-key="left"]');
     await left.click();
+    // Matrix UI deliberately opens a small preview first, then full reading.
+    await page.locator(".pro-point-preview").waitFor({state:"visible",timeout:10000});
+    await page.locator(".pro-point-preview").click();
     await page.locator("#pro-point-details .pro-inline-reading-title").waitFor({state:"visible",timeout:20000});
     assert.ok((await page.locator("#pro-point-details").innerText()).includes("Как видят вас другие"),"left point should open public first chapter");
     await page.locator('.pro-node[data-node-key="right"]').click();
+    await page.locator(".pro-point-preview").waitFor({state:"visible"});
+    await page.locator(".pro-point-preview").click();
     await page.locator("#pro-point-details .pro-paid-lock").waitFor({state:"visible"});
     await page.locator("#pro-pdf-buttons .pro-pdf-button").first().waitFor({state:"visible",timeout:20000});
     await page.locator("#pro-pdf-buttons .pro-pdf-button").first().click();
