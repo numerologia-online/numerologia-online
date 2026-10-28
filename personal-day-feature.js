@@ -82,10 +82,9 @@ const bullets = (items = []) => items.filter(Boolean).map((text) => `<li>${esc(t
 const todayLabel = () => new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(new Date());
 const monthTitle = (date) => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(date);
 
-// One exact message is used for both Telegram inbox delivery and sharing.
+// The assembled daily reading is used for user-initiated sharing.
 const DAY_SITE_URL = "https://numerologia-online.github.io/numerologia-online/?view=day";
 const DAY_BOT_URL = "https://t.me/Numerologiaonline_bot";
-const DAY_SAVE_URL = "https://numerologia-online-bot.tankraft431.workers.dev/api/save-day";
 const formatDayMessage = (dateOfBirth, item) => {
   const parts = [
     "🔮 Личный расчёт дня",
@@ -103,72 +102,14 @@ const addDayShareButtons = (result, report) => {
   const controls = document.createElement("section");
   controls.className = "personal-day-share";
   controls.setAttribute("aria-label", "Сохранить и поделиться прогнозом");
-  controls.innerHTML = '<p class="personal-day-share-title">Сохрани свой прогноз ❤️</p>'
-    + '<button type="button" class="personal-day-share-save">📩 Отправить расчёт в мой бот</button>'
-    + '<button type="button" class="personal-day-share-send">💌 Поделиться с подругой</button>'
-    + '<p class="personal-day-share-status" role="status" aria-live="polite"></p>';
+  controls.innerHTML = '<p class="personal-day-share-title">Хочешь получать прогноз каждый день? ❤️</p>'
+    + '<a class="personal-day-share-subscribe" href="' + DAY_BOT_URL
+    + '" target="_blank" rel="noopener noreferrer" aria-label="Подписаться на ежедневный бесплатный прогноз в Telegram-боте">'
+    + '<span class="personal-day-subscribe-icon" aria-hidden="true">✈</span>'
+    + '<span>Подпишись на ежедневный бесплатный прогноз в телеграм-боте</span></a>'
+    + '<button type="button" class="personal-day-share-send">💌 Поделиться с подругой</button>';
   result.append(controls);
-  const save = controls.querySelector(".personal-day-share-save");
   const share = controls.querySelector(".personal-day-share-send");
-  const status = controls.querySelector(".personal-day-share-status");
-
-  save.addEventListener("click", async () => {
-    const signedData = window.Telegram?.WebApp?.initData;
-    if (!signedData) {
-      status.textContent = "Чтобы получить сообщение в переписке, открой этот расчёт через кнопку нашего Telegram-бота.";
-      return;
-    }
-    if (report.length > 3800) {
-      status.textContent = "Прогноз получился слишком длинным для одного сообщения Telegram.";
-      return;
-    }
-    save.disabled = true;
-    status.textContent = "Отправляю прогноз в твою переписку…";
-    try {
-      const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 14000);
-      let response;
-      try {
-        response = await fetch(DAY_SAVE_URL, {
-          method: "POST",
-          mode: "cors",
-          cache: "no-store",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ init_data: signedData, text: report }),
-          signal: controller.signal
-        });
-      } finally {
-        window.clearTimeout(timer);
-      }
-      const data = await response.json();
-      if (!response.ok || data?.ok !== true) throw new Error(data?.error || "DELIVERY_FAILED");
-      status.textContent = "✓ Прогноз отправлен в переписку с нашим ботом!";
-      save.textContent = "✓ Прогноз уже в моём боте";
-    } catch (error) {
-      save.disabled = false;
-      const reasons = {
-        BOT_NOT_CONFIGURED: "На сервере не подключён токен бота. Отправка пока недоступна.",
-        TELEGRAM_AUTH_REQUIRED: "Telegram не подтвердил вход. Закрой расчёт и открой его заново через меню бота.",
-        INIT_DATA_MISSING: "Telegram не передал данные входа. Открой расчёт через кнопку в чате с ботом.",
-        INIT_DATA_FORMAT: "Telegram передал неполные данные входа. Открой расчёт через меню бота заново.",
-        SESSION_EXPIRED: "Сессия Telegram устарела. Закрой мини-приложение и открой его заново.",
-        SIGNATURE_MISMATCH: "Ключ бота не совпадает с подписью Telegram. Проверяем подключение на сервере.",
-        USER_NOT_PRESENT: "Telegram не передал профиль пользователя. Открой расчёт из чата с ботом.",
-        AUTH_CHECK_UNAVAILABLE: "Проверка Telegram временно недоступна. Попробуй чуть позже.",
-        DELIVERY_FAILED: "Сервер Telegram не принял сообщение. Попробуй ещё раз чуть позже.",
-        BOT_CHAT_UNAVAILABLE: "Бот не может написать в этот чат. Открой переписку с ним и нажми /start.",
-        BOT_API_AUTH_FAILED: "Сервер Telegram отклонил настройки бота. Нужно проверить подключение.",
-        BOT_RATE_LIMIT: "Telegram временно ограничил отправку. Попробуй позже.",
-        INVALID_FORECAST: "Прогноз не подошёл для отправки. Обнови страницу и рассчитай ещё раз.",
-        ORIGIN_NOT_ALLOWED: "Открой расчёт через наше мини-приложение Telegram."
-      };
-      status.textContent = reasons[error?.message]
-        || (error?.message === "AbortError"
-          ? "Сервер не ответил за 14 секунд. Попробуй позже."
-          : "Не удалось связаться с сервером отправки. Проверь соединение и обновление Cloudflare.");
-    }
-  });
-
   share.addEventListener("click", async () => {
     if (navigator.share) {
       try {
