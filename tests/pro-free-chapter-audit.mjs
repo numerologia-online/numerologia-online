@@ -57,6 +57,23 @@ try{
       "decorative arrow must not intercept any matrix taps");
     assert.match(await freeGuide.locator("path").first().getAttribute("d"), /52 281$/,
       "arrow should land exactly on the top edge of the free left big circle");
+    const layout=await page.locator("#pro-diagram svg").evaluate(svg => {
+      const labels=[...svg.querySelectorAll(".pro-sector-tag")].map(el => {
+        const key=el.getAttribute("data-zone");
+        const box=el.querySelector("rect:not(.pro-sector-hitbox)");
+        return {key,y:Number(box.getAttribute("y"))+Number(box.getAttribute("height"))/2};
+      });
+      return {viewHeight:svg.viewBox.baseVal.height,nodeCount:svg.querySelectorAll(".pro-node").length,labels};
+    });
+    assert.equal(layout.viewHeight,727,"matrix should not include the old third row's empty height");
+    assert.equal(layout.nodeCount,31,"no matrix numbers may be removed while compacting labels");
+    assert.equal(layout.labels.length,13,"all thirteen topic labels must remain");
+    for(const key of ["lessons","growth"]){
+      assert.equal(layout.labels.find(x=>x.key===key)?.y,620,"first compact lower row must remain grouped");
+    }
+    for(const key of ["purpose","career"]){
+      assert.equal(layout.labels.find(x=>x.key===key)?.y,681,"second compact lower row must remain grouped");
+    }
     const left=page.locator('.pro-node[data-node-key="left"]');
     await left.click();
     // Matrix UI deliberately opens a small preview first, then full reading.
