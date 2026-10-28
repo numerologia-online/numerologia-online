@@ -183,11 +183,12 @@ const sectorLabelPositions = {
   money:         {x:538,y:404,width:116},
   resource:      {x:128,y:553,width:192},
   family:        {x:487,y:555,width:160},
-  purpose:       {x:310,y:628,width:216},
-  // Три дополнительные темы остаются ниже матрицы, в двух свободных рядах.
-  lessons:       {x:166,y:700,width:232},
-  growth:        {x:454,y:700,width:208},
-  career:        {x:310,y:763,width:202}
+  // Четыре нижние темы собраны вместе: два компактных ряда вместо трёх.
+  // Основная геометрия 31 числа и их координаты остаются прежними.
+  lessons:       {x:165,y:620,width:220},
+  growth:        {x:455,y:620,width:210},
+  purpose:       {x:163,y:681,width:216},
+  career:        {x:455,y:681,width:204}
 };
 
 function renderDiagramSectorLabels(svg, zones) {
@@ -234,7 +235,7 @@ function renderDiagramSectorLabels(svg, zones) {
 }
 
 function renderDiagram(points) {
-  const svg = svgElement("svg",{viewBox:"0 0 620 806",role:"group","aria-label":"Интерактивная матрица с нажимаемыми названиями сфер и 31 точкой"});
+  const svg = svgElement("svg",{viewBox:"0 0 620 727",role:"group","aria-label":"Интерактивная матрица с нажимаемыми названиями сфер и 31 точкой"});
   const frame = svgElement("g",{fill:"none",stroke:"#b4aba0","stroke-width":"1.9"});
   [
     ["polygon",{points:"310,34 506,114 586,310 506,506 310,586 114,506 34,310 114,114"}],
