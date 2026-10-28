@@ -49,6 +49,18 @@ try{
       "mobile result must start right below the form, without a giant gap");
     assert.ok(compactLayout.titleFont <= 24 && compactLayout.titleHeight <= 60,
       "calculator title should stay small and not dominate the mobile screen");
+    // All original questions now live in a compact 2-column grid.
+    assert.equal(await page.locator("#pro-compact-questions #pro-question-buttons > .pro-question-item").count(),14,
+      "fourteen original questions must remain available in the compact picker");
+    assert.equal(await page.locator("#pro-question-legacy").isVisible(),false,
+      "previous long question section must be hidden, not deleted");
+    assert.equal(await page.locator("#pro-zone-buttons").isVisible(),false,
+      "old duplicate sphere menu must be hidden");
+    const compactColumns = await page.locator("#pro-compact-questions #pro-question-buttons").evaluate(
+      el => getComputedStyle(el).gridTemplateColumns.split(" ").length);
+    assert.equal(compactColumns,2,"compact picker must have two columns on phone");
+    assert.ok((await page.locator("#pro-question-impression").innerText()).includes("ЧИСЛО "+sample.energy),
+      "free question must display its correctly calculated personal number");
     await page.locator("#pro-question-impression").click();
     await page.locator("#pro-answer-impression .pro-inline-reading-title, #pro-answer-impression h3").first().waitFor({state:"visible",timeout:20000});
     const first=await page.locator("#pro-answer-impression").innerText();
@@ -59,13 +71,13 @@ try{
 
     await page.locator("#pro-question-trueSelf").click();
     await page.locator("#pro-answer-trueSelf .pro-paid-lock").waitFor({state:"visible"});
-    // Both new discoverability controls must open the exact same free authored chapter.
-    const freeSphereButton = page.locator("#pro-free-impression");
-    await freeSphereButton.waitFor({state:"visible"});
-    await freeSphereButton.click();
-    await page.locator("#pro-point-details .pro-inline-reading-title").waitFor({state:"visible",timeout:20000});
-    assert.ok((await page.locator("#pro-point-details").innerText()).includes("Как видят вас другие"),
-      "free entry next to locked spheres must open original left chapter");
+    // Redundant large free shortcut is preserved in HTML, but hidden:
+    // the same authored chapter is now the first compact question.
+    assert.equal(await page.locator("#pro-free-impression").isVisible(),false);
+    assert.equal(await page.locator("#pro-answer-impression").isVisible(),false,
+      "switching to another question must close the earlier free answer");
+    assert.equal(await page.locator("#pro-answer-trueSelf").isVisible(),true,
+      "paid teaser should open in the compact picker");
     assert.match(await page.locator("#pro-matrix-title").innerText(), /Ваш личный калькулятор жизни/);
     assert.match(await page.locator("#pro-matrix-start").innerText(), /НАЧНИТЕ ЗДЕСЬ/);
     assert.equal(await page.locator(".pro-free-node-guide").count(), 0,
@@ -89,8 +101,8 @@ try{
     assert.equal(await page.locator(".pro-matrix-free-label").innerText(),"БЕСПЛАТНО",
       "a contrasting red free label belongs next to Start Here");
     const offer = page.locator("#pro-paywall-banner");
-    assert.equal(await offer.locator("h2").innerText(),"Полный разбор и PDF навсегда");
-    assert.equal(await offer.locator("button").innerText(),"Выбрать варианты доступа");
+    assert.equal(await offer.locator("h2").innerText(),"Открыть полный разбор");
+    assert.equal(await offer.locator("button").innerText(),"Варианты доступа");
     assert.equal(await offer.locator("p, small").count(),0,
       "compact offer must not repeat pricing, legal text, or marketing paragraphs");
     assert.equal(await page.locator("#pro-pdf-controls #pro-pdf-buttons").count(),1,
