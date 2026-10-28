@@ -739,6 +739,10 @@ const warmChildPdf=()=>{
 
 const showChildPdfOffer = () => {
   if (!birth) return;
+  const dateISO = birth.year + "-" + pad(birth.month) + "-" + pad(birth.day);
+  const pdfDate = byId("child-pdf-confirm-date");
+  pdfDate.textContent = pad(birth.day) + "." + pad(birth.month) + "." + birth.year;
+  pdfDate.dateTime = dateISO;
   const chapters = matrixDefinitions(calculateMatrix(birth));
   pdfChapters.replaceChildren();
   for (const chapter of chapters) {
@@ -760,6 +764,12 @@ pdfOpen.addEventListener("click", showChildPdfOffer);
 byId("child-pdf-top-open").addEventListener("click", showChildPdfOffer);
 // Closing the offer must NEVER depend on the PDF purchase/download state.
 pdfClose.addEventListener("click", () => pdfDialog.close());
+byId("child-pdf-change-date").addEventListener("click", () => {
+  pdfDialog.close();
+  form.scrollIntoView({behavior:"smooth",block:"center"});
+  input.focus({preventScroll:true});
+  input.select();
+});
 pdfDialog.addEventListener("click", event => {
   if (event.target === pdfDialog) pdfDialog.close();
 });
