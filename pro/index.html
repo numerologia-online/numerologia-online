@@ -9,7 +9,7 @@
   <base href="../">
   <title>Полный личный расчёт | Нумерология Онлайн</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="pro/pro.css?v=60">
+  <link rel="stylesheet" href="pro/pro.css?v=61">
   <link rel="stylesheet" href="site-support.css?v=3">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 </head>
@@ -45,13 +45,14 @@
         <section class="pro-zone-picker" aria-labelledby="pro-zone-picker-title">
           <p class="pro-eyebrow">ИССЛЕДУЙТЕ СВОЮ МАТРИЦУ</p>
           <h3 id="pro-zone-picker-title">Выберите интересующую сферу</h3>
-          <p class="pro-muted">Начните с открытой главы, а затем посмотрите, какие ещё темы ждут вас в полном разборе.</p>
-          <button id="pro-free-impression" class="pro-free-impression" type="button" aria-label="Открыть бесплатно главу Как видят вас другие">
+          <p class="pro-muted">Ваши персональные числа и темы жизни. Нажмите на интересующий вопрос, чтобы открыть его разбор.</p>
+          <button id="pro-free-impression" class="pro-free-impression" type="button" aria-label="Открыть бесплатно главу Как видят вас другие" hidden>
             <span class="pro-free-impression-icon" aria-hidden="true">🔓</span>
             <span class="pro-free-impression-name"><strong>Как видят вас другие</strong><small>Ваш первый полный ответ уже открыт</small></span>
             <span class="pro-free-impression-cta">БЕСПЛАТНО <span aria-hidden="true">→</span></span>
           </button>
-          <div id="pro-zone-buttons" class="pro-zone-buttons" role="group" aria-label="Платные тематические сферы матрицы"></div>
+          <div id="pro-zone-buttons" class="pro-zone-buttons" role="group" aria-label="Тематические сферы матрицы" hidden></div>
+          <div id="pro-compact-questions" class="pro-compact-questions" aria-label="Персональные вопросы по матрице"></div>
         </section>
       </section>
       <section id="pro-paywall-banner" class="pro-paywall-banner" hidden>
@@ -63,7 +64,9 @@
         <div id="pro-pdf-buttons" class="pro-pdf-buttons"></div>
         <p class="pro-pdf-note">Большой документ формируется по вашей дате рождения. Подготовка может занять некоторое время.</p>
       </section>
-      <section class="pro-paper" aria-labelledby="pro-question-title">
+      <!-- Reversible layout experiment: original question section stays in HTML,
+           while its live question buttons move into the compact picker above. -->
+      <section id="pro-question-legacy" class="pro-paper" aria-labelledby="pro-question-title" hidden>
         <p class="pro-eyebrow">КОНСУЛЬТАЦИЯ ПО ТЕМАМ</p>
         <h2 id="pro-question-title">О чём хотите узнать?</h2>
         <p class="pro-muted">Первый ответ «Как видят вас другие» открыт бесплатно. Остальные полные ответы доступны после покупки разбора.</p>
@@ -157,6 +160,6 @@
     </dialog>
   </main>
   <a class="site-support-link" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer" aria-label="Техподдержка: написать сообщение в Telegram"><span class="site-support-mark" aria-hidden="true">?</span><span>Техподдержка</span></a>
-  <script type="module" src="pro/pro.js?v=121"></script>
+  <script type="module" src="pro/pro.js?v=122"></script>
 </body>
 </html>
