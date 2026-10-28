@@ -279,3 +279,42 @@
   #child-matrix-panel .child-matrix-start-heading h3{font-size:clamp(21px,7.45vw,30px)}
   #child-matrix-panel .child-matrix-start-heading p{font-size:13px}
 }
+
+
+/* v7: a tighter reading header: title sits beside the number, not beneath it. */
+#child-matrix-panel .child-insight-place { margin-top:10px; }
+#child-matrix-panel .child-insight {
+  grid-template-columns:68px minmax(0,1fr);
+  column-gap:12px;
+  row-gap:2px;
+  padding:18px 18px 16px;
+}
+#child-matrix-panel .child-insight-badge {
+  width:68px;height:68px;min-width:68px;min-height:68px;
+}
+#child-matrix-panel .child-insight-kicker {
+  padding:0 32px 0 0;
+  font-size:9px;line-height:1.15;letter-spacing:.15px;
+}
+#child-matrix-panel .child-insight h3 {
+  margin:0;padding:0;
+  font:500 clamp(20px,4.8vw,22px)/1.08 Georgia,"Times New Roman",serif;
+  letter-spacing:-.3px;
+}
+#child-matrix-panel .child-insight-body {
+  margin-top:8px;padding-top:10px;
+}
+@media (max-width:390px) {
+  #child-matrix-panel .child-insight {
+    grid-template-columns:60px minmax(0,1fr);
+    column-gap:10px;
+    padding:15px 13px 15px;
+  }
+  #child-matrix-panel .child-insight-badge {
+    width:60px;height:60px;min-width:60px;min-height:60px;
+    font-size:24px;
+  }
+  #child-matrix-panel .child-insight h3 {
+    font-size:20px;line-height:1.08;
+  }
+}
