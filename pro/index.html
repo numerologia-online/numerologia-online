@@ -9,7 +9,7 @@
   <base href="../">
   <title>Полный личный расчёт | Нумерология Онлайн</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="pro/pro.css?v=49">
+  <link rel="stylesheet" href="pro/pro.css?v=50">
   <link rel="stylesheet" href="site-support.css?v=3">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 </head>
@@ -42,18 +42,23 @@
       </nav>
       <section class="pro-paper" aria-labelledby="pro-matrix-title">
         <div class="pro-title-row">
-          <div><p class="pro-eyebrow">ИНТЕРАКТИВНАЯ СХЕМА</p><h2 id="pro-matrix-title">Все точки матрицы</h2></div>
-          <span class="pro-small-note">Нажимайте на числа</span>
+          <div><p class="pro-eyebrow">ВАША ЛИЧНАЯ МАТРИЦА</p><h2 id="pro-matrix-title">Магия вашей жизни начинается здесь</h2></div>
         </div>
+        <p class="pro-matrix-lead">За каждым числом - своя история. <strong>Первую главу о себе вы можете открыть бесплатно.</strong></p>
         <div id="pro-diagram" class="pro-diagram"></div>
         <section id="pro-point-details" class="pro-point-details" role="region" aria-label="Подробный разбор выбранной точки" tabindex="-1" hidden></section>
         <section id="pro-zone-reading" class="pro-zone-reading" role="region" aria-labelledby="pro-zone-reading-title" tabindex="-1" hidden></section>
-        <p class="pro-diagram-caption">Начните с левого большого числа: <strong>«Как видят вас другие» - бесплатно.</strong> Остальные подробные трактовки доступны после покупки.</p>
+        <p class="pro-diagram-caption">Нажимайте на числа, чтобы узнать, что они означают. <strong>Левое большое число - ваша бесплатная глава.</strong></p>
         <section class="pro-zone-picker" aria-labelledby="pro-zone-picker-title">
-          <p class="pro-eyebrow">УЧИМСЯ ЧИТАТЬ МАТРИЦУ</p>
+          <p class="pro-eyebrow">ИССЛЕДУЙТЕ СВОЮ МАТРИЦУ</p>
           <h3 id="pro-zone-picker-title">Выберите интересующую сферу</h3>
-          <p class="pro-muted">Выберите тему, чтобы открыть разбор всех связанных энергий и узнать, как использовать их в жизни.</p>
-          <div id="pro-zone-buttons" class="pro-zone-buttons" role="group" aria-label="Зоны матрицы"></div>
+          <p class="pro-muted">Начните с открытой главы, а затем посмотрите, какие ещё темы ждут вас в полном разборе.</p>
+          <button id="pro-free-impression" class="pro-free-impression" type="button" aria-label="Открыть бесплатно главу Как видят вас другие">
+            <span class="pro-free-impression-icon" aria-hidden="true">🔓</span>
+            <span class="pro-free-impression-name"><strong>Как видят вас другие</strong><small>Ваш первый полный ответ уже открыт</small></span>
+            <span class="pro-free-impression-cta">БЕСПЛАТНО <span aria-hidden="true">→</span></span>
+          </button>
+          <div id="pro-zone-buttons" class="pro-zone-buttons" role="group" aria-label="Платные тематические сферы матрицы"></div>
         </section>
       </section>
       <section id="pro-paywall-banner" class="pro-paywall-banner" hidden>
@@ -162,6 +167,6 @@
     </dialog>
   </main>
   <a class="site-support-link" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer" aria-label="Техподдержка: написать сообщение в Telegram"><span class="site-support-mark" aria-hidden="true">?</span><span>Техподдержка</span></a>
-  <script type="module" src="pro/pro.js?v=107"></script>
+  <script type="module" src="pro/pro.js?v=108"></script>
 </body>
 </html>
