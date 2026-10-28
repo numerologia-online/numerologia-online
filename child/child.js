@@ -596,7 +596,9 @@ form.addEventListener("submit", async (event) => {
     renderMatrix(calculateMatrix(birth));
     byId("child-born-date").textContent = pad(birth.day) + "." + pad(birth.month) + "." + birth.year;
     byId("child-born-date").dateTime = birth.year + "-" + pad(birth.month) + "-" + pad(birth.day);
-    setTab(startingTab);
+    // Each new calculation opens the matrix, never an old Day selection.
+    startingTab = "matrix";
+    setTab("matrix");
     preview.hidden = true;
     result.hidden = false;
     // Show the child's birth date and both navigation prompts after calculating.
@@ -606,7 +608,7 @@ form.addEventListener("submit", async (event) => {
       result.scrollIntoView({behavior: "smooth", block: "start"});
       window.requestAnimationFrame(updateChildGuide);
     });
-    if (startingTab==="matrix") warmChildPdf();
+    warmChildPdf();
   } catch (reason) {
     error.textContent = "Не удалось загрузить расчёт. Проверьте подключение и попробуйте ещё раз.";
     error.hidden = false;
