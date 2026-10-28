@@ -9,18 +9,10 @@ pointPreview.className = "pro-point-preview";
 pointPreview.hidden = true;
 pointPreview.setAttribute("aria-label", "Перейти к разбору выбранной точки");
 // A small, readable pointer to the actual free LEFT circle; never a new reading.
-const freeNodeGuide = document.createElement("button");
-freeNodeGuide.type = "button";
+const freeNodeGuide = document.createElement("div");
 freeNodeGuide.className = "pro-free-node-guide";
-freeNodeGuide.setAttribute("aria-label", "Нажмите на левое большое число - глава Как видят вас другие бесплатно");
-freeNodeGuide.append(element("strong", "БЕСПЛАТНО"), element("span", "Начните с этой цифры"));
-freeNodeGuide.addEventListener("click", () => {
-  if (!getCurrent()) return;
-  hidePointPreview();
-  hideZonePreview();
-  markPointActive("left");
-  onOpenPoint("left");
-});
+freeNodeGuide.setAttribute("aria-hidden", "true");
+freeNodeGuide.append(element("strong", "БЕСПЛАТНО"), element("span", "Нажмите на число ↑"));
 const {preview: zonePreview, show: showZonePreview, hide: hideZonePreview} = createZonePreview({
   diagram, element, getCurrent, hidePointPreview, onSelectZone
 });
