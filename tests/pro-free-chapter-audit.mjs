@@ -63,10 +63,10 @@ try{
     assert.equal(await freeGuide.evaluate(el => getComputedStyle(el).pointerEvents), "none",
       "decorative arrow must not intercept any matrix taps");
     const arrowLine = await freeGuide.locator("path").first().getAttribute("d");
-    assert.equal(arrowLine, "M 9 269 L 28 294",
-      "short straight pointer must end on the upper-left edge of the free number");
+    assert.equal(arrowLine, "M 3 5 L 3 266 L 28 294",
+      "straight left-margin arrow should reach the free circle from the Start Here label");
     assert.ok(!/[CQ]/.test(arrowLine),
-      "old long curved arrow must not return");
+      "the arrow must not contain unwanted curves");
     const layout=await page.locator("#pro-diagram svg").evaluate(svg => {
       const labels=[...svg.querySelectorAll(".pro-sector-tag")].map(el => {
         const key=el.getAttribute("data-zone");
