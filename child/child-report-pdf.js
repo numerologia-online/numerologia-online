@@ -181,7 +181,7 @@ export function childPdfDefinition(report, {preview=false}={}) {
       {text:"Содержание",style:"tocTitle"},
       {text:draft
         ? "Готово "+report.chapters.length+" из "+report.total+" глав. Остальные главы отмечены как находящиеся в работе."
-        : report.chapters.length+" главы о вашем ребёнке. Возвращайтесь к нужным разделам в любое время.",
+        : report.chapters.length+" глава о вашем ребёнке. Возвращайтесь к нужным разделам в любое время.",
         style:"tocIntro"},
       ...tocItems,
       ...chapterContents,
