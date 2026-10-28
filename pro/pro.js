@@ -46,6 +46,39 @@ let verifiedOwner = false;
 let ownerSeeFree = false;
 let ownerToolbar = null;
 const hasPaidAccess = () => verifiedOwner && !ownerSeeFree;
+
+// The one free chapter is the left major point (birth day / outer image).
+// Never fetch the complete 14-chapter paid bank in this public preview.
+const FREE_PRO_TOPIC = "impression";
+const FREE_PRO_POINT = "left";
+const freeImpressionRequests = new Map();
+function loadFreeImpression(energy) {
+  const number = Number(energy);
+  if (!Number.isInteger(number) || number < 1 || number > 22) {
+    return Promise.reject(new Error("Некорректная энергия бесплатной главы"));
+  }
+  if (!freeImpressionRequests.has(number)) {
+    const promise = fetch("knowledge/full-report/free/impression/energy-" + number + ".json?v=1")
+      .then(response => {
+        if (!response.ok) throw new Error("Не удалось загрузить бесплатную главу");
+        return response.json();
+      })
+      .then(bank => {
+        if (bank.id !== number || Object.keys(bank.sections || {}).join(",") !== FREE_PRO_TOPIC
+            || !Array.isArray(bank.sections.impression?.paragraphs)
+            || bank.sections.impression.paragraphs.length < 2) {
+          throw new Error("Бесплатная глава не соответствует энергии");
+        }
+        return bank;
+      })
+      .catch(err => {
+        freeImpressionRequests.delete(number);
+        throw err;
+      });
+    freeImpressionRequests.set(number, promise);
+  }
+  return freeImpressionRequests.get(number);
+}
 const paywallBanner = document.querySelector("#pro-paywall-banner");
 const paywallDialog = document.querySelector("#pro-paywall-dialog");
 const oldPreviewParam = new URL(location.href);
@@ -526,7 +559,7 @@ function renderQuestions(definitions) {
     button.setAttribute("aria-pressed", "false");
     button.setAttribute("aria-expanded", "false");
     button.setAttribute("aria-controls", "pro-answer-" + definition.key);
-    button.append(element("small", category[definition.key] || "Расшифровка"));
+    button.append(element("small", definition.key === FREE_PRO_TOPIC ? "БЕСПЛАТНО · ЛИЧНОСТЬ" : (category[definition.key] || "Расшифровка")));
     button.append(element("span", definition.title));
 
     const panel = element("article", null, "pro-answer");
@@ -659,7 +692,10 @@ function loadInlineFullReading(target, key, pointEnergy = null, includeGuidance 
   // а не энергию того же вопроса из другой позиции общего PDF.
   const energy = Number.isInteger(pointEnergy) ? pointEnergy : definition.energy;
   target.replaceChildren(paragraph("Открываю полный разбор…", "pro-muted"));
-  return Promise.all([loadFullReportSection(energy), includeGuidance ? loadPracticalGuidance(energy) : Promise.resolve(null)])
+  return Promise.all([
+    hasPaidAccess() ? loadFullReportSection(energy) : (key === FREE_PRO_TOPIC ? loadFreeImpression(energy) : Promise.reject(new Error("Платный раздел закрыт"))),
+    includeGuidance && hasPaidAccess() ? loadPracticalGuidance(energy) : Promise.resolve(null)
+  ])
     .then(([bank, guidance]) => {
       if (!current || current.id !== id || !target.isConnected) return;
       const section = bank?.sections?.[key];
@@ -736,12 +772,13 @@ function openPointDetail(key) {
   const authoredKey = position?.key || point.topic || additionalPointReadings[key];
   const hasAuthoredText = Boolean(authoredKey &&
     current.definitions.some(definition => definition.key === authoredKey));
+  const freeLeftPoint = !hasPaidAccess() && key === FREE_PRO_POINT && authoredKey === FREE_PRO_TOPIC;
   pointDetails.replaceChildren();
 
   const head = element("div", null, "pro-point-details-header");
   const heading = element("div");
   heading.append(element("p", "ПОДРОБНЫЙ РАЗБОР ТОЧКИ", "pro-eyebrow"));
-  heading.append(element("h3", position?.title || current.previews.titles[key] || point.label));
+  heading.append(element("h3", freeLeftPoint ? "Как видят вас другие" : (position?.title || current.previews.titles[key] || point.label)));
   const close = element("button", "Закрыть", "pro-point-details-close");
   close.type = "button";
   close.setAttribute("aria-label", "Закрыть подробный разбор точки");
@@ -757,7 +794,7 @@ function openPointDetail(key) {
   if (energy.name) chips.append(element("span", energy.name));
   pointDetails.append(chips);
 
-  if (!hasPaidAccess()) {
+  if (!hasPaidAccess() && !freeLeftPoint) {
     pointDetails.append(makePaywallLock("Разбор точки: " + (position?.title || current.previews.titles[key] || point.label)));
     pointDetails.hidden = false;
     scrollOpenedAnswerToTop(pointDetails, () => !pointDetails.hidden);
@@ -769,7 +806,7 @@ function openPointDetail(key) {
     // No generic advice from point-previews.json is substituted for an authored answer.
     const full = element("section", null, "pro-inline-full-reading");
     pointDetails.append(full);
-    loadInlineFullReading(full, authoredKey, point.value, false, position?.context || null);
+    loadInlineFullReading(full, authoredKey, point.value, false, freeLeftPoint ? null : (position?.context || null));
   } else {
     // Defensive fallback only if a new, unconfigured point is added later.
     const detail = current.previews.details?.[key];
@@ -916,7 +953,7 @@ async function selectQuestion(key, scroll = false) {
   const answer = button?.parentElement?.querySelector(".pro-answer");
   if (!button || !answer) return;
 
-  if (!hasPaidAccess()) {
+  if (!hasPaidAccess() && key !== FREE_PRO_TOPIC) {
     const next = current.selected === key ? null : key;
     current.selected = next;
     questionButtons.querySelectorAll(".pro-question-item").forEach(card => {
@@ -958,7 +995,10 @@ async function selectQuestion(key, scroll = false) {
   answer.setAttribute("aria-busy", "true");
   answer.replaceChildren(paragraph("Загружаю подробную расшифровку…", "pro-muted"));
   try {
-    const [bank, practicalGuidance] = await Promise.all([loadFullReportSection(definition.energy), loadPracticalGuidance(definition.energy)]);
+    const [bank, practicalGuidance] = await Promise.all([
+      hasPaidAccess() ? loadFullReportSection(definition.energy) : loadFreeImpression(definition.energy),
+      hasPaidAccess() ? loadPracticalGuidance(definition.energy) : Promise.resolve(null)
+    ]);
     if (!current || current.id !== id || current.selected !== key || answerRequestId !== request) return;
     const source = bank?.sections?.[key];
     if (!source?.paragraphs?.length) throw new Error("Нет описания этой позиции");
