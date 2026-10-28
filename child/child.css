@@ -1848,3 +1848,29 @@ body {
  .child-result-heading .child-pdf-shortcut{font-size:11px;padding:4px 8px}
  .child-pdf-actions .child-pdf-button{font-size:14px}
 }
+
+
+/* v44: full-size download CTA replaces the 'Ваш ребёнок' heading. */
+.child-result .child-result-heading{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  align-items:center;column-gap:12px;min-height:62px;padding:0 2px;
+}
+.child-result-heading .child-pdf-shortcut{
+  display:flex;width:100%;max-width:none;min-width:0;min-height:61px;
+  padding:10px 12px;gap:9px;border:2px solid #cbb47a;border-radius:15px;
+  background:linear-gradient(115deg,#174f3f 0%,#186d53 70%,#218269 100%);
+  box-shadow:0 6px 16px rgba(26,96,74,.22);
+  font:800 clamp(14px,3.75vw,18px)/1.12 var(--sans);
+  white-space:nowrap;
+}
+.child-result-heading .child-pdf-shortcut>span{font-size:23px;color:#f0dfb4}
+.child-result-heading .child-born{justify-self:end;align-self:center;min-width:0}
+@media(max-width:530px){
+  .child-result .child-result-heading{column-gap:8px;min-height:58px;padding:0 3px}
+  .child-result-heading .child-pdf-shortcut{min-height:55px;padding:8px;gap:6px;border-radius:13px}
+  .child-result-heading .child-pdf-shortcut>span{font-size:21px}
+}
+@media(max-width:360px){
+  .child-result-heading .child-pdf-shortcut{min-height:52px;font-size:13px;padding:7px 5px;gap:4px}
+  .child-result-heading .child-pdf-shortcut>span{font-size:18px}
+}
