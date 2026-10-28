@@ -47,10 +47,8 @@ try{
       "free entry next to locked spheres must open original left chapter");
     const freeArrow = page.locator(".pro-free-node-guide");
     await freeArrow.waitFor({state:"visible"});
-    await freeArrow.click();
-    await page.locator("#pro-point-details .pro-inline-reading-title").waitFor({state:"visible",timeout:20000});
-    assert.ok((await page.locator("#pro-point-details").innerText()).includes("Как видят вас другие"),
-      "arrow at left number must open original free chapter");
+    assert.equal(await freeArrow.evaluate(node => getComputedStyle(node).pointerEvents), "none",
+      "visual guide must not obstruct tapping the actual left matrix circle");
     const left=page.locator('.pro-node[data-node-key="left"]');
     await left.click();
     // Matrix UI deliberately opens a small preview first, then full reading.
