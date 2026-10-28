@@ -615,11 +615,64 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-paywall-locked .pro-zone-button[data-zone]::after,.pro-paywall-locked .pro-zone-button[data-karmic]::after{content:"🔒";font-size:12px;margin-left:auto;opacity:.7}
 .pro-paywall-locked .pro-zone-button{padding-right:9px}
 .pro-paywall-locked .pro-pdf-note{font-size:12px;color:#81715b}
-.pro-paywall-dialog{width:min(420px,calc(100vw - 32px));border:1px solid #d9c8a9;border-radius:20px;box-shadow:0 25px 75px #172a3e38;padding:26px;background:#fffefa;color:#344b5d}
-.pro-paywall-dialog::backdrop{background:#15263682}
-.pro-paywall-dialog h2{font-size:28px}
-.pro-paywall-dialog p{font-size:14px;line-height:1.6}
-.pro-paywall-dialog button{border:0;background:#294558;border-radius:12px;color:white;min-height:45px;padding:10px 23px;font-weight:750}
+/* One-time vs club subscription: polished preview, no payment processing. */
+.pro-paywall-dialog{
+  width:min(555px,calc(100vw - 22px));max-height:min(90dvh,900px);overflow-y:auto;
+  border:1px solid #d8cbb9;border-radius:25px;box-shadow:0 28px 90px rgba(20,38,54,.31);
+  padding:0;background:#fffefa;color:#304859;overscroll-behavior:contain
+}
+.pro-paywall-dialog::backdrop{background:rgba(14,31,44,.64);backdrop-filter:blur(3px)}
+.pro-paywall-dialog-header{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:16px 21px 8px;background:#fffefa}
+.pro-paywall-dialog-kicker{margin:0!important;font-size:10px!important;line-height:1.2!important;
+  color:#a18460!important;font-weight:850;letter-spacing:.17em}
+.pro-paywall-dialog-close{display:grid;place-items:center;width:33px;height:33px;min-height:33px!important;
+  padding:0!important;border:1px solid #e3ded5!important;border-radius:50%!important;
+  background:#f8f6f1!important;color:#5b6570!important;font-size:24px;font-weight:400!important;line-height:1}
+.pro-paywall-dialog-close:hover{background:#ece7df!important}
+.pro-paywall-dialog-body{padding:9px clamp(15px,4vw,26px) 25px}
+.pro-paywall-dialog h2{font:400 clamp(28px,6vw,35px)/1.12 Georgia,"Times New Roman",serif;letter-spacing:-.035em;
+  margin:0 0 10px;color:#243c4c}
+.pro-paywall-dialog-lead{font-size:13px;line-height:1.55;color:#62717a;margin:0 0 18px}
+.pro-paywall-choices{display:grid;gap:11px}
+.pro-paywall-option{border:1px solid #e1dfd9;background:#fff;border-radius:18px;padding:16px}
+.pro-paywall-option-club{border:1.5px solid #bfa177;background:linear-gradient(138deg,#fffefa 0%,#f7f6f2 75%,#f0f1ec 100%);
+  box-shadow:0 8px 24px rgba(59,64,60,.08)}
+.pro-paywall-option-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.pro-paywall-option-label{font-size:10px;font-weight:850;color:#947852;letter-spacing:.11em}
+.pro-paywall-option-advantage{font-size:10px;color:#36574d;background:#e7eee8;padding:4px 9px;border-radius:99px;font-weight:850}
+.pro-paywall-option-price-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.pro-paywall-option-price-row h3{font:500 clamp(19px,4.6vw,23px)/1.16 Georgia,"Times New Roman",serif;margin:0;color:#283f51;letter-spacing:-.025em}
+.pro-paywall-option-price-stack{display:flex;flex-direction:column;align-items:flex-end;gap:0;flex:none}
+.pro-paywall-option-price{white-space:nowrap;font-size:27px;line-height:1.1;letter-spacing:-.04em;font-weight:850;color:#2d4c54}
+.pro-paywall-option-price-stack del{font-size:13px;color:#8c9294}
+.pro-paywall-option p{font-size:12.5px;line-height:1.5;color:#62717a;margin:9px 0 12px}
+.pro-paywall-option p strong{color:#294757}
+.pro-paywall-option-action{display:block;width:100%;margin-top:12px;border:0;border-radius:12px;
+  min-height:43px;padding:11px 14px;font-weight:800;font-size:13px;line-height:1.4}
+.pro-paywall-option-action-once{background:#eef0ef;color:#304657}
+.pro-paywall-option-action-once:hover{background:#e5e9e7}
+.pro-paywall-option-action-club{background:#274b50;color:#fff}
+.pro-paywall-option-action-club:hover{background:#1b3a41}
+.pro-paywall-club-cost{margin:11px 0!important;font-size:12.5px!important;line-height:1.45!important}
+.pro-paywall-club-perks{border-top:1px solid #e1dbd0;margin-top:13px;padding-top:11px}
+.pro-paywall-club-perks>strong{display:block;font-size:12px;color:#365354}
+.pro-paywall-club-perks ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.pro-paywall-club-perks li{position:relative;padding-left:21px;font-size:12px;line-height:1.45;color:#536a70}
+.pro-paywall-club-perks li:before{content:"✓";position:absolute;left:0;color:#517866;font-weight:900}
+.pro-paywall-renewal{margin:8px 0 0!important;color:#7b807d!important;font-size:11px!important;line-height:1.5!important}
+.pro-paywall-checkout-note{margin:13px 0 0;padding:12px 14px;border-radius:12px;
+  background:#e9f0ec;border:1px solid #b7cbc1;font-size:12px;line-height:1.5;color:#31544e}
+.pro-paywall-dialog-disclaimer{margin:13px 0 0;font-size:11px;line-height:1.52;color:#8b8580}
+.pro-paywall-banner-prices{font-weight:850;color:#315a55!important}
+@media(max-width:480px){
+  .pro-paywall-dialog{border-radius:20px;width:calc(100vw - 16px);max-height:calc(100dvh - 30px)}
+  .pro-paywall-dialog-header{padding:12px 15px 6px}
+  .pro-paywall-dialog-body{padding:8px 15px 18px}
+  .pro-paywall-option{padding:13px 12px}
+  .pro-paywall-option-price{font-size:25px}
+  .pro-paywall-club-perks ul{gap:5px}
+}
 @media(max-width:480px){.pro-paywall-banner{padding:13px 12px}.pro-paywall-banner button{width:100%}.pro-paid-lock{padding:10px}.pro-paid-lock-button{flex:1 1 100%;max-width:none}}
 
 /* Free introductory adult chapter: the first question is unmistakably open. */
