@@ -1720,3 +1720,17 @@ body {
 #child-matrix-panel .child-matrix-start-heading h3{font:750 clamp(15px,4vw,18px)/1.08 var(--serif);letter-spacing:-.015em;white-space:normal}
 #child-matrix-panel .child-matrix-start-heading p{font:600 clamp(10px,2.65vw,11px)/1.15 var(--sans);margin:2px 0 0;text-align:left}
 @media(max-width:390px){#child-matrix-panel .child-matrix-start-heading{padding:6px 9px}#child-matrix-panel .child-matrix-start-heading h3{font-size:15px}#child-matrix-panel .child-matrix-start-heading p{font-size:10px}}
+
+
+/* v36: replace two stacked banners with one compact navigation row. */
+#child-matrix-panel .child-compact-guides{display:grid;grid-template-columns:1fr 1fr;gap:7px;align-items:stretch;margin:4px 1px 7px}
+#child-matrix-panel .child-compact-guides .child-matrix-start-heading,
+#child-matrix-panel .child-compact-guides .child-day-discovery{box-sizing:border-box;width:100%;min-width:0;min-height:0;margin:0;padding:8px 9px;border-radius:12px;border-width:1.5px;box-shadow:none}
+#child-matrix-panel .child-compact-guides .child-matrix-start-heading h3{font-size:clamp(13px,3.5vw,16px);line-height:1.08;white-space:normal;letter-spacing:0}
+#child-matrix-panel .child-compact-guides .child-matrix-start-heading p{font-size:10px;line-height:1.2;margin:3px 0 0}
+#child-matrix-panel .child-compact-guides .child-day-discovery-copy{gap:3px}
+#child-matrix-panel .child-compact-guides .child-day-discovery-copy strong{font-size:clamp(13px,3.5vw,16px);line-height:1.08}
+#child-matrix-panel .child-compact-guides .child-day-discovery-copy>span{font-size:10px;line-height:1.2}
+#child-matrix-panel .child-compact-guides .child-day-discovery-arrow,
+#child-matrix-panel .child-compact-guides .child-day-discovery-heart{display:none}
+@media(max-width:390px){#child-matrix-panel .child-compact-guides{gap:6px}#child-matrix-panel .child-compact-guides .child-matrix-start-heading,#child-matrix-panel .child-compact-guides .child-day-discovery{padding:7px 8px}}
