@@ -112,7 +112,7 @@ function previewCheckout(choice) {
     ? "Вы выбрали клуб: подписка 499 ₽ в месяц + первый полный разбор за 490 ₽, итого 989 ₽ при первом оформлении. Оплата и клубные возможности ещё не подключены."
     : "Вы выбрали разовый полный разбор за 999 ₽ без подписки. Оплата пока не подключена.";
   note.hidden = false;
-  note.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  // Keep prices and the confirmation in place; don't jump past the club perks.
 }
 paywallDialog?.querySelector("#pro-paywall-one-time")?.addEventListener("click", () => previewCheckout("once"));
 paywallDialog?.querySelector("#pro-paywall-club")?.addEventListener("click", () => previewCheckout("club"));
