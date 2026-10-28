@@ -24,7 +24,7 @@ const loadStylesheet = (href) => new Promise((resolve, reject) => {
 });
 
 const getYearFeature = () => {
-    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=36");
+    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=37");
   return yearFeatureLoading;
 };
 
@@ -50,7 +50,7 @@ const openMatrixFeature = async () => {
 };
 
 const getRedFlagFeature = () => {
-  if (!redFlagFeatureLoading) redFlagFeatureLoading = import("./redflag-feature.js?v=89");
+  if (!redFlagFeatureLoading) redFlagFeatureLoading = import("./redflag-feature.js?v=90");
   return redFlagFeatureLoading;
 };
 
@@ -89,7 +89,7 @@ const openPersonalDayFeature = async () => {
 window.setTimeout(() => getPersonalDayFeature().catch(() => {}), 900);
 
 const getDestinyCodeFeature = () => {
-  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=24");
+  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=25");
   return destinyCodeFeatureLoading;
 };
 
