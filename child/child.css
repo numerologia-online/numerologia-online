@@ -1883,3 +1883,31 @@ body {
 #child-matrix-panel .child-lock-buy{display:block;width:100%;min-height:49px;margin:13px 0 3px;padding:11px 13px;background:linear-gradient(115deg,#174f3f,#218269);border:2px solid #cbb47a;border-radius:15px;color:#fff;font:750 14px/1.2 var(--sans)}
 .child-pdf-dialog .child-pdf-save:disabled {background:#e2dfe4;border-color:#d6c8d2;box-shadow:none;color:#746c76;opacity:1;cursor:not-allowed}
 .child-pdf-dialog .child-pdf-save:disabled .child-pdf-save-symbol {background:#f4ebef;color:#978391}
+
+/* Pre-purchase date confirmation: visible, compact and easy to correct. */
+.child-pdf-dialog{overflow-y:auto;overscroll-behavior:contain}
+.child-pdf-date-check{
+  display:flex;align-items:center;gap:12px;justify-content:space-between;
+  padding:11px 12px;margin:11px 0 8px;border:2px solid #c85e9d;
+  border-radius:15px;background:linear-gradient(110deg,#fff5fa,#f5edf9);
+}
+.child-pdf-date-check-info{display:flex;flex-direction:column;gap:3px;min-width:0}
+.child-pdf-date-check-info>strong{
+  font:800 clamp(12px,3.5vw,15px)/1.15 var(--sans);
+  letter-spacing:.01em;color:#91376c;
+}
+#child-pdf-confirm-date{font:800 clamp(21px,5vw,27px)/1.05 var(--sans);color:#583c62;font-variant-numeric:tabular-nums}
+.child-pdf-date-check-info>span{font:550 clamp(10px,2.6vw,11px)/1.22 var(--sans);color:#775f77}
+.child-pdf-change-date{
+  flex:none;padding:8px 11px;min-height:37px;
+  border:1px solid #cea9c1;border-radius:10px;background:#fff;
+  color:#8c426f;font:750 12px/1.15 var(--sans);
+  cursor:pointer;
+}
+.child-pdf-change-date:focus-visible{outline:3px solid #a54b80;outline-offset:2px}
+@media(max-height:750px){
+  .child-pdf-date-check{padding:7px 9px;margin:7px 0 5px;gap:8px;border-width:1.5px;border-radius:12px}
+  .child-pdf-date-check-info{gap:2px}
+  #child-pdf-confirm-date{font-size:21px}
+  .child-pdf-change-date{min-height:32px;padding:6px 8px;font-size:11px}
+}
