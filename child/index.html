@@ -7,7 +7,7 @@
   <meta name="description" content="Для мам - детская матрица судьбы и личный день ребёнка по дате рождения.">
   <title>Для мам - всё о ребёнке | Нумерология Онлайн</title>
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-  <link rel="stylesheet" href="./child.css?v=42">
+  <link rel="stylesheet" href="./child.css?v=43">
   <link rel="stylesheet" href="./matrix-luxe.css?v=7">
   <link rel="stylesheet" href="../site-support.css?v=3">
 </head>
@@ -64,7 +64,10 @@
 
     <section id="child-result" class="child-result" hidden aria-live="polite">
       <div class="child-result-heading">
-        <h2>Ваш ребёнок</h2>
+        <div class="child-heading-main">
+          <h2>Ваш ребёнок</h2>
+          <button id="child-pdf-top-open" class="child-pdf-shortcut" type="button" aria-label="Открыть скачивание полного разбора в PDF"><span aria-hidden="true">↓</span> Скачать PDF</button>
+        </div>
         <p id="child-born" class="child-born"><span class="child-born-label">Дата рождения</span><time id="child-born-date"></time></p>
       </div>
       <div class="child-tabs" role="tablist" aria-label="Выберите расчёт">
@@ -93,7 +96,7 @@
           <div id="child-matrix-sections" class="child-topic-grid"></div>
         </div>
         <div class="child-pdf-actions">
-          <button id="child-pdf-open" class="child-pdf-button" type="button">Полный разбор ребёнка · 490 ₽ <span aria-hidden="true">→</span></button>
+          <button id="child-pdf-open" class="child-pdf-button" type="button"><span class="child-pdf-button-icon" aria-hidden="true">↓</span><span>Скачать полный разбор в PDF · 490 ₽</span></button>
           <p>Полный разбор можно <strong>скачать в PDF и сохранить на телефон</strong>, чтобы возвращаться к нему в любое время.</p>
         </div>
       </section>
@@ -136,6 +139,6 @@
     <p id="child-pdf-status" class="child-pdf-status" role="status" aria-live="polite"></p>
   </dialog>
   <a class="site-support-link" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer" aria-label="Техподдержка: написать сообщение в Telegram"><span class="site-support-mark" aria-hidden="true">?</span><span>Техподдержка</span></a>
-  <script type="module" src="./child.js?v=96"></script>
+  <script type="module" src="./child.js?v=97"></script>
 </body>
 </html>
