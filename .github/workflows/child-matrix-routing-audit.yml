@@ -1,0 +1,20 @@
+name: Exhaustive child matrix routing audit
+on:
+  push:
+    paths:
+      - 'tests/child-matrix-routing.mjs'
+      - '.github/workflows/child-matrix-routing-audit.yml'
+      - 'child/child.js'
+      - 'numerology-core.js'
+      - 'child/data/matrix/sections/**'
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/child-matrix-routing.mjs
