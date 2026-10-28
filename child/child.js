@@ -594,17 +594,17 @@ form.addEventListener("submit", async (event) => {
     chosenDate = currentDate();
     closeInsight();
     renderMatrix(calculateMatrix(birth));
-    byId("child-born").textContent = "Дата рождения: " + pad(birth.day) + "." + pad(birth.month) + "." + birth.year;
+    byId("child-born-date").textContent = pad(birth.day) + "." + pad(birth.month) + "." + birth.year;
+    byId("child-born-date").dateTime = birth.year + "-" + pad(birth.month) + "-" + pad(birth.day);
     setTab(startingTab);
     preview.hidden = true;
     result.hidden = false;
-    // On calculation, glide to the start of the matrix instead of its
-    // surrounding header. The user can see where to tap before reading.
-    const scrollTarget = startingTab === "matrix"
-      ? matrixPanel.querySelector(".child-matrix-start-heading")
-      : result;
+    // Show the child's birth date and both navigation prompts after calculating.
+    // Starting at the result header also keeps the first topic cards in view on
+    // taller mobile screens; the responsive overview below adapts shorter screens.
     window.requestAnimationFrame(() => {
-      scrollTarget.scrollIntoView({behavior: "smooth", block: "start"});
+      result.scrollIntoView({behavior: "smooth", block: "start"});
+      window.requestAnimationFrame(updateChildGuide);
     });
     if (startingTab==="matrix") warmChildPdf();
   } catch (reason) {
