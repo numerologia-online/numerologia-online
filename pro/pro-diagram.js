@@ -8,11 +8,6 @@ pointPreview.type = "button";
 pointPreview.className = "pro-point-preview";
 pointPreview.hidden = true;
 pointPreview.setAttribute("aria-label", "Перейти к разбору выбранной точки");
-// A small, readable pointer to the actual free LEFT circle; never a new reading.
-const freeNodeGuide = document.createElement("div");
-freeNodeGuide.className = "pro-free-node-guide";
-freeNodeGuide.setAttribute("aria-hidden", "true");
-freeNodeGuide.append(element("strong", "БЕСПЛАТНО"), element("span", "Нажмите на число ↑"));
 const {preview: zonePreview, show: showZonePreview, hide: hideZonePreview} = createZonePreview({
   diagram, element, getCurrent, hidePointPreview, onSelectZone
 });
@@ -279,7 +274,7 @@ function renderDiagram(points) {
   });
   hidePointPreview();
   hideZonePreview();
-  diagram.replaceChildren(svg, pointPreview, zonePreview, freeNodeGuide);
+  diagram.replaceChildren(svg, pointPreview, zonePreview);
 }
 
 function markPointActive(key) {
