@@ -1,10 +1,5 @@
 
 /* Year preview: completed months free, current and future months locked. */
-#year .year-free-month-note{
-  margin:13px 0 19px;padding:12px 15px;border:1px solid #d2c29d;
-  border-radius:13px;background:#fff9e8;color:#4b563f;
-  font:700 14px/1.4 Inter,system-ui,sans-serif;
-}
 #year .month-card--locked{
   border-color:#d8c9d0;background:linear-gradient(120deg,#fffafc,#f3f5fc);
   box-shadow:none;
