@@ -708,7 +708,7 @@ const warmChildPdf=()=>{
   else window.setTimeout(warm,320);
 };
 
-pdfOpen.addEventListener("click", () => {
+const showChildPdfOffer = () => {
   if (!birth) return;
   const chapters = matrixDefinitions(calculateMatrix(birth));
   pdfChapters.replaceChildren();
@@ -723,7 +723,9 @@ pdfOpen.addEventListener("click", () => {
       ? "PDF собирается. Готовый файл появится здесь."
       : "Все главы будут собраны в один PDF-файл.";
   pdfDialog.showModal();
-});
+};
+pdfOpen.addEventListener("click", showChildPdfOffer);
+byId("child-pdf-top-open").addEventListener("click", showChildPdfOffer);
 pdfClose.addEventListener("click", () => { if (!pdfSave.disabled) pdfDialog.close(); });
 pdfDialog.addEventListener("click", event => {
   if (event.target === pdfDialog && !pdfSave.disabled) pdfDialog.close();
