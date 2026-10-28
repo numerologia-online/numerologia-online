@@ -1683,3 +1683,16 @@ body {
  .child-day-discovery { padding:12px 13px; gap:7px; }
  .child-day-discovery-copy > span { font-size:12px; }
 }
+
+
+/* Compact onboarding cards on mobile. */
+.child-day-discovery{margin:7px 0 9px;padding:9px 12px;gap:8px;border-width:1.5px;border-radius:17px;box-shadow:0 4px 12px rgba(113,134,181,.08)}
+.child-day-discovery-copy{gap:2px}
+.child-day-discovery-copy strong{font-size:clamp(15px,4vw,19px);line-height:1.12}
+.child-day-discovery-copy>span{font-size:clamp(11px,2.9vw,12.5px);line-height:1.26}
+.child-day-discovery-heart{font-size:25px}
+.child-day-discovery-arrow{top:-24px;right:23%;font-size:32px}
+#child-matrix-panel .child-matrix-start-heading{margin:7px 2px 8px;padding:9px 13px 10px;border-radius:17px;box-shadow:0 4px 12px rgba(151,65,122,.07)}
+#child-matrix-panel .child-matrix-start-heading h3{font-size:clamp(23px,6.8vw,33px);line-height:1.05}
+#child-matrix-panel .child-matrix-start-heading p{margin-top:3px;font-size:clamp(11px,3vw,13px);line-height:1.25}
+@media(max-width:390px){.child-day-discovery{padding:9px 11px;gap:7px}.child-day-discovery-copy>span{font-size:11px}#child-matrix-panel .child-matrix-start-heading{padding:9px 11px 10px}#child-matrix-panel .child-matrix-start-heading h3{font-size:clamp(22px,6.7vw,27px)}#child-matrix-panel .child-matrix-start-heading p{font-size:11px}}
