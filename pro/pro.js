@@ -55,6 +55,7 @@ const pointDetails = document.querySelector("#pro-point-details");
 const zoneButtons = document.querySelector("#pro-zone-buttons");
 const zoneReading = document.querySelector("#pro-zone-reading");
 const questionButtons = document.querySelector("#pro-question-buttons");
+const compactQuestions = document.querySelector("#pro-compact-questions");
 const karmic = document.querySelector("#pro-karma");
 const purpose = document.querySelector("#pro-purpose");
 const pdfControls = document.querySelector("#pro-pdf-controls");
@@ -604,7 +605,12 @@ function renderQuestions(definitions) {
     button.setAttribute("aria-pressed", "false");
     button.setAttribute("aria-expanded", "false");
     button.setAttribute("aria-controls", "pro-answer-" + definition.key);
-    button.append(element("small", definition.key === FREE_PRO_TOPIC ? "БЕСПЛАТНО · ЛИЧНОСТЬ" : (category[definition.key] || "Расшифровка")));
+    // Compact answer cards reuse the original question buttons and authored
+    // panels. Each number comes from the existing calculation, not a new formula.
+    card.classList.toggle("pro-question-free", definition.key === FREE_PRO_TOPIC);
+    button.append(element("small",
+      "ЧИСЛО " + definition.energy + (definition.key === FREE_PRO_TOPIC ? " · БЕСПЛАТНО" : " · ПОЛНЫЙ РАЗБОР")
+    ));
     button.append(element("span", definition.title));
 
     const panel = element("article", null, "pro-answer");
@@ -619,6 +625,12 @@ function renderQuestions(definitions) {
     frag.append(card);
   });
   questionButtons.replaceChildren(frag);
+  // Reversible presentation only: move the SAME 14 interactive question cards
+  // into the compact section. No copying, new bank or duplicated handlers.
+  // Original HTML holder remains hidden below for easy rollback.
+  if (compactQuestions && questionButtons.parentElement !== compactQuestions) {
+    compactQuestions.append(questionButtons);
+  }
 }
 
 // Один общий вывод полного авторского текста для точек схемы и сфер.
