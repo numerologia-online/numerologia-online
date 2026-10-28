@@ -1696,3 +1696,16 @@ body {
 #child-matrix-panel .child-matrix-start-heading h3{font-size:clamp(23px,6.8vw,33px);line-height:1.05}
 #child-matrix-panel .child-matrix-start-heading p{margin-top:3px;font-size:clamp(11px,3vw,13px);line-height:1.25}
 @media(max-width:390px){.child-day-discovery{padding:9px 11px;gap:7px}.child-day-discovery-copy>span{font-size:11px}#child-matrix-panel .child-matrix-start-heading{padding:9px 11px 10px}#child-matrix-panel .child-matrix-start-heading h3{font-size:clamp(22px,6.7vw,27px)}#child-matrix-panel .child-matrix-start-heading p{font-size:11px}}
+
+
+/* v33: compact two-step guidance to reveal more of the matrix at first glance. */
+.child-day-discovery{min-height:0;margin:4px 0 6px;padding:6px 10px;border-radius:13px;gap:7px}
+.child-day-discovery-copy{gap:1px}
+.child-day-discovery-copy strong{font-size:clamp(14px,3.7vw,17px);line-height:1.05}
+.child-day-discovery-copy>span{font-size:clamp(10px,2.65vw,11px);line-height:1.15}
+.child-day-discovery-heart{font-size:19px}
+.child-day-discovery-arrow{top:-20px;font-size:25px;right:22%}
+#child-matrix-panel .child-matrix-start-heading{margin:4px 2px 6px;padding:7px 11px 8px;border-radius:13px}
+#child-matrix-panel .child-matrix-start-heading h3{font-size:clamp(21px,6vw,29px);line-height:1}
+#child-matrix-panel .child-matrix-start-heading p{margin-top:2px;font-size:clamp(10px,2.7vw,12px);line-height:1.15}
+@media(max-width:390px){.child-day-discovery{padding:6px 9px}.child-day-discovery-copy>span{font-size:10px}#child-matrix-panel .child-matrix-start-heading{padding:7px 10px 8px}#child-matrix-panel .child-matrix-start-heading h3{font-size:clamp(20px,6vw,24px)}#child-matrix-panel .child-matrix-start-heading p{font-size:10px}}
