@@ -1745,3 +1745,6 @@ body {
 #child-matrix-panel .child-compact-guides .child-matrix-start-heading:after{content:none!important;display:none!important}
 #child-matrix-panel .child-compact-guides .child-day-discovery{position:relative;overflow:visible}
 #child-matrix-panel .child-compact-guides .child-day-discovery:before{content:"↗";position:absolute;top:-47px;left:35%;font:900 43px/1 var(--sans);color:#5387c8;text-shadow:1px 1px 0 #fff,-1px -1px 0 #fff;pointer-events:none;transform:rotate(-12deg);z-index:5}
+
+/* v39: slim upward pointer in the gap, clear of the tab label. */
+#child-matrix-panel .child-compact-guides .child-day-discovery:before{content:"↑";top:-29px;left:auto;right:28%;font:800 25px/1 var(--sans);transform:none;color:#5188ca;text-shadow:1px 1px 0 #fff,-1px -1px 0 #fff}
