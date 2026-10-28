@@ -821,14 +821,28 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   font:900 clamp(11px,2.9vw,14px)/1.15 Inter,system-ui,sans-serif;
   letter-spacing:.035em;box-shadow:0 2px 5px rgba(157,33,28,.13)
 }
-.pro-diagram .pro-free-start-arrow{pointer-events:none}
-.pro-diagram .pro-free-start-arrow path{
-  fill:none;stroke:#c83230;stroke-width:5.6;stroke-linecap:round;stroke-linejoin:round;
-  pointer-events:none
+/* Die-cut, dimensional sticker arrow: white outer edge, cherry gradient and gloss. */
+.pro-diagram .pro-free-start-arrow{
+  pointer-events:none;filter:drop-shadow(1px 2.4px 1.6px rgba(81,39,35,.30))
 }
-.pro-diagram .pro-free-start-arrow polygon{
-  fill:#c83230;stroke:none;pointer-events:none
+.pro-diagram .pro-free-start-arrow .pro-free-sticker-border{
+  fill:none;stroke:#fffdf6;stroke-width:17;
+  stroke-linecap:round;stroke-linejoin:round;pointer-events:none
 }
+.pro-diagram .pro-free-start-arrow .pro-free-sticker-shaft{
+  fill:none;stroke:url(#pro-free-sticker-red);stroke-width:9;
+  stroke-linecap:round;stroke-linejoin:round;pointer-events:none
+}
+.pro-diagram .pro-free-start-arrow .pro-free-sticker-head{
+  fill:url(#pro-free-sticker-red);stroke:#fffdf6;stroke-width:7;
+  stroke-linejoin:round;paint-order:stroke fill;pointer-events:none
+}
+.pro-diagram .pro-free-start-arrow .pro-free-sticker-glint{
+  fill:none;stroke:#ffd6cb;stroke-width:1.6;stroke-linecap:round;
+  opacity:.78;pointer-events:none
+}
+.pro-paywall-banner h2{margin-bottom:12px}
+.pro-paywall-banner #pro-paywall-buy{width:100%;min-height:44px}
 .pro-diagram .pro-node[data-node-key="left"].major circle{
   stroke:#3d9181;stroke-width:4.2;fill:#ddf2eb
 }
