@@ -12,6 +12,16 @@ const matrixTab = byId("child-tab-matrix");
 const dayTab = byId("child-tab-day");
 const matrixVisual = byId("child-matrix-visual");
 const matrixSections = byId("child-matrix-sections");
+/* Fail closed until a server-verified, per-child purchase entitlement exists.
+ * A flag, query string, or localStorage value must NEVER unlock paid readings.
+ * This static frontend is not DRM: private JSON must be migrated off GitHub Pages. */
+const FREE_CHILD_POINT = "character";
+const childEntitlement = { status: "preview", childId: null, birthDate: null };
+const hasChildPaidAccess = () => childEntitlement.status === "active" &&
+  !!childEntitlement.childId && !!birth &&
+  childEntitlement.birthDate === [birth.year, String(birth.month).padStart(2,"0"), String(birth.day).padStart(2,"0")].join("-");
+const childPointIsLocked = point => point.id !== FREE_CHILD_POINT && !hasChildPaidAccess();
+
 const preview = byId("child-preview");
 let startingTab = "matrix";
 preview.querySelectorAll("[data-child-start]").forEach((button) => {
@@ -174,6 +184,20 @@ const openPointReading = async (point, source = null) => {
   childGuide.hidden = true;
   insight.hidden = false;
 
+  // Free preview is restricted to Character; no paid bank fetch happens here.
+  if (childPointIsLocked(point)) {
+    body.replaceChildren();
+    const note = document.createElement("p");
+    note.className = "child-locked-note";
+    note.textContent = "🔒 Эта глава входит в полный разбор ребёнка. Бесплатно доступна первая глава «Характер и темперамент».";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "child-lock-buy";
+    button.textContent = "Открыть весь разбор и PDF · 490 ₽";
+    button.addEventListener("click", showChildPdfOffer);
+    body.append(note, button);
+    return;
+  }
   // A karmic tail is a three-energy combination, never a generic energy text.
   if (point.id === "tail" || point.id === "tail-detail") {
     body.textContent = "Открываю кармический разбор…";
@@ -316,12 +340,14 @@ const renderMatrix = (matrix) => {
     button.type = "button";
     button.dataset.childTopic = definition.id;
     button.className = definition.id === "tail" ? "child-topic child-topic-tail" : "child-topic";
-    button.setAttribute("aria-label", "Открыть: " + definition.title);
+    const locked = childPointIsLocked(definition);
+    button.classList.toggle("child-topic-locked", locked);
+    button.setAttribute("aria-label", (locked ? "Закрытая глава: " : "Открыть: ") + definition.title);
     const symbol = document.createElement("span");
     symbol.className = "child-topic-symbol";
     const symbols = {character:"✧",talents:"☆",learning:"▤",parenting:"♡",
       activities:"◈",recovery:"❀",emotions:"◌",purpose:"⌾",money:"₽",tail:"∞"};
-    symbol.textContent = symbols[definition.id] || "✧";
+    symbol.textContent = locked ? "🔒" : (symbols[definition.id] || "✧");
     symbol.setAttribute("aria-hidden", "true");
     const name = document.createElement("span");
     name.className = "child-topic-label";
@@ -677,6 +703,7 @@ const pdfModule = () => {
 const prepareChildPdf=(date)=>{
   const key=childPdfKey(date);
   if (!key) return Promise.reject(new Error("Сначала рассчитайте матрицу ребёнка."));
+  if (!hasChildPaidAccess()) return Promise.reject(new Error("PDF доступен после подтверждённой покупки для этого ребёнка."));
   if (preparedChildPdf?.key===key) return Promise.resolve(preparedChildPdf);
   if (preparingChildPdf?.key===key) return preparingChildPdf.promise;
   const generation=childPdfGeneration;
@@ -700,7 +727,7 @@ const prepareChildPdf=(date)=>{
   return promise;
 };
 const warmChildPdf=()=>{
-  if(!birth) return;
+  if(!birth || !hasChildPaidAccess()) return;
   const date={...birth},key=childPdfKey(date);
   const warm=()=>{
     if(childPdfKey(birth)!==key || preparedChildPdf?.key===key) return;
@@ -719,11 +746,14 @@ const showChildPdfOffer = () => {
     item.textContent = chapter.title;
     pdfChapters.append(item);
   }
-  pdfStatus.textContent = preparedChildPdf?.key===childPdfKey(birth)
-    ? "Полный PDF уже готов к скачиванию."
-    : preparingChildPdf?.key===childPdfKey(birth)
-      ? "PDF собирается. Готовый файл появится здесь."
-      : "Все главы будут собраны в один PDF-файл.";
+  const paid = hasChildPaidAccess();
+  pdfSave.disabled = !paid;
+  pdfSave.querySelector(".child-pdf-save-label").textContent = paid
+    ? "Скачать полный разбор в PDF" : "Скачать PDF после покупки";
+  pdfSave.querySelector(".child-pdf-save-symbol").textContent = paid ? "↓" : "🔒";
+  pdfStatus.textContent = paid
+    ? (preparedChildPdf?.key===childPdfKey(birth) ? "PDF готов к скачиванию." : "Файл будет собран для этого ребёнка.")
+    : "Оплата пока не подключена. Полный разбор и PDF закрыты; первая глава бесплатна.";
   pdfDialog.showModal();
 };
 pdfOpen.addEventListener("click", showChildPdfOffer);
@@ -733,7 +763,7 @@ pdfDialog.addEventListener("click", event => {
   if (event.target === pdfDialog && !pdfSave.disabled) pdfDialog.close();
 });
 pdfSave.addEventListener("click", async () => {
-  if (!birth || pdfSave.disabled) return;
+  if (!birth || pdfSave.disabled || !hasChildPaidAccess()) return;
   const date={...birth};
   const normalLabel=pdfSave.innerHTML;
   pdfSave.disabled=true;
