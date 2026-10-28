@@ -609,7 +609,7 @@ function renderQuestions(definitions) {
     // panels. Each number comes from the existing calculation, not a new formula.
     card.classList.toggle("pro-question-free", definition.key === FREE_PRO_TOPIC);
     button.append(element("small",
-      "ЧИСЛО " + definition.energy + (definition.key === FREE_PRO_TOPIC ? " · БЕСПЛАТНО" : " · ПОЛНЫЙ РАЗБОР")
+      "ЧИСЛО " + definition.energy + (definition.key === FREE_PRO_TOPIC ? " · БЕСПЛАТНО" : "")
     ));
     button.append(element("span", definition.title));
 
