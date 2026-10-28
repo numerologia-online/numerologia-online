@@ -615,63 +615,71 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-paywall-locked .pro-zone-button[data-zone]::after,.pro-paywall-locked .pro-zone-button[data-karmic]::after{content:"🔒";font-size:12px;margin-left:auto;opacity:.7}
 .pro-paywall-locked .pro-zone-button{padding-right:9px}
 .pro-paywall-locked .pro-pdf-note{font-size:12px;color:#81715b}
-/* One-time vs club subscription: polished preview, no payment processing. */
+/* Compact editorial price choice. No payments or entitlement checks here. */
 .pro-paywall-dialog{
-  width:min(555px,calc(100vw - 22px));max-height:min(90dvh,900px);overflow-y:auto;
-  border:1px solid #d8cbb9;border-radius:25px;box-shadow:0 28px 90px rgba(20,38,54,.31);
-  padding:0;background:#fffefa;color:#304859;overscroll-behavior:contain
+  width:min(485px,calc(100vw - 24px));max-height:min(90dvh,860px);overflow-y:auto;
+  border:1px solid #d9d2c6;border-radius:23px;padding:0;
+  color:#2c4050;background:#fffefa;box-shadow:0 25px 75px rgba(20,36,46,.27);
+  overscroll-behavior:contain
 }
-.pro-paywall-dialog::backdrop{background:rgba(14,31,44,.64);backdrop-filter:blur(3px)}
-.pro-paywall-dialog-header{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;
-  gap:12px;padding:16px 21px 8px;background:#fffefa}
-.pro-paywall-dialog-kicker{margin:0!important;font-size:10px!important;line-height:1.2!important;
-  color:#a18460!important;font-weight:850;letter-spacing:.17em}
-.pro-paywall-dialog-close{display:grid;place-items:center;width:33px;height:33px;min-height:33px!important;
-  padding:0!important;border:1px solid #e3ded5!important;border-radius:50%!important;
-  background:#f8f6f1!important;color:#5b6570!important;font-size:24px;font-weight:400!important;line-height:1}
-.pro-paywall-dialog-close:hover{background:#ece7df!important}
-.pro-paywall-dialog-body{padding:9px clamp(15px,4vw,26px) 25px}
-.pro-paywall-dialog h2{font:400 clamp(28px,6vw,35px)/1.12 Georgia,"Times New Roman",serif;letter-spacing:-.035em;
-  margin:0 0 10px;color:#243c4c}
-.pro-paywall-dialog-lead{font-size:13px;line-height:1.55;color:#62717a;margin:0 0 18px}
-.pro-paywall-choices{display:grid;gap:11px}
-.pro-paywall-option{border:1px solid #e1dfd9;background:#fff;border-radius:18px;padding:16px}
-.pro-paywall-option-club{border:1.5px solid #bfa177;background:linear-gradient(138deg,#fffefa 0%,#f7f6f2 75%,#f0f1ec 100%);
-  box-shadow:0 8px 24px rgba(59,64,60,.08)}
-.pro-paywall-option-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
-.pro-paywall-option-label{font-size:10px;font-weight:850;color:#947852;letter-spacing:.11em}
-.pro-paywall-option-advantage{font-size:10px;color:#36574d;background:#e7eee8;padding:4px 9px;border-radius:99px;font-weight:850}
-.pro-paywall-option-price-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.pro-paywall-option-price-row h3{font:500 clamp(19px,4.6vw,23px)/1.16 Georgia,"Times New Roman",serif;margin:0;color:#283f51;letter-spacing:-.025em}
-.pro-paywall-option-price-stack{display:flex;flex-direction:column;align-items:flex-end;gap:0;flex:none}
-.pro-paywall-option-price{white-space:nowrap;font-size:27px;line-height:1.1;letter-spacing:-.04em;font-weight:850;color:#2d4c54}
-.pro-paywall-option-price-stack del{font-size:13px;color:#8c9294}
-.pro-paywall-option p{font-size:12.5px;line-height:1.5;color:#62717a;margin:9px 0 12px}
-.pro-paywall-option p strong{color:#294757}
-.pro-paywall-option-action{display:block;width:100%;margin-top:12px;border:0;border-radius:12px;
-  min-height:43px;padding:11px 14px;font-weight:800;font-size:13px;line-height:1.4}
-.pro-paywall-option-action-once{background:#eef0ef;color:#304657}
-.pro-paywall-option-action-once:hover{background:#e5e9e7}
-.pro-paywall-option-action-club{background:#274b50;color:#fff}
-.pro-paywall-option-action-club:hover{background:#1b3a41}
-.pro-paywall-club-cost{margin:11px 0!important;font-size:12.5px!important;line-height:1.45!important}
-.pro-paywall-club-perks{border-top:1px solid #e1dbd0;margin-top:13px;padding-top:11px}
-.pro-paywall-club-perks>strong{display:block;font-size:12px;color:#365354}
-.pro-paywall-club-perks ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
-.pro-paywall-club-perks li{position:relative;padding-left:21px;font-size:12px;line-height:1.45;color:#536a70}
-.pro-paywall-club-perks li:before{content:"✓";position:absolute;left:0;color:#517866;font-weight:900}
-.pro-paywall-renewal{margin:8px 0 0!important;color:#7b807d!important;font-size:11px!important;line-height:1.5!important}
-.pro-paywall-checkout-note{margin:13px 0 0;padding:12px 14px;border-radius:12px;
-  background:#e9f0ec;border:1px solid #b7cbc1;font-size:12px;line-height:1.5;color:#31544e}
-.pro-paywall-dialog-disclaimer{margin:13px 0 0;font-size:11px;line-height:1.52;color:#8b8580}
-.pro-paywall-banner-prices{font-weight:850;color:#315a55!important}
+.pro-paywall-dialog::backdrop{background:rgba(20,34,44,.58);backdrop-filter:blur(2px)}
+.pro-paywall-dialog-header{
+  position:sticky;top:0;z-index:3;display:flex;justify-content:space-between;align-items:center;
+  padding:15px 20px 7px;background:#fffefa
+}
+.pro-paywall-dialog-kicker{margin:0!important;color:#a18a68!important;font-size:10px!important;font-weight:800;letter-spacing:.16em}
+.pro-paywall-dialog-close{
+  display:grid;place-items:center;width:32px;height:32px;padding:0;border:1px solid #e3e0d9;
+  border-radius:50%;font-size:24px;line-height:1;color:#65717a;background:#f9f7f2
+}
+.pro-paywall-dialog-body{padding:12px 22px 22px}
+.pro-paywall-dialog h2{margin:0 0 10px;font:400 clamp(29px,6.5vw,37px)/1.1 Georgia,serif;letter-spacing:-.045em;color:#263e50}
+.pro-paywall-dialog-lead{margin:0 0 22px;font-size:13px;line-height:1.58;color:#69747b}
+.pro-paywall-eyebrow{font-size:10px;font-weight:850;letter-spacing:.12em;color:#937b5e;margin:0 0 6px}
+.pro-paywall-once{display:flex;justify-content:space-between;align-items:center;gap:13px;padding:0 0 17px}
+.pro-paywall-once h3{margin:0;font:500 clamp(19px,4.7vw,22px)/1.2 Georgia,serif;color:#30495b;letter-spacing:-.026em}
+.pro-paywall-caption{margin:5px 0 0;font-size:11px;color:#889098}
+.pro-paywall-once-action{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:none}
+.pro-paywall-once-action strong{font-size:24px;letter-spacing:-.035em;white-space:nowrap}
+.pro-paywall-once-action button{border:1px solid #d5d7d5;color:#3e5158;background:white;border-radius:9px;padding:7px 16px;min-height:33px;font-size:12px;font-weight:800}
+.pro-paywall-separator{position:relative;margin:0 0 19px;font-size:11px;color:#8f8b84;text-align:center;display:flex;align-items:center;gap:13px}
+.pro-paywall-separator::before,.pro-paywall-separator::after{content:"";height:1px;background:#e2ded7;flex:1}
+.pro-paywall-club{padding:19px 17px 16px;border:1.5px solid #b9a17b;border-radius:19px;background:linear-gradient(125deg,#fbfaf5,#f3f5f2)}
+.pro-paywall-club-heading{display:flex;align-items:center;justify-content:space-between;gap:15px}
+.pro-paywall-club-heading h3{margin:0;color:#2a4853;font:500 clamp(22px,5.5vw,27px)/1.15 Georgia,serif;letter-spacing:-.035em}
+.pro-paywall-club-price{display:flex;flex-direction:column;align-items:flex-end;flex:none}
+.pro-paywall-club-price del{color:#88928e;font-size:12px;line-height:1.3}
+.pro-paywall-club-price strong{color:#27554c;font-size:33px;line-height:1.1;letter-spacing:-.05em}
+.pro-paywall-club-intro{font-size:12.5px;line-height:1.57;color:#586d70;margin:12px 0 15px}
+.pro-paywall-club-intro strong{color:#294b50}
+.pro-paywall-total{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 0;border-top:1px solid #dcded6;border-bottom:1px solid #dcded6}
+.pro-paywall-total span{font-size:12px;color:#4d6367;font-weight:650}
+.pro-paywall-total strong{font-size:22px;white-space:nowrap;color:#264b50;letter-spacing:-.035em}
+.pro-paywall-club-featureline{padding:13px 0 2px;font-size:12px;line-height:1.7;color:#536762}
+.pro-paywall-club-details{border-bottom:1px solid #dedfd7;margin:0 0 15px;padding-bottom:11px}
+.pro-paywall-club-details summary{list-style:none;cursor:pointer;font-size:12px;color:#406765;font-weight:750;text-decoration:underline;text-underline-offset:3px}
+.pro-paywall-club-details summary::-webkit-details-marker{display:none}
+.pro-paywall-club-details summary::after{content:"⌄";margin-left:7px;text-decoration:none}
+.pro-paywall-club-details[open] summary::after{content:"⌃"}
+.pro-paywall-club-details ul{margin:10px 0 0;padding-left:19px;display:grid;gap:4px;color:#5c6f73;font-size:12px;line-height:1.5}
+.pro-paywall-club-button{display:block;width:100%;padding:13px 10px;min-height:48px;border:0;border-radius:12px;
+  color:white;background:#294c51;font-size:13px;line-height:1.4;font-weight:800}
+.pro-paywall-club-button:active{transform:scale(.99)}
+.pro-paywall-renewal{margin:10px 0 0;font-size:10.5px;color:#78827c;line-height:1.5}
+.pro-paywall-checkout-note{margin:14px 0 0;padding:12px 14px;border:1px solid #b7cbc1;
+  border-radius:11px;background:#e9f0ec;color:#31544e;font-size:12px;line-height:1.5}
+.pro-paywall-dialog-disclaimer{margin:12px 0 0;font-size:10.5px;color:#8c8d87;line-height:1.55}
+.pro-paywall-banner-prices{font-weight:800;color:#315a55!important}
 @media(max-width:480px){
-  .pro-paywall-dialog{border-radius:20px;width:calc(100vw - 16px);max-height:calc(100dvh - 30px)}
+  .pro-paywall-dialog{width:calc(100vw - 18px);max-height:calc(100dvh - 28px);border-radius:19px}
   .pro-paywall-dialog-header{padding:12px 15px 6px}
-  .pro-paywall-dialog-body{padding:8px 15px 18px}
-  .pro-paywall-option{padding:13px 12px}
-  .pro-paywall-option-price{font-size:25px}
-  .pro-paywall-club-perks ul{gap:5px}
+  .pro-paywall-dialog-body{padding:10px 15px 18px}
+  .pro-paywall-dialog-lead{margin-bottom:19px}
+  .pro-paywall-once{padding-bottom:13px}
+  .pro-paywall-club{padding:16px 13px}
+  .pro-paywall-once-action strong{font-size:22px}
+  .pro-paywall-club-price strong{font-size:30px}
 }
 @media(max-width:480px){.pro-paywall-banner{padding:13px 12px}.pro-paywall-banner button{width:100%}.pro-paid-lock{padding:10px}.pro-paid-lock-button{flex:1 1 100%;max-width:none}}
 
