@@ -561,3 +561,31 @@ section.personal-day-main .personal-day-label{display:block;margin:0 0 18px;colo
   .personal-month-teaser-copy{font-size:14px}
   .personal-month-teaser-warning-note strong{font-size:15px}
 }
+
+/* Monthly important dates: visual subscription preview only.
+   Never reveal personalised dates until server-verified subscriptions exist. */
+.personal-month-teaser-padlock{display:inline-block;vertical-align:middle;font:normal 22px/1 system-ui,sans-serif;white-space:nowrap}
+.personal-month-subscription[hidden]{display:none!important}
+.personal-month-subscription{
+  margin-top:14px;padding:23px 19px 22px;border:1px solid #ddc7a1;
+  border-radius:23px;background:linear-gradient(155deg,#fffdf8,#f5f0e7);
+  color:#30495b;text-align:center;box-shadow:0 9px 23px rgba(46,53,66,.06)
+}
+.personal-month-subscription-symbol{
+  display:grid;place-items:center;margin:0 auto 12px;width:54px;height:54px;
+  border-radius:50%;background:#f3e9d8;font-size:27px
+}
+.personal-month-subscription h4{
+  margin:0 0 10px;color:#274153;font:600 clamp(21px,5.5vw,27px)/1.16 Georgia,serif
+}
+.personal-month-subscription p{
+  margin:0 0 13px;font-size:15px;line-height:1.55;color:#596b77
+}
+.personal-month-subscription .personal-month-subscription-note{
+  margin:14px 0 0;padding-top:12px;border-top:1px solid #e4dbcc;
+  color:#957a59;font-size:13px;font-weight:650
+}
+@media(max-width:560px){
+  .personal-month-subscription{padding:20px 15px;border-radius:20px}
+  .personal-month-teaser-padlock{font-size:20px}
+}
