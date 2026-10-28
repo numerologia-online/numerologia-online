@@ -437,7 +437,7 @@ const renderMatrix = (matrix) => {
   // Compact caption capsules; labels stay connected to their original matrix sections.
   const matrixCaptions = [
     {id:"talents",x:260,y:94,w:144,h:37,icon:"star",lines:["Таланты","и сильные стороны"],tone:"violet"},
-    {id:"parenting",x:70,y:53,w:116,h:35,icon:"crown",lines:["Воспитание","и поддержка"],tone:"gold"},
+    {id:"parenting",x:115,y:53,w:116,h:35,icon:"crown",lines:["Воспитание","и поддержка"],tone:"gold"},
     {id:"emotions",x:416,y:55,w:134,h:35,icon:"chat",lines:["Эмоции","и общение"],tone:"blue"},
     {id:"character",x:99,y:209,w:133,h:35,icon:"person",lines:["Характер","и темперамент"],tone:"pink"},
     {id:"activities",x:421,y:209,w:131,h:35,icon:"target",lines:["Спорт, кружки","и увлечения"],tone:"pink"},
