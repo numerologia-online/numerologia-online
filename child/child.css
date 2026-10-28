@@ -1874,3 +1874,12 @@ body {
   .child-result-heading .child-pdf-shortcut{min-height:52px;font-size:13px;padding:7px 5px;gap:4px}
   .child-result-heading .child-pdf-shortcut>span{font-size:18px}
 }
+
+
+/* v45: clear preview locks until a verified per-child purchase grants access. */
+#child-matrix-panel .child-topic-locked {background:#f9f7fa;border-color:#e9e2e9}
+#child-matrix-panel .child-topic-locked .child-topic-symbol{font-size:12px;color:#937f96}
+#child-matrix-panel .child-locked-note{font-weight:600;color:#6b5b6c;line-height:1.5}
+#child-matrix-panel .child-lock-buy{display:block;width:100%;min-height:49px;margin:13px 0 3px;padding:11px 13px;background:linear-gradient(115deg,#174f3f,#218269);border:2px solid #cbb47a;border-radius:15px;color:#fff;font:750 14px/1.2 var(--sans)}
+.child-pdf-dialog .child-pdf-save:disabled {background:#e2dfe4;border-color:#d6c8d2;box-shadow:none;color:#746c76;opacity:1;cursor:not-allowed}
+.child-pdf-dialog .child-pdf-save:disabled .child-pdf-save-symbol {background:#f4ebef;color:#978391}
