@@ -168,16 +168,11 @@ const openPointReading = async (point, source = null) => {
     ...matrixSections.querySelectorAll('[data-child-topic="' + point.id + '"]')
   ].filter(Boolean))];
   selectedElements.forEach((node) => node.classList.add("is-selected"));
-  // Hide the onboarding cue and take the reader directly to the
-  // requested chapter after her own tap, never on initial calculation.
+  // Keep the selected number and matrix on screen. The reading opens
+  // directly beneath the diagram, without jumping past the chosen point.
   matrixVisual.classList.add("has-started");
   childGuide.hidden = true;
   insight.hidden = false;
-  window.requestAnimationFrame(() => {
-    if (requestId === insightRequestId && !insight.hidden) {
-      insight.scrollIntoView({behavior:"smooth",block:"start"});
-    }
-  });
 
   // A karmic tail is a three-energy combination, never a generic energy text.
   if (point.id === "tail" || point.id === "tail-detail") {
@@ -603,7 +598,14 @@ form.addEventListener("submit", async (event) => {
     setTab(startingTab);
     preview.hidden = true;
     result.hidden = false;
-    result.scrollIntoView({behavior: "smooth", block: "start"});
+    // On calculation, glide to the start of the matrix instead of its
+    // surrounding header. The user can see where to tap before reading.
+    const scrollTarget = startingTab === "matrix"
+      ? matrixPanel.querySelector(".child-matrix-start-heading")
+      : result;
+    window.requestAnimationFrame(() => {
+      scrollTarget.scrollIntoView({behavior: "smooth", block: "start"});
+    });
     if (startingTab==="matrix") warmChildPdf();
   } catch (reason) {
     error.textContent = "Не удалось загрузить расчёт. Проверьте подключение и попробуйте ещё раз.";
