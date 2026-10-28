@@ -654,23 +654,46 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 }
 .pro-paywall-plan-action-once{background:#e8edeb;color:#3d5561}
 .pro-paywall-plan-action-club{background:#28534e;color:#fff}
-.pro-paywall-perks{margin-top:10px;padding:11px 9px 8px;border:1px solid #e6d7bb;border-radius:14px;background:#fbfaf6}
-.pro-paywall-perks-heading{margin:0 1px 9px}
-.pro-paywall-perks h3{margin:0;color:#304c59;font:500 clamp(18px,4vw,22px)/1.1 Georgia,"Times New Roman",serif;letter-spacing:-.02em}
-.pro-paywall-perks-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.pro-paywall-perks{margin-top:10px;padding:12px 9px 10px;border:1px solid #e5cfaa;border-radius:15px;background:linear-gradient(145deg,#fffdf7,#f8f5ed)}
+.pro-paywall-perks-heading{margin:0 2px 9px}
+.pro-paywall-perks-kicker{margin:0 0 3px;color:#a27d46;font-size:9px;font-weight:900;letter-spacing:.11em}
+.pro-paywall-perks h3{margin:0;color:#294e58;font:500 clamp(20px,4.5vw,24px)/1.08 Georgia,"Times New Roman",serif;letter-spacing:-.025em}
+.pro-paywall-perks-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
 .pro-paywall-perk{
-  display:grid;grid-template-columns:22px minmax(0,1fr);gap:5px;align-items:start;min-width:0;
-  padding:8px 6px;border:1px solid #ede8df;border-radius:10px;background:#fff
+  display:grid;grid-template-columns:23px minmax(0,1fr);gap:5px;align-items:start;min-width:0;
+  padding:10px 7px;border:1px solid #e3e5df;border-radius:12px;background:white
 }
-.pro-paywall-perk:nth-child(4n + 2){background:#f6f8f6}
-.pro-paywall-perk:nth-child(4n + 3){background:#fcf8ef}
-.pro-paywall-perk-icon{display:block;font-size:17px;line-height:1.15;text-align:center}
-.pro-paywall-perk-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
-.pro-paywall-perk-copy strong{font-size:11.3px;line-height:1.2;font-weight:850;color:#304b55;overflow-wrap:break-word}
-.pro-paywall-perk-copy>span{font-size:10.3px;line-height:1.25;color:#67777a;overflow-wrap:break-word}
-.pro-paywall-perk-copy b{color:#267456;font-weight:850}
-.pro-paywall-perk-copy del{color:#969c9b}
-.pro-paywall-perk-future .pro-paywall-perk-copy>span{color:#8f8273}
+.pro-paywall-perk-icon{display:block;font-size:19px;line-height:1.12;text-align:center}
+.pro-paywall-perk-copy{display:flex;flex-direction:column;align-items:stretch;gap:5px;min-width:0}
+.pro-paywall-perk-copy strong{font-size:12.3px;line-height:1.19;font-weight:900;color:#294351;overflow-wrap:break-word}
+.pro-paywall-perk-copy>span{font-size:10.7px;line-height:1.35;color:#617477;overflow-wrap:break-word}
+.pro-paywall-perk-copy .pro-paywall-perk-old{color:#89918d;font-size:10.8px}
+.pro-paywall-perk-old del,.pro-paywall-perk-copy del{color:#8e9694;text-decoration-thickness:1.5px;text-decoration-color:#c2716d}
+.pro-paywall-perk-benefit{
+  display:block;align-self:flex-start;max-width:100%;padding:5px 7px;border-radius:7px;
+  background:#e0f2e9;color:#11684f;font-size:16px;line-height:1.08;font-weight:950;
+  letter-spacing:-.035em;overflow-wrap:anywhere
+}
+.pro-paywall-perk-emphasis{color:#1a7952!important;font-size:12px!important;line-height:1.15!important;font-weight:950;letter-spacing:.015em}
+.pro-paywall-member-price{color:#146947;font-size:14px;white-space:nowrap}
+.pro-paywall-perk-calendar{background:#f0f8f5;border-color:#b8d8c7}
+.pro-paywall-perk-calendar .pro-paywall-perk-benefit{background:#d1ebdc;color:#136846;font-size:11px;letter-spacing:.025em}
+.pro-paywall-perk-year{background:#f5faf0;border-color:#cbdca8}
+.pro-paywall-perk-year .pro-paywall-perk-benefit{background:#dff1d3;color:#2e6829;font-size:17px}
+.pro-paywall-perk-yesno{background:#edf9f3;border-color:#add6bd}
+.pro-paywall-perk-yesno .pro-paywall-perk-benefit{background:#d2eedc;color:#066b3b;font-size:17px}
+.pro-paywall-perk-redflag{background:#fff4f1;border-color:#eac1b6}
+.pro-paywall-perk-redflag .pro-paywall-perk-benefit{background:#fce1da;color:#ba3a2e;font-size:23px}
+.pro-paywall-perk-moment{background:#f7f3ff;border-color:#d7c7ed}
+.pro-paywall-perk-moment .pro-paywall-perk-benefit{background:#e7def8;color:#6444a0;font-size:23px}
+.pro-paywall-perk-reports{background:#f1f8f7;border-color:#b5d5cd}
+.pro-paywall-perk-reports .pro-paywall-perk-benefit{background:#dceee8;color:#176b59;font-size:23px}
+.pro-paywall-perk-ritual{grid-column:1 / -1;grid-template-columns:28px minmax(0,1fr);padding:11px 10px;background:linear-gradient(100deg,#fff1d3,#fff9e9);border-color:#d6b978}
+.pro-paywall-perk-ritual .pro-paywall-perk-icon{font-size:22px}
+.pro-paywall-perk-ritual .pro-paywall-perk-copy{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 8px;align-items:center}
+.pro-paywall-perk-ritual .pro-paywall-perk-copy strong{font-size:13px}
+.pro-paywall-perk-ritual .pro-paywall-perk-copy>span{grid-column:1;grid-row:2}
+.pro-paywall-perk-ritual .pro-paywall-perk-benefit{grid-column:2;grid-row:1 / 3;background:#f7e1a8;color:#825510;font-size:11px;letter-spacing:.01em;max-width:140px;text-align:center}
 .pro-paywall-renewal{margin:10px 3px 0;color:#617277;font-size:10px;line-height:1.38}
 .pro-paywall-checkout-note{margin:9px 0 0;padding:9px 10px;border:1px solid #b7cbc1;border-radius:9px;background:#eaf1ed;color:#31544e;font-size:11px;line-height:1.4}
 .pro-paywall-dialog-disclaimer{margin:4px 3px 0;color:#8a8880;font-size:9.5px;line-height:1.35}
@@ -682,11 +705,17 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   .pro-paywall-plan{padding:10px 8px 9px}
   .pro-paywall-plan h3{font-size:15px}
   .pro-paywall-plan-detail{font-size:10px}
-  .pro-paywall-perks{padding:9px 7px 7px}
-  .pro-paywall-perk{grid-template-columns:19px minmax(0,1fr);gap:4px;padding:7px 5px}
-  .pro-paywall-perk-icon{font-size:16px}
-  .pro-paywall-perk-copy strong{font-size:11px}
-  .pro-paywall-perk-copy>span{font-size:10px}
+  .pro-paywall-perks{padding:9px 6px 7px}
+  .pro-paywall-perks h3{font-size:19px}
+  .pro-paywall-perks-list{gap:6px}
+  .pro-paywall-perk{grid-template-columns:21px minmax(0,1fr);gap:4px;padding:8px 6px}
+  .pro-paywall-perk-icon{font-size:17px}
+  .pro-paywall-perk-copy{gap:4px}
+  .pro-paywall-perk-copy strong{font-size:11.6px}
+  .pro-paywall-perk-copy>span{font-size:10.1px}
+  .pro-paywall-perk-benefit{font-size:15px;padding:5px 6px}
+  .pro-paywall-perk-ritual{grid-template-columns:24px minmax(0,1fr);padding:9px 7px}
+  .pro-paywall-perk-ritual .pro-paywall-perk-benefit{max-width:115px;font-size:10px}
 }
 @media(max-width:480px){.pro-paywall-banner{padding:13px 12px}.pro-paywall-banner button{width:100%}.pro-paid-lock{padding:10px}.pro-paid-lock-button{flex:1 1 100%;max-width:none}}
 
