@@ -1655,3 +1655,31 @@ body {
   .child-pdf-payment-note{font-size:9px;margin-top:4px}
   .child-pdf-status{font-size:9px;margin-top:4px}
 }
+
+
+/* Child day discovery: visible only while browsing the matrix. */
+.child-day-discovery {
+  position:relative; display:flex; align-items:center; gap:13px;
+  width:100%; margin:13px 0 17px; padding:13px 17px 13px 18px;
+  text-align:left; border:2px solid #83afd8; border-radius:23px;
+  background:linear-gradient(112deg,#edf6ff 0%,#f5e9f5 61%,#faedf4 100%);
+  box-shadow:0 7px 19px rgba(113,134,181,.11);
+  color:#423350; cursor:pointer; overflow:visible;
+}
+.child-day-discovery[hidden] { display:none !important; }
+.child-day-discovery-arrow {
+  position:absolute; right:23%; top:-35px; font:800 45px/1 var(--sans);
+  color:#598acb; transform:rotate(-20deg);
+  text-shadow:0 1px 0 white; pointer-events:none;
+}
+.child-day-discovery-copy { display:flex; flex:1; flex-direction:column; gap:4px; min-width:0; }
+.child-day-discovery-copy strong {
+  font:800 clamp(17px,4.6vw,23px)/1.12 var(--serif); color:#41699d;
+}
+.child-day-discovery-copy > span { font:600 13px/1.4 var(--sans); color:#5c526d; }
+.child-day-discovery-heart { font:600 34px/1 var(--serif); color:#ac6d99; }
+.child-day-discovery:focus-visible { outline:3px solid #4d81c8; outline-offset:3px; }
+@media (max-width:390px) {
+ .child-day-discovery { padding:12px 13px; gap:7px; }
+ .child-day-discovery-copy > span { font-size:12px; }
+}
