@@ -124,6 +124,17 @@ document.querySelector("#back-home").addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "instant" });
 });
 
+// Month forecasts behave like a single reading, not twelve open text stacks.
+const yearMonths = document.querySelector("#months");
+yearMonths?.addEventListener("toggle", (event) => {
+  const opened = event.target;
+  if (!(opened instanceof HTMLDetailsElement) || !opened.open ||
+      !opened.matches("details.month-card") || opened.parentElement !== yearMonths) return;
+  yearMonths.querySelectorAll(":scope > details.month-card[open]").forEach((other) => {
+    if (other !== opened) other.open = false;
+  });
+}, true);
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const birthDate = parseBirthDate(birthInput.value);
