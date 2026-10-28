@@ -1763,8 +1763,7 @@ body {
  .child-result:not(.is-day-view)>.child-tabs button{min-height:41px;padding:7px 3px}
  #child-matrix-panel .child-compact-guides{margin:3px 1px 5px;gap:6px}
  #child-matrix-panel .child-visual{
-    width:100%;max-width:350px;
-    max-width:min(100%,clamp(310px,calc(100dvh - 385px),350px));
+    width:100%;max-width:100%;
     margin:0 auto 6px;
  }
  #child-matrix-panel .child-topics-heading{margin:2px 3px 5px;gap:5px}
