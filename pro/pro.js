@@ -110,7 +110,7 @@ function previewCheckout(choice) {
   if (!note) return;
   note.textContent = choice === "club"
     ? "Вы выбрали клуб: подписка 499 ₽ в месяц + первый полный разбор за 490 ₽, итого 989 ₽ при первом оформлении. Оплата и клубные возможности ещё не подключены."
-    : "Вы выбрали разовый полный разбор за 999 ₽ без подписки. Оплата пока не подключена.";
+    : "Вы выбрали разовый полный разбор за 990 ₽ без подписки. Оплата пока не подключена.";
   note.hidden = false;
   // Keep prices and the confirmation in place; don't jump past the club perks.
 }
