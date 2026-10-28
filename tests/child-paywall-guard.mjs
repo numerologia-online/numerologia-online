@@ -7,6 +7,13 @@ const sql = read('server/child-paywall/schema.sql');
 const api = read('server/child-paywall/public/api/child-access.php');
 const report = read('child/child-report-pdf.js');
 assert.match(child, /const FREE_CHILD_POINT = "character"/);
+assert.match(child, /data\/matrix\/free\/character-\$\{number\}\.json/);
+for (let energy=1;energy<=22;energy++) {
+  const free=JSON.parse(read('child/data/matrix/free/character-'+energy+'.json'));
+  const full=JSON.parse(read('child/data/matrix/sections/energy-'+energy+'.json'));
+  assert.deepEqual(Object.keys(free.sections), ['character']);
+  assert.deepEqual(free.sections.character, full.sections.character);
+}
 assert.match(child, /if \(childPointIsLocked\(point\)\)/);
 assert.match(child, /if \(!hasChildPaidAccess\(\)\) return Promise\.reject/);
 assert.match(child, /if\(!birth \|\| !hasChildPaidAccess\(\)\) return/);
