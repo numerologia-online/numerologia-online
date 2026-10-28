@@ -158,35 +158,16 @@ const monthMarkedDays = (birth, date = new Date()) => {
 };
 // Важные числа месяца: календарь и значения отмеченных дат.
 // Полный прогноз месяца остаётся в отдельном разделе "Разбор года".
-const monthCalendar = (birth, date = new Date()) => {
+// Preview-only until the monthly subscription is implemented.
+// Do not place a real personalised calendar or its date lists in the public DOM.
+const monthCalendar = (_birth, date = new Date()) => {
   const year = date.getFullYear();
   const month = date.getMonth();
   const total = new Date(year, month + 1, 0).getDate();
   const first = new Date(year, month, 1).getDay();
   const offset = (first + 6) % 7;
-  const marked = monthMarkedDays(birth, date);
-  const cells = [];
-  for (let i = 0; i < offset; i += 1) cells.push('<span class="personal-month-empty"></span>');
-  for (let day = 1; day <= total; day += 1) {
-    const info = marked.get(day)?.info || { status: "neutral", label: "" };
-    cells.push(`<span class="personal-month-day personal-month-${info.status}" aria-label="${day}, ${esc(info.label || "обычный день")}">${day}</span>`);
-  }
-  const monthGenitive = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"][month];
-  const groupLines = (status) => {
-    const groups = new Map();
-    marked.forEach(({ day, info }) => {
-      if (info.status !== status) return;
-      if (!groups.has(info.group)) groups.set(info.group, []);
-      groups.get(info.group).push(day);
-    });
-    if (!groups.size) return '<p class="personal-month-empty-note">В этом месяце нет отмеченных дат.</p>';
-    return [...groups.entries()].map(([group, dates]) =>
-      `<span class="personal-month-summary-line"><i aria-hidden="true">•</i><span><strong>${esc(group)}</strong><em>${dates.join(", ")} ${monthGenitive}</em></span></span>`
-    ).join("");
-  };
-  // Наглядный тизер, не персональный прогноз: цветные первые 10 чисел,
-  // остальные приглушены. Настоящие цвета всегда строятся через monthMarkedDays.
-  const sampleColors = ["good","neutral","chance","risk","neutral","good","chance","neutral","risk","good"];
+  // Illustrative colours, NOT real personalised predictions.
+  const sampleColors = ["good", "neutral", "chance", "risk", "neutral", "good", "chance", "neutral", "risk", "good"];
   const teaserCells = [];
   for (let i = 0; i < offset; i += 1) teaserCells.push('<span class="personal-month-teaser-empty"></span>');
   for (let day = 1; day <= total; day += 1) {
@@ -195,30 +176,25 @@ const monthCalendar = (birth, date = new Date()) => {
     const warning = day === 4;
     teaserCells.push(`<span class="personal-month-teaser-day personal-month-teaser-${style}${warning ? " personal-month-teaser-warning" : ""}" aria-label="${day}${locked ? ", закрыто" : ""}">${day}${warning ? '<b aria-hidden="true">!</b>' : ""}</span>`);
   }
-  return `<section class="personal-month-preview personal-month-important">
+  return `<section class="personal-month-preview personal-month-important" aria-label="Важные числа месяца по подписке">
     <div class="personal-month-teaser">
-      <p class="personal-month-teaser-kicker">ТВОЙ КАЛЕНДАРЬ</p>
-      <h3 class="personal-month-teaser-title">Важные числа месяца</h3>
-      <p class="personal-month-teaser-subtitle">Реальные шансы и настоящие опасности</p>
-      <div class="personal-month-teaser-board" aria-label="Пример календаря с открытыми и скрытыми датами">
-        <div class="personal-month-teaser-weekdays">${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d) => `<span>${d}</span>`).join("")}</div>
+      <p class="personal-month-teaser-kicker">ТВОЙ КАЛЕНДАРЬ · ПО ПОДПИСКЕ</p>
+      <h3 class="personal-month-teaser-title">Важные числа месяца <span class="personal-month-teaser-padlock" aria-hidden="true">🔒</span></h3>
+      <p class="personal-month-teaser-subtitle">Когда не упустить шанс и где лучше быть осторожнее</p>
+      <div class="personal-month-teaser-board" aria-label="Пример закрытого календаря">
+        <div class="personal-month-teaser-weekdays">${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map(d => `<span>${d}</span>`).join("")}</div>
         <div class="personal-month-teaser-grid">${teaserCells.join("")}</div>
-        <div class="personal-month-teaser-warning-note"><span aria-hidden="true">!</span><strong>ОСТОРОЖНО</strong><small>Один неверный шаг может обойтись дорого. Узнай свои даты риска заранее.</small></div>
+        <div class="personal-month-teaser-warning-note"><span aria-hidden="true">!</span><strong>ВАЖНЫЕ ДАТЫ</strong><small>Узнайте заранее, когда стоит быть внимательнее с покупками и когда могут появиться новые возможности.</small></div>
       </div>
-      <p class="personal-month-teaser-footnote">Пример оформления. Точные цвета и даты покажет личный расчёт.</p>
-      <p class="personal-month-teaser-copy">В каждом месяце есть дни, когда открываются новые возможности, и даты, когда особенно важно не ошибиться. Проверь свои важные числа заранее.</p>
+      <p class="personal-month-teaser-footnote">Пример оформления. Личные даты доступны по подписке.</p>
+      <p class="personal-month-teaser-copy">Ваш календарь лучших дней, важных шансов и дат риска на ${esc(monthTitle(date))}.</p>
     </div>
-    <button type="button" class="personal-month-open" aria-expanded="false" aria-controls="personal-month-important-content">Проверить важные числа месяца <span aria-hidden="true">↓</span></button>
-    <div class="personal-month-content" id="personal-month-important-content" hidden>
-      <div class="personal-month-heading"><div><p class="personal-month-kicker">Важные числа месяца</p><h3>${esc(monthTitle(date))}</h3></div><span class="personal-month-mark">✦</span></div>
-      <div class="personal-month-weekdays">${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d) => `<span>${d}</span>`).join("")}</div>
-      <div class="personal-month-grid">${cells.join("")}</div>
-      <div class="personal-month-legend"><span><i class="personal-month-dot good"></i>Лучшие дни</span><span><i class="personal-month-dot chance"></i>Важные шансы</span><span><i class="personal-month-dot risk"></i>Дни риска</span></div>
-      <div class="personal-month-detail-list">
-        <section class="personal-month-summary personal-month-summary-good"><h4><span class="personal-month-summary-icon">✓</span>Лучшие дни месяца</h4><div>${groupLines("good")}</div></section>
-        <section class="personal-month-summary personal-month-summary-risk"><h4><span class="personal-month-summary-icon">×</span>Дни риска</h4><div>${groupLines("risk")}</div></section>
-        <section class="personal-month-summary personal-month-summary-chance"><h4><span class="personal-month-summary-icon">★</span>Важные шансы</h4><div>${groupLines("chance")}</div></section>
-      </div>
+    <button type="button" class="personal-month-open" aria-expanded="false" aria-controls="personal-month-subscription">🔒 Открыть по подписке <span aria-hidden="true">↓</span></button>
+    <div class="personal-month-subscription" id="personal-month-subscription" hidden>
+      <div class="personal-month-subscription-symbol" aria-hidden="true">🔒</div>
+      <h4>Важные числа - только по подписке</h4>
+      <p>Узнавайте свои лучшие даты, важные шансы и дни, когда по нумерологической трактовке стоит внимательнее относиться к покупкам и решениям.</p>
+      <p class="personal-month-subscription-note">Месячная подписка ещё готовится. Оплата пока не подключена.</p>
     </div>
   </section>`;
 };
@@ -281,18 +257,18 @@ export const openPersonalDay = () => {
     if (!item.loadError) addDayShareButtons(result, formatDayMessage(input.value, item));
     result.insertAdjacentHTML("beforeend", monthCalendar(birth));
     const importantButton = result.querySelector(".personal-month-open");
-    const importantContent = result.querySelector(".personal-month-content");
+    const subscriptionInfo = result.querySelector(".personal-month-subscription");
     importantButton?.addEventListener("click", () => {
+      if (!subscriptionInfo) return;
       const expanded = importantButton.getAttribute("aria-expanded") === "true";
       importantButton.setAttribute("aria-expanded", String(!expanded));
-      importantContent.hidden = expanded;
+      subscriptionInfo.hidden = expanded;
       importantButton.innerHTML = expanded
-        ? 'Проверить важные числа месяца <span aria-hidden="true">↓</span>'
-        : 'Скрыть важные числа <span aria-hidden="true">↑</span>';
+        ? '🔒 Открыть по подписке <span aria-hidden="true">↓</span>'
+        : 'Скрыть условия подписки <span aria-hidden="true">↑</span>';
       if (!expanded) {
-        // Прокручиваем именно к настоящему календарю, а не к тизеру.
         requestAnimationFrame(() => {
-          const targetTop = importantContent.getBoundingClientRect().top;
+          const targetTop = subscriptionInfo.getBoundingClientRect().top;
           const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
           if (nativePageScroll) {
             window.scrollTo({ top: Math.max(0, targetTop + window.scrollY - 12), behavior: reduceMotion ? "instant" : "smooth" });
