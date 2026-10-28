@@ -57,14 +57,14 @@ let selectedPoint = null;
 let selectedElements = [];
 let insightRequestId = 0;
 // Load every approved child energy, not just energy 1. Cache by energy number.
-// One reading source: one JSON file per energy, all topics in its sections.
+// Static preview loads CHARACTER ONLY. Full paid banks must live on REG.RU server after deployment.
 const energyBankRequests = new Map();
 const getEnergyBank = (energy) => {
   const number = Number(energy);
   if (!Number.isInteger(number) || number < 1 || number > 22) return Promise.resolve(null);
   if (!energyBankRequests.has(number)) {
     energyBankRequests.set(number,
-      fetch(`./data/matrix/sections/energy-${number}.json?v=14`)
+      fetch(`./data/matrix/free/character-${number}.json?v=1`)
         .then((response) => {
           if (!response.ok) throw new Error("Детская энергия не загрузилась");
           return response.json();
