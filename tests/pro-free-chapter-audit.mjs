@@ -38,6 +38,19 @@ try{
 
     await page.locator("#pro-question-trueSelf").click();
     await page.locator("#pro-answer-trueSelf .pro-paid-lock").waitFor({state:"visible"});
+    // Both new discoverability controls must open the exact same free authored chapter.
+    const freeSphereButton = page.locator("#pro-free-impression");
+    await freeSphereButton.waitFor({state:"visible"});
+    await freeSphereButton.click();
+    await page.locator("#pro-point-details .pro-inline-reading-title").waitFor({state:"visible",timeout:20000});
+    assert.ok((await page.locator("#pro-point-details").innerText()).includes("Как видят вас другие"),
+      "free entry next to locked spheres must open original left chapter");
+    const freeArrow = page.locator(".pro-free-node-guide");
+    await freeArrow.waitFor({state:"visible"});
+    await freeArrow.click();
+    await page.locator("#pro-point-details .pro-inline-reading-title").waitFor({state:"visible",timeout:20000});
+    assert.ok((await page.locator("#pro-point-details").innerText()).includes("Как видят вас другие"),
+      "arrow at left number must open original free chapter");
     const left=page.locator('.pro-node[data-node-key="left"]');
     await left.click();
     // Matrix UI deliberately opens a small preview first, then full reading.
