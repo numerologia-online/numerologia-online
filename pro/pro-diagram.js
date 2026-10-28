@@ -270,18 +270,19 @@ function renderDiagram(points) {
     svg.append(g);
   });
   renderDiagramSectorLabels(svg, getCurrent()?.zones || []);
-  // Decorative guide follows the REAL left matrix node. Does not change
-  // geometry, formulas, hit areas, 31 nodes or the 13 theme labels.
+  // One short, straight gold arrow to the upper-left EDGE of the free node.
+  // The former sweeping curve crossed too much of the diagram. This marker
+  // has no pointer events and does not change any point or line geometry.
   const freePoint = points.find(point => point.key === "left");
   if (freePoint) {
-    const x = freePoint.x;
-    const tipY = freePoint.y - 29;
+    const tipX = freePoint.x - 24;
+    const tipY = freePoint.y - 16;
     const guide = svgElement("g", {"class":"pro-free-start-arrow","aria-hidden":"true","pointer-events":"none"});
     guide.append(svgElement("path", {
-      d:`M 20 9 C 10 95 4 210 4 259 C 4 272 23 277 ${x} ${tipY}`
+      d:`M ${tipX - 19} ${tipY - 25} L ${tipX} ${tipY}`
     }));
     guide.append(svgElement("path", {
-      d:`M ${x - 17} ${tipY - 10} L ${x} ${tipY} L ${x - 3} ${tipY - 19}`
+      d:`M ${tipX - 12} ${tipY - 7} L ${tipX} ${tipY} L ${tipX - 5} ${tipY - 13}`
     }));
     svg.append(guide);
   }
