@@ -77,15 +77,15 @@ try{
     assert.equal(await freeGuide.evaluate(el => getComputedStyle(el).pointerEvents), "none",
       "decorative arrow must not intercept any matrix taps");
     const arrowLine = await freeGuide.locator(".pro-free-sticker-shaft").getAttribute("d");
-    assert.equal(arrowLine, "M 23 12 C 18 46 28 77 21 112 C 11 161 9 207 15 233 C 18 254 21 267 27 277",
-      "sticker arrow must have three smooth bends");
+    assert.equal(arrowLine, "M 31 12 C 8 30 10 65 27 89 C 37 108 4 137 12 168 C 23 205 2 230 16 251 C 22 264 22 271 27 278",
+      "sticker arrow must have four smooth bends");
     assert.equal(await freeGuide.locator(".pro-free-sticker-head").getAttribute("points"),
       "28,294 8,275 38,270",
       "sticker arrowhead must land at the left free circle");
     assert.equal(await freeGuide.locator(".pro-free-sticker-border").count(),1,
       "sticker arrow must have its white die-cut border");
-    assert.equal((arrowLine.match(/ C /g) || []).length,3,
-      "sticker uses smooth Bézier curves, not sharp corners");
+    assert.equal((arrowLine.match(/ C /g) || []).length,4,
+      "sticker uses a smooth S-shaped Bézier curve, not sharp corners");
     assert.equal(await page.locator(".pro-matrix-free-label").innerText(),"БЕСПЛАТНО",
       "a contrasting red free label belongs next to Start Here");
     const offer = page.locator("#pro-paywall-banner");
