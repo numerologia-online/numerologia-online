@@ -25,6 +25,16 @@ try {
       assert.equal(await page.locator("#months .month-card--locked").count(),item.locked);
       assert.equal(await page.locator("#months .month-card:not(.month-card--locked)").count(),item.free);
       assert.equal(await page.locator("#year-paywall-dialog").isVisible(), false);
+      // Only one month may remain open: previous long forecast collapses.
+      const firstMonth = page.locator("#months details.month-card").nth(0);
+      const secondMonth = page.locator("#months details.month-card").nth(1);
+      await firstMonth.locator("summary").click();
+      assert.equal(await firstMonth.evaluate(el => el.open), true);
+      await secondMonth.locator("summary").click();
+      await page.waitForFunction(() => document.querySelectorAll("#months > details.month-card[open]").length === 1);
+      assert.equal(await firstMonth.evaluate(el => el.open), false, "first month must collapse");
+      assert.equal(await secondMonth.evaluate(el => el.open), true, "second month must remain open");
+      await secondMonth.locator("summary").click();
       if (item.locked > 0) {
         const locked = page.locator("#months .month-card--locked").first();
         await locked.locator("summary").click();
