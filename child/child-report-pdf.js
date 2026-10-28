@@ -188,12 +188,7 @@ export function childPdfDefinition(report, {preview=false}={}) {
       {stack:[
         {text:"НУМЕРОЛОГИЯ ОНЛАЙН",style:"coverBrand"},
         {text:"Ваш ребёнок - целый мир, который стоит узнавать",style:"endTitle"},
-        {text:"Возвращайтесь к этому разбору по мере взросления ребёнка. Пусть он помогает замечать сильные стороны, понимать потребности и сохранять доверие в семье.",style:"paragraph"},
-        {text:"С любовью, Татьяна",color:soft,italics:true,fontSize:22,margin:[0,27,0,25]},
-        {text:"Наш сайт",style:"partTitle"},
-        {text:"numerologia-online.github.io/numerologia-online/",color:forest,
-         fontSize:17.5,link:"https://numerologia-online.github.io/numerologia-online/",margin:[0,0,0,18]},
-        {text:"Техподдержка: @Kod_9966",fontSize:17.5,color:forest,link:"https://t.me/Kod_9966"}
+        {text:"Возвращайтесь к этому разбору по мере взросления ребёнка. Пусть он помогает замечать сильные стороны, понимать потребности и сохранять доверие в семье.",style:"paragraph"}
       ],margin:[0,26,0,0]}
     ],
     footer:(page,total)=>page===1?null:{
