@@ -1,0 +1,30 @@
+name: Adult free first chapter audit
+on:
+  push:
+    paths:
+      - 'pro/pro.js'
+      - 'pro/index.html'
+      - 'pro/pro.css'
+      - 'knowledge/full-report/free/impression/**'
+      - 'tests/pro-free-chapter-audit.mjs'
+      - '.github/workflows/pro-free-chapter-audit.yml'
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check module syntax
+        run: node --check pro/pro.js
+      - name: Install browser
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Check all 22 free data banks and mobile browser behavior
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pro-http.log 2>&1 &
+          node tests/pro-free-chapter-audit.mjs
