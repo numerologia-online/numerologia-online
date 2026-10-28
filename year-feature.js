@@ -62,7 +62,7 @@ const showMonthProgress = async (monthName, monthIndex) => {
   loaderMessage.textContent = `Считаю ваш ${monthName.toLowerCase()}`;
   loaderProgress.style.width = `${progress}%`;
   loaderTrack.setAttribute("aria-valuenow", String(progress));
-  await new Promise((resolve) => window.setTimeout(resolve, 600));
+  await new Promise((resolve) => window.setTimeout(resolve, 85));
 };
 
 const reduce = (value) => {
