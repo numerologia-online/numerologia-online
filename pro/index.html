@@ -9,7 +9,7 @@
   <base href="../">
   <title>Полный личный расчёт | Нумерология Онлайн</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="pro/pro.css?v=42">
+  <link rel="stylesheet" href="pro/pro.css?v=43">
   <link rel="stylesheet" href="site-support.css?v=3">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 </head>
@@ -57,10 +57,11 @@
         </section>
       </section>
       <section id="pro-paywall-banner" class="pro-paywall-banner" hidden>
-        <h2>Весь полный разбор - 490 ₽</h2>
-        <p><strong>Первая глава «Как видят вас другие» - бесплатно.</strong> Покупка открывает остальные ответы, 13 сфер матрицы, трактовки точек, предназначение, кармические программы и скачивание полного PDF.</p>
-        <button id="pro-paywall-buy" type="button">Открыть весь разбор · 490 ₽</button>
-        <small>Оплата пока не подключена. Сейчас доступен просмотр оформления.</small>
+        <h2>Полный разбор и PDF навсегда</h2>
+        <p><strong>Первая глава «Как видят вас другие» - бесплатно.</strong> Откройте остальные ответы, 13 сфер матрицы, трактовки точек, предназначение и кармические программы. Сохраните персональный PDF навсегда.</p>
+        <p class="pro-paywall-banner-prices">999 ₽ без подписки <span aria-hidden="true">·</span> 490 ₽ по подписке</p>
+        <button id="pro-paywall-buy" type="button">Выбрать вариант доступа</button>
+        <small>Пока доступен только предварительный просмотр. Оплата не подключена.</small>
       </section>
       <section id="pro-pdf-controls" class="pro-pdf-controls" aria-label="Сохранить персональный полный разбор" hidden>
         <div class="pro-pdf-intro"><p class="pro-eyebrow">ВАШ ПЕРСОНАЛЬНЫЙ ДОКУМЕНТ</p><h2>Ваш разбор можно сохранить</h2></div>
@@ -80,13 +81,59 @@
       </section>
     </div>
     <footer class="pro-footer">Нумерология Онлайн · Полный личный разбор по дате рождения</footer>
-    <dialog id="pro-paywall-dialog" class="pro-paywall-dialog" aria-labelledby="pro-paywall-dialog-title">
-      <h2 id="pro-paywall-dialog-title">Весь разбор · 490 ₽</h2>
-      <p>490 ₽ открывают весь разбор целиком, а не один пункт. Вы сможете скачать PDF и сохранить его навсегда. Это демонстрация, оплата пока не подключена.</p>
-      <form method="dialog"><button type="submit">Понятно</button></form>
+    <dialog id="pro-paywall-dialog" class="pro-paywall-dialog" aria-labelledby="pro-paywall-dialog-title" aria-describedby="pro-paywall-dialog-lead">
+      <div class="pro-paywall-dialog-header">
+        <p class="pro-paywall-dialog-kicker">НУМЕРОЛОГИЯ ONLINE</p>
+        <form method="dialog"><button class="pro-paywall-dialog-close" type="submit" aria-label="Закрыть окно">×</button></form>
+      </div>
+      <div class="pro-paywall-dialog-body">
+        <h2 id="pro-paywall-dialog-title">Откройте свой полный разбор</h2>
+        <p id="pro-paywall-dialog-lead" class="pro-paywall-dialog-lead">Все подробные трактовки, предназначение, кармические программы и PDF, который останется с вами навсегда.</p>
+        <div class="pro-paywall-choices" role="group" aria-label="Выберите вариант покупки">
+          <section class="pro-paywall-option pro-paywall-option-once" aria-labelledby="pro-paywall-once-title">
+            <div class="pro-paywall-option-top">
+              <span class="pro-paywall-option-label">БЕЗ ПОДПИСКИ</span>
+            </div>
+            <div class="pro-paywall-option-price-row">
+              <h3 id="pro-paywall-once-title">Один полный разбор</h3>
+              <strong class="pro-paywall-option-price">999 ₽</strong>
+            </div>
+            <p>Разовая покупка на одну дату рождения. Все разделы и персональный PDF навсегда.</p>
+            <button id="pro-paywall-one-time" class="pro-paywall-option-action pro-paywall-option-action-once" type="button">Выбрать разовую покупку</button>
+          </section>
+          <section class="pro-paywall-option pro-paywall-option-club" aria-labelledby="pro-paywall-club-title">
+            <div class="pro-paywall-option-top">
+              <span class="pro-paywall-option-label">С ПОДПИСКОЙ</span>
+              <span class="pro-paywall-option-advantage">Клубная цена</span>
+            </div>
+            <div class="pro-paywall-option-price-row">
+              <h3 id="pro-paywall-club-title">Полный разбор</h3>
+              <div class="pro-paywall-option-price-stack">
+                <strong class="pro-paywall-option-price">490 ₽</strong>
+                <del>999 ₽</del>
+              </div>
+            </div>
+            <p class="pro-paywall-club-cost">Подписка - <strong>499 ₽/мес.</strong> Первый месяц с разбором - <strong>989 ₽ вместе.</strong> Следующие большие разборы - по клубной цене.</p>
+            <div class="pro-paywall-club-perks">
+              <strong>А ещё внутри клуба:</strong>
+              <ul>
+                <li>Календарь важных чисел месяца</li>
+                <li>Персональный прогноз на неделю</li>
+                <li>Новая глава годового разбора каждый месяц</li>
+                <li>Вопросы «Да или нет?»</li>
+                <li>Скидки на Red Flag и «Нумерологию момента»</li>
+              </ul>
+            </div>
+            <button id="pro-paywall-club" class="pro-paywall-option-action pro-paywall-option-action-club" type="button">Выбрать подписку и разбор · 989 ₽</button>
+            <p class="pro-paywall-renewal">Затем подписка 499 ₽ в месяц до отмены. Новые большие разборы оплачиваются отдельно. Будущие продления можно отменить.</p>
+          </section>
+        </div>
+        <p id="pro-paywall-checkout-note" class="pro-paywall-checkout-note" role="status" aria-live="polite" hidden></p>
+        <p class="pro-paywall-dialog-disclaimer">Это предварительный просмотр тарифов. Оплата ещё не подключена, клубные сервисы готовятся к запуску.</p>
+      </div>
     </dialog>
   </main>
   <a class="site-support-link" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer" aria-label="Техподдержка: написать сообщение в Telegram"><span class="site-support-mark" aria-hidden="true">?</span><span>Техподдержка</span></a>
-  <script type="module" src="pro/pro.js?v=103"></script>
+  <script type="module" src="pro/pro.js?v=104"></script>
 </body>
 </html>
