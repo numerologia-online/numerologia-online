@@ -239,7 +239,7 @@ const getDayBank = () => {
 // 19 topics read from their own matrix position; money is in the same JSON energy file.
 const matrixDefinitions = (matrix) => [
   {id: "character", title: "Характер и темперамент", number: matrix.left, x: 41, y: 260, color: "violet"},
-  {id: "innerNature", section: "character", title: "Внутренние особенности ребёнка", number: matrix.center, x: 260, y: 260, color: "center"},
+  {id: "innerNature", section: "comfort", title: "Внутренний мир и душевный комфорт", number: matrix.center, x: 260, y: 260, color: "center"},
   {id: "talents", title: "Таланты и сильные стороны", number: matrix.top, x: 260, y: 41, color: "violet"},
   {id: "learning", title: "Как ребёнку легче учиться", number: matrix.left},
   {id: "parenting", title: "Как воспитывать и поддерживать", number: matrix.corners.topLeft, x: 104, y: 104, color: "blue"},
@@ -438,18 +438,18 @@ const renderMatrix = (matrix) => {
   // Compact caption capsules; labels stay connected to their original matrix sections.
   const matrixCaptions = [
     {id:"talents",x:260,y:94,w:144,h:37,icon:"star",lines:["Таланты","и сильные стороны"],tone:"violet"},
-    {id:"parenting",x:70,y:53,w:116,h:35,icon:"crown",lines:["Поддержка","рода"],tone:"gold"},
-    {id:"emotions",x:416,y:55,w:134,h:35,icon:"chat",lines:["Общение","и окружение"],tone:"blue"},
+    {id:"parenting",x:70,y:53,w:116,h:35,icon:"crown",lines:["Воспитание","и поддержка"],tone:"gold"},
+    {id:"emotions",x:416,y:55,w:134,h:35,icon:"chat",lines:["Эмоции","и общение"],tone:"blue"},
     {id:"character",x:99,y:209,w:133,h:35,icon:"person",lines:["Характер","и темперамент"],tone:"pink"},
-    {id:"activities",x:421,y:209,w:131,h:35,icon:"target",lines:["Увлечения","и интересы"],tone:"pink"},
-    {id:"games",x:260,y:205,w:140,h:30,icon:"game",lines:["Игры и интересы"],tone:"gold"},
+    {id:"activities",x:421,y:209,w:131,h:35,icon:"target",lines:["Спорт, кружки","и увлечения"],tone:"pink"},
+    {id:"games",x:260,y:205,w:140,h:30,icon:"game",lines:["Игры и увлечения"],tone:"gold"},
     {id:"innerNature",x:260,y:333,w:149,h:34,icon:"heart",lines:["Внутренний мир","и душевный комфорт"],tone:"pink"},
-    {id:"learningHelp",x:152,y:297,w:116,h:30,icon:"book",lines:["Обучение"],tone:"violet"},
-    {id:"interests",x:369,y:297,w:110,h:30,icon:"sparkle",lines:["Интересы"],tone:"violet"},
-    {id:"familyFeelings",x:108,y:369,w:131,h:35,icon:"home",lines:["Близкие","и семья"],tone:"blue"},
-    {id:"independence",x:411,y:371,w:166,h:36,icon:"diamond",lines:["Самостоятельность","и развитие"],tone:"violet"},
+    {id:"learningHelp",x:152,y:297,w:116,h:30,icon:"book",lines:["Освоить новое"],tone:"violet"},
+    {id:"interests",x:369,y:297,w:110,h:30,icon:"sparkle",lines:["Что увлекает"],tone:"violet"},
+    {id:"familyFeelings",x:108,y:369,w:131,h:35,icon:"home",lines:["Как чувствует","близких"],tone:"blue"},
+    {id:"independence",x:411,y:371,w:166,h:36,icon:"diamond",lines:["Развитие","самостоятельности"],tone:"violet"},
     {id:"tail",x:154,y:450,w:150,h:30,icon:"infinity",lines:["Кармический хвост"],tone:"pink"},
-    {id:"recovery",x:382,y:480,w:166,h:36,icon:"leaf",lines:["Восстановление","и ресурс"],tone:"gold"}
+    {id:"recovery",x:382,y:480,w:166,h:36,icon:"leaf",lines:["Отдых","и восстановление"],tone:"gold"}
   ];
   // Hand-drawn outline pictograms stay vector-sharp on iPhone and require zero network requests.
   const captionIcons = {
