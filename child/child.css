@@ -1778,3 +1778,33 @@ body {
  .child-result-heading #child-born-date{font-size:18px}
  .child-result-heading .child-born-label{font-size:10px}
 }
+
+
+/* Child PDF purchase / download is a primary action, not a low-emphasis text link. */
+.child-pdf-actions > p{max-width:480px;margin:9px auto 0;font-size:12.5px;line-height:1.45;color:#51465b}
+.child-pdf-actions > p strong{font-weight:800;color:#1c7057}
+.child-pdf-dialog .child-pdf-save{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  min-height:60px;padding:9px 14px;border-radius:16px;
+  border:2px solid #cbb47a;
+  background:linear-gradient(115deg,#174f3f 0%,#186d53 58%,#218269 100%);
+  box-shadow:0 7px 17px rgba(26,96,74,.22),inset 0 1px 0 rgba(255,255,255,.20);
+  color:#fff;font:800 clamp(15px,4vw,18px)/1.14 var(--sans);
+  letter-spacing:.005em;text-align:center;
+}
+.child-pdf-dialog .child-pdf-save-symbol{
+  flex:none;display:grid;place-items:center;width:37px;height:37px;border-radius:50%;
+  background:#f0dfb4;color:#245845;font:800 26px/1 var(--sans);
+}
+.child-pdf-dialog .child-pdf-save-label{flex:0 1 auto}
+.child-pdf-dialog .child-pdf-save:focus-visible{outline:3px solid #d3ac59;outline-offset:3px}
+.child-pdf-dialog .child-pdf-save:disabled{opacity:.68}
+.child-pdf-dialog .child-pdf-save-help{
+  margin:6px 0 0;color:#345747;text-align:center;
+  font:650 11px/1.25 var(--sans);
+}
+@media(max-height:750px){
+ .child-pdf-dialog .child-pdf-save{min-height:50px;padding:5px 10px;gap:8px;font-size:14px}
+ .child-pdf-dialog .child-pdf-save-symbol{width:30px;height:30px;font-size:21px}
+ .child-pdf-dialog .child-pdf-save-help{margin-top:3px;font-size:9px}
+}
