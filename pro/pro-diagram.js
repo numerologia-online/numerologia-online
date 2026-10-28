@@ -270,9 +270,8 @@ function renderDiagram(points) {
     svg.append(g);
   });
   renderDiagramSectorLabels(svg, getCurrent()?.zones || []);
-  // A prominent straight arrow following the left margin from
-  // "НАЧНИТЕ ЗДЕСЬ" to the rim of the original free left circle.
-  // It stays OUTSIDE zone labels and never intercepts taps.
+  // An elegant continuous Bézier curve ending at the free left circle.
+  // Purely decorative: it never obstructs matrix numbers or changes geometry.
   const freePoint = points.find(point => point.key === "left");
   if (freePoint) {
     const tipX = freePoint.x - 24;
@@ -280,11 +279,10 @@ function renderDiagram(points) {
     const marginX = freePoint.x - 38;
     const guide = svgElement("g", {"class":"pro-free-start-arrow","aria-hidden":"true","pointer-events":"none"});
     guide.append(svgElement("path", {
-      d:`M ${marginX} 6 L ${marginX} ${tipY - 34} L ${tipX} ${tipY - 1}`
+      d:`M ${marginX} 7 C ${marginX - 2} 91 ${marginX - 1} 186 ${marginX} ${tipY - 54} C ${marginX + 1} ${tipY - 30} ${tipX - 9} ${tipY - 16} ${tipX} ${tipY - 3}`
     }));
-    // A solid triangular head is much easier to identify as an arrow on phones.
     guide.append(svgElement("polygon", {
-      points:`${tipX},${tipY} ${tipX - 19},${tipY - 10} ${tipX + 3},${tipY - 22}`
+      points:`${tipX},${tipY} ${tipX - 14},${tipY - 13} ${tipX + 4},${tipY - 20}`
     }));
     svg.append(guide);
   }
