@@ -277,13 +277,14 @@ function renderDiagram(points) {
   if (freePoint) {
     const tipX = freePoint.x - 24;
     const tipY = freePoint.y - 16;
-    const marginX = freePoint.x - 49;
+    const marginX = freePoint.x - 38;
     const guide = svgElement("g", {"class":"pro-free-start-arrow","aria-hidden":"true","pointer-events":"none"});
     guide.append(svgElement("path", {
-      d:`M ${marginX} 5 L ${marginX} ${tipY - 28} L ${tipX} ${tipY}`
+      d:`M ${marginX} 6 L ${marginX} ${tipY - 34} L ${tipX} ${tipY - 1}`
     }));
-    guide.append(svgElement("path", {
-      d:`M ${tipX - 12} ${tipY - 6} L ${tipX} ${tipY} L ${tipX - 3} ${tipY - 14}`
+    // A solid triangular head is much easier to identify as an arrow on phones.
+    guide.append(svgElement("polygon", {
+      points:`${tipX},${tipY} ${tipX - 19},${tipY - 10} ${tipX + 3},${tipY - 22}`
     }));
     svg.append(guide);
   }
