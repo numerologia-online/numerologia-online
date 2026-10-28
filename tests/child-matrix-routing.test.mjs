@@ -46,7 +46,8 @@ test("Each authored topic maps to its own number in the child matrix", async () 
   // deliberately not executable without the full page.
   const fragment = script.slice(start, end + 3);
   assert.ok(fragment.startsWith("const matrixDefinitions"));
-  const definitions = new Function("matrix", fragment + "\nreturn matrixDefinitions(matrix);")(calculate({day:1,month:2,year:2022}));
+  const sampleMatrix = calculate({day:1,month:2,year:2022});
+  const definitions = new Function("matrix", fragment + "\nreturn matrixDefinitions(matrix);")(sampleMatrix);
   const keys = Object.keys((await bank(1)).sections);
   assert.deepEqual([...new Set(definitions.filter(x => x.id !== "tail").map(x => x.section || x.id))].sort(), keys.sort());
   assert.equal(definitions.find(x => x.id === "talents").number, 2);
@@ -54,7 +55,9 @@ test("Each authored topic maps to its own number in the child matrix", async () 
   assert.equal(definitions.find(x => x.id === "character").number, 1);
   assert.equal(definitions.find(x => x.id === "innerNature").number, 18);
   assert.equal(definitions.find(x => x.id === "innerNature").section, "character");
-  assert.equal(definitions.find(x => x.id === "money").number, 18);
+  // This is the money-channel point (21 for this sample), not the centre (18).
+  assert.equal(sampleMatrix.channels.moneyPoint, 21);
+  assert.equal(definitions.find(x => x.id === "money").number, sampleMatrix.channels.moneyPoint);
   // The child's birth-day energy describes the character first, same as adult matrix.
   const another = new Function("matrix", fragment + "\nreturn matrixDefinitions(matrix);")(calculate({day:9,month:9,year:2024}));
   assert.equal(another[0].id, "character");
