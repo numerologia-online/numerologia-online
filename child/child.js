@@ -564,6 +564,7 @@ const setTab = (next) => {
   const isMatrix = next === "matrix";
   matrixPanel.hidden = !isMatrix;
   dayPanel.hidden = isMatrix;
+  byId("child-day-discovery").hidden = !isMatrix;
   result.classList.toggle("is-day-view", !isMatrix);
   matrixTab.setAttribute("aria-selected", String(isMatrix));
   dayTab.setAttribute("aria-selected", String(!isMatrix));
@@ -621,6 +622,10 @@ input.addEventListener("input", () => {
 
 matrixTab.addEventListener("click", () => setTab("matrix"));
 dayTab.addEventListener("click", () => setTab("day"));
+byId("child-day-discovery").addEventListener("click", () => {
+  setTab("day");
+  dayTab.scrollIntoView({behavior:"smooth", block:"start"});
+});
 // Keep the two actual tabs accessible by keyboard as well as touch.
 [matrixTab, dayTab].forEach((tab) => tab.addEventListener("keydown", (event) => {
   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
