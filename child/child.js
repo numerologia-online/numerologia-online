@@ -688,7 +688,7 @@ const prepareChildPdf=(date)=>{
     const blob=await buildChildPdfBlob(report);
     if (generation!==childPdfGeneration || childPdfKey(birth)!==key) throw new Error("Дата рождения изменилась.");
     preparedChildPdf={key,blob,filename:"Полный разбор ребёнка "+report.birthday+".pdf"};
-    if (pdfDialog.open) pdfStatus.textContent="Полный PDF готов. Все 22 главы собраны.";
+    if (pdfDialog.open) pdfStatus.textContent="Полный PDF готов. Все 21 глава собрана.";
     return preparedChildPdf;
   })();
   preparingChildPdf={key,promise};
@@ -721,7 +721,7 @@ pdfOpen.addEventListener("click", () => {
     ? "Полный PDF уже готов к скачиванию."
     : preparingChildPdf?.key===childPdfKey(birth)
       ? "PDF собирается. Готовый файл появится здесь."
-      : "Все 22 главы будут собраны в один файл.";
+      : "Все 21 глава будет собрана в один файл.";
   pdfDialog.showModal();
 });
 pdfClose.addEventListener("click", () => { if (!pdfSave.disabled) pdfDialog.close(); });
