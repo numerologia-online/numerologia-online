@@ -9,7 +9,7 @@
   <base href="../">
   <title>Полный личный расчёт | Нумерология Онлайн</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="pro/pro.css?v=43">
+  <link rel="stylesheet" href="pro/pro.css?v=44">
   <link rel="stylesheet" href="site-support.css?v=3">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 </head>
@@ -87,49 +87,49 @@
         <form method="dialog"><button class="pro-paywall-dialog-close" type="submit" aria-label="Закрыть окно">×</button></form>
       </div>
       <div class="pro-paywall-dialog-body">
-        <h2 id="pro-paywall-dialog-title">Откройте свой полный разбор</h2>
-        <p id="pro-paywall-dialog-lead" class="pro-paywall-dialog-lead">Все подробные трактовки, предназначение, кармические программы и PDF, который останется с вами навсегда.</p>
-        <div class="pro-paywall-choices" role="group" aria-label="Выберите вариант покупки">
-          <section class="pro-paywall-option pro-paywall-option-once" aria-labelledby="pro-paywall-once-title">
-            <div class="pro-paywall-option-top">
-              <span class="pro-paywall-option-label">БЕЗ ПОДПИСКИ</span>
-            </div>
-            <div class="pro-paywall-option-price-row">
-              <h3 id="pro-paywall-once-title">Один полный разбор</h3>
-              <strong class="pro-paywall-option-price">999 ₽</strong>
-            </div>
-            <p>Разовая покупка на одну дату рождения. Все разделы и персональный PDF навсегда.</p>
-            <button id="pro-paywall-one-time" class="pro-paywall-option-action pro-paywall-option-action-once" type="button">Выбрать разовую покупку</button>
-          </section>
-          <section class="pro-paywall-option pro-paywall-option-club" aria-labelledby="pro-paywall-club-title">
-            <div class="pro-paywall-option-top">
-              <span class="pro-paywall-option-label">С ПОДПИСКОЙ</span>
-              <span class="pro-paywall-option-advantage">Клубная цена</span>
-            </div>
-            <div class="pro-paywall-option-price-row">
-              <h3 id="pro-paywall-club-title">Полный разбор</h3>
-              <div class="pro-paywall-option-price-stack">
-                <strong class="pro-paywall-option-price">490 ₽</strong>
-                <del>999 ₽</del>
-              </div>
-            </div>
-            <p class="pro-paywall-club-cost">Подписка - <strong>499 ₽/мес.</strong> Первый месяц с разбором - <strong>989 ₽ вместе.</strong> Следующие большие разборы - по клубной цене.</p>
-            <div class="pro-paywall-club-perks">
-              <strong>А ещё внутри клуба:</strong>
-              <ul>
-                <li>Календарь важных чисел месяца</li>
-                <li>Персональный прогноз на неделю</li>
-                <li>Новая глава годового разбора каждый месяц</li>
-                <li>Вопросы «Да или нет?»</li>
-                <li>Скидки на Red Flag и «Нумерологию момента»</li>
-              </ul>
-            </div>
-            <button id="pro-paywall-club" class="pro-paywall-option-action pro-paywall-option-action-club" type="button">Выбрать подписку и разбор · 989 ₽</button>
-            <p class="pro-paywall-renewal">Затем подписка 499 ₽ в месяц до отмены. Новые большие разборы оплачиваются отдельно. Будущие продления можно отменить.</p>
-          </section>
-        </div>
+        <h2 id="pro-paywall-dialog-title">Ваш полный разбор</h2>
+        <p id="pro-paywall-dialog-lead" class="pro-paywall-dialog-lead">Подробные трактовки, все сферы матрицы и PDF, который останется с вами навсегда.</p>
+
+        <section class="pro-paywall-once" aria-labelledby="pro-paywall-once-title">
+          <div>
+            <p class="pro-paywall-eyebrow">РАЗОВАЯ ПОКУПКА</p>
+            <h3 id="pro-paywall-once-title">Открыть весь разбор</h3>
+            <p class="pro-paywall-caption">Одна дата рождения · PDF навсегда</p>
+          </div>
+          <div class="pro-paywall-once-action">
+            <strong>999 ₽</strong>
+            <button id="pro-paywall-one-time" type="button">Выбрать</button>
+          </div>
+        </section>
+
+        <div class="pro-paywall-separator">или с выгодой по подписке</div>
+
+        <section class="pro-paywall-club" aria-labelledby="pro-paywall-club-title">
+          <p class="pro-paywall-eyebrow">КЛУБ «МОЙ ЛИЧНЫЙ НУМЕРОЛОГ»</p>
+          <div class="pro-paywall-club-heading">
+            <h3 id="pro-paywall-club-title">Полный разбор</h3>
+            <div class="pro-paywall-club-price"><del>999 ₽</del><strong>490 ₽</strong></div>
+          </div>
+          <p class="pro-paywall-club-intro">Подписка <strong>499 ₽ в месяц</strong> открывает клубную цену и дополнительные возможности.</p>
+          <div class="pro-paywall-total">
+            <span>Подписка + разбор сегодня</span>
+            <strong>989 ₽</strong>
+          </div>
+          <div class="pro-paywall-club-featureline">Календарь важных дат · Прогноз на неделю · Глава года</div>
+          <details class="pro-paywall-club-details">
+            <summary>Что ещё входит в подписку?</summary>
+            <ul>
+              <li>Вопросы «Да или нет?»</li>
+              <li>Выгодные цены на «Мужчина или Red Flag»</li>
+              <li>Скидки на «Нумерологию момента»</li>
+              <li>Клубные цены на другие большие разборы</li>
+            </ul>
+          </details>
+          <button id="pro-paywall-club" class="pro-paywall-club-button" type="button">Вступить в клуб и открыть разбор · 989 ₽</button>
+          <p class="pro-paywall-renewal">Далее 499 ₽/мес. до отмены. Новые разборы оплачиваются отдельно. Продление можно отменить в любой момент.</p>
+        </section>
         <p id="pro-paywall-checkout-note" class="pro-paywall-checkout-note" role="status" aria-live="polite" hidden></p>
-        <p class="pro-paywall-dialog-disclaimer">Это предварительный просмотр тарифов. Оплата ещё не подключена, клубные сервисы готовятся к запуску.</p>
+        <p class="pro-paywall-dialog-disclaimer">Это демонстрация оформления. Платежи и подписка пока не подключены.</p>
       </div>
     </dialog>
   </main>
