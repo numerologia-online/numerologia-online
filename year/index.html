@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="styles.css?v=209">
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="year-polish.css?v=25">
-  <link rel="stylesheet" href="year-paywall.css?v=1">
+  <link rel="stylesheet" href="year-paywall.css?v=2">
 </head>
 <body>
   <main class="app-shell">
@@ -60,7 +60,6 @@
               <h2 id="report-title"></h2>
               <p class="report-meta" id="report-meta"></p>
               <p id="report-copy"></p>
-              <p id="year-free-month-note" class="year-free-month-note" role="status"></p>
             </div>
             <div id="year-transition" class="year-transition" aria-label="Периоды личного года"></div>
             <div class="birthday-note" id="birthday-note"></div>
@@ -91,7 +90,7 @@
   </p>
   <noscript>Для расчёта года необходимо разрешить JavaScript в браузере.</noscript>
   <script type="module">
-    import(new URL("../year-feature.js?v=34", window.location.href).href).catch((error) => {
+    import(new URL("../year-feature.js?v=36", window.location.href).href).catch((error) => {
       console.error("Не удалось загрузить годовой разбор", error);
       document.querySelector("#standalone-year-error").hidden = false;
     });
