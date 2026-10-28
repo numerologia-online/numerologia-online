@@ -1709,3 +1709,8 @@ body {
 #child-matrix-panel .child-matrix-start-heading h3{font-size:clamp(21px,6vw,29px);line-height:1}
 #child-matrix-panel .child-matrix-start-heading p{margin-top:2px;font-size:clamp(10px,2.7vw,12px);line-height:1.15}
 @media(max-width:390px){.child-day-discovery{padding:6px 9px}.child-day-discovery-copy>span{font-size:10px}#child-matrix-panel .child-matrix-start-heading{padding:7px 10px 8px}#child-matrix-panel .child-matrix-start-heading h3{font-size:clamp(20px,6vw,24px)}#child-matrix-panel .child-matrix-start-heading p{font-size:10px}}
+
+/* v34: smaller matrix invitation */
+#child-matrix-panel .child-matrix-start-heading{margin:3px 2px 5px;padding:5px 10px 6px;border-radius:12px}
+#child-matrix-panel .child-matrix-start-heading h3{font-size:clamp(19px,5.4vw,25px);line-height:1}
+#child-matrix-panel .child-matrix-start-heading p{margin:2px 0 0;font-size:clamp(10px,2.65vw,12px);line-height:1.14}
