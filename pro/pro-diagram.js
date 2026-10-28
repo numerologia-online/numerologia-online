@@ -269,23 +269,42 @@ function renderDiagram(points) {
     g.addEventListener("keydown",(event) => {if(event.key==="Enter"||event.key===" "){event.preventDefault();activate();}});
     svg.append(g);
   });
-  renderDiagramSectorLabels(svg, getCurrent()?.zones || []);
-  // An elegant continuous Bézier curve ending at the free left circle.
-  // Purely decorative: it never obstructs matrix numbers or changes geometry.
+  // A die-cut sticker arrow with a soft, flowing silhouette. Coordinates
+  // point to the existing free left circle; all 31 nodes remain untouched.
   const freePoint = points.find(point => point.key === "left");
   if (freePoint) {
     const tipX = freePoint.x - 24;
     const tipY = freePoint.y - 16;
-    const marginX = freePoint.x - 38;
-    const guide = svgElement("g", {"class":"pro-free-start-arrow","aria-hidden":"true","pointer-events":"none"});
-    guide.append(svgElement("path", {
-      d:`M ${marginX} 7 C ${marginX - 2} 91 ${marginX - 1} 186 ${marginX} ${tipY - 54} C ${marginX + 1} ${tipY - 30} ${tipX - 9} ${tipY - 16} ${tipX} ${tipY - 3}`
+    const arrow = svgElement("g", {
+      "class":"pro-free-start-arrow", "aria-hidden":"true", "pointer-events":"none"
+    });
+    const defs = svgElement("defs");
+    const gradient = svgElement("linearGradient", {
+      id:"pro-free-sticker-red",x1:"0%",y1:"0%",x2:"100%",y2:"100%"
+    });
+    [
+      ["0%","#f56c59"],["48%","#e4383c"],["100%","#bb1832"]
+    ].forEach(([offset,color]) =>
+      gradient.append(svgElement("stop",{offset,"stop-color":color})));
+    defs.append(gradient);
+    arrow.append(defs);
+    // Whimsical curve stays near the left edge, then curls toward the free 9.
+    const stroke = `M 23 12 C 18 46 28 77 21 112 C 11 161 9 207 15 233 C 18 254 21 267 ${tipX - 1} ${tipY - 17}`;
+    arrow.append(svgElement("path",{d:stroke,"class":"pro-free-sticker-border"}));
+    arrow.append(svgElement("path",{d:stroke,"class":"pro-free-sticker-shaft"}));
+    arrow.append(svgElement("polygon",{
+      "class":"pro-free-sticker-head",
+      points:`${tipX},${tipY} ${tipX - 20},${tipY - 19} ${tipX + 10},${tipY - 24}`
     }));
-    guide.append(svgElement("polygon", {
-      points:`${tipX},${tipY} ${tipX - 14},${tipY - 13} ${tipX + 4},${tipY - 20}`
+    arrow.append(svgElement("path",{
+      "class":"pro-free-sticker-glint",
+      d:"M 23 28 C 20 55 27 81 22 103"
     }));
-    svg.append(guide);
+    svg.append(arrow);
   }
+  // Topic labels are always on top of decorative artwork, so the sticker
+  // never hides a label or its tap target.
+  renderDiagramSectorLabels(svg, getCurrent()?.zones || []);
   svg.addEventListener("click", event => {
     if (!event.target.closest(".pro-node, .pro-sector-tag")) { hidePointPreview(); hideZonePreview(); }
   });
