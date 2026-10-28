@@ -813,7 +813,11 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   font:850 clamp(18px,4.1vw,23px)/1.2 Inter,system-ui,sans-serif;
   letter-spacing:.055em
 }
-.pro-matrix-start span{font:400 35px/1 Georgia,serif;color:#b39460}
+.pro-diagram .pro-free-start-arrow{pointer-events:none}
+.pro-diagram .pro-free-start-arrow path{
+  fill:none;stroke:#b39360;stroke-width:3.7;stroke-linecap:round;stroke-linejoin:round;
+  pointer-events:none
+}
 .pro-diagram .pro-node[data-node-key="left"].major circle{
   stroke:#3d9181;stroke-width:4.2;fill:#ddf2eb
 }
@@ -849,7 +853,6 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   .pro-title-row #pro-matrix-title{font-size:clamp(29px,7.7vw,36px)}
   .pro-matrix-start{margin:6px 0 0 7px;gap:7px}
   .pro-matrix-start strong{font-size:19px}
-  .pro-matrix-start span{font-size:32px}
   .pro-free-impression{padding:9px 8px;gap:7px}
   .pro-free-impression-icon{width:30px;height:32px;font-size:18px}
   .pro-free-impression-name strong{font-size:12px}
