@@ -20,6 +20,15 @@ const categoryStates = new Map(REDFLAG_CATEGORIES.map((category) => [category.id
   answerErrors: new Map()
 }]));
 
+// A single visible category also means a single expanded answer.
+const collapseOtherCategories = (keepId) => {
+  categoryStates.forEach((state, id) => {
+    if (id === keepId) return;
+    state.expanded = false;
+    state.activeQuestionId = null;
+  });
+};
+
 let activeProfile;
 let formattedDate;
 
@@ -409,12 +418,7 @@ const createCategory = (category, index) => {
     const topBefore = toggle.getBoundingClientRect().top;
     // A new category replaces the previous one, including its expanded answer.
     if (opening) {
-      categoryStates.forEach((otherState, otherId) => {
-        if (otherId !== category.id) {
-          otherState.expanded = false;
-          otherState.activeQuestionId = null;
-        }
-      });
+      collapseOtherCategories(category.id);
     }
     state.expanded = opening;
     if (!opening) state.activeQuestionId = null;
@@ -506,6 +510,7 @@ form.addEventListener("submit", async (event) => {
       : null;
     const firstCategory = linkedCategory || REDFLAG_CATEGORIES[0];
     const firstState = categoryStates.get(firstCategory.id);
+    collapseOtherCategories(firstCategory.id);
     firstState.expanded = true;
     await ensureQuestions(firstCategory);
     for (const state of categoryStates.values()) state.activeQuestionId = null;
@@ -547,6 +552,7 @@ export const openRedFlag = () => {
     : null;
   if (category) {
     const state = categoryStates.get(category.id);
+    collapseOtherCategories(category.id);
     state.expanded = true;
     renderCategories();
     void ensureQuestions(category).then(() => {
