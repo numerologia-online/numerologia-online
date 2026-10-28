@@ -35,6 +35,20 @@ try{
       "date should survive reload after opening a calculation");
     assert.equal(await page.locator("#pro-diagram .pro-node").count(),31,
       "restored calculation should regenerate all matrix points");
+    const compactLayout = await page.evaluate(() => {
+      const form = document.querySelector("#pro-form").getBoundingClientRect();
+      const paper = document.querySelector("#pro-results > .pro-paper").getBoundingClientRect();
+      const title = document.querySelector("#pro-matrix-title");
+      return {
+        gap: paper.top - form.bottom,
+        titleFont: Number.parseFloat(getComputedStyle(title).fontSize),
+        titleHeight: title.getBoundingClientRect().height
+      };
+    });
+    assert.ok(compactLayout.gap <= 15,
+      "mobile result must start right below the form, without a giant gap");
+    assert.ok(compactLayout.titleFont <= 24 && compactLayout.titleHeight <= 60,
+      "calculator title should stay small and not dominate the mobile screen");
     await page.locator("#pro-question-impression").click();
     await page.locator("#pro-answer-impression .pro-inline-reading-title, #pro-answer-impression h3").first().waitFor({state:"visible",timeout:20000});
     const first=await page.locator("#pro-answer-impression").innerText();
