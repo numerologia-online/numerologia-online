@@ -1740,3 +1740,8 @@ body {
 #child-matrix-panel .child-compact-guides .child-matrix-start-heading:after{content:"↙";position:absolute;left:10px;bottom:-26px;z-index:5;color:#b5267e;font:900 30px/1 var(--sans);text-shadow:1px 1px #fff,-1px -1px #fff;pointer-events:none}
 #child-matrix-panel .child-compact-guides .child-day-discovery{background:linear-gradient(120deg,#eef6ff,#f4edf9);border-color:#77a7d5}
 #child-matrix-panel .child-compact-guides .child-day-discovery-copy>span{font-size:10px;line-height:1.17}
+
+/* v38: one blue arrow from day teaser toward the upper Day tab; no second pink arrow. */
+#child-matrix-panel .child-compact-guides .child-matrix-start-heading:after{content:none!important;display:none!important}
+#child-matrix-panel .child-compact-guides .child-day-discovery{position:relative;overflow:visible}
+#child-matrix-panel .child-compact-guides .child-day-discovery:before{content:"↗";position:absolute;top:-47px;left:35%;font:900 43px/1 var(--sans);color:#5387c8;text-shadow:1px 1px 0 #fff,-1px -1px 0 #fff;pointer-events:none;transform:rotate(-12deg);z-index:5}
