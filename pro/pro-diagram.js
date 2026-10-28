@@ -270,19 +270,20 @@ function renderDiagram(points) {
     svg.append(g);
   });
   renderDiagramSectorLabels(svg, getCurrent()?.zones || []);
-  // One short, straight gold arrow to the upper-left EDGE of the free node.
-  // The former sweeping curve crossed too much of the diagram. This marker
-  // has no pointer events and does not change any point or line geometry.
+  // A prominent straight arrow following the left margin from
+  // "НАЧНИТЕ ЗДЕСЬ" to the rim of the original free left circle.
+  // It stays OUTSIDE zone labels and never intercepts taps.
   const freePoint = points.find(point => point.key === "left");
   if (freePoint) {
     const tipX = freePoint.x - 24;
     const tipY = freePoint.y - 16;
+    const marginX = freePoint.x - 49;
     const guide = svgElement("g", {"class":"pro-free-start-arrow","aria-hidden":"true","pointer-events":"none"});
     guide.append(svgElement("path", {
-      d:`M ${tipX - 19} ${tipY - 25} L ${tipX} ${tipY}`
+      d:`M ${marginX} 5 L ${marginX} ${tipY - 28} L ${tipX} ${tipY}`
     }));
     guide.append(svgElement("path", {
-      d:`M ${tipX - 12} ${tipY - 7} L ${tipX} ${tipY} L ${tipX - 5} ${tipY - 13}`
+      d:`M ${tipX - 12} ${tipY - 6} L ${tipX} ${tipY} L ${tipX - 3} ${tipY - 14}`
     }));
     svg.append(guide);
   }
