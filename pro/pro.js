@@ -300,6 +300,11 @@ results.addEventListener("toggle", event => {
   const opened = event.target;
   if (!(opened instanceof HTMLDetailsElement) || !opened.open) return;
   if (!opened.matches(".pro-zone-reading-position, .pro-purpose-card, .pro-karma-card, .pro-position-original")) return;
+  if (opened.matches(".pro-purpose-card")) {
+    purpose.querySelectorAll("details.pro-purpose-card[open]").forEach((other) => {
+      if (other !== opened) other.open = false;
+    });
+  }
   scrollOpenedAnswerToTop(opened, () => opened.open);
 }, true);
 
@@ -813,6 +818,12 @@ function openPointDetail(key) {
   const hasAuthoredText = Boolean(authoredKey &&
     current.definitions.some(definition => definition.key === authoredKey));
   const freeLeftPoint = !hasPaidAccess() && key === FREE_PRO_POINT && authoredKey === FREE_PRO_TOPIC;
+  // A selected point replaces any earlier long zone panel, rather than
+  // leaving two separate blocks of reading open below the same matrix.
+  if (zoneReading && !zoneReading.hidden) {
+    zoneReading.hidden = true;
+    zoneReading.replaceChildren();
+  }
   pointDetails.replaceChildren();
 
   const head = element("div", null, "pro-point-details-header");
