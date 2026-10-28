@@ -91,7 +91,7 @@
   </p>
   <noscript>Для расчёта года необходимо разрешить JavaScript в браузере.</noscript>
   <script type="module">
-    import("./year-feature.js?v=33").catch((error) => {
+    import(new URL("../year-feature.js?v=34", window.location.href).href).catch((error) => {
       console.error("Не удалось загрузить годовой разбор", error);
       document.querySelector("#standalone-year-error").hidden = false;
     });
