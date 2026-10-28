@@ -407,7 +407,17 @@ const createCategory = (category, index) => {
   toggle.addEventListener("click", () => {
     const opening = !state.expanded;
     const topBefore = toggle.getBoundingClientRect().top;
+    // A new category replaces the previous one, including its expanded answer.
+    if (opening) {
+      categoryStates.forEach((otherState, otherId) => {
+        if (otherId !== category.id) {
+          otherState.expanded = false;
+          otherState.activeQuestionId = null;
+        }
+      });
+    }
     state.expanded = opening;
+    if (!opening) state.activeQuestionId = null;
     renderCategories();
     if (opening) ensureQuestions(category);
     // Preserve the category heading's screen position when expanding/collapsing.
