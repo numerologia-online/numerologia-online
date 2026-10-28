@@ -758,9 +758,10 @@ const showChildPdfOffer = () => {
 };
 pdfOpen.addEventListener("click", showChildPdfOffer);
 byId("child-pdf-top-open").addEventListener("click", showChildPdfOffer);
-pdfClose.addEventListener("click", () => { if (!pdfSave.disabled) pdfDialog.close(); });
+// Closing the offer must NEVER depend on the PDF purchase/download state.
+pdfClose.addEventListener("click", () => pdfDialog.close());
 pdfDialog.addEventListener("click", event => {
-  if (event.target === pdfDialog && !pdfSave.disabled) pdfDialog.close();
+  if (event.target === pdfDialog) pdfDialog.close();
 });
 pdfSave.addEventListener("click", async () => {
   if (!birth || pdfSave.disabled || !hasChildPaidAccess()) return;
