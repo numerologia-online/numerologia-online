@@ -14,6 +14,28 @@ const defaultSubmitHtml = schoolClientMode
 
 const form = document.querySelector("#pro-form");
 const input = document.querySelector("#pro-birth-date");
+// Keep only the last successfully opened date for this browser tab.
+// Session storage survives refresh but avoids permanent cross-client storage.
+const rememberedBirthKey = schoolClientMode
+  ? "numerologia-pro-school-birth-v1"
+  : "numerologia-pro-birth-v1";
+let restoringRememberedBirth = false;
+function rememberCalculatedBirth(value) {
+  try { sessionStorage.setItem(rememberedBirthKey, value); } catch (_) {}
+}
+function restoreCalculatedBirth() {
+  let saved = "";
+  try { saved = sessionStorage.getItem(rememberedBirthKey) || ""; } catch (_) {}
+  if (!saved) return;
+  if (!/^\d{2}\.\d{2}\.\d{4}$/.test(saved) || !parseBirthDate(saved)) {
+    try { sessionStorage.removeItem(rememberedBirthKey); } catch (_) {}
+    return;
+  }
+  input.value = saved;
+  restoringRememberedBirth = true;
+  // Use exactly the same form calculation and access checks as a fresh submit.
+  form.requestSubmit();
+}
 if (schoolClientMode) {
   const homeLink = document.querySelector("#pro-home-link");
   homeLink.href = "pro/school/";
@@ -1323,7 +1345,11 @@ form.addEventListener("submit", async(event)=>{
     });
     diagram.querySelectorAll(".pro-node").forEach(node => node.classList.remove("pro-karmic-highlight"));
     results.hidden=false;
-    scrollOpenedAnswerToTop(results, () => current?.id === id && !results.hidden);
+    rememberCalculatedBirth(formattedDate);
+    // On refresh do not force the reader away from the browser's restored scroll.
+    if (!restoringRememberedBirth) {
+      scrollOpenedAnswerToTop(results, () => current?.id === id && !results.hidden);
+    }
     karmic.replaceChildren(paragraph("Подбираю кармические программы…","pro-muted"));
     Promise.all([
       loadKarmicPrograms(),
@@ -1344,7 +1370,10 @@ form.addEventListener("submit", async(event)=>{
     error.textContent="Не удалось загрузить расчёт. Обновите страницу и попробуйте снова.";
     error.hidden=false;
   }finally{
+    restoringRememberedBirth = false;
     submit.disabled=false;
     submit.innerHTML=defaultSubmitHtml;
   }
 });
+// Reopen a successful calculation after a reload without requiring another tap.
+restoreCalculatedBirth();
