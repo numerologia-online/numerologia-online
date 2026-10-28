@@ -289,7 +289,7 @@ function renderDiagram(points) {
     defs.append(gradient);
     arrow.append(defs);
     // Whimsical curve stays near the left edge, then curls toward the free 9.
-    const stroke = `M 23 12 C 18 46 28 77 21 112 C 11 161 9 207 15 233 C 18 254 21 267 ${tipX - 1} ${tipY - 17}`;
+    const stroke = `M 31 12 C 8 30 10 65 27 89 C 37 108 4 137 12 168 C 23 205 2 230 16 251 C 22 264 22 271 ${tipX - 1} ${tipY - 16}`;
     arrow.append(svgElement("path",{d:stroke,"class":"pro-free-sticker-border"}));
     arrow.append(svgElement("path",{d:stroke,"class":"pro-free-sticker-shaft"}));
     arrow.append(svgElement("polygon",{
@@ -298,7 +298,7 @@ function renderDiagram(points) {
     }));
     arrow.append(svgElement("path",{
       "class":"pro-free-sticker-glint",
-      d:"M 23 28 C 20 55 27 81 22 103"
+      d:"M 26 21 C 13 38 14 63 26 83"
     }));
     svg.append(arrow);
   }
