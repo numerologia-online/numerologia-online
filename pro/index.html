@@ -9,7 +9,7 @@
   <base href="../">
   <title>Полный личный расчёт | Нумерология Онлайн</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="pro/pro.css?v=48">
+  <link rel="stylesheet" href="pro/pro.css?v=49">
   <link rel="stylesheet" href="site-support.css?v=3">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 </head>
@@ -81,79 +81,83 @@
       </section>
     </div>
     <footer class="pro-footer">Нумерология Онлайн · Полный личный разбор по дате рождения</footer>
-    <dialog id="pro-paywall-dialog" class="pro-paywall-dialog" aria-labelledby="pro-paywall-dialog-title" aria-describedby="pro-paywall-dialog-lead">
+    <dialog id="pro-paywall-dialog" class="pro-paywall-dialog" aria-labelledby="pro-paywall-dialog-title" aria-describedby="pro-paywall-dialog-note">
       <div class="pro-paywall-dialog-header">
         <p class="pro-paywall-dialog-kicker">НУМЕРОЛОГИЯ ONLINE</p>
         <form method="dialog"><button class="pro-paywall-dialog-close" type="submit" aria-label="Закрыть окно">×</button></form>
       </div>
       <div class="pro-paywall-dialog-body">
         <h2 id="pro-paywall-dialog-title">Откройте полный разбор</h2>
-        <p id="pro-paywall-dialog-lead" class="pro-paywall-dialog-lead">Ваш персональный PDF остаётся навсегда. А с клубом - ещё больше возможностей.</p>
-        <div class="pro-paywall-compare" role="group" aria-label="Стоимость полного разбора">
+        <div class="pro-paywall-compare" role="group" aria-label="Способы покупки полного разбора">
           <section class="pro-paywall-plan pro-paywall-plan-once" aria-labelledby="pro-paywall-once-title">
-            <h3 id="pro-paywall-once-title">Без подписки</h3>
+            <p class="pro-paywall-plan-kicker"><span>БЕЗ ПОДПИСКИ</span></p>
+            <h3 id="pro-paywall-once-title">Один полный<br>разбор</h3>
             <div class="pro-paywall-plan-price">990 ₽</div>
-            <p class="pro-paywall-plan-detail">Разбор + PDF навсегда</p>
+            <p class="pro-paywall-plan-detail">Разовая покупка<br>PDF навсегда</p>
+            <div class="pro-paywall-book-art pro-paywall-book-art-once" aria-hidden="true"><span>ПЕРСОНАЛЬНЫЙ<br>РАЗБОР</span><i>✧</i></div>
             <button id="pro-paywall-one-time" class="pro-paywall-plan-action pro-paywall-plan-action-once" type="button">Купить разово</button>
           </section>
           <section class="pro-paywall-plan pro-paywall-plan-club" aria-labelledby="pro-paywall-club-title">
-            <h3 id="pro-paywall-club-title">С подпиской ✨</h3>
-            <div class="pro-paywall-plan-price">490 ₽</div>
-            <p class="pro-paywall-plan-detail">+ клуб 499 ₽/мес. · вместе <b>989 ₽</b></p>
+            <p class="pro-paywall-plan-kicker pro-paywall-plan-kicker-club">♛ ВЫГОДНЕЕ</p>
+            <h3 id="pro-paywall-club-title">Разбор + клуб</h3>
+            <div class="pro-paywall-plan-price">989 ₽</div>
+            <p id="pro-paywall-dialog-note" class="pro-paywall-plan-detail pro-paywall-plan-detail-club">Вступив в клуб за <strong>989 ₽</strong>, по цене одного разбора вы получите <strong>и полный разбор, и все плюсы подписки!</strong></p>
+            <div class="pro-paywall-book-art pro-paywall-book-art-club" aria-hidden="true"><span>ПЕРСОНАЛЬНЫЙ<br>РАЗБОР</span><i>✧</i><b>+</b></div>
             <button id="pro-paywall-club" class="pro-paywall-plan-action pro-paywall-plan-action-club" type="button">Вступить в клуб</button>
           </section>
         </div>
         <p id="pro-paywall-checkout-note" class="pro-paywall-checkout-note" role="status" aria-live="polite" hidden></p>
+
         <section class="pro-paywall-matrix" aria-labelledby="pro-paywall-matrix-title">
-          <h3 id="pro-paywall-matrix-title">Сравните преимущества клуба</h3>
+          <h3 id="pro-paywall-matrix-title">Что вы получаете в клубе каждый месяц</h3>
           <table class="pro-paywall-matrix-table">
             <colgroup><col class="pro-paywall-matrix-name"><col class="pro-paywall-matrix-standard"><col class="pro-paywall-matrix-member"></colgroup>
             <thead><tr>
-              <th scope="col">Ваши возможности</th>
-              <th scope="col">Без подписки</th>
-              <th scope="col">В клубе ✨</th>
+              <th scope="col">Преимущества</th>
+              <th scope="col">БЕЗ ПОДПИСКИ</th>
+              <th scope="col">В КЛУБЕ ♛</th>
             </tr></thead>
             <tbody>
               <tr>
-                <th scope="row">📅 <span>Важные числа</span></th>
-                <td class="pro-paywall-matrix-muted">Недоступно</td>
-                <td class="pro-paywall-matrix-in"><strong>Включено</strong><small>Дни риска и удачи</small></td>
+                <th scope="row"><span class="pro-paywall-row-icon" aria-hidden="true">📅</span><span>Календарь важных чисел<small>Дни риска, удачи, покупок</small></span></th>
+                <td class="pro-paywall-matrix-muted"><span class="pro-paywall-muted-lock">🔒</span> Недоступно</td>
+                <td class="pro-paywall-matrix-in"><strong>✓ Включено</strong><small>Каждый месяц новый</small></td>
               </tr>
               <tr>
-                <th scope="row">📖 <span>Разбор месяца</span></th>
-                <td><small>Год целиком</small><strong>990 ₽</strong></td>
-                <td class="pro-paywall-matrix-in"><strong>БЕСПЛАТНО</strong><small>Новая глава ежемесячно</small></td>
+                <th scope="row"><span class="pro-paywall-row-icon" aria-hidden="true">📖</span><span>Разбор месяца<small>Новая глава вашего года</small></span></th>
+                <td><del>990 ₽</del><small>Полный год отдельно</small></td>
+                <td class="pro-paywall-matrix-in"><strong>✓ БЕСПЛАТНО</strong><small>По одной главе каждый месяц</small></td>
               </tr>
               <tr>
-                <th scope="row">🔮 <span>«Да или нет?»</span></th>
-                <td><strong>19 ₽</strong><small>за вопрос</small></td>
-                <td class="pro-paywall-matrix-in"><strong>0 ₽</strong><small>БЕЗЛИМИТНО</small></td>
+                <th scope="row"><span class="pro-paywall-row-icon" aria-hidden="true">🔮</span><span>Вопросы «Да или нет?»<small>Ответы на ваши ситуации</small></span></th>
+                <td><strong>19 ₽</strong><small>За один вопрос</small></td>
+                <td class="pro-paywall-matrix-in"><strong>✓ 0 ₽</strong><small>БЕЗЛИМИТНО</small></td>
               </tr>
               <tr>
-                <th scope="row">🚩 <span>Red Flag</span><small>80 вопросов</small></th>
-                <td><strong>19–59 ₽</strong><small>за вопрос</small></td>
-                <td class="pro-paywall-matrix-in"><strong>−50%</strong><small>на все вопросы</small></td>
+                <th scope="row"><span class="pro-paywall-row-icon" aria-hidden="true">🚩</span><span>Мужчина или Red Flag<small>Все 80 вопросов</small></span></th>
+                <td><strong>19–59 ₽</strong><small>За один вопрос</small></td>
+                <td class="pro-paywall-matrix-in pro-paywall-matrix-discount"><strong>✓ −50%</strong><small>На каждый вопрос</small></td>
               </tr>
               <tr>
-                <th scope="row">✨ <span>Вопросы момента</span></th>
-                <td class="pro-paywall-matrix-muted">Полная цена</td>
-                <td class="pro-paywall-matrix-in"><strong>−50%</strong><small>Деньги, любовь, решения</small></td>
+                <th scope="row"><span class="pro-paywall-row-icon" aria-hidden="true">✨</span><span>Нумерология момента<small>Деньги, любовь, решения</small></span></th>
+                <td><strong>100 ₽*</strong><small>За вопрос</small></td>
+                <td class="pro-paywall-matrix-in pro-paywall-matrix-discount"><strong>✓ −50%</strong><small>На важные вопросы</small></td>
               </tr>
               <tr>
-                <th scope="row">🎁 <span>Большие разборы</span></th>
-                <td><strong>990 ₽</strong></td>
-                <td class="pro-paywall-matrix-in"><strong>490 ₽</strong><small>Клубная цена</small></td>
+                <th scope="row"><span class="pro-paywall-row-icon" aria-hidden="true">🎁</span><span>Большие разборы<small>Совместимость, дети, PDF</small></span></th>
+                <td><strong>990 ₽</strong><small>За разбор</small></td>
+                <td class="pro-paywall-matrix-in pro-paywall-matrix-discount"><strong>✓ 490 ₽</strong><small>Клубная цена ≈ −50%</small></td>
               </tr>
               <tr>
-                <th scope="row">💰 <span>Денежные ритуалы</span></th>
-                <td class="pro-paywall-matrix-muted">Недоступно</td>
-                <td class="pro-paywall-matrix-in"><strong>Только в клубе</strong><small>Новый каждый месяц</small></td>
+                <th scope="row"><span class="pro-paywall-row-icon" aria-hidden="true">💰</span><span>Денежные ритуалы<small>Авторские практики богатства</small></span></th>
+                <td class="pro-paywall-matrix-muted"><span class="pro-paywall-muted-lock">🔒</span> Недоступно</td>
+                <td class="pro-paywall-matrix-in"><strong>✓ Только в клубе</strong><small>Новый ритуал каждый месяц</small></td>
               </tr>
             </tbody>
           </table>
         </section>
-        <p class="pro-paywall-renewal">Клуб - 499 ₽/мес. с автопродлением. Отменить следующее списание можно в любой момент. Разборы оплачиваются отдельно по клубной цене.</p>
-        <p class="pro-paywall-dialog-disclaimer">Предварительный макет. Платежи ещё не подключены, клубные функции и скидки готовятся к запуску.</p>
+        <p class="pro-paywall-renewal">В первый месяц: разбор 490 ₽ + подписка 499 ₽ = <strong>989 ₽</strong>. Затем подписка 499 ₽/мес. до отмены. Новые разборы оплачиваются отдельно по клубной цене. Автопродление можно отключить в любой момент.</p>
+        <p class="pro-paywall-dialog-disclaimer">Демонстрация оформления: оплата не подключена. *Цена вопросов момента и будущие клубные сервисы предварительные.</p>
       </div>
     </dialog>
   </main>
