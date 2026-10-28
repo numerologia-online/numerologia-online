@@ -76,16 +76,25 @@ try{
     await freeGuide.waitFor({state:"visible"});
     assert.equal(await freeGuide.evaluate(el => getComputedStyle(el).pointerEvents), "none",
       "decorative arrow must not intercept any matrix taps");
-    const arrowLine = await freeGuide.locator("path").first().getAttribute("d");
-    assert.equal(arrowLine, "M 14 7 C 12 91 13 186 14 240 C 15 264 19 278 28 291",
-      "elegant smooth curve must approach the free left number");
-    assert.equal(await freeGuide.locator("polygon").getAttribute("points"),
-      "28,294 14,281 32,274",
-      "proportional arrowhead must point to the free circle");
-    assert.equal((arrowLine.match(/ C /g) || []).length,2,
-      "smooth arrow uses Bézier curves instead of a sharp corner");
+    const arrowLine = await freeGuide.locator(".pro-free-sticker-shaft").getAttribute("d");
+    assert.equal(arrowLine, "M 23 12 C 18 46 28 77 21 112 C 11 161 9 207 15 233 C 18 254 21 267 27 277",
+      "sticker arrow must have three smooth bends");
+    assert.equal(await freeGuide.locator(".pro-free-sticker-head").getAttribute("points"),
+      "28,294 8,275 38,270",
+      "sticker arrowhead must land at the left free circle");
+    assert.equal(await freeGuide.locator(".pro-free-sticker-border").count(),1,
+      "sticker arrow must have its white die-cut border");
+    assert.equal((arrowLine.match(/ C /g) || []).length,3,
+      "sticker uses smooth Bézier curves, not sharp corners");
     assert.equal(await page.locator(".pro-matrix-free-label").innerText(),"БЕСПЛАТНО",
       "a contrasting red free label belongs next to Start Here");
+    const offer = page.locator("#pro-paywall-banner");
+    assert.equal(await offer.locator("h2").innerText(),"Полный разбор и PDF навсегда");
+    assert.equal(await offer.locator("button").innerText(),"Выбрать варианты доступа");
+    assert.equal(await offer.locator("p, small").count(),0,
+      "compact offer must not repeat pricing, legal text, or marketing paragraphs");
+    assert.equal(await page.locator("#pro-pdf-controls #pro-pdf-buttons").count(),1,
+      "separate PDF download area must remain intact");
     const layout=await page.locator("#pro-diagram svg").evaluate(svg => {
       const labels=[...svg.querySelectorAll(".pro-sector-tag")].map(el => {
         const key=el.getAttribute("data-zone");
