@@ -14,6 +14,21 @@ const ritualsSection = document.querySelector("#money-rituals");
 const ritualsCode = document.querySelector("#money-rituals-code");
 const ritualsList = document.querySelector("#money-rituals-list");
 
+// Keep long interpretations manageable: opening one closes its siblings.
+// Toggle does not bubble, so capture it on the list container.
+const singleOpenDisclosure = (container, selector) => {
+  container.addEventListener("toggle", (event) => {
+    const opened = event.target;
+    if (!(opened instanceof HTMLDetailsElement) || !opened.open ||
+        !opened.matches(selector) || opened.parentElement !== container) return;
+    container.querySelectorAll(selector).forEach((other) => {
+      if (other !== opened && other.open) other.open = false;
+    });
+  }, true);
+};
+singleOpenDisclosure(cards, "details.destiny-code-disclosure");
+singleOpenDisclosure(ritualsList, "details.money-ritual");
+
 const masterNumbers = new Set([11, 22, 33]);
 
 const sumDigits = (value) => String(Math.abs(Number(value) || 0))
