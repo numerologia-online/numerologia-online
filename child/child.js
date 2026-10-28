@@ -250,7 +250,6 @@ const matrixDefinitions = (matrix) => [
   {id: "mistakes", title: "Главные ошибки ребёнка", number: matrix.leftSpoke.outer},
   {id: "lifeLessons", title: "Главные жизненные уроки (общее предназначение)", number: matrix.purpose.general},
   {id: "parentMistakes", title: "Главные ошибки родителей", number: matrix.corners.topLeft},
-  {id: "comfort", title: "Точка душевного комфорта", number: matrix.center},
   {id: "gifts", title: "Идеальный подарок", number: matrix.left},
   {id: "games", title: "Как играть и увлекать ребёнка", number: matrix.topSpoke.near, x: 260, y: 157, color: "gold"},
   {id: "parentChildLessons", title: "Детско-родительские уроки", number: matrix.corners.bottomLeft},
