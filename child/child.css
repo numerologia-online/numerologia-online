@@ -1734,3 +1734,9 @@ body {
 #child-matrix-panel .child-compact-guides .child-day-discovery-arrow,
 #child-matrix-panel .child-compact-guides .child-day-discovery-heart{display:none}
 @media(max-width:390px){#child-matrix-panel .child-compact-guides{gap:6px}#child-matrix-panel .child-compact-guides .child-matrix-start-heading,#child-matrix-panel .child-compact-guides .child-day-discovery{padding:7px 8px}}
+
+/* v37: distinct start cue with compact integrated arrow. */
+#child-matrix-panel .child-compact-guides .child-matrix-start-heading{position:relative;border:2px solid #c9509b;background:linear-gradient(120deg,#fff1f8,#f7e3f1);box-shadow:0 3px 11px rgba(165,55,117,.14);overflow:visible}
+#child-matrix-panel .child-compact-guides .child-matrix-start-heading:after{content:"↙";position:absolute;left:10px;bottom:-26px;z-index:5;color:#b5267e;font:900 30px/1 var(--sans);text-shadow:1px 1px #fff,-1px -1px #fff;pointer-events:none}
+#child-matrix-panel .child-compact-guides .child-day-discovery{background:linear-gradient(120deg,#eef6ff,#f4edf9);border-color:#77a7d5}
+#child-matrix-panel .child-compact-guides .child-day-discovery-copy>span{font-size:10px;line-height:1.17}
