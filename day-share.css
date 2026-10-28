@@ -47,3 +47,22 @@
   .personal-day-share { margin: 15px 0 20px; padding: 18px 14px 16px; }
   .personal-day-share-title { font-size: 22px; }
 }
+
+/* v2: larger Telegram subscription CTA on daily calculation. */
+.personal-day-share .personal-day-share-subscribe{
+ display:flex;align-items:center;justify-content:center;gap:12px;
+ box-sizing:border-box;width:100%;min-height:82px;padding:14px 18px;
+ border:2px solid #d4bb80;border-radius:18px;
+ background:linear-gradient(115deg,#17513f,#1b7157 65%,#25856b);
+ box-shadow:0 9px 23px rgba(20,89,69,.22);color:#fff;text-decoration:none;text-align:center;
+ font:800 clamp(16px,4vw,19px)/1.24 Inter,system-ui,sans-serif;cursor:pointer;
+}
+.personal-day-share .personal-day-subscribe-icon{
+ display:grid;place-items:center;flex:none;width:42px;height:42px;
+ border-radius:50%;background:#f0dfb4;color:#15543f;font-size:24px;line-height:1;
+}
+.personal-day-share .personal-day-share-subscribe:focus-visible{outline:3px solid #a88c65;outline-offset:3px}
+@media(max-width:520px){
+ .personal-day-share .personal-day-share-subscribe{min-height:90px;padding:13px 11px;gap:9px;font-size:16px}
+ .personal-day-share .personal-day-subscribe-icon{width:37px;height:37px;font-size:21px}
+}
