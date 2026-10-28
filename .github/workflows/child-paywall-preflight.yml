@@ -1,0 +1,29 @@
+name: Child access preflight
+on:
+  push:
+    paths:
+      - 'child/child.js'
+      - 'child/index.html'
+      - 'child/child-report-pdf.js'
+      - 'server/child-paywall/**'
+      - 'tests/child-paywall-guard.mjs'
+      - '.github/workflows/child-paywall-preflight.yml'
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check site JavaScript syntax
+        run: node --check child/child.js
+      - name: Check paywall behavior guards
+        run: node tests/child-paywall-guard.mjs
+      - name: Check backend PHP syntax
+        run: |
+          php -l server/child-paywall/public/api/child-access.php
+          php -l server/child-paywall/private/bootstrap.php
+          php -l server/child-paywall/private/grant-paid-purchase.php
