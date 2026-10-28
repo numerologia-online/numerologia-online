@@ -1714,3 +1714,9 @@ body {
 #child-matrix-panel .child-matrix-start-heading{margin:3px 2px 5px;padding:5px 10px 6px;border-radius:12px}
 #child-matrix-panel .child-matrix-start-heading h3{font-size:clamp(19px,5.4vw,25px);line-height:1}
 #child-matrix-panel .child-matrix-start-heading p{margin:2px 0 0;font-size:clamp(10px,2.65vw,12px);line-height:1.14}
+
+/* v35: matrix intro matches compact blue day banner height. */
+#child-matrix-panel .child-matrix-start-heading{box-sizing:border-box;min-height:0;margin:4px 2px 6px;padding:6px 10px;border-width:1.5px;border-radius:13px;box-shadow:0 4px 12px rgba(151,65,122,.07)}
+#child-matrix-panel .child-matrix-start-heading h3{font:750 clamp(15px,4vw,18px)/1.08 var(--serif);letter-spacing:-.015em;white-space:normal}
+#child-matrix-panel .child-matrix-start-heading p{font:600 clamp(10px,2.65vw,11px)/1.15 var(--sans);margin:2px 0 0;text-align:left}
+@media(max-width:390px){#child-matrix-panel .child-matrix-start-heading{padding:6px 9px}#child-matrix-panel .child-matrix-start-heading h3{font-size:15px}#child-matrix-panel .child-matrix-start-heading p{font-size:10px}}
