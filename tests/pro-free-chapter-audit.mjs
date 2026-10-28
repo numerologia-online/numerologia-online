@@ -63,10 +63,15 @@ try{
     assert.equal(await freeGuide.evaluate(el => getComputedStyle(el).pointerEvents), "none",
       "decorative arrow must not intercept any matrix taps");
     const arrowLine = await freeGuide.locator("path").first().getAttribute("d");
-    assert.equal(arrowLine, "M 3 5 L 3 266 L 28 294",
-      "straight left-margin arrow should reach the free circle from the Start Here label");
+    assert.equal(arrowLine, "M 14 6 L 14 260 L 28 293",
+      "visible straight arrow must reach the free left circle");
+    assert.equal(await freeGuide.locator("polygon").getAttribute("points"),
+      "28,294 9,284 31,272",
+      "large filled triangular arrow head must point to the free circle");
     assert.ok(!/[CQ]/.test(arrowLine),
       "the arrow must not contain unwanted curves");
+    assert.equal(await page.locator(".pro-matrix-free-label").innerText(),"БЕСПЛАТНО",
+      "a contrasting red free label belongs next to Start Here");
     const layout=await page.locator("#pro-diagram svg").evaluate(svg => {
       const labels=[...svg.querySelectorAll(".pro-sector-tag")].map(el => {
         const key=el.getAttribute("data-zone");
