@@ -667,7 +667,7 @@ const invalidateChildPdf = () => {
 };
 let childPdfModulePromise = null;
 const pdfModule = () => {
-  if (!childPdfModulePromise) childPdfModulePromise = import("./child-report-pdf.js?v=7")
+  if (!childPdfModulePromise) childPdfModulePromise = import("./child-report-pdf.js?v=8")
     .catch(error => { childPdfModulePromise = null; throw error; });
   return childPdfModulePromise;
 };
