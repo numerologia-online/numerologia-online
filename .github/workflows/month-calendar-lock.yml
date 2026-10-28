@@ -1,0 +1,24 @@
+name: Monthly calendar subscription preview checks
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  monthly-calendar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check daily JS and subscriber-only calendar
+        run: |
+          node --check personal-day-feature.js
+          node --check app.js
+          node --test tests/monthly-calendar-paywall.test.mjs
