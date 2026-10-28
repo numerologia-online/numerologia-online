@@ -1808,3 +1808,43 @@ body {
  .child-pdf-dialog .child-pdf-save-symbol{width:30px;height:30px;font-size:21px}
  .child-pdf-dialog .child-pdf-save-help{margin-top:3px;font-size:9px}
 }
+
+
+/* v43: one premium dark-green PDF action at the bottom and a compact shortcut beside the result heading. */
+.child-result-heading .child-heading-main{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}
+.child-result-heading .child-heading-main h2{margin:0}
+.child-result-heading .child-pdf-shortcut{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-height:32px;max-width:100%;padding:5px 12px;
+  border:1.5px solid #cbb47a;border-radius:11px;
+  background:linear-gradient(115deg,#174f3f 0%,#186d53 70%,#218269 100%);
+  color:#fff;box-shadow:0 4px 11px rgba(26,96,74,.20);
+  font:800 clamp(11px,3.2vw,13px)/1.12 var(--sans);
+  white-space:nowrap;cursor:pointer;
+}
+.child-result-heading .child-pdf-shortcut>span{font-size:17px;line-height:1;color:#f0dfb4}
+.child-result-heading .child-pdf-shortcut:focus-visible,
+.child-pdf-actions .child-pdf-button:focus-visible{outline:3px solid #d3ac59;outline-offset:3px}
+.child-pdf-actions .child-pdf-button{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  min-height:63px;padding:10px 15px;border:2px solid #cbb47a;
+  border-radius:17px;background:linear-gradient(115deg,#174f3f 0%,#186d53 58%,#218269 100%);
+  box-shadow:0 9px 21px rgba(26,96,74,.24),inset 0 1px 0 rgba(255,255,255,.20);
+  color:#fff;font:800 clamp(15px,3.9vw,19px)/1.2 var(--sans);
+  text-align:center;cursor:pointer;
+}
+.child-pdf-actions .child-pdf-button-icon{
+  flex:none;display:grid;place-items:center;width:35px;height:35px;
+  border-radius:50%;background:#f0dfb4;color:#245845;
+  font:800 25px/1 var(--sans);
+}
+@media(max-width:530px){
+ .child-result-heading .child-heading-main{gap:4px}
+ .child-result-heading .child-pdf-shortcut{min-height:30px;padding:5px 10px}
+ .child-pdf-actions .child-pdf-button{min-height:58px;padding:8px 10px;gap:9px}
+ .child-pdf-actions .child-pdf-button-icon{width:31px;height:31px;font-size:22px}
+}
+@media(max-width:360px){
+ .child-result-heading .child-pdf-shortcut{font-size:11px;padding:4px 8px}
+ .child-pdf-actions .child-pdf-button{font-size:14px}
+}
