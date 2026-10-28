@@ -1748,3 +1748,34 @@ body {
 
 /* v39: slim upward pointer in the gap, clear of the tab label. */
 #child-matrix-panel .child-compact-guides .child-day-discovery:before{content:"↑";top:-29px;left:auto;right:28%;font:800 25px/1 var(--sans);transform:none;color:#5188ca;text-shadow:1px 1px 0 #fff,-1px -1px 0 #fff}
+
+
+/* v40: results-first mobile overview after calculation. */
+.child-result-heading .child-born{display:flex;flex-direction:column;align-items:flex-end;gap:0;margin:0;color:#6b3e6d;text-align:right;line-height:1.16}
+.child-result-heading .child-born-label{font:500 11px/1.15 var(--sans);color:#84758a}
+.child-result-heading #child-born-date{font:750 clamp(19px,4.8vw,22px)/1.16 var(--sans);color:#6a396f;letter-spacing:.015em;font-variant-numeric:tabular-nums}
+@media(max-width:530px){
+ .child-result:not(.is-day-view){margin-top:7px;padding:7px 5px 12px;scroll-margin-top:7px}
+ .child-result-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;gap:5px;min-height:39px;padding:0 3px}
+ .child-result-heading h2{font-size:20px;line-height:1.15;white-space:nowrap}
+ .child-result-heading .child-born{flex-shrink:0}
+ .child-result:not(.is-day-view)>.child-tabs{margin:5px 0 6px;padding:3px;border-radius:15px}
+ .child-result:not(.is-day-view)>.child-tabs button{min-height:41px;padding:7px 3px}
+ #child-matrix-panel .child-compact-guides{margin:3px 1px 5px;gap:6px}
+ #child-matrix-panel .child-visual{
+    width:100%;max-width:350px;
+    max-width:min(100%,clamp(310px,calc(100dvh - 385px),350px));
+    margin:0 auto 6px;
+ }
+ #child-matrix-panel .child-topics-heading{margin:2px 3px 5px;gap:5px}
+ #child-matrix-panel .child-topics-heading h3{font-size:19px;line-height:1.12}
+ #child-matrix-panel .child-topics-heading p{font-size:10px;line-height:1.2}
+ #child-matrix-panel .child-topic-grid{gap:5px}
+ #child-matrix-panel .child-topic:nth-child(-n+4){min-height:45px;padding:6px 7px;gap:5px}
+ #child-matrix-panel .child-topic:nth-child(-n+4) .child-topic-symbol{width:24px;height:24px}
+}
+@media(max-width:360px){
+ .child-result-heading h2{font-size:18px}
+ .child-result-heading #child-born-date{font-size:18px}
+ .child-result-heading .child-born-label{font-size:10px}
+}
