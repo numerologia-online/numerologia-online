@@ -621,3 +621,7 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
 .pro-paywall-dialog p{font-size:14px;line-height:1.6}
 .pro-paywall-dialog button{border:0;background:#294558;border-radius:12px;color:white;min-height:45px;padding:10px 23px;font-weight:750}
 @media(max-width:480px){.pro-paywall-banner{padding:13px 12px}.pro-paywall-banner button{width:100%}.pro-paid-lock{padding:10px}.pro-paid-lock-button{flex:1 1 100%;max-width:none}}
+
+/* Free introductory adult chapter: the first question is unmistakably open. */
+#pro-question-impression{border-color:#b7d5c0;background:linear-gradient(115deg,#f2faf3,#fffef8)}
+#pro-question-impression small{color:#18624a;font-weight:900;letter-spacing:.04em}
