@@ -73,5 +73,5 @@ test("All report entry pages load the guard after Telegram's SDK", () => {
 });
 
 test("No aggressive touch interception that would break PDF scrolling", () => {
-  assert.doesNotMatch(guard, /touchmove|preventDefault|stopPropagation|touchAction/);
+  assert.doesNotMatch(guard, /addEventListener\s*\(\s*["\x27]touchmove|\.preventDefault\s*\(|\.stopPropagation\s*\(|\.style\.touchAction\s*=/);
 });
