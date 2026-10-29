@@ -396,37 +396,80 @@
         <p class="account-muted">Номер телефона не запрашиваем. Содержимое оплаченных разборов пока не защищено личным кабинетом.</p>
       </section>
       <section id="account-profile" hidden>
-        <div class="account-identity">
-          <span class="account-avatar" id="account-avatar-letter" aria-hidden="true"></span>
-          <div class="account-identity-main">
-            <p class="account-identity-label">Вы вошли как</p>
-            <h3 id="account-person-name"></h3>
+        <div id="account-overview">
+          <div class="account-identity">
+            <span class="account-avatar" id="account-avatar-letter" aria-hidden="true"></span>
+            <div class="account-identity-main">
+              <p id="account-identity-label" class="account-identity-label">Ваш профиль</p>
+              <h3 id="account-person-name"></h3>
+            </div>
+            <span id="account-verified" class="account-verified" aria-label="Аккаунт подтверждён" hidden>✓</span>
           </div>
-          <span class="account-verified" aria-label="Telegram подтверждён">✓</span>
-        </div>
-        <p id="account-preview-warning" class="account-preview-warning" hidden>Вход подтверждён через Telegram.</p>
-        <div class="account-birth-section">
-          <label class="account-label" for="account-birth">Моя дата рождения</label>
-          <p class="account-field-hint">Введите дату вручную</p>
-          <input id="account-birth" class="account-date" type="text" inputmode="numeric"
-                 autocomplete="bday" autocapitalize="off" spellcheck="false"
-                 maxlength="10" placeholder="ДД.ММ.ГГГГ"
-                 aria-describedby="account-birth-note">
-          <div class="account-actions">
-            <button type="button" class="account-primary" id="account-birth-save">Сохранить дату</button>
-            <button type="button" class="account-secondary" id="account-birth-delete">Очистить</button>
+          <p id="account-preview-warning" class="account-preview-warning" hidden></p>
+          <p id="account-browser-note" class="account-browser-note" hidden>Кабинет доступен прямо на сайте. Пока вход через VK и почту не подключён, дата рождения сохраняется только в этом браузере. Покупки и подписку будем синхронизировать после подключения авторизации.</p>
+          <div class="account-section-heading">Мой кабинет</div>
+          <div class="account-tiles account-navigation">
+            <button type="button" class="account-tile" data-account-panel="saved"><span class="account-tile-icon" aria-hidden="true">♡</span><strong>Сохранённое</strong><small>Разборы и ответы на вопросы</small></button>
+            <button type="button" class="account-tile" data-account-panel="club"><span class="account-tile-icon" aria-hidden="true">♕</span><strong>Мой клуб</strong><small>Подписка и преимущества</small></button>
+            <button type="button" class="account-tile" data-account-panel="prices"><span class="account-tile-icon" aria-hidden="true">₽</span><strong>Тарифы</strong><small>Все варианты доступа</small></button>
+            <button type="button" class="account-tile" data-account-panel="learning"><span class="account-tile-icon" aria-hidden="true">✧</span><strong>Моё обучение</strong><small>Школы, уроки и практика</small></button>
+            <button type="button" class="account-tile account-tile--wide" data-account-panel="settings"><span class="account-tile-icon" aria-hidden="true">◎</span><strong>Мои данные</strong><small>Дата рождения и настройки профиля</small></button>
           </div>
-          <p id="account-birth-note" class="account-muted" role="status" aria-live="polite"></p>
+          <a class="account-tile account-support-tile" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer"><strong>Техподдержка <span aria-hidden="true">↗</span></strong><small>Помощь с доступом и разборами</small></a>
         </div>
-        <div class="account-section-heading">Мои разделы</div>
-        <div class="account-tiles">
-          <a class="account-tile" href="./pro/"><strong>Полный разбор <span aria-hidden="true">↗</span></strong><small>Личный расчёт</small></a>
-          <a class="account-tile" href="./#lichnyj-den"><strong>Мой день <span aria-hidden="true">↗</span></strong><small>Подсказки на день</small></a>
-          <a class="account-tile" href="./pro/schools/"><strong>Моё обучение <span aria-hidden="true">↗</span></strong><small>Школа нумерологии</small></a>
-          <a class="account-tile" href="https://t.me/Numerologiaonline_bot" target="_blank" rel="noopener noreferrer"><strong>Telegram-бот <span aria-hidden="true">↗</span></strong><small>Открыть бота</small></a>
-          <a class="account-tile account-support-tile" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer"><strong>Техподдержка <span aria-hidden="true">↗</span></strong><small>Проблема с доступом или разбором? Напишите нам</small></a>
-        </div>
-        <p class="account-footer-note">Тарифы и доступ к покупкам пока в разработке.</p>
+
+        <section class="account-panel" data-account-content="saved" hidden>
+          <button class="account-back" type="button" data-account-back>← В кабинет</button>
+          <h3>Сохранённое</h3>
+          <p class="account-panel-intro">Все ваши оплаченные разборы и ответы в одном месте.</p>
+          <div class="account-library-group"><span class="account-library-symbol" aria-hidden="true">♡</span><div><strong>Большие разборы</strong><small>Полный разбор жизни, совместимость и другие покупки</small></div></div>
+          <div class="account-library-group"><span class="account-library-symbol" aria-hidden="true">✦</span><div><strong>Ответы на вопросы</strong><small>Всё, к чему захочется вернуться</small></div></div>
+          <p class="account-empty-state">История оплаченных материалов появится здесь после подключения покупок к аккаунту. Пока ничего не списываем и не выдаём незавершённую оплату за покупку.</p>
+          <div class="account-storage-disclaimer"><strong>Как долго доступны покупки ♡</strong><p>Оплаченные разборы и ответы на вопросы будут доступны в личном кабинете 12 месяцев с даты покупки. Мы ограничиваем срок хранения персональных записей, чтобы сервис оставался быстрым, а цены - доступными. Вы сможете сохранить ответ на телефон, сделать скриншоты или скачать PDF, если он предусмотрен разбором. Файлы на вашем устройстве останутся с вами.</p></div>
+        </section>
+
+        <section class="account-panel" data-account-content="club" hidden>
+          <button class="account-back" type="button" data-account-back>← В кабинет</button>
+          <h3>Мой клуб</h3>
+          <div class="account-plan-summary"><span>СТАТУС КЛУБА</span><strong>Пока не подключён</strong><p>С запуском подписки здесь появятся срок действия, условия продления и управление клубом.</p></div>
+          <div class="account-club-benefits"><strong>Участникам клуба</strong><p>Специальные цены на большие разборы, доступ к клубным материалам и новые возможности по мере запуска.</p></div>
+          <button type="button" class="account-primary" data-account-panel="prices">Посмотреть тарифы</button>
+        </section>
+
+        <section class="account-panel" data-account-content="prices" hidden>
+          <button class="account-back" type="button" data-account-back>← В кабинет</button>
+          <h3>Тарифы</h3>
+          <p class="account-panel-intro">Выбирайте разовую покупку или специальные цены клуба.</p>
+          <div class="account-price-options">
+            <div class="account-price-plan"><small>БЕЗ ПОДПИСКИ</small><strong>990 ₽</strong><span>Большой разбор с PDF</span></div>
+            <div class="account-price-plan account-price-plan--club"><small>С КЛУБОМ</small><strong>490 ₽</strong><span>Большой разбор по клубной цене</span></div>
+          </div>
+          <p class="account-price-fine">Первый месяц с клубом - 980 ₽ (490 ₽ за разбор и 490 ₽ за клуб). Далее клуб - 490 ₽ в месяц, новые разборы оплачиваются отдельно. Оплата пока не подключена.</p>
+          <button type="button" class="account-primary" id="account-show-offer">Посмотреть преимущества клуба</button>
+        </section>
+
+        <section class="account-panel" data-account-content="learning" hidden>
+          <button class="account-back" type="button" data-account-back>← В кабинет</button>
+          <h3>Моё обучение</h3>
+          <p class="account-panel-intro">Уроки и практические задания в школе нумерологии.</p>
+          <a class="account-primary account-panel-link" href="./pro/schools/">Перейти к школам →</a>
+          <p class="account-muted">История обучения и достижения будут отображаться здесь после синхронизации аккаунта.</p>
+        </section>
+
+        <section class="account-panel" data-account-content="settings" hidden>
+          <button class="account-back" type="button" data-account-back>← В кабинет</button>
+          <h3>Мои данные</h3>
+          <div class="account-birth-section">
+            <label class="account-label" for="account-birth">Моя дата рождения</label>
+            <p class="account-field-hint">Введите дату вручную</p>
+            <input id="account-birth" class="account-date" type="text" inputmode="numeric" autocomplete="bday" autocapitalize="off" spellcheck="false" maxlength="10" placeholder="ДД.ММ.ГГГГ" aria-describedby="account-birth-note">
+            <div class="account-actions">
+              <button type="button" class="account-primary" id="account-birth-save">Сохранить дату</button>
+              <button type="button" class="account-secondary" id="account-birth-delete">Очистить</button>
+            </div>
+            <p id="account-birth-note" class="account-muted" role="status" aria-live="polite"></p>
+          </div>
+        </section>
       </section>
     </dialog>
     <dialog id="year-paywall-dialog" class="year-paywall-dialog" aria-labelledby="year-paywall-title">
