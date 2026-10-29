@@ -19,7 +19,7 @@ jobs:
           node-version: '22'
       - name: Verify owner-only access and syntax
         run: |
-          node --test tests/owner-access.test.mjs
+          node --test tests/owner-access.test.mjs tests/telegram-scroll-guard.test.mjs
           node --check pro/pro.js
           node --check auth-server/api/miniapp.js
           node --check auth-server/api/session.js
