@@ -1,0 +1,266 @@
+/* Единый дизайн окна покупки для всех разборов. Источник: одобренный дизайн полного разбора. */
+/* Approved cream-and-gold comparison. UI preview only; no actual checkout. */
+.pro-paywall-dialog{
+  width:min(720px,calc(100vw - 16px));max-height:calc(100dvh - 16px);
+  border:1px solid #d9bf91;border-radius:25px;padding:0;
+  background:radial-gradient(circle at 95% 14%,#fff8ed,#fffefa 44%,#fff9ed 100%);
+  color:#183147;box-shadow:0 30px 85px rgba(22,36,46,.28);
+  overflow-y:auto;overscroll-behavior:contain;
+}
+.pro-paywall-dialog::backdrop{background:rgba(21,33,42,.61);backdrop-filter:blur(3px)}
+.pro-paywall-dialog-header{
+  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5;
+  padding:15px 22px 5px;background:linear-gradient(90deg,#fffefa,#fffaf0)
+}
+.pro-paywall-dialog-kicker{margin:0!important;font-size:10px!important;font-weight:850;letter-spacing:.23em;color:#947b58!important}
+.pro-paywall-dialog-close{
+  display:grid;place-items:center;flex:none;width:34px;height:34px;min-height:34px;
+  border:1px solid #e0d4bf;border-radius:50%;padding:0;
+  color:#263c50;background:#fffdf9;font:400 26px/1 system-ui,sans-serif
+}
+.pro-paywall-dialog-body{padding:6px 21px 23px}
+.pro-paywall-dialog h2{margin:0 0 15px;color:#0e2941;font:400 clamp(28px,4vw,41px)/1.07 Georgia,"Times New Roman",serif;letter-spacing:-.045em}
+.pro-paywall-compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.pro-paywall-plan{
+  display:flex;flex-direction:column;position:relative;isolation:isolate;min-width:0;
+  min-height:216px;padding:17px 17px 14px;overflow:hidden;
+  border:1px solid #e6ddcd;border-radius:21px;background:rgba(255,255,255,.86);
+  box-shadow:0 8px 18px rgba(69,62,47,.045)
+}
+.pro-paywall-plan-club{
+  border:1.5px solid #cda356;background:linear-gradient(140deg,#fffdfa,#fff8e8);
+  box-shadow:0 9px 22px rgba(155,122,65,.11)
+}
+.pro-paywall-plan-kicker{margin:0 0 8px;color:#917b57;font:850 10px/1.2 system-ui,sans-serif;letter-spacing:.06em}
+.pro-paywall-plan-kicker span{
+  display:inline-block;padding:5px 11px;background:#f0e9db;border-radius:50px;color:#33312d
+}
+.pro-paywall-plan-kicker-club{
+  display:inline-block;align-self:flex-start;padding:5px 13px;border-radius:50px;
+  background:linear-gradient(120deg,#b6914c,#d0a858);color:#fff;
+}
+.pro-paywall-plan h3{position:relative;z-index:1;margin:0 0 6px;
+  color:#16354a;font:500 clamp(19px,3.8vw,29px)/1.13 Georgia,"Times New Roman",serif;letter-spacing:-.03em
+}
+.pro-paywall-plan-price{position:relative;z-index:1;margin:0;
+  color:#0c293f;font-size:clamp(30px,4.6vw,45px);font-weight:850;line-height:1.05;letter-spacing:-.055em;white-space:nowrap
+}
+.pro-paywall-plan-club .pro-paywall-plan-price{color:#076048}
+.pro-paywall-plan-detail{position:relative;z-index:1;margin:8px 0 13px;max-width:97%;
+  color:#5e6870;font-size:12px;line-height:1.48
+}
+.pro-paywall-plan-detail strong{color:#654521}
+.pro-paywall-plan-detail-club{
+  width:100%;max-width:100%;padding:9px 10px;border:1px solid #f3e6cc;border-radius:12px;
+  background:rgba(253,244,222,.91);color:#6d491e
+}
+.pro-paywall-book-art{
+  display:grid;place-items:start center;position:absolute;right:18px;top:42px;
+  width:74px;height:103px;padding:13px 5px;
+  border:2px solid #eee2cf;border-left:6px solid #dbc8a8;
+  background:#fffcf5;box-shadow:6px 7px 10px rgba(77,55,27,.14);
+  transform:rotate(7deg);opacity:.68;pointer-events:none;z-index:0;
+}
+.pro-paywall-book-art span{text-align:center;font:500 7px/1.5 Georgia,serif;color:#b08c5d;letter-spacing:.03em}
+.pro-paywall-book-art i{position:absolute;top:48px;font:38px/1 Georgia,serif;color:#cfa86c}
+.pro-paywall-book-art-club{right:22px;top:48px;transform:rotate(-6deg);opacity:.52}
+.pro-paywall-book-art b{
+  display:grid;place-items:center;position:absolute;right:-16px;bottom:8px;
+  width:31px;height:31px;border-radius:50%;background:#0a654b;color:#fff;
+  font:800 22px/1 system-ui,sans-serif;box-shadow:0 3px 7px rgba(0,0,0,.15)
+}
+.pro-paywall-plan-action{
+  position:relative;z-index:1;width:100%;min-height:44px;margin-top:auto;padding:10px 8px;
+  border:0;border-radius:12px;font-size:13px;line-height:1.2;font-weight:850;
+}
+.pro-paywall-plan-action-once{background:#e8eceb;color:#17364e}
+.pro-paywall-plan-action-club{background:#095c45;color:#fff}
+.pro-paywall-plan-action:hover{filter:brightness(.96)}
+.pro-paywall-matrix{margin-top:18px}
+.pro-paywall-matrix>h3{margin:0 0 15px;color:#12334a;
+  font:400 clamp(23px,3.6vw,31px)/1.15 Georgia,"Times New Roman",serif;letter-spacing:-.035em
+}
+.pro-paywall-matrix-table{
+  width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;
+  overflow:hidden;border:1px solid #e7ddca;border-radius:18px;background:#fffcf8;
+  box-shadow:0 6px 14px rgba(64,52,37,.035)
+}
+.pro-paywall-matrix-name{width:47%}
+.pro-paywall-matrix-standard{width:25%}
+.pro-paywall-matrix-member{width:28%}
+.pro-paywall-matrix-table th,.pro-paywall-matrix-table td{box-sizing:border-box;vertical-align:middle}
+.pro-paywall-matrix-table thead th{
+  padding:10px 8px;border-bottom:1px solid #e9e3d7;background:#f7f4ed;
+  color:#334451;text-align:center;font-size:11px;font-weight:850;line-height:1.3
+}
+.pro-paywall-matrix-table thead th:first-child{text-align:left}
+.pro-paywall-matrix-table thead th:last-child{
+  color:#fff;background:linear-gradient(110deg,#07654d,#20845f)
+}
+.pro-paywall-matrix-table tbody th{
+  padding:11px 9px;text-align:left;font-size:12px;font-weight:850;color:#20364a;
+  background:rgba(255,253,248,.96);line-height:1.3
+}
+.pro-paywall-matrix-table tbody th>.pro-paywall-row-icon{
+  display:inline-grid;place-items:center;vertical-align:middle;margin-right:6px;
+  width:26px;height:28px;font-size:19px;line-height:1
+}
+.pro-paywall-matrix-table tbody th>span:last-child{display:inline-block;vertical-align:middle;max-width:calc(100% - 39px)}
+.pro-paywall-matrix-table tbody th small{display:block;margin-top:2px;color:#68717a;font-size:10px;line-height:1.3;font-weight:500}
+.pro-paywall-matrix-table tbody td{
+  padding:10px 7px;text-align:center;color:#4d5d66;font-size:11px;line-height:1.24;overflow-wrap:anywhere
+}
+.pro-paywall-matrix-table tbody td strong{
+  display:block;color:#1c344b;font-size:13px;line-height:1.14;font-weight:850
+}
+.pro-paywall-matrix-table tbody td small{display:block;margin-top:3px;color:#69737a;font-size:9.7px;line-height:1.3}
+.pro-paywall-matrix-table tbody tr:not(:last-child)>*{border-bottom:1px solid #ece6da}
+.pro-paywall-matrix-table tbody tr:nth-child(even)>th{background:#fbf9f5}
+.pro-paywall-matrix-table tbody td.pro-paywall-matrix-in{
+  background:#eff8ef;border-left:1px solid #deeadc;color:#155b43
+}
+.pro-paywall-matrix-table tbody tr:nth-child(even)>td.pro-paywall-matrix-in{background:#ebf5e9}
+.pro-paywall-matrix-table tbody td.pro-paywall-matrix-in strong{
+  color:#075e42;font-size:clamp(12px,2.8vw,17px);font-weight:950
+}
+.pro-paywall-matrix-table tbody td.pro-paywall-matrix-in small{color:#2b604f}
+.pro-paywall-matrix-table tbody td.pro-paywall-matrix-discount strong{color:#c12345}
+.pro-paywall-matrix-table tbody td.pro-paywall-matrix-muted{color:#9aa0a3}
+.pro-paywall-muted-lock{font-size:16px;opacity:.6}
+.pro-paywall-matrix-table tbody td del{font-size:16px;font-weight:850;color:#1c344b;text-decoration-color:#bd4954;text-decoration-thickness:2px}
+.pro-paywall-renewal{margin:15px 4px 0;font-size:11px;line-height:1.5;color:#586970}
+.pro-paywall-checkout-note{margin:11px 0 0;padding:12px;border:1px solid #b7cbc1;border-radius:11px;
+  background:#e8f4eb;color:#31544e;font-size:12px;line-height:1.4
+}
+.pro-paywall-dialog-disclaimer{margin:5px 4px 0;color:#898a82;font-size:10px;line-height:1.35}
+.pro-paywall-banner-prices{font-weight:800;color:#315a55!important}
+@media(max-width:510px){
+  .pro-paywall-dialog{width:calc(100vw - 12px);max-height:calc(100dvh - 12px);border-radius:20px}
+  .pro-paywall-dialog-header{padding:9px 12px 2px}
+  .pro-paywall-dialog-body{padding:4px 12px 15px}
+  .pro-paywall-dialog h2{font-size:clamp(26px,6.5vw,32px);margin-bottom:12px}
+  .pro-paywall-compare{gap:8px}
+  .pro-paywall-plan{padding:12px 10px 11px;min-height:222px;border-radius:15px}
+  .pro-paywall-plan-kicker{font-size:9px}
+  .pro-paywall-plan h3{font-size:19px}
+  .pro-paywall-plan-price{font-size:34px}
+  .pro-paywall-plan-detail{font-size:10.5px}
+  .pro-paywall-plan-detail-club{padding:7px 8px}
+  .pro-paywall-book-art{right:9px;top:59px;width:47px;height:68px;padding:7px 4px;opacity:.31}
+  .pro-paywall-book-art span{font-size:5px}
+  .pro-paywall-book-art i{top:27px;font-size:25px}
+  .pro-paywall-book-art b{width:21px;height:21px;font-size:15px;right:-10px;bottom:4px}
+  .pro-paywall-plan-action{min-height:40px;font-size:11px;padding:8px 4px}
+  .pro-paywall-matrix{margin-top:13px}
+  .pro-paywall-matrix>h3{font-size:22px;margin-bottom:10px}
+  .pro-paywall-matrix-name{width:43%}
+  .pro-paywall-matrix-standard{width:27%}
+  .pro-paywall-matrix-member{width:30%}
+  .pro-paywall-matrix-table{border-radius:12px}
+  .pro-paywall-matrix-table thead th{padding:8px 4px;font-size:9.5px}
+  .pro-paywall-matrix-table tbody th{padding:8px 5px;font-size:10.6px}
+  .pro-paywall-matrix-table tbody th>.pro-paywall-row-icon{width:19px;height:23px;margin-right:3px;font-size:16px}
+  .pro-paywall-matrix-table tbody th>span:last-child{max-width:calc(100% - 26px)}
+  .pro-paywall-matrix-table tbody th small{font-size:9px;line-height:1.22}
+  .pro-paywall-matrix-table tbody td{padding:8px 3px;font-size:10px}
+  .pro-paywall-matrix-table tbody td strong{font-size:11.5px}
+  .pro-paywall-matrix-table tbody td small{font-size:9px}
+  .pro-paywall-matrix-table tbody td.pro-paywall-matrix-in strong{font-size:clamp(11px,2.9vw,15px)}
+  .pro-paywall-matrix-table tbody td del{font-size:13px}
+  .pro-paywall-renewal{font-size:10px;margin-top:10px}
+}
+@media(max-width:360px){
+  .pro-paywall-dialog-body{padding:2px 9px 13px}
+  .pro-paywall-plan{padding:10px 7px}
+  .pro-paywall-plan h3{font-size:17px}
+  .pro-paywall-plan-price{font-size:29px}
+  .pro-paywall-plan-kicker span{padding:5px 7px}
+  .pro-paywall-matrix-table tbody th,.pro-paywall-matrix-table tbody td{padding-top:7px;padding-bottom:7px}
+}
+
+/* Club checkout: make the price advantage readable before the first-month total. */
+.pro-paywall-billing-summary{
+  margin:10px 0 0;padding:10px 13px;border:1px solid #ebdfc9;
+  border-radius:13px;background:#f9f4ea;color:#604e37;
+  font-size:12px;line-height:1.4
+}
+.pro-paywall-billing-summary strong{color:#12614b;font-weight:900}
+@media(max-width:510px){
+  /* Compact modal on iPhone: two balanced offer cards, then the benefits table. */
+  .pro-paywall-dialog{width:calc(100vw - 10px);max-height:calc(100dvh - 10px);border-radius:17px}
+  .pro-paywall-dialog-header{padding:6px 11px 0}
+  .pro-paywall-dialog-kicker{font-size:9px!important;letter-spacing:.16em}
+  .pro-paywall-dialog-close{width:29px;height:29px;min-height:29px;font-size:23px}
+  .pro-paywall-dialog-body{padding:2px 10px 10px}
+  .pro-paywall-dialog h2{font-size:clamp(21px,5.6vw,25px);line-height:1.04;margin-bottom:8px}
+  .pro-paywall-compare{gap:7px}
+  .pro-paywall-plan{min-height:165px;padding:9px 9px 8px;border-radius:14px}
+  .pro-paywall-plan-kicker{font-size:9px;margin-bottom:6px;line-height:1.12}
+  .pro-paywall-plan-kicker span,.pro-paywall-plan-kicker-club{padding:4px 8px}
+  .pro-paywall-plan h3{font-size:clamp(17px,4.5vw,19px);line-height:1.1;margin-bottom:5px}
+  .pro-paywall-plan-price{font-size:clamp(29px,7.8vw,35px)}
+  .pro-paywall-plan-detail{font-size:10px;line-height:1.25;margin:6px 0 8px;max-width:100%}
+  .pro-paywall-plan-detail-club{padding:0;border:0;border-radius:0;background:transparent;color:#466455}
+  .pro-paywall-book-art{display:none}
+  .pro-paywall-plan-action{min-height:32px;padding:6px 5px;font-size:10.5px;border-radius:9px}
+  .pro-paywall-billing-summary{margin-top:7px;padding:7px 9px;font-size:10.5px;line-height:1.3;border-radius:10px}
+  .pro-paywall-matrix{margin-top:9px}
+  .pro-paywall-matrix>h3{font-size:19px;line-height:1.12;margin-bottom:6px}
+  .pro-paywall-matrix-name{width:46%}
+  .pro-paywall-matrix-standard{width:24%}
+  .pro-paywall-matrix-member{width:30%}
+  .pro-paywall-matrix-table{border-radius:11px}
+  .pro-paywall-matrix-table thead th{padding:5px 3px;font-size:9px;line-height:1.12}
+  .pro-paywall-matrix-table tbody th{padding:5px 4px;font-size:10px;line-height:1.16}
+  .pro-paywall-matrix-table tbody th>.pro-paywall-row-icon{width:17px;height:19px;margin-right:2px;font-size:15px}
+  .pro-paywall-matrix-table tbody th>span:last-child{max-width:calc(100% - 23px)}
+  .pro-paywall-matrix-table tbody th small{margin-top:2px;font-size:9px;line-height:1.13}
+  .pro-paywall-matrix-table tbody td{padding:5px 2px;font-size:9.5px;line-height:1.15}
+  .pro-paywall-matrix-table tbody td strong{font-size:11px;line-height:1.1}
+  .pro-paywall-matrix-table tbody td small{margin-top:2px;font-size:9px;line-height:1.15}
+  .pro-paywall-matrix-table tbody td.pro-paywall-matrix-in strong{font-size:clamp(10.5px,2.9vw,12px)}
+  .pro-paywall-matrix-table tbody td del{font-size:12px}
+  .pro-paywall-muted-lock{font-size:13px}
+  .pro-paywall-renewal{margin:8px 2px 0;font-size:9.5px;line-height:1.28}
+  .pro-paywall-dialog-disclaimer{margin:4px 2px 0;font-size:9px;line-height:1.2}
+}
+
+/* Small-screen purchase dialog: fit the comparison and club benefits without shrinking the whole site. */
+@media(max-width:510px){
+  .pro-paywall-dialog{max-height:calc(100dvh - 8px);scroll-padding-top:36px}
+  .pro-paywall-dialog-header{padding:4px 10px 0}
+  .pro-paywall-dialog-close{width:28px;height:28px;min-height:28px}
+  .pro-paywall-dialog-body{padding:0 9px 8px}
+  .pro-paywall-dialog h2{font-size:clamp(20px,5.2vw,23px);margin:0 0 6px;line-height:1.04}
+  .pro-paywall-compare{gap:6px}
+  .pro-paywall-plan{min-height:150px;padding:7px 8px 7px;border-radius:13px}
+  .pro-paywall-plan-kicker{font-size:8.5px;margin-bottom:3px}
+  .pro-paywall-plan-kicker span,.pro-paywall-plan-kicker-club{padding:3px 7px}
+  .pro-paywall-plan h3{font-size:clamp(16px,4.1vw,18px);margin:0 0 3px;line-height:1.08}
+  .pro-paywall-plan-price{font-size:clamp(27px,7.3vw,32px)}
+  .pro-paywall-plan-detail{font-size:9.6px;line-height:1.16;margin:4px 0 5px}
+  .pro-paywall-plan-action{min-height:30px;padding:5px 4px;font-size:10.5px;border-radius:8px}
+  .pro-paywall-billing-summary{margin-top:6px;padding:6px 8px;border-radius:9px;font-size:10px;line-height:1.23}
+  .pro-paywall-matrix{margin-top:7px}
+  .pro-paywall-matrix>h3{font-size:18px;margin:0 0 5px;line-height:1.05}
+  .pro-paywall-matrix-table thead th{padding:4px 3px;font-size:9px}
+  .pro-paywall-matrix-table tbody th{padding:4px 4px;font-size:9.8px;line-height:1.12}
+  .pro-paywall-matrix-table tbody th>.pro-paywall-row-icon{width:16px;height:17px;margin-right:2px;font-size:14px}
+  .pro-paywall-matrix-table tbody th>span:last-child{max-width:calc(100% - 22px)}
+  .pro-paywall-matrix-table tbody th small{font-size:8.8px;line-height:1.1;margin-top:1px}
+  .pro-paywall-matrix-table tbody td{padding:4px 2px;font-size:9.3px;line-height:1.11}
+  .pro-paywall-matrix-table tbody td strong{font-size:10.6px;line-height:1.1}
+  .pro-paywall-matrix-table tbody td small{font-size:8.9px;line-height:1.11;margin-top:1px}
+  .pro-paywall-matrix-table tbody td.pro-paywall-matrix-in strong{font-size:clamp(10px,2.75vw,11.5px)}
+  .pro-paywall-muted-lock{font-size:12px}
+  .pro-paywall-renewal{margin:5px 2px 0;font-size:9px;line-height:1.2}
+  .pro-paywall-dialog-disclaimer{margin:3px 2px 0;font-size:8.8px;line-height:1.17}
+}
+@media(max-width:510px) and (max-height:760px){
+  .pro-paywall-dialog h2{font-size:20px;margin-bottom:5px}
+  .pro-paywall-plan{min-height:142px;padding:6px 7px}
+  .pro-paywall-plan h3{font-size:16px}
+  .pro-paywall-plan-price{font-size:28px}
+  .pro-paywall-plan-action{min-height:29px}
+  .pro-paywall-matrix-table tbody th,.pro-paywall-matrix-table tbody td{padding-top:3px;padding-bottom:3px}
+}
