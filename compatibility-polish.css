@@ -164,3 +164,18 @@
   #compatibility .compatibility-form input{min-height:45px}
   #compatibility .compatibility-submit{min-height:48px}
 }
+
+/* Первый ответ открывается бесплатно; остальные вопросы ведут к общему окну покупки. */
+#compatibility .compatibility-topic.is-free{border-color:#c8a78f;background:linear-gradient(125deg,#fffdfa,#fbf5ee)}
+#compatibility .compatibility-topic.is-free .compatibility-topic-index{border-color:#c39765;color:#8b5f6e}
+#compatibility .compatibility-topic.is-free .compatibility-topic-title::after{
+  content:"БЕСПЛАТНО";display:inline-block;vertical-align:middle;
+  margin:6px 0 0 7px;padding:3px 7px;border-radius:999px;
+  background:#f0eadb;color:#755b36;font:800 9px/1.25 system-ui,sans-serif;letter-spacing:.055em;
+}
+#compatibility .compatibility-topic.is-locked .compatibility-topic-icon{
+  font-family:system-ui,sans-serif;font-size:17px;line-height:1;
+  background:#faf1ee;color:#9f7588;border-color:#e5cbd4;
+}
+#compatibility .compatibility-topic.is-locked .compatibility-topic-title{color:#62576a}
+#compatibility .compatibility-topic.is-locked:active{border-color:#c89caf}
