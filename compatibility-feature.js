@@ -47,7 +47,7 @@ const showOffer = () => {
   });
 };
 pdfButtons.forEach(button => {
-  button.textContent = "🔒 Скачать PDF · после покупки";
+  button.textContent = "Открыть полностью и скачать в PDF";
   button.addEventListener("click", showOffer);
 });
 
