@@ -182,7 +182,6 @@ const telegramSectionCards = Object.freeze({
   redflag: '[data-open-redflag]',
   compatibility: '[data-open-compatibility]',
   full: 'a.product-card.calculation',
-  woman: '#woman-section',
   wealth: '[data-open-destiny-code]',
   children: '#children-section',
   horary: '#horary-section',
