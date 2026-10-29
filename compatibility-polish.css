@@ -50,17 +50,6 @@
   #compatibility .compatibility-submit{min-height:48px}
 }
 
-/* Центрируем приветственный блок по высоте, пока результат не рассчитан. */
-@media(max-width:600px){
-  #compatibility:has(#compatibility-result[hidden]) .compatibility-paper{
-    min-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-    display:flex;
-    flex-direction:column;
-  }
-  #compatibility:has(#compatibility-result[hidden]) .compatibility-intro{margin-top:auto}
-  #compatibility:has(#compatibility-result[hidden]) .compatibility-form{margin-bottom:auto}
-}
-
 /* Две одинаковые точки сохранения PDF: до и после всех 13 вопросов. */
 .compatibility-pdf-controls{display:grid;justify-items:center;text-align:center;gap:8px;margin:14px 0 24px}
 .compatibility-pdf-controls--top{margin-top:0;margin-bottom:22px}
@@ -71,3 +60,107 @@
 .compatibility-pdf-button:focus-visible{outline:3px solid #c49aaa;outline-offset:3px}
 .compatibility-pdf-button:disabled{opacity:.72;cursor:wait}
 @media(max-width:375px){.compatibility-pdf-button{min-height:48px}}
+
+/* Версия 2: лёгкое премиальное оформление, только статические CSS-градиенты.
+   Никаких картинок, веб-шрифтов, анимации фона и дополнительных загрузок. */
+#compatibility{
+  --cp-ink:#3b3044;--cp-muted:#6d6675;--cp-accent:#935f77;
+  --cp-outline:#e8d0d8;
+  background:
+    radial-gradient(ellipse at 10% 9%,rgba(237,201,209,.27),transparent 36%),
+    radial-gradient(ellipse at 97% 42%,rgba(237,210,219,.22),transparent 32%),
+    linear-gradient(165deg,#fcfaf6,#fdf6f5 60%,#faf7f2);
+}
+#compatibility .compatibility-paper{width:100%;max-width:700px;padding:12px clamp(11px,3.5vw,25px) 36px}
+#compatibility .compatibility-topbar{padding:3px 0 12px}
+#compatibility .compatibility-topbar p{font-size:clamp(10px,2.6vw,12px);letter-spacing:.17em;color:#91697c}
+#compatibility .compatibility-close{width:43px;height:43px;background:#fffdfa;border-color:#e5ccd6;box-shadow:0 4px 12px #73516b0d}
+#compatibility .compatibility-intro{padding:12px 3px 9px}
+#compatibility .compatibility-ornament{font-size:16px;margin-bottom:10px;color:#b58b9d}
+#compatibility .compatibility-intro h1{margin:0;font:400 clamp(35px,9.5vw,56px)/1.02 Georgia,"Times New Roman",serif;letter-spacing:-.044em;color:#3d3448}
+#compatibility .compatibility-intro h1::after,
+#compatibility .compatibility-result-heading h2::after{
+  content:"";display:block;width:91px;height:1px;margin:15px auto 0;
+  background:linear-gradient(90deg,transparent,#bf9a79,transparent);
+}
+#compatibility .compatibility-intro p{max-width:43ch;margin:13px auto 0;font-size:clamp(13px,3.5vw,15px);line-height:1.55;color:#716c7c}
+#compatibility .compatibility-form{
+  gap:13px;margin:17px 0 0;padding:clamp(17px,4.1vw,25px);border-radius:25px;
+  background:radial-gradient(ellipse at 100% 0%,rgba(241,211,219,.38),transparent 58%),linear-gradient(145deg,#fffefa,#fff9f8);
+  border-color:#e5cbd5;box-shadow:0 10px 27px #65425812;
+}
+#compatibility .compatibility-form label{font-size:clamp(13px,3.6vw,15px);color:#50485b;gap:7px}
+#compatibility .compatibility-form input{min-height:50px;border-radius:15px;border-color:#e2d6dc;background:rgba(255,255,255,.96);color:#373347}
+#compatibility .compatibility-form input:focus{border-color:#b98599}
+#compatibility .compatibility-submit{
+  min-height:53px;border-radius:16px;
+  background:linear-gradient(115deg,#835c72,#b17f94);
+  box-shadow:0 6px 16px #74506322;
+}
+#compatibility .compatibility-result{scroll-margin-top:12px;padding-top:8px}
+#compatibility .compatibility-result-heading{padding:8px 4px 16px}
+#compatibility .compatibility-result-heading h2{font:400 clamp(34px,8.8vw,49px)/1.07 Georgia,"Times New Roman",serif;letter-spacing:-.044em;color:#3d3448;margin:0}
+#compatibility .compatibility-result-heading p{max-width:44ch;margin:13px auto 0;font-size:clamp(13px,3.55vw,15px);line-height:1.5}
+#compatibility .compatibility-topics{gap:11px}
+#compatibility .compatibility-topic{
+  border-radius:22px;border-color:#e9d1da;
+  background:radial-gradient(ellipse at 97% 7%,rgba(238,205,216,.3),transparent 55%),linear-gradient(137deg,#fffdfb,#fcf7f5);
+  box-shadow:0 5px 17px #563d4b0e;
+}
+#compatibility .compatibility-topic.is-open{border-color:#c89eaf;box-shadow:0 8px 21px #754a5b18}
+#compatibility .compatibility-topic-toggle{
+  grid-template-columns:44px minmax(0,1fr) 38px;gap:12px;min-height:87px;
+  padding:15px clamp(12px,3.4vw,22px);
+  color:#40384b;
+}
+#compatibility .compatibility-topic-index{
+  display:grid;place-items:center;width:44px;height:44px;
+  border:1px solid #d9b594;border-radius:50%;background:#fffaf6df;
+  font:400 19px/1 Georgia,"Times New Roman",serif;
+  color:#a56d83;font-variant-numeric:tabular-nums;
+}
+#compatibility .compatibility-topic-title{
+  min-width:0;font:600 clamp(17px,4.5vw,21px)/1.25 Georgia,"Times New Roman",serif;
+  letter-spacing:-.015em;color:#403648;
+}
+#compatibility .compatibility-topic-icon{
+  display:grid;place-items:center;width:38px;height:38px;
+  border:1px solid #d9b39f;border-radius:50%;background:#fffdf8d9;
+  font-size:27px;color:#a36c82;
+}
+#compatibility .compatibility-topic-body{font-size:clamp(15px,4vw,17px);line-height:1.72;color:#555062}
+#compatibility .compatibility-topic-body .compatibility-topic-lead{
+  color:#81596f;font:600 clamp(18px,4.7vw,21px)/1.45 Georgia,"Times New Roman",serif;
+  border-color:#eadade;
+}
+#compatibility .compatibility-pdf-controls{gap:9px}
+#compatibility .compatibility-pdf-controls--bottom{border-top-color:#ead6dc}
+#compatibility .compatibility-pdf-controls--bottom p{
+  max-width:32ch;font:400 clamp(18px,4.7vw,22px)/1.38 Georgia,"Times New Roman",serif;
+  color:#6f556b;
+}
+#compatibility .compatibility-pdf-button{
+  max-width:440px;min-height:54px;border-radius:999px;
+  border-color:#c49f9e;background:linear-gradient(112deg,#80596f,#b68599);
+  box-shadow:0 7px 19px #72455b29;
+}
+#compatibility .compatibility-footer{max-width:47ch;margin:27px auto 0;font-size:13px;line-height:1.6;color:#79707d}
+@media(max-width:600px){
+  #compatibility .compatibility-paper{padding-top:4px}
+  #compatibility .compatibility-intro{margin-top:0}
+  #compatibility .compatibility-form{margin-bottom:0}
+}
+@media(max-width:375px){
+  #compatibility .compatibility-topic-toggle{grid-template-columns:39px minmax(0,1fr) 34px;gap:9px;padding:13px 10px;min-height:79px}
+  #compatibility .compatibility-topic-index{width:39px;height:39px;font-size:17px}
+  #compatibility .compatibility-topic-icon{width:34px;height:34px}
+  #compatibility .compatibility-topic-title{font-size:16px}
+}
+@media(max-height:680px){
+  #compatibility .compatibility-intro{padding-top:3px;padding-bottom:6px}
+  #compatibility .compatibility-intro h1{font-size:clamp(32px,9vw,44px)}
+  #compatibility .compatibility-intro p{font-size:13px;line-height:1.4;margin-top:8px}
+  #compatibility .compatibility-form{margin-top:9px;gap:9px;padding:14px}
+  #compatibility .compatibility-form input{min-height:45px}
+  #compatibility .compatibility-submit{min-height:48px}
+}
