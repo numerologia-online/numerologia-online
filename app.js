@@ -89,14 +89,14 @@ const openPersonalDayFeature = async () => {
 window.setTimeout(() => getPersonalDayFeature().catch(() => {}), 900);
 
 const getDestinyCodeFeature = () => {
-  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=26");
+  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=27");
   return destinyCodeFeatureLoading;
 };
 
 const openDestinyCodeFeature = async () => {
   const [feature] = await Promise.all([
     getDestinyCodeFeature(),
-    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=5")
+    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=6")
   ]);
   feature.openDestinyCode();
 };
@@ -104,7 +104,7 @@ const openDestinyCodeFeature = async () => {
 const openMoneyCodeClientLink = async () => {
   const [feature] = await Promise.all([
     getDestinyCodeFeature(),
-    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=5")
+    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=6")
   ]);
   feature.openDestinyCode({ clientOnly: true });
   const backButton = document.querySelector("#back-destiny-code-home");
