@@ -793,6 +793,54 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   .pro-paywall-plan-kicker span{padding:5px 7px}
   .pro-paywall-matrix-table tbody th,.pro-paywall-matrix-table tbody td{padding-top:7px;padding-bottom:7px}
 }
+
+/* Club checkout: make the price advantage readable before the first-month total. */
+.pro-paywall-billing-summary{
+  margin:10px 0 0;padding:10px 13px;border:1px solid #ebdfc9;
+  border-radius:13px;background:#f9f4ea;color:#604e37;
+  font-size:12px;line-height:1.4
+}
+.pro-paywall-billing-summary strong{color:#12614b;font-weight:900}
+@media(max-width:510px){
+  /* Compact modal on iPhone: two balanced offer cards, then the benefits table. */
+  .pro-paywall-dialog{width:calc(100vw - 10px);max-height:calc(100dvh - 10px);border-radius:17px}
+  .pro-paywall-dialog-header{padding:6px 11px 0}
+  .pro-paywall-dialog-kicker{font-size:9px!important;letter-spacing:.16em}
+  .pro-paywall-dialog-close{width:29px;height:29px;min-height:29px;font-size:23px}
+  .pro-paywall-dialog-body{padding:2px 10px 10px}
+  .pro-paywall-dialog h2{font-size:clamp(21px,5.6vw,25px);line-height:1.04;margin-bottom:8px}
+  .pro-paywall-compare{gap:7px}
+  .pro-paywall-plan{min-height:165px;padding:9px 9px 8px;border-radius:14px}
+  .pro-paywall-plan-kicker{font-size:9px;margin-bottom:6px;line-height:1.12}
+  .pro-paywall-plan-kicker span,.pro-paywall-plan-kicker-club{padding:4px 8px}
+  .pro-paywall-plan h3{font-size:clamp(17px,4.5vw,19px);line-height:1.1;margin-bottom:5px}
+  .pro-paywall-plan-price{font-size:clamp(29px,7.8vw,35px)}
+  .pro-paywall-plan-detail{font-size:10px;line-height:1.25;margin:6px 0 8px;max-width:100%}
+  .pro-paywall-plan-detail-club{padding:0;border:0;border-radius:0;background:transparent;color:#466455}
+  .pro-paywall-book-art{display:none}
+  .pro-paywall-plan-action{min-height:32px;padding:6px 5px;font-size:10.5px;border-radius:9px}
+  .pro-paywall-billing-summary{margin-top:7px;padding:7px 9px;font-size:10.5px;line-height:1.3;border-radius:10px}
+  .pro-paywall-matrix{margin-top:9px}
+  .pro-paywall-matrix>h3{font-size:19px;line-height:1.12;margin-bottom:6px}
+  .pro-paywall-matrix-name{width:46%}
+  .pro-paywall-matrix-standard{width:24%}
+  .pro-paywall-matrix-member{width:30%}
+  .pro-paywall-matrix-table{border-radius:11px}
+  .pro-paywall-matrix-table thead th{padding:5px 3px;font-size:9px;line-height:1.12}
+  .pro-paywall-matrix-table tbody th{padding:5px 4px;font-size:10px;line-height:1.16}
+  .pro-paywall-matrix-table tbody th>.pro-paywall-row-icon{width:17px;height:19px;margin-right:2px;font-size:15px}
+  .pro-paywall-matrix-table tbody th>span:last-child{max-width:calc(100% - 23px)}
+  .pro-paywall-matrix-table tbody th small{margin-top:2px;font-size:9px;line-height:1.13}
+  .pro-paywall-matrix-table tbody td{padding:5px 2px;font-size:9.5px;line-height:1.15}
+  .pro-paywall-matrix-table tbody td strong{font-size:11px;line-height:1.1}
+  .pro-paywall-matrix-table tbody td small{margin-top:2px;font-size:9px;line-height:1.15}
+  .pro-paywall-matrix-table tbody td.pro-paywall-matrix-in strong{font-size:clamp(10.5px,2.9vw,12px)}
+  .pro-paywall-matrix-table tbody td del{font-size:12px}
+  .pro-paywall-muted-lock{font-size:13px}
+  .pro-paywall-renewal{margin:8px 2px 0;font-size:9.5px;line-height:1.28}
+  .pro-paywall-dialog-disclaimer{margin:4px 2px 0;font-size:9px;line-height:1.2}
+}
+
 @media(max-width:480px){.pro-paywall-banner{padding:13px 12px}.pro-paywall-banner button{width:100%}.pro-paid-lock{padding:10px}.pro-paid-lock-button{flex:1 1 100%;max-width:none}}
 
 /* Free introductory adult chapter: the first question is unmistakably open. */
