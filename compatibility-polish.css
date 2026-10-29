@@ -179,3 +179,19 @@
 }
 #compatibility .compatibility-topic.is-locked .compatibility-topic-title{color:#62576a}
 #compatibility .compatibility-topic.is-locked:active{border-color:#c89caf}
+
+/* Compact compatibility list: smaller question cards without changing interactions. */
+#compatibility .compatibility-topics{gap:7px}
+#compatibility .compatibility-topic{border-radius:17px;box-shadow:0 3px 10px rgba(86,61,75,.045)}
+#compatibility .compatibility-topic-toggle{grid-template-columns:35px minmax(0,1fr) 32px;gap:9px;min-height:66px;padding:9px 12px}
+#compatibility .compatibility-topic-index{width:35px;height:35px;font-size:16px}
+#compatibility .compatibility-topic-title{font-size:clamp(15px,4vw,18px);line-height:1.17}
+#compatibility .compatibility-topic-icon{width:32px;height:32px;font-size:23px}
+#compatibility .compatibility-topic.is-locked .compatibility-topic-icon{font-size:15px}
+#compatibility .compatibility-topic.is-free .compatibility-topic-title::after{margin:3px 0 0 5px;padding:2px 6px;font-size:8px}
+@media(max-width:375px){
+ #compatibility .compatibility-topic-toggle{grid-template-columns:32px minmax(0,1fr) 30px;gap:7px;min-height:62px;padding:8px 10px}
+ #compatibility .compatibility-topic-index{width:32px;height:32px;font-size:15px}
+ #compatibility .compatibility-topic-icon{width:30px;height:30px}
+ #compatibility .compatibility-topic-title{font-size:15px}
+}
