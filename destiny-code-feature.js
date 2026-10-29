@@ -72,7 +72,7 @@ const createMoneyDisclosure = ({ label, lead, text, advice = "", ritual = "", ri
   const paragraphs = Array.isArray(text) ? text : [text];
   const copy = paragraphs.filter(Boolean).map((paragraph) => `<p>${paragraph}</p>`).join("");
   const ritualParagraphs = ritual ? ritual.split("\n\n").map((paragraph) => `<p>${paragraph}</p>`).join("") : "";
-  const ctaMarkup = cta ? `<a class="destiny-code-telegram-link" href="${cta.href}" target="_blank" rel="noopener noreferrer">${cta.label}</a>` : "";
+  const ctaMarkup = cta ? `<a class="destiny-code-full-report-link" href="${cta.href}">${cta.label}</a>` : "";
   details.innerHTML = `<summary><span><p>${label}</p><h3>${lead}</h3></span><b aria-hidden="true">+</b></summary><div class="destiny-code-disclosure-body">${copy ? `<div class="destiny-code-copy">${copy}</div>` : ""}${ritual ? `<div class="destiny-code-ritual"><strong>${ritualTitle}</strong>${ritualParagraphs}</div>` : ""}${advice ? `<p class="destiny-code-advice"><strong>Ориентир:</strong> ${advice}</p>` : ""}${ctaMarkup}</div>`;
   return details;
 };
@@ -108,26 +108,19 @@ const moneyCard = async ({ key, label, fallback }, energy) => {
   };
 };
 
-const telegramOrderText = encodeURIComponent(`Татьяна, добрый день!
-
-Хочу заказать у вас полный личный разбор судьбы и своей жизни.
-
-Скажите, пожалуйста, это правда, что сейчас при заказе полного разбора вы дарите
-
-🎁 БЕСПЛАТНО — разборы 2026 и 2027 годов
-👑 Денежные ритуалы доступны только по клубной подписке за 490 рублей в месяц?
-
-Подскажите, пожалуйста, как можно записаться, что нужно от меня и какая стоимость на данный момент? Буду ждать вашего ответа.`);
-
-const createMoneyPathOffer = ({ title, text }) => createMoneyDisclosure({
-  label: "Полный личный разбор",
-  lead: title,
-  text,
-  cta: {
-    label: "Написать Татьяне →",
-    href: `https://t.me/Kod_9966?text=${telegramOrderText}`
-  }
-});
+const createMoneyPathOffer = ({ title, text }) => {
+  const details = createMoneyDisclosure({
+    label: "В полном разборе матрицы судьбы",
+    lead: title,
+    text,
+    cta: {
+      label: "Перейти к полному разбору →",
+      href: "./pro/"
+    }
+  });
+  details.classList.add("destiny-code-disclosure--full-report");
+  return details;
+};
 
 const createActivationContent = (code) => ({
   label: `Ваш код денег ${code}`,
@@ -139,18 +132,12 @@ const createActivationContent = (code) => ({
 });
 
 const createActivationDisclosure = (code) => {
+  // Free activation of the personal code, distinct from 10 paid club rituals.
   const details = createMoneyDisclosure({
-    label: "Только по подписке",
-    lead: "Активация денежного талисмана",
-    text: "Ритуал с вашим кодом " + code + " доступен участницам клуба за 490 ₽ в месяц. Каждый месяц добавляем новый авторский ритуал.",
-    accent: true
+    ...createActivationContent(code),
+    label: "Бесплатно"
   });
-  details.classList.add("destiny-code-disclosure--club-locked");
-  details.querySelector("summary").querySelector("b").textContent = "🔒";
-  details.querySelector("summary").addEventListener("click", (event) => {
-    event.preventDefault();
-    openMoneyRituals(code);
-  });
+  details.classList.add("destiny-code-disclosure--free");
   return details;
 };
 
@@ -313,6 +300,7 @@ form.addEventListener("submit", async (event) => {
         code: code.financialCode,
         sections: [
           code.cards[0],
+          createActivationContent(code.financialCode),
            ...code.cards.slice(1)
         ]
       })
