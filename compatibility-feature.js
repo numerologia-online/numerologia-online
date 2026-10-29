@@ -36,8 +36,8 @@ const getBank = (energy) => {
 const offer = Object.freeze({
   product: "полную совместимость",
   title: "Откройте все 13 ответов",
-  oncePrice: 999,
-  memberPrice: 499,
+  oncePrice: 990,
+  memberPrice: 490,
   clubMonthly: 490
 });
 const showOffer = () => {
