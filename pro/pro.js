@@ -126,7 +126,11 @@ function showPaymentInfo() {
     note.textContent = "";
     note.hidden = true;
   }
-  if (paywallDialog.showModal && !paywallDialog.open) paywallDialog.showModal();
+  if (paywallDialog.showModal && !paywallDialog.open) {
+    paywallDialog.showModal();
+    // A reopened scrollable dialog must begin with the title, not a clipped mid-scroll view.
+    paywallDialog.scrollTop = 0;
+  }
 }
 function previewCheckout(choice) {
   const note = paywallDialog?.querySelector("#pro-paywall-checkout-note");
