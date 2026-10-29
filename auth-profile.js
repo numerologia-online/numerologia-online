@@ -8,8 +8,8 @@
   const CHECK_URL = "https://numerologia-online-auth-server.vercel.app/api/miniapp";
   const PROFILE_URL = "https://xn--c1adkkdfjbp1a4l.online/api/profile.php";
   // Opens the Main Mini App directly when it is enabled in BotFather.
-  const MAIN_APP_URL = "https://t.me/Numerologiaonline_bot?startapp";
   const BIRTH_PREFIX = "num-online-birth-v1:";
+  const BROWSER_BIRTH_KEY = BIRTH_PREFIX + "browser";
   const dialog = document.querySelector("#account-dialog");
   const accountButton = document.querySelector("[data-account-open='profile']");
   const loginView = document.querySelector("#account-login");
@@ -23,6 +23,9 @@
   const birthInput = document.querySelector("#account-birth");
   const birthNote = document.querySelector("#account-birth-note");
   const warning = document.querySelector("#account-preview-warning");
+  const browserNote = document.querySelector("#account-browser-note");
+  const verifiedIcon = document.querySelector("#account-verified");
+  const identityLabel = document.querySelector("#account-identity-label");
   const app = window.Telegram && window.Telegram.WebApp;
   if (!dialog || !accountButton || !loginView || !profileView || !status) return;
 
@@ -100,7 +103,7 @@
     status.textContent = message;
     status.hidden = false;
     retry.hidden = !canRetry;
-    setAccountButton(mini ? "Личный кабинет" : "Войти через Telegram");
+    setAccountButton("Личный кабинет");
     accountButton.disabled = false;
   }
 
@@ -151,6 +154,10 @@
     if (avatarLetter) avatarLetter.textContent = String(user.name || "П").trim().charAt(0).toUpperCase();
     warning.textContent = "Вход подтверждён через Telegram.";
     warning.hidden = false;
+    if (verifiedIcon) verifiedIcon.hidden = false;
+    if (browserNote) browserNote.hidden = true;
+    if (identityLabel) identityLabel.textContent = "Вы вошли как";
+    showAccountPanel(null);
     birthInput.value = birthForDisplay(localStorage.getItem(BIRTH_PREFIX + user.id));
     birthInput.removeAttribute("aria-invalid");
     birthNote.textContent = birthNoteText;
@@ -158,6 +165,54 @@
     accountButton.disabled = false;
   }
 
+
+  // Website cabinet without Telegram: personal date stays only in this browser.
+  // No guest access to paid files or simulated server identity.
+  const accountOverview = document.querySelector("#account-overview");
+  const accountPanels = [...dialog.querySelectorAll("[data-account-content]")];
+  function showAccountPanel(key) {
+    if (accountOverview) accountOverview.hidden = Boolean(key);
+    for (const panel of accountPanels) panel.hidden = panel.dataset.accountContent !== key;
+    dialog.scrollTop = 0;
+  }
+  dialog.querySelectorAll("[data-account-panel]").forEach(button => {
+    button.addEventListener("click", () => showAccountPanel(button.dataset.accountPanel));
+  });
+  dialog.querySelectorAll("[data-account-back]").forEach(button => {
+    button.addEventListener("click", () => showAccountPanel(null));
+  });
+
+  function showBrowserCabinet() {
+    user = null;
+    loginView.hidden = true;
+    profileView.hidden = false;
+    if (identityLabel) identityLabel.textContent = "Ваш кабинет";
+    title.textContent = "На этом устройстве";
+    if (avatarLetter) avatarLetter.textContent = "♡";
+    if (verifiedIcon) verifiedIcon.hidden = true;
+    if (warning) warning.hidden = true;
+    if (browserNote) browserNote.hidden = false;
+    try { birthInput.value = birthForDisplay(localStorage.getItem(BROWSER_BIRTH_KEY)); }
+    catch (_) { birthInput.value = ""; }
+    birthNoteText = "Дату можно сохранить в этом браузере. На других устройствах она пока не появится.";
+    birthNote.textContent = birthNoteText;
+    birthInput.removeAttribute("aria-invalid");
+    showAccountPanel(null);
+    setAccountButton("Личный кабинет");
+  }
+
+  document.querySelector("#account-show-offer")?.addEventListener("click", async () => {
+    try {
+      const { openSharedOffer } = await import("./shared-offer.js?v=1");
+      await openSharedOffer({
+        product: "полный разбор", title: "Откройте полный разбор",
+        oncePrice: 990, memberPrice: 490, clubMonthly: 490
+      });
+    } catch (error) {
+      console.error("Окно с тарифами", error);
+      alert("Не удалось открыть варианты доступа. Попробуйте ещё раз.");
+    }
+  });
 
   // The existing Vercel sign-in remains unchanged. Profile actions are
   // independently authorized using Telegram's signed Mini App initData.
@@ -254,10 +309,10 @@
   }
 
   accountButton.addEventListener("click", () => {
-    // Outside Telegram: go straight to the Main Mini App deep link in one tap.
-    // No intermediate dialog, OAuth popup or extra confirmation on our side.
+    // The ordinary website opens its cabinet without Telegram redirect.
     if (!mini) {
-      window.location.assign(MAIN_APP_URL);
+      showBrowserCabinet();
+      if (!dialog.open) dialog.showModal();
       return;
     }
     if (user) showProfile();
@@ -268,6 +323,7 @@
     if (!dialog.open) dialog.showModal();
   });
   document.querySelector("#account-close").addEventListener("click", () => dialog.close());
+  dialog.addEventListener("close", () => showAccountPanel(null));
   dialog.addEventListener("click", event => {
     if (event.target === dialog) dialog.close();
   });
@@ -275,12 +331,22 @@
     if (mini) identify();
   });
   document.querySelector("#account-birth-save").addEventListener("click", async () => {
-    if (!user || profileBusy) return;
+    if ((!user && mini) || profileBusy) return;
     const iso = birthToISO(birthInput.value);
     if (!iso) {
       birthInput.setAttribute("aria-invalid", "true");
       birthNote.textContent = "Проверьте дату. Нужен формат ДД.ММ.ГГГГ, например 09.09.1986.";
       birthInput.focus();
+      return;
+    }
+    if (!mini) {
+      try {
+        localStorage.setItem(BROWSER_BIRTH_KEY, iso);
+        birthNote.textContent = "✓ Дата сохранена на этом устройстве. Для переноса на другой телефон потребуется вход в аккаунт.";
+        birthInput.blur();
+      } catch (_) {
+        birthNote.textContent = "Не удалось сохранить дату в этом браузере.";
+      }
       return;
     }
     profileBusy = true;
@@ -304,7 +370,17 @@
     }
   });
   document.querySelector("#account-birth-delete").addEventListener("click", async () => {
-    if (!user || profileBusy) return;
+    if ((!user && mini) || profileBusy) return;
+    if (!mini) {
+      try {
+        localStorage.removeItem(BROWSER_BIRTH_KEY);
+        birthInput.value = "";
+        birthNote.textContent = "Дата удалена с этого устройства.";
+      } catch (_) {
+        birthNote.textContent = "Не удалось удалить дату из браузера.";
+      }
+      return;
+    }
     profileBusy = true;
     birthRevision += 1;
     const verifiedId = user.id;
@@ -331,6 +407,6 @@
     try { app?.ready(); app?.expand(); } catch (_) {}
     identify();
   } else {
-    setAccountButton("Войти через Telegram");
+    setAccountButton("Личный кабинет");
   }
 })();
