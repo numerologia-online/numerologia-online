@@ -3,10 +3,9 @@
  * No registration, database writes, birth-date changes or opt-in side effects.
  * Called only on an explicit "Сохранить в Telegram" button click.
  */
-const WEBSITE_ORIGIN = 'https://numerologia-online.github.io';
+const WEBSITE_ORIGINS = new Set(['https://numerologia-online.github.io', 'https://xn--c1adkkdfjbp1a4l.online']);
 const encoder = new TextEncoder();
 const SAME_ORIGIN_HEADERS = {
-  'Access-Control-Allow-Origin': WEBSITE_ORIGIN,
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
   'Cache-Control': 'no-store',
@@ -14,10 +13,14 @@ const SAME_ORIGIN_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
 };
 
-function reply(body, status = 200, cors = false) {
+function corsHeaders(origin) {
+  return { ...SAME_ORIGIN_HEADERS, 'Access-Control-Allow-Origin': origin };
+}
+
+function reply(body, status = 200, cors = false, origin = '') {
   return new Response(JSON.stringify(body), {
     status,
-    headers: cors ? SAME_ORIGIN_HEADERS : { 'Cache-Control': 'no-store', 'Content-Type': 'application/json' },
+    headers: cors ? corsHeaders(origin) : { 'Cache-Control': 'no-store', 'Content-Type': 'application/json' },
   });
 }
 
@@ -107,23 +110,24 @@ async function restoreMissingInboundWebhook(botToken) {
 
 export async function handleDaySave(request, env, ctx) {
   const origin = request.headers.get('Origin');
-  if (origin !== WEBSITE_ORIGIN) return reply({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403);
-  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: SAME_ORIGIN_HEADERS });
-  if (request.method !== 'POST') return reply({ ok: false, error: 'METHOD_NOT_ALLOWED' }, 405, true);
+  if (!WEBSITE_ORIGINS.has(origin)) return reply({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403);
+  const respond = (body, status = 200, cors = false) => reply(body, status, cors, origin);
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(origin) });
+  if (request.method !== 'POST') return respond({ ok: false, error: 'METHOD_NOT_ALLOWED' }, 405, true);
   // Telegram bot tokens never contain whitespace. iOS paste may add hidden
   // whitespace characters; normalize only for this independent save endpoint.
   const botToken = typeof env?.BOT_TOKEN === 'string'
     ? env.BOT_TOKEN.replace(/[\s\u200B-\u200D\uFEFF]/g, '') : '';
   if (!/^[0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/.test(botToken))
-    return reply({ ok: false, error: 'BOT_NOT_CONFIGURED' }, 503, true);
+    return respond({ ok: false, error: 'BOT_NOT_CONFIGURED' }, 503, true);
 
   let body;
   try {
     const raw = await request.text();
-    if (raw.length > 8500) return reply({ ok: false, error: 'BODY_TOO_LARGE' }, 413, true);
+    if (raw.length > 8500) return respond({ ok: false, error: 'BODY_TOO_LARGE' }, 413, true);
     body = JSON.parse(raw);
   } catch {
-    return reply({ ok: false, error: 'INVALID_REQUEST' }, 400, true);
+    return respond({ ok: false, error: 'INVALID_REQUEST' }, 400, true);
   }
   if (!body || typeof body !== 'object' || Array.isArray(body)
       || typeof body.text !== 'string'
@@ -132,16 +136,17 @@ export async function handleDaySave(request, env, ctx) {
         || (body.text.startsWith('🚩 Мужчина или Red Flag\n')
           && body.text.includes('\nВопрос: ')
           && body.text.includes('\nДата рождения мужчины: ')))
-      || !body.text.includes('https://numerologia-online.github.io/numerologia-online/')
+      || !(body.text.includes('https://numerologia-online.github.io/numerologia-online/')
+        || body.text.includes('https://xn--c1adkkdfjbp1a4l.online/'))
       || !body.text.includes('https://t.me/Numerologiaonline_bot')
       || /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(body.text)) {
-    return reply({ ok: false, error: 'INVALID_FORECAST' }, 400, true);
+    return respond({ ok: false, error: 'INVALID_FORECAST' }, 400, true);
   }
 
   let verified;
   try { verified = await verifiedTelegramUser(body.init_data, botToken); }
   catch { verified = { error: 'AUTH_CHECK_UNAVAILABLE' }; }
-  if (!verified?.id) return reply({ ok: false, error: verified?.error || 'AUTH_CHECK_UNAVAILABLE' }, 401, true);
+  if (!verified?.id) return respond({ ok: false, error: verified?.error || 'AUTH_CHECK_UNAVAILABLE' }, 401, true);
   const chatId = verified.id;
 
   try {
@@ -161,17 +166,17 @@ export async function handleDaySave(request, env, ctx) {
       // A legitimate signed bot interaction can self-heal an unregistered
       // incoming webhook without changing registration, subscriptions or chats.
       if (ctx?.waitUntil) ctx.waitUntil(restoreMissingInboundWebhook(botToken));
-      return reply({ ok: true }, 200, true);
+      return respond({ ok: true }, 200, true);
     }
     // Only categorical delivery diagnostics; never echo Telegram responses,
     // secrets or private chat/user details to the Mini App.
-    if (res.status === 401) return reply({ ok: false, error: 'BOT_API_AUTH_FAILED' }, 502, true);
-    if (res.status === 403) return reply({ ok: false, error: 'BOT_CHAT_UNAVAILABLE' }, 502, true);
-    if (res.status === 429) return reply({ ok: false, error: 'BOT_RATE_LIMIT' }, 503, true);
+    if (res.status === 401) return respond({ ok: false, error: 'BOT_API_AUTH_FAILED' }, 502, true);
+    if (res.status === 403) return respond({ ok: false, error: 'BOT_CHAT_UNAVAILABLE' }, 502, true);
+    if (res.status === 429) return respond({ ok: false, error: 'BOT_RATE_LIMIT' }, 503, true);
     if (res.status === 400 && /chat not found/i.test(String(api?.description || '')))
-      return reply({ ok: false, error: 'BOT_CHAT_UNAVAILABLE' }, 502, true);
-    return reply({ ok: false, error: 'DELIVERY_FAILED' }, 502, true);
+      return respond({ ok: false, error: 'BOT_CHAT_UNAVAILABLE' }, 502, true);
+    return respond({ ok: false, error: 'DELIVERY_FAILED' }, 502, true);
   } catch {
-    return reply({ ok: false, error: 'DELIVERY_FAILED' }, 502, true);
+    return respond({ ok: false, error: 'DELIVERY_FAILED' }, 502, true);
   }
 }
