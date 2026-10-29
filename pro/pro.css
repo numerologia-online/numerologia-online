@@ -927,7 +927,7 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   color:#9d845d;font-weight:850
 }
 .pro-zone-picker .pro-compact-questions .pro-question-free > button{
-  min-height:60px;padding-left:14px;font-size:14px;color:#245b48
+  min-height:60px;padding-left:14px;padding-right:100px;font-size:14px;color:#245b48
 }
 .pro-zone-picker .pro-compact-questions .pro-question-free > button small{color:#167049}
 .pro-zone-picker .pro-compact-questions .pro-question-item > button::after{
@@ -937,7 +937,11 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   content:"🔒";font-size:13px;opacity:.7
 }
 .pro-paywall-locked .pro-zone-picker .pro-compact-questions .pro-question-free > button::after{
-  content:"🔓";font-size:16px;opacity:1
+  content:"ОТКРЫТО";right:10px;transform:translateY(-50%);
+  padding:7px 9px;border:1px solid #abd9b9;border-radius:999px;
+  background:#dff3e6;color:#176645;letter-spacing:.045em;
+  font-size:10px;font-weight:900;line-height:1;white-space:nowrap;
+  opacity:1;filter:none
 }
 .pro-zone-picker .pro-compact-questions .pro-question-item.expanded{
   border-left:0;background:#f3f8f6
