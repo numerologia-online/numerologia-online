@@ -63,14 +63,14 @@ const openRedFlagFeature = async () => {
 };
 
 const getCompatibilityFeature = () => {
-  if (!compatibilityFeatureLoading) compatibilityFeatureLoading = import("./compatibility-feature.js?v=3");
+  if (!compatibilityFeatureLoading) compatibilityFeatureLoading = import("./compatibility-feature.js?v=4");
   return compatibilityFeatureLoading;
 };
 
 const openCompatibilityFeature = async () => {
   const [feature] = await Promise.all([
     getCompatibilityFeature(),
-    compatibilityStylesLoading ??= loadStylesheet("compatibility-polish.css?v=5")
+    compatibilityStylesLoading ??= loadStylesheet("compatibility-polish.css?v=6")
   ]);
   feature.openCompatibility();
 };
