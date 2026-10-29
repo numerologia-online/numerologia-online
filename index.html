@@ -345,6 +345,15 @@
             <h1 id="money-rituals-title">Денежные<br />ритуалы</h1>
             <p id="money-rituals-code"></p>
           </div>
+          <div class="money-club-paywall">
+            <p class="money-club-kicker">Только по подписке</p>
+            <h2>Денежная библиотека клуба</h2>
+            <p>Все денежные ритуалы доступны только участницам клуба. Каждый месяц добавляется новый авторский ритуал.</p>
+            <div class="money-club-price"><strong>490 ₽</strong><span>в месяц</span></div>
+            <button id="money-club-join" class="money-club-join" type="button">Вступить в клуб <span aria-hidden="true">→</span></button>
+            <small>Без действующей подписки тексты и инструкции не открываются.</small>
+          </div>
+          <div class="money-rituals-heading"><h2>Ритуалы библиотеки</h2><span>10 ритуалов · 🔒</span></div>
           <div id="money-rituals-list" class="money-rituals-list" aria-live="polite"></div>
         </div>
       </section>
@@ -382,6 +391,15 @@
         <button class="install-later" id="install-later" type="button">Не сейчас</button>
       </section>
     </div>
+    <dialog id="money-club-dialog" class="money-club-dialog" aria-labelledby="money-club-title">
+      <header class="money-club-dialog-header"><p>НУМЕРОЛОГИЯ ONLINE</p><button type="button" id="money-club-dialog-close" aria-label="Закрыть окно">×</button></header>
+      <p class="money-club-dialog-kicker">Эксклюзивно для участниц клуба</p>
+      <h2 id="money-club-title">Денежные ритуалы</h2>
+      <div class="money-club-dialog-price"><strong>490 ₽</strong><span>в месяц</span></div>
+      <p>В клубе откроются все денежные ритуалы с вашим личным кодом. Каждый месяц в библиотеке появляется новый авторский ритуал.</p>
+      <p class="money-club-dialog-warning">Подписка и оплата пока не подключены. До запуска клуба ритуалы остаются закрытыми.</p>
+      <form method="dialog"><button class="money-club-dialog-dismiss" type="submit">Вернуться к ритуалам</button></form>
+    </dialog>
     <dialog id="coming-soon"><button class="dialog-close" type="button" aria-label="Закрыть">×</button><p class="eyebrow">Скоро</p><h2>Это направление уже есть в плане сайта.</h2><p>Сейчас мы сначала доводим до красоты и точности «Разбор года».</p></dialog>
     <dialog id="account-dialog" class="account-dialog" aria-labelledby="account-title">
       <div class="account-header">
