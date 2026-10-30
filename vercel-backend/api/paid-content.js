@@ -5,7 +5,7 @@ import crypto from "node:crypto";
 
 const ALLOWED_ORIGINS = new Set(["https://numerologia-online.github.io", "https://нумерология.online", "https://xn--c1adkkdfjbp1a4l.online"]);
 const REPO = "numerologia-online/numi-numi-on-private";
-const ALLOWED = /^(?:data\/year\/(?:odd\/)?energy-[1-9]\.txt|knowledge\/full-report\/(?:energies|periods)\.json|knowledge\/full-report\/sections\/energy-(?:[1-9]|1[0-9]|2[0-2])\.json)$/;
+const ALLOWED = /^(?:data\/year\/(?:odd\/)?energy-[1-9]\.txt|knowledge\/full-report\/(?:energies|periods)\.json|knowledge\/full-report\/sections\/energy-(?:[1-9]|1[0-9]|2[0-2])\.json|pro\/(?:zones|point-previews|karmic-tail-deepening-[ab])\.json|data\/money-blocks\.json)$/;
 
 function authenticatedTelegramUser(initData, botToken) {
   if (!initData || initData.length > 8192 || !botToken) return null;
