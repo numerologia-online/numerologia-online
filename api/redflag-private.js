@@ -1,4 +1,5 @@
 // Secure Red Flag delivery. Never expose GITHUB_PRIVATE_TOKEN to a browser.
+// Deployment refresh: activate protected Production credentials.
 // Until a payment ledger is connected, only the verified Telegram owner may read answers.
 import crypto from "node:crypto";
 
