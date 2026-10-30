@@ -3,7 +3,7 @@
 // Until a payment ledger is connected, only the verified Telegram owner may read answers.
 import crypto from "node:crypto";
 
-const ORIGIN = "https://numerologia-online.github.io";
+const ALLOWED_ORIGINS = new Set(["https://numerologia-online.github.io", "https://нумерология.online", "https://xn--c1adkkdfjbp1a4l.online"]);
 const REPO = "numerologia-online/numi-numi-on-private";
 const ALLOWED = /^data\/redflag\/(?:love\/published\/[0-9]{1,2}-[0-9]{1,2}\.json|[a-z0-9-]+\/[a-z0-9-]+\.json)$/;
 
@@ -28,7 +28,8 @@ function authenticatedTelegramUser(initData, botToken) {
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store, private");
   res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Origin", ORIGIN);
+  const origin = req.headers.origin;
+  if (ALLOWED_ORIGINS.has(origin)) res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(204).end();
