@@ -301,8 +301,10 @@
       // No modal on success. The site welcomes the user and keeps the
       // current Mini App page open. The cabinet opens only on request.
     } catch (err) {
+      // Keep the site usable when authentication is temporarily unreachable.
+      // Show the error only if the visitor manually opens the cabinet.
       setMessage("Автоматический вход не удался: " + (err?.message || "Нет соединения с сервером."), !!raw);
-      if (!dialog.open) dialog.showModal();
+      setAccountButton("Личный кабинет");
     } finally {
       loading = false;
     }
