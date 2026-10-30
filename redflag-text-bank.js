@@ -7,7 +7,8 @@ const loadJson = async (path) => {
     ? await fetch("https://numerologia-online-auth-server.vercel.app/api/redflag-private", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({init_data:window.Telegram?.WebApp?.initData || "",path:path.replace(/^\.\//,"").split("?")[0]})
+        body: JSON.stringify({init_data:window.Telegram?.WebApp?.initData || "",path:path.replace(/^\.\//,"").split("?")[0]}),
+        signal: AbortSignal.timeout(12000)
       })
     : await fetch(new URL(path, import.meta.url));
   if (!response.ok) throw new Error(`Не удалось загрузить текстовую базу: ${path}`);
