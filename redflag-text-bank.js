@@ -5,7 +5,7 @@ import { reduce22 } from "./redflag-profile.js?v=1";
 const REDFLAG_SECURE_MODE_KEY = "numi-redflag-secure-preview-v1";
 const REDFLAG_SECURE_API = "https://нумерология.online/api/redflag-content.php";
 const secureModeEnabled = () => {
-  try { return window.localStorage.getItem(REDFLAG_SECURE_MODE_KEY) === "on"; }
+  try { return new URLSearchParams(window.location.search).get("rf_secure_test") === "1" || window.localStorage.getItem(REDFLAG_SECURE_MODE_KEY) === "on"; }
   catch { return false; }
 };
 const loadJson = async (path) => {
