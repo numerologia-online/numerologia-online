@@ -246,8 +246,9 @@
       // No modal on success. The site welcomes the user and keeps the
       // current Mini App page open. The cabinet opens only on request.
     } catch (err) {
+      // A background login failure must never interrupt the visitor with a modal.
+      // Keep the error available only if the visitor opens the cabinet manually.
       setMessage("Автоматический вход не удался: " + (err?.message || "Нет соединения с сервером."), !!raw);
-      if (!dialog.open) dialog.showModal();
     } finally {
       loading = false;
     }
