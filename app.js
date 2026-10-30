@@ -193,3 +193,32 @@ if (Object.prototype.hasOwnProperty.call(telegramSectionCards, telegramView)) {
   const card = document.querySelector(telegramSectionCards[telegramView]);
   if (card) card.click();
 }
+
+
+/* Temporary safe check: exposed only inside Telegram when ?privatecheck=1.
+   Never expose private text in the page. */
+if (new URLSearchParams(location.search).has("privatecheck")) {
+  const check = document.createElement("button");
+  check.type = "button";
+  check.textContent = "Проверить доступ к закрытым текстам";
+  check.style.cssText = "position:fixed;bottom:90px;left:10px;right:10px;z-index:99999;background:#403447;color:#fff;padding:14px;border-radius:12px;border:0;font:16px system-ui";
+  document.body.append(check);
+  check.onclick = async () => {
+    check.disabled = true;
+    check.textContent = "Проверяю...";
+    try {
+      const initData = window.Telegram?.WebApp?.initData || "";
+      if (!initData) throw new Error("Открой проверку внутри Telegram");
+      const r = await fetch("https://numerologia-online-auth-server.vercel.app/api/redflag-private", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({init_data:initData,path:"data/redflag/money/gift.json"}),
+        signal:AbortSignal.timeout(12000)
+      });
+      const d = await r.json();
+      check.textContent = r.ok && d.questionId === "gift" && d.entries
+        ? "Проверено: закрытый текст получен"
+        : "Ошибка проверки: " + (d.error || r.status);
+    } catch(e) {check.textContent = "Ошибка: " + (e.message || "сети");}
+    check.disabled = false;
+  };
+}
