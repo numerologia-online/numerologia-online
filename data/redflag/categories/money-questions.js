@@ -1,14 +1,14 @@
 import { reduce22 } from "../../../redflag-profile.js?v=1";
 
 const loadJson = async (path) => {
-  const isAnswer = /^\\.\\.\\/[a-z0-9-]+\\/[a-z0-9-]+\\.json(?:\\?[^#]*)?$/.test(path);
+  const isAnswer = /^\.\.\/[a-z0-9-]+\/[a-z0-9-]+\.json(?:\?[^#]*)?$/.test(path);
   if (isAnswer) {
     const initData = window.Telegram?.WebApp?.initData || "";
     if (!initData) throw new Error("TELEGRAM_AUTH_REQUIRED");
     const response = await fetch("https://numerologia-online-auth-server.vercel.app/api/redflag-private", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ init_data: initData, path: "data/redflag/" + path.replace(/^\\.\\.\\//, "").split("?")[0] })
+      body: JSON.stringify({ init_data: initData, path: "data/redflag/" + path.replace(/^\.\.\//, "").split("?")[0] })
     });
     if (!response.ok) throw new Error("PRIVATE_TEXT_HTTP_" + response.status);
     return response.json();
