@@ -2,48 +2,34 @@ import { reduce22 } from "./redflag-profile.js?v=1";
 
 // Switch is OFF by default. Public originals stay intact until the protected
 // REG.RU endpoint is deployed and verified inside Telegram with VPN.
-const REDFLAG_SECURE_MODE_KEY = "numi-redflag-secure-preview-v1";
 const REDFLAG_SECURE_API = "https://нумерология.online/api/redflag-content.php";
-const secureModeEnabled = () => {
-  try { return new URLSearchParams(window.location.search).get("rf_secure_test") !== "0"; }
-  catch { return false; }
-};
 const loadJson = async (path) => {
-  // Only answer JSON files are eligible for the secure preview.
-  // Public question metadata and the rest of the site remain unchanged.
   const answerPath = /^\.\/data\/redflag\/(?:love\/published\/[0-9]+-[0-9]+\.json|[a-z0-9-]+\/[a-z0-9-]+\.json)(?:\?[^#]*)?$/.test(path);
-  if (answerPath && secureModeEnabled()) {
+  if (answerPath) {
     const initData = window.Telegram?.WebApp?.initData || "";
-    if (initData) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 6500);
-      try {
-        const response = await fetch(REDFLAG_SECURE_API, {
-          method: "POST",
-          mode: "cors",
-          cache: "no-store",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ init_data: initData, path: path.split("?")[0] }),
-          signal: controller.signal
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (data && typeof data === "object" && !Array.isArray(data)) {
-            window.__numiRedflagSource = "secure";
-            return data;
-          }
-        }
-      } catch (_) {
-        // Preview only: existing experience must survive an unavailable backend.
-      } finally {
-        clearTimeout(timer);
+    if (!initData) throw new Error("SECURE_REDFLAG_TELEGRAM_REQUIRED");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      const response = await fetch(REDFLAG_SECURE_API, {
+        method: "POST", mode: "cors", cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ init_data: initData, path: path.split("?")[0] }),
+        signal: controller.signal
+      });
+      if (!response.ok) throw new Error("SECURE_REDFLAG_HTTP_" + response.status);
+      const data = await response.json();
+      if (!data || typeof data !== "object" || Array.isArray(data) || data.ok === false) {
+        throw new Error("SECURE_REDFLAG_INVALID_RESPONSE");
       }
+      window.__numiRedflagSource = "secure";
+      return data;
+    } finally {
+      clearTimeout(timer);
     }
-    window.__numiRedflagSource = "public-fallback";
   }
   const response = await fetch(new URL(path, import.meta.url));
   if (!response.ok) throw new Error(`Не удалось загрузить текстовую базу: ${path}`);
-  if (answerPath) window.__numiRedflagSource = "public";
   return response.json();
 };
 
