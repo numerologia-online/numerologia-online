@@ -1,7 +1,6 @@
 import { reduce22 } from "./redflag-profile.js?v=1";
 
-// Switch is OFF by default. Public originals stay intact until the protected
-// REG.RU endpoint is deployed and verified inside Telegram with VPN.
+// Paid answer banks use only the protected API. No public fallback.
 const REDFLAG_SECURE_API = "https://нумерология.online/api/redflag-content.php";
 const loadJson = async (path) => {
   const answerPath = /^\.\/data\/redflag\/(?:love\/published\/[0-9]+-[0-9]+\.json|[a-z0-9-]+\/[a-z0-9-]+\.json)(?:\?[^#]*)?$/.test(path);
