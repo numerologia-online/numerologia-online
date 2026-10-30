@@ -1,7 +1,7 @@
 /** Список вопросов о паре; пользователь сам решает, какой ответ раскрыть. */
 import { parseBirthDate } from "./numerology-core.js?v=1";
 import { calculateCompatibility } from "./compatibility-engine.js?v=1";
-import { openSharedOffer } from "./shared-offer.js?v=1";
+import { createCompatibilityPdfController } from "./compatibility-pdf.js?v=2";
 
 const home = document.querySelector("#home");
 const page = document.querySelector("#compatibility");
@@ -33,23 +33,7 @@ const getBank = (energy) => {
   return promise;
 };
 
-const offer = Object.freeze({
-  product: "полную совместимость",
-  title: "Откройте все 13 ответов",
-  oncePrice: 990,
-  memberPrice: 490,
-  clubMonthly: 490
-});
-const showOffer = () => {
-  openSharedOffer(offer).catch(error => {
-    console.error("Окно покупки:", error);
-    alert("Не удалось открыть варианты доступа. Проверьте интернет и попробуйте снова.");
-  });
-};
-pdfButtons.forEach(button => {
-  button.textContent = "Открыть полностью и скачать в PDF";
-  button.addEventListener("click", showOffer);
-});
+const { setReport: setPdfReport } = createCompatibilityPdfController({ buttons: pdfButtons, getBank });
 
 const formatInput = (input) => {
   const digits = input.value.replace(/\D/g, "").slice(0, 8);
@@ -80,9 +64,7 @@ const addParagraphs = (target, content) => {
   }
 };
 
-const showTopic = async (topic, article, isFree) => {
-  // Только первый вопрос. Не загружаем банк ответов для остальных 12.
-  if (!isFree) { showOffer(); return; }
+const showTopic = async (topic, article) => {
   const body = article.querySelector(".compatibility-topic-body");
   const button = article.querySelector(".compatibility-topic-toggle");
   if (selected === topic.key) { clearSelection(); return; }
@@ -118,19 +100,17 @@ const renderTopics = (topics) => {
   const list = document.createDocumentFragment();
   for (const [index, topic] of topics.entries()) {
     const card = document.createElement("article");
-    card.className = "compatibility-topic " + (index === 0 ? "is-free" : "is-locked");
+    card.className = "compatibility-topic";
     const button = document.createElement("button");
     button.type = "button";
     button.className = "compatibility-topic-toggle";
     button.setAttribute("aria-expanded", "false");
     button.innerHTML = `<span class="compatibility-topic-index">${String(index + 1).padStart(2, "0")}</span><span class="compatibility-topic-title"></span><span class="compatibility-topic-icon" aria-hidden="true">+</span>`;
     button.querySelector(".compatibility-topic-title").textContent = topic.title;
-    button.querySelector(".compatibility-topic-icon").textContent = index === 0 ? "+" : "🔒";
-    button.setAttribute("aria-label", index === 0 ? "Открыть бесплатный ответ: " + topic.title : "Открыть варианты покупки: " + topic.title);
     const body = document.createElement("div");
     body.className = "compatibility-topic-body";
     body.hidden = true;
-    button.addEventListener("click", () => showTopic(topic, card, index === 0));
+    button.addEventListener("click", () => showTopic(topic, card));
     card.append(button, body);
     list.append(card);
   }
@@ -148,6 +128,7 @@ form.addEventListener("submit", (event) => {
   }
   const topics = calculateCompatibility(first, second);
   renderTopics(topics);
+  setPdfReport({ topics, dateA: aField.value, dateB: bField.value });
   summary.textContent = `Расчёт для ${aField.value} и ${bField.value} готов. Выбирайте любой вопрос, чтобы прочитать свой разбор.`;
   result.hidden = false;
   error.hidden = true;

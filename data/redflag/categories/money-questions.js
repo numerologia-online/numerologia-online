@@ -1,24 +1,12 @@
 import { reduce22 } from "../../../redflag-profile.js?v=1";
 
 const loadJson = async (path) => {
-  const isAnswer = /^\.\.\/[a-z0-9-]+\/[a-z0-9-]+\.json(?:\?[^#]*)?$/.test(path);
-  if (isAnswer) {
-    const initData = window.Telegram?.WebApp?.initData || "";
-    if (!initData) throw new Error("TELEGRAM_AUTH_REQUIRED");
-    const response = await fetch("https://numerologia-online-auth-server.vercel.app/api/redflag-private", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ init_data: initData, path: "data/redflag/" + path.replace(/^\.\.\//, "").split("?")[0] }),
-      signal: AbortSignal.timeout(12000)
-    });
-    if (!response.ok) throw new Error("PRIVATE_TEXT_HTTP_" + response.status);
-    return response.json();
-  }
   const response = await fetch(new URL(path, import.meta.url));
   if (!response.ok) throw new Error(`Не удалось загрузить данные: ${path}`);
   return response.json();
 };
 
+// Only titles and file paths are loaded when the category opens.
 // The chosen question's text bank is fetched once, on demand.
 const bank = await loadJson("../banks/money-questions.json?v=34");
 const textBankRequests = new Map();

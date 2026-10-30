@@ -4,7 +4,7 @@ import {
   buildFullReportSections,
   loadFullReportKnowledge,
   loadFullReportSection
-} from "./full-report-library.js?v=5";
+} from "./full-report-library.js?v=4";
 import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "./karmic-programs.js?v=3";
 import { createFullReportPdfController } from "./full-report-pdf.js?v=4";
 

@@ -3,7 +3,7 @@
 // No bot token and no other secret is stored in the frontend or this backend.
 const crypto = require("node:crypto");
 const BOT_ID = "8814989076";
-const ALLOWED_ORIGINS = new Set(["https://numerologia-online.github.io", "https://xn--c1adkkdfjbp1a4l.online"]);
+const ALLOWED_ORIGIN = "https://numerologia-online.github.io";
 const TELEGRAM_PUB_HEX = "e7bf03a2fa4602af4580703d88dda5bb59f32ed8b02a56c187fe7d34caed242d";
 const DER_ED25519_PREFIX = "302a300506032b6570032100";
 const publicKey = crypto.createPublicKey({
@@ -17,8 +17,7 @@ function reply(res, code, body) {
 
 module.exports = (req, res) => {
   res.setHeader("Cache-Control", "no-store, private");
-  const requestOrigin = String(req.headers.origin || "");
-  if (ALLOWED_ORIGINS.has(requestOrigin)) res.setHeader("Access-Control-Allow-Origin", requestOrigin);
+  res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Vary", "Origin");
@@ -26,7 +25,7 @@ module.exports = (req, res) => {
 
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return reply(res, 405, { ok: false, error: "METHOD" });
-  if (!ALLOWED_ORIGINS.has(requestOrigin)) return reply(res, 403, { ok: false, error: "ORIGIN" });
+  if (req.headers.origin !== ALLOWED_ORIGIN) return reply(res, 403, { ok: false, error: "ORIGIN" });
 
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;

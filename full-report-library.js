@@ -4,18 +4,9 @@ let knowledgeRequest;
 const sectionRequests = new Map();
 
 const readJson = async (file) => {
-  const initData = window.Telegram?.WebApp?.initData;
-  if (!initData) throw new Error("Для полного разбора откройте сайт через Telegram.");
-  const response = await fetch("https://numerologia-online-auth-server.vercel.app/api/paid-content", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ init_data: initData, path: `knowledge/full-report/${file}` }),
-    signal: AbortSignal.timeout(12000)
-  });
+  const response = await fetch(knowledgeUrl(file));
   if (!response.ok) throw new Error(`Не удалось загрузить ${file}`);
-  const result = await response.json();
-  if (!result.ok || !result.content) throw new Error(`Не удалось получить ${file}`);
-  return result.content;
+  return response.json();
 };
 
 export const loadFullReportKnowledge = () => {

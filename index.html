@@ -19,54 +19,11 @@
     <link rel="stylesheet" href="day-share.css?v=2" />
     <link rel="stylesheet" href="theme.css" />
     <link rel="stylesheet" href="artwork.css?v=6" />
-    <link rel="stylesheet" href="hero-polish.css?v=5" />
+    <link rel="stylesheet" href="hero-polish.css?v=4" />
     <link rel="stylesheet" href="site-support.css?v=3" />
     <link rel="stylesheet" href="pro-home.css?v=3" />
     <link rel="stylesheet" href="install.css?v=3" />
-    <link rel="stylesheet" href="auth-profile.css?v=11" />
-    <!-- Reversible experiment: subtitles on the eight homepage catalog cards only. -->
-    <style id="home-card-subtitles-experiment">
-      .products[aria-label="Направления расчётов"] > .product-card {
-        display:flex;
-        flex-direction:column;
-        align-items:flex-start;
-        justify-content:center;
-        gap:4px;
-      }
-      .products[aria-label="Направления расчётов"] > a.product-card.calculation {
-        align-items:flex-start;
-        justify-content:center;
-      }
-      .products[aria-label="Направления расчётов"] .product-title {
-        margin:0;
-      }
-      .products[aria-label="Направления расчётов"] .product-subtitle {
-        display:block;
-        position:relative;
-        z-index:1;
-        max-width:75%;
-        font:500 12.5px/1.27 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
-        letter-spacing:0;
-        color:inherit;
-        opacity:.84;
-        text-align:left;
-      }
-      @media(max-width:699px){
-        .products[aria-label="Направления расчётов"] > .product-card {
-          min-height:74px;
-          padding-top:10px;
-          padding-bottom:10px;
-        }
-        .products[aria-label="Направления расчётов"] .product-title,
-        .products[aria-label="Направления расчётов"] .product-subtitle {
-          max-width:100%;
-        }
-        .products[aria-label="Направления расчётов"] .product-subtitle {
-          font-size:11.5px;
-          line-height:1.22;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="auth-profile.css?v=10" />
   </head>
   <body>
     <main class="app-shell">
@@ -100,19 +57,20 @@
         </div>
 
         <section class="products" aria-label="Направления расчётов">
-          <button class="product-card day" type="button" data-open-personal-day data-artwork="assets/day.webp"><span class="product-title">Личный день</span><span class="product-subtitle">Каждый день - твой личный расчёт. Подсказки и предупреждения</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <button class="product-card year-card" type="button" data-open-year data-artwork="assets/year.webp"><span class="product-title">Разбор года</span><span class="product-subtitle">12 месяцев любви, денег, опасных поворотов и важных решений</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <a class="product-card calculation" href="./pro/" data-artwork="assets/full-calculation.webp" aria-label="Полный разбор жизни"><span class="product-title">Полный разбор жизни</span><span class="product-subtitle">Твой навигатор по жизни с конкретными шагами к любви и деньгам</span><span class="product-arrow" aria-hidden="true">→</span></a>
-          <button class="product-card red-flag" type="button" data-open-redflag data-artwork="assets/red-flag.webp"><span class="product-title">Мужчина или Red Flag</span><span class="product-subtitle">80 вопросов об изменах, щедрости, абьюзе и его намерениях</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <button class="product-card compatibility" type="button" data-open-compatibility data-artwork="assets/compatibility.webp"><span class="product-title">Совместимость ❤️</span><span class="product-subtitle">13 ответов, чтобы понять, стоит ли тратить на него время.</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <a class="product-card child" id="children-section" href="./child/" data-artwork="assets/children.webp"><span class="product-title"><strong style="font-size:1.13em;font-weight:900;">Для мам</strong> - всё о ребёнке</span><span class="product-subtitle">Характер, таланты и секреты воспитания, которых не видно сразу</span><span class="product-arrow" aria-hidden="true">→</span></a>
-          <button class="product-card code" type="button" data-open-destiny-code data-artwork="assets/code.webp"><span class="product-title">КОД БОГАТСТВА</span><span class="product-subtitle">Твой денежный код, его активация и ритуалы богатства</span><span class="product-arrow" aria-hidden="true">→</span></button>
-          <button class="product-card horary" id="horary-section" type="button" data-coming-soon data-artwork="assets/horary.webp"><span class="product-title">100 вопросов обо всём</span><span class="product-subtitle">Нумерология момента. Ответы на то, что волнует прямо сейчас</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card day" type="button" data-open-personal-day data-artwork="assets/day.webp"><span class="product-title">Личный расчёт дня</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card year-card" type="button" data-open-year data-artwork="assets/year.webp"><span class="product-title">Полный расчёт года</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card red-flag" type="button" data-open-redflag data-artwork="assets/red-flag.webp"><span class="product-title">Мужчина или Ред Флаг</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card compatibility" type="button" data-open-compatibility data-artwork="assets/compatibility.webp"><span class="product-title">Совместимость и любовь</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <a class="product-card calculation" href="./pro/" data-artwork="assets/full-calculation.webp" aria-label="Полный разбор"><span class="product-title">Полный разбор</span><span class="product-arrow" aria-hidden="true">→</span></a>
+          <button class="product-card woman" id="woman-section" type="button" data-coming-soon data-artwork="assets/woman.webp"><span class="product-title">Женщина или тарелочница</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card code" type="button" data-open-destiny-code data-artwork="assets/code.webp"><span class="product-title">Ваш код богатства и ритуалы</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <a class="product-card child" id="children-section" href="./child/" data-artwork="assets/children.webp"><span class="product-title"><strong style="font-size:1.13em;font-weight:900;">Для мам</strong> - всё о ребёнке</span><span class="product-arrow" aria-hidden="true">→</span></a>
+          <button class="product-card horary" id="horary-section" type="button" data-coming-soon data-artwork="assets/horary.webp"><span class="product-title">Любой вопрос</span><span class="product-arrow" aria-hidden="true">→</span></button>
         </section>
         <section class="school-home-entry" aria-labelledby="school-home-title">
           <p class="school-home-eyebrow">ПРОФЕССИОНАЛЬНЫЙ РАЗДЕЛ</p>
           <h2 id="school-home-title">Школа нумерологии</h2>
-          <p>Выберите своё направление. Матрица судьбы уже открыта, новые школы появятся здесь позже.</p>
+          <p>Выберите своё направление: Матрица судьбы уже открыта, новые школы появятся здесь позже.</p>
           <a class="school-home-button" href="./pro/schools/">Вход для нумерологов <span aria-hidden="true">→</span></a>
         </section>
         <section class="products" aria-label="Запись на личный расчёт" style="grid-template-columns:1fr; margin-top:14px;">
@@ -147,7 +105,7 @@
             <h2 class="founder-story-title" id="founder-note-title">Давайте знакомиться. <em>Я Татьяна.</em></h2>
             <p>Я создала «Нумерологию онлайн» для женщин, которым нужны не загадочные предсказания, а ответы на настоящие жизненные вопросы. Не долгие эзотерические тексты, а чёткие рекомендации в жизни, отношениях, деньгах, выборе и будущем. Я хотела, чтобы сложные расчёты превратились в понятные ответы, а нумерология стала доступной каждой женщине.</p>
             <p>Много лет я посвятила изучению разных школ нумерологии, практическим исследованиям и работе с людьми. Со временем даже разработала собственную методику - «Нумерологию момента», которая помогает находить ответы на срочные вопросы здесь и сейчас.</p>
-            <p>Клиентов становилось всё больше. Почти каждая девушка, заказавшая расчёт себе или ребёнку, возвращалась снова и рекомендовала меня подругам, сёстрам, мамам. Сарафанное радио оказалось сильнее любой рекламы. Я повышала цены, но поток людей продолжал расти. Однажды всего за две недели ко мне записались 100 человек.</p>
+            <p>Клиентов становилось всё больше: почти каждая девушка, заказавшая расчёт себе или ребёнку, возвращалась снова и рекомендовала меня подругам, сёстрам, мамам. Сарафанное радио оказалось сильнее любой рекламы. Я повышала цены, но поток людей продолжал расти. Однажды всего за две недели ко мне записались 100 человек.</p>
             <p>Я поняла, что могу бесконечно повышать цены, но тогда моя помощь станет доступна не каждой. А если оставить цену 10 000 рублей, запись растянется на годы вперёд и смысл помощи «здесь и сейчас» просто пропадёт. Мне же хотелось помогать и тем, кто может заплатить 100 000, и тем, кому сейчас трудно найти даже 1 000 рублей.</p>
             <p><strong>Так родилась «Нумерология онлайн»</strong> - сервис, за которым стоят годы моей практики, глубокое изучение нумерологии и собственная авторская методика.</p>
             <p class="founder-story-important"><strong>ВАЖНО - здесь ваши ответы не придумывает и не пишет искусственный интеллект!</strong> Каждую трактовку я пишу и проверяю вручную, опираясь на свои знания и опыт. Сайт лишь выполняет расчёты и подбирает подготовленные мной тексты. Вы получаете не случайный ответ от нейросети, а настоящую авторскую работу нумеролога. Я работаю над сайтом каждый день, лично наполняя его новыми материалами.</p>
@@ -243,13 +201,13 @@
           <section id="compatibility-result" class="compatibility-result" hidden>
             <div class="compatibility-result-heading"><h2>Ваши 13 вопросов</h2><p id="compatibility-summary"></p></div>
             <div class="compatibility-pdf-controls compatibility-pdf-controls--top">
-              <button class="compatibility-pdf-button" type="button">Открыть полностью и скачать в PDF</button>
+              <button class="compatibility-pdf-button" type="button">Скачать PDF ↓</button>
               <p>Все 13 ответов в одном красивом документе</p>
             </div>
             <div id="compatibility-topics" class="compatibility-topics" aria-label="Темы совместимости"></div>
             <div class="compatibility-pdf-controls compatibility-pdf-controls--bottom">
               <p>Хочешь сохранить ваш разбор и возвращаться к нему?</p>
-              <button class="compatibility-pdf-button" type="button">Открыть полностью и скачать в PDF</button>
+              <button class="compatibility-pdf-button" type="button">Скачать PDF ↓</button>
             </div>
           </section>
           <p class="compatibility-footer">Разбор раскрывает возможные сценарии пары. Решения об отношениях всегда остаются за вами.</p>
@@ -345,15 +303,6 @@
             <h1 id="money-rituals-title">Денежные<br />ритуалы</h1>
             <p id="money-rituals-code"></p>
           </div>
-          <div class="money-club-paywall">
-            <p class="money-club-kicker">Только по подписке</p>
-            <h2>Денежная библиотека клуба</h2>
-            <p>Все денежные ритуалы доступны только участницам клуба. Каждый месяц добавляется новый авторский ритуал.</p>
-            <div class="money-club-price"><strong>490 ₽</strong><span>в месяц</span></div>
-            <button id="money-club-join" class="money-club-join" type="button">Вступить в клуб <span aria-hidden="true">→</span></button>
-            <small>Без действующей подписки тексты и инструкции не открываются.</small>
-          </div>
-          <div class="money-rituals-heading"><h2>Ритуалы библиотеки</h2><span>10 ритуалов · 🔒</span></div>
           <div id="money-rituals-list" class="money-rituals-list" aria-live="polite"></div>
         </div>
       </section>
@@ -391,15 +340,6 @@
         <button class="install-later" id="install-later" type="button">Не сейчас</button>
       </section>
     </div>
-    <dialog id="money-club-dialog" class="money-club-dialog" aria-labelledby="money-club-title">
-      <header class="money-club-dialog-header"><p>НУМЕРОЛОГИЯ ONLINE</p><button type="button" id="money-club-dialog-close" aria-label="Закрыть окно">×</button></header>
-      <p class="money-club-dialog-kicker">Эксклюзивно для участниц клуба</p>
-      <h2 id="money-club-title">Денежные ритуалы</h2>
-      <div class="money-club-dialog-price"><strong>490 ₽</strong><span>в месяц</span></div>
-      <p>В клубе откроются все денежные ритуалы с вашим личным кодом. Каждый месяц в библиотеке появляется новый авторский ритуал.</p>
-      <p class="money-club-dialog-warning">Подписка и оплата пока не подключены. До запуска клуба ритуалы остаются закрытыми.</p>
-      <form method="dialog"><button class="money-club-dialog-dismiss" type="submit">Вернуться к ритуалам</button></form>
-    </dialog>
     <dialog id="coming-soon"><button class="dialog-close" type="button" aria-label="Закрыть">×</button><p class="eyebrow">Скоро</p><h2>Это направление уже есть в плане сайта.</h2><p>Сейчас мы сначала доводим до красоты и точности «Разбор года».</p></dialog>
     <dialog id="account-dialog" class="account-dialog" aria-labelledby="account-title">
       <div class="account-header">
@@ -414,80 +354,37 @@
         <p class="account-muted">Номер телефона не запрашиваем. Содержимое оплаченных разборов пока не защищено личным кабинетом.</p>
       </section>
       <section id="account-profile" hidden>
-        <div id="account-overview">
-          <div class="account-identity">
-            <span class="account-avatar" id="account-avatar-letter" aria-hidden="true"></span>
-            <div class="account-identity-main">
-              <p id="account-identity-label" class="account-identity-label">Ваш профиль</p>
-              <h3 id="account-person-name"></h3>
-            </div>
-            <span id="account-verified" class="account-verified" aria-label="Аккаунт подтверждён" hidden>✓</span>
+        <div class="account-identity">
+          <span class="account-avatar" id="account-avatar-letter" aria-hidden="true"></span>
+          <div class="account-identity-main">
+            <p class="account-identity-label">Вы вошли как</p>
+            <h3 id="account-person-name"></h3>
           </div>
-          <p id="account-preview-warning" class="account-preview-warning" hidden></p>
-          <p id="account-browser-note" class="account-browser-note" hidden>Кабинет доступен прямо на сайте. Пока вход через VK и почту не подключён, дата рождения сохраняется только в этом браузере. Покупки и подписку будем синхронизировать после подключения авторизации.</p>
-          <div class="account-section-heading">Мой кабинет</div>
-          <div class="account-tiles account-navigation">
-            <button type="button" class="account-tile" data-account-panel="saved"><span class="account-tile-icon" aria-hidden="true">♡</span><strong>Сохранённое</strong><small>Разборы и ответы на вопросы</small></button>
-            <button type="button" class="account-tile" data-account-panel="club"><span class="account-tile-icon" aria-hidden="true">♕</span><strong>Мой клуб</strong><small>Подписка и преимущества</small></button>
-            <button type="button" class="account-tile" data-account-panel="prices"><span class="account-tile-icon" aria-hidden="true">₽</span><strong>Тарифы</strong><small>Все варианты доступа</small></button>
-            <button type="button" class="account-tile" data-account-panel="learning"><span class="account-tile-icon" aria-hidden="true">✧</span><strong>Моё обучение</strong><small>Школы, уроки и практика</small></button>
-            <button type="button" class="account-tile account-tile--wide" data-account-panel="settings"><span class="account-tile-icon" aria-hidden="true">◎</span><strong>Мои данные</strong><small>Дата рождения и настройки профиля</small></button>
-          </div>
-          <a class="account-tile account-support-tile" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer"><strong>Техподдержка <span aria-hidden="true">↗</span></strong><small>Помощь с доступом и разборами</small></a>
+          <span class="account-verified" aria-label="Telegram подтверждён">✓</span>
         </div>
-
-        <section class="account-panel" data-account-content="saved" hidden>
-          <button class="account-back" type="button" data-account-back>← В кабинет</button>
-          <h3>Сохранённое</h3>
-          <p class="account-panel-intro">Все ваши оплаченные разборы и ответы в одном месте.</p>
-          <div class="account-library-group"><span class="account-library-symbol" aria-hidden="true">♡</span><div><strong>Большие разборы</strong><small>Полный разбор жизни, совместимость и другие покупки</small></div></div>
-          <div class="account-library-group"><span class="account-library-symbol" aria-hidden="true">✦</span><div><strong>Ответы на вопросы</strong><small>Всё, к чему захочется вернуться</small></div></div>
-          <p class="account-empty-state">История оплаченных материалов появится здесь после подключения покупок к аккаунту. Пока ничего не списываем и не выдаём незавершённую оплату за покупку.</p>
-          <div class="account-storage-disclaimer"><strong>Как долго доступны покупки ♡</strong><p>Оплаченные разборы и ответы на вопросы будут доступны в личном кабинете 12 месяцев с даты покупки. Мы ограничиваем срок хранения персональных записей, чтобы сервис оставался быстрым, а цены - доступными. Вы сможете сохранить ответ на телефон, сделать скриншоты или скачать PDF, если он предусмотрен разбором. Файлы на вашем устройстве останутся с вами.</p></div>
-        </section>
-
-        <section class="account-panel" data-account-content="club" hidden>
-          <button class="account-back" type="button" data-account-back>← В кабинет</button>
-          <h3>Мой клуб</h3>
-          <div class="account-plan-summary"><span>СТАТУС КЛУБА</span><strong>Пока не подключён</strong><p>С запуском подписки здесь появятся срок действия, условия продления и управление клубом.</p></div>
-          <div class="account-club-benefits"><strong>Участникам клуба</strong><p>Специальные цены на большие разборы, доступ к клубным материалам и новые возможности по мере запуска.</p></div>
-          <button type="button" class="account-primary" data-account-panel="prices">Посмотреть тарифы</button>
-        </section>
-
-        <section class="account-panel" data-account-content="prices" hidden>
-          <button class="account-back" type="button" data-account-back>← В кабинет</button>
-          <h3>Тарифы</h3>
-          <p class="account-panel-intro">Выбирайте разовую покупку или специальные цены клуба.</p>
-          <div class="account-price-options">
-            <div class="account-price-plan"><small>БЕЗ ПОДПИСКИ</small><strong>990 ₽</strong><span>Большой разбор с PDF</span></div>
-            <div class="account-price-plan account-price-plan--club"><small>С КЛУБОМ</small><strong>490 ₽</strong><span>Большой разбор по клубной цене</span></div>
+        <p id="account-preview-warning" class="account-preview-warning" hidden>Вход подтверждён через Telegram.</p>
+        <div class="account-birth-section">
+          <label class="account-label" for="account-birth">Моя дата рождения</label>
+          <p class="account-field-hint">Введите дату вручную</p>
+          <input id="account-birth" class="account-date" type="text" inputmode="numeric"
+                 autocomplete="bday" autocapitalize="off" spellcheck="false"
+                 maxlength="10" placeholder="ДД.ММ.ГГГГ"
+                 aria-describedby="account-birth-note">
+          <div class="account-actions">
+            <button type="button" class="account-primary" id="account-birth-save">Сохранить дату</button>
+            <button type="button" class="account-secondary" id="account-birth-delete">Очистить</button>
           </div>
-          <p class="account-price-fine">Первый месяц с клубом - 980 ₽ (490 ₽ за разбор и 490 ₽ за клуб). Далее клуб - 490 ₽ в месяц, новые разборы оплачиваются отдельно. Оплата пока не подключена.</p>
-          <button type="button" class="account-primary" id="account-show-offer">Посмотреть преимущества клуба</button>
-        </section>
-
-        <section class="account-panel" data-account-content="learning" hidden>
-          <button class="account-back" type="button" data-account-back>← В кабинет</button>
-          <h3>Моё обучение</h3>
-          <p class="account-panel-intro">Уроки и практические задания в школе нумерологии.</p>
-          <a class="account-primary account-panel-link" href="./pro/schools/">Перейти к школам →</a>
-          <p class="account-muted">История обучения и достижения будут отображаться здесь после синхронизации аккаунта.</p>
-        </section>
-
-        <section class="account-panel" data-account-content="settings" hidden>
-          <button class="account-back" type="button" data-account-back>← В кабинет</button>
-          <h3>Мои данные</h3>
-          <div class="account-birth-section">
-            <label class="account-label" for="account-birth">Моя дата рождения</label>
-            <p class="account-field-hint">Введите дату вручную</p>
-            <input id="account-birth" class="account-date" type="text" inputmode="numeric" autocomplete="bday" autocapitalize="off" spellcheck="false" maxlength="10" placeholder="ДД.ММ.ГГГГ" aria-describedby="account-birth-note">
-            <div class="account-actions">
-              <button type="button" class="account-primary" id="account-birth-save">Сохранить дату</button>
-              <button type="button" class="account-secondary" id="account-birth-delete">Очистить</button>
-            </div>
-            <p id="account-birth-note" class="account-muted" role="status" aria-live="polite"></p>
-          </div>
-        </section>
+          <p id="account-birth-note" class="account-muted" role="status" aria-live="polite"></p>
+        </div>
+        <div class="account-section-heading">Мои разделы</div>
+        <div class="account-tiles">
+          <a class="account-tile" href="./pro/"><strong>Полный разбор <span aria-hidden="true">↗</span></strong><small>Личный расчёт</small></a>
+          <a class="account-tile" href="./#lichnyj-den"><strong>Мой день <span aria-hidden="true">↗</span></strong><small>Подсказки на день</small></a>
+          <a class="account-tile" href="./pro/schools/"><strong>Моё обучение <span aria-hidden="true">↗</span></strong><small>Школа нумерологии</small></a>
+          <a class="account-tile" href="https://t.me/Numerologiaonline_bot" target="_blank" rel="noopener noreferrer"><strong>Telegram-бот <span aria-hidden="true">↗</span></strong><small>Открыть бота</small></a>
+          <a class="account-tile account-support-tile" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer"><strong>Техподдержка <span aria-hidden="true">↗</span></strong><small>Проблема с доступом или разбором? Напишите нам</small></a>
+        </div>
+        <p class="account-footer-note">Тарифы и доступ к покупкам пока в разработке.</p>
       </section>
     </dialog>
     <dialog id="year-paywall-dialog" class="year-paywall-dialog" aria-labelledby="year-paywall-title">
@@ -508,7 +405,7 @@
     </dialog>
   <script src="artwork-loader.js?v=1" defer></script>
   <script src="install.js?v=4" defer></script>
-  <script src="auth-profile.js?v=17" defer></script>
-  <script type="module" src="app.js?v=276"></script>
+  <script src="auth-profile.js?v=15" defer></script>
+  <script type="module" src="app.js?v=262"></script>
   </body>
 </html>

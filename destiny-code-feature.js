@@ -1,5 +1,5 @@
 import { createMoneyPdfButton } from "./money-pdf.js?v=10";
-import { loadFullReportKnowledge, loadFullReportSection } from "./full-report-library.js?v=5";
+import { loadFullReportKnowledge, loadFullReportSection } from "./full-report-library.js?v=3";
 import { calculateMatrix } from "./numerology-core.js?v=1";
 
 const home = document.querySelector("#home");
@@ -13,7 +13,6 @@ const cards = document.querySelector("#destiny-code-cards");
 const ritualsSection = document.querySelector("#money-rituals");
 const ritualsCode = document.querySelector("#money-rituals-code");
 const ritualsList = document.querySelector("#money-rituals-list");
-const clubDialog = document.querySelector("#money-club-dialog");
 
 // Keep long interpretations manageable: opening one closes its siblings.
 // Toggle does not bubble, so capture it on the list container.
@@ -28,7 +27,7 @@ const singleOpenDisclosure = (container, selector) => {
   }, true);
 };
 singleOpenDisclosure(cards, "details.destiny-code-disclosure");
-// Premium ritual cards never reveal content without verified club access.
+singleOpenDisclosure(ritualsList, "details.money-ritual");
 
 const masterNumbers = new Set([11, 22, 33]);
 
@@ -72,12 +71,13 @@ const createMoneyDisclosure = ({ label, lead, text, advice = "", ritual = "", ri
   const paragraphs = Array.isArray(text) ? text : [text];
   const copy = paragraphs.filter(Boolean).map((paragraph) => `<p>${paragraph}</p>`).join("");
   const ritualParagraphs = ritual ? ritual.split("\n\n").map((paragraph) => `<p>${paragraph}</p>`).join("") : "";
-  const ctaMarkup = cta ? `<a class="destiny-code-full-report-link" href="${cta.href}">${cta.label}</a>` : "";
+  const ctaMarkup = cta ? `<a class="destiny-code-telegram-link" href="${cta.href}" target="_blank" rel="noopener noreferrer">${cta.label}</a>` : "";
   details.innerHTML = `<summary><span><p>${label}</p><h3>${lead}</h3></span><b aria-hidden="true">+</b></summary><div class="destiny-code-disclosure-body">${copy ? `<div class="destiny-code-copy">${copy}</div>` : ""}${ritual ? `<div class="destiny-code-ritual"><strong>${ritualTitle}</strong>${ritualParagraphs}</div>` : ""}${advice ? `<p class="destiny-code-advice"><strong>Ориентир:</strong> ${advice}</p>` : ""}${ctaMarkup}</div>`;
   return details;
 };
 
 let moneyBlocksRequest;
+let moneyRitualsRequest;
 
 const loadMoneyBlocks = () => {
   if (!moneyBlocksRequest) {
@@ -87,6 +87,16 @@ const loadMoneyBlocks = () => {
     });
   }
   return moneyBlocksRequest;
+};
+
+const loadMoneyRituals = () => {
+  if (!moneyRitualsRequest) {
+    moneyRitualsRequest = fetch("data/money-rituals.json?v=2").then((response) => {
+      if (!response.ok) throw new Error("Не удалось загрузить денежные ритуалы");
+      return response.json();
+    });
+  }
+  return moneyRitualsRequest;
 };
 
 const MONEY_CARDS = [
@@ -108,19 +118,26 @@ const moneyCard = async ({ key, label, fallback }, energy) => {
   };
 };
 
-const createMoneyPathOffer = ({ title, text }) => {
-  const details = createMoneyDisclosure({
-    label: "В полном разборе матрицы судьбы",
-    lead: title,
-    text,
-    cta: {
-      label: "Перейти к полному разбору →",
-      href: "./pro/"
-    }
-  });
-  details.classList.add("destiny-code-disclosure--full-report");
-  return details;
-};
+const telegramOrderText = encodeURIComponent(`Татьяна, добрый день!
+
+Хочу заказать у вас полный личный разбор судьбы и своей жизни.
+
+Скажите, пожалуйста, это правда, что сейчас при заказе полного разбора вы дарите
+
+🎁 БЕСПЛАТНО — разборы 2026 и 2027 годов
+🎁 В ПОДАРОК — 10 денежных ритуалов с моим личным кодом?
+
+Подскажите, пожалуйста, как можно записаться, что нужно от меня и какая стоимость на данный момент? Буду ждать вашего ответа.`);
+
+const createMoneyPathOffer = ({ title, text }) => createMoneyDisclosure({
+  label: "Полный личный разбор",
+  lead: title,
+  text,
+  cta: {
+    label: "Написать Татьяне →",
+    href: `https://t.me/Kod_9966?text=${telegramOrderText}`
+  }
+});
 
 const createActivationContent = (code) => ({
   label: `Ваш код денег ${code}`,
@@ -131,21 +148,13 @@ const createActivationContent = (code) => ({
   accent: true
 });
 
-const createActivationDisclosure = (code) => {
-  // Free activation of the personal code, distinct from 10 paid club rituals.
-  const details = createMoneyDisclosure({
-    ...createActivationContent(code),
-    label: "Бесплатно"
-  });
-  details.classList.add("destiny-code-disclosure--free");
-  return details;
-};
+const createActivationDisclosure = (code) => createMoneyDisclosure(createActivationContent(code));
 
 const createRitualsCta = (code) => {
   const details = createMoneyDisclosure({
-    label: "Только по подписке · 490 ₽/мес.",
-    lead: "Денежные ритуалы для вашего кода",
-    text: `Код ${code}. 10 авторских ритуалов уже в библиотеке, каждый месяц добавляем новый.`
+    label: "Денежная библиотека",
+    lead: "10 денежных ритуалов с вашим личным кодом денег",
+    text: `Код ${code} · практики, которые можно сохранить себе.`
   });
   details.querySelector("summary").addEventListener("click", (event) => {
     event.preventDefault();
@@ -154,54 +163,26 @@ const createRitualsCta = (code) => {
   return details;
 };
 
-const RITUAL_TITLES = Object.freeze([
-  "Активация денежного талисмана",
-  "Карта желания на деньги",
-  "Конверт большой цели",
-  "Первая оплата месяца",
-  "Кошелёк, который помнит изобилие",
-  "Купюра растущей луны",
-  "Денежное письмо в будущее",
-  "Ритуал для большой покупки",
-  "Ритуал доверия переменам",
-  "Денежное намерение на новый месяц"
-]);
-
-const showClubOffer = () => {
-  if (clubDialog && !clubDialog.open) clubDialog.showModal();
+const createRitual = (ritual, code) => {
+  const details = document.createElement("details");
+  details.className = "money-ritual";
+  const render = (value) => value.replaceAll("{code}", code);
+  details.innerHTML = `<summary><span class="money-ritual-icon" aria-hidden="true">${ritual.icon}</span><span><b>${ritual.title}</b><small>${ritual.when}</small></span><i aria-hidden="true">+</i></summary><div class="money-ritual-body"><p class="money-ritual-needs"><strong>Понадобится:</strong> ${ritual.needs}</p><ol>${ritual.steps.map((step) => `<li>${render(step)}</li>`).join("")}</ol><p class="money-ritual-phrase">«${ritual.phrase}»</p></div>`;
+  return details;
 };
-document.querySelector("#money-club-dialog-close")?.addEventListener("click", () => clubDialog.close());
-clubDialog?.addEventListener("click", (event) => {
-  if (event.target === clubDialog) clubDialog.close();
-});
-document.querySelector("#money-club-join")?.addEventListener("click", showClubOffer);
 
-const openMoneyRituals = (code) => {
+const openMoneyRituals = async (code) => {
   section.classList.remove("is-active");
   ritualsSection.classList.add("is-active");
-  ritualsCode.textContent = "Ваш код денег " + code;
-  const list = document.createDocumentFragment();
-  RITUAL_TITLES.forEach((name, index) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "money-ritual-locked";
-    button.setAttribute("aria-label", "Ритуал " + (index + 1) + " «" + name + "». Доступен по подписке");
-    const number = document.createElement("span");
-    number.className = "money-ritual-locked-number";
-    number.textContent = String(index + 1).padStart(2, "0");
-    const title = document.createElement("span");
-    title.className = "money-ritual-locked-title";
-    title.textContent = name;
-    const lock = document.createElement("span");
-    lock.className = "money-ritual-locked-icon";
-    lock.textContent = "🔒";
-    lock.setAttribute("aria-hidden", "true");
-    button.append(number, title, lock);
-    button.addEventListener("click", showClubOffer);
-    list.append(button);
-  });
-  ritualsList.replaceChildren(list);
+  ritualsCode.textContent = `Ваш код денег: ${code}`;
+  ritualsList.innerHTML = `<p class="money-rituals-loading">Открываю денежную библиотеку…</p>`;
   window.scrollTo({ top: 0, behavior: "instant" });
+  try {
+    const rituals = await loadMoneyRituals();
+    ritualsList.replaceChildren(...rituals.map((ritual) => createRitual(ritual, code)));
+  } catch {
+    ritualsList.innerHTML = `<p class="money-rituals-loading">Не удалось открыть ритуалы. Обновите страницу и попробуйте ещё раз.</p>`;
+  }
 };
 
 const buildCode = async (birthDate, energies) => {
@@ -301,7 +282,7 @@ form.addEventListener("submit", async (event) => {
         sections: [
           code.cards[0],
           createActivationContent(code.financialCode),
-           ...code.cards.slice(1)
+          ...code.cards.slice(1)
         ]
       })
     );

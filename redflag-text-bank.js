@@ -1,16 +1,7 @@
 import { reduce22 } from "./redflag-profile.js?v=1";
 
-// GitHub Pages preview: load original answer files without REG.RU.
 const loadJson = async (path) => {
-  const answer = (path.includes("/banks/") && /\/(?:love|flags|infidelity|intimacy|family|language|verdict)\.json/.test(path)) || (/data\/redflag\/(?:love\/published\/|[a-z0-9-]+\/)/.test(path) && !path.includes("/banks/"));
-  const response = answer
-    ? await fetch("https://numerologia-online-auth-server.vercel.app/api/redflag-private", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({init_data:window.Telegram?.WebApp?.initData || "",path:path.replace(/^\.\//,"").split("?")[0]}),
-        signal: AbortSignal.timeout(12000)
-      })
-    : await fetch(new URL(path, import.meta.url));
+  const response = await fetch(new URL(path, import.meta.url));
   if (!response.ok) throw new Error(`Не удалось загрузить текстовую базу: ${path}`);
   return response.json();
 };

@@ -1,6 +1,6 @@
 // Red Flag deliberately needs only day and month, with no birth-year dependence.
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=79";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=73";
 
 const home = document.querySelector("#home");
 const redFlag = document.querySelector("#redflag");
@@ -53,7 +53,7 @@ const parseRedFlagDate = (value) => {
 
 // Share the exact currently calculated answer, not a second calculation.
 // The server route reuses the verified sender used by "Личный расчёт дня".
-const REDFLAG_SITE_URL = "https://xn--c1adkkdfjbp1a4l.online/?view=redflag";
+const REDFLAG_SITE_URL = "https://numerologia-online.github.io/numerologia-online/?view=redflag";
 const REDFLAG_BOT_URL = "https://t.me/Numerologiaonline_bot";
 const REDFLAG_SAVE_URL = "https://numerologia-online-bot.tankraft431.workers.dev/api/save-redflag";
 const REDFLAG_TICKET_URL = "https://xn--c1adkkdfjbp1a4l.online/api/redflag-save.php";

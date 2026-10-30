@@ -33,7 +33,7 @@
 .money-rituals-paper{min-height:100dvh;padding:0 0 40px;color:#33283e}.money-rituals-intro{padding:42px 0 24px}.money-rituals-intro h1{margin:7px 0 0;color:#513868;font-family:Georgia,"Times New Roman",serif;font-size:clamp(45px,12vw,67px);font-weight:400;line-height:.95}.money-rituals-intro>p:last-child{margin:17px 0 0;color:#9c6724;font-weight:800}.money-rituals-list{display:grid;gap:10px}.money-rituals-loading{margin:20px 0;color:#716778;text-align:center}
 .money-ritual{border:1px solid rgba(84,63,114,.16);border-radius:20px;background:rgba(255,255,255,.88);box-shadow:0 9px 20px rgba(67,53,93,.06);overflow:hidden}.money-ritual summary{display:grid;grid-template-columns:40px 1fr 20px;gap:11px;align-items:center;padding:15px;cursor:pointer;list-style:none}.money-ritual summary::-webkit-details-marker{display:none}.money-ritual-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#f5ead7;color:#a1651c;font-size:19px}.money-ritual summary b{display:block;color:#382844;font-family:Georgia,"Times New Roman",serif;font-size:20px;font-weight:400}.money-ritual summary small{display:block;margin-top:3px;color:#787180;font-size:11px;line-height:1.3}.money-ritual summary i{color:#9b692b;font-size:25px;font-style:normal}.money-ritual[open] summary i{transform:rotate(45deg)}.money-ritual-body{padding:0 16px 17px;border-top:1px solid rgba(84,63,114,.1);color:#5d596a;font-size:14px;line-height:1.5}.money-ritual-needs{margin:13px 0 8px}.money-ritual-body ol{display:grid;gap:8px;margin:0;padding-left:21px}.money-ritual-phrase{margin:15px 0 0;padding:12px;border-radius:13px;background:#f8f0e3;color:#765324;font-family:Georgia,"Times New Roman",serif;font-size:15px;line-height:1.4}
 
-.destiny-code-full-report-link,.destiny-code-rituals-open{display:flex;align-items:center;justify-content:center;min-height:48px;margin-top:16px;padding:0 16px;border:1px solid rgba(155,98,25,.62);border-radius:14px;background:#fff8ec;color:#754316;font:800 14px/1.2 inherit;text-align:center;text-decoration:none;cursor:pointer}.destiny-code-rituals-open{width:100%}
+.destiny-code-telegram-link,.destiny-code-rituals-open{display:flex;align-items:center;justify-content:center;min-height:48px;margin-top:16px;padding:0 16px;border:1px solid rgba(155,98,25,.62);border-radius:14px;background:#fff8ec;color:#754316;font:800 14px/1.2 inherit;text-align:center;text-decoration:none;cursor:pointer}.destiny-code-rituals-open{width:100%}
 
 /* Денежные ритуалы: сохраняем нежный шрифт, усиливаем читаемость */
 .money-ritual summary b{font-size:22px;font-weight:700;line-height:1.14}
@@ -43,104 +43,3 @@
 .money-ritual-body ol{gap:12px;padding-left:25px}
 .money-ritual-needs{margin:16px 0 12px}
 .money-ritual-phrase{margin-top:18px;padding:16px;color:#5e3d1d;font-size:18px;font-weight:600;line-height:1.55}
-
-/* Денежная библиотека клуба. Только CSS, без изображений и новых загрузок. */
-.money-rituals-intro{padding:25px 0 18px}
-.money-rituals-intro h1{font-size:clamp(40px,10vw,61px);line-height:1}
-.money-club-paywall{
-  padding:22px clamp(17px,4vw,26px);margin:8px 0 24px;
-  border:1px solid #d8bc8b;border-radius:24px;
-  background:radial-gradient(ellipse at 95% 5%,rgba(244,218,171,.4),transparent 52%),linear-gradient(140deg,#fffefa,#f9f3e8);
-  box-shadow:0 10px 24px rgba(103,77,45,.09);
-}
-.money-club-kicker,.money-club-dialog-kicker{margin:0;color:#a17a46;font-size:11px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}
-.money-club-paywall h2{margin:12px 0;color:#304f43;font:400 clamp(25px,6.2vw,33px)/1.15 Georgia,serif}
-.money-club-paywall>p:not(.money-club-kicker){margin:8px 0 0;color:#616b62;font-size:14px;line-height:1.56}
-.money-club-price{display:flex;align-items:baseline;gap:9px;margin:18px 0 13px}
-.money-club-price strong{color:#175741;font-size:clamp(37px,9vw,48px);letter-spacing:-.05em;line-height:1}
-.money-club-price span{color:#6f716b;font-size:15px}
-.money-club-join,.money-club-dialog-dismiss{
-  display:flex;justify-content:center;align-items:center;gap:10px;
-  width:100%;min-height:49px;border:0;border-radius:14px;
-  background:linear-gradient(110deg,#174f3c,#247454);color:#fff;
-  font:800 15px/1.3 system-ui,sans-serif;cursor:pointer;
-}
-.money-club-paywall small{display:block;margin:11px 0 0;color:#858078;font-size:11px;line-height:1.45}
-.money-rituals-heading{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 10px}
-.money-rituals-heading h2{margin:0;color:#3f3850;font:400 clamp(23px,5.5vw,29px)/1.2 Georgia,serif}
-.money-rituals-heading span{color:#988374;font-size:11px;white-space:nowrap}
-.money-rituals-list{gap:8px}
-.money-ritual-locked{
-  display:grid;grid-template-columns:36px minmax(0,1fr) 30px;
-  gap:11px;align-items:center;width:100%;min-height:66px;
-  padding:12px;border:1px solid #e8d8db;border-radius:16px;
-  background:linear-gradient(135deg,#fffefa,#fbf6f4);
-  color:#54445c;text-align:left;cursor:pointer;
-}
-.money-ritual-locked-number{
-  display:grid;place-items:center;width:36px;height:36px;
-  border:1px solid #d6b993;border-radius:50%;
-  font:400 17px Georgia,serif;color:#987a5d;
-}
-.money-ritual-locked-title{font:600 clamp(16px,4.4vw,19px)/1.25 Georgia,serif}
-.money-ritual-locked-icon{font-size:18px;line-height:1;text-align:center}
-.money-ritual-locked:focus-visible,.money-club-join:focus-visible,.money-club-dialog button:focus-visible{outline:3px solid #c2a87a;outline-offset:3px}
-.destiny-code-disclosure--club-locked summary>b{font-family:system-ui,sans-serif;font-size:16px;transform:none!important}
-.money-club-dialog{
-  box-sizing:border-box;width:min(92vw,480px);max-height:86dvh;
-  overflow:auto;margin:auto;padding:19px 21px 22px;
-  border:1px solid #dcc393;border-radius:23px;
-  background:linear-gradient(145deg,#fffefa,#fbf5eb);
-  color:#344d40;box-shadow:0 25px 70px rgba(19,33,29,.28);
-}
-.money-club-dialog::backdrop{background:rgba(23,34,29,.6)}
-.money-club-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
-.money-club-dialog-header p{margin:0;color:#a08057;font:850 10px/1.3 system-ui,sans-serif;letter-spacing:.16em}
-.money-club-dialog-header button{width:37px;height:37px;border:1px solid #e4d7c6;border-radius:50%;background:#fffdf7;color:#2b493b;font-size:24px}
-.money-club-dialog h2{margin:10px 0 8px;color:#2b4b3e;font:400 clamp(30px,7vw,39px)/1.12 Georgia,serif}
-.money-club-dialog-price{display:flex;align-items:baseline;gap:10px;margin:15px 0}
-.money-club-dialog-price strong{font-size:39px;color:#155b45;letter-spacing:-.04em}
-.money-club-dialog-price span{color:#737d70;font-size:15px}
-.money-club-dialog>p:not(.money-club-dialog-kicker){color:#636f65;font-size:14px;line-height:1.55}
-.money-club-dialog .money-club-dialog-warning{padding:11px 13px;border:1px solid #e7d8b9;border-radius:12px;background:#faf5e8;font-size:12px}
-.money-club-dialog-dismiss{margin-top:17px}
-@media(max-width:375px){.money-ritual-locked{grid-template-columns:33px minmax(0,1fr) 28px;gap:8px;padding:10px}.money-ritual-locked-number{width:33px;height:33px}}
-
-/* Денежный код: первая активация бесплатна, три продолжения ведут в полный разбор. */
-#destiny-code .destiny-code-disclosure--free{
-  border:1px solid #d1b584;
-  background:radial-gradient(ellipse at 100% 5%,rgba(255,255,255,.78),transparent 60%),linear-gradient(125deg,#fffdf4,#f7f0db);
-  box-shadow:0 7px 22px rgba(138,109,60,.10);
-}
-#destiny-code .destiny-code-disclosure--free summary p{
-  display:inline-block;width:max-content;max-width:100%;padding:5px 9px;border-radius:99px;
-  background:#e8f2e9;color:#246649;letter-spacing:.045em;font-size:10px;
-}
-#destiny-code .destiny-code-disclosure--free summary h3{color:#3d4734;font-size:clamp(21px,5.6vw,25px);line-height:1.18}
-#destiny-code .destiny-code-disclosure--free summary>b{color:#a47f4f}
-#destiny-code .destiny-code-disclosure--free .destiny-code-ritual{
-  margin-top:15px;padding:16px;border-color:#e1cba5;background:#fffdf8;
-}
-#destiny-code .destiny-code-disclosure--full-report{
-  border:1px solid #dde6dc;background:linear-gradient(128deg,#fffefa,#f4f8f3);
-}
-#destiny-code .destiny-code-disclosure--full-report summary p{color:#71917a;letter-spacing:.055em}
-#destiny-code .destiny-code-disclosure--full-report summary h3{font-size:clamp(21px,5.6vw,25px);line-height:1.18;color:#304e42}
-#destiny-code .destiny-code-disclosure--full-report summary>b{color:#286d51}
-#destiny-code .destiny-code-full-report-link{
-  display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
-  min-height:49px;margin:16px 0 0;padding:12px 17px;
-  background:linear-gradient(110deg,#1b5c47,#2b7658);border:1px solid #2b7257;
-  border-radius:14px;color:#fff;text-decoration:none;
-  font:800 14px/1.3 system-ui,-apple-system,sans-serif;
-  box-shadow:0 5px 12px rgba(21,82,61,.13);
-}
-#destiny-code .destiny-code-full-report-link:focus-visible{
-  outline:3px solid #c8ac79;outline-offset:3px;
-}
-#destiny-code .destiny-code-full-report-link:active{filter:brightness(.95)}
-@media(max-width:375px){
-  #destiny-code .destiny-code-disclosure--full-report summary{padding:15px}
-  #destiny-code .destiny-code-disclosure--free summary{padding:15px}
-  #destiny-code .destiny-code-full-report-link{font-size:13px}
-}
