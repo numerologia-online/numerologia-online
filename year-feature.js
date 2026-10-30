@@ -1,4 +1,4 @@
-import { createMonthlyLinkSelector, loadEnergies, monthNames } from "./year-content.js?v=4";
+import { createMonthlyLinkSelector, loadEnergies, monthNames } from "./year-content.js?v=5";
 import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=1";
 import { isFreeYearMonth } from "./year-access.js?v=1";
 
