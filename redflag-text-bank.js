@@ -11,7 +11,7 @@ const secureModeEnabled = () => {
 const loadJson = async (path) => {
   // Only answer JSON files are eligible for the secure preview.
   // Public question metadata and the rest of the site remain unchanged.
-  const answerPath = /^\.\/data\/redflag\/(?:love\/published\/[0-9]+-[0-9]+\.json|questions\/[a-z0-9/-]+\.json)(?:\?[^#]*)?$/.test(path);
+  const answerPath = /^\.\/data\/redflag\/(?:love\/published\/[0-9]+-[0-9]+\.json|[a-z0-9-]+\/[a-z0-9-]+\.json)(?:\?[^#]*)?$/.test(path);
   if (answerPath && secureModeEnabled()) {
     const initData = window.Telegram?.WebApp?.initData || "";
     if (initData) {
