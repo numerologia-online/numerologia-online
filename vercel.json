@@ -1,10 +1,10 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "git": {
-    "deploymentEnabled": false
-  },
+  "version": 2,
   "functions": {
     "api/redflag-private.js": {
+      "maxDuration": 10
+    },
+    "api/redflag-health.js": {
       "maxDuration": 10
     }
   }
