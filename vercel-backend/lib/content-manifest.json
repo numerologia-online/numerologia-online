@@ -1,0 +1,1611 @@
+{
+  "release": "20261030secure1",
+  "ref": "04bb5552c69f3bb06b4258afff16fb964b5d84c8",
+  "files": {
+    "child/data/matrix/karmic-tail/12-16-4.json": {
+      "sha": "749ead4096a53ff4a4d2782dfbce97e97d6900e7",
+      "bytes": 19122,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/12-19-7.json": {
+      "sha": "194aaeedbbc39046156930013a6f302ff9318fde",
+      "bytes": 19013,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/15-20-5.json": {
+      "sha": "cef00647057bc420794eb6468fb28f0ec0b60798",
+      "bytes": 10476,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/15-5-8.json": {
+      "sha": "67f8439be553de854a0ecdb59629ccd6080cd4cc",
+      "bytes": 9750,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/15-8-11.json": {
+      "sha": "456141dac02ecf09c67f690d4833b38c6b4ff349",
+      "bytes": 13745,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/18-3-12.json": {
+      "sha": "2352643f082c0b1750c81a7c850d8cafa157e820",
+      "bytes": 11057,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/18-6-15.json": {
+      "sha": "d892dccfdfddc6e6f1ecb8f3f1ad57b19542ab58",
+      "bytes": 13975,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/18-6-6.json": {
+      "sha": "dea76c0928778309b306a72abc17f04e217f4b23",
+      "bytes": 10230,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/18-9-9.json": {
+      "sha": "4e0a363f7686ad10ab25d4600ff05a440a8698b2",
+      "bytes": 13673,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/21-10-16.json": {
+      "sha": "36826d1537b299eece9e8a30aec2c10b53ef306e",
+      "bytes": 15626,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/21-10-7.json": {
+      "sha": "560deb09437623c8795853c99ab25f8880769f43",
+      "bytes": 13919,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/21-4-10.json": {
+      "sha": "f25926374b39f0f62fcf129a72cb2ea2d9bccc85",
+      "bytes": 16207,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/21-7-13.json": {
+      "sha": "1cc19573c8fcb70a87ccb32bd083f648b3503953",
+      "bytes": 14901,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/3-13-10.json": {
+      "sha": "a329a089bb5f7d3d9d05604e8dbf9eda0729dad8",
+      "bytes": 9946,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/3-22-19.json": {
+      "sha": "32bc7bd78a466a222c9e2cc5958729a515bff95d",
+      "bytes": 8380,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/3-7-22.json": {
+      "sha": "1445acbc03f633b5e31fe4cf2f3d67166205d59c",
+      "bytes": 8342,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/6-14-8.json": {
+      "sha": "53f99418fb1753f61c85341f990e530d2a497949",
+      "bytes": 10552,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/6-17-11.json": {
+      "sha": "40f90f02bdc80e6c7438ae158fff59b9a3c62a41",
+      "bytes": 10576,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/6-20-14.json": {
+      "sha": "649c1e7b4fd96c98641ea11685cd7302eb9843d3",
+      "bytes": 10954,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/6-5-17.json": {
+      "sha": "6f19269f1ae71d68b42bf617bfcc4df218455584",
+      "bytes": 8668,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/6-8-20.json": {
+      "sha": "bc89a2ed7de0cbdbe0b336ba02c2d4706539cccd",
+      "bytes": 10417,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/9-12-3.json": {
+      "sha": "1f3fd0f27bcb0455d430e1f30baf671b6eaaa51b",
+      "bytes": 10743,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/9-15-6.json": {
+      "sha": "9c96b4733b9687bbac2e243215712adfc07d340f",
+      "bytes": 14221,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/9-18-9.json": {
+      "sha": "04c0a888794ab505b69ebebdf78edbcd3c32ba13",
+      "bytes": 12020,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/9-3-21.json": {
+      "sha": "bca5ef6cbbf62c8e563f4eafd4ccdbbe6a6431b7",
+      "bytes": 10606,
+      "public": false
+    },
+    "child/data/matrix/karmic-tail/9-9-18.json": {
+      "sha": "436aba16a210a22a2b0464592997c164454a4ea3",
+      "bytes": 11426,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-1.json": {
+      "sha": "627e3396006c70f9bbae18719e51ad90329b3110",
+      "bytes": 41832,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-10.json": {
+      "sha": "e123532116f3258bba6cc814f2ad9fcd899a70dd",
+      "bytes": 70055,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-11.json": {
+      "sha": "cdb8f4cd3421c5f2adf7d37b9551e1a01337c5f6",
+      "bytes": 74083,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-12.json": {
+      "sha": "c83ddbd0d7ac31abc6bbed1e22ed7cc34b69fbd6",
+      "bytes": 61634,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-13.json": {
+      "sha": "207fc9179675fce38b05b78502fcdca4b4514337",
+      "bytes": 80980,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-14.json": {
+      "sha": "72d7f29528646a0484fe4597b448f911b4c9f315",
+      "bytes": 86444,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-15.json": {
+      "sha": "cb4580a2f33e90b5f8e5cea9332c1cce1566b58c",
+      "bytes": 78341,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-16.json": {
+      "sha": "adda93b8e9a469914457533ccc31cb13635abcd0",
+      "bytes": 71139,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-17.json": {
+      "sha": "56486ea4b66a34cbff553599686a3399efb5068a",
+      "bytes": 77502,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-18.json": {
+      "sha": "2d49c68b8da7daeb2bc656aeb89797e37e456751",
+      "bytes": 74542,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-19.json": {
+      "sha": "16336f824882b54c19274f96baae6d605ec0d76c",
+      "bytes": 84757,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-2.json": {
+      "sha": "5b6b6221d5778bd4890b3311621eabececef87a8",
+      "bytes": 46140,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-20.json": {
+      "sha": "54fd6f7582059eb2d9160984c4a86940e03b0741",
+      "bytes": 79677,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-21.json": {
+      "sha": "18af52aaed60184afff6650a5f6bf5234f587867",
+      "bytes": 85329,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-22.json": {
+      "sha": "a6e2f09c5b46aabd7a9fc49fb70d7c9b3d6676bc",
+      "bytes": 72232,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-3.json": {
+      "sha": "e5c541e9dd128d8694466c57b6269becfe8f15c5",
+      "bytes": 56657,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-4.json": {
+      "sha": "ffdbfeaeb45db2485e7bd443872dab4985043bd2",
+      "bytes": 51393,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-5.json": {
+      "sha": "cc072da4e32b0ff9c799d34ee754b6defa1fb53a",
+      "bytes": 44550,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-6.json": {
+      "sha": "b32a9eb1b64840184a1996a403939674aa3b682c",
+      "bytes": 46992,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-7.json": {
+      "sha": "9bc0a12ed9a85a7f2e218fedbe2218272cc2d69f",
+      "bytes": 50544,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-8.json": {
+      "sha": "239bcd4d02ac11d74f85a425e19cf832c46b0768",
+      "bytes": 52223,
+      "public": false
+    },
+    "child/data/matrix/sections/energy-9.json": {
+      "sha": "623e217e53a9fba4297eb82ccc5161445c258de4",
+      "bytes": 44441,
+      "public": false
+    },
+    "data/compatibility/deep/energy-1.json": {
+      "sha": "536e9f9e92cb1c3cdac61341ed4ff19e230ba45d",
+      "bytes": 35287,
+      "public": true
+    },
+    "data/compatibility/deep/energy-10.json": {
+      "sha": "f95c2890014c28d16fec2f6cbd4126ea695e935c",
+      "bytes": 47442,
+      "public": true
+    },
+    "data/compatibility/deep/energy-11.json": {
+      "sha": "16cecda395963890ce9a8908faf7ba8d02c8aff5",
+      "bytes": 46045,
+      "public": true
+    },
+    "data/compatibility/deep/energy-12.json": {
+      "sha": "da819c42707867ee7a1375bfb9f6ca055d67815f",
+      "bytes": 43133,
+      "public": true
+    },
+    "data/compatibility/deep/energy-13.json": {
+      "sha": "1e16c32ef1e0455fb9c5c35dfb7337e862d3d5fe",
+      "bytes": 41347,
+      "public": true
+    },
+    "data/compatibility/deep/energy-14.json": {
+      "sha": "986d913a8358d3461b2bf304dbc3cdf6e82a3d13",
+      "bytes": 42152,
+      "public": true
+    },
+    "data/compatibility/deep/energy-15.json": {
+      "sha": "71b4f091929c3b5da76030591edbe6baf021e24d",
+      "bytes": 41780,
+      "public": true
+    },
+    "data/compatibility/deep/energy-16.json": {
+      "sha": "e5ce503fecb44cc522267bda584bbdfbe44581db",
+      "bytes": 38923,
+      "public": true
+    },
+    "data/compatibility/deep/energy-17.json": {
+      "sha": "26de29373c4b9d77031714385420aa06bb2521af",
+      "bytes": 40171,
+      "public": true
+    },
+    "data/compatibility/deep/energy-18.json": {
+      "sha": "2ef74b633b06ff3c6ce44f612f287abff3ae3b81",
+      "bytes": 53730,
+      "public": true
+    },
+    "data/compatibility/deep/energy-19.json": {
+      "sha": "76dd1b8b22a67a6813208f48e3535c59e3c8b49a",
+      "bytes": 71775,
+      "public": true
+    },
+    "data/compatibility/deep/energy-2.json": {
+      "sha": "812fc4b917a63806b1f8405dfee9a66d26cbb5f9",
+      "bytes": 42884,
+      "public": true
+    },
+    "data/compatibility/deep/energy-20.json": {
+      "sha": "23194915f26c2029496bd79a1ae2bedcd2651d20",
+      "bytes": 61972,
+      "public": true
+    },
+    "data/compatibility/deep/energy-21.json": {
+      "sha": "934232ee37f2bc0a7140cfbb47bc9d138b51fddd",
+      "bytes": 71476,
+      "public": true
+    },
+    "data/compatibility/deep/energy-22.json": {
+      "sha": "464edb0021dfac28df6de4776d827b30807e2fd5",
+      "bytes": 64741,
+      "public": true
+    },
+    "data/compatibility/deep/energy-3.json": {
+      "sha": "8d1fb7d8d69fc64e22046273c56350aa8f23062e",
+      "bytes": 37715,
+      "public": true
+    },
+    "data/compatibility/deep/energy-4.json": {
+      "sha": "e9679b92ce5dd57daa45369e54a8c20bb40895b0",
+      "bytes": 38082,
+      "public": true
+    },
+    "data/compatibility/deep/energy-5.json": {
+      "sha": "37ac75e2ed5d5040a804a2394b59d36bff5267af",
+      "bytes": 38090,
+      "public": true
+    },
+    "data/compatibility/deep/energy-6.json": {
+      "sha": "04922665f0e11ac64ff07be744504b965d2393b6",
+      "bytes": 38200,
+      "public": true
+    },
+    "data/compatibility/deep/energy-7.json": {
+      "sha": "242daf251ca8179536e54ec4ac2a7e2c561d0e97",
+      "bytes": 33111,
+      "public": true
+    },
+    "data/compatibility/deep/energy-8.json": {
+      "sha": "d1249073b0f6465ffae1206c45b6260563df9b56",
+      "bytes": 37816,
+      "public": true
+    },
+    "data/compatibility/deep/energy-9.json": {
+      "sha": "25935e7d55ffdf24cf2d6c237b20e93af4174264",
+      "bytes": 37193,
+      "public": true
+    },
+    "data/money-blocks.json": {
+      "sha": "37e38012642da0fcc4b269f5d9a66f7f4abed06b",
+      "bytes": 40572,
+      "public": false
+    },
+    "data/money-rituals.json": {
+      "sha": "0edbf859a479c13dcfab6b1fb7645fe73520de42",
+      "bytes": 21787,
+      "public": false
+    },
+    "data/redflag/banks/family.json": {
+      "sha": "e506a60eafc6034d808f4074dd7280f04bdba0ce",
+      "bytes": 14550,
+      "public": true
+    },
+    "data/redflag/banks/flags.json": {
+      "sha": "6a4a7f2fb2b5fd366417e25a9ab42f03fc49d691",
+      "bytes": 14288,
+      "public": true
+    },
+    "data/redflag/banks/infidelity.json": {
+      "sha": "5230f1e8706df25c342bebad91557f9f70de5982",
+      "bytes": 14714,
+      "public": true
+    },
+    "data/redflag/banks/intimacy.json": {
+      "sha": "1d69f72e84db19db7145eb29c8612d7e98520d2b",
+      "bytes": 14428,
+      "public": true
+    },
+    "data/redflag/banks/language.json": {
+      "sha": "0752993a4eb0a9f933d7d11c9dbfac2b8d56816c",
+      "bytes": 14321,
+      "public": true
+    },
+    "data/redflag/banks/love.json": {
+      "sha": "ef2b9675d7ba2518e0e0b79fa88aceb2c45f7913",
+      "bytes": 15980,
+      "public": true
+    },
+    "data/redflag/banks/money-questions.json": {
+      "sha": "3ce45d38d8f8a621566790b1d48b6ca7eed94ef0",
+      "bytes": 2709,
+      "public": true
+    },
+    "data/redflag/banks/verdict.json": {
+      "sha": "6c24e871ccf0c3b173b7d1b41e4d15d700f9a051",
+      "bytes": 13811,
+      "public": true
+    },
+    "data/redflag/love/adult-partner.json": {
+      "sha": "5fca53ac1958de3aaaa4112a1b0b8757b98f64a4",
+      "bytes": 72347,
+      "public": false
+    },
+    "data/redflag/love/approved-first-step-jan31-feb04.json": {
+      "sha": "898711170fdcaea63436d02507153ce8d1f42a12",
+      "bytes": 10880,
+      "public": false
+    },
+    "data/redflag/love/drafts/17-4.json": {
+      "sha": "ce1fc2f4c929a7c3e7221fee41fccb43ead9d786",
+      "bytes": 1939,
+      "public": false
+    },
+    "data/redflag/love/drafts/first-step.json": {
+      "sha": "7ecd98e4a32dee50f13c9f70454cea73e2270659",
+      "bytes": 69966,
+      "public": false
+    },
+    "data/redflag/love/family-or-triangle.json": {
+      "sha": "4c6942d8a3f80d7ba3801511c7192cefeaa05417",
+      "bytes": 73202,
+      "public": false
+    },
+    "data/redflag/love/first-step.json": {
+      "sha": "26c4b8d66d6c81caffde3e355ea5d32fedb74239",
+      "bytes": 375058,
+      "public": true
+    },
+    "data/redflag/love/hard-moment.json": {
+      "sha": "44a82e0224caa1ba9191a481dac1e09c3a95e2d4",
+      "bytes": 71891,
+      "public": false
+    },
+    "data/redflag/love/honest-or-disappear.json": {
+      "sha": "7131f2d320e7d7a803a047113ec25bcffe207ac9",
+      "bytes": 72353,
+      "public": false
+    },
+    "data/redflag/love/love-or-attention.json": {
+      "sha": "49397203787772b014dba3b86f2a1a64177ede9e",
+      "bytes": 73580,
+      "public": false
+    },
+    "data/redflag/love/near-him.json": {
+      "sha": "0f22757adbc69387b06681ef3e948ae14ae3da96",
+      "bytes": 71575,
+      "public": false
+    },
+    "data/redflag/love/published/1-2.json": {
+      "sha": "f49e26cfb373f3465497c5df722be7b3e42192e4",
+      "bytes": 17346,
+      "public": true
+    },
+    "data/redflag/love/published/1-3.json": {
+      "sha": "5e3d03335dd4ff0e2333e90de92ffbacc89158fd",
+      "bytes": 21786,
+      "public": true
+    },
+    "data/redflag/love/published/1-4.json": {
+      "sha": "a1e3746e19cdddf458b18a9a83abc0dc10e2a1e3",
+      "bytes": 21426,
+      "public": true
+    },
+    "data/redflag/love/published/1-5.json": {
+      "sha": "cd41efe478a401fd3988bb7b9d30595672e48d2c",
+      "bytes": 18332,
+      "public": true
+    },
+    "data/redflag/love/published/10-2.json": {
+      "sha": "dfb8e3dc7262d5ac28b1de2fd563276f4e07f8ab",
+      "bytes": 19431,
+      "public": true
+    },
+    "data/redflag/love/published/10-3.json": {
+      "sha": "3b7fe69d6618f599553d1c6db08221a6ce28683e",
+      "bytes": 21873,
+      "public": true
+    },
+    "data/redflag/love/published/10-4.json": {
+      "sha": "6cbb6e9972d8abfec67bc2be0a06bd3daa48976d",
+      "bytes": 21369,
+      "public": true
+    },
+    "data/redflag/love/published/11-2.json": {
+      "sha": "727f104a80a4cae81a817d9010125b5f9aea3399",
+      "bytes": 19546,
+      "public": true
+    },
+    "data/redflag/love/published/11-3.json": {
+      "sha": "8218f57f3de6a3cf5b04b561579c36e0ad857665",
+      "bytes": 21735,
+      "public": true
+    },
+    "data/redflag/love/published/11-4.json": {
+      "sha": "fb8a63135aabd3ae577fc4d0cc9e30f5190e251e",
+      "bytes": 20852,
+      "public": true
+    },
+    "data/redflag/love/published/12-2.json": {
+      "sha": "f024a318e4cd31b66b8ba316cd684002ad5629ae",
+      "bytes": 19587,
+      "public": true
+    },
+    "data/redflag/love/published/12-3.json": {
+      "sha": "4e031db6046ea7cc988df643b0c9cbdcd5f3da69",
+      "bytes": 22694,
+      "public": true
+    },
+    "data/redflag/love/published/12-4.json": {
+      "sha": "6040cf4cf077cde85fa1b470eecbf964629ba0c7",
+      "bytes": 21248,
+      "public": true
+    },
+    "data/redflag/love/published/13-2.json": {
+      "sha": "16f01be5474b7cc525c117d4e6d2acb6e25e7473",
+      "bytes": 21567,
+      "public": true
+    },
+    "data/redflag/love/published/13-3.json": {
+      "sha": "b5dd42bb8c84fd51689b661695735c1d222b0a64",
+      "bytes": 22404,
+      "public": true
+    },
+    "data/redflag/love/published/13-4.json": {
+      "sha": "f555b1686239019ea479ea169162a95e216d38ff",
+      "bytes": 21712,
+      "public": true
+    },
+    "data/redflag/love/published/14-2.json": {
+      "sha": "0b499a222a531feb13f9235e9b9dfaefc9cd6046",
+      "bytes": 21146,
+      "public": true
+    },
+    "data/redflag/love/published/14-3.json": {
+      "sha": "8516d96bf47b77e80d8d898f18338cdedc28b3e9",
+      "bytes": 22535,
+      "public": true
+    },
+    "data/redflag/love/published/14-4.json": {
+      "sha": "bbdb3aa5a2c0319e89d5f57b01774f55f11966ec",
+      "bytes": 22438,
+      "public": true
+    },
+    "data/redflag/love/published/15-2.json": {
+      "sha": "65cc460bab21ede6ee1f906cd8662afdc3af5a81",
+      "bytes": 20728,
+      "public": true
+    },
+    "data/redflag/love/published/15-3.json": {
+      "sha": "32b4d5aa50c96ca89d386ba4f064c777c279501d",
+      "bytes": 22350,
+      "public": true
+    },
+    "data/redflag/love/published/15-4.json": {
+      "sha": "b6ffccdfaa9090cb4a1b64f312c99487204d6797",
+      "bytes": 23078,
+      "public": true
+    },
+    "data/redflag/love/published/16-2.json": {
+      "sha": "81b0981ee56df9339702b7e889caa324b0239d5d",
+      "bytes": 21508,
+      "public": true
+    },
+    "data/redflag/love/published/16-3.json": {
+      "sha": "c5c6e7f40c659ea59197e9030bdb54cb24e51689",
+      "bytes": 22217,
+      "public": true
+    },
+    "data/redflag/love/published/16-4.json": {
+      "sha": "47ed209c71013220767f7d31dd5ce9933b7d4baf",
+      "bytes": 22763,
+      "public": true
+    },
+    "data/redflag/love/published/17-2.json": {
+      "sha": "320344b0dac67da21e254028e498db5ba1e7407a",
+      "bytes": 21797,
+      "public": true
+    },
+    "data/redflag/love/published/17-3.json": {
+      "sha": "2fe41e751c6aa299f571477b3e541a6a7450f2ca",
+      "bytes": 21857,
+      "public": true
+    },
+    "data/redflag/love/published/18-2.json": {
+      "sha": "7e3d3d9a8c6ce2b3b29bab413dd8371b628dde45",
+      "bytes": 21648,
+      "public": true
+    },
+    "data/redflag/love/published/18-3.json": {
+      "sha": "2e700df1ec86086106ef422667af5bfcc257fd3f",
+      "bytes": 22631,
+      "public": true
+    },
+    "data/redflag/love/published/18-4.json": {
+      "sha": "2259e855707138aef6f540e6cb1125698c37b10a",
+      "bytes": 17550,
+      "public": true
+    },
+    "data/redflag/love/published/19-2.json": {
+      "sha": "c0b6df2eb170dc269074ea9773aedf06c4c65e36",
+      "bytes": 21271,
+      "public": true
+    },
+    "data/redflag/love/published/19-3.json": {
+      "sha": "951b1e3c2045a2d3d8ccf0737a75331c1e1f0182",
+      "bytes": 21773,
+      "public": true
+    },
+    "data/redflag/love/published/19-4.json": {
+      "sha": "7fde09a742abfd6242a798fbee6f93ec410d9eb6",
+      "bytes": 17624,
+      "public": true
+    },
+    "data/redflag/love/published/2-2.json": {
+      "sha": "c5f74eea8db701d29aef98046dcc81e62f529be8",
+      "bytes": 17384,
+      "public": true
+    },
+    "data/redflag/love/published/2-3.json": {
+      "sha": "286af8c12ca68c4ebe2501d3e0bf3338e75fcda8",
+      "bytes": 21291,
+      "public": true
+    },
+    "data/redflag/love/published/2-4.json": {
+      "sha": "edd18922a2ac5a89430b499d78cd589ba522d4df",
+      "bytes": 22191,
+      "public": true
+    },
+    "data/redflag/love/published/2-5.json": {
+      "sha": "9741468d0216b534b095ba5d4ee2c1eca3772b7b",
+      "bytes": 18481,
+      "public": true
+    },
+    "data/redflag/love/published/20-2.json": {
+      "sha": "0af0ba7e1c8e9b926c139bcec4186e803a705e07",
+      "bytes": 21850,
+      "public": true
+    },
+    "data/redflag/love/published/20-3.json": {
+      "sha": "50ecdb94e6e76995b1f8165cd62b75feac4b5e1b",
+      "bytes": 22112,
+      "public": true
+    },
+    "data/redflag/love/published/20-4.json": {
+      "sha": "60c75937c451186ce57bd58bfebe88a17aa07951",
+      "bytes": 17995,
+      "public": true
+    },
+    "data/redflag/love/published/21-2.json": {
+      "sha": "e1cb171df33a5d7f35bce4d0bf123bef18327ce5",
+      "bytes": 22147,
+      "public": true
+    },
+    "data/redflag/love/published/21-3.json": {
+      "sha": "8e2cdc57a01bd84ede0e7539759d74662c117ead",
+      "bytes": 22759,
+      "public": true
+    },
+    "data/redflag/love/published/21-4.json": {
+      "sha": "f963ec95c1a7b324d61cd0cebcb70ce49e0c6d6a",
+      "bytes": 19549,
+      "public": true
+    },
+    "data/redflag/love/published/22-2.json": {
+      "sha": "20fb436058c0dbe8610a348cb69f9113afd78d06",
+      "bytes": 22132,
+      "public": true
+    },
+    "data/redflag/love/published/22-3.json": {
+      "sha": "886a957c4496bff07c494c8ac321a0583c0f5005",
+      "bytes": 22942,
+      "public": true
+    },
+    "data/redflag/love/published/22-4.json": {
+      "sha": "ed1afc494621a8658b062c1493cad77bd890c416",
+      "bytes": 19597,
+      "public": true
+    },
+    "data/redflag/love/published/23-2.json": {
+      "sha": "1ec045bbb31dade26b43a13e024b5c18eb52aa1a",
+      "bytes": 21574,
+      "public": true
+    },
+    "data/redflag/love/published/23-3.json": {
+      "sha": "a36a6da4b06944a342d2dae88ff3bb11c45813b7",
+      "bytes": 21593,
+      "public": true
+    },
+    "data/redflag/love/published/23-4.json": {
+      "sha": "5578193e80ee78726aa8673f421944cb533fc85e",
+      "bytes": 19428,
+      "public": true
+    },
+    "data/redflag/love/published/24-2.json": {
+      "sha": "8247ff8fe28dc5439f7cfc7aa710fc01be21f68f",
+      "bytes": 21311,
+      "public": true
+    },
+    "data/redflag/love/published/24-3.json": {
+      "sha": "95971da380d2c9084fe0c9bfb4c40647172ba182",
+      "bytes": 22510,
+      "public": true
+    },
+    "data/redflag/love/published/24-4.json": {
+      "sha": "f0e41a7730737ccadf7a1bb23b7c0ecdb0db1d9c",
+      "bytes": 19626,
+      "public": true
+    },
+    "data/redflag/love/published/25-2.json": {
+      "sha": "9953eecf6604714c3ca57dc2535a836c705b3465",
+      "bytes": 21659,
+      "public": true
+    },
+    "data/redflag/love/published/25-3.json": {
+      "sha": "9da94f7c6bee3b89dff4c0514d4d50aafef703f5",
+      "bytes": 23049,
+      "public": true
+    },
+    "data/redflag/love/published/25-4.json": {
+      "sha": "b2760f9dec2417abb23e84cf91364ee53a7bf08a",
+      "bytes": 19906,
+      "public": true
+    },
+    "data/redflag/love/published/26-2.json": {
+      "sha": "65eaba737cb5b928d64b9288d0837c340589f3a3",
+      "bytes": 21770,
+      "public": true
+    },
+    "data/redflag/love/published/26-3.json": {
+      "sha": "b96644bc23619c8b9ef8c4f340807f2d3ca2814a",
+      "bytes": 22968,
+      "public": true
+    },
+    "data/redflag/love/published/26-4.json": {
+      "sha": "6f52a5817de89d932e5887e12e7828728a355e7c",
+      "bytes": 20394,
+      "public": true
+    },
+    "data/redflag/love/published/27-2.json": {
+      "sha": "382ec28b2a8d7d46e763ac860bbf31be3b012721",
+      "bytes": 22723,
+      "public": true
+    },
+    "data/redflag/love/published/27-3.json": {
+      "sha": "2943a17bb02e17609d5c32253e7844293a8286b8",
+      "bytes": 23896,
+      "public": true
+    },
+    "data/redflag/love/published/27-4.json": {
+      "sha": "3032a26790d66ed647e2c9b210145841dcbd874b",
+      "bytes": 19104,
+      "public": true
+    },
+    "data/redflag/love/published/28-2.json": {
+      "sha": "e7520c6868dbc95d888d7b4a2bc59efb556b2658",
+      "bytes": 22816,
+      "public": true
+    },
+    "data/redflag/love/published/28-3.json": {
+      "sha": "3b9311a58e4bd2ce7cfc0083f4b18ff46cd8483f",
+      "bytes": 22790,
+      "public": true
+    },
+    "data/redflag/love/published/28-4.json": {
+      "sha": "ee62be24a168b8c1bfcd47b93786dbbbf4d4c997",
+      "bytes": 19079,
+      "public": true
+    },
+    "data/redflag/love/published/29-2.json": {
+      "sha": "ef49be8912b5675dbc806b7f03dbc71c41b06808",
+      "bytes": 21875,
+      "public": true
+    },
+    "data/redflag/love/published/29-3.json": {
+      "sha": "282712dc5f5e9a250d057910c619c4e9ae45331e",
+      "bytes": 22807,
+      "public": true
+    },
+    "data/redflag/love/published/29-4.json": {
+      "sha": "fb56360f28410db097fa5e6ca198f9ed936410b9",
+      "bytes": 19194,
+      "public": true
+    },
+    "data/redflag/love/published/3-2.json": {
+      "sha": "6168a28cf17d07234380ac26c7352674d247d9d7",
+      "bytes": 18511,
+      "public": true
+    },
+    "data/redflag/love/published/3-3.json": {
+      "sha": "a59672b64366ef846d9465b06c5360d5b7a7fca9",
+      "bytes": 21473,
+      "public": true
+    },
+    "data/redflag/love/published/3-4.json": {
+      "sha": "2127464bbd8fcbbdb658e2562f51e57a6d39bab8",
+      "bytes": 22137,
+      "public": true
+    },
+    "data/redflag/love/published/3-5.json": {
+      "sha": "a84676566fa1dd7f5d81c16f4e09ecec21647f03",
+      "bytes": 18463,
+      "public": true
+    },
+    "data/redflag/love/published/30-3.json": {
+      "sha": "b09fa3ad116612e7af306fd2318b941b30043393",
+      "bytes": 22918,
+      "public": true
+    },
+    "data/redflag/love/published/30-4.json": {
+      "sha": "9e363aa8dfe37ebcabb111a5dfb7b3a854c91379",
+      "bytes": 19355,
+      "public": true
+    },
+    "data/redflag/love/published/31-1.json": {
+      "sha": "3f96cf4b13bfd14808f22a74c9a9bf99a8051017",
+      "bytes": 17199,
+      "public": true
+    },
+    "data/redflag/love/published/31-3.json": {
+      "sha": "21375dae141869a4735f15a69204a67f4270257d",
+      "bytes": 23619,
+      "public": true
+    },
+    "data/redflag/love/published/4-2.json": {
+      "sha": "b4cd2eb2558d73315779cfe849059b9a05b6a2f1",
+      "bytes": 17474,
+      "public": true
+    },
+    "data/redflag/love/published/4-3.json": {
+      "sha": "231fe9a8b37f7d3d7bd62ceef79b69a8a4a318ee",
+      "bytes": 22185,
+      "public": true
+    },
+    "data/redflag/love/published/4-4.json": {
+      "sha": "29137c746796a11e31398622b6a0ec119c372ed9",
+      "bytes": 22404,
+      "public": true
+    },
+    "data/redflag/love/published/4-5.json": {
+      "sha": "7c916bb86788c4d9d1a17ce6e79fcb9bf9dbc249",
+      "bytes": 18687,
+      "public": true
+    },
+    "data/redflag/love/published/5-2.json": {
+      "sha": "8dc298af84fdc79fceb0b08d12717528fb6710a7",
+      "bytes": 18081,
+      "public": true
+    },
+    "data/redflag/love/published/5-3.json": {
+      "sha": "d2d70d94d9a0458bbe78dadae2f7cf86c13345f0",
+      "bytes": 20184,
+      "public": true
+    },
+    "data/redflag/love/published/5-4.json": {
+      "sha": "150959c096097f419ec4a65a2e678247ddc802f9",
+      "bytes": 20726,
+      "public": true
+    },
+    "data/redflag/love/published/5-5.json": {
+      "sha": "f7b78c3005bedf791d611b9c3e255a6fcc25825a",
+      "bytes": 18342,
+      "public": true
+    },
+    "data/redflag/love/published/6-2.json": {
+      "sha": "3268c702cdc54f1f5ba2f05b785a757b6c16119c",
+      "bytes": 17375,
+      "public": true
+    },
+    "data/redflag/love/published/6-3.json": {
+      "sha": "076c5cc97374dbbf92a137a78871dc4ad7c2cfe8",
+      "bytes": 21612,
+      "public": true
+    },
+    "data/redflag/love/published/6-4.json": {
+      "sha": "4652c40a8e7f257e471de933099eb7e8415df36d",
+      "bytes": 21272,
+      "public": true
+    },
+    "data/redflag/love/published/7-2.json": {
+      "sha": "1d3dad7121defdc256144831bd3b126f8bc43b30",
+      "bytes": 17355,
+      "public": true
+    },
+    "data/redflag/love/published/7-3.json": {
+      "sha": "f144e0133293a3a93c6c0f5a85a28eb9bfbefe8c",
+      "bytes": 21635,
+      "public": true
+    },
+    "data/redflag/love/published/7-4.json": {
+      "sha": "f3b8476555388b51d49a251ec6e26f4ed764704c",
+      "bytes": 21324,
+      "public": true
+    },
+    "data/redflag/love/published/7-5.json": {
+      "sha": "3e99db2f0ca8f76403f243ee96e69aadfbd831ba",
+      "bytes": 19562,
+      "public": true
+    },
+    "data/redflag/love/published/8-2.json": {
+      "sha": "fb708fe33abecaf9f0bacf26575c673b6f7fdc3c",
+      "bytes": 17484,
+      "public": true
+    },
+    "data/redflag/love/published/8-3.json": {
+      "sha": "9e896e6e24f6d44599e9ad84ae857daded4489ad",
+      "bytes": 22134,
+      "public": true
+    },
+    "data/redflag/love/published/8-4.json": {
+      "sha": "3f194f23611c3c04ed5ca2bdc754da89e0283cbd",
+      "bytes": 22137,
+      "public": true
+    },
+    "data/redflag/love/published/8-5.json": {
+      "sha": "b268db353b925098a607daf78233e303cb2f3fc5",
+      "bytes": 19436,
+      "public": true
+    },
+    "data/redflag/love/published/9-2.json": {
+      "sha": "7fa74b25cb63d6d67f72e8ad6c6e3abe6a2ddc25",
+      "bytes": 16849,
+      "public": true
+    },
+    "data/redflag/love/published/9-3.json": {
+      "sha": "5436f4308b3df0e1a542bde827e8ccf8b710a097",
+      "bytes": 21889,
+      "public": true
+    },
+    "data/redflag/love/published/9-4.json": {
+      "sha": "de2e1a5a16496c80b096e99f48c3004986bb986f",
+      "bytes": 20646,
+      "public": true
+    },
+    "data/redflag/love/relationship-format.json": {
+      "sha": "4e757574b44350e16ebac91daa90694716786f6d",
+      "bytes": 72132,
+      "public": false
+    },
+    "data/redflag/love/relationship-or-comfort.json": {
+      "sha": "5009e62240e8624f2834e9999aca1608b0184157",
+      "bytes": 70770,
+      "public": false
+    },
+    "data/redflag/love/romance.json": {
+      "sha": "c228941227474a96b710fe1022ea03f279a4e749",
+      "bytes": 70143,
+      "public": false
+    },
+    "data/redflag/money/celebration.json": {
+      "sha": "f7087b6b749320859c9aae097aa3116ca9c1c9c3",
+      "bytes": 621631,
+      "public": false
+    },
+    "data/redflag/money/comic-verdict.json": {
+      "sha": "ee32beb3bc422a53d7c66d4593ab34e477c87ca7",
+      "bytes": 249375,
+      "public": false
+    },
+    "data/redflag/money/courtship.json": {
+      "sha": "9ab561cd6f7a338fe92f8b2a800243ae85e43326",
+      "bytes": 467815,
+      "public": false
+    },
+    "data/redflag/money/family-load.json": {
+      "sha": "9c1bd023cedb3b85b047dc8921716c84f34f28f9",
+      "bytes": 584104,
+      "public": false
+    },
+    "data/redflag/money/generosity.json": {
+      "sha": "6d9390dbda04c6468c562a8970e2a2bbb4280dbc",
+      "bytes": 555994,
+      "public": false
+    },
+    "data/redflag/money/gift.json": {
+      "sha": "e1a1a32364b0b905ce012f3ee7e8aadfb8356e49",
+      "bytes": 502645,
+      "public": true
+    },
+    "data/redflag/money/provider.json": {
+      "sha": "4aa44f4dec3f3d9cbf8504908a0eeabb8715b76a",
+      "bytes": 571396,
+      "public": false
+    },
+    "data/redflag/money/resource.json": {
+      "sha": "56dac2b1219ee8969cadb7028e8aad05403ab9e8",
+      "bytes": 610024,
+      "public": false
+    },
+    "data/redflag/money/responsibility.json": {
+      "sha": "f965de8916d424a2cc014f316da3d81b39439890",
+      "bytes": 607727,
+      "public": false
+    },
+    "data/redflag/money/solve-or-create.json": {
+      "sha": "93871168c308ad10519d39821d3b81c3b4066d34",
+      "bytes": 626968,
+      "public": false
+    },
+    "data/redflag/money/words-or-deeds.json": {
+      "sha": "32894a3b855d7de41b32d34de1d11e961f294854",
+      "bytes": 441012,
+      "public": false
+    },
+    "data/year/energy-1.txt": {
+      "sha": "bd00fd87283b0a6bac787fd858020e2d012f5444",
+      "bytes": 43821,
+      "public": false
+    },
+    "data/year/energy-2.txt": {
+      "sha": "d770c9135399dd945e951de3d09ef4d7076a5159",
+      "bytes": 46000,
+      "public": false
+    },
+    "data/year/energy-3.txt": {
+      "sha": "2043de9b0e7c93064a8aaad127f8bc6806cadb90",
+      "bytes": 49602,
+      "public": false
+    },
+    "data/year/energy-4.txt": {
+      "sha": "061d2254ce040978581d373612efe3b5f9b45de5",
+      "bytes": 37719,
+      "public": false
+    },
+    "data/year/energy-5.txt": {
+      "sha": "2efd4127a424f02188203bb006ab3495403db9ed",
+      "bytes": 41141,
+      "public": false
+    },
+    "data/year/energy-6.txt": {
+      "sha": "eb42a427c6167b494d70768f3a26fa07a8fe8dcd",
+      "bytes": 43040,
+      "public": false
+    },
+    "data/year/energy-7.txt": {
+      "sha": "0d7dba913a38d651664a1210c157f7b407a61ffc",
+      "bytes": 43246,
+      "public": false
+    },
+    "data/year/energy-8.txt": {
+      "sha": "ba9d2fa15282867e989f2122d1d4b061daf89310",
+      "bytes": 49109,
+      "public": false
+    },
+    "data/year/energy-9.txt": {
+      "sha": "a6930bf75b097701e635855ac22b615a431f6a7c",
+      "bytes": 42171,
+      "public": false
+    },
+    "data/year/odd/energy-1.txt": {
+      "sha": "1b8d43af29ebce4a1ce371767b84758edab41f34",
+      "bytes": 46556,
+      "public": false
+    },
+    "data/year/odd/energy-2.txt": {
+      "sha": "c2a66550fd213a84717ac8906d18a243ec455bbc",
+      "bytes": 41119,
+      "public": false
+    },
+    "data/year/odd/energy-3.txt": {
+      "sha": "e28153a6accb00e098862f9a089d4ce6a560b62b",
+      "bytes": 45217,
+      "public": false
+    },
+    "data/year/odd/energy-4.txt": {
+      "sha": "0a245ca0a5a8b4f540829af6b4d938d464a4162d",
+      "bytes": 39042,
+      "public": false
+    },
+    "data/year/odd/energy-5.txt": {
+      "sha": "a569cca8478c2fe1f856fe74e127c5deb79d0001",
+      "bytes": 40355,
+      "public": false
+    },
+    "data/year/odd/energy-6.txt": {
+      "sha": "7515c8ffb259d81077f3762abb17a9b04bff2a11",
+      "bytes": 41948,
+      "public": false
+    },
+    "data/year/odd/energy-7.txt": {
+      "sha": "9188367e7ea24ac9320d36842d9edafaeb62ebb1",
+      "bytes": 43255,
+      "public": false
+    },
+    "data/year/odd/energy-8.txt": {
+      "sha": "39f9f1edf9fd5efe8c603afe978543cd46c91ed1",
+      "bytes": 48729,
+      "public": false
+    },
+    "data/year/odd/energy-9.txt": {
+      "sha": "3f56b657ff46305bb8ca5eabbeea0f3f0390656f",
+      "bytes": 40919,
+      "public": false
+    },
+    "karmic-programs.md": {
+      "sha": "59bed54ba2ee00b16c3181d1a1a4a9b075f7b789",
+      "bytes": 53609,
+      "public": false
+    },
+    "karmic-tails.md": {
+      "sha": "1bb773a031eac033b92e2c4c3c56ab6c3f704e66",
+      "bytes": 37861,
+      "public": false
+    },
+    "knowledge/archive/energy-6-former-root.txt": {
+      "sha": "9f99089cc7ef0eeb3e83eb59ca744d33f37343e7",
+      "bytes": 39544,
+      "public": false
+    },
+    "knowledge/archive/karmic-programs-outside-current-formulas.md": {
+      "sha": "f35b60a3da72fc206d556aa7cc2bb5878670c0cd",
+      "bytes": 15434,
+      "public": false
+    },
+    "knowledge/full-report/energies.json": {
+      "sha": "b0fe3cb6a41eb04abde193a8d478ebd98998a749",
+      "bytes": 35031,
+      "public": true
+    },
+    "knowledge/full-report/karmicPrograms.json": {
+      "sha": "619a84ed164d11e767b0d5c5fa508388f57c80b6",
+      "bytes": 9476,
+      "public": false
+    },
+    "knowledge/full-report/periods.json": {
+      "sha": "219e64aa3eebd43a48a73130e1e382ea144945d9",
+      "bytes": 6768,
+      "public": true
+    },
+    "knowledge/full-report/sections/energy-1.json": {
+      "sha": "538ada8a98f2037f992c007ec7580d9dde0a0a4f",
+      "bytes": 64595,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-10.json": {
+      "sha": "5b443b58c14db37539ac7ced0fb949952787261e",
+      "bytes": 64819,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-11.json": {
+      "sha": "dc48a4a0687e5e499a56d67e3fd19ea1c6f82ff1",
+      "bytes": 88020,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-12.json": {
+      "sha": "9f0ac7f9619f88abeeb4ca03ff62cf16543bb639",
+      "bytes": 49632,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-13.json": {
+      "sha": "11b80c47af06550ee46d6ea00eb3f64f41fff820",
+      "bytes": 104206,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-14.json": {
+      "sha": "3336927ee0775fca2fb3433e9c11ebb94ac48570",
+      "bytes": 98770,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-15.json": {
+      "sha": "c2f53df8d9c5bfe95bde18c786bdc3928ccac454",
+      "bytes": 71120,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-16.json": {
+      "sha": "f355a0e953f42bb06e070a940c49d048653e0fa6",
+      "bytes": 62547,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-17.json": {
+      "sha": "1c4adc08c3d0814dc8b737e7266557e9d19d5901",
+      "bytes": 61100,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-18.json": {
+      "sha": "f5f2fd91a7355e3f9c39062a7f37ba3970ba39dd",
+      "bytes": 28333,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-19.json": {
+      "sha": "59ffd287161dc0db7632b9d759546a5c96ebf218",
+      "bytes": 31175,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-2.json": {
+      "sha": "905d7ef6454ff59846acb99daed9564c9dc6a344",
+      "bytes": 59945,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-20.json": {
+      "sha": "28c9ecdb5e8297fa508550628bbd3f9d7d1f731c",
+      "bytes": 31903,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-21.json": {
+      "sha": "89cb2a2cfc109e538fafc27bb5984d3ad9566a77",
+      "bytes": 28904,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-22.json": {
+      "sha": "2809f503f754b9cf889948a39f5dba6d75db007f",
+      "bytes": 31288,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-3.json": {
+      "sha": "88e34035a4b70bf3dd6875e239e389c7dd093b32",
+      "bytes": 72754,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-4.json": {
+      "sha": "abefd98e8e27973cdb231fd1b4fa385e182a9e84",
+      "bytes": 38916,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-5.json": {
+      "sha": "69c867801d2f0e112738e89e47be831ec47f183c",
+      "bytes": 136982,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-6.json": {
+      "sha": "334c6c42d16296d633c226a01709cef184545701",
+      "bytes": 95166,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-7.json": {
+      "sha": "806d05dbd4ddd1a4a2d821b66d64768dde108739",
+      "bytes": 80284,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-8.json": {
+      "sha": "08b7ab5049c7dd0bec29a1ca70d133b425c841ae",
+      "bytes": 165342,
+      "public": false
+    },
+    "knowledge/full-report/sections/energy-9.json": {
+      "sha": "ab679469aca2522d606efa4b69b511523ffb62ce",
+      "bytes": 141746,
+      "public": false
+    },
+    "pro/guidance/energy-10.json": {
+      "sha": "6d7be5dd253b9e0195e57770e55ec0026d53dd55",
+      "bytes": 6530,
+      "public": false
+    },
+    "pro/guidance/energy-11.json": {
+      "sha": "3acb06f5720aa5ce8d6a140e13fb57c7551eb489",
+      "bytes": 6246,
+      "public": false
+    },
+    "pro/guidance/energy-12.json": {
+      "sha": "05a195c8ac164f831f70d9d14d0f0911cb5c0a09",
+      "bytes": 6039,
+      "public": false
+    },
+    "pro/guidance/energy-13.json": {
+      "sha": "d8701cf638998731a909715c503ebfd79b1f0762",
+      "bytes": 6359,
+      "public": false
+    },
+    "pro/guidance/energy-14.json": {
+      "sha": "14c59d3c2f69b7d04bf525d440c37eac88b49d94",
+      "bytes": 6109,
+      "public": false
+    },
+    "pro/guidance/energy-15.json": {
+      "sha": "9a69bd531c9aac89879ea35563d340b57090301e",
+      "bytes": 6240,
+      "public": false
+    },
+    "pro/guidance/energy-16.json": {
+      "sha": "25b603e73ffd4fde2b84e3d45b98a1277d5fb3bc",
+      "bytes": 6339,
+      "public": false
+    },
+    "pro/guidance/energy-17.json": {
+      "sha": "07a8fd71e2177e3188fa0d2b1267154b69693ece",
+      "bytes": 6050,
+      "public": false
+    },
+    "pro/guidance/energy-18.json": {
+      "sha": "20a60c0086beec1fbd90723cdc31a3613528123a",
+      "bytes": 6349,
+      "public": false
+    },
+    "pro/guidance/energy-19.json": {
+      "sha": "b977090f88afe0bce6e3843a02b17ca714124f41",
+      "bytes": 6051,
+      "public": false
+    },
+    "pro/guidance/energy-20.json": {
+      "sha": "d5012f09da9b3a590f1094ff9317ee187a8e40fc",
+      "bytes": 6382,
+      "public": false
+    },
+    "pro/guidance/energy-21.json": {
+      "sha": "89cfec6ab1ed9e34b35d0ab9719ff0e797aa153f",
+      "bytes": 6196,
+      "public": false
+    },
+    "pro/guidance/energy-22.json": {
+      "sha": "9acc51f90ce7a3f92f3b6f1d708e84f881b6b1bd",
+      "bytes": 6189,
+      "public": false
+    },
+    "pro/guidance/energy-4.json": {
+      "sha": "cb625b17194e7c2a8e119138c7df29d6b7644550",
+      "bytes": 7219,
+      "public": false
+    },
+    "pro/guidance/energy-7.json": {
+      "sha": "76f4b5a0cd22bcee2f6d380ce02c5871c19bd845",
+      "bytes": 7430,
+      "public": false
+    },
+    "pro/karmic-program-additions.json": {
+      "sha": "01bbf1de2c5f71d9bba84b6546d9685f3bc6cf1b",
+      "bytes": 41242,
+      "public": false
+    },
+    "pro/karmic-program-deepening-a.json": {
+      "sha": "e220a79641fc4c0360de6d8b70d1850981deda8f",
+      "bytes": 14225,
+      "public": false
+    },
+    "pro/karmic-program-deepening-b.json": {
+      "sha": "417f326e8694817be2ade0620758a82072e443ec",
+      "bytes": 14052,
+      "public": false
+    },
+    "pro/karmic-program-deepening-c.json": {
+      "sha": "6d7affdd8063b319dc7bd6e9a5ca16c48e10f2db",
+      "bytes": 11351,
+      "public": false
+    },
+    "pro/karmic-programs.json": {
+      "sha": "269e417271faa21c140f6ab5345bdd707dea9d46",
+      "bytes": 1097503,
+      "public": false
+    },
+    "pro/karmic-tail-deepening-a.json": {
+      "sha": "cac38bf1a17800c5aa8c5f1ade7c354c9fbb7959",
+      "bytes": 74344,
+      "public": false
+    },
+    "pro/karmic-tail-deepening-b.json": {
+      "sha": "3c07526a2de4ef1c1b107346f85be08fae1fd9c1",
+      "bytes": 78636,
+      "public": false
+    },
+    "pro/point-previews.json": {
+      "sha": "1b1d8400c971d62b180a72e4d6878deaea2999b9",
+      "bytes": 30048,
+      "public": true
+    },
+    "pro/purpose/general.json": {
+      "sha": "ba976b4f6100b0e8a681ed37878d62a4fee2d998",
+      "bytes": 22947,
+      "public": false
+    },
+    "pro/purpose/personal.json": {
+      "sha": "fdfbc2624a78516c9e038a6e4961115eb372b641",
+      "bytes": 22808,
+      "public": false
+    },
+    "pro/purpose/planetary.json": {
+      "sha": "e85049424e9c4d630e184a56c4d92786e309d8d4",
+      "bytes": 23783,
+      "public": false
+    },
+    "pro/purpose/social.json": {
+      "sha": "3e76d1eff849b061e957635980d79d09b6cd5174",
+      "bytes": 23225,
+      "public": false
+    },
+    "pro/school/arcana.json": {
+      "sha": "a6da26da60407311825ad120710b5583a5a513c0",
+      "bytes": 16482,
+      "public": false
+    },
+    "pro/school/lessons.json": {
+      "sha": "44245cb79ba7fb5f2c4f54d0cfc866fd087009b9",
+      "bytes": 44539,
+      "public": true
+    },
+    "pro/school/lessons/base.json": {
+      "sha": "22949a05a3d57d06672cc978e10d731775929752",
+      "bytes": 4987,
+      "public": false
+    },
+    "pro/school/lessons/case-clinic.json": {
+      "sha": "d3b3fa9269edb0af2fe0a0651d2e0cd99c6635a5",
+      "bytes": 6963,
+      "public": false
+    },
+    "pro/school/lessons/case-independent.json": {
+      "sha": "730b83f1a2dc8498f0ec1e4348c4036b2f8b8b3b",
+      "bytes": 6079,
+      "public": false
+    },
+    "pro/school/lessons/consult.json": {
+      "sha": "dd9c542dc8ad793b1c42f7231ecbbe77242d2888",
+      "bytes": 5769,
+      "public": false
+    },
+    "pro/school/lessons/corners.json": {
+      "sha": "c8f8976b5c8fcda98a5b716897259e6dcb34bbc1",
+      "bytes": 3536,
+      "public": false
+    },
+    "pro/school/lessons/energies-a.json": {
+      "sha": "f2a116a8460709b7de0742d203e0c3ce42ae5d93",
+      "bytes": 4913,
+      "public": false
+    },
+    "pro/school/lessons/energies-b.json": {
+      "sha": "115957e3f439925efce93572bfdf379134f22d43",
+      "bytes": 4577,
+      "public": false
+    },
+    "pro/school/lessons/energy-01-02.json": {
+      "sha": "7d4bc3e4e7af164e76ae34f3e3de435d39909bb2",
+      "bytes": 8017,
+      "public": false
+    },
+    "pro/school/lessons/energy-03-04.json": {
+      "sha": "5e09c5343dc5d1346b3156792900e936496bfcf4",
+      "bytes": 7912,
+      "public": false
+    },
+    "pro/school/lessons/energy-05-06.json": {
+      "sha": "6277ef1205643e697617bfec3b7682514cd4b64c",
+      "bytes": 8077,
+      "public": false
+    },
+    "pro/school/lessons/energy-07-08.json": {
+      "sha": "ff75daf220eca1238ce7f95f0899699fce8656d9",
+      "bytes": 8136,
+      "public": false
+    },
+    "pro/school/lessons/energy-09-10.json": {
+      "sha": "f022fc465a0cccda34d7e5822ec6805673d31a1f",
+      "bytes": 8009,
+      "public": false
+    },
+    "pro/school/lessons/energy-11-12.json": {
+      "sha": "3abccf2d815019a89edc95d3c59177442520c8a3",
+      "bytes": 8054,
+      "public": false
+    },
+    "pro/school/lessons/energy-13-14.json": {
+      "sha": "73be4ae30784d86057a1118ea00a4bf7445fd94d",
+      "bytes": 7802,
+      "public": false
+    },
+    "pro/school/lessons/energy-15-16.json": {
+      "sha": "6950541427b45360e982411cb76b46ec67e31a63",
+      "bytes": 8087,
+      "public": false
+    },
+    "pro/school/lessons/energy-17-18.json": {
+      "sha": "8f9c36c681a50b8985252cf9ad5b4ee29cd35769",
+      "bytes": 8135,
+      "public": false
+    },
+    "pro/school/lessons/energy-19-20.json": {
+      "sha": "3aef45cefd6b5bb2af7a77c27abc490c8c7155c9",
+      "bytes": 8060,
+      "public": false
+    },
+    "pro/school/lessons/energy-21-22.json": {
+      "sha": "d752ab18b7d359511cbc9b989b71ed610806797e",
+      "bytes": 8009,
+      "public": false
+    },
+    "pro/school/lessons/final.json": {
+      "sha": "61f0149069b3dc671c45266bf290c358bf7d2d7a",
+      "bytes": 7578,
+      "public": false
+    },
+    "pro/school/lessons/internal.json": {
+      "sha": "0cffad4675740d2dc29a712a4b4e9ea6775b6c89",
+      "bytes": 6365,
+      "public": false
+    },
+    "pro/school/lessons/lineage-practice.json": {
+      "sha": "805ede8c3250563046a0d06ddada49a0dea1bdcc",
+      "bytes": 5206,
+      "public": false
+    },
+    "pro/school/lessons/love-practice.json": {
+      "sha": "1bb1eecbb5b92507a57674c95581ad552789d18e",
+      "bytes": 5256,
+      "public": false
+    },
+    "pro/school/lessons/money-practice.json": {
+      "sha": "abb9bcdc26af1712ffaf5d1b8e4cc5f1bbf70021",
+      "bytes": 5373,
+      "public": false
+    },
+    "pro/school/lessons/purpose.json": {
+      "sha": "fcded580c2bdfabb121b56636744cced7838424e",
+      "bytes": 4777,
+      "public": false
+    },
+    "pro/school/lessons/reduce.json": {
+      "sha": "e3e6bc6dab7b7b9cab2b93a2bb5778bd258690b7",
+      "bytes": 3950,
+      "public": false
+    },
+    "pro/school/lessons/start.json": {
+      "sha": "124a7d322a994629c8c93fc7f488c583effa0b1d",
+      "bytes": 5189,
+      "public": true
+    },
+    "pro/school/lessons/tail.json": {
+      "sha": "01e5cf610f8e034b41bad92656e5a889505b5152",
+      "bytes": 4509,
+      "public": false
+    },
+    "pro/school/lessons/talents-practice.json": {
+      "sha": "e3172ec1979a02c428317f1c0e4fbc3774d1314a",
+      "bytes": 4997,
+      "public": false
+    },
+    "pro/school/lessons/topics.json": {
+      "sha": "859b9d3052e8506712c54aad8cb9f7985db1716b",
+      "bytes": 5577,
+      "public": false
+    },
+    "pro/schools/classic/lessons/alphabet.json": {
+      "sha": "ec72d4d4d176c8cef0ec5594eaec3bd67f95266e",
+      "bytes": 4181,
+      "public": false
+    },
+    "pro/schools/classic/lessons/birthday.json": {
+      "sha": "3e5e42174823390e606d39e8a09de00d607e233e",
+      "bytes": 4098,
+      "public": false
+    },
+    "pro/schools/classic/lessons/expression.json": {
+      "sha": "01b71f34bfbbf6846b3faee3730039edd66237c5",
+      "bytes": 4132,
+      "public": false
+    },
+    "pro/schools/classic/lessons/final.json": {
+      "sha": "6049c729dfcb1499dbb51d4558923cd193ebcdb0",
+      "bytes": 5979,
+      "public": false
+    },
+    "pro/schools/classic/lessons/hello.json": {
+      "sha": "23265e3ce7485b0276dce1fd3868be379923ce1f",
+      "bytes": 4031,
+      "public": true
+    },
+    "pro/schools/classic/lessons/masters.json": {
+      "sha": "90b836316dc54eff1168756426f67d0748f90352",
+      "bytes": 3810,
+      "public": false
+    },
+    "pro/schools/classic/lessons/month.json": {
+      "sha": "828a2cdfdcfcf67180953f978d7a22546c394ef9",
+      "bytes": 3510,
+      "public": false
+    },
+    "pro/schools/classic/lessons/path.json": {
+      "sha": "ddf2b2677ad32343550cf29e93fd7738297ff196",
+      "bytes": 3489,
+      "public": false
+    },
+    "pro/schools/classic/lessons/personality.json": {
+      "sha": "68690dbfc2da636dbd0e1e573b2620459f763611",
+      "bytes": 3840,
+      "public": false
+    },
+    "pro/schools/classic/lessons/reduce.json": {
+      "sha": "08e4f17e6dcaa175abd6d8dfccf20d22f9149efc",
+      "bytes": 3586,
+      "public": false
+    },
+    "pro/schools/classic/lessons/soul.json": {
+      "sha": "3bbb8801f13b38e43b9d0497f90bede7a5de31f3",
+      "bytes": 3620,
+      "public": false
+    },
+    "pro/schools/classic/lessons/year.json": {
+      "sha": "6b60b48316f9e18b7866f6d89198fc5400099edc",
+      "bytes": 3510,
+      "public": false
+    },
+    "pro/zones.json": {
+      "sha": "4d61c9e277c9e955a8fdf5e265e2a0e5ab96003f",
+      "bytes": 77672,
+      "public": true
+    },
+    "infrastructure/content/school-step-descriptions.json": {
+      "sha": "3c6ce0166e7d959ae1f2313c28ad5aa01addfae7",
+      "bytes": 1317,
+      "public": false
+    },
+    "infrastructure/content/school-diagram-copy.json": {
+      "sha": "0e8030ec47cb40f4623da4ff357294c939afcbe8",
+      "bytes": 2930,
+      "public": false
+    }
+  }
+}

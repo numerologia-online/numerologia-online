@@ -1,8 +1,8 @@
 {
   "version": 2,
   "functions": {
-    "api/redflag-private.js": {
-      "maxDuration": 10
+    "api/*.js": {
+      "maxDuration": 30
     }
   }
 }
