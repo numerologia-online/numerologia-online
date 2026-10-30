@@ -1,0 +1,168 @@
+name: REG.RU publish account popup fix (manual; initial run once)
+
+on:
+  push:
+    paths:
+      - .github/workflows/reg-ru-one-time-account-popup-fix.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'One-time verified REG.RU account popup fix deployment'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Patch only REG.RU modal launch and its cache version; preserve backups
+        env:
+          REG_FTP_HOST: ${{ secrets.REG_FTP_HOST }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib, hashlib, io, os, re, socket, ssl, time, urllib.request
+          from urllib.parse import urlparse
+
+          host = os.getenv("REG_FTP_HOST", "").strip()
+          user = os.getenv("REG_FTP_USER", "").strip()
+          passwd = os.getenv("REG_FTP_PASSWORD", "")
+          expected = "xn--c1adkkdfjbp1a4l.online"
+          site = "www/" + expected
+          if not (host and user and passwd):
+              raise SystemExit("Missing credentials. Nothing was uploaded.")
+
+          # Authenticate only over certificate-verified encrypted FTPS.
+          socket.inet_aton(host)
+          ptr = socket.gethostbyaddr(host)[0].rstrip(".").lower()
+          if not re.fullmatch(r"[a-z0-9.-]+\.hosting\.reg\.ru", ptr):
+              raise SystemExit("REG.RU FTP host could not be verified. Nothing uploaded.")
+          if host not in {a[4][0] for a in socket.getaddrinfo(ptr, 21, type=socket.SOCK_STREAM)}:
+              raise SystemExit("REG.RU FTP host mismatch. Nothing uploaded.")
+
+          ftp = ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=18)
+          originals = {}
+          uploaded = []
+          home = None
+
+          def read_ftp(filename, limit=300000):
+              data = bytearray()
+              def collect(chunk):
+                  data.extend(chunk)
+                  if len(data) > limit:
+                      raise RuntimeError("Unexpectedly large site file")
+              ftp.retrbinary("RETR " + filename, collect)
+              return bytes(data)
+
+          def upload(filename, data):
+              ftp.storbinary("STOR " + filename, io.BytesIO(data))
+              if hashlib.sha256(read_ftp(filename)).digest() != hashlib.sha256(data).digest():
+                  raise RuntimeError("Uploaded file failed integrity check")
+
+          try:
+              ftp.connect(ptr, 21)
+              ftp.auth()
+              ftp.login(user, passwd)
+              ftp.prot_p()
+              ftp.set_pasv(True)
+              home = ftp.pwd()
+              ftp.cwd(site)
+              originals["auth-profile.js"] = read_ftp("auth-profile.js")
+              originals["index.html"] = read_ftp("index.html")
+              js = originals["auth-profile.js"].decode("utf-8")
+              html = originals["index.html"].decode("utf-8")
+
+              trigger = '      setMessage("Автоматический вход не удался: " + (err?.message || "Нет соединения с сервером."), !!raw);\n      if (!dialog.open) dialog.showModal();'
+              replacement = '      // Do not interrupt visitors with a modal when automatic login fails.\n      setMessage("Автоматический вход не удался: " + (err?.message || "Нет соединения с сервером."), !!raw);'
+              if trigger in js:
+                  if js.count(trigger) != 1:
+                      raise RuntimeError("Ambiguous login code; no files modified")
+                  newjs = js.replace(trigger, replacement)
+              elif replacement in js:
+                  print("AUTO-POPUP FIX: already present; no JS change needed")
+                  newjs = js
+              else:
+                  raise RuntimeError("Expected login code not found; no files modified")
+
+              pattern = r'(auth-profile\.js\?v=)(\d+)'
+              m = re.search(pattern, html)
+              if m is None or len(re.findall(pattern, html)) != 1:
+                  raise RuntimeError("Cannot safely identify cache version; no files modified")
+              previous_version = int(m.group(2))
+              if newjs != js:
+                  next_version = previous_version + 1
+                  newhtml = re.sub(pattern, lambda match: match.group(1) + str(next_version), html, count=1)
+              else:
+                  next_version = previous_version
+                  newhtml = html
+
+              changes = {}
+              if newjs != js:
+                  changes["auth-profile.js"] = newjs.encode("utf-8")
+              if newhtml != html:
+                  changes["index.html"] = newhtml.encode("utf-8")
+              if not changes:
+                  print("No changes needed. Existing REG.RU file already patched.")
+              else:
+                  # Back up the exact live originals outside the public www directory.
+                  ftp.cwd(home)
+                  try:
+                      ftp.mkd("site-safeguard-backups")
+                  except ftplib.error_perm:
+                      ftp.cwd("site-safeguard-backups")
+                  ftp.cwd("site-safeguard-backups")
+                  stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+                  for filename in changes:
+                      backup_name = stamp + "-" + filename
+                      upload(backup_name, originals[filename])
+                      print("BACKUP CREATED outside website:", backup_name)
+                  ftp.cwd(home)
+                  ftp.cwd(site)
+
+                  try:
+                      # Upload only the two narrowly validated files.
+                      for filename, data in changes.items():
+                          uploaded.append(filename)
+                          upload(filename, data)
+                          print("UPDATED:", filename)
+                  except Exception:
+                      print("Upload interrupted, restoring original file versions")
+                      for filename in reversed(uploaded):
+                          try:
+                              upload(filename, originals[filename])
+                              print("RESTORED:", filename)
+                          except Exception:
+                              print("RESTORE FAILED:", filename)
+                      raise
+
+              print("CURRENT SCRIPT VERSION:", next_version)
+              print("VERIFIED REG.RU FILE CHANGES:", len(changes))
+          except Exception as exc:
+              print("PUBLISH FAILED:", type(exc).__name__, str(exc)[:180])
+              raise
+          finally:
+              try:
+                  ftp.quit()
+              except Exception:
+                  ftp.close()
+
+          # HTTPS check is intentionally separate from FTP success.
+          for label, url in (
+              ("HOME", "https://" + expected + "/"),
+              ("JAVASCRIPT", "https://" + expected + "/auth-profile.js?v=" + str(next_version))):
+              try:
+                  request = urllib.request.Request(url, headers={"Cache-Control": "no-cache"})
+                  with urllib.request.urlopen(request, timeout=15) as response:
+                      final = urlparse(response.geturl())
+                      body = response.read(300000)
+                      print("LIVE:", label, "status", response.status, "host", final.hostname)
+                      if label == "JAVASCRIPT":
+                          text = body.decode("utf-8", "replace")
+                          print("LIVE AUTOMATIC POPUP REMOVED:", trigger not in text and replacement in text)
+                      else:
+                          print("LIVE HTML HAS NEW CACHE VERSION:",
+                                ("auth-profile.js?v=" + str(next_version)) in body.decode("utf-8", "replace"))
+              except Exception as exc:
+                  print("LIVE VERIFICATION UNAVAILABLE:", label, type(exc).__name__)
+          PY
