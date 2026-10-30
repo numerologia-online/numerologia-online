@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
-import { readFileSync } from 'node:fs';
-export const manifest=JSON.parse(readFileSync(new URL('./content-manifest.json',import.meta.url),'utf8'));
+import contentManifest from './content-manifest.json' with { type: 'json' };
+export const manifest=contentManifest;
 const origins=new Set(['https://numerologia-online.github.io','https://xn--c1adkkdfjbp1a4l.online']);
 const key=crypto.createPublicKey({key:Buffer.from('302a300506032b6570032100e7bf03a2fa4602af4580703d88dda5bb59f32ed8b02a56c187fe7d34caed242d','hex'),format:'der',type:'spki'});
 const cache=new Map();
