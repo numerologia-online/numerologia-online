@@ -197,7 +197,7 @@ if (Object.prototype.hasOwnProperty.call(telegramSectionCards, telegramView)) {
 
 /* Temporary safe check: exposed only inside Telegram when ?privatecheck=1.
    Never expose private text in the page. */
-if (new URLSearchParams(location.search).has("privatecheck")) {
+if (window.Telegram?.WebApp?.initData) {
   const check = document.createElement("button");
   check.type = "button";
   check.textContent = "Проверить доступ к закрытым текстам";
