@@ -91,14 +91,25 @@ export const loadEnergy = (energy, variant = "even") => {
   if (!cache.has(cacheKey)) {
     const variantPath = variant === "odd" ? `data/year/odd/energy-${energy}.txt` : `data/year/energy-${energy}.txt`;
     const fallbackPath = `data/year/energy-${energy}.txt`;
-    const request = fetch(variantPath)
-      .then((response) => {
-        if (response.status === 404 && variant === "odd") return fetch(fallbackPath).then((fallback) => fallback.status === 404 ? null : fallback.ok ? fallback.text() : Promise.reject(new Error(`Не удалось открыть энергию ${energy}.`)));
-        if (response.status === 404) return null;
-        if (!response.ok) throw new Error(`Не удалось открыть энергию ${energy}.`);
-        return response.text();
+    const privateText = async (path) => {
+      const initData = window.Telegram?.WebApp?.initData;
+      if (!initData) throw new Error("Для закрытого разбора откройте сайт через Telegram.");
+      const response = await fetch("https://numerologia-online-auth-server.vercel.app/api/paid-content", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ init_data: initData, path }),
+        signal: AbortSignal.timeout(12000)
+      });
+      if (!response.ok) throw new Error("Закрытый разбор временно недоступен.");
+      const result = await response.json();
+      if (!result.ok || typeof result.content !== "string") throw new Error("Не удалось получить текст разбора.");
+      return result.content;
+    };
+    const request = privateText(variantPath)
+      .catch((error) => {
+        // Do not silently bypass authorization or expose protected answers.
+        throw error;
       })
-      .then((text) => text === null ? emptyEnergy(energy) : parseEnergyText(text, energy));
+      .then((text) => parseEnergyText(text, energy));
     cache.set(cacheKey, request);
   }
   return cache.get(cacheKey);
