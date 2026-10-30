@@ -8,7 +8,8 @@ const loadJson = async (path) => {
     const response = await fetch("https://numerologia-online-auth-server.vercel.app/api/redflag-private", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ init_data: initData, path: "data/redflag/" + path.replace(/^\.\.\//, "").split("?")[0] })
+      body: JSON.stringify({ init_data: initData, path: "data/redflag/" + path.replace(/^\.\.\//, "").split("?")[0] }),
+      signal: AbortSignal.timeout(12000)
     });
     if (!response.ok) throw new Error("PRIVATE_TEXT_HTTP_" + response.status);
     return response.json();
