@@ -1,7 +1,6 @@
 import { reduce22 } from "./redflag-profile.js?v=1";
 
-// Paid answer banks use only the protected API. No public fallback.
-const REDFLAG_SECURE_API = "https://нумерология.online/api/redflag-content.php";
+// GitHub Pages preview: load original answer files without REG.RU.
 const loadJson = async (path) => {
   const response = await fetch(new URL(path, import.meta.url));
   if (!response.ok) throw new Error(`Не удалось загрузить текстовую базу: ${path}`);
