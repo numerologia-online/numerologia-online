@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 
 const ORIGIN = "https://numerologia-online.github.io";
 const REPO = "numerologia-online/numi-numi-on-private";
-const ALLOWED = /^data\\/redflag\\/(?:love\\/published\\/\\d{1,2}-\\d{1,2}\\.json|[a-z0-9-]+\\/[a-z0-9-]+\\.json)$/;
+const ALLOWED = /^data\/redflag\/(?:love\/published\/[0-9]{1,2}-[0-9]{1,2}\.json|[a-z0-9-]+\/[a-z0-9-]+\.json)$/;
 
 function authenticatedTelegramUser(initData, botToken) {
   if (!initData || initData.length > 8192 || !botToken) return null;
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
   const userId = authenticatedTelegramUser(req.body?.init_data, botToken);
   if (!userId) return res.status(401).json({ ok: false, error: "TELEGRAM_AUTH_REQUIRED" });
   if (userId !== ownerId) return res.status(403).json({ ok: false, error: "PURCHASE_REQUIRED" });
-  const path = String(req.body?.path || "").split("?")[0].replace(/^\\.\\//, "");
+  const path = String(req.body?.path || "").split("?")[0].replace(/^\.\//, "");
   if (!ALLOWED.test(path) || path.includes("..")) return res.status(400).json({ ok: false, error: "INVALID_PATH" });
   try {
     const response = await fetch("https://api.github.com/repos/" + REPO + "/contents/" + path, {
