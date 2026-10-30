@@ -1,0 +1,139 @@
+name: REG.RU publish selected files (on owner request only)
+
+on:
+  push:
+    paths:
+      - .github/reg-ru-publish.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Safely check connection or publish exactly approved files
+        env:
+          REG_FTP_HOST: ${{ secrets.REG_FTP_HOST }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib, hashlib, io, json, os, pathlib, re, socket, ssl, time
+
+          manifest = json.loads(pathlib.Path(".github/reg-ru-publish.json").read_text("utf-8"))
+          mode = manifest.get("mode")
+          files = manifest.get("files")
+          if mode not in ("check", "publish") or not isinstance(files, list):
+              raise SystemExit("Invalid release manifest. No files modified.")
+          if mode == "publish" and (not 1 <= len(files) <= 20):
+              raise SystemExit("Choose 1 to 20 files to publish. No files modified.")
+          forbidden = (".github/", ".git/", "server/", "vercel-backend/", "cloudflare/",
+                       "auth-server/", "auth-free/", "tests/", "scripts/", "api/")
+          allowed_extensions = {".js", ".css", ".html", ".json", ".svg", ".txt"}
+          prepared = {}
+          for item in files:
+              if not isinstance(item, str) or not item or "\\" in item or "\x00" in item:
+                  raise SystemExit("Invalid path. No files modified.")
+              posix = pathlib.PurePosixPath(item)
+              if (posix.is_absolute() or ".." in posix.parts or item.startswith(forbidden)
+                  or any(part.startswith(".") for part in posix.parts)
+                  or posix.suffix.lower() not in allowed_extensions):
+                  raise SystemExit("Disallowed path. No files modified.")
+              local = pathlib.Path(item)
+              if not local.is_file() or local.is_symlink() or local.stat().st_size > 2_000_000:
+                  raise SystemExit("Source file missing, symlinked or too large. No files modified.")
+              prepared[item] = local.read_bytes()
+
+          host = os.environ.get("REG_FTP_HOST", "").strip()
+          user = os.environ.get("REG_FTP_USER", "").strip()
+          password = os.environ.get("REG_FTP_PASSWORD", "")
+          if not (host and user and password):
+              raise SystemExit("REG.RU credentials missing. No files modified.")
+          socket.inet_aton(host)
+          ptr = socket.gethostbyaddr(host)[0].rstrip(".").lower()
+          if not re.fullmatch(r"[a-z0-9.-]+\.hosting\.reg\.ru", ptr):
+              raise SystemExit("Unverified hosting server. No files modified.")
+          ips = {x[4][0] for x in socket.getaddrinfo(ptr, 21, type=socket.SOCK_STREAM)}
+          if host not in ips:
+              raise SystemExit("Hosting server DNS mismatch. No files modified.")
+
+          def read_remote(ftp, name, limit=2_100_000):
+              buf = bytearray()
+              def collect(chunk):
+                  buf.extend(chunk)
+                  if len(buf) > limit:
+                      raise RuntimeError("Remote file too large")
+              ftp.retrbinary("RETR " + name, collect)
+              return bytes(buf)
+
+          def put_remote(ftp, name, content):
+              ftp.storbinary("STOR " + name, io.BytesIO(content))
+              if hashlib.sha256(read_remote(ftp, name)).digest() != hashlib.sha256(content).digest():
+                  raise RuntimeError("Upload integrity verification failed")
+
+          ftp = ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=16)
+          originals = {}
+          uploaded = []
+          try:
+              ftp.connect(ptr, 21)
+              ftp.auth()
+              ftp.login(user, password)
+              ftp.prot_p()
+              ftp.set_pasv(True)
+              home = ftp.pwd()
+              site = "www/xn--c1adkkdfjbp1a4l.online"
+              ftp.cwd(site)
+              if "index.html" not in [x.rsplit("/",1)[-1] for x in ftp.nlst()]:
+                  raise RuntimeError("Could not verify exact website root")
+              print("REG.RU: verified encrypted connection and exact website directory")
+              if mode == "check":
+                  print("READ-ONLY CHECK OK. No files uploaded or deleted.")
+              else:
+                  for name in prepared:
+                      try:
+                          originals[name] = read_remote(ftp, name)
+                      except ftplib.error_perm:
+                          raise RuntimeError("Refusing to create an unverified new file: " + name)
+                  ftp.cwd(home)
+                  try:
+                      ftp.mkd("site-safeguard-backups")
+                  except ftplib.error_perm:
+                      pass
+                  ftp.cwd("site-safeguard-backups")
+                  stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+                  for name in originals:
+                      backup = stamp + "-" + hashlib.sha256(name.encode()).hexdigest()[:10] + "-" + pathlib.PurePosixPath(name).name
+                      put_remote(ftp, backup, originals[name])
+                      print("BACKUP:", name, "saved outside public website")
+                  ftp.cwd(home)
+                  ftp.cwd(site)
+                  try:
+                      for name, content in prepared.items():
+                          uploaded.append(name)
+                          put_remote(ftp, name, content)
+                          print("PUBLISHED AND VERIFIED:", name)
+                  except Exception:
+                      print("Upload failed. Restoring original versions.")
+                      for name in reversed(uploaded):
+                          try:
+                              put_remote(ftp, name, originals[name])
+                              print("RESTORED:", name)
+                          except Exception:
+                              print("ROLLBACK FAILED:", name)
+                      raise
+                  print("REG.RU MANUAL RELEASE SUCCESS:", len(uploaded), "file(s)")
+          finally:
+              try:
+                  ftp.quit()
+              except Exception:
+                  ftp.close()
+          PY
