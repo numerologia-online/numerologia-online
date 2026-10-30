@@ -1,5 +1,5 @@
 import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=5";
-import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
+import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=5";
 import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=31";
 import { nodesFor } from "./pro-points.js?v=3";
 import { createProDiagram } from "./pro-diagram.js?v=24";
