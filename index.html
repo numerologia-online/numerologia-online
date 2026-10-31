@@ -400,6 +400,32 @@
         letter-spacing:.01em;
       }
     </style>
+    <style id="numi-tariff-legibility-fix-20261031">
+      /* Explicit labels fit even in Telegram's narrow iPhone webview. */
+      #account-dialog .numi-tariff-table .numi-tariff-row {
+        grid-template-columns:minmax(0,1.45fr) minmax(0,.67fr) minmax(0,.98fr);
+      }
+      #account-dialog .numi-tariff-table .numi-club-free strong {
+        display:block;font:900 clamp(9px,2.7vw,12px)/1.15 system-ui,sans-serif;
+        letter-spacing:-.045em;white-space:nowrap;overflow-wrap:normal;
+        color:#086c40;text-shadow:0 1px 0 #fff;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-unavailable {
+        color:#acada5;font-size:24px;font-weight:400;
+      }
+      #account-dialog .numi-tariff-table .numi-club-included strong {
+        display:block;color:#08764a;font:900 26px/1.1 system-ui,sans-serif;
+      }
+      #account-dialog .numi-tariff-table .numi-club-included small {
+        display:block;color:#176846;font:700 clamp(9px,2.65vw,11px)/1.2 system-ui,sans-serif;
+        margin-top:2px;letter-spacing:-.02em;
+      }
+      @media(max-width:390px) {
+        #account-dialog .numi-tariff-table .numi-tariff-row {
+          grid-template-columns:minmax(0,1.4fr) minmax(0,.67fr) minmax(0,1fr);
+        }
+      }
+    </style>
     <!-- Reversible experiment: subtitles on the eight homepage catalog cards only. -->
     <style id="home-card-subtitles-experiment">
       .products[aria-label="Направления расчётов"] > .product-card {
@@ -837,7 +863,7 @@
           <button class="account-back numi-tariff-back" type="button" data-account-back><span aria-hidden="true">←</span> Назад в личный кабинет</button>
           <h3>Мои тарифы</h3>
           <div class="numi-tariff-lead">
-            <div class="numi-tariff-once"><span class="numi-tariff-card-icon" aria-hidden="true">◇</span><strong>Разовые покупки</strong><small>Выбирайте только то, что интересно</small><span class="numi-tariff-card-foot">Без обязательств</span></div>
+            <div class="numi-tariff-once"><span class="numi-tariff-card-icon" aria-hidden="true">◇</span><strong>Разовые покупки</strong><small>Выбирайте только то, что интересно</small><span class="numi-tariff-card-foot">Без подписки</span></div>
             <div class="numi-tariff-club"><span class="numi-tariff-club-badge">♕ ВЫГОДНЕЕ</span><strong class="numi-tariff-club-title">Клуб</strong><strong class="numi-tariff-club-price">490 ₽ <em>/ мес.</em></strong><small>Скидки на разборы, бесплатные вопросы и закрытые материалы</small></div>
           </div>
           <p class="numi-tariff-caption"><strong>Что вы получаете в клубе каждый месяц</strong><span>Больше возможностей и специальные цены. Подписка необязательна.</span></p>
@@ -845,15 +871,15 @@
             <div class="numi-tariff-head" role="row"><span role="columnheader">Раздел</span><span role="columnheader">Разово</span><span role="columnheader">♕ В клубе</span></div>
             <div class="numi-tariff-row" role="row"><strong role="cell">Полный разбор года</strong><span role="cell">990 ₽</span><span role="cell" class="numi-club-discount">−50%</span></div>
             <div class="numi-tariff-row" role="row"><strong role="cell">Полный разбор жизни</strong><span role="cell">990 ₽</span><span role="cell" class="numi-club-discount">−50%</span></div>
-            <div class="numi-tariff-row" role="row"><strong role="cell">Вопросы «Да или нет?»</strong><span role="cell">19 ₽</span><span role="cell" class="numi-club-free">БЕСПЛАТНО</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Вопросы «Да или нет?»</strong><span role="cell">19 ₽</span><span role="cell" class="numi-club-free"><strong>БЕСПЛАТНО</strong></span></div>
             <div class="numi-tariff-row numi-tariff-row--feature" role="row">
               <div role="cell"><strong>Мужчина или Red Flag</strong><small>Знакомство · Подарки · Деньги · Верность · Семья · Язык любви</small></div>
               <span role="cell">19–49 ₽<small>за вопрос</small></span>
               <span role="cell" class="numi-club-discount">−50%<small>на вопросы</small></span>
             </div>
             <div class="numi-tariff-row" role="row"><strong role="cell">Нумерология момента</strong><span role="cell">100 ₽</span><span role="cell" class="numi-club-discount">−50%</span></div>
-            <div class="numi-tariff-row" role="row"><strong role="cell">Календарь важных чисел</strong><span role="cell">Недоступно</span><span role="cell">Включено</span></div>
-            <div class="numi-tariff-row" role="row"><strong role="cell">Денежные ритуалы</strong><span role="cell">Недоступно</span><span role="cell">В клубе</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Календарь важных чисел</strong><span role="cell" class="numi-tariff-unavailable">—</span><span role="cell" class="numi-club-included"><strong>✓</strong><small>Включено</small></span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Денежные ритуалы</strong><span role="cell" class="numi-tariff-unavailable">—</span><span role="cell" class="numi-club-included"><strong>✓</strong><small>Только в клубе</small></span></div>
           </div>
           <p class="numi-tariff-footer">Клуб стоит 490 ₽ в месяц. Большие разборы и платные вопросы оплачиваются отдельно по клубной цене. Подключение оплаты пока готовится.</p>
           <button type="button" class="account-primary" id="account-show-offer">Подробнее о преимуществах клуба</button>
