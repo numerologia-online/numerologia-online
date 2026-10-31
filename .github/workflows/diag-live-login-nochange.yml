@@ -1,0 +1,38 @@
+name: Read-only live Telegram login verification
+on:
+  push:
+    paths: [.github/workflows/diag-live-login-nochange.yml]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check actual REG.RU login script and identity backend (no login data)
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,re,hashlib
+          home='https://xn--c1adkkdfjbp1a4l.online/'
+          auth='https://numerologia-online-auth-server.vercel.app/api/miniapp'
+          def req(url,method='GET',data=None):
+            r=urllib.request.Request(url,method=method,data=data,headers={
+              'User-Agent':'NUMI-read-only-login-diagnostic',
+              'Origin':home.rstrip('/'),
+              'Content-Type':'application/json',
+              'Cache-Control':'no-cache'})
+            try:response=urllib.request.urlopen(r,timeout=15)
+            except urllib.error.HTTPError as e:response=e
+            with response:
+              b=response.read(300000)
+              print('HTTP',method,url,'status',response.status,'content_type',response.headers.get('content-type'),'allow_origin',response.headers.get('access-control-allow-origin'),'location',response.headers.get('location'),'body_sample',b[:180].decode('utf-8','replace').replace('\n',' ') if 'miniapp' in url else 'omitted',flush=True)
+            return b
+          html=req(home).decode('utf-8','replace')
+          links=re.findall(r'auth-profile\.js\?v=\d+',html)
+          print('LIVE scripts',links,flush=True)
+          js=req(home+'auth-profile.js?v=18').decode('utf-8','replace')
+          print('LIVE auth script',len(js),'sha256',hashlib.sha256(js.encode()).hexdigest(),'has silent identify',('if (!dialog.open) dialog.close();' in js),'opens only if user',('if (!user)' in js and 'dialog.showModal();' in js),flush=True)
+          req(auth,'POST',b'{"init_data":""}')
+          req('https://numerologia-online-auth-server.vercel.app/api/health')
+          req(home+'api/profile.php','POST',b'{"action":"get","init_data":""}')
+          PY
