@@ -94,7 +94,7 @@
         '<button id="numi-forgot" type="button" class="numi-auth-link">Забыли пароль?</button>',
         '<button id="numi-back-login" type="button" class="numi-auth-link" hidden>Вернуться ко входу</button>',
         '<button id="numi-resend" type="button" class="numi-auth-link" hidden>Отправить письмо ещё раз</button>',
-        '<p id="numi-account-message" class="numi-account-message" role="status" aria-live="polite" hidden></p>',
+
       '</div>',
       '<div id="numi-account-signed" hidden>',
         '<p id="numi-account-email-label" class="numi-signed-email"></p>',
@@ -125,6 +125,7 @@
           '<button class="numi-auth-submit" type="submit">Объединить аккаунты ♡</button>',
         '</form>',
       '</div>',
+      '<p id="numi-account-message" class="numi-account-message" role="status" aria-live="polite" hidden></p>',
     '</section>'
   ].join("");
   const identity = overview.querySelector(".account-identity");
