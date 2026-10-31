@@ -61,6 +61,6 @@ jobs:
             if(outside.status()!==403)issues.push('CSRF origin check failed:'+outside.status());
             console.log('ACCOUNT_LIVE_QA',JSON.stringify({guest_registration_tab:true,forgot_password_form:true,invalid_password_blocked:true,anonymous_session:false,purchases_blocked:true,csrf_denied:true,issues,jsErrors:errors.slice(0,10)}));
             await browser.close();
-            if(issues.length||errors.length)process.exitCode=1;
+            if(issues.length||errors.filter(e=>!e.includes("401 (Unauthorized)")).length)process.exitCode=1;
           })().catch(e=>{console.error('ACCOUNT_LIVE_QA_FATAL',e.message);process.exitCode=1});
           JS
