@@ -1,0 +1,64 @@
+name: REG.RU technical readiness inventory (read-only)
+on:
+  push:
+    paths: ['.github/workflows/reg-ru-readiness-check.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Inspect installed API and private database configuration without exposing values
+        env:
+          FTP_USER: ${{ secrets.REG_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,json,re,posixpath
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=15)
+          def report(value): print(json.dumps(value,ensure_ascii=False),flush=True)
+          def read(path,limit=250000):
+              out=io.BytesIO()
+              def collect(data):
+                  if out.tell()+len(data)>limit:raise RuntimeError('File exceeds audit limit')
+                  out.write(data)
+              ftp.retrbinary('RETR '+path,collect)
+              return out.getvalue().decode('utf-8','replace')
+          def inspect(path):
+              try: source=read(path)
+              except ftplib.error_perm:report({'file':path,'installed':False});return
+              facts={'file':path,'installed':True,'pdo':bool(re.search(r'\bPDO\b',source)),'mysqli':'mysqli' in source.lower(),'sqlite':'sqlite' in source.lower(),'mysql':'mysql' in source.lower(),'file_storage':bool(re.search(r'file_put_contents|fopen|json_encode',source)),'payment_status_check':bool(re.search(r"(?:status|paid|entitlement|purchase)",source,re.I))}
+              tables=set(re.findall(r'(?i)\b(?:FROM|JOIN|INTO|TABLE(?:\s+IF\s+NOT\s+EXISTS)?)\s+([a-z_][a-z_0-9]*)',source))
+              facts['table_names']=sorted(t for t in tables if t.lower() in {'user_accounts','child_profiles','child_purchases','child_entitlements','purchases','orders','payments','entitlements','users','profiles','telegram_users','user_profiles'})
+              facts['config_keys_present']=[key for key in ('mysql_dsn','mysql_user','mysql_password','db_host','db_name','db_user','db_password','site_origin') if re.search(r"['\"]"+key+r"['\"]",source)]
+              includes=[]
+              for match in re.finditer(r"(?:require|include)(?:_once)?\s+__DIR__\s*\.\s*['\"]([^'\"]+\.php)['\"]",source):
+                  target=posixpath.normpath(posixpath.dirname(path)+'/'+match.group(1).lstrip('/'))
+                  if target.startswith(home+'/private/') and '..' not in target.split('/'):
+                      includes.append(target)
+              facts['private_includes']=includes
+              report(facts)
+              for target in includes:
+                  try:
+                      config=read(target,50000)
+                      report({'private_configuration':target,'exists':True,'database_keys_present':[key for key in ('mysql_dsn','mysql_user','mysql_password','db_host','db_name','db_user','db_password','dsn') if re.search(r"['\"]"+key+r"['\"]",config)],'pdo':'PDO' in config,'sqlite':'sqlite' in config.lower(),'mysql':'mysql' in config.lower()})
+                  except ftplib.error_perm:report({'private_configuration':target,'exists':False})
+          try:
+              ftp.connect('server172.hosting.reg.ru',21);ftp.login(os.environ['FTP_USER'],os.environ['FTP_PASSWORD']);ftp.prot_p()
+              home=ftp.pwd().rstrip('/')
+              site=home+'/www/xn--c1adkkdfjbp1a4l.online'
+              ftp.cwd(site)
+              report({'verified_ftps':True,'site_root_found':True})
+              for path in ('api/profile.php','api/miniapp.php','api/child-access.php','api/paid-content.php','api/redflag-private.php','api/payments.php','api/payment-webhook.php'):
+                  inspect(site+'/'+path)
+              for relative in ('private/child-paywall/config.local.php','private/child-paywall/bootstrap.php','private/child-paywall/schema.sql','private/paid-content-security/guard.php'):
+                  inspect(home+'/'+relative)
+              report({'production_files_modified':0,'database_rows_read':0,'database_rows_written':0,'database_connection_tested':False})
+          except Exception as error:
+              report({'audit_failed':type(error).__name__});raise SystemExit(1)
+          finally:
+              try:ftp.quit()
+              except Exception:ftp.close()
+          PY
