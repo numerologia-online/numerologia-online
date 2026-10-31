@@ -24,7 +24,7 @@ const loadStylesheet = (href) => new Promise((resolve, reject) => {
 });
 
 const getYearFeature = () => {
-    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=37");
+    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=20261031reg1");
   return yearFeatureLoading;
 };
 
@@ -37,7 +37,7 @@ const openYearFeature = async () => {
 };
 
 const getMatrixFeature = () => {
-  if (!matrixFeatureLoading) matrixFeatureLoading = import("./matrix-feature.js?v=36");
+  if (!matrixFeatureLoading) matrixFeatureLoading = import("./matrix-feature.js?v=20261031reg1");
   return matrixFeatureLoading;
 };
 
@@ -50,7 +50,7 @@ const openMatrixFeature = async () => {
 };
 
 const getRedFlagFeature = () => {
-  if (!redFlagFeatureLoading) redFlagFeatureLoading = import("./redflag-feature.js?v=91");
+  if (!redFlagFeatureLoading) redFlagFeatureLoading = import("./redflag-feature.js?v=20261031reg1");
   return redFlagFeatureLoading;
 };
 
@@ -63,7 +63,7 @@ const openRedFlagFeature = async () => {
 };
 
 const getCompatibilityFeature = () => {
-  if (!compatibilityFeatureLoading) compatibilityFeatureLoading = import("./compatibility-feature.js?v=3");
+  if (!compatibilityFeatureLoading) compatibilityFeatureLoading = import("./compatibility-feature.js?v=20261031reg1");
   return compatibilityFeatureLoading;
 };
 
