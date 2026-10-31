@@ -11,8 +11,8 @@ DOMAIN="xn--c1adkkdfjbp1a4l.online"
 STYLE=b'    <style id="numi-owner-test-checkout-20261031">'
 MARKER=b'    <!-- Reversible experiment: subtitles on the eight homepage catalog cards only. -->'
 FORM=b'          <div id="numi-test-checkout"'
-LIST=b'          <div id="numi-confirmed-purchases" aria-label="Список сохранённых разборов и ответов"></div>'
-TARIFF=b'          <button type="button" class="account-primary" id="account-show-offer">Подробнее о преимуществах клуба</button>'
+LIST='          <div id="numi-confirmed-purchases" aria-label="Список сохранённых разборов и ответов"></div>'.encode('utf-8')
+TARIFF='          <button type="button" class="account-primary" id="account-show-offer">Подробнее о преимуществах клуба</button>'.encode('utf-8')
 PRICE_TEST=b'          <button type="button" id="numi-open-test-from-prices"'
 def sha(blob):return hashlib.sha256(blob).digest()
 def previous(revision,path):return subprocess.check_output(['git','show',revision+':'+path])
