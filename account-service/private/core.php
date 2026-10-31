@@ -340,6 +340,74 @@ function naEmailForTelegram(PDO $db,array $body): never {
     if (!naSendVerify($db,$current['id'],$email)) naReply(503,['ok'=>false,'error'=>'EMAIL_DELIVERY_UNAVAILABLE']);
     naReply(200,['ok'=>true,'confirmation_required'=>true]);
 }
+/**
+ * Link a verified email login with a freshly signed Telegram identity.
+ * Email/password proves the email account; verified Telegram initData proves Telegram.
+ * Orders and entitlements retain their rows and payment verification metadata.
+ */
+function naMergeTelegramEmail(PDO $db,array $body): never {
+    $email=naEmail($body['email']??null);
+    $password=$body['password']??null;
+    $signed=$body['init_data']??null;
+    if (!$email||!is_string($password)||strlen($password)>500||!is_string($signed)||!$signed) {
+        naReply(400,['ok'=>false,'error'=>'INVALID_CREDENTIALS']);
+    }
+    naRate($db,$email);
+    $telegram=naTelegramUser($signed);
+    if (!$telegram||empty($telegram['id'])) naReply(401,['ok'=>false,'error'=>'TELEGRAM_INVALID']);
+    $stmt=$db->prepare('SELECT id,password_hash,email_verified_at FROM numi_accounts WHERE email=? LIMIT 1');
+    $stmt->execute([$email]);
+    $target=$stmt->fetch();
+    if (!$target||!is_string($target['password_hash'])||!password_verify($password,$target['password_hash'])) {
+        naRate($db,$email,true);
+        naReply(401,['ok'=>false,'error'=>'INVALID_CREDENTIALS']);
+    }
+    if (!$target['email_verified_at']) naReply(403,['ok'=>false,'error'=>'EMAIL_NOT_VERIFIED']);
+    $tgId=(string)$telegram['id'];
+    $targetId=(string)$target['id'];
+    $db->beginTransaction();
+    try {
+        // Lock the identity row: concurrent merges cannot silently overwrite each other.
+        $stmt=$db->prepare('SELECT account_id FROM numi_identities WHERE provider=? AND provider_user_id=? FOR UPDATE');
+        $stmt->execute(['telegram',$tgId]);
+        $fromId=$stmt->fetchColumn();
+        $fromId=$fromId===false?null:(string)$fromId;
+        if ($fromId!==null && $fromId!==$targetId) {
+            $stmt=$db->prepare('SELECT id,email,email_verified_at,birth_date FROM numi_accounts WHERE id=? FOR UPDATE');
+            $stmt->execute([$fromId]);
+            $from=$stmt->fetch();
+            if (!$from) throw new RuntimeException('SOURCE_ACCOUNT_MISSING');
+            // Never silently merge another email identity or a pending email setup.
+            if ($from['email']!==null) {
+                $db->rollBack();
+                naReply(409,['ok'=>false,'error'=>'TELEGRAM_EMAIL_CONFLICT']);
+            }
+            $db->prepare('UPDATE numi_orders SET account_id=? WHERE account_id=?')->execute([$targetId,$fromId]);
+            $db->prepare('UPDATE numi_entitlements SET account_id=? WHERE account_id=?')->execute([$targetId,$fromId]);
+            $db->prepare('UPDATE numi_identities SET account_id=? WHERE provider=? AND provider_user_id=? AND account_id=?')
+                ->execute([$targetId,'telegram',$tgId,$fromId]);
+            $db->prepare('UPDATE numi_accounts SET birth_date=COALESCE(birth_date,?) WHERE id=?')
+                ->execute([$from['birth_date'],$targetId]);
+            // Invalidate abandoned credentials and tokens; preserve rows/orders for audit.
+            $db->prepare('DELETE FROM numi_sessions WHERE account_id=?')->execute([$fromId]);
+            $db->prepare('DELETE FROM numi_tokens WHERE account_id=?')->execute([$fromId]);
+        } elseif ($fromId===null) {
+            $db->prepare('INSERT INTO numi_identities(provider,provider_user_id,account_id) VALUES(?,?,?)')
+                ->execute(['telegram',$tgId,$targetId]);
+        }
+        $db->commit();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        if ($e instanceof PDOException && (string)$e->getCode()==='23000') {
+            naReply(409,['ok'=>false,'error'=>'IDENTITY_ALREADY_LINKED']);
+        }
+        throw $e;
+    }
+    naSignOut($db);
+    naSignIn($db,$targetId);
+    naReply(200,['ok'=>true,'authenticated'=>true,'linked'=>'telegram',
+        'account'=>naPublicAccount(naUser($db,$targetId))]);
+}
 function naResend(PDO $db,array $body): never {
     $email=naEmail($body['email']??null);
     if (!$email) naReply(400,['ok'=>false,'error'=>'INVALID_EMAIL']);
@@ -399,6 +467,7 @@ function naServe(): never {
         if ($action==='reset_password') naResetPassword($db,$body);
         if ($action==='telegram') naTelegram($db,$body,false);
         if ($action==='link_telegram') naTelegram($db,$body,true);
+        if ($action==='merge_telegram_email') naMergeTelegramEmail($db,$body);
         if ($action==='set_email') naEmailForTelegram($db,$body);
         if ($action==='birth') naSaveBirth($db,$body);
         if ($action==='purchases') naPurchases($db);
