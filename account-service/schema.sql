@@ -76,3 +76,12 @@ CREATE TABLE IF NOT EXISTS numi_entitlements (
   CONSTRAINT fk_numi_entitlement_account FOREIGN KEY(account_id) REFERENCES numi_accounts(id),
   CONSTRAINT fk_numi_entitlement_order FOREIGN KEY(order_id) REFERENCES numi_orders(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- User-controlled privacy of the "Saved" list. Does not modify purchases,
+-- payment state or entitlements. Also created idempotently by the API if needed.
+CREATE TABLE IF NOT EXISTS numi_saved_hidden (
+  entitlement_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  hidden_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_numi_saved_hidden_entitlement
+    FOREIGN KEY (entitlement_id) REFERENCES numi_entitlements(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
