@@ -45,6 +45,88 @@ def safe_merge_live(live,base,ours,kind):
         if lint.returncode!=0:raise RuntimeError('Merged '+kind+' source failed syntax check')
         return output
 
+
+def patch_core(live,ours):
+    """Add only test-specific code to the live PHP, retaining all unrelated changes."""
+    start=b'/**\n * Owner-only checkout rehearsal:'
+    end=b'/**\n * Saved-item visibility is deliberately independent'
+    if live.count(b'function naTestPurchase(') or live.count(b'function naTestOwner('):
+        raise RuntimeError('Some test PHP functions already exist; stop for manual review')
+    if ours.count(start)!=1 or ours.count(end)!=1:
+        raise RuntimeError('Expected test function source anchors missing')
+    functions=ours[ours.index(start):ours.index(end)]
+    if functions.count(b'function naTestPurchase(')!=1 or functions.count(b'function naTestHide(')!=1:
+        raise RuntimeError('Test function block incomplete')
+    if live.count(end)!=1:raise RuntimeError('Live PHP insertion anchor differs')
+    output=live.replace(end,functions+end,1)
+    # Preserve existing payment/hiding code; intercept only synthetic test ids.
+    needle=b"    $id=$body['entitlement_id']??null;\n"
+    hide=output.split(b'function naHideSaved(',1)
+    if len(hide)!=2 or hide[1].split(b'function naPurchases(',1)[0].count(needle)!=1:
+        raise RuntimeError('Live hide_saved signature differs')
+    prefix,rest=output.split(b'function naHideSaved(',1)
+    section,tail=rest.split(b'function naPurchases(',1)
+    section=section.replace(needle,needle+b"    if (is_string($id) && str_starts_with($id,'test:')) naTestHide($db,$id);\n",1)
+    output=prefix+b'function naHideSaved('+section+b'function naPurchases('+tail
+    # Do not change the existing paid-entitlements SELECT.
+    head,tail=output.split(b'function naPurchases(',1)
+    body,follow=tail.split(b'function naServe(',1)
+    existing_init=b"    naEnsureSavedHidden($db);\n"
+    if body.count(existing_init)!=1:raise RuntimeError('Live purchases initialization differs')
+    if ours.count(b'function naPurchases(')!=1:raise RuntimeError('Missing desired purchases source')
+    desired=ours.split(b'function naPurchases(',1)[1].split(b'function naServe(',1)[0]
+    desired_init=desired.split(existing_init,1)[1].split(b'    $stmt=$db->prepare(',1)[0]
+    if b'naEnsureTestOrders($db)' not in desired_init:raise RuntimeError('Test query missing')
+    body=body.replace(existing_init,existing_init+desired_init,1)
+    old_reply=b"    naReply(200,['ok'=>true,'purchases'=>$stmt->fetchAll(),'account'=>naPublicAccount($account)]);"
+    new_reply=b"    naReply(200,['ok'=>true,'purchases'=>array_merge($testPurchases,$stmt->fetchAll()),'test_enabled'=>$testOwner,'account'=>naPublicAccount($account)]);"
+    if body.count(old_reply)!=1:raise RuntimeError('Live purchases return format differs')
+    body=body.replace(old_reply,new_reply,1)
+    output=head+b'function naPurchases('+body+b'function naServe('+follow
+    dispatch=b"        if ($action==='purchases') naPurchases($db);"
+    if output.count(dispatch)!=1:raise RuntimeError('Live request dispatch differs')
+    output=output.replace(dispatch,dispatch+b"\n        if ($action==='test_purchase') naTestPurchase($db,$body);",1)
+    if output.count(b'function naTestPurchase(')!=1 or output.count(b'naTestHide($db,$id)')!=1:
+        raise RuntimeError('Surgical PHP checks failed')
+    return output
+
+def patch_js(live,ours):
+    """Insert only sandbox UI behavior, leaving other account code unchanged."""
+    if b'request("test_purchase"' in live:
+        raise RuntimeError('Some sandbox JS already exists; stop for review')
+    old=b'      container.replaceChildren();'
+    new=(b'      container.replaceChildren();\n'
+         b'      const testBox=document.getElementById("numi-test-checkout");\n'
+         b'      if(testBox) testBox.hidden=result.test_enabled!==true;\n'
+         b'      const testLink=document.getElementById("numi-open-test-from-prices");\n'
+         b'      if(testLink) testLink.hidden=result.test_enabled!==true;')
+    if live.count(old)!=1:raise RuntimeError('Live saved list rendering differs')
+    output=live.replace(old,new,1)
+    title=b'        title.textContent=purchase.product_code||"Сохранённый разбор";'
+    title_new='        title.textContent=(purchase.is_test?"🧪 ТЕСТ · ":"")+(purchase.product_code||"Сохранённый разбор");'.encode('utf-8')
+    if output.count(title)!=1:raise RuntimeError('Live saved item title differs')
+    output=output.replace(title,title_new,1)
+    target=b'        content.append(title,detail);'
+    desired_chunk=ours.split(target,1)[1].split(b'        const remove=document.createElement("button");',1)[0]
+    if b'purchase.is_test' not in desired_chunk:raise RuntimeError('Test answer rendering missing')
+    if output.count(target)!=1:raise RuntimeError('Live saved list contents differ')
+    output=output.replace(target,target+desired_chunk,1)
+    handler_start=b'  // Owner-only interface; backend checks verified email for EVERY write.'
+    handler_end=b'  // Browser birth dates persist in the account'
+    if ours.count(handler_start)!=1 or ours.count(handler_end)!=1 or output.count(handler_end)!=1:
+        raise RuntimeError('Test UI handler anchors missing')
+    handler=ours.split(handler_start,1)[1].split(handler_end,1)[0]
+    output=output.replace(handler_end,handler_start+handler+handler_end,1)
+    # Only add known messages; never alter existing authentication actions.
+    marker='        SAVED_ITEM_NOT_FOUND:"Запись уже недоступна.",'.encode('utf-8')
+    extras=('\n        TEST_NOT_ENABLED:"Тестовые покупки разрешены только владельцу.",'
+            '\n        INVALID_TEST_PRODUCT:"Неизвестный пробный разбор.",'
+            '\n        INVALID_TEST_DATE:"Проверьте дату рождения.",').encode('utf-8')
+    if output.count(marker)!=1:raise RuntimeError('Live error message anchor differs')
+    output=output.replace(marker,marker+extras,1)
+    if output.count(b'request("test_purchase"')!=1:raise RuntimeError('Test UI script incomplete')
+    return output
+
 def http_get(path):
     q='&' if '?' in path else '?'
     request=Request('https://'+DOMAIN+'/'+path+q+'test_checkout='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
@@ -93,8 +175,8 @@ def main():
             raise RuntimeError('Paid content guard is missing')
         # Preserve live changes that were published independently after our known base.
         # Safe three-way merge refuses conflicts and validates syntax before any write.
-        merged_core=safe_merge_live(before['core'],expected_core,core,'core')
-        merged_js=safe_merge_live(before['js'],expected_js,js,'js')
+        merged_core=patch_core(before['core'],core)
+        merged_js=patch_js(before['js'],js)
         if (merged_core.count(b'function naTestPurchase(')!=1
             or merged_core.count(b'function naTestOwner(')!=1
             or b"if ($action==='test_purchase') naTestPurchase($db,$body);" not in merged_core):
