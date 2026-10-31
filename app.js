@@ -50,7 +50,7 @@ const openMatrixFeature = async () => {
 };
 
 const getRedFlagFeature = () => {
-  if (!redFlagFeatureLoading) redFlagFeatureLoading = import("./redflag-feature.js?v=91");
+  if (!redFlagFeatureLoading) redFlagFeatureLoading = import("./redflag-feature.js?v=92");
   return redFlagFeatureLoading;
 };
 
@@ -63,14 +63,14 @@ const openRedFlagFeature = async () => {
 };
 
 const getCompatibilityFeature = () => {
-  if (!compatibilityFeatureLoading) compatibilityFeatureLoading = import("./compatibility-feature.js?v=3");
+  if (!compatibilityFeatureLoading) compatibilityFeatureLoading = import("./compatibility-feature.js?v=6");
   return compatibilityFeatureLoading;
 };
 
 const openCompatibilityFeature = async () => {
   const [feature] = await Promise.all([
     getCompatibilityFeature(),
-    compatibilityStylesLoading ??= loadStylesheet("compatibility-polish.css?v=4")
+    compatibilityStylesLoading ??= loadStylesheet("compatibility-polish.css?v=7")
   ]);
   feature.openCompatibility();
 };
@@ -89,14 +89,14 @@ const openPersonalDayFeature = async () => {
 window.setTimeout(() => getPersonalDayFeature().catch(() => {}), 900);
 
 const getDestinyCodeFeature = () => {
-  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=25");
+  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=27");
   return destinyCodeFeatureLoading;
 };
 
 const openDestinyCodeFeature = async () => {
   const [feature] = await Promise.all([
     getDestinyCodeFeature(),
-    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=4")
+    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=6")
   ]);
   feature.openDestinyCode();
 };
@@ -104,7 +104,7 @@ const openDestinyCodeFeature = async () => {
 const openMoneyCodeClientLink = async () => {
   const [feature] = await Promise.all([
     getDestinyCodeFeature(),
-    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=4")
+    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=6")
   ]);
   feature.openDestinyCode({ clientOnly: true });
   const backButton = document.querySelector("#back-destiny-code-home");
@@ -182,7 +182,6 @@ const telegramSectionCards = Object.freeze({
   redflag: '[data-open-redflag]',
   compatibility: '[data-open-compatibility]',
   full: 'a.product-card.calculation',
-  woman: '#woman-section',
   wealth: '[data-open-destiny-code]',
   children: '#children-section',
   horary: '#horary-section',
