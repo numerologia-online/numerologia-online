@@ -371,7 +371,7 @@
         background:linear-gradient(155deg,#fffdf8,#fbf6ed)
       }
       #account-dialog .numi-saved-empty[hidden] {display:none!important}
-      #account-dialog .numi-angel {display:block;width:min(100%,260px);height:auto;margin:0 auto 6px}
+      #account-dialog .numi-angel {display:block;width:min(100%,285px);height:auto;margin:0 auto 6px}
       #account-dialog .numi-saved-empty h4 {margin:2px 0 8px;color:#184b38;font:normal 27px/1.15 Georgia,serif}
       #account-dialog .numi-saved-empty p {margin:0;max-width:260px;color:#718278;font-size:13px;line-height:1.5}
       #account-dialog .numi-saved-retention {margin:12px 0 0;color:#829087;font-size:11px;line-height:1.45}
@@ -796,21 +796,60 @@
           <p class="account-panel-intro">Ваши разборы и ответы всегда под рукой.</p>
           <div id="numi-confirmed-purchases" aria-label="Список сохранённых разборов и ответов"></div>
           <div class="account-empty-state numi-saved-empty">
-            <svg class="numi-angel" viewBox="0 0 280 218" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ангел с сердцем">
-              <g stroke="#b88b45" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <ellipse cx="141" cy="23" rx="36" ry="9" transform="rotate(-10 141 23)"/>
-                <path d="M91 104C52 62 31 109 68 137C35 137 37 170 89 160"/>
-                <path d="M189 104C228 62 249 109 212 137C245 137 243 170 191 160"/>
-                <path d="M104 91C96 67 103 50 121 47C134 30 166 40 176 58C197 71 189 98 180 108"/>
-                <path d="M110 68C114 84 132 84 140 72C148 85 166 87 176 78"/>
-                <path d="M120 93Q126 99 131 93M151 93Q156 99 161 93"/>
-                <path d="M135 109Q141 114 147 109"/>
-                <path d="M111 105C118 129 110 143 105 158M172 105C165 129 174 145 176 158"/>
-                <path d="M141 143C106 108 69 139 96 172L141 207L186 172C213 139 176 108 141 143Z" fill="#fffaf0"/>
-                <path d="M104 143C88 133 80 151 94 160M178 143C194 133 202 151 188 160"/>
+            <svg class="numi-angel" viewBox="0 0 320 285" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Милый сказочный ангелочек с большим сердцем, в котором написано «Ответы на твои вопросы»">
+              <defs>
+                <linearGradient id="numi-angel-wings" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#fffdf8"/><stop offset="1" stop-color="#f3dfbc"/>
+                </linearGradient>
+                <linearGradient id="numi-angel-heart" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#fff6e5"/><stop offset="1" stop-color="#f6dfb9"/>
+                </linearGradient>
+                <linearGradient id="numi-angel-hair" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#e9bf75"/><stop offset="1" stop-color="#b7823d"/>
+                </linearGradient>
+              </defs>
+              <g stroke="#d7b273" stroke-linecap="round" fill="none">
+                <path d="M42 83v13M35 90h14M279 79v14M272 86h14" stroke-width="2"/>
+                <path d="M65 36v9M60 41h10M256 135v9M251 139h10" stroke-width="1.6"/>
+                <path d="M74 168l-7 7M247 171l8 7" stroke-width="2"/>
               </g>
-              <text x="141" y="165" text-anchor="middle" font-family="Georgia,serif" font-size="12.5" fill="#966c2b">Ответы на твои</text>
-              <text x="141" y="180" text-anchor="middle" font-family="Georgia,serif" font-size="12.5" fill="#966c2b">вопросы</text>
+              <ellipse cx="161" cy="28" rx="48" ry="12" fill="#fff8e9" stroke="#cfa45f" stroke-width="3" transform="rotate(-5 161 28)"/>
+              <!-- Feathered wings behind the child -->
+              <g fill="url(#numi-angel-wings)" stroke="#cda467" stroke-width="3.4" stroke-linejoin="round">
+                <path d="M120 147C93 102 68 111 69 138C43 121 24 151 51 176C29 185 50 211 85 200C96 195 113 187 130 179Z"/>
+                <path d="M200 147C227 102 252 111 251 138C277 121 296 151 269 176C291 185 270 211 235 200C224 195 207 187 190 179Z"/>
+              </g>
+              <g fill="none" stroke="#dcb883" stroke-width="2" stroke-linecap="round">
+                <path d="M111 170C83 143 70 149 61 157M105 184C84 173 66 183 59 193"/>
+                <path d="M209 170C237 143 250 149 259 157M215 184C236 173 254 183 261 193"/>
+              </g>
+              <!-- Soft clothes and small neck -->
+              <path d="M148 145h24v27h-24Z" fill="#fce9ce"/>
+              <path d="M113 165Q160 144 207 165L219 220Q159 246 101 220Z" fill="#fffdfa" stroke="#d3ae72" stroke-width="3"/>
+              <path d="M159 164l-10 13 11 13 11-13-12-13Z" fill="#e9c58e"/>
+              <!-- Round hair silhouette, unmistakable face and curls -->
+              <path d="M104 108C97 77 110 53 136 50C156 37 178 45 191 61C209 77 214 99 204 125L194 141H117Z" fill="url(#numi-angel-hair)" stroke="#b88746" stroke-width="2.5"/>
+              <circle cx="113" cy="117" r="14" fill="#d6a55d"/><circle cx="206" cy="117" r="14" fill="#d6a55d"/>
+              <ellipse cx="160" cy="106" rx="49" ry="54" fill="#ffe8cd" stroke="#c99a63" stroke-width="2.7"/>
+              <path d="M112 89Q129 53 156 67Q175 48 197 79Q187 94 174 89Q157 93 150 78Q137 95 112 89Z" fill="url(#numi-angel-hair)"/>
+              <path d="M110 101q-15 13 0 26M210 101q15 13 0 26" fill="none" stroke="#c99a63" stroke-width="3"/>
+              <g fill="none" stroke="#855e43" stroke-width="3.2" stroke-linecap="round">
+                <path d="M129 111q9 9 18 0M173 111q9 9 18 0"/>
+                <path d="M155 132q6 5 12 0"/>
+              </g>
+              <circle cx="127" cy="126" r="8" fill="#efaeb1" opacity=".5"/>
+              <circle cx="193" cy="126" r="8" fill="#efaeb1" opacity=".5"/>
+              <path d="M118 72C105 77 102 94 111 104M199 69C214 80 212 101 205 105" fill="none" stroke="#b88746" stroke-width="4" stroke-linecap="round"/>
+              <!-- Large clearly shaped heart in front, hugged from both sides -->
+              <path d="M160 197C137 165 104 168 97 192C85 231 122 250 160 276C198 250 235 231 223 192C216 168 183 165 160 197Z"
+                    fill="url(#numi-angel-heart)" stroke="#c6944f" stroke-width="3.7" stroke-linejoin="round"/>
+              <path d="M117 188Q125 183 136 190M184 190Q195 183 203 188" fill="none" stroke="#fff" stroke-width="3.4" opacity=".85"/>
+              <!-- Hands curved around outside of the heart -->
+              <path d="M110 199C94 192 85 203 95 216C101 223 110 218 116 213" fill="#ffe8cd" stroke="#c99a63" stroke-width="2.8"/>
+              <path d="M210 199C226 192 235 203 225 216C219 223 210 218 204 213" fill="#ffe8cd" stroke="#c99a63" stroke-width="2.8"/>
+              <path d="M98 204l9 4M222 204l-9 4" stroke="#c99a63" stroke-width="2" stroke-linecap="round"/>
+              <text x="160" y="218" text-anchor="middle" fill="#80571f" font-family="Georgia,'Times New Roman',serif" font-size="13.2" font-weight="600">Ответы на твои</text>
+              <text x="160" y="236" text-anchor="middle" fill="#80571f" font-family="Georgia,'Times New Roman',serif" font-size="13.2" font-weight="600">вопросы</text>
             </svg>
             <h4>Здесь пока пусто</h4>
             <p>Ваши сохранённые разборы и ответы появятся здесь.</p>
