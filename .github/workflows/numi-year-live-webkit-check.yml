@@ -1,0 +1,58 @@
+name: Read-only live year calculation after locked text fix
+on:
+  push:
+    paths:
+      - .github/workflows/numi-year-live-webkit-check.yml
+permissions:
+  contents: read
+jobs:
+  test:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Install isolated Safari WebKit
+        run: |
+          mkdir -p /tmp/numi-year-check
+          cd /tmp/numi-year-check
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund playwright@1.56.1 >/dev/null
+          npx playwright install --with-deps webkit
+      - name: Verify free past months, future locks, year transition and PDF paywall
+        run: |
+          cd /tmp/numi-year-check
+          node - <<'JS'
+          const {webkit}=require('playwright');
+          (async()=>{
+            const browser=await webkit.launch({headless:true});
+            for(const [year,freeCount] of [[2026,9],[2027,0]]){
+              const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true});
+              const errors=[];
+              page.on('pageerror',e=>errors.push(e.message));
+              const response=await page.goto('https://xn--c1adkkdfjbp1a4l.online/',{waitUntil:'domcontentloaded',timeout:25000});
+              if(response.status()!==200)throw Error('Homepage unavailable');
+              await page.locator('[data-open-year]').click();
+              await page.locator('#birth-date').fill('09.09.1986');
+              await page.locator('#report-year').fill(String(year));
+              await page.locator('#year-form button[type="submit"]').click();
+              await page.locator('#report').waitFor({state:'visible',timeout:35000});
+              const months=await page.locator('#months > details.month-card').evaluateAll(els=>els.map(el=>({
+                month:el.querySelector('summary span')?.textContent?.trim(),
+                locked:el.classList.contains('month-card--locked'),
+                visibleText:el.querySelector('.month-content')?.textContent?.length || 0,
+                authorText:!!el.querySelector('.link-sections')
+              })));
+              if(months.length!==12)throw Error('Not 12 months '+months.length);
+              const unlocked=months.filter(x=>!x.locked);
+              if(unlocked.length!==freeCount)throw Error('Wrong number of free months for '+year+': '+unlocked.length);
+              if(year===2026&&unlocked.some(x=>!x.authorText||x.visibleText<150))throw Error('Past-month authored texts missing');
+              if(months.filter(x=>x.locked).some(x=>x.authorText))throw Error('Paid author texts exposed');
+              await page.locator('#pdf-button-top').click();
+              await page.locator('#year-paywall-dialog[open]').waitFor({timeout:9000});
+              if(errors.length)throw Error('Browser JavaScript errors '+JSON.stringify(errors.slice(0,3)));
+              console.log('YEAR_LIVE_WEBKIT_PASS',JSON.stringify({year,months:months.length,free:unlocked.length,locked:months.length-unlocked.length,pdf_paywall:true,js_errors:0}));
+              await page.close();
+            }
+            await browser.close();
+          })().catch(e=>{console.error('YEAR_LIVE_WEBKIT_FAIL',e.message);process.exitCode=1});
+          JS
