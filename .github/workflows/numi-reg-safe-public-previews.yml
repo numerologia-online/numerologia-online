@@ -1,0 +1,46 @@
+name: Sanitize 36 mixed public previews while preserving verified free content
+on:
+  push:
+    paths:
+      - .github/workflows/numi-reg-safe-public-previews.yml
+permissions:
+  contents: write
+concurrency:
+  group: numi-reg-free-preview-publish
+  cancel-in-progress: false
+jobs:
+  protect:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish exactly 36 safe public previews and preserve free answers'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Syntax-check safety procedure before publication
+        run: python3 -m py_compile .github/scripts/numi-reg-safe-public-previews.py
+      - name: Back up and sanitize only reviewed public JSON files on REG.RU
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi-reg-safe-public-previews.py
+      - name: Align 36 verified public preview JSON files in main
+        run: |
+          python3 - <<'PY'
+          import json,pathlib,re,subprocess
+          s=subprocess.check_output(['git','show','f67c2ce48928e97a8471d07608b6c722985b7267:paid-content-paths.js'],text=True)
+          m=re.search(r'export const protectedFiles\s*=\s*(\{[^;]+\})\s*;',s,re.S)
+          assert m
+          p=json.loads(m.group(1))
+          f=json.loads(subprocess.check_output(['git','show','eb1fb7c9b1e3992f2207d9979f3d029276bc3401:.github/numi-frontend-release.json']))
+          by={e['path']:e for e in f['files']}
+          targets=[k for k,v in p.items() if v['public'] and not k.startswith('data/redflag/love/published/') and by[k]['old']!=by[k]['new']]
+          assert len(targets)==36
+          for name in targets:
+              pathlib.Path(name).write_bytes(subprocess.check_output(['git','show','f67c2ce48928e97a8471d07608b6c722985b7267:'+name]))
+          print('Aligned exactly 36 approved safe mixed public previews',flush=True)
+          PY
+          git diff --check
+          git add -- data/compatibility/deep data/redflag/banks knowledge/full-report/energies.json knowledge/full-report/periods.json pro/point-previews.json pro/school/arcana.json pro/school/lessons.json pro/zones.json
+          git -c user.name='numi-site-safeguard' -c user.email='actions@users.noreply.github.com' commit -m 'Mirror vetted free-only public preview catalogs from REG.RU into main'
+          git push origin HEAD:main
