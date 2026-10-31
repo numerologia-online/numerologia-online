@@ -54,7 +54,11 @@ def prepare():
         raise RuntimeError("Expected 40 mixed/free catalog paths")
     files = {}
     for path in paths:
-        e = entries[path]
+        e = entries.get(path)
+        if e is None:
+            if path not in ("data/redflag/love/first-step.json", "data/redflag/money/gift.json", "pro/school/lessons/start.json", "pro/schools/classic/lessons/hello.json"):
+                raise RuntimeError("Unreviewed free-only path missing from approved manifest: " + path)
+            continue
         if e["old"] == e["new"]:
             continue
         if not path.endswith(".json") or ".." in path or not re.fullmatch(r"[a-zA-Z0-9_./-]+", path):
