@@ -358,6 +358,27 @@
       #account-dialog [data-account-content="prices"] .numi-tariff-row>[role=cell] {min-height:53px;padding-top:8px;padding-bottom:8px}
       #account-dialog [data-account-content="prices"] .numi-tariff-head [role=columnheader] {padding-top:9px;padding-bottom:9px}
     </style>
+    <style id="numi-saved-library-structure-20261031">
+      #account-dialog .numi-saved-library > h3 {
+        margin:10px 0 6px;color:#174332;font:normal clamp(28px,7vw,35px)/1.15 Georgia,serif
+      }
+      #account-dialog .numi-saved-library .account-panel-intro {
+        margin:5px 0 15px;color:#668074;font-size:14px;line-height:1.45
+      }
+      #account-dialog .numi-saved-empty {
+        display:flex;flex-direction:column;align-items:center;text-align:center;
+        padding:20px 13px 22px;margin:10px 0;border:1px solid #e3cca1;border-radius:20px;
+        background:linear-gradient(155deg,#fffdf8,#fbf6ed)
+      }
+      #account-dialog .numi-saved-empty[hidden] {display:none!important}
+      #account-dialog .numi-angel {display:block;width:min(100%,260px);height:auto;margin:0 auto 6px}
+      #account-dialog .numi-saved-empty h4 {margin:2px 0 8px;color:#184b38;font:normal 27px/1.15 Georgia,serif}
+      #account-dialog .numi-saved-empty p {margin:0;max-width:260px;color:#718278;font-size:13px;line-height:1.5}
+      #account-dialog .numi-saved-retention {margin:12px 0 0;color:#829087;font-size:11px;line-height:1.45}
+      #account-dialog .numi-saved-library #numi-confirmed-purchases {margin:0 0 8px}
+      #account-dialog .numi-saved-library .numi-saved-row {min-height:59px;padding:9px 0}
+      #account-dialog .numi-saved-library .numi-saved-row-content strong {font-size:15px}
+    </style>
     <!-- Reversible experiment: subtitles on the eight homepage catalog cards only. -->
     <style id="home-card-subtitles-experiment">
       .products[aria-label="Направления расчётов"] > .product-card {
@@ -769,14 +790,32 @@
           <a class="account-tile account-support-tile" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer"><strong>Техподдержка <span aria-hidden="true">↗</span></strong><small>Помощь с доступом и разборами</small></a>
         </div>
 
-        <section class="account-panel" data-account-content="saved" hidden>
+        <section class="account-panel numi-saved-library" data-account-content="saved" hidden>
           <button class="account-back numi-gold-back" type="button" data-account-back><span aria-hidden="true">←</span> Назад в личный кабинет</button>
           <h3>Сохранённое</h3>
-          <p class="account-panel-intro">Все ваши оплаченные разборы и ответы в одном месте.</p>
-          <div class="account-library-group"><span class="account-library-symbol" aria-hidden="true">♡</span><div><strong>Большие разборы</strong><small>Полный разбор жизни, совместимость и другие покупки</small></div></div>
-          <div class="account-library-group"><span class="account-library-symbol" aria-hidden="true">✦</span><div><strong>Ответы на вопросы</strong><small>Всё, к чему захочется вернуться</small></div></div>
-          <p class="account-empty-state">♡ Здесь пока пусто. Ваши сохранённые разборы и ответы появятся здесь.</p>
-          <div class="account-storage-disclaimer"><strong>Как долго доступны покупки ♡</strong><p>Оплаченные разборы и ответы на вопросы будут доступны в личном кабинете 12 месяцев с даты покупки. Мы ограничиваем срок хранения персональных записей, чтобы сервис оставался быстрым, а цены - доступными. Вы сможете сохранить ответ на телефон, сделать скриншоты или скачать PDF, если он предусмотрен разбором. Файлы на вашем устройстве останутся с вами.</p></div>
+          <p class="account-panel-intro">Ваши разборы и ответы всегда под рукой.</p>
+          <div id="numi-confirmed-purchases" aria-label="Список сохранённых разборов и ответов"></div>
+          <div class="account-empty-state numi-saved-empty">
+            <svg class="numi-angel" viewBox="0 0 280 218" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ангел с сердцем">
+              <g stroke="#b88b45" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <ellipse cx="141" cy="23" rx="36" ry="9" transform="rotate(-10 141 23)"/>
+                <path d="M91 104C52 62 31 109 68 137C35 137 37 170 89 160"/>
+                <path d="M189 104C228 62 249 109 212 137C245 137 243 170 191 160"/>
+                <path d="M104 91C96 67 103 50 121 47C134 30 166 40 176 58C197 71 189 98 180 108"/>
+                <path d="M110 68C114 84 132 84 140 72C148 85 166 87 176 78"/>
+                <path d="M120 93Q126 99 131 93M151 93Q156 99 161 93"/>
+                <path d="M135 109Q141 114 147 109"/>
+                <path d="M111 105C118 129 110 143 105 158M172 105C165 129 174 145 176 158"/>
+                <path d="M141 143C106 108 69 139 96 172L141 207L186 172C213 139 176 108 141 143Z" fill="#fffaf0"/>
+                <path d="M104 143C88 133 80 151 94 160M178 143C194 133 202 151 188 160"/>
+              </g>
+              <text x="141" y="165" text-anchor="middle" font-family="Georgia,serif" font-size="12.5" fill="#966c2b">Ответы на твои</text>
+              <text x="141" y="180" text-anchor="middle" font-family="Georgia,serif" font-size="12.5" fill="#966c2b">вопросы</text>
+            </svg>
+            <h4>Здесь пока пусто</h4>
+            <p>Ваши сохранённые разборы и ответы появятся здесь.</p>
+          </div>
+          <p class="numi-saved-retention">Сохранённые материалы доступны в течение 12 месяцев. При необходимости вы можете сохранить их на устройство.</p>
         </section>
 
         <section class="account-panel" data-account-content="club" hidden>
