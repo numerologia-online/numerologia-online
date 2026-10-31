@@ -75,6 +75,11 @@ function naPublicAccount(array $account): array {
         'birth_date'=>$account['birth_date'],
     ];
 }
+function naHasLinkedTelegram(PDO $db,string $accountId): bool {
+    $query=$db->prepare('SELECT 1 FROM numi_identities WHERE account_id=? AND provider=? LIMIT 1');
+    $query->execute([$accountId,'telegram']);
+    return (bool)$query->fetchColumn();
+}
 function naCurrent(PDO $db): ?array {
     $raw=$_COOKIE[NUMI_ACCOUNT_COOKIE]??'';
     if (!is_string($raw) || !preg_match('/^[A-Za-z0-9_-]{43}$/D',$raw)) return null;
@@ -587,7 +592,7 @@ function naServe(): never {
         if ($action==='health') naReply(200,['ok'=>true,'service'=>'numi-account','database'=>true]);
         if ($action==='session') {
             $current=naCurrent($db);
-            naReply(200,['ok'=>true,'authenticated'=>(bool)$current,'account'=>$current?naPublicAccount($current):null]);
+            naReply(200,['ok'=>true,'authenticated'=>(bool)$current,'account'=>$current?array_merge(naPublicAccount($current),['telegram_linked'=>naHasLinkedTelegram($db,(string)$current['id'])]):null]);
         }
         if ($action==='register') naRegister($db,$body);
         if ($action==='login') naLogin($db,$body);
