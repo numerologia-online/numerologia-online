@@ -334,6 +334,8 @@
       container.replaceChildren();
       const testBox=document.getElementById("numi-test-checkout");
       if(testBox) testBox.hidden=result.test_enabled!==true;
+      const testLink=document.getElementById("numi-open-test-from-prices");
+      if(testLink) testLink.hidden=result.test_enabled!==true;
       for(const purchase of purchases){
         const item=document.createElement("div");
         item.className="numi-saved-row";
