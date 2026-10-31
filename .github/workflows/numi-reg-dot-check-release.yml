@@ -1,0 +1,26 @@
+name: REG.RU single dot delivery check
+on:
+  push:
+    paths:
+      - .github/workflows/numi-reg-dot-check-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: numi-reg-dot-check-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Run one-dot REG.RU publication test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate single-dot script
+        run: |
+          python3 -m py_compile account-service/deploy-reg-dot-check.py
+          grep -q 'numi-reg-test-dot-20261031' index.html
+      - name: Publish only one character in account title; verify and roll back on failure
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u account-service/deploy-reg-dot-check.py
