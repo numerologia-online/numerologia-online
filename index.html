@@ -440,6 +440,8 @@
       #account-dialog .numi-test-answer {margin:9px 0 0;background:#fff9eb;border:1px solid #e0cba2;border-radius:9px;padding:8px;font-size:12px}
       #account-dialog .numi-test-answer summary {cursor:pointer;color:#165d44;font-weight:700}
       #account-dialog .numi-test-answer p {margin:7px 0 0;font-size:12px;line-height:1.5}
+      #account-dialog .numi-test-price-link {width:100%;margin:10px 0 0;padding:13px;border:1px solid #ad8f55;border-radius:13px;background:#f8f0db;color:#204e37;font-weight:750}
+      #account-dialog .numi-test-price-link[hidden] {display:none!important}
     </style>
     <!-- Reversible experiment: subtitles on the eight homepage catalog cards only. -->
     <style id="home-card-subtitles-experiment">
@@ -916,6 +918,7 @@
           </div>
           <p class="numi-tariff-footer">Клуб стоит 490 ₽ в месяц. Большие разборы и платные вопросы оплачиваются отдельно по клубной цене. Подключение оплаты пока готовится.</p>
           <button type="button" class="account-primary" id="account-show-offer">Подробнее о преимуществах клуба</button>
+          <button type="button" id="numi-open-test-from-prices" data-account-panel="saved" class="numi-test-price-link" hidden>🧪 Провести тестовую покупку · 0 ₽</button>
         </section>
 
         <section class="account-panel" data-account-content="learning" hidden>
