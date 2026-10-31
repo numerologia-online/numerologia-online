@@ -44,3 +44,4 @@ jobs:
           git add -- data/compatibility/deep data/redflag/banks knowledge/full-report/energies.json knowledge/full-report/periods.json pro/point-previews.json pro/school/arcana.json pro/school/lessons.json pro/zones.json
           git -c user.name='numi-site-safeguard' -c user.email='actions@users.noreply.github.com' commit -m 'Mirror vetted free-only public preview catalogs from REG.RU into main'
           git push origin HEAD:main
+# retry after syntax lint
