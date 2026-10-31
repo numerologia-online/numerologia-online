@@ -1,0 +1,66 @@
+name: REG.RU prepare harmless preview test files (ONE TIME)
+
+on:
+  push:
+    paths: [.github/workflows/reg-ru-stage-probe-only.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Create empty staging location and public non-sensitive access probes
+        env:
+          FTP_HOST: ${{ secrets.REG_FTP_HOST }}
+          FTP_USER: ${{ secrets.REG_FTP_USER }}
+          FTP_PASS: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,io,os,socket,ssl,re,urllib.request,urllib.error
+          HOST=os.environ["FTP_HOST"].strip()
+          USER=os.environ["FTP_USER"].strip()
+          PASS=os.environ["FTP_PASS"]
+          DOMAIN="xn--c1adkkdfjbp1a4l.online"
+          FOLDER="vesta-blinchik-numi-c313e2f44ae802e16599"
+          socket.inet_aton(HOST)
+          PTR=socket.gethostbyaddr(HOST)[0].lower().rstrip(".")
+          if not re.fullmatch(r"[a-z0-9.-]+\.hosting\.reg\.ru",PTR):
+              raise SystemExit("REG.RU verified hostname required")
+          if HOST not in {x[4][0] for x in socket.getaddrinfo(PTR,21,type=socket.SOCK_STREAM)}:
+              raise SystemExit("REG.RU DNS identity check failed")
+
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=18)
+          try:
+              ftp.connect(PTR,21)
+              ftp.auth()
+              ftp.login(USER,PASS)
+              ftp.prot_p()
+              ftp.set_pasv(True)
+              ftp.cwd("www/"+DOMAIN)
+              if "index.html" not in [x.rsplit("/",1)[-1] for x in ftp.nlst()]:
+                  raise SystemExit("Live site root verification failed")
+              root=ftp.pwd()
+              existing=[x.rsplit("/",1)[-1] for x in ftp.nlst()]
+              if FOLDER in existing:
+                  raise SystemExit("Staging location unexpectedly exists; refusing to overwrite")
+              ftp.mkd(FOLDER)
+              ftp.cwd(FOLDER)
+              probes={
+                "index.html":b"<!doctype html><html lang='ru'><meta charset='utf-8'><title>Preview security test only</title><body>Security gate setup in progress. No website files are here.</body></html>\n",
+                "styles.css":b"/* harmless preview permission check only */\n",
+                "probe.js":b"/* harmless preview permission check only */\n",
+                "probe.json":b'{"preview_access_test":true}\n',
+                "probe.svg":b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>\n',
+              }
+              for name,data in probes.items():
+                  ftp.storbinary("STOR "+name,io.BytesIO(data))
+              print("Created harmless empty test location, no paid data copied.")
+              print("PRODUCTION ROOT FILES MODIFIED: 0")
+              print("Only security probe files are publicly accessible until hosting-panel protection is enabled.")
+          finally:
+              try:ftp.quit()
+              except Exception:ftp.close()
+          PY
