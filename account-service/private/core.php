@@ -53,7 +53,7 @@ function naEmail(mixed $value): ?string {
     return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : null;
 }
 function naPassword(mixed $password): bool {
-    return is_string($password) && strlen($password)>=10 && strlen($password)<=200;
+    return is_string($password) && strlen($password)>=1 && strlen($password)<=200;
 }
 function naCookies(string $raw, int $until): void {
     setcookie(NUMI_ACCOUNT_COOKIE, $raw, [
