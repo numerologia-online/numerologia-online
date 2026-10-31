@@ -1,0 +1,32 @@
+name: Test existing private year preview endpoint without changing production
+on:
+  push:
+    paths:
+      - .github/workflows/numi-year-preview-live-probe.yml
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Check genuine guest preview for 2026 and locked future 2027
+        run: |
+          python3 - <<'PY'
+          import json, urllib.request, urllib.error
+          base="https://xn--c1adkkdfjbp1a4l.online/api/numi-year-preview.php"
+          for year in (2026,2027):
+              body=json.dumps({"birth_date":"1986-09-09","year":year,"timezone":"Europe/Samara"}).encode()
+              req=urllib.request.Request(base,data=body,headers={"Content-Type":"application/json","Origin":"https://xn--c1adkkdfjbp1a4l.online","Cache-Control":"no-cache"})
+              try:
+                  with urllib.request.urlopen(req,timeout=28) as resp:
+                      code=resp.status
+                      data=json.loads(resp.read(120000))
+              except urllib.error.HTTPError as exc:
+                  print("YEAR_PREVIEW_ERROR",year,exc.code,exc.read(500).decode("utf-8","replace"))
+                  raise
+              total=sum(len(e.get("links",{})) for e in data.get("primary",{}).values())+sum(len(e.get("links",{})) for e in data.get("alternate",{}).values())
+              assert code==200 and data.get("ok") is True and len(data.get("primary",{}))>=1
+              assert total>0 if year==2026 else total==0
+              print("YEAR_PREVIEW_PASS",json.dumps({"year":year,"status":code,"available_monthly_links":total,"scope":"guest"}))
+          PY
