@@ -66,6 +66,18 @@
         clear:both;
       }
     </style>
+    <style id="numi-stable-cabinet-height-20261031">
+      /* The account dialog must not collapse after the email-link form disappears. */
+      @media (max-width:700px) {
+        #account-dialog:not(.account-dialog--editing):not(:has(input:focus)) {
+          min-height:min(78dvh,740px);
+        }
+        #account-dialog.account-dialog--editing,
+        #account-dialog:has(input:focus) {
+          min-height:0;
+        }
+      }
+    </style>
     <!-- Reversible experiment: subtitles on the eight homepage catalog cards only. -->
     <style id="home-card-subtitles-experiment">
       .products[aria-label="Направления расчётов"] > .product-card {
