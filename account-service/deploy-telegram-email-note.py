@@ -13,15 +13,16 @@ def http_get(path):
         return res.read(2000000)
 def main():
     new_js=pathlib.Path("account-browser.js").read_bytes()
-    if b"numi-telegram-link-prompt" not in new_js or b"\xd0\x9f\xd1\x80\xd0\xb8\xd0\xb2\xd1\x8f\xd0\xb7\xd0\xb0\xd1\x82\xd1\x8c" not in new_js:
+    if b"numi-telegram-link-prompt" not in new_js or b"numi-account-privacy" not in new_js:
         raise RuntimeError("Approved text missing")
     baselines=[
       (b"account-browser.js?v=1",prior("8526946c219af9036231bdfb77a18503da550c6e^")),
       (b"account-browser.js?v=2",prior("8526946c219af9036231bdfb77a18503da550c6e")),
       (b"account-browser.js?v=3",prior("2cefda4c7fa3706e891aaf164c841f6366e94c22")),
       (b"account-browser.js?v=4",prior("700a0efa645311398d926215613c226c449771ae")),
+      (b"account-browser.js?v=5",prior("018f97176007611daf87f8f4af77402f598f3385")),
     ]
-    dest_tag=b"account-browser.js?v=5"
+    dest_tag=b"account-browser.js?v=6"
     f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
     f.connect(HOST,21);f.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"]);f.prot_p();f.set_pasv(True)
     base=f.pwd().rstrip("/")
