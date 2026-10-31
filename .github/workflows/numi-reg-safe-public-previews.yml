@@ -45,3 +45,5 @@ jobs:
           git -c user.name='numi-site-safeguard' -c user.email='actions@users.noreply.github.com' commit -m 'Mirror vetted free-only public preview catalogs from REG.RU into main'
           git push origin HEAD:main
 # retry after syntax lint
+
+# validated source logger keywords
