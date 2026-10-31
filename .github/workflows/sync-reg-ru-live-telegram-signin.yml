@@ -1,0 +1,53 @@
+name: Synchronize verified live REG.RU Telegram sign-in with main (one time)
+on:
+  push:
+    paths:
+      - .github/workflows/sync-reg-ru-live-telegram-signin.yml
+permissions:
+  contents: write
+jobs:
+  sync:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Stage one-time verified REG.RU Telegram sign-in synchronization'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Read published client over IPv4 and sync only auth client and cache reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -4 --fail --silent --show-error --location --max-time 25 \
+            https://xn--c1adkkdfjbp1a4l.online/auth-profile.js -o /tmp/numi-live-auth.js
+          curl -4 --fail --silent --show-error --location --max-time 25 \
+            https://xn--c1adkkdfjbp1a4l.online/ -o /tmp/numi-live-home.html
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          live=Path('/tmp/numi-live-auth.js').read_bytes()
+          expected='c9bbfeef5d85d66b6e119357734fabb74bdf2301c279ff6b060063428c918dbe'
+          actual=hashlib.sha256(live).hexdigest()
+          if actual!=expected: raise SystemExit('Published login changed after verification; no repo files modified. sha256='+actual)
+          txt=live.decode('utf-8')
+          if txt.count('const CHECK_URL = "/api/profile.php";')!=1: raise SystemExit('Incorrect local login endpoint')
+          if txt.count('body: JSON.stringify({ action: "get", init_data: raw })')!=1: raise SystemExit('Missing signed Telegram identity action')
+          if 'numerologia-online-auth-server.vercel.app/api/miniapp' in txt: raise SystemExit('Broken Vercel identity route still present')
+          remote_html=Path('/tmp/numi-live-home.html').read_text(encoding='utf-8')
+          if remote_html.count('auth-profile.js?v=19')!=1: raise SystemExit('Published version is not 19')
+          local_index=Path('index.html')
+          html=local_index.read_text(encoding='utf-8')
+          if html.count('auth-profile.js?v=18')!=1: raise SystemExit('main HTML version drift; refusing update')
+          if html.count('auth-profile.js?v=19'): raise SystemExit('Conflicting version')
+          Path('auth-profile.js').write_bytes(live)
+          local_index.write_text(html.replace('auth-profile.js?v=18','auth-profile.js?v=19',1),encoding='utf-8')
+          print('Verified exact REG.RU login SHA-256',actual,flush=True)
+          print('Only auth-profile.js and index.html version tag updated; all other main files untouched.',flush=True)
+          PY
+          node --check auth-profile.js
+          git diff --check
+          git add -- auth-profile.js index.html
+          git diff --cached --quiet && { echo 'No content differences'; exit 1; }
+          git -c user.name='numi-site-safeguard' -c user.email='actions@users.noreply.github.com' \
+             commit -m 'Sync verified live REG.RU Telegram sign-in v19 into main'
+          git push origin HEAD:main
