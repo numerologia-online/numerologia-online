@@ -154,6 +154,17 @@ def main():
     price_line=PRICE_TEST+src.split(PRICE_TEST,1)[1].split(b'</button>',1)[0]+b'</button>'
     expected_core=previous('054289023a7615cebb09b16822807f302d8c224c^','account-service/private/core.php')
     expected_js=previous('cfe1a1696e490f0a9982d116d3af95843b9adaaf^','account-browser.js')
+    # Dry-run the exact selective patch before connecting to hosting.
+    dry_php=patch_core(expected_core,core)
+    dry_js=patch_js(expected_js,js)
+    with tempfile.TemporaryDirectory(prefix='numi-test-preflight-') as d:
+        for content,suffix,cmd in [(dry_php,'php','php'),(dry_js,'js','node')]:
+            file=pathlib.Path(d)/('check.'+suffix);file.write_bytes(content)
+            args=['php','-l',str(file)] if cmd=='php' else ['node','--check',str(file)]
+            check=subprocess.run(args,capture_output=True,text=True)
+            if check.returncode!=0:
+                raise RuntimeError('Preflight syntax failed: '+(check.stderr or check.stdout)[:180])
+    log(dry_run_passed=True)
     ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
     ftp.connect(HOST,21)
     ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
@@ -183,6 +194,14 @@ def main():
             raise RuntimeError('Test backend merge incomplete; refusing publication')
         if merged_js.count(b'request("test_purchase"')!=1:
             raise RuntimeError('Test browser script merge incomplete; refusing publication')
+        # Syntax check against ACTUAL live code before writing anything.
+        with tempfile.TemporaryDirectory(prefix='numi-test-live-check-') as d:
+            for content,suffix,cmd in [(merged_core,'php','php'),(merged_js,'js','node')]:
+                file=pathlib.Path(d)/('check.'+suffix);file.write_bytes(content)
+                args=['php','-l',str(file)] if cmd=='php' else ['node','--check',str(file)]
+                check=subprocess.run(args,capture_output=True,text=True)
+                if check.returncode!=0:
+                    raise RuntimeError('Live patch syntax failed: '+(check.stderr or check.stdout)[:180])
         html=before['index']
         if html.count(LIST)!=1 or html.count(MARKER)!=1 or html.count(TARIFF)!=1:
             raise RuntimeError('Unexpected live Saved/tariff layout')
