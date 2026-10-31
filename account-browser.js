@@ -106,6 +106,7 @@
           '<p>Вы можете привязать свою почту, чтобы мы узнавали вас, даже если вы заходите через главную страницу сайта, и показывали все ваши покупки. ❤️</p>',
           '<p><strong>Привязывать почту необязательно!</strong> Если вы пользуетесь только Telegram, ваши покупки всегда будут доступны при входе через него.</p>',
           '<button type="button" id="numi-set-email-open" class="numi-auth-submit">Привязать почту ♡</button>',
+          '<button type="button" id="numi-existing-email-open" class="numi-auth-link">У меня уже есть аккаунт с почтой</button>',
           '<p class="numi-account-privacy">Почта и Telegram нужны для входа и сохранения ваших покупок. Мы не отправляем рекламные письма и не пишем вам личные сообщения.</p>',
         '</div>',
         '<p id="numi-telegram-email-linked" hidden>✓ Почта привязана. Теперь можно входить через Telegram или через сайт.</p>',
@@ -114,6 +115,12 @@
           '<label>Придумайте пароль<input name="password" type="password" autocomplete="new-password" maxlength="200" required></label>',
           '<label>Повторите пароль<input name="password_confirm" type="password" autocomplete="new-password" maxlength="200" required></label>',
           '<button type="submit" class="numi-auth-submit">Привязать почту</button>',
+        '</form>',
+        '<form id="numi-existing-email-form" hidden>',
+          '<p>Уже регистрировались на сайте? Войдите по своей почте, чтобы объединить покупки с Telegram.</p>',
+          '<label>Email<input name="email" type="email" autocomplete="email" required></label>',
+          '<label>Пароль от аккаунта<input name="password" type="password" autocomplete="current-password" required></label>',
+          '<button class="numi-auth-submit" type="submit">Объединить аккаунты ♡</button>',
         '</form>',
       '</div>',
     '</section>'
@@ -129,6 +136,7 @@
   const resetForm = document.getElementById("numi-reset-form");
   const passForm = document.getElementById("numi-new-password-form");
   const setEmailForm = document.getElementById("numi-set-email-form");
+  const mergeForm = document.getElementById("numi-existing-email-form");
   setEmailForm?.addEventListener("submit",event=>{
     const fields=new FormData(setEmailForm);
     if(String(fields.get("password")||"")!==String(fields.get("password_confirm")||"")){
@@ -265,7 +273,29 @@
   });
 
   document.getElementById("numi-set-email-open").addEventListener("click",()=>{
+    mergeForm.hidden=true;
     setEmailForm.hidden=!setEmailForm.hidden;
+  });
+  document.getElementById("numi-existing-email-open").addEventListener("click",()=>{
+    setEmailForm.hidden=true;
+    mergeForm.hidden=!mergeForm.hidden;
+  });
+  mergeForm.addEventListener("submit",async event=>{
+    event.preventDefault();
+    if(!isTelegram() || !mergeForm.reportValidity()) return;
+    const form=new FormData(mergeForm);
+    await perform("merge_telegram_email",{
+      email:String(form.get("email")||"").trim(),
+      password:String(form.get("password")||""),
+      init_data:signedTelegram()
+    },null);
+    if(current?.email_verified){
+      document.getElementById("numi-telegram-link-prompt").hidden=true;
+      document.getElementById("numi-telegram-email-linked").hidden=false;
+      mergeForm.hidden=true;
+      setEmailForm.hidden=true;
+      await updatePurchases();
+    }
   });
   setEmailForm.addEventListener("submit",async event=>{
     event.preventDefault();
