@@ -1,0 +1,26 @@
+name: Publish smaller Saved empty card on REG.RU
+on:
+  push:
+    paths:
+      - .github/workflows/numi-saved-empty-compact-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: numi-saved-empty-compact-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish compact Saved empty card on REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate layout deployment
+        run: python3 -m py_compile account-service/deploy-saved-empty-compact.py
+      - name: Publish compact illustration card with backup and rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u account-service/deploy-saved-empty-compact.py
