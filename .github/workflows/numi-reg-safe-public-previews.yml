@@ -34,7 +34,7 @@ jobs:
           p=json.loads(m.group(1))
           f=json.loads(subprocess.check_output(['git','show','eb1fb7c9b1e3992f2207d9979f3d029276bc3401:.github/numi-frontend-release.json']))
           by={e['path']:e for e in f['files']}
-          targets=[k for k,v in p.items() if v['public'] and not k.startswith('data/redflag/love/published/') and by[k]['old']!=by[k]['new']]
+          targets=[k for k,v in p.items() if v['public'] and k in by and not k.startswith('data/redflag/love/published/') and by[k]['old']!=by[k]['new']]
           assert len(targets)==36
           for name in targets:
               pathlib.Path(name).write_bytes(subprocess.check_output(['git','show','f67c2ce48928e97a8471d07608b6c722985b7267:'+name]))
@@ -47,3 +47,5 @@ jobs:
 # retry after syntax lint
 
 # validated source logger keywords
+
+# four stand-alone free resources intentionally unchanged
