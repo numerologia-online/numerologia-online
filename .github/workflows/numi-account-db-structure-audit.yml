@@ -1,0 +1,43 @@
+name: Inspect installed REG.RU DB adapter without printing credentials or customer data
+on:
+  push:
+    paths:
+      - .github/workflows/numi-account-db-structure-audit.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Inspect database adapter shape and existing profile tables (read-only)
+        env:
+          FTP_USER: ${{ secrets.REG_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,io,re,os,ssl,json
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=22)
+          f.connect("server172.hosting.reg.ru",21);f.login(os.environ["FTP_USER"],os.environ["FTP_PASSWORD"]);f.prot_p()
+          home=f.pwd().rstrip("/");site=home+"/www/xn--c1adkkdfjbp1a4l.online"
+          def text(path):
+              out=io.BytesIO();f.retrbinary("RETR "+path,out.write);return out.getvalue().decode("utf-8")
+          db=text(home+"/private/db.php")
+          p=text(site+"/api/profile.php")
+          patterns={
+             "db_function_names":sorted(set(re.findall(r'\bfunction\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(',db))),
+             "db_returns_pdo":bool(re.search(r'\breturn\s+(?:new\s+PDO|\$pdo\b)',db,re.I)),
+             "db_assigns_pdo":bool(re.search(r'\$\w+\s*=\s*new\s+PDO',db,re.I)),
+             "db_returns_array":bool(re.search(r'\breturn\s*\[',db)),
+             "db_class_names":sorted(set(re.findall(r'\bclass\s+([A-Za-z_][A-Za-z0-9_]*)',db))),
+             "db_vars":sorted(set(re.findall(r'\$([A-Za-z_][A-Za-z0-9_]*)\s*=',db)))[:30],
+             "profile_requires":re.findall(r'^\s*(?:require|require_once|include|include_once)\b[^;]+;',p,re.M)[:8],
+             "profile_db_function_calls":sorted(set(re.findall(r'\b([A-Za-z_][A-Za-z0-9_]*)\(\)',p))&set(re.findall(r'\bfunction\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(',db))),
+             "profile_db_variables":sorted(set(re.findall(r'\$([A-Za-z_][A-Za-z0-9_]*)\s*->\s*(?:prepare|query|exec|beginTransaction)\b',p))),
+             "profile_sql_table_names":sorted(set(re.findall(r'\b(?:FROM|INTO|UPDATE|JOIN|TABLE(?:\s+IF\s+NOT\s+EXISTS)?)\s+([a-z_][a-z0-9_]*)',p,re.I))),
+             "profile_has_session_cookies":"setcookie" in p,
+             "profile_has_mail":"mail(" in p
+          }
+          print("ACCOUNT_DB_ADAPTER_FACTS",json.dumps(patterns,ensure_ascii=False),flush=True)
+          f.quit()
+          PY
