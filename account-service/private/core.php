@@ -105,14 +105,25 @@ function naBucket(string $email): string {
     return hash('sha256',$ip.'|'.$email.'|numi-auth-v1');
 }
 function naRate(PDO $db, string $email, bool $record=false): void {
-    $bucket=naBucket($email);
+    // Both per-address and per-network limits: rotating recipient emails
+    // must not permit registration or password-reset mail floods.
+    $recipient=naBucket($email);
+    $network=naBucket('*');
     $db->exec('DELETE FROM numi_auth_attempts WHERE created_at<DATE_SUB(UTC_TIMESTAMP(),INTERVAL 20 MINUTE)');
-    $stmt=$db->prepare('SELECT COUNT(*) FROM numi_auth_attempts WHERE bucket_hash=? AND created_at>DATE_SUB(UTC_TIMESTAMP(),INTERVAL 15 MINUTE)');
-    $stmt->execute([$bucket]);
-    if ((int)$stmt->fetchColumn()>=7) naReply(429,['ok'=>false,'error'=>'TOO_MANY_ATTEMPTS']);
+    $stmt=$db->prepare('SELECT bucket_hash,COUNT(*) AS attempts FROM numi_auth_attempts
+        WHERE bucket_hash IN (?,?) AND created_at>DATE_SUB(UTC_TIMESTAMP(),INTERVAL 15 MINUTE)
+        GROUP BY bucket_hash');
+    $stmt->execute([$recipient,$network]);
+    foreach ($stmt->fetchAll() as $row) {
+        if (($row['bucket_hash']===$recipient && (int)$row['attempts']>=7)
+            || ($row['bucket_hash']===$network && (int)$row['attempts']>=30)) {
+            naReply(429,['ok'=>false,'error'=>'TOO_MANY_ATTEMPTS']);
+        }
+    }
     if ($record) {
         $stmt=$db->prepare('INSERT INTO numi_auth_attempts(bucket_hash) VALUES(?)');
-        $stmt->execute([$bucket]);
+        $stmt->execute([$recipient]);
+        $stmt->execute([$network]);
     }
 }
 function naNewToken(PDO $db, string $id, string $purpose, int $minutes): string {
