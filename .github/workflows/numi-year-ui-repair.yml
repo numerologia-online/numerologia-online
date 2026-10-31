@@ -4,7 +4,7 @@ on:
     paths:
       - .github/workflows/numi-year-ui-repair.yml
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: numi-year-ui-manual-repair
   cancel-in-progress: false
@@ -27,5 +27,15 @@ jobs:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: python3 -u .github/scripts/numi-year-ui-repair.py
+      - name: Preserve verified live homepage and app customizations in main
+        run: |
+          git diff --check
+          git add -- app.js index.html
+          if ! git diff --cached --quiet; then
+            git -c user.name='numi-year-repair' -c user.email='actions@users.noreply.github.com' commit -m 'Sync live app and homepage year loader after verified REG.RU repair'
+            git push origin HEAD:main
+          fi
 
 # Recheck precise live-file baseline before release
+
+# Manual year-only release with retained production customizations
