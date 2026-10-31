@@ -1,0 +1,28 @@
+name: Publish optimized CSS startup on REG.RU
+on:
+  push:
+    paths:
+      - .github/workflows/numi-startup-css-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: numi-startup-css-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Release bundled startup CSS safely to REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate assets and deployment
+        run: |
+          python3 -m py_compile account-service/deploy-startup-css.py
+          test -s assets/numi-startup-20261031.css
+      - name: Publish bundled CSS with backup and rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u account-service/deploy-startup-css.py
