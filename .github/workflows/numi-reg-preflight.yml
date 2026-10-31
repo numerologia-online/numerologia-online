@@ -1,0 +1,70 @@
+name: Read-only REG.RU site migration preflight
+on:
+  push:
+    paths:
+      - .github/workflows/numi-reg-preflight.yml
+      - .github/numi-frontend-release.json
+  workflow_dispatch:
+permissions:
+  contents: read
+  statuses: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare all current web files without changing server
+        env:
+          FTP_USER: ${{ secrets.REG_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,ssl,hashlib,json,os,pathlib,io,subprocess
+          release=json.loads(pathlib.Path('.github/numi-frontend-release.json').read_text('utf-8'))
+          assert release['intent']=='NON_DESTRUCTIVE_PREFLIGHT_ONLY'
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=19)
+          conflicts=[];counts={'old_matches':0,'already_new':0,'deleted_already':0,'unexpected':0}
+          def gitsha(b):return hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+          def read(path):
+              out=io.BytesIO()
+              def collect(data):
+                  if out.tell()+len(data)>4000000:raise RuntimeError('Remote file too large')
+                  out.write(data)
+              try:ftp.retrbinary('RETR '+path,collect)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              return out.getvalue()
+          def status(ok,desc):
+              subprocess.run(['gh','api','--method','POST','repos/'+os.environ['GITHUB_REPOSITORY']+'/statuses/'+os.environ['GITHUB_SHA'],
+              '-f','state='+('success'if ok else'failure'),'-f','context=numi/reg-preflight','-f','description='+desc[:135]],check=True)
+          try:
+              ftp.connect('server172.hosting.reg.ru',21)
+              ftp.login(os.environ['FTP_USER'],os.environ['FTP_PASSWORD'])
+              ftp.prot_p()
+              home=ftp.pwd().rstrip('/')
+              site=home+'/'+release['root']
+              ftp.cwd(site)
+              for entry in release['files']:
+                  path=entry['path']
+                  remote=read(site+'/'+path)
+                  if remote is None and entry['new'] is None:counts['deleted_already']+=1;continue
+                  if remote is None:counts['unexpected']+=1;conflicts.append(path+':not-found');continue
+                  sha=gitsha(remote)
+                  if sha==entry['old']:counts['old_matches']+=1
+                  elif sha==entry['new']:counts['already_new']+=1
+                  else:counts['unexpected']+=1;conflicts.append(path+':mismatch')
+              print('READ ONLY:',counts,'first_conflicts:',conflicts[:12],flush=True)
+              good=counts['unexpected']==0
+              status(good,'Unrecognized '+str(counts['unexpected'])+'/'+str(len(release['files']))+'; matches '+str(counts['old_matches']))
+              if not good:raise SystemExit(1)
+          except Exception as e:
+              print('Preflight stopped:',type(e).__name__,flush=True)
+              if not conflicts:status(False,'Read-only preflight unavailable')
+              raise
+          finally:
+              try:ftp.quit()
+              except:ftp.close()
+          PY
