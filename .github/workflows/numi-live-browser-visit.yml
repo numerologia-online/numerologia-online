@@ -1,4 +1,4 @@
-name: Live Safari-sized browser open diagnosis
+name: Live WebKit Safari-engine browser open diagnosis
 on:
   push:
     paths:
@@ -16,14 +16,14 @@ jobs:
           cd /tmp/numi-browser
           npm init -y >/dev/null
           npm install --no-audit --no-fund playwright@1.56.1 >/dev/null
-          npx playwright install chromium
+          npx playwright install --with-deps webkit
       - name: Visit public site with mobile viewport, capture JS errors
         run: |
           cd /tmp/numi-browser
           node - <<'JS'
-          const { chromium } = require('playwright');
+          const { webkit } = require('playwright');
           (async () => {
-            const b=await chromium.launch({headless:true});
+            const b=await webkit.launch({headless:true});
             for (const target of ['https://xn--c1adkkdfjbp1a4l.online/','https://xn--c1adkkdfjbp1a4l.online/child/','https://xn--c1adkkdfjbp1a4l.online/pro/']) {
               const page=await b.newPage({viewport:{width:390,height:844},isMobile:true,deviceScaleFactor:2});
               const errors=[];
