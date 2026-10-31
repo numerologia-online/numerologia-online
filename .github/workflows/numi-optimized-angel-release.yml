@@ -1,0 +1,33 @@
+name: Publish lightweight fairy angel only to REG.RU
+on:
+  push:
+    paths:
+      - .github/workflows/numi-optimized-angel-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: numi-optimized-angel-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish lightweight angel illustration on REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify image and guarded deployment
+        run: |
+          python3 -m py_compile account-service/deploy-optimized-angel.py
+          python3 - <<'PY'
+          from pathlib import Path
+          a=Path('assets/numi-angel-soft-20261031.webp').read_bytes()
+          assert a[:4]==b'RIFF' and a[8:12]==b'WEBP' and len(a)<18000
+          print('Optimized angel bytes:',len(a))
+          PY
+      - name: Publish isolated picture and saved-panel HTML, with backup
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u account-service/deploy-optimized-angel.py
