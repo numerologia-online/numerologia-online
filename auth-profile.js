@@ -326,9 +326,8 @@
   });
   document.querySelector("#account-close").addEventListener("click", () => dialog.close());
   dialog.addEventListener("close", () => showAccountPanel(null));
-  dialog.addEventListener("click", event => {
-    if (event.target === dialog) dialog.close();
-  });
+  // The dimmed area belongs to the dialog: taps and scrolling must never close the cabinet.
+  // Only the explicit close button can close it. (Telegram/iOS bottom touch safety.)
   retry.addEventListener("click", () => {
     if (mini) identify();
   });
@@ -406,7 +405,11 @@
   mini = isTelegramEnvironment();
   if (mini) {
     document.querySelector(".account-telegram-link").hidden = true;
-    try { app?.ready(); app?.expand(); } catch (_) {}
+    try {
+      app?.ready();
+      app?.expand();
+      if (typeof app?.disableVerticalSwipes === "function") app.disableVerticalSwipes();
+    } catch (_) {}
     identify();
   } else {
     setAccountButton("Личный кабинет");
