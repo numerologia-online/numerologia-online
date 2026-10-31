@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish confirmation-ready registration UI on REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish recovery request feedback on REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
