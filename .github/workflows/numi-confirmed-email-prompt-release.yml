@@ -1,0 +1,26 @@
+name: Hide redundant confirmed-email card on REG.RU
+on:
+  push:
+    paths:
+      - .github/workflows/numi-confirmed-email-prompt-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: numi-confirmed-email-prompt-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish confirmed-email account cleanup on REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate source and script syntax
+        run: |
+          node --check account-browser.js
+          python3 -m py_compile account-service/deploy-hide-linked-email-prompt.py
+      - name: Update account UI only, with backup and public verification
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u account-service/deploy-hide-linked-email-prompt.py
