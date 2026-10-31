@@ -37,13 +37,24 @@ def main():
         guard=read(guardpath)
         if b"NUMI PAID STATIC ACCESS GUARD BEGIN 2026-10-31" not in guard:
             raise RuntimeError("Paid content guard missing")
-        if BEGIN in prior:
-            if prior.count(GOLD)==4 and block in prior:report(success=True,already_published=True);return
-            raise RuntimeError("Unknown existing back-button update")
-        if prior.count(END)!=1 or prior.count(PREMIUM)!=1 or prior.count(OLD_SHORT)!=3 or prior.count(OLD_LONG)!=1:
-            raise RuntimeError("Unrecognized live navigation baseline; no changes")
-        updated=prior.replace(OLD_LONG,GOLD,1).replace(OLD_SHORT,GOLD)
-        updated=updated.replace(END,block+END,1)
+        if prior.count(END)!=1 or prior.count(PREMIUM)!=1:
+            raise RuntimeError("Unrecognized live pricing/navigation baseline; no changes")
+        # Saved/club/learning/settings may have either earlier button label.
+        # Do not presume the saved-page release landed before this release.
+        old_count=prior.count(OLD_SHORT)+prior.count(OLD_LONG)
+        gold_count=prior.count(GOLD)
+        if old_count+gold_count!=4:
+            raise RuntimeError("Unexpected number of cabinet navigation buttons; no changes")
+        if BEGIN in prior and block not in prior:
+            raise RuntimeError("Conflicting shared back-button styling already exists")
+        updated=prior.replace(OLD_LONG,GOLD).replace(OLD_SHORT,GOLD)
+        if BEGIN not in prior:
+            updated=updated.replace(END,block+END,1)
+        if updated.count(GOLD)!=4:
+            raise RuntimeError("Navigation transformation incomplete; no changes")
+        if updated==prior:
+            report(success=True,already_published=True)
+            return
         folder=root+"/site-safeguard-backups"
         try:ftp.mkd(folder)
         except ftplib.error_perm:ftp.cwd(folder)
