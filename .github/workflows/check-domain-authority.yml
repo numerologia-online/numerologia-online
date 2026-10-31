@@ -1,0 +1,19 @@
+name: Check authoritative DNS for VPN troubleshooting
+on:
+  push:
+    paths: [.github/workflows/check-domain-authority.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Identify nameservers and address records (read only)
+        run: |
+          for type in NS A AAAA CNAME; do
+            echo "RECORD=$type APEX:"
+            dig +time=3 +tries=1 +short xn--c1adkkdfjbp1a4l.online "$type"
+            echo "RECORD=$type WWW:"
+            dig +time=3 +tries=1 +short www.xn--c1adkkdfjbp1a4l.online "$type"
+          done
