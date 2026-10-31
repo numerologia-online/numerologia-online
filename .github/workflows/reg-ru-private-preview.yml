@@ -16,7 +16,9 @@ concurrency:
 
 jobs:
   stage:
-    if: github.ref == 'refs/heads/main'
+    # DISABLED: REG.RU returns static files without Apache .htaccess authentication.
+    # Keep all staging assets quarantined outside the public document root.
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
