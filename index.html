@@ -379,6 +379,27 @@
       #account-dialog .numi-saved-library .numi-saved-row {min-height:59px;padding:9px 0}
       #account-dialog .numi-saved-library .numi-saved-row-content strong {font-size:15px}
     </style>
+    <style id="numi-angel-seamless-background-20261031">
+      /* White illustration pixels blend into the cream card without a visible square. */
+      #account-dialog .numi-saved-empty {
+        background:#fffaf1;
+        background-image:none;
+        overflow:hidden;
+      }
+      #account-dialog .numi-saved-empty .numi-angel {
+        mix-blend-mode:multiply;
+        background:transparent;
+        display:block;
+        margin:0 auto -1px;
+      }
+      #account-dialog .numi-saved-angel-title {
+        margin:3px 0 5px;
+        color:#95651e;
+        font:700 clamp(16px,4.4vw,19px)/1.25 Georgia,"Times New Roman",serif;
+        text-align:center;
+        letter-spacing:.01em;
+      }
+    </style>
     <!-- Reversible experiment: subtitles on the eight homepage catalog cards only. -->
     <style id="home-card-subtitles-experiment">
       .products[aria-label="Направления расчётов"] > .product-card {
@@ -796,7 +817,8 @@
           <p class="account-panel-intro">Ваши разборы и ответы всегда под рукой.</p>
           <div id="numi-confirmed-purchases" aria-label="Список сохранённых разборов и ответов"></div>
           <div class="account-empty-state numi-saved-empty">
-            <img class="numi-angel" src="assets/numi-angel-soft-20261031.webp" width="310" height="300" loading="lazy" decoding="async" alt="Нежный ангел с крылышками держит сердце: Ответы на твои вопросы">
+            <div class="numi-saved-angel-title">♡ Ответы на твои вопросы</div>
+            <img class="numi-angel" src="assets/numi-angel-soft-20261031.webp" width="310" height="300" loading="lazy" decoding="async" alt="Нежный ангел с крылышками держит сердце с ответами">
             <h4>Здесь пока пусто</h4>
             <p>Ваши сохранённые разборы и ответы появятся здесь.</p>
           </div>
