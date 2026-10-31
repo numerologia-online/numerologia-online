@@ -1,0 +1,35 @@
+name: Compare live customized REG.RU frontend files with sanitized repo
+on:
+  push:
+    paths:
+      - .github/workflows/numi-live-diff-readonly.yml
+permissions:
+  contents: read
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read-only diff of nine live files
+        env:
+          FTP_USER: ${{ secrets.REG_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,ssl,os,io,difflib,pathlib
+          paths=['app.js','compatibility-feature.js','destiny-code-feature.js','index.html','pro/index.html','pro/pro.js','redflag-categories.js','redflag-feature.js','redflag-text-bank.js']
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=12)
+          ftp.connect('server172.hosting.reg.ru',21);ftp.login(os.environ['FTP_USER'],os.environ['FTP_PASSWORD']);ftp.prot_p();ftp.cwd('www/xn--c1adkkdfjbp1a4l.online')
+          for path in paths:
+              out=io.BytesIO()
+              ftp.retrbinary('RETR '+path,out.write)
+              remote=out.getvalue().decode('utf-8','replace').splitlines()
+              desired=pathlib.Path(path).read_text('utf-8').splitlines()
+              changes=list(difflib.unified_diff(remote,desired,fromfile='REG_LIVE/'+path,tofile='SAFE_MAIN/'+path,lineterm='',n=2))
+              print('====== DIFF FILE',path,'live lines:',len(remote),'candidate lines:',len(desired),'lines:',len(changes),flush=True)
+              for line in changes[:600]:
+                  print(line[:300],flush=True)
+              if len(changes)>600:print('======= TRUNCATED',len(changes)-600,flush=True)
+          ftp.quit()
+          PY
