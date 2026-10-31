@@ -60,5 +60,5 @@ def main():
 if __name__=="__main__":
     try:main()
     except BaseException as e:
-        log("STOP",type(e).__name__)
+        log("STOP",type(e).__name__,str(e)[:180] if isinstance(e,RuntimeError) else "")
         sys.exit(1)
