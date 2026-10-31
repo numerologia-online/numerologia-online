@@ -4,7 +4,7 @@ NEVER writes to numi_orders or numi_entitlements.
 Reuses an existing verified account and separates tests in numi_test_purchases.
 Replaces just public test UI, account JS and account core, with backups/rollback.
 """
-import ftplib,hashlib,io,json,os,pathlib,ssl,subprocess,sys,time
+import ftplib,hashlib,io,json,os,pathlib,ssl,subprocess,sys,time,tempfile
 from urllib.request import Request,urlopen
 HOST="server172.hosting.reg.ru"
 DOMAIN="xn--c1adkkdfjbp1a4l.online"
@@ -17,6 +17,34 @@ PRICE_TEST=b'          <button type="button" id="numi-open-test-from-prices"'
 def sha(blob):return hashlib.sha256(blob).digest()
 def previous(revision,path):return subprocess.check_output(['git','show',revision+':'+path])
 def log(**values):print("NUMI_OWNER_TEST_CHECKOUT",json.dumps(values,sort_keys=True),flush=True)
+
+def safe_merge_live(live,base,ours,kind):
+    """Three-way merge: live changes are kept, expected product delta added.
+    Stop BEFORE publishing if any conflict or syntax failure occurs.
+    """
+    if sha(live)==sha(ours):return ours
+    if sha(live)==sha(base):return ours
+    with tempfile.TemporaryDirectory(prefix='numi-merge-') as d:
+        paths=[pathlib.Path(d)/part for part in ('live','baseline','desired')]
+        for path,payload in zip(paths,(live,base,ours)):path.write_bytes(payload)
+        cmd=['git','merge-file','-p',*(str(p) for p in paths)]
+        result=subprocess.run(cmd,capture_output=True)
+        if result.returncode!=0 or b'<<<<<<< ' in result.stdout or b'>>>>>>> ' in result.stdout:
+            log(merge_conflict=kind,live_hash=sha(live).hex()[:12],base_hash=sha(base).hex()[:12],
+                merge_exit=result.returncode)
+            raise RuntimeError('Safe '+kind+' patch could not be merged; original retained')
+        output=result.stdout
+        if kind=='core':
+            check=pathlib.Path(d)/'validated.php'
+            check.write_bytes(output)
+            lint=subprocess.run(['php','-l',str(check)],capture_output=True)
+        else:
+            check=pathlib.Path(d)/'validated.js'
+            check.write_bytes(output)
+            lint=subprocess.run(['node','--check',str(check)],capture_output=True)
+        if lint.returncode!=0:raise RuntimeError('Merged '+kind+' source failed syntax check')
+        return output
+
 def http_get(path):
     q='&' if '?' in path else '?'
     request=Request('https://'+DOMAIN+'/'+path+q+'test_checkout='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
@@ -63,10 +91,16 @@ def main():
         before={k:read(v) for k,v in paths.items()}
         if b'NUMI PAID STATIC ACCESS GUARD BEGIN 2026-10-31' not in before['guard']:
             raise RuntimeError('Paid content guard is missing')
-        if sha(before['core'])!=sha(expected_core):
-            raise RuntimeError('Live backend differs from verified baseline; no files changed')
-        if sha(before['js'])!=sha(expected_js):
-            raise RuntimeError('Live account JS differs from verified baseline; no files changed')
+        # Preserve live changes that were published independently after our known base.
+        # Safe three-way merge refuses conflicts and validates syntax before any write.
+        merged_core=safe_merge_live(before['core'],expected_core,core,'core')
+        merged_js=safe_merge_live(before['js'],expected_js,js,'js')
+        if (merged_core.count(b'function naTestPurchase(')!=1
+            or merged_core.count(b'function naTestOwner(')!=1
+            or b"if ($action==='test_purchase') naTestPurchase($db,$body);" not in merged_core):
+            raise RuntimeError('Test backend merge incomplete; refusing publication')
+        if merged_js.count(b'request("test_purchase"')!=1:
+            raise RuntimeError('Test browser script merge incomplete; refusing publication')
         html=before['index']
         if html.count(LIST)!=1 or html.count(MARKER)!=1 or html.count(TARIFF)!=1:
             raise RuntimeError('Unexpected live Saved/tariff layout')
@@ -87,9 +121,9 @@ def main():
         log(backup_complete=True)
         changed=[]
         try:
-            for k,payload in (('core',core),('js',js),('index',updated)):
+            for k,payload in (('core',merged_core),('js',merged_js),('index',updated)):
                 changed.append(k);write(paths[k],payload)
-            if sha(http_get('account-browser.js'))!=sha(js):
+            if sha(http_get('account-browser.js'))!=sha(merged_js):
                 raise RuntimeError('Live JS validation failed')
             if sha(http_get(''))!=sha(updated):
                 raise RuntimeError('Live homepage validation failed')
