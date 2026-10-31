@@ -7,32 +7,20 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 4
     steps:
-      - name: Check actual REG.RU login script and identity backend (no login data)
+      - name: Check IPv4-only URL and script behavior
         run: |
-          python3 - <<'PY'
-          import urllib.request,urllib.error,re,hashlib
-          home='https://xn--c1adkkdfjbp1a4l.online/'
-          auth='https://numerologia-online-auth-server.vercel.app/api/miniapp'
-          def req(url,method='GET',data=None):
-            r=urllib.request.Request(url,method=method,data=data,headers={
-              'User-Agent':'NUMI-read-only-login-diagnostic',
-              'Origin':home.rstrip('/'),
-              'Content-Type':'application/json',
-              'Cache-Control':'no-cache'})
-            try:response=urllib.request.urlopen(r,timeout=15)
-            except urllib.error.HTTPError as e:response=e
-            with response:
-              b=response.read(300000)
-              print('HTTP',method,url,'status',response.status,'content_type',response.headers.get('content-type'),'allow_origin',response.headers.get('access-control-allow-origin'),'location',response.headers.get('location'),'body_sample',b[:180].decode('utf-8','replace').replace('\n',' ') if 'miniapp' in url else 'omitted',flush=True)
-            return b
-          html=req(home).decode('utf-8','replace')
-          links=re.findall(r'auth-profile\.js\?v=\d+',html)
-          print('LIVE scripts',links,flush=True)
-          js=req(home+'auth-profile.js?v=18').decode('utf-8','replace')
-          print('LIVE auth script',len(js),'sha256',hashlib.sha256(js.encode()).hexdigest(),'has silent identify',('if (!dialog.open) dialog.close();' in js),'opens only if user',('if (!user)' in js and 'dialog.showModal();' in js),flush=True)
-          req(auth,'POST',b'{"init_data":""}')
-          req('https://numerologia-online-auth-server.vercel.app/api/health')
-          req(home+'api/profile.php','POST',b'{"action":"get","init_data":""}')
-          PY
+          set +e
+          curl -4 -sS -L --max-time 14 -o /tmp/home -w 'HOME %{http_code} %{remote_ip}\n' https://xn--c1adkkdfjbp1a4l.online/
+          grep -o 'auth-profile.js?v=[0-9]*' /tmp/home | head -3
+          curl -4 -sS -L --max-time 14 -o /tmp/auth -w 'SCRIPT %{http_code} %{remote_ip}\n' https://xn--c1adkkdfjbp1a4l.online/auth-profile.js?v=18
+          sha256sum /tmp/auth
+          grep -F -c 'if (dialog.open) dialog.close();' /tmp/auth
+          grep -F -c 'if (!user)' /tmp/auth
+          curl -4 -sS -L --max-time 14 -o /tmp/vercel -w 'VERCEL %{http_code} %{remote_ip}\n' https://numerologia-online-auth-server.vercel.app/api/health
+          head -c 160 /tmp/vercel
+          echo
+          curl -4 -sS -L --max-time 14 -o /tmp/profile -w 'REG_PROFILE %{http_code} %{remote_ip}\n' https://xn--c1adkkdfjbp1a4l.online/api/profile.php
+          head -c 100 /tmp/profile
+          echo
