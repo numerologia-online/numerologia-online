@@ -18,7 +18,7 @@ jobs:
   stage:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 12
     steps:
       - name: Checkout code, not production hosting
         uses: actions/checkout@v4
@@ -30,10 +30,11 @@ jobs:
         run: |
           python3 - <<'PY'
           import base64, ftplib, hashlib, io, json, os, pathlib, re, secrets, socket, ssl, sys, time, urllib.error, urllib.parse, urllib.request
+          from concurrent.futures import ThreadPoolExecutor
 
           # Generated password is NEVER committed. Only its salted bcrypt hash is stored.
           STAGING = "vesta-blinchik-numi-c313e2f44ae802e16599"
-          AUTH_LINE = "numi:$2y$12$L3RsE1p6wD3Nd48n.Ft4bO7vBwZVVBqJ7EU8V7nnp67.jQhpUua76"
+          AUTH_LINE = "numi:$2y$05$E2R9jMZ6zcigE5xeBhdKhuMGKXeM4GrQVNT9X2NZ/h8D.m4KsMl1e"
           DOMAIN = "xn--c1adkkdfjbp1a4l.online"
           REMOTE_SITE = "www/" + DOMAIN
           BASE = "https://" + DOMAIN + "/" + STAGING + "/"
@@ -132,7 +133,8 @@ jobs:
                   policy = get(ftps,".htaccess").decode("utf-8","replace")
                   if not ("AuthType Basic" in policy and "Require valid-user" in policy and "AuthUserFile" in policy):
                       raise RuntimeError("Stage password protection missing; refusing to upload")
-                  print("Existing preview folder detected. Checking access policy before files.")
+                  write(ftps, ".htpasswd", (AUTH_LINE + "\n").encode())
+                  print("Existing preview folder detected. Resetting approved staging password hash and checking access policy.", flush=True)
 
               # Security gate: deny all anonymous visitors BEFORE uploading client assets.
               for part in ("", "index.html", "asset-access-check.txt"):
@@ -178,34 +180,58 @@ jobs:
               status, _ = http_get(BASE + "index.html")
               if status != 401:
                   raise RuntimeError("Preview protection changed, refusing upload")
-              created_dirs = {""}
-              uploaded = 0
-              identical = 0
+              # Create staging folders from approved source paths first.
+              # Upload with four verified FTPS sessions; production remains untouched.
               ftps.cwd(preview_root)
-              for relative, data in sorted(staged.items()):
-                  path = pathlib.PurePosixPath(relative)
-                  if len(path.parts) > 1:
-                      prefix = ""
-                      for part in path.parts[:-1]:
-                          prefix = (prefix + "/" + part).strip("/")
-                          if prefix not in created_dirs:
-                              try:
-                                  ftps.mkd(prefix)
-                              except ftplib.error_perm:
-                                  pass
-                              created_dirs.add(prefix)
-                  # All paths are relative to the staging folder (never production root).
+              directories = set()
+              for relative in staged:
+                  parts = pathlib.PurePosixPath(relative).parts
+                  for n in range(1, len(parts)):
+                      directories.add("/".join(parts[:n]))
+              for directory in sorted(directories, key=lambda p: (p.count("/"),p)):
                   try:
-                      old = get(ftps,relative,limit=8000000)
-                      if hashlib.sha256(old).digest() == hashlib.sha256(data).digest():
-                          identical += 1
-                          continue
+                      ftps.mkd(directory)
                   except ftplib.error_perm:
                       pass
-                  write(ftps,relative,data)
-                  uploaded += 1
-                  if uploaded % 50 == 0:
-                      print("PREVIEW FILES UPLOADED:",uploaded)
+              print("PREVIEW DIRECTORY STRUCTURE READY:", len(directories), flush=True)
+
+              def stage_partition(partition):
+                  connection = ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=25)
+                  count = 0
+                  try:
+                      connection.connect(hostname,21)
+                      connection.auth()
+                      connection.login(username,password)
+                      connection.prot_p()
+                      connection.set_pasv(True)
+                      connection.cwd(preview_root)
+                      for relative, data in partition:
+                          connection.storbinary("STOR " + relative, io.BytesIO(data))
+                          count += 1
+                          if count % 35 == 0:
+                              print("STAGING PROGRESS: uploaded", count, "in a worker", flush=True)
+                  finally:
+                      try: connection.quit()
+                      except Exception: connection.close()
+                  return count
+
+              items = sorted(staged.items(), key=lambda item: (item[0] != "index.html", item[0]))
+              partitions = [items[n::4] for n in range(4)]
+              with ThreadPoolExecutor(max_workers=4) as pool:
+                  result = list(pool.map(stage_partition, partitions))
+              uploaded = sum(result)
+              if uploaded != len(staged):
+                  raise RuntimeError("Staging transfer incomplete")
+              print("STAGING FILES TRANSFERRED:", uploaded, flush=True)
+
+              # Verify a representative set by content hash, plus public access denial.
+              ftps.cwd(preview_root)
+              for item in ("index.html", "app.js", "styles.css", "auth-profile.js",
+                           "manifest.webmanifest"):
+                  if item in staged:
+                      if hashlib.sha256(get(ftps,item,limit=8000000)).digest() != hashlib.sha256(staged[item]).digest():
+                          raise RuntimeError("Preview integrity mismatch: " + item)
+              print("STAGING CONTENT INTEGRITY CHECK PASSED", flush=True)
 
               status,_=http_get(BASE)
               status_css,_=http_get(BASE+"styles.css")
@@ -214,7 +240,7 @@ jobs:
               if (status,status_css,status_json)!=(401,401,401):
                   raise RuntimeError("Final security audit failed. Keep preview unpublished.")
               print("PRIVATE PREVIEW READY; staged:",len(staged),
-                    "new/changed:",uploaded,"unchanged:",identical)
+                    "new/changed:",uploaded)
               print("PRODUCTION ROOT FILES MODIFIED: 0")
           finally:
               try: ftps.quit()
