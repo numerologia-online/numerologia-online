@@ -45,7 +45,13 @@ jobs:
               stage='list'
               items=ftp.nlst()
               print('Root listing OK; count',len(items),flush=True)
-              status(True,'all-stages')
+              stage='retr-3'
+              for p in ('index.html', 'data/year/energy-1.txt', 'data/redflag/love/published/1-2.json'):
+                  start=time.monotonic()
+                  chunks=[]
+                  ftp.retrbinary('RETR '+p, lambda data: chunks.append(len(data)),blocksize=65536)
+                  print('FILE:',p,'BYTES:',sum(chunks),'SECS:',round(time.monotonic()-start,2),flush=True)
+              status(True,'read-sample')
           except Exception as e:
               print('FTPS FAILED AT',stage,'type',type(e).__name__,flush=True)
               status(False,stage+'-'+type(e).__name__)
