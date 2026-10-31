@@ -249,6 +249,7 @@
       // A background login failure must never interrupt the visitor with a modal.
       // Keep the error available only if the visitor opens the cabinet manually.
       setMessage("Автоматический вход не удался: " + (err?.message || "Нет соединения с сервером."), !!raw);
+      if (dialog.open) dialog.close();
     } finally {
       loading = false;
     }
@@ -261,11 +262,11 @@
       window.location.assign(MAIN_APP_URL);
       return;
     }
-    if (user) showProfile();
-    else if (!loading) {
-      loginView.hidden = false;
-      profileView.hidden = true;
+    if (!user) {
+      if (!loading) void identify();
+      return;
     }
+    showProfile();
     if (!dialog.open) dialog.showModal();
   });
   document.querySelector("#account-close").addEventListener("click", () => dialog.close());
