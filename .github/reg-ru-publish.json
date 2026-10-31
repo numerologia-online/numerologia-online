@@ -1,5 +1,15 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "Connection-only self-test for manually requested releases, 2026-10-30."
+  "mode": "publish",
+  "files": [
+    "index.html"
+  ],
+  "patches": {
+    "index.html": {
+      "before": "Подсказки и предупреждения</span>",
+      "after": "Подсказки и предупреждения.</span>",
+      "expected_sha256": "6e25f4c15e9633d3c859114074cf16406030c97883b5ef8bcd4795254e6b4b50"
+    }
+  },
+  "tested_preview_commit": "6d6a85acbae08faa032ad2ce55eb3ce2c6be323a",
+  "note": "Owner requested publication of the single full stop already verified on the protected REG.RU preview. Preserve every other live-page byte."
 }

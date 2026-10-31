@@ -57,6 +57,18 @@ jobs:
                   raise SystemExit("Source file missing, symlinked or too large. No files modified.")
               prepared[item] = local.read_bytes()
 
+          patches = manifest.get("patches", {})
+          if not isinstance(patches, dict) or set(patches) - set(prepared):
+              raise SystemExit("Invalid approved patches. No files modified.")
+          for name, patch in patches.items():
+              if (not isinstance(patch, dict)
+                  or set(patch) != {"before", "after", "expected_sha256"}
+                  or not all(isinstance(patch.get(key), str) for key in patch)
+                  or not patch["before"] or len(patch["before"]) > 10000
+                  or len(patch["after"]) > 10000
+                  or not re.fullmatch(r"[0-9a-f]{64}", patch["expected_sha256"])):
+                  raise SystemExit("Invalid approved patch. No files modified.")
+
           host = os.environ.get("REG_FTP_HOST", "").strip()
           user = os.environ.get("REG_FTP_USER", "").strip()
           password = os.environ.get("REG_FTP_PASSWORD", "")
@@ -123,6 +135,15 @@ jobs:
                           originals[name] = read_remote(ftp, name)
                       except ftplib.error_perm:
                           raise RuntimeError("Refusing to create an unverified new file: " + name)
+                  for name, patch in patches.items():
+                      original = originals[name]
+                      if hashlib.sha256(original).hexdigest() != patch["expected_sha256"]:
+                          raise RuntimeError("Live page changed since approval. No files modified.")
+                      before, after = patch["before"].encode("utf-8"), patch["after"].encode("utf-8")
+                      if original.count(before) != 1:
+                          raise RuntimeError("Approved patch must match exactly once. No files modified.")
+                      prepared[name] = original.replace(before, after, 1)
+                      print("APPROVED TESTED PATCH:", name)
                   ftp.cwd(home)
                   try:
                       ftp.mkd("site-safeguard-backups")
