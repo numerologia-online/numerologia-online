@@ -157,7 +157,7 @@
     message.textContent=content;
     message.classList.toggle("is-success",success);
   }
-  function clearMessage(){ message.hidden=true;message.textContent=""; }
+  function clearMessage(){ message.hidden=true;message.textContent="";message.classList.remove("is-success"); }
   function setFormState(loading) {
     busy=loading;
     for (const control of root.querySelectorAll("button,input")) control.disabled=loading;
@@ -231,14 +231,17 @@
     setFormState(true);
     try {
       const result=await request(action,payload);
+      clearMessage();
       if(result?.authenticated){
         current=result.account;
         render();await updatePurchases();
       }else if(success){
         alertMessage(success,true);
       }
+      return true;
     } catch(err) {
       alertMessage(err.message||"Не удалось подключиться.");
+      return false;
     } finally { setFormState(false); }
   }
   emailForm.addEventListener("submit",async event=>{
@@ -289,12 +292,12 @@
     event.preventDefault();
     if(!isTelegram() || !mergeForm.reportValidity()) return;
     const form=new FormData(mergeForm);
-    await perform("merge_telegram_email",{
+    const merged=await perform("merge_telegram_email",{
       email:String(form.get("email")||"").trim(),
       password:String(form.get("password")||""),
       init_data:signedTelegram()
     },null);
-    if(current?.email_verified){
+    if(merged && current?.email_verified){
       document.getElementById("numi-telegram-link-prompt").hidden=true;
       document.getElementById("numi-telegram-email-linked").hidden=false;
       mergeForm.hidden=true;
