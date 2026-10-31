@@ -382,6 +382,12 @@ function naMergeTelegramEmail(PDO $db,array $body): never {
                 $db->rollBack();
                 naReply(409,['ok'=>false,'error'=>'TELEGRAM_EMAIL_CONFLICT']);
             }
+            $other=$db->prepare('SELECT COUNT(*) FROM numi_identities WHERE account_id=? AND NOT (provider=? AND provider_user_id=?)');
+            $other->execute([$fromId,'telegram',$tgId]);
+            if ((int)$other->fetchColumn()>0) {
+                $db->rollBack();
+                naReply(409,['ok'=>false,'error'=>'TELEGRAM_EMAIL_CONFLICT']);
+            }
             $db->prepare('UPDATE numi_orders SET account_id=? WHERE account_id=?')->execute([$targetId,$fromId]);
             $db->prepare('UPDATE numi_entitlements SET account_id=? WHERE account_id=?')->execute([$targetId,$fromId]);
             $db->prepare('UPDATE numi_identities SET account_id=? WHERE provider=? AND provider_user_id=? AND account_id=?')
