@@ -1,0 +1,55 @@
+name: Diagnose REG.RU VPN route and web server restrictions
+on:
+  push:
+    paths:
+      - .github/workflows/diagnose-vpn-access.yml
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Compare DNS, HTTP, and host restrictions (read-only)
+        env:
+          FTP_USER: ${{ secrets.REG_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ssl,socket,ftplib,io,urllib.request,urllib.error,re
+          name='xn--c1adkkdfjbp1a4l.online'
+          for host in [name,'www.'+name,'server172.hosting.reg.ru']:
+              try:
+                  records=socket.getaddrinfo(host,443,type=socket.SOCK_STREAM)
+                  print('DNS',host,sorted({(r[0].name,r[4][0]) for r in records}),flush=True)
+              except Exception as e: print('DNS ERROR',host,type(e).__name__,flush=True)
+          for site in ['https://'+name+'/','https://www.'+name+'/','https://'+name+'/api/numi-content-health.php','https://numerologia-online.github.io/numerologia-online/']:
+              try:
+                  req=urllib.request.Request(site,headers={'User-Agent':'numi-vpn-read-only-check','Cache-Control':'no-cache'})
+                  try:res=urllib.request.urlopen(req,timeout=15)
+                  except urllib.error.HTTPError as e:res=e
+                  with res:
+                      body=res.read(130)
+                      print('HTTP',site,'status',res.status,'redirected',res.url,'kind',res.headers.get('Content-Type'),'length_sample',len(body),flush=True)
+              except Exception as e: print('HTTP ERROR',site,type(e).__name__,flush=True)
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=14)
+          f.connect('server172.hosting.reg.ru',21);f.login(__import__('os').environ['FTP_USER'],__import__('os').environ['FTP_PASSWORD']);f.prot_p()
+          original=f.pwd()
+          f.cwd('www/'+name)
+          for path in ['.htaccess','.user.ini','index.html']:
+              try:
+                  chunks=[]
+                  def collect(v):
+                      if sum(map(len,chunks))+len(v)>260000:raise ValueError('too large')
+                      chunks.append(v)
+                  f.retrbinary('RETR '+path,collect)
+                  payload=b''.join(chunks)
+                  print('FTPS FILE',path,'exists',len(payload),flush=True)
+                  if path=='.htaccess':
+                      code=payload.decode('utf-8','replace')
+                      for word in ['Require not ip','Deny from','Allow from','RewriteRule','RewriteCond','GeoIP','SetEnvIf','AuthType']:
+                          print('HTACCESS',word,'count',code.lower().count(word.lower()),flush=True)
+              except ftplib.error_perm as e:
+                  print('FTPS FILE',path,'missing_or_denied',str(e)[:32],flush=True)
+          f.quit()
+          PY
