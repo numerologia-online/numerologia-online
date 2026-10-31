@@ -201,7 +201,7 @@
     const tg=isTelegram();
     guest.hidden=tg||!!current;
     signed.hidden=tg||!current;
-    tgBox.hidden=!tg;
+    tgBox.hidden=!tg||!current;
     if (!tg) {
       if (current) {
         if (identityLabel) identityLabel.textContent="Вы вошли как";
@@ -354,16 +354,22 @@
     // The legacy cabinet opens first. After that, restore the server-verified identity.
     queueMicrotask(()=>{ render();if(!initialized){initialized=true;void refresh();} });
   });
+  render();
   if(isTelegram()){
-    // Signed Mini App launch is the only trust root for Telegram account linking.
+    // Only the server-verified signed Telegram login may show account linking.
     request("telegram",{init_data:signedTelegram()}).then(result=>{
       current=result.account;
       if(browserNote)browserNote.hidden=true;
       const linked=Boolean(current.email_verified_at||current.email_verified);
       document.getElementById("numi-telegram-link-prompt").hidden=linked;
       document.getElementById("numi-telegram-email-linked").hidden=!linked;
-      if(linked) setEmailForm.hidden=true;
-    }).catch(()=>{tgBox.hidden=true;});
+      if(linked){setEmailForm.hidden=true;mergeForm.hidden=true;}
+      render();
+      void updatePurchases();
+    }).catch(()=>{
+      current=null;
+      render();
+    });
   }else{
     void refresh();
   }
