@@ -21,7 +21,7 @@ RELEASE = "eb1fb7c9b1e3992f2207d9979f3d029276bc3401"
 LOGIN_SHA = "c9bbfeef5d85d66b6e119357734fabb74bdf2301c279ff6b060063428c918dbe"
 
 def note(**kwargs):
-    print(json.dumps(kwargs, sort_keys=True), ensure_ascii=False), flush=True)
+    print(json.dumps(kwargs, sort_keys=True, ensure_ascii=False), flush=True)
 
 def git_bytes(commit, path):
     return subprocess.check_output(["git", "show", commit + ":" + path], timeout=25)
