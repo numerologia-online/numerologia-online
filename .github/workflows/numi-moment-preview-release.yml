@@ -1,0 +1,37 @@
+name: Publish 300-question moment preview safely on REG.RU
+on:
+  push:
+    paths:
+      - .github/workflows/numi-moment-preview-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: numi-moment-preview-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish isolated numerology moment preview on REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate complete moment preview without touching production
+        run: |
+          python3 -m py_compile moment/deploy-moment-preview.py
+          node --check moment/moment.js
+          python3 - <<'PY'
+          import json
+          d=json.load(open('moment/questions.json',encoding='utf-8'))
+          assert len(d['categories']) == 12
+          assert len(d['questions']) == 300
+          assert len({x['title'] for x in d['questions']}) == 300
+          assert len({x['id'] for x in d['questions']}) == 300
+          assert set(x['category'] for x in d['questions']) == set(x['id'] for x in d['categories'])
+          assert set(x['mode'] for x in d['questions']) <= {'self','partner','event'}
+          print('Moment preview: 300 unique questions in 12 categories validated')
+          PY
+      - name: Publish isolated preview with complete backup and live checks
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u moment/deploy-moment-preview.py
