@@ -326,6 +326,38 @@
         #account-dialog .numi-tariff-table .numi-club-free {font-size:clamp(10px,2.75vw,12px)!important}
       }
     </style>
+    <style id="numi-cabinet-full-height-compact-prices-20261031">
+      /* Cabinet stays on screen; a touch below content can never reach the backdrop. */
+      @media (max-width:700px) {
+        #account-dialog:not(.account-dialog--editing):not(:has(input:focus)) {
+          height:calc(100dvh - 22px);
+          max-height:calc(100dvh - 22px);
+          min-height:0;
+          margin:auto;
+          overscroll-behavior:contain;
+          overflow-y:auto;
+          scroll-padding-bottom:24px;
+          padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+        }
+        #account-dialog.account-dialog--editing,
+        #account-dialog:has(input:focus) {height:auto}
+      }
+      #account-dialog [data-account-content="prices"] .numi-tariff-back {
+        min-height:48px;padding:9px 13px;margin:2px 0 10px;
+      }
+      #account-dialog [data-account-content="prices"]>h3 {margin-bottom:9px;font-size:clamp(27px,7vw,35px)}
+      #account-dialog [data-account-content="prices"] .numi-tariff-lead {gap:8px;margin:4px 0 10px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-lead>div {padding:11px 10px;border-radius:16px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-card-icon {font-size:19px;margin-bottom:2px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-club .numi-tariff-club-badge {margin:0 0 5px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-club .numi-tariff-club-price {margin:4px 0 3px;font-size:clamp(25px,6.6vw,34px)!important}
+      #account-dialog [data-account-content="prices"] .numi-tariff-lead small {font-size:11px;line-height:1.32}
+      #account-dialog [data-account-content="prices"] .numi-tariff-card-foot {padding:5px 4px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-caption {margin:9px 0 8px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-caption strong {font-size:20px;margin-bottom:3px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-row>[role=cell] {min-height:53px;padding-top:8px;padding-bottom:8px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-head [role=columnheader] {padding-top:9px;padding-bottom:9px}
+    </style>
     <!-- Reversible experiment: subtitles on the eight homepage catalog cards only. -->
     <style id="home-card-subtitles-experiment">
       .products[aria-label="Направления расчётов"] > .product-card {
@@ -769,7 +801,7 @@
             <div class="numi-tariff-row" role="row"><strong role="cell">Полный разбор жизни</strong><span role="cell">990 ₽</span><span role="cell" class="numi-club-discount">−50%</span></div>
             <div class="numi-tariff-row" role="row"><strong role="cell">Вопросы «Да или нет?»</strong><span role="cell">19 ₽</span><span role="cell" class="numi-club-free">БЕСПЛАТНО</span></div>
             <div class="numi-tariff-row numi-tariff-row--feature" role="row">
-              <div role="cell"><strong>Мужчина или Red Flag</strong><small>Знакомство и инициатива · Подарки и щедрость · Деньги и ответственность · Верность и измены · Семья и отношения · Язык любви</small></div>
+              <div role="cell"><strong>Мужчина или Red Flag</strong><small>Знакомство · Подарки · Деньги · Верность · Семья · Язык любви</small></div>
               <span role="cell">19–49 ₽<small>за вопрос</small></span>
               <span role="cell" class="numi-club-discount">−50%<small>на вопросы</small></span>
             </div>
@@ -832,7 +864,7 @@
     </dialog>
   <script src="artwork-loader.js?v=1" defer></script>
   <script src="install.js?v=4" defer></script>
-  <script src="auth-profile.js?v=19" defer></script>
+  <script src="auth-profile.js?v=20" defer></script>
   <script src="account-browser.js?v=14" defer></script>
   <script type="module" src="app.js?v=263"></script>
   </body>
