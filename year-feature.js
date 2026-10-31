@@ -1,4 +1,5 @@
-import { createMonthlyLinkSelector, loadEnergies, monthNames } from "./year-content.js?v=4";
+import { hasOwnerAccess, ownerAccessKnown, AUTH_SERVER } from "./paid-access.js?v=20261031reg1";
+import { createMonthlyLinkSelector, loadEnergies, monthNames } from "./year-content.js?v=20261031reg1";
 import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=1";
 import { isFreeYearMonth } from "./year-access.js?v=1";
 
@@ -20,7 +21,7 @@ yearPaywallDialog.addEventListener("click", event => {
   if (event.target === yearPaywallDialog) yearPaywallDialog.close();
 });
 // Paid access will require verified server entitlement; not yet connected.
-const hasVerifiedYearAccess = () => false;
+const hasVerifiedYearAccess = () => ownerAccessKnown();
 let reportRevealTimer;
 
 const showCalculationLoading = () => {
@@ -158,10 +159,19 @@ form.addEventListener("submit", async (event) => {
   let energyContent;
   let alternateEnergyContent;
   try {
+    if (await hasOwnerAccess()) {
     [energyContent, alternateEnergyContent] = await Promise.all([
       loadEnergies([energyBeforeBirthday, energyAfterBirthday], textVariant),
       loadEnergies([energyBeforeBirthday, energyAfterBirthday], textVariant === "even" ? "odd" : "even")
     ]);
+    } else {
+      const birth_date = [birthDate.getUTCFullYear(), String(birthDate.getUTCMonth()+1).padStart(2,"0"), String(birthDate.getUTCDate()).padStart(2,"0")].join("-");
+      const response = await fetch(AUTH_SERVER+"/api/numi-year-preview.php", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({birth_date,year:reportYearValue,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone}),cache:"no-store",signal:AbortSignal.timeout(25000)});
+      if (!response.ok) throw Error("Не удалось получить бесплатные месяцы");
+      const preview=await response.json();
+      if (!preview.ok) throw Error("Не удалось получить бесплатные месяцы");
+      energyContent=preview.primary;alternateEnergyContent=preview.alternate;
+    }
   } catch (error) {
     showCalculationError();
     yearInput.setCustomValidity("Не удалось открыть тексты года. Обновите страницу и попробуйте ещё раз.");
@@ -227,7 +237,7 @@ form.addEventListener("submit", async (event) => {
     const month = { title: `Энергия ${monthEnergy}`, text: "Авторская карточка этой связки ещё готовится." };
     const item = document.createElement("details");
     item.className = "month-card";
-    if (!isFreeYearMonth(reportYearValue, calendarMonth)) {
+    if (!hasVerifiedYearAccess() && !isFreeYearMonth(reportYearValue, calendarMonth)) {
       item.classList.add("month-card--locked");
       const energyLabel = isBirthdayMonth
         ? personalMonth(energyBeforeBirthday, calendarMonth) + "→" + personalMonth(energyAfterBirthday, calendarMonth)
@@ -671,8 +681,8 @@ const downloadPdf = async () => {
   }
 };
 
-pdfButton.addEventListener("click", showYearPaywall);
-pdfButtonTop.addEventListener("click", showYearPaywall);
+pdfButton.addEventListener("click", openPdfPreview);
+pdfButtonTop.addEventListener("click", openPdfPreview);
 pdfPreviewClose.addEventListener("click", () => pdfPreviewDialog.close());
 pdfDownloadButton.addEventListener("click", downloadPdf);
 pdfPreviewDialog.addEventListener("close", () => {
