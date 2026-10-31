@@ -1,0 +1,66 @@
+name: Verify production email registration and account modal in mobile Safari
+on:
+  push:
+    paths:
+      - .github/workflows/numi-account-live-browser-qa.yml
+permissions:
+  contents: read
+jobs:
+  webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Install browser for read-only checks
+        run: |
+          mkdir -p /tmp/numi-auth-qa
+          cd /tmp/numi-auth-qa
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund playwright@1.56.1 >/dev/null
+          npx playwright install --with-deps webkit
+      - name: Audit account UI, invalid login and security boundary
+        run: |
+          cd /tmp/numi-auth-qa
+          node - <<'JS'
+          const {webkit}=require('playwright');
+          const DOMAIN='https://xn--c1adkkdfjbp1a4l.online';
+          (async()=>{
+            const browser=await webkit.launch({headless:true});
+            const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,deviceScaleFactor:2});
+            const page=await context.newPage();
+            const issues=[],errors=[];
+            page.on('pageerror',e=>errors.push(e.message));
+            page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
+            let response=await page.goto(DOMAIN+'/',{waitUntil:'domcontentloaded',timeout:25000});
+            if(response.status()!==200)throw Error('Homepage HTTP '+response.status());
+            await page.locator('[data-account-open="profile"]').click();
+            await page.locator('#account-dialog[open]').waitFor({timeout:12000});
+            await page.locator('#numi-account-guest').waitFor({state:'visible',timeout:16000});
+            const register=page.locator('[data-numi-tab="register"]');
+            await register.click();
+            if((await page.locator('#numi-email-form button[type=submit]').innerText()).trim()!=='Зарегистрироваться')issues.push('Register tab failed');
+            await page.locator('#numi-forgot').count().then(c=>{if(c!==1)issues.push('Forgot password button missing')});
+            await page.locator('[data-numi-tab="login"]').click();
+            await page.locator('#numi-forgot').click();
+            await page.locator('#numi-reset-form').waitFor({state:'visible',timeout:4000});
+            await page.locator('#numi-back-login').click();
+            await page.locator('#numi-email-form').waitFor({state:'visible',timeout:4000});
+            await page.locator('#numi-email-form [name=email]').fill('no-such-user@example.invalid');
+            await page.locator('#numi-email-form [name=password]').fill('testing_a_random_invalid_password_1234');
+            await page.locator('#numi-email-form button[type=submit]').click();
+            await page.locator('#numi-account-message:not([hidden])').waitFor({timeout:12000});
+            const msg=await page.locator('#numi-account-message').innerText();
+            if(!msg.includes('неверн'))issues.push('Invalid login feedback missing: '+msg);
+            await page.locator('#account-close').click();
+            if(await page.locator('#account-dialog').evaluate(el=>el.open))issues.push('Cabinet failed to close');
+            const session=await context.request.post(DOMAIN+'/api/numi-account.php',{headers:{Origin:DOMAIN,'Content-Type':'application/json'},data:{action:'session'}});
+            const sj=await session.json();
+            if(session.status()!==200||sj.authenticated!==false)issues.push('Anonymous session was not denied');
+            const purchases=await context.request.post(DOMAIN+'/api/numi-account.php',{headers:{Origin:DOMAIN,'Content-Type':'application/json'},data:{action:'purchases'}});
+            if(purchases.status()!==401)issues.push('Anonymous purchases leaked:'+purchases.status());
+            const outside=await context.request.post(DOMAIN+'/api/numi-account.php',{headers:{Origin:'https://not-our-site.invalid','Content-Type':'application/json'},data:{action:'session'}});
+            if(outside.status()!==403)issues.push('CSRF origin check failed:'+outside.status());
+            console.log('ACCOUNT_LIVE_QA',JSON.stringify({guest_registration_tab:true,forgot_password_form:true,invalid_password_blocked:true,anonymous_session:false,purchases_blocked:true,csrf_denied:true,issues,jsErrors:errors.slice(0,10)}));
+            await browser.close();
+            if(issues.length||errors.length)process.exitCode=1;
+          })().catch(e=>{console.error('ACCOUNT_LIVE_QA_FATAL',e.message);process.exitCode=1});
+          JS
