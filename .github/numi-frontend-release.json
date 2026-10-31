@@ -1,13 +1,13 @@
 {
-  "intent": "NON_DESTRUCTIVE_PREFLIGHT_ONLY",
+  "intent": "APPROVED_PROTECTED_RELEASE",
   "base_commit": "d943b08b9cf8a9be4b37e300abad1c0a92920757",
-  "candidate_commit": "3ba72664f8aaea3cdee6928b243b852d7c79ae5a",
+  "candidate_commit": "f67c2ce48928e97a8471d07608b6c722985b7267",
   "root": "www/xn--c1adkkdfjbp1a4l.online",
   "files": [
     {
       "path": "app.js",
       "old": "0e1c51f01f62d4c631c6f2077c59e4c309734e0e",
-      "new": "1487e092e0886ffedc04299f249964df30993e4d"
+      "new": "05034a023818a2c6a517c7215fdbb1d5d992de8c"
     },
     {
       "path": "child/child.js",
@@ -1725,5 +1725,5 @@
       "new": "38beff84aee418bb2faf729bb3f07286ecf4579e"
     }
   ],
-  "note": "Do not publish without approved preflight and verified rollback. Current live site remains untouched."
+  "note": "Production release permitted by user's direct request; publisher must reverify every remote source, store private backups and rollback on failed uploads."
 }
