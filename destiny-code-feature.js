@@ -1,5 +1,6 @@
+import { contentFetch as fetch, hasOwnerAccess } from "./paid-access.js?v=20261031reg1";
 import { createMoneyPdfButton } from "./money-pdf.js?v=10";
-import { loadFullReportKnowledge, loadFullReportSection } from "./full-report-library.js?v=3";
+import { loadFullReportKnowledge, loadFullReportSection } from "./full-report-library.js?v=20261031reg1";
 import { calculateMatrix } from "./numerology-core.js?v=1";
 
 const home = document.querySelector("#home");
@@ -178,6 +179,10 @@ const openMoneyRituals = async (code) => {
   ritualsList.innerHTML = `<p class="money-rituals-loading">Открываю денежную библиотеку…</p>`;
   window.scrollTo({ top: 0, behavior: "instant" });
   try {
+    if (!await hasOwnerAccess()) {
+      ritualsList.textContent = "🔒 Ритуалы доступны по подписке. Оплата пока не подключена.";
+      return;
+    }
     const rituals = await loadMoneyRituals();
     ritualsList.replaceChildren(...rituals.map((ritual) => createRitual(ritual, code)));
   } catch {
@@ -206,7 +211,7 @@ const buildCode = async (birthDate, energies) => {
     moneyFlow: matrix.rightSpoke.near,
     earning: matrix.rightSpoke.core
   };
-  const moneyCards = await Promise.all(MONEY_CARDS.map((definition) => moneyCard(definition, moneyPositions[definition.key])));
+  const moneyCards = await hasOwnerAccess() ? await Promise.all(MONEY_CARDS.map((definition) => moneyCard(definition, moneyPositions[definition.key]))) : [];
 
   return {
     title: `Код даты ${String(birthDate.day).padStart(2, "0")}.${String(birthDate.month).padStart(2, "0")}.${birthDate.year}`,
