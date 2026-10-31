@@ -1,0 +1,49 @@
+name: Audit direct public access to paid content on REG.RU (read-only)
+
+on:
+  push:
+    paths:
+      - .github/workflows/reg-ru-public-text-exposure-audit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check public content without cookies, credentials or changes
+        run: |
+          python3 - <<'PY'
+          import urllib.request, urllib.error
+          host="https://xn--c1adkkdfjbp1a4l.online"
+          paths=[
+             "/data/redflag/love/published/1-2.json",
+             "/data/redflag/banks/money-questions.json",
+             "/data/year/energy-1.txt",
+             "/child/data/matrix/karmic-tail/12-16-4.json",
+             "/pro/karmic-programs.json",
+          ]
+          public=[]
+          for path in paths:
+              req=urllib.request.Request(host+path,headers={"Cache-Control":"no-cache","User-Agent":"Content-exposure-read-only-audit/1.0"})
+              try:
+                  with urllib.request.urlopen(req,timeout=12) as res:
+                      snippet=res.read(250)
+                      status=res.status
+                      content_type=res.headers.get("Content-Type","")
+              except urllib.error.HTTPError as e:
+                  status=e.code
+                  snippet=b""
+                  content_type=e.headers.get("Content-Type","")
+              except Exception as e:
+                  print("CHECK FAILED:",path,type(e).__name__,flush=True)
+                  continue
+              print("ANONYMOUS:",path,"HTTP",status,"type",content_type,"has_content",bool(snippet),flush=True)
+              if status == 200 and snippet:
+                  public.append(path)
+          print("PUBLIC PAID-CONTENT CANDIDATES:",len(public),flush=True)
+          for path in public:print("EXPOSED:",path,flush=True)
+          PY
