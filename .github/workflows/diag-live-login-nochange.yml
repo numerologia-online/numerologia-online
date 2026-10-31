@@ -9,18 +9,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
-      - name: Check IPv4-only URL and script behavior
+      - name: Compare Vercel login aliases and REG.RU local identity
         run: |
-          set +e
-          curl -4 -sS -L --max-time 14 -o /tmp/home -w 'HOME %{http_code} %{remote_ip}\n' https://xn--c1adkkdfjbp1a4l.online/
-          grep -o 'auth-profile.js?v=[0-9]*' /tmp/home | head -3
-          curl -4 -sS -L --max-time 14 -o /tmp/auth -w 'SCRIPT %{http_code} %{remote_ip}\n' https://xn--c1adkkdfjbp1a4l.online/auth-profile.js?v=18
-          sha256sum /tmp/auth
-          grep -F -c 'if (dialog.open) dialog.close();' /tmp/auth
-          grep -F -c 'if (!user)' /tmp/auth
-          curl -4 -sS -L --max-time 14 -o /tmp/vercel -w 'VERCEL %{http_code} %{remote_ip}\n' https://numerologia-online-auth-server.vercel.app/api/health
-          head -c 160 /tmp/vercel
-          echo
-          curl -4 -sS -L --max-time 14 -o /tmp/profile -w 'REG_PROFILE %{http_code} %{remote_ip}\n' https://xn--c1adkkdfjbp1a4l.online/api/profile.php
-          head -c 100 /tmp/profile
+          for host in numerologia-online-auth-server.vercel.app numerologia-online-auth-server-79ed375z2-tankraft431-1927.vercel.app numerologia-online-auth-server-hobzpw620-tankraft431-1927.vercel.app; do
+            for route in api/health api/miniapp; do
+              echo "CHECK $host/$route"
+              curl -4 -sS -L --max-time 12 --output /tmp/verify-output --write-out 'STATUS %{http_code} IP %{remote_ip}\n' --url "https://$host/$route"
+              head -c 180 /tmp/verify-output
+              echo
+            done
+          done
+          echo "CHECK REG.RU profile.php with invalid credentials"
+          curl -4 -sS -L --max-time 12 --output /tmp/verify-output --write-out 'STATUS %{http_code} IP %{remote_ip}\n' --request POST -H 'Content-Type: application/json' --data '{"action":"get","init_data":"invalid"}' https://xn--c1adkkdfjbp1a4l.online/api/profile.php
+          head -c 180 /tmp/verify-output
           echo
