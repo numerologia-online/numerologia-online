@@ -1,0 +1,117 @@
+name: Repair REG.RU Telegram cabinet authentication one time
+on:
+  push:
+    paths: [.github/workflows/repair-reg-ru-telegram-login.yml]
+permissions:
+  contents: read
+jobs:
+  fix:
+    if: github.event.head_commit.message == 'Apply one-time isolated REG.RU Telegram sign-in repair'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Safely repair only live auth client and cache tag; back up originals
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib, ssl, os, io, hashlib, re, subprocess, tempfile, time
+          host='server172.hosting.reg.ru'
+          dirname='www/xn--c1adkkdfjbp1a4l.online'
+          user=os.environ['REG_FTP_USER']
+          passwd=os.environ['REG_FTP_PASSWORD']
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          originals={}
+          changes={}
+          uploaded=[]
+          def get(name,limit=320000):
+              chunks=[]
+              ftp.retrbinary('RETR '+name,chunks.append)
+              data=b''.join(chunks)
+              if len(data)>limit:raise RuntimeError('Unexpected large file '+name)
+              return data
+          def put(name,data):
+              ftp.storbinary('STOR '+name,io.BytesIO(data))
+              if hashlib.sha256(get(name)).digest()!=hashlib.sha256(data).digest():
+                  raise RuntimeError('FTP readback integrity mismatch '+name)
+          def single_replace(text,needle,new,label):
+              n=text.count(needle)
+              if n!=1:raise RuntimeError('Expected exact single change '+label+', got '+str(n))
+              return text.replace(needle,new)
+          ftp.connect(host,21);ftp.login(user,passwd);ftp.prot_p()
+          try:
+              home=ftp.pwd()
+              ftp.cwd(dirname)
+              originals['auth-profile.js']=get('auth-profile.js')
+              originals['index.html']=get('index.html')
+              script=originals['auth-profile.js'].decode('utf-8')
+              html=originals['index.html'].decode('utf-8')
+              print('ORIGINAL LIVE script SHA-256',hashlib.sha256(originals['auth-profile.js']).hexdigest(),flush=True)
+              old_target='const CHECK_URL = "https://numerologia-online-auth-server.vercel.app/api/miniapp";'
+              script=single_replace(script,old_target,
+                  'const CHECK_URL = "/api/profile.php";',
+                  'replace broken Vercel route with existing signed REG.RU profile route')
+              script=single_replace(script,
+                  'body: JSON.stringify({ init_data: raw })',
+                  'body: JSON.stringify({ action: "get", init_data: raw })',
+                  'reuse existing REG.RU profile API get action')
+              script=single_replace(script,
+                  '      if (dialog.open) dialog.close();',
+                  '      // Keep the cabinet visible when an interactive login attempt fails.',
+                  'preserve manually opened login errors')
+              script=single_replace(script,
+                  '    if (!user) {\n      if (!loading) void identify();\n      return;\n    }',
+                  '    if (!user) {\n      if (!dialog.open) dialog.showModal();\n      if (!loading) void identify();\n      return;\n    }',
+                  'open cabinet on tap even while automatic authorization is pending')
+              if 'function getInitData()' not in script or 'getInitData()' not in script:
+                  raise RuntimeError('Telegram initData validation caller missing')
+              if 'const PROFILE_URL = "https://xn--c1adkkdfjbp1a4l.online/api/profile.php";' not in script:
+                  raise RuntimeError('REG.RU profile contract changed')
+              pattern=r'(auth-profile\.js\?v=)(\d+)'
+              matches=list(re.finditer(pattern,html))
+              if len(matches)!=1:raise RuntimeError('Cannot identify unique auth script version')
+              version=int(matches[0].group(2))
+              html=re.sub(pattern,lambda m:m.group(1)+str(version+1),html,count=1)
+              with tempfile.NamedTemporaryFile(suffix='.js') as tmp:
+                  tmp.write(script.encode('utf-8'));tmp.flush()
+                  p=subprocess.run(['node','--check',tmp.name],text=True,capture_output=True)
+                  if p.returncode:raise RuntimeError('JavaScript parse failed: '+p.stderr[:180])
+              changes={'auth-profile.js':script.encode('utf-8'),'index.html':html.encode('utf-8')}
+              # Backups outside website document root, before any change.
+              ftp.cwd(home)
+              try:ftp.mkd('site-safeguard-backups')
+              except ftplib.error_perm:pass
+              ftp.cwd('site-safeguard-backups')
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              for name,data in originals.items():
+                  safe=stamp+'-before-local-telegram-login-'+name
+                  put(safe,data)
+                  print('BACKUP outside public site',safe,flush=True)
+              ftp.cwd(home);ftp.cwd(dirname)
+              try:
+                  for name,data in changes.items():
+                      uploaded.append(name)
+                      put(name,data)
+                      print('UPDATED',name,'sha256',hashlib.sha256(data).hexdigest(),flush=True)
+              except Exception:
+                  print('FAILURE - restoring original site files',flush=True)
+                  for name in reversed(uploaded):
+                      try:put(name,originals[name]);print('RESTORED',name,flush=True)
+                      except Exception as e:print('CRITICAL ROLLBACK ERROR',name,type(e).__name__,flush=True)
+                  raise
+              print('LOGIN FIX DONE script_cache_version',version+1,flush=True)
+          finally:
+              try:ftp.quit()
+              except Exception:ftp.close()
+          PY
+      - name: Independently confirm freshly published login script and homepage over IPv4
+        run: |
+          set -e
+          curl -4 --fail --silent --show-error -L --max-time 20 -o /tmp/live-home https://xn--c1adkkdfjbp1a4l.online/
+          grep -o 'auth-profile.js?v=[0-9]*' /tmp/live-home | tail -1
+          curl -4 --fail --silent --show-error -L --max-time 20 -o /tmp/live-auth https://xn--c1adkkdfjbp1a4l.online/auth-profile.js
+          grep -F 'const CHECK_URL = "/api/profile.php";' /tmp/live-auth
+          grep -F 'if (!dialog.open) dialog.showModal();' /tmp/live-auth
+          if grep -F 'numerologia-online-auth-server.vercel.app/api/miniapp' /tmp/live-auth; then exit 1; fi
+          echo 'LIVE LOGIN NOW USES SAME-ORIGIN SIGNED REG.RU API'
