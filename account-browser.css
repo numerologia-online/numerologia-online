@@ -1,0 +1,34 @@
+/* Signup lives inside the existing cabinet; Telegram layout stays untouched. */
+.numi-account-entry, .numi-account-entry * { box-sizing:border-box }
+.numi-account-entry {
+  margin:14px 0 16px;
+  padding:17px 16px;
+  border:1px solid #dccbaf;
+  border-radius:19px;
+  background:#fffdf8;
+  color:#1e4a3b;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.numi-account-entry[hidden],.numi-account-entry [hidden] {display:none!important}
+.numi-account-entry h3 { margin:0 0 8px;font:600 22px/1.2 Georgia,serif;color:#204b3c}
+.numi-account-entry p {margin:6px 0 12px;color:#64796e;font-size:13px;line-height:1.5}
+.numi-auth-tabs {display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:4px;background:#eff1e9;border-radius:13px;margin:13px 0}
+.numi-auth-tabs button {padding:10px 7px;border:0;border-radius:10px;background:transparent;color:#567669;font:700 13px/1.2 system-ui;cursor:pointer}
+.numi-auth-tabs button.is-active {background:white;color:#15533d;box-shadow:0 2px 8px #123f2518}
+.numi-account-entry form {margin:8px 0 0}
+.numi-account-entry label {display:block;margin:0 0 10px;font:650 13px/1.4 system-ui;color:#335a4b}
+.numi-account-entry input {width:100%;height:46px;margin-top:6px;padding:10px 12px;background:#fff;color:#193d30;border:1px solid #d4ddd5;border-radius:11px;font:500 16px/1.2 system-ui;outline:0}
+.numi-account-entry input:focus {border-color:#6baf91;box-shadow:0 0 0 3px #a1dbc34f}
+.numi-account-entry .numi-auth-submit {width:100%;min-height:48px;margin:11px 0 0;padding:12px 10px;border:none;border-radius:12px;background:#194d3b;color:#fff;font:700 15px/1.3 system-ui;cursor:pointer}
+.numi-auth-submit:disabled,.numi-auth-link:disabled {opacity:.65;cursor:wait}
+.numi-account-entry .numi-auth-link {display:inline-block;max-width:100%;padding:6px 0;margin:9px 0 0;border:0;background:none;color:#28634a;text-align:left;text-decoration:underline;text-underline-offset:3px;font:650 12px/1.35 system-ui;cursor:pointer}
+.numi-account-entry .numi-account-message {margin:12px 0 0;padding:11px 12px;border-radius:11px;background:#fff0e7;color:#984f32;font:500 13px/1.5 system-ui}
+.numi-account-entry .numi-account-message.is-success {background:#eaf4ec;color:#246444}
+.numi-account-entry .numi-signed-email {margin:0;color:#3d6652;font:600 13px/1.5 system-ui}
+.numi-purchase-entry {display:flex;flex-direction:column;gap:4px;margin:9px 0;padding:11px;border-radius:12px;border:1px solid #e0d7c5;background:#fff}
+.numi-purchase-entry strong {font-size:14px;color:#21513b}
+.numi-purchase-entry small {font-size:12px;color:#677d71}
+@media (max-width:400px) {
+ .numi-account-entry {padding:14px 12px}
+ .numi-account-entry h3 {font-size:20px}
+}
