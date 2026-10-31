@@ -437,13 +437,58 @@ function naSaveBirth(PDO $db,array $body): never {
     $db->prepare('UPDATE numi_accounts SET birth_date=? WHERE id=?')->execute([$birth,$account['id']]);
     naReply(200,['ok'=>true,'account'=>naPublicAccount(naUser($db,$account['id']))]);
 }
+/**
+ * Saved-item visibility is deliberately independent from payment rights.
+ * This table contains only a reference and a hiding timestamp. Never update
+ * numi_orders, numi_entitlements or payment status when hiding an item.
+ */
+function naEnsureSavedHidden(PDO $db): void {
+    $db->exec("CREATE TABLE IF NOT EXISTS numi_saved_hidden (
+        entitlement_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+        hidden_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_numi_saved_hidden_entitlement FOREIGN KEY (entitlement_id)
+            REFERENCES numi_entitlements(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+function naHideSaved(PDO $db,array $body): never {
+    $account=naCurrent($db);
+    if (!$account) naReply(401,['ok'=>false,'error'=>'LOGIN_REQUIRED']);
+    $id=$body['entitlement_id']??null;
+    if (!is_string($id) || !preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/iD',$id)) {
+        naReply(400,['ok'=>false,'error'=>'INVALID_SAVED_ITEM']);
+    }
+    naEnsureSavedHidden($db);
+    $db->beginTransaction();
+    try {
+        $stmt=$db->prepare("SELECT e.id FROM numi_entitlements e
+            JOIN numi_orders o ON o.id=e.order_id
+            WHERE e.id=? AND e.account_id=? AND e.status='active'
+              AND o.status='paid' AND o.verified_at IS NOT NULL
+            FOR UPDATE");
+        $stmt->execute([$id,$account['id']]);
+        if (!$stmt->fetchColumn()) {
+            $db->rollBack();
+            naReply(404,['ok'=>false,'error'=>'SAVED_ITEM_NOT_FOUND']);
+        }
+        $db->prepare('INSERT IGNORE INTO numi_saved_hidden(entitlement_id) VALUES(?)')->execute([$id]);
+        $db->commit();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        throw $e;
+    }
+    naReply(200,['ok'=>true,'hidden'=>true]);
+}
 function naPurchases(PDO $db): never {
     $account=naCurrent($db);
     if (!$account) naReply(401,['ok'=>false,'error'=>'LOGIN_REQUIRED']);
-    $stmt=$db->prepare("SELECT e.product_code,e.resource_id,e.expires_at,e.created_at
+    naEnsureSavedHidden($db);
+    $stmt=$db->prepare("SELECT e.id AS entitlement_id,e.product_code,e.resource_id,e.expires_at,e.created_at
         FROM numi_entitlements e JOIN numi_orders o ON o.id=e.order_id
+        LEFT JOIN numi_saved_hidden h ON h.entitlement_id=e.id
         WHERE e.account_id=? AND e.status='active' AND o.status='paid' AND o.verified_at IS NOT NULL
-            AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP()) ORDER BY e.created_at DESC LIMIT 100");
+            AND h.entitlement_id IS NULL
+            AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
+        ORDER BY e.created_at DESC LIMIT 100");
     $stmt->execute([$account['id']]);
     naReply(200,['ok'=>true,'purchases'=>$stmt->fetchAll(),'account'=>naPublicAccount($account)]);
 }
@@ -477,6 +522,7 @@ function naServe(): never {
         if ($action==='set_email') naEmailForTelegram($db,$body);
         if ($action==='birth') naSaveBirth($db,$body);
         if ($action==='purchases') naPurchases($db);
+        if ($action==='hide_saved') naHideSaved($db,$body);
         if ($action==='logout') {
             naSignOut($db);
             naReply(200,['ok'=>true,'authenticated'=>false]);
