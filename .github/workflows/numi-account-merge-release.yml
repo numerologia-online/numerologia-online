@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Release verified Telegram and email account merging to REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish final validated account merge to REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
