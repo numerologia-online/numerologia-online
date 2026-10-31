@@ -1,0 +1,36 @@
+name: Publish REG.RU email signup UI without changing Telegram or paid-content logic
+on:
+  push:
+    paths:
+      - .github/workflows/numi-account-ui-deploy.yml
+permissions:
+  contents: write
+concurrency:
+  group: numi-account-ui-one-time-publish
+  cancel-in-progress: false
+jobs:
+  install:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Release verified account registration UI to REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify frontend code syntax
+        run: |
+          node --check account-browser.js
+          python3 -m py_compile account-service/deploy-ui.py
+      - name: Back up and install only two new assets plus exact live homepage tags
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u account-service/deploy-ui.py
+      - name: Align the exact verified live HTML with main
+        run: |
+          git diff --check
+          git add -- index.html
+          if ! git diff --cached --quiet; then
+            git -c user.name='numi-account-safe-release' -c user.email='actions@users.noreply.github.com' commit -m 'Sync manually approved REG.RU first-party account UI tags into main'
+            git push origin HEAD:main
+          fi
