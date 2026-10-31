@@ -141,7 +141,11 @@
   function setFormState(loading) {
     busy=loading;
     for (const control of root.querySelectorAll("button,input")) control.disabled=loading;
-    if (!loading) for(const control of root.querySelectorAll("button,input")) control.disabled=false;
+    const submit=resetForm.querySelector('button[type="submit"]');
+    if (submit) {
+      submit.textContent=loading && selected==="reset" ? "Отправляем запрос..." : "Отправить ссылку";
+      submit.setAttribute("aria-busy",loading && selected==="reset" ? "true" : "false");
+    }
   }
   function choose(mode) {
     selected=mode;
@@ -229,8 +233,10 @@
   });
   resetForm.addEventListener("submit",async event=>{
     event.preventDefault();
-    const email=String(new FormData(resetForm).get("email")||"");
-    await perform("request_reset",{email},"Если такой адрес зарегистрирован, на него отправлена ссылка для восстановления.");
+    const email=String(new FormData(resetForm).get("email")||"").trim();
+    if (!email || !resetForm.reportValidity()) return;
+    clearMessage();
+    await perform("request_reset",{email},"✓ Запрос принят. Если почта зарегистрирована и подтверждена, мы отправим письмо со ссылкой для смены пароля. Проверьте «Входящие» и «Спам». Если письма нет, проверьте адрес или попробуйте зарегистрироваться.");
   });
   passForm.addEventListener("submit",async event=>{
     event.preventDefault();
