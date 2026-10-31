@@ -182,7 +182,7 @@ def main():
                 if response.returncode!=0 or response.stdout.strip() not in ("401","403","404","410"):
                     raise RuntimeError("Paid static guard lost on "+p)
             note(success=True,sanitized_public_mixed_files=36,
-                 184_paid_static_urls_still_denied=True,
+                 paid_static_184_urls_still_denied=True,
                  free_readings_still_available=True,telegram_auth_unchanged=True)
         except BaseException:
             note(publication_failed=True,starting_restore=len(uploaded))
