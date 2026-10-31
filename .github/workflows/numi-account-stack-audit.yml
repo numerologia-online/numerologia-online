@@ -1,0 +1,72 @@
+name: Inspect REG.RU account and database capabilities without exposing credentials
+on:
+  push:
+    paths:
+      - .github/workflows/numi-account-stack-audit.yml
+permissions:
+  contents: read
+jobs:
+  inventory:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check server capabilities and available private database configs
+        env:
+          FTP_USER: ${{ secrets.REG_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,hashlib,io,json,os,re,secrets,ssl,urllib.request,urllib.parse,urllib.error
+          domain="xn--c1adkkdfjbp1a4l.online"
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          f.connect("server172.hosting.reg.ru",21);f.login(os.environ["FTP_USER"],os.environ["FTP_PASSWORD"]);f.prot_p();f.set_pasv(True)
+          home=f.pwd().rstrip("/");site=home+"/www/"+domain
+          def listing(path):
+              try:
+                  names=[x.rsplit("/",1)[-1] for x in f.nlst(path)]
+                  return [x for x in names if x not in (".","..")]
+              except ftplib.error_perm:return []
+          def file(path):
+              b=io.BytesIO()
+              try:f.retrbinary("RETR "+path,b.write)
+              except ftplib.error_perm:return None
+              return b.getvalue()
+          private=listing(home+"/private")
+          api=listing(site+"/api")
+          print("ACCOUNT_SERVER_DIRECTORY_AUDIT",json.dumps({"private_dirs_count":len(private),"private_subdirs":[x for x in private if re.search("child|auth|account|profile|db|sql|config",x,re.I)][:24],"public_api_php":[x for x in api if re.search("profile|account|auth|session|login|purchase|payment|child",x,re.I)][:40]},ensure_ascii=False),flush=True)
+          for path in [
+              home+"/private/child-paywall/config.local.php",
+              home+"/private/numi-accounts/config.local.php",
+              home+"/private/numi-secure-access/config.local.php",
+              home+"/private/bot-config.php",
+              site+"/api/profile.php",
+          ]:
+              source=file(path)
+              if source is None:continue
+              keys=[k for k in ("mysql_dsn","mysql_user","mysql_password","db_host","db_name","db_user","db_password","dsn","pdo","mysqli","sqlite") if k.encode() in source.lower()]
+              print("ACCOUNT_FILE_FACTS",json.dumps({"class":path.rsplit("/",1)[-1],"location":("private" if "/private/" in path else "api"),"size":len(source),"db_key_words":keys}),flush=True)
+          token=secrets.token_urlsafe(30);name="numi-account-runtime-"+secrets.token_hex(9)+".php"
+          php="""<?php
+          header('Content-Type: application/json; charset=UTF-8');
+          header('Cache-Control: no-store');
+          if (!hash_equals('__TOKEN__',$_SERVER['HTTP_X_NUMI_AUDIT']??'')){http_response_code(404);exit;}
+          echo json_encode(['php_major'=>PHP_MAJOR_VERSION,'php_minor'=>PHP_MINOR_VERSION,
+          'pdo_mysql'=>extension_loaded('pdo_mysql'),'pdo_sqlite'=>extension_loaded('pdo_sqlite'),
+          'mysqli'=>extension_loaded('mysqli'),'sqlite3'=>extension_loaded('sqlite3'),
+          'mail_function'=>function_exists('mail'),'openssl'=>extension_loaded('openssl'),
+          'sodium'=>extension_loaded('sodium'),'curl'=>extension_loaded('curl'),
+          'random_bytes'=>function_exists('random_bytes')]);
+          """.replace("__TOKEN__",token).encode()
+          try:
+              f.storbinary("STOR "+site+"/api/"+name,io.BytesIO(php))
+              req=urllib.request.Request("https://"+domain+"/api/"+name,headers={"X-Numi-Audit":token})
+              with urllib.request.urlopen(req,timeout=20) as resp:
+                  result=json.loads(resp.read(4000))
+              print("ACCOUNT_PHP_RUNTIME",json.dumps(result),flush=True)
+          finally:
+              try:f.delete(site+"/api/"+name)
+              except ftplib.error_perm:print("AUDIT_CLEANUP_FAILED")
+              try:f.quit()
+              except:pass
+          PY
