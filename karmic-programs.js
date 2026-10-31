@@ -1,3 +1,4 @@
+import { contentFetch as fetch, hasOwnerAccess, ownerAccessKnown, privateContent } from "./paid-access.js?v=20261030secure1";
 import { reduce22 } from "./numerology-core.js?v=1";
 
 const keyFor = (values) => [...values].sort((left, right) => left - right).join("-");

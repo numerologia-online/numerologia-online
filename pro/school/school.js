@@ -1,3 +1,4 @@
+import { contentFetch as fetch, hasOwnerAccess, ownerAccessKnown, privateContent } from "../../paid-access.js?v=20261030secure1";
 import { calculateMatrix, parseBirthDate } from "../../numerology-core.js?v=5";
 import { pointCatalog } from "./points.js?v=3";
 
@@ -165,6 +166,10 @@ function renderArcana() {
   arcanaContent.replaceChildren();
   arcanaContent.append(make("p","school-overline",`ЭНЕРГИЯ ${item.id} ИЗ 22`));
   arcanaContent.append(make("h3","school-arcana-title",item.name));
+  if (!ownerAccessKnown()) {
+    addParagraph(arcanaContent,"🔒 Подробные материалы школы закрыты. Ознакомительный первый урок доступен бесплатно.","school-arcana-core");
+    return;
+  }
   addParagraph(arcanaContent,item.core,"school-arcana-core");
   const dl=make("dl");
   [["В сильном проявлении",item.plus],["В сложном проявлении",item.minus],["В отношениях",item.love],["В деньгах и работе",item.money]].forEach(([name,desc])=>{

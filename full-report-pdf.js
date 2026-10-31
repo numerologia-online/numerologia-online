@@ -1,6 +1,6 @@
-import { buildFullReportSections, loadFullReportSection } from "./full-report-library.js?v=4";
+import { buildFullReportSections, loadFullReportSection } from "./full-report-library.js?v=20261030secure1";
 import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=1";
-import { findKarmicPrograms, findKarmicTail } from "./karmic-programs.js?v=3";
+import { findKarmicPrograms, findKarmicTail } from "./karmic-programs.js?v=20261030secure1";
 
 // Отдельный модуль PDF: документ, фон, скачивание и кэширование.
 export function createFullReportPdfController({getReport, reading, extendContent = null, buttonClass = "matrix-pdf-button", beforeDownload = null, customizeDocument = null}) {

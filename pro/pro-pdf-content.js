@@ -1,5 +1,5 @@
-import { findKarmicPrograms, findKarmicTail } from "../karmic-programs.js?v=31";
-import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
+import { findKarmicPrograms, findKarmicTail } from "../karmic-programs.js?v=20261030secure1";
+import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=20261030secure1";
 
 // The full PDF retains its original 14 authored readings from full-report-pdf.js.
 // Add the four EXISTING purpose interpretations and the matched karmic programs.
