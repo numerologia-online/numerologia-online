@@ -45,7 +45,7 @@ jobs:
               if set(data.get('entries',{}))-{'first-step'}:errors.append('Full Red Flag entries: '+str(file))
           for file in pathlib.Path('data/redflag/money').glob('*.json'):
               data=json.loads(file.read_text())
-              if data.get('entries'):errors.append('Red Flag money entries exposed: '+str(file))
+              if file.name != 'gift.json' and data.get('entries'):errors.append('Paid Red Flag money entries exposed: '+str(file))
           for file in pathlib.Path('knowledge/full-report/sections').glob('energy-*.json'):
               if 'sections' in json.loads(file.read_text()):errors.append('Full report answers exposed: '+str(file))
           status('numi/client-bank-redactions',not errors,'Redacted client files valid='+str(not errors))
