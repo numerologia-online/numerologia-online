@@ -1,3 +1,4 @@
+import { contentFetch as fetch, hasOwnerAccess, ownerAccessKnown, privateContent } from "./paid-access.js?v=20261031reg1";
 import { reduce22 } from "./redflag-profile.js?v=1";
 
 const loadJson = async (path) => {
