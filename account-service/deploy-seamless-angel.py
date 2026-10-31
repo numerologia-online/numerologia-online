@@ -6,7 +6,7 @@ HOST="server172.hosting.reg.ru"
 CSS_START=b'    <style id="numi-angel-seamless-background-20261031">'
 CSS_END=b'    <!-- Reversible experiment: subtitles on the eight homepage catalog cards only. -->'
 OLD='          <div class="account-empty-state numi-saved-empty">\n            <img class="numi-angel" src="assets/numi-angel-soft-20261031.webp" width="310" height="300" loading="lazy" decoding="async" alt="Нежный ангел с крылышками держит сердце: Ответы на твои вопросы">'.encode('utf-8')
-NEW='          <div class="account-empty-state numi-saved-empty">\n            <div class="numi-saved-angel-title">♡ Ответы на твои вопросы \xd0\x9e\xd1\x82\xd0\xb2\xd0\xb5\xd1\x82\xd1\x8b \xd0\xbd\xd0\xb0 \xd1\x82\xd0\xb2\xd0\xbe\xd0\xb8 \xd0\xb2\xd0\xbe\xd0\xbf\xd1\x80\xd0\xbe\xd1\x81\xd1\x8b</div>\n            <img class="numi-angel" src="assets/numi-angel-soft-20261031.webp" width="310" height="300" loading="lazy" decoding="async" alt="Нежный ангел с крылышками держит сердце с ответами">'.encode('utf-8')
+NEW='          <div class="account-empty-state numi-saved-empty">\n            <div class="numi-saved-angel-title">♡ Ответы на твои вопросы</div>\n            <img class="numi-angel" src="assets/numi-angel-soft-20261031.webp" width="310" height="300" loading="lazy" decoding="async" alt="Нежный ангел с крылышками держит сердце с ответами">'.encode('utf-8')
 def sha(b):return hashlib.sha256(b).digest()
 def report(**kwargs):print("NUMI_ANGEL_BG",json.dumps(kwargs,sort_keys=True),flush=True)
 def public_page():
