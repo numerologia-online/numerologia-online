@@ -438,6 +438,69 @@ function naSaveBirth(PDO $db,array $body): never {
     naReply(200,['ok'=>true,'account'=>naPublicAccount(naUser($db,$account['id']))]);
 }
 /**
+ * Owner-only checkout rehearsal: entirely separate from numi_orders/entitlements.
+ * Never grants access to paid content and never represents a real payment.
+ */
+function naTestOwner(?array $account): bool {
+    return $account !== null && !empty($account['email_verified_at'])
+        && is_string($account['email']??null)
+        && hash_equals('f289c5906895cbbd1b42d74e4e2e07d531fc1af4e91bcf7e5700835856003d29', hash('sha256', strtolower($account['email'])));
+}
+function naEnsureTestOrders(PDO $db): void {
+    $db->exec("CREATE TABLE IF NOT EXISTS numi_test_purchases (
+      id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+      account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+      product_code VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+      resource_id VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+      title VARCHAR(180) NOT NULL,
+      test_answer TEXT NOT NULL,
+      hidden_at DATETIME NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      KEY ix_numi_test_purchases_account(account_id,hidden_at,created_at),
+      CONSTRAINT fk_numi_test_purchases_owner FOREIGN KEY(account_id) REFERENCES numi_accounts(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+function naTestPurchase(PDO $db,array $body): never {
+    $owner=naCurrent($db);
+    if (!naTestOwner($owner)) naReply(403,['ok'=>false,'error'=>'TEST_NOT_ENABLED']);
+    $kind=$body['kind']??null;
+    $items=[
+      'redflag'=>['Мужчина или Red Flag: пишет первым?','redflag'],
+      'moment'=>['Нумерология момента: получится ли задуманное?','moment'],
+      'year'=>['Полный разбор года','year'],
+    ];
+    if (!is_string($kind)||!isset($items[$kind])) naReply(400,['ok'=>false,'error'=>'INVALID_TEST_PRODUCT']);
+    [$title,$code]=$items[$kind];
+    $date=$body['birth_date']??'';
+    if (!is_string($date)||!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/D',$date)) naReply(400,['ok'=>false,'error'=>'INVALID_TEST_DATE']);
+    [$year,$month,$day]=array_map('intval',explode('-',$date));
+    if (!checkdate($month,$day,$year)||$year<1900||$year>2100) naReply(400,['ok'=>false,'error'=>'INVALID_TEST_DATE']);
+    naEnsureTestOrders($db);
+    $resource=$kind.':'.$date;
+    // Idempotency: repeated checkout for the same question/date never adds a duplicate.
+    $stmt=$db->prepare("SELECT id FROM numi_test_purchases
+        WHERE account_id=? AND product_code=? AND resource_id=? AND hidden_at IS NULL LIMIT 1");
+    $stmt->execute([$owner['id'],$code,$resource]);
+    $existing=$stmt->fetchColumn();
+    if ($existing) naReply(200,['ok'=>true,'test'=>true,'already_exists'=>true]);
+    $id=naUuid();
+    $answer='Демонстрационный ответ. Это проверка сохранения, повторного открытия и удаления. Реальный платный текст и право доступа не выдаются.';
+    $stmt=$db->prepare('INSERT INTO numi_test_purchases(id,account_id,product_code,resource_id,title,test_answer) VALUES(?,?,?,?,?,?)');
+    $stmt->execute([$id,$owner['id'],$code,$resource,$title,$answer]);
+    naReply(200,['ok'=>true,'test'=>true,'created'=>true]);
+}
+function naTestHide(PDO $db,string $id): never {
+    $owner=naCurrent($db);
+    if (!naTestOwner($owner)) naReply(403,['ok'=>false,'error'=>'TEST_NOT_ENABLED']);
+    $uuid=substr($id,5);
+    if (!preg_match('/^[a-f0-9-]{36}$/iD',$uuid)) naReply(400,['ok'=>false,'error'=>'INVALID_SAVED_ITEM']);
+    naEnsureTestOrders($db);
+    $stmt=$db->prepare('UPDATE numi_test_purchases SET hidden_at=UTC_TIMESTAMP() WHERE id=? AND account_id=? AND hidden_at IS NULL');
+    $stmt->execute([$uuid,$owner['id']]);
+    if ($stmt->rowCount()!==1) naReply(404,['ok'=>false,'error'=>'SAVED_ITEM_NOT_FOUND']);
+    naReply(200,['ok'=>true,'hidden'=>true,'test'=>true]);
+}
+/**
  * Saved-item visibility is deliberately independent from payment rights.
  * This table contains only a reference and a hiding timestamp. Never update
  * numi_orders, numi_entitlements or payment status when hiding an item.
@@ -454,6 +517,7 @@ function naHideSaved(PDO $db,array $body): never {
     $account=naCurrent($db);
     if (!$account) naReply(401,['ok'=>false,'error'=>'LOGIN_REQUIRED']);
     $id=$body['entitlement_id']??null;
+    if (is_string($id) && str_starts_with($id,'test:')) naTestHide($db,$id);
     if (!is_string($id) || !preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/iD',$id)) {
         naReply(400,['ok'=>false,'error'=>'INVALID_SAVED_ITEM']);
     }
@@ -482,6 +546,20 @@ function naPurchases(PDO $db): never {
     $account=naCurrent($db);
     if (!$account) naReply(401,['ok'=>false,'error'=>'LOGIN_REQUIRED']);
     naEnsureSavedHidden($db);
+    $testOwner=naTestOwner($account);
+    $testPurchases=[];
+    if ($testOwner) {
+        naEnsureTestOrders($db);
+        $tests=$db->prepare('SELECT id,product_code,resource_id,title,test_answer,created_at FROM numi_test_purchases WHERE account_id=? AND hidden_at IS NULL ORDER BY created_at DESC LIMIT 100');
+        $tests->execute([$account['id']]);
+        foreach ($tests->fetchAll() as $t) {
+            $testPurchases[]=[
+                'entitlement_id'=>'test:'.$t['id'],'product_code'=>$t['title'],
+                'resource_id'=>$t['resource_id'],'created_at'=>$t['created_at'],
+                'is_test'=>true,'test_answer'=>$t['test_answer']
+            ];
+        }
+    }
     $stmt=$db->prepare("SELECT e.id AS entitlement_id,e.product_code,e.resource_id,e.expires_at,e.created_at
         FROM numi_entitlements e JOIN numi_orders o ON o.id=e.order_id
         LEFT JOIN numi_saved_hidden h ON h.entitlement_id=e.id
@@ -490,7 +568,7 @@ function naPurchases(PDO $db): never {
             AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
         ORDER BY e.created_at DESC LIMIT 100");
     $stmt->execute([$account['id']]);
-    naReply(200,['ok'=>true,'purchases'=>$stmt->fetchAll(),'account'=>naPublicAccount($account)]);
+    naReply(200,['ok'=>true,'purchases'=>array_merge($testPurchases,$stmt->fetchAll()),'test_enabled'=>$testOwner,'account'=>naPublicAccount($account)]);
 }
 function naServe(): never {
     naHeaders();
@@ -522,6 +600,7 @@ function naServe(): never {
         if ($action==='set_email') naEmailForTelegram($db,$body);
         if ($action==='birth') naSaveBirth($db,$body);
         if ($action==='purchases') naPurchases($db);
+        if ($action==='test_purchase') naTestPurchase($db,$body);
         if ($action==='hide_saved') naHideSaved($db,$body);
         if ($action==='logout') {
             naSignOut($db);
