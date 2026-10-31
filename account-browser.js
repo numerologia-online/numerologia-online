@@ -100,8 +100,13 @@
         '<button type="button" id="numi-account-logout" class="numi-auth-link">Выйти из аккаунта</button>',
       '</div>',
       '<div id="numi-account-telegram" hidden>',
-        '<p>Ваш Telegram-аккаунт подтверждён. Покупки будут сохраняться за вашим профилем.</p>',
-        '<button type="button" id="numi-set-email-open" class="numi-auth-link">Добавить email для входа с другого устройства</button>',
+        '<div id="numi-telegram-link-prompt">',
+          '<h3>♡ Пусть ваши покупки всегда будут с вами</h3>',
+          '<p>Вы можете привязать свою почту, чтобы мы узнавали вас, даже если вы заходите через главную страницу сайта, и показывали все ваши покупки. ❤️</p>',
+          '<p><strong>Привязывать почту необязательно!</strong> Если вы пользуетесь только Telegram, ваши покупки всегда будут доступны при входе через него.</p>',
+          '<button type="button" id="numi-set-email-open" class="numi-auth-submit">Привязать почту ♡</button>',
+        '</div>',
+        '<p id="numi-telegram-email-linked" hidden>✓ Почта привязана. Теперь можно входить через Telegram или через сайт.</p>',
         '<form id="numi-set-email-form" hidden>',
           '<label>Email<input name="email" type="email" inputmode="email" autocomplete="email" required></label>',
           '<label>Придумайте пароль<input name="password" type="password" autocomplete="new-password" maxlength="200" required></label>',
@@ -320,8 +325,10 @@
     request("telegram",{init_data:signedTelegram()}).then(result=>{
       current=result.account;
       if(browserNote)browserNote.hidden=true;
-      if(current.email_verified_at||current.email_verified)
-        document.getElementById("numi-set-email-open").hidden=true;
+      const linked=Boolean(current.email_verified_at||current.email_verified);
+      document.getElementById("numi-telegram-link-prompt").hidden=linked;
+      document.getElementById("numi-telegram-email-linked").hidden=!linked;
+      if(linked) setEmailForm.hidden=true;
     }).catch(()=>{tgBox.hidden=true;});
   }else{
     void refresh();
