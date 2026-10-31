@@ -1,0 +1,28 @@
+name: Install separate REG.RU MySQL registration API without modifying Telegram or site
+on:
+  push:
+    paths:
+      - .github/workflows/numi-account-api-deploy.yml
+permissions:
+  contents: read
+concurrency:
+  group: numi-account-service-migration
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Release isolated account database and API to REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static syntax and schema scope validation
+        run: |
+          php -l account-service/private/core.php
+          php -l account-service/public/numi-account.php
+          node --check account-browser.js
+          python3 -m py_compile account-service/deploy.py
+      - name: Migrate only new account tables and install isolated PHP API
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u account-service/deploy.py
