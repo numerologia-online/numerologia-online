@@ -59,7 +59,8 @@
         TELEGRAM_INVALID:"Не удалось подтвердить Telegram. Откройте мини-приложение заново.",
         ACCOUNT_TEMPORARILY_UNAVAILABLE:"Вход временно недоступен, попробуйте позже.",
         EMAIL_ALREADY_VERIFIED:"Почта уже привязана.",
-        IDENTITY_ALREADY_LINKED:"Этот Telegram уже привязан к другому аккаунту."
+        IDENTITY_ALREADY_LINKED:"Этот Telegram уже привязан к другому аккаунту.",
+        TELEGRAM_EMAIL_CONFLICT:"Для безопасности эти аккаунты нельзя объединить автоматически. Покупки не изменены."
       }[json?.error] || "Не удалось выполнить действие. Попробуйте ещё раз.";
       throw new Error(message);
     }
@@ -98,6 +99,7 @@
       '<div id="numi-account-signed" hidden>',
         '<p id="numi-account-email-label" class="numi-signed-email"></p>',
         '<p class="numi-account-privacy">Почта и Telegram нужны для входа и сохранения ваших покупок. Мы не отправляем рекламные письма и не пишем вам личные сообщения.</p>',
+        '<p class="numi-account-privacy">Хотите видеть эти покупки и в Telegram? Откройте наш сайт из Telegram-бота и нажмите «У меня уже есть аккаунт с почтой».</p>',
         '<button type="button" id="numi-account-logout" class="numi-auth-link">Выйти из аккаунта</button>',
       '</div>',
       '<div id="numi-account-telegram" hidden>',
