@@ -85,3 +85,17 @@ CREATE TABLE IF NOT EXISTS numi_saved_hidden (
   CONSTRAINT fk_numi_saved_hidden_entitlement
     FOREIGN KEY (entitlement_id) REFERENCES numi_entitlements(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Strictly sandboxed owner-only checkout rehearsal. NOT a real order or entitlement.
+CREATE TABLE IF NOT EXISTS numi_test_purchases (
+  id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+  account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  product_code VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  resource_id VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  title VARCHAR(180) NOT NULL,
+  test_answer TEXT NOT NULL,
+  hidden_at DATETIME NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY ix_numi_test_purchases_account(account_id,hidden_at,created_at),
+  CONSTRAINT fk_numi_test_purchases_owner FOREIGN KEY(account_id) REFERENCES numi_accounts(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
