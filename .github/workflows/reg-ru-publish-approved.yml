@@ -101,6 +101,22 @@ jobs:
               print("REG.RU: verified encrypted connection and exact website directory")
               if mode == "check":
                   print("READ-ONLY CHECK OK. No files uploaded or deleted.")
+                  root = ftp.pwd()
+                  for item in ftp.nlst():
+                      candidate = item.rsplit("/",1)[-1]
+                      if not any(token in candidate.lower() for token in ("test", "vesta", "numi", "stage", "preview")):
+                          continue
+                      try:
+                          ftp.cwd(root)
+                          ftp.cwd(candidate)
+                          entries = {x.rsplit("/",1)[-1] for x in ftp.nlst()}
+                          print("STAGING FOLDER FOUND:", candidate,
+                                "has_index:", "index.html" in entries,
+                                "has_php_login:", "index.php" in entries,
+                                "has_htaccess:", ".htaccess" in entries)
+                      except Exception:
+                          continue
+                  ftp.cwd(root)
               else:
                   for name in prepared:
                       try:
