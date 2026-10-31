@@ -17,7 +17,7 @@ def main():
     source=pathlib.Path("index.html").read_bytes()
     if source.count(PREFIX)!=1 or NEW_STYLE not in source:raise RuntimeError("New SVG source invalid")
     angel=PREFIX+source.split(PREFIX,1)[1].split(END,1)[0]+END
-    if b"numi-angel-hair" not in angel or 'Ответы на твои'.encode() not in angel:
+    if b"numi-delicate-heart" not in angel or 'Ответы на твои'.encode() not in angel:
         raise RuntimeError("Illustration integrity check failed")
     ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
     ftp.connect(HOST,21);ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"]);ftp.prot_p();ftp.set_pasv(True)
@@ -36,11 +36,16 @@ def main():
         if original.count(PREFIX)!=1 or original.count(END)<1:
             raise RuntimeError("Saved-page angel markup absent")
         old=PREFIX+original.split(PREFIX,1)[1].split(END,1)[0]+END
-        if b'viewBox="0 0 280 218"' not in old:
-            if angel==old and NEW_STYLE in original:log(success=True,already_live=True);return
-            raise RuntimeError("Unknown old illustration, refusing write")
-        if original.count(OLD_STYLE)!=1:raise RuntimeError("Old CSS anchor mismatch")
-        updated=original.replace(old,angel,1).replace(OLD_STYLE,NEW_STYLE,1)
+        if angel==old and NEW_STYLE in original:
+            log(success=True,already_live=True)
+            return
+        if b'viewBox="0 0 320 285"' not in old and b'viewBox="0 0 280 218"' not in old:
+            raise RuntimeError("Unknown old angel SVG, refusing write")
+        if original.count(NEW_STYLE)!=1 and original.count(OLD_STYLE)!=1:
+            raise RuntimeError("Unknown illustration CSS anchor")
+        updated=original.replace(old,angel,1)
+        if OLD_STYLE in original:
+            updated=updated.replace(OLD_STYLE,NEW_STYLE,1)
         rootbackup=root+"/site-safeguard-backups"
         try:ftp.mkd(rootbackup)
         except ftplib.error_perm:ftp.cwd(rootbackup)
