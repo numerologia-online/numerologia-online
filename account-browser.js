@@ -58,6 +58,8 @@
         INVALID_RESET_REQUEST:"Проверьте новый пароль и ссылку.",
         TELEGRAM_INVALID:"Не удалось подтвердить Telegram. Откройте мини-приложение заново.",
         ACCOUNT_TEMPORARILY_UNAVAILABLE:"Вход временно недоступен, попробуйте позже.",
+        INVALID_SAVED_ITEM:"Не удалось определить запись.",
+        SAVED_ITEM_NOT_FOUND:"Запись уже недоступна.",
         EMAIL_ALREADY_VERIFIED:"Почта уже привязана.",
         IDENTITY_ALREADY_LINKED:"Этот Telegram уже привязан к другому аккаунту.",
         TELEGRAM_EMAIL_CONFLICT:"Для безопасности эти аккаунты нельзя объединить автоматически. Покупки не изменены."
@@ -316,23 +318,53 @@
 
   async function updatePurchases() {
     if(!savedPanel||!current) return;
+    let container=document.getElementById("numi-confirmed-purchases");
+    if(!container){
+      container=document.createElement("div");
+      container.id="numi-confirmed-purchases";
+      container.setAttribute("aria-label","Ваши сохранённые разборы и ответы");
+      savedPanel.querySelector(".account-panel-intro")?.insertAdjacentElement("afterend",container);
+    }
     try {
       const result=await request("purchases");
-      let container=document.getElementById("numi-confirmed-purchases");
-      if(!container){
-        container=document.createElement("div");
-        container.id="numi-confirmed-purchases";
-        savedPanel.querySelector(".account-panel-intro")?.insertAdjacentElement("afterend",container);
-      }
+      const purchases=Array.isArray(result.purchases)?result.purchases:[];
       container.replaceChildren();
-      for(const purchase of result.purchases||[]){
-        const item=document.createElement("div"); item.className="numi-purchase-entry";
-        const title=document.createElement("strong");title.textContent=purchase.product_code;
-        const detail=document.createElement("small");detail.textContent="Код материала: "+purchase.resource_id;
-        item.append(title,detail);container.append(item);
+      for(const purchase of purchases){
+        const item=document.createElement("div");
+        item.className="numi-saved-row";
+        const content=document.createElement("div");
+        content.className="numi-saved-row-content";
+        const title=document.createElement("strong");
+        title.textContent=purchase.product_code||"Сохранённый разбор";
+        const detail=document.createElement("small");
+        const date=String(purchase.created_at||"").slice(0,10);
+        detail.textContent=date && /^\\d{4}-\\d{2}-\\d{2}$/.test(date)
+          ? "Сохранено "+date.slice(8,10)+"."+date.slice(5,7)+"."+date.slice(0,4)
+          : "Ваш сохранённый материал";
+        content.append(title,detail);
+        const remove=document.createElement("button");
+        remove.type="button";
+        remove.className="numi-saved-remove";
+        remove.setAttribute("aria-label","Удалить из сохранённого");
+        remove.title="Удалить из сохранённого";
+        remove.textContent="🗑";
+        remove.addEventListener("click",async ()=>{
+          if(remove.disabled) return;
+          remove.disabled=true;
+          try {
+            await request("hide_saved",{entitlement_id:purchase.entitlement_id});
+            item.remove();
+            savedPanel.querySelector(".account-empty-state")?.toggleAttribute("hidden",container.children.length>0);
+          } catch(err) {
+            remove.disabled=false;
+            alertMessage(err.message||"Не удалось удалить запись.");
+          }
+        });
+        item.append(content,remove);
+        container.append(item);
       }
-      savedPanel.querySelector(".account-empty-state")?.toggleAttribute("hidden",(result.purchases||[]).length>0);
-    }catch(_){ /* Never claim payments without a verified server result */ }
+      savedPanel.querySelector(".account-empty-state")?.toggleAttribute("hidden",purchases.length>0);
+    }catch(_){ /* Never pretend a payment or a saved record has been verified. */ }
   }
   // Browser birth dates persist in the account, Telegram birth dates still use the existing verified endpoint.
   document.getElementById("account-birth-save")?.addEventListener("click",async ()=>{
