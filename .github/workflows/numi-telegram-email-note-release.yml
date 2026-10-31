@@ -1,4 +1,4 @@
-name: Publish account communication privacy note on REG.RU
+name: Publish corrected account privacy wording on REG.RU
 on:
   push:
     paths:
@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish account communication privacy note on REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish corrected account privacy wording on REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
