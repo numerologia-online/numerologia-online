@@ -60,6 +60,9 @@
         ACCOUNT_TEMPORARILY_UNAVAILABLE:"Вход временно недоступен, попробуйте позже.",
         INVALID_SAVED_ITEM:"Не удалось определить запись.",
         SAVED_ITEM_NOT_FOUND:"Запись уже недоступна.",
+        TEST_NOT_ENABLED:"Тестовые покупки разрешены только владельцу.",
+        INVALID_TEST_PRODUCT:"Неизвестный пробный разбор.",
+        INVALID_TEST_DATE:"Проверьте дату рождения.",
         EMAIL_ALREADY_VERIFIED:"Почта уже привязана.",
         IDENTITY_ALREADY_LINKED:"Этот Telegram уже привязан к другому аккаунту.",
         TELEGRAM_EMAIL_CONFLICT:"Для безопасности эти аккаунты нельзя объединить автоматически. Покупки не изменены."
@@ -329,19 +332,34 @@
       const result=await request("purchases");
       const purchases=Array.isArray(result.purchases)?result.purchases:[];
       container.replaceChildren();
+      const testBox=document.getElementById("numi-test-checkout");
+      if(testBox) testBox.hidden=result.test_enabled!==true;
       for(const purchase of purchases){
         const item=document.createElement("div");
         item.className="numi-saved-row";
         const content=document.createElement("div");
         content.className="numi-saved-row-content";
         const title=document.createElement("strong");
-        title.textContent=purchase.product_code||"Сохранённый разбор";
+        title.textContent=(purchase.is_test?"🧪 ТЕСТ · ":"")+(purchase.product_code||"Сохранённый разбор");
         const detail=document.createElement("small");
         const date=String(purchase.created_at||"").slice(0,10);
         detail.textContent=date && /^\\d{4}-\\d{2}-\\d{2}$/.test(date)
           ? "Сохранено "+date.slice(8,10)+"."+date.slice(5,7)+"."+date.slice(0,4)
           : "Ваш сохранённый материал";
         content.append(title,detail);
+        if(purchase.is_test){
+          const description=document.createElement("small");
+          description.textContent="Дата: "+String(purchase.resource_id||"").split(":").pop()+" · Деньги не списаны";
+          content.append(description);
+          const details=document.createElement("details");
+          details.className="numi-test-answer";
+          const summary=document.createElement("summary");
+          summary.textContent="Открыть пробный ответ";
+          const answer=document.createElement("p");
+          answer.textContent=purchase.test_answer||"Пробный ответ без оплаты";
+          details.append(summary,answer);
+          content.append(details);
+        }
         const remove=document.createElement("button");
         remove.type="button";
         remove.className="numi-saved-remove";
@@ -366,6 +384,29 @@
       savedPanel.querySelector(".account-empty-state")?.toggleAttribute("hidden",purchases.length>0);
     }catch(_){ /* Never pretend a payment or a saved record has been verified. */ }
   }
+  // Owner-only interface; backend checks verified email for EVERY write.
+  document.getElementById("numi-test-checkout-form")?.addEventListener("submit",async event=>{
+    event.preventDefault();
+    const form=event.currentTarget;
+    const submit=form.querySelector("button[type=submit]");
+    const note=document.getElementById("numi-test-checkout-message");
+    const kind=form.querySelector("[name=kind]")?.value;
+    const birth_date=form.querySelector("[name=birth_date]")?.value;
+    if(!kind||!birth_date)return;
+    if(submit)submit.disabled=true;
+    try{
+      const response=await request("test_purchase",{kind,birth_date});
+      if(note)note.textContent=response.already_exists
+        ?"Этот тестовый ответ уже сохранён. Повторной покупки не было."
+        :"Тестовая покупка готова: 0 ₽, без списаний. Ответ появился ниже.";
+      await updatePurchases();
+    }catch(err){
+      if(note)note.textContent=err.message||"Не удалось провести тест.";
+    }finally{
+      if(submit)submit.disabled=false;
+    }
+  });
+
   // Browser birth dates persist in the account, Telegram birth dates still use the existing verified endpoint.
   document.getElementById("account-birth-save")?.addEventListener("click",async ()=>{
     if(isTelegram()||!current||!birthInput) return;
