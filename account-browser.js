@@ -141,6 +141,16 @@
   const root = document.getElementById("numi-account-entry");
   const guest = document.getElementById("numi-account-guest");
   const signed = document.getElementById("numi-account-signed");
+  const logoutButton=document.getElementById("numi-account-logout");
+  const accountSettings=document.querySelector('#account-dialog [data-account-content="settings"]');
+  if(accountSettings && logoutButton){
+    const logoutRow=document.createElement("div");
+    logoutRow.className="account-actions";
+    logoutRow.style.marginTop="16px";
+    logoutButton.textContent="Выйти из аккаунта";
+    logoutRow.append(logoutButton);
+    accountSettings.append(logoutRow);
+  }
   const tgBox = document.getElementById("numi-account-telegram");
   const emailForm = document.getElementById("numi-email-form");
   const resetForm = document.getElementById("numi-reset-form");
@@ -208,7 +218,11 @@
   function render() {
     const tg=isTelegram();
     guest.hidden=tg||!!current;
-    signed.hidden=tg||!current;
+    signed.hidden=true;
+    // Once the user is signed in by email, the identity card above is enough.
+    // Do not repeat the email/Telegram onboarding box on every visit.
+    root.style.display=(!tg && !!current)?"none":"";
+    if(logoutButton) logoutButton.hidden=tg||!current;
     tgBox.hidden=!tg||!current;
     if (!tg) {
       if (current) {
