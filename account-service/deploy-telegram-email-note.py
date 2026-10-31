@@ -21,8 +21,9 @@ def main():
       (b"account-browser.js?v=3",prior("2cefda4c7fa3706e891aaf164c841f6366e94c22")),
       (b"account-browser.js?v=4",prior("700a0efa645311398d926215613c226c449771ae")),
       (b"account-browser.js?v=5",prior("018f97176007611daf87f8f4af77402f598f3385")),
+      (b"account-browser.js?v=6",prior("b1e1895ef1b8665a8b7d5482b134dba825717ea4")),
     ]
-    dest_tag=b"account-browser.js?v=6"
+    dest_tag=b"account-browser.js?v=7"
     f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
     f.connect(HOST,21);f.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"]);f.prot_p();f.set_pasv(True)
     base=f.pwd().rstrip("/")
