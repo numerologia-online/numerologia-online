@@ -1,4 +1,4 @@
-import { createMonthlyLinkSelector, loadEnergies, monthNames } from "./year-content.js?v=4";
+import { createMonthlyLinkSelector, parseEnergyText, monthNames } from "./year-content.js?v=4";
 import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=1";
 import { isFreeYearMonth } from "./year-access.js?v=1";
 
@@ -19,8 +19,64 @@ document.querySelector(".year-paywall-back")?.addEventListener("click", () => ye
 yearPaywallDialog.addEventListener("click", event => {
   if (event.target === yearPaywallDialog) yearPaywallDialog.close();
 });
-// Paid access will require verified server entitlement; not yet connected.
-const hasVerifiedYearAccess = () => false;
+// Paid originals stay server-side. Only a signed Telegram owner may request them.
+const YEAR_CONTENT_API = "https://xn--c1adkkdfjbp1a4l.online/api/";
+let verifiedYearOwner = false;
+const hasVerifiedYearAccess = () => verifiedYearOwner;
+
+const signedYearInitData = () => {
+  const direct = window.Telegram?.WebApp?.initData;
+  if (typeof direct === "string" && direct) return direct;
+  const fragment = window.location.hash.replace(/^#/, "");
+  if (!fragment.includes("tgWebAppData=")) return "";
+  try { return new URLSearchParams(fragment).get("tgWebAppData") || ""; }
+  catch (_) { return ""; }
+};
+
+const requestYearApi = async (route, body) => {
+  const response = await fetch(YEAR_CONTENT_API + route, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    cache: "no-store",
+    signal: AbortSignal.timeout(25000)
+  });
+  const data = await response.json();
+  if (!response.ok || data?.ok !== true) throw new Error("Годовой расчёт временно недоступен");
+  return data;
+};
+
+const verifyYearOwner = async (initData) => {
+  if (!initData) return false;
+  const result = await requestYearApi("numi-miniapp.php", { init_data: initData });
+  return result.owner === true && Boolean(result.user?.id);
+};
+
+const loadYearForOwner = async (energies, variant, initData) => {
+  const unique = [...new Set(energies)];
+  const entries = await Promise.all(unique.map(async (energy) => {
+    const path = "data/year/" + (variant === "odd" ? "odd/" : "") + "energy-" + energy + ".txt";
+    const result = await requestYearApi("numi-paid-content.php", { init_data: initData, path });
+    if (typeof result.content !== "string") throw new Error("Неверный формат закрытого текста года");
+    return [energy, parseEnergyText(result.content, energy)];
+  }));
+  return Object.fromEntries(entries);
+};
+
+const loadYearForGuest = async (birthDate, reportYearValue) => {
+  const birthDateIso = [
+    birthDate.getUTCFullYear(),
+    String(birthDate.getUTCMonth() + 1).padStart(2, "0"),
+    String(birthDate.getUTCDate()).padStart(2, "0")
+  ].join("-");
+  const result = await requestYearApi("numi-year-preview.php", {
+    birth_date: birthDateIso,
+    year: reportYearValue,
+    timezone: "Europe/Samara"
+  });
+  if (!result.primary || !result.alternate) throw new Error("Бесплатный просмотр года недоступен");
+  return [result.primary, result.alternate];
+};
 let reportRevealTimer;
 
 const showCalculationLoading = () => {
@@ -157,14 +213,30 @@ form.addEventListener("submit", async (event) => {
   const energyAfterBirthday = personalYear(birthDate, reportYearValue);
   let energyContent;
   let alternateEnergyContent;
+  verifiedYearOwner = false;
   try {
-    [energyContent, alternateEnergyContent] = await Promise.all([
-      loadEnergies([energyBeforeBirthday, energyAfterBirthday], textVariant),
-      loadEnergies([energyBeforeBirthday, energyAfterBirthday], textVariant === "even" ? "odd" : "even")
-    ]);
+    const initData = signedYearInitData();
+    if (initData) {
+      try { verifiedYearOwner = await verifyYearOwner(initData); }
+      catch (_) { verifiedYearOwner = false; }
+    }
+    if (verifiedYearOwner) {
+      try {
+        [energyContent, alternateEnergyContent] = await Promise.all([
+          loadYearForOwner([energyBeforeBirthday, energyAfterBirthday], textVariant, initData),
+          loadYearForOwner([energyBeforeBirthday, energyAfterBirthday], textVariant === "even" ? "odd" : "even", initData)
+        ]);
+      } catch (_) {
+        // Owner-only source is temporarily unavailable: show the safe free preview.
+        verifiedYearOwner = false;
+      }
+    }
+    if (!verifiedYearOwner) {
+      [energyContent, alternateEnergyContent] = await loadYearForGuest(birthDate, reportYearValue);
+    }
   } catch (error) {
     showCalculationError();
-    yearInput.setCustomValidity("Не удалось открыть тексты года. Обновите страницу и попробуйте ещё раз.");
+    yearInput.setCustomValidity("Не удалось получить расчёт года. Попробуйте ещё раз.");
     yearInput.reportValidity();
     return;
   }
@@ -227,7 +299,7 @@ form.addEventListener("submit", async (event) => {
     const month = { title: `Энергия ${monthEnergy}`, text: "Авторская карточка этой связки ещё готовится." };
     const item = document.createElement("details");
     item.className = "month-card";
-    if (!isFreeYearMonth(reportYearValue, calendarMonth)) {
+    if (!hasVerifiedYearAccess() && !isFreeYearMonth(reportYearValue, calendarMonth)) {
       item.classList.add("month-card--locked");
       const energyLabel = isBirthdayMonth
         ? personalMonth(energyBeforeBirthday, calendarMonth) + "→" + personalMonth(energyAfterBirthday, calendarMonth)
