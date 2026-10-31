@@ -111,6 +111,29 @@
         font:700 15px/1.35 system-ui,sans-serif;
       }
     </style>
+    <style id="numi-account-tariffs-20261031">
+      #account-dialog .numi-tariff-lead {display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0 7px}
+      #account-dialog .numi-tariff-lead>div {border:1px solid #dddccf;border-radius:13px;padding:12px 10px;min-width:0}
+      #account-dialog .numi-tariff-lead strong {display:block;font-size:17px;line-height:1.3;color:#174632}
+      #account-dialog .numi-tariff-lead small {display:block;margin-top:5px;color:#67776b;font-size:11px;line-height:1.4}
+      #account-dialog .numi-tariff-club {background:#f3f8ef;border-color:#d2dfcc!important}
+      #account-dialog .numi-tariff-club>span {display:block;margin-bottom:3px;font-size:10px;font-weight:800;letter-spacing:.08em;color:#9e762a}
+      #account-dialog .numi-tariff-caption {margin:9px 0 14px;color:#65786c;font-size:12px;line-height:1.45}
+      #account-dialog .numi-tariff-table {border-top:1px solid #d9dfd5}
+      #account-dialog .numi-tariff-head,#account-dialog .numi-tariff-row {display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,.7fr) minmax(0,.73fr);column-gap:7px;align-items:center}
+      #account-dialog .numi-tariff-head {padding:10px 0;background:#f3f5ef;color:#51695c;font-size:10px;font-weight:800;text-transform:uppercase}
+      #account-dialog .numi-tariff-row {padding:12px 0;border-bottom:1px solid #e1e5dd;color:#224c3c;font-size:12px;line-height:1.35}
+      #account-dialog .numi-tariff-row strong {font-weight:700;font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+      #account-dialog .numi-tariff-row>[role=cell]:not(:first-child) {text-align:center;font-weight:700}
+      #account-dialog .numi-tariff-row>[role=cell]:last-child {color:#166444}
+      #account-dialog .numi-tariff-row small {display:block;margin-top:4px;color:#76867b;font-size:11px;font-weight:400;line-height:1.4}
+      #account-dialog .numi-tariff-row--feature {align-items:start;background:#fafbf8}
+      #account-dialog .numi-tariff-footer {margin:14px 0;color:#64796e;font-size:12px;line-height:1.5}
+      @media(max-width:400px) {
+        #account-dialog .numi-tariff-head,#account-dialog .numi-tariff-row {grid-template-columns:minmax(0,1.5fr) minmax(0,.7fr) minmax(0,.7fr);gap:4px}
+        #account-dialog .numi-tariff-row strong {font-size:12px}
+      }
+    </style>
     <!-- Reversible experiment: subtitles on the eight homepage catalog cards only. -->
     <style id="home-card-subtitles-experiment">
       .products[aria-label="Направления расчётов"] > .product-card {
@@ -541,15 +564,29 @@
         </section>
 
         <section class="account-panel" data-account-content="prices" hidden>
-          <button class="account-back" type="button" data-account-back>← В кабинет</button>
-          <h3>Тарифы</h3>
-          <p class="account-panel-intro">Выбирайте разовую покупку или специальные цены клуба.</p>
-          <div class="account-price-options">
-            <div class="account-price-plan"><small>БЕЗ ПОДПИСКИ</small><strong>990 ₽</strong><span>Большой разбор с PDF</span></div>
-            <div class="account-price-plan account-price-plan--club"><small>С КЛУБОМ</small><strong>490 ₽</strong><span>Большой разбор по клубной цене</span></div>
+          <button class="account-back" type="button" data-account-back>← Назад в личный кабинет</button>
+          <h3>Мои тарифы</h3>
+          <div class="numi-tariff-lead">
+            <div><strong>Разовые покупки</strong><small>Выбирайте только то, что интересно</small></div>
+            <div class="numi-tariff-club"><span>КЛУБ ♕</span><strong>490 ₽ / мес.</strong><small>Скидки и дополнительные возможности</small></div>
           </div>
-          <p class="account-price-fine">Первый месяц с клубом - 980 ₽ (490 ₽ за разбор и 490 ₽ за клуб). Далее клуб - 490 ₽ в месяц, новые разборы оплачиваются отдельно. Оплата пока не подключена.</p>
-          <button type="button" class="account-primary" id="account-show-offer">Посмотреть преимущества клуба</button>
+          <p class="numi-tariff-caption">Все цены и преимущества - на одном экране. Подписка необязательна.</p>
+          <div class="numi-tariff-table" role="table" aria-label="Сравнение цен на разовые покупки и с подпиской">
+            <div class="numi-tariff-head" role="row"><span role="columnheader">Раздел</span><span role="columnheader">Разово</span><span role="columnheader">В клубе</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Полный разбор года</strong><span role="cell">990 ₽</span><span role="cell">490 ₽</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Полный разбор жизни</strong><span role="cell">990 ₽</span><span role="cell">490 ₽</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Вопросы «Да или нет?»</strong><span role="cell">19 ₽</span><span role="cell">0 ₽</span></div>
+            <div class="numi-tariff-row numi-tariff-row--feature" role="row">
+              <div role="cell"><strong>Мужчина или Red Flag</strong><small>Знакомство и инициатива · Подарки и щедрость · Деньги и ответственность · Верность и измены · Семья и отношения · Язык любви</small></div>
+              <span role="cell">19–49 ₽<small>за вопрос</small></span>
+              <span role="cell">−50%<small>на вопросы</small></span>
+            </div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Нумерология момента</strong><span role="cell">100 ₽</span><span role="cell">−50%</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Календарь важных чисел</strong><span role="cell">Недоступно</span><span role="cell">Включено</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Денежные ритуалы</strong><span role="cell">Недоступно</span><span role="cell">В клубе</span></div>
+          </div>
+          <p class="numi-tariff-footer">Клуб стоит 490 ₽ в месяц. Большие разборы и платные вопросы оплачиваются отдельно по клубной цене. Подключение оплаты пока готовится.</p>
+          <button type="button" class="account-primary" id="account-show-offer">Подробнее о преимуществах клуба</button>
         </section>
 
         <section class="account-panel" data-account-content="learning" hidden>
