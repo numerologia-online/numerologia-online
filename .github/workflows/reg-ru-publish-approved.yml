@@ -38,6 +38,9 @@ jobs:
               raise SystemExit("Choose 1 to 20 files to publish. No files modified.")
           forbidden = (".github/", ".git/", "server/", "vercel-backend/", "cloudflare/",
                        "auth-server/", "auth-free/", "tests/", "scripts/", "api/")
+          sensitive_content = ("data/year/", "data/redflag/", "child/data/matrix/sections/",
+                               "child/data/matrix/karmic-tail/", "knowledge/full-report/",
+                               "pro/purpose/", "pro/karmic-programs.json", "pro/guidance/")
           allowed_extensions = {".js", ".css", ".html", ".json", ".svg", ".txt"}
           prepared = {}
           for item in files:
@@ -45,6 +48,7 @@ jobs:
                   raise SystemExit("Invalid path. No files modified.")
               posix = pathlib.PurePosixPath(item)
               if (posix.is_absolute() or ".." in posix.parts or item.startswith(forbidden)
+                  or item.startswith(sensitive_content)
                   or any(part.startswith(".") for part in posix.parts)
                   or posix.suffix.lower() not in allowed_extensions):
                   raise SystemExit("Disallowed path. No files modified.")
