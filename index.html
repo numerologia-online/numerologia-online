@@ -515,10 +515,9 @@
           <div class="account-section-heading">Мой кабинет</div>
           <div class="account-tiles account-navigation">
             <button type="button" class="account-tile" data-account-panel="saved"><span class="account-tile-icon" aria-hidden="true">♡</span><strong>Сохранённое</strong><small>Разборы и ответы на вопросы</small></button>
-            <button type="button" class="account-tile" data-account-panel="club"><span class="account-tile-icon" aria-hidden="true">♕</span><strong>Мой клуб</strong><small>Подписка и преимущества</small></button>
             <button type="button" class="account-tile" data-account-panel="prices"><span class="account-tile-icon" aria-hidden="true">₽</span><strong>Тарифы</strong><small>Все варианты доступа</small></button>
             <button type="button" class="account-tile" data-account-panel="learning"><span class="account-tile-icon" aria-hidden="true">✧</span><strong>Моё обучение</strong><small>Школы, уроки и практика</small></button>
-            <button type="button" class="account-tile account-tile--wide" data-account-panel="settings"><span class="account-tile-icon" aria-hidden="true">◎</span><strong>Мои данные</strong><small>Дата рождения и настройки профиля</small></button>
+            <button type="button" class="account-tile" data-account-panel="settings"><span class="account-tile-icon" aria-hidden="true">◎</span><strong>Мои данные</strong><small>Дата рождения и настройки профиля</small></button>
           </div>
           <a class="account-tile account-support-tile" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer"><strong>Техподдержка <span aria-hidden="true">↗</span></strong><small>Помощь с доступом и разборами</small></a>
         </div>
@@ -573,6 +572,15 @@
               <button type="button" class="account-secondary" id="account-birth-delete">Очистить</button>
             </div>
             <p id="account-birth-note" class="account-muted" role="status" aria-live="polite"></p>
+          </div>
+          <div class="account-birth-section" id="numi-subscription-settings">
+            <h4 class="account-label">Моя подписка</h4>
+            <p class="account-muted"><strong>Статус:</strong> подписка пока не подключена.</p>
+            <p class="account-field-hint">Когда появится подписка, здесь будут её срок действия и управление продлением.</p>
+            <div class="account-actions">
+              <button type="button" class="account-primary" disabled title="Будет доступно после подключения подписки">Продлить</button>
+              <button type="button" class="account-secondary" disabled title="Будет доступно после подключения подписки">Отменить продление</button>
+            </div>
           </div>
         </section>
       </section>
