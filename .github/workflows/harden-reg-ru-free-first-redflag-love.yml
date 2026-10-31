@@ -1,0 +1,115 @@
+name: Protect public Red Flag Love dates and preserve exact free answers
+on:
+  push:
+    paths: [.github/workflows/harden-reg-ru-free-first-redflag-love.yml]
+permissions:
+  contents: write
+concurrency:
+  group: reg-ru-protect-love-content
+  cancel-in-progress: false
+jobs:
+  protect:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Guarded one-time REG.RU published love answer protection'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check installed private backend
+        run: |
+          curl -4fsSL --max-time 20 https://xn--c1adkkdfjbp1a4l.online/api/numi-content-health.php -o /tmp/health.json
+          python3 -c "import json; j=json.load(open('/tmp/health.json')); assert j['ok'] and j['configured']"
+      - name: Validate, privately back up, and protect public date banks
+        env:
+          REG_FTP_USER: \${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: \${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,hashlib,io,json,os,pathlib,re,ssl,subprocess,time
+          D='xn--c1adkkdfjbp1a4l.online'
+          OLD='eb1fb7c9b1e3992f2207d9979f3d029276bc3401'
+          NEW='f67c2ce48928e97a8471d07608b6c722985b7267'
+          def show(ref,path):return subprocess.check_output(['git','show',ref+':'+path],timeout=25)
+          def blob(data):return hashlib.sha1(('blob '+str(len(data))+'\0').encode()+data).hexdigest()
+          manifest=json.loads(show(OLD,'.github/numi-frontend-release.json'))
+          files=sorted([f for f in manifest['files'] if f['path'].startswith('data/redflag/love/published/') and f['path'].endswith('.json')],key=lambda x:x['path'])
+          if len(files)!=97:raise RuntimeError('Unexpected count of published dates')
+          changes={}
+          for f in files:
+              p=f['path']
+              if not re.fullmatch(r'data/redflag/love/published/[0-9]{1,2}-[0-9]{1,2}\.json',p):raise RuntimeError('Unexpected path')
+              old=pathlib.Path(p).read_bytes();new=show(NEW,p)
+              if blob(old)!=f['old'] or blob(new)!=f['new']:raise RuntimeError('Commit snapshot mismatch '+p)
+              a=json.loads(old);b=json.loads(new)
+              if set(b.get('entries',{}))!={'first-step'} or b['entries']['first-step']!=a.get('entries',{}).get('first-step') or a.get('dateKey')!=b.get('dateKey'):
+                  raise RuntimeError('Free answer preservation failed '+p)
+              changes[p]=(old,new)
+          print('PREPARED: 97 exact free-first answer files, originals unchanged',flush=True)
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect('server172.hosting.reg.ru',21);ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p()
+          home=ftp.pwd().rstrip('/');site=home+'/www/'+D
+          def get(path):
+              b=bytearray()
+              def take(c):
+                  b.extend(c)
+                  if len(b)>1000000:raise RuntimeError('Remote file too large')
+              ftp.retrbinary('RETR '+path,take)
+              return bytes(b)
+          def put(path,data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              if hashlib.sha256(get(path)).digest()!=hashlib.sha256(data).digest():raise RuntimeError('Upload mismatch '+path)
+          try:
+              homehash=hashlib.sha256(get(site+'/index.html')).digest()
+              authhash=hashlib.sha256(get(site+'/auth-profile.js')).hexdigest()
+              if authhash!='c9bbfeef5d85d66b6e119357734fabb74bdf2301c279ff6b060063428c918dbe':
+                  raise RuntimeError('Login script changed; refusing publication')
+              for i,(p,(old,new)) in enumerate(changes.items(),1):
+                  if blob(get(site+'/'+p))!=blob(old):raise RuntimeError('Live content drift '+p)
+                  if i%25==0:print('PREFLIGHT',i,'/',len(changes),flush=True)
+              print('All public originals verified unchanged',flush=True)
+              root=home+'/site-safeguard-backups'
+              try:ftp.mkd(root)
+              except ftplib.error_perm:pass
+              backup=root+'/love-free-first-'+time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              ftp.mkd(backup)
+              for i,(p,(old,new)) in enumerate(changes.items(),1):
+                  put(backup+'/'+pathlib.PurePosixPath(p).name,old)
+                  if i%25==0:print('BACKUPS',i,'/',len(changes),flush=True)
+              print('All originals backed up and verified OUTSIDE public root',flush=True)
+              changed=[]
+              try:
+                  for i,(p,(old,new)) in enumerate(changes.items(),1):
+                      changed.append(p);put(site+'/'+p,new)
+                      if i%25==0:print('PUBLIC FREE-ONLY',i,'/',len(changes),flush=True)
+                  if hashlib.sha256(get(site+'/index.html')).digest()!=homehash:raise RuntimeError('Homepage unexpectedly modified')
+                  if hashlib.sha256(get(site+'/auth-profile.js')).hexdigest()!=authhash:raise RuntimeError('Auth unexpectedly modified')
+                  for p in ('data/redflag/love/published/1-2.json','data/redflag/love/published/10-2.json'):
+                      r=subprocess.run(['curl','-4','-fsSL','--max-time','18','--header','Cache-Control: no-cache','https://'+D+'/'+p+'?v='+str(int(time.time()))],capture_output=True,timeout=25)
+                      if r.returncode!=0 or json.loads(r.stdout)!=json.loads(changes[p][1]):raise RuntimeError('Public URL verification failure '+p)
+                  print('SUCCESS: 97 date files now contain ONLY original free first answers',flush=True)
+              except BaseException:
+                  print('UPLOAD INTERRUPTED - ROLLBACK',flush=True)
+                  failures=[]
+                  for p in reversed(changed):
+                      try:put(site+'/'+p,changes[p][0])
+                      except BaseException:failures.append(p)
+                  print('ROLLBACK FAILURES',failures,flush=True)
+                  raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+      - name: Mirror verified free-only date files to main, without touching UI or author originals
+        run: |
+          python3 - <<'PY'
+          import json,pathlib,subprocess
+          m=json.loads(subprocess.check_output(['git','show','eb1fb7c9b1e3992f2207d9979f3d029276bc3401:.github/numi-frontend-release.json']))
+          files=[f['path'] for f in m['files'] if f['path'].startswith('data/redflag/love/published/') and f['path'].endswith('.json')]
+          assert len(files)==97
+          for p in files:pathlib.Path(p).write_bytes(subprocess.check_output(['git','show','f67c2ce48928e97a8471d07608b6c722985b7267:'+p]))
+          PY
+          git diff --check
+          git add data/redflag/love/published
+          git -c user.name='numi-site-safeguard' -c user.email='actions@users.noreply.github.com' commit -m 'Keep Red Flag Love premium content private, preserve exact free first answers'
+          git push origin HEAD:main
