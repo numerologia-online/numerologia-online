@@ -34,7 +34,8 @@ def main():
         (b"account-browser.js?v=5",gitfile("018f97176007611daf87f8f4af77402f598f3385","account-browser.js")),
         (b"account-browser.js?v=6",gitfile("b1e1895ef1b8665a8b7d5482b134dba825717ea4","account-browser.js")),
         (b"account-browser.js?v=7",gitfile("50669740bd062e7e46223c16d6ea4b88568a9dbb","account-browser.js")),
-        (b"account-browser.js?v=8",gitfile("44bb7d1be1ecfbea6295412724bed0de22befc82","account-browser.js"))
+        (b"account-browser.js?v=8",gitfile("44bb7d1be1ecfbea6295412724bed0de22befc82","account-browser.js")),
+        (b"account-browser.js?v=9",gitfile("2c4ef35cdcdce166b08a45c657d3d6a449b488be","account-browser.js"))
     ]
     old_core=gitfile("7559abedee85e2594fac9b736cc32e21dbd63c5d^","account-service/private/core.php")
     f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
@@ -62,9 +63,9 @@ def main():
             raise RuntimeError("Paid content guard missing: no write")
         matches=[tag for tag,blob in baselines
                  if current["index"].count(tag)==1 and digest(current["js"])==digest(blob)]
-        if len(matches)!=1 or b"account-browser.js?v=9" in current["index"]:
+        if len(matches)!=1 or b"account-browser.js?v=10" in current["index"]:
             raise RuntimeError("Live frontend is not an approved baseline: no write")
-        new_index=current["index"].replace(matches[0],b"account-browser.js?v=9",1)
+        new_index=current["index"].replace(matches[0],b"account-browser.js?v=10",1)
         parent=home+"/site-safeguard-backups"
         try:f.mkd(parent)
         except ftplib.error_perm:f.cwd(parent)
