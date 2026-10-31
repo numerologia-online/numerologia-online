@@ -1,0 +1,26 @@
+name: Enforce paid static HTTP access on REG.RU without changing author texts (one time)
+on:
+  push:
+    paths:
+      - .github/workflows/numi-reg-static-paid-guard.yml
+permissions:
+  contents: read
+concurrency:
+  group: numi-reg-private-static-guard
+  cancel-in-progress: false
+jobs:
+  protect:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Apply 184 paid URL guards with free public previews retained'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check guard syntax before accessing the server
+        run: python3 -m py_compile .github/scripts/numi-reg-static-paid-guard.py
+      - name: Back up the existing Apache rules and guard exactly 184 paid files
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi-reg-static-paid-guard.py
