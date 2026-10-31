@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Retry only angel caption and seamless background on REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish corrected UTF-8 angel title on REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
