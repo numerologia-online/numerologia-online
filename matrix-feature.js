@@ -1,12 +1,13 @@
+import { hasOwnerAccess } from "./paid-access.js?v=20261031reg1";
 import { calculateMatrix, parseBirthDate } from "./numerology-core.js?v=5";
 import {
   buildFullReportPreview,
   buildFullReportSections,
   loadFullReportKnowledge,
   loadFullReportSection
-} from "./full-report-library.js?v=4";
-import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "./karmic-programs.js?v=3";
-import { createFullReportPdfController } from "./full-report-pdf.js?v=4";
+} from "./full-report-library.js?v=20261031reg1";
+import { findKarmicPrograms, findKarmicTail, loadKarmicPrograms, loadKarmicTails } from "./karmic-programs.js?v=20261031reg1";
+import { createFullReportPdfController } from "./full-report-pdf.js?v=20261031reg1";
 
 const home = document.querySelector("#home");
 const matrix = document.querySelector("#matrix");
@@ -402,6 +403,15 @@ form.addEventListener("submit", async (event) => {
   result.scrollIntoView({ behavior: "smooth", block: "start" });
 
   try {
+    if (!await hasOwnerAccess()) {
+      const response = await fetch("knowledge/full-report/free/impression/energy-" + matrixData.left + ".json");
+      if (!response.ok) throw Error("Бесплатная глава недоступна");
+      const bank = await response.json();
+      renderReading([{key:"impression",eyebrow:"Бесплатная глава",title:"Как видят вас другие",paragraphs:bank.sections?.impression?.paragraphs || bank.paragraphs || []}]);
+      const access = document.createElement("a");
+      access.href = "pro/";access.textContent = "Открыть полный разбор и PDF";reading.append(access);
+      return;
+    }
     const [knowledge, karmicPrograms, karmicTails] = await Promise.all([
       loadFullReportKnowledge(),
       loadKarmicPrograms(),
