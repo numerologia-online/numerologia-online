@@ -1,4 +1,3 @@
-import { privateContent } from "./paid-access.js?v=20261031reg1";
 export const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
 
 const connectionFields = {
@@ -90,13 +89,16 @@ export const createMonthlyLinkSelector = (primaryContent, alternateContent) => {
 export const loadEnergy = (energy, variant = "even") => {
   const cacheKey = `${variant}:${energy}`;
   if (!cache.has(cacheKey)) {
-    const path = variant === "odd" ? `data/year/odd/energy-${energy}.txt` : `data/year/energy-${energy}.txt`;
-    const request = privateContent(path)
-      .then(text => {
-        if (typeof text !== "string") throw new Error("Не удалось получить текст разбора");
-        return parseEnergyText(text, energy);
+    const variantPath = variant === "odd" ? `data/year/odd/energy-${energy}.txt` : `data/year/energy-${energy}.txt`;
+    const fallbackPath = `data/year/energy-${energy}.txt`;
+    const request = fetch(variantPath)
+      .then((response) => {
+        if (response.status === 404 && variant === "odd") return fetch(fallbackPath).then((fallback) => fallback.status === 404 ? null : fallback.ok ? fallback.text() : Promise.reject(new Error(`Не удалось открыть энергию ${energy}.`)));
+        if (response.status === 404) return null;
+        if (!response.ok) throw new Error(`Не удалось открыть энергию ${energy}.`);
+        return response.text();
       })
-      .catch(error => { cache.delete(cacheKey); throw error; });
+      .then((text) => text === null ? emptyEnergy(energy) : parseEnergyText(text, energy));
     cache.set(cacheKey, request);
   }
   return cache.get(cacheKey);

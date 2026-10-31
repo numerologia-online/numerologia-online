@@ -1,4 +1,3 @@
-import { contentFetch as fetch, hasOwnerAccess, ownerAccessKnown, privateContent } from "../../../paid-access.js?v=20261030secure1";
 import { calculateMatrix, parseBirthDate } from "../../../numerology-core.js?v=5";
 import { nodesFor } from "../../pro-points.js?v=3";
 
@@ -33,8 +32,13 @@ const stepTitles = [
   "Посчитайте центральную энергию",
   "Заполните четыре угла"
 ];
-let stepDescriptions = [];
-let schoolCopy={};
+const stepDescriptions = [
+  "На листе нарисуйте ромб: вершины сверху, справа, снизу и слева. Наложите на ромб прямой квадрат и проведите вертикальную и горизонтальную линии через центр. Девять кружков пока пустые.",
+  "Слева - число дня рождения, сверху - месяца, справа - сумма цифр года. Ниже показан расчёт каждого числа именно по вашей дате.",
+  "Нижняя точка - сумма трёх уже записанных чисел: левого, верхнего и правого. Сначала найдите полную сумму, затем проверьте: если она больше 22, сложите её цифры.",
+  "Чтобы получить центральное число, сложите четыре числа в кружках: слева, сверху, справа и снизу. Если сумма больше 22, сложите её цифры.",
+  "Число в каждом углу квадрата - сумма двух ближайших чисел ромба. Если результат больше 22, сложите его цифры."
+];
 
 const firstLessonSteps=[
  {title:"Нарисуйте большой ромб",text:"Отметьте сверху, справа, снизу и слева по одной точке. Соедините их линиями. Получился ромб.",hint:"На этом шаге никаких цифр. Только четыре вершины."},
@@ -239,8 +243,19 @@ function showInternalCalculations(root,matrix){
   ]);
 }
 
-let cornerStages=[];
-let internalStages=[];
+const cornerStages=[
+  {title:"Верхний левый угол",text:"Сложите числа слева и сверху. Если сумма больше 22, сложите её цифры."},
+  {title:"Верхний правый угол",text:"Теперь сложите числа сверху и справа. Запишите промежуточную сумму, прежде чем сокращать."},
+  {title:"Нижний правый угол",text:"Здесь складываются числа справа и снизу. Применяйте то же правило 22 энергий."},
+  {title:"Нижний левый угол",text:"Остаются числа снизу и слева. Проверьте, что все четыре угла рассчитаны по соседним точкам."}
+];
+const internalStages=[
+  {title:"Проверьте девять основных точек",text:"На схеме много маленьких кружков. Сначала убедитесь, что известны девять основных чисел. От них строятся другие позиции."},
+  {title:"Рассчитайте три оси",text:"Найдите средние числа на верхней, левой и правой осях из соответствующей внешней точки и личного центра."},
+  {title:"Разберите родовые диагонали",text:"Для родовых диагоналей используйте основной центр матрицы. Сумма четырёх углов - отдельный показатель."},
+  {title:"Постройте нижнюю линию",text:"Два дополнительных нижних числа рассчитываются последовательно из центра и нижней точки."},
+  {title:"Считайте денежную и любовную линии",text:"Найдите вход в деньги, вход в отношения, общий баланс и точки под знаками доллара и сердца."}
+];
 const internalFocus=[
  ["top","right","bottom","left","center","topLeft","topRight","bottomRight","bottomLeft"],
  ["top","left","right","center","topOuter","topNear","topCore","leftOuter","leftNear","leftCore","rightOuter","rightNear","rightCore"],
@@ -297,8 +312,8 @@ function guidedTitle(isFull){
 function guidedText(isFull){
   if(id==="reduce"){
     return step===1
-      ?schoolCopy.reduceGuidedText[0]
-      :schoolCopy.reduceGuidedText[1];
+      ?"Посмотрите на день, месяц и год своей даты. Числа от 1 до 22 оставляем без изменений, а большие сокращаем сложением цифр. Ниже показаны ваши вычисления."
+      :"Закрепим главное: 11, 15 и 22 сохраняем, а 23, 31 и другие числа больше 22 сокращаем сложением цифр. Затем можно пройти тест.";
   }
   if(id==="corners")return cornerStages[step].text;
   if(id==="internal")return internalStages[step].text;
@@ -714,12 +729,6 @@ async function start() {
       nav.append(back);
       return;
     }
-    if (id !== "start") {
-      if (!await hasOwnerAccess()) throw Error("PURCHASE_REQUIRED");
-      stepDescriptions=await privateContent("infrastructure/content/school-step-descriptions.json");
-      schoolCopy=await privateContent("infrastructure/content/school-diagram-copy.json");
-      cornerStages=schoolCopy.cornerStages;internalStages=schoolCopy.internalStages;
-    }
     const response=await fetch(manifest[index].file+"?v=13");
     if(!response.ok)throw Error("Материал урока не найден");
     lesson=await response.json();
@@ -730,8 +739,8 @@ async function start() {
     console.error("Школа: урок",error);
     const notice=$("lesson-error");
     notice.hidden=false;
-    notice.textContent=error.message==="PURCHASE_REQUIRED" ? "🔒 Этот урок входит в закрытые материалы школы. Оплата пока не подключена." : "Не получилось загрузить урок. Проверьте интернет и попробуйте открыть его снова.";
-    $("lesson-title").textContent=error.message==="PURCHASE_REQUIRED" ? "Материал урока закрыт" : "Урок временно недоступен";
+    notice.textContent="Не получилось загрузить урок. Проверьте интернет и попробуйте открыть его снова.";
+    $("lesson-title").textContent="Урок временно недоступен";
   }
 }
 start();

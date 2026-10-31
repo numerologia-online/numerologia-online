@@ -1,30 +1,28 @@
-import { contentFetch as fetch, hasOwnerAccess, ownerAccessKnown, privateContent } from "./paid-access.js?v=20261031reg1";
 const knowledgeUrl = (file) => `knowledge/full-report/${file}?v=1`;
 
-const knowledgeRequests = new Map();
+let knowledgeRequest;
 const sectionRequests = new Map();
 
 const readJson = async (file) => {
   const response = await fetch(knowledgeUrl(file));
-  if (!response.ok) throw new Error("Не удалось загрузить " + file);
+  if (!response.ok) throw new Error(`Не удалось загрузить ${file}`);
   return response.json();
 };
 
-export const loadFullReportKnowledge = async () => {
-  const mode=await hasOwnerAccess() ? "owner" : "public";
-  if (!knowledgeRequests.has(mode)) {
-    const request=Promise.all([readJson("energies.json"),readJson("periods.json")])
-      .then(([energies,periods])=>({energies,periods}))
-      .catch(error=>{knowledgeRequests.delete(mode);throw error;});
-    knowledgeRequests.set(mode,request);
+export const loadFullReportKnowledge = () => {
+  if (!knowledgeRequest) {
+    knowledgeRequest = Promise.all([
+      readJson("energies.json"),
+      readJson("periods.json")
+    ]).then(([energies, periods]) => ({ energies, periods }));
   }
-  return knowledgeRequests.get(mode);
+  return knowledgeRequest;
 };
 
 export const loadFullReportSection = (energy) => {
   const normalizedEnergy = Number(energy);
   if (!sectionRequests.has(normalizedEnergy)) {
-    sectionRequests.set(normalizedEnergy, readJson(`sections/energy-${normalizedEnergy}.json`).catch(error=>{sectionRequests.delete(normalizedEnergy);throw error;}));
+    sectionRequests.set(normalizedEnergy, readJson(`sections/energy-${normalizedEnergy}.json`));
   }
   return sectionRequests.get(normalizedEnergy);
 };

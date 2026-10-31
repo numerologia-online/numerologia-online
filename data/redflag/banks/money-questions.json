@@ -5,8 +5,7 @@
       "title": "Будет дарить подарки или даже цветы придётся выпрашивать?",
       "textFile": "money/gift.json?v=6",
       "status": "ready",
-      "priceRub": 10,
-      "isFree": true
+      "priceRub": 10
     },
     {
       "id": "generosity",

@@ -1,12 +1,11 @@
-import { contentFetch as fetch, hasOwnerAccess } from "../paid-access.js?v=20261031reg1";
 import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=5";
-import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=20261031reg1";
-import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=20261031reg1";
+import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
+import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=31";
 import { nodesFor } from "./pro-points.js?v=3";
 import { createProDiagram } from "./pro-diagram.js?v=24";
-import { createFullReportPdfController } from "../full-report-pdf.js?v=20261031reg1";
-import { buildProPdfChapters } from "./pro-pdf-content.js?v=20261031reg1";
-import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=20261031reg1";
+import { createFullReportPdfController } from "../full-report-pdf.js?v=4";
+import { buildProPdfChapters } from "./pro-pdf-content.js?v=25";
+import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
 
 const schoolClientMode = new URLSearchParams(window.location.search).get("from") === "school";
 const defaultSubmitHtml = schoolClientMode
@@ -1333,8 +1332,6 @@ form.addEventListener("submit", async(event)=>{
   invalidateFullPdf();
   pdfControls.hidden = true;
   pdfButtons.replaceChildren();
-  // The REG.RU PHP server recognizes signed Telegram authorization, not browser flags.
-  verifiedOwner = await hasOwnerAccess();
   syncPaywallUi();
   if (!hasPaidAccess()) {
     pdfButtons.replaceChildren(makeLockedPdfButton());
@@ -1377,10 +1374,6 @@ form.addEventListener("submit", async(event)=>{
       scrollOpenedAnswerToTop(results, () => current?.id === id && !results.hidden);
     }
     karmic.replaceChildren(paragraph("Подбираю кармические программы…","pro-muted"));
-    if (!hasPaidAccess()) {
-      renderKarmic(matrix, [], [], {tail:{},program:{}});
-      return;
-    }
     Promise.all([
       loadKarmicPrograms(),
       loadKarmicTails(),

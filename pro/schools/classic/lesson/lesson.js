@@ -1,4 +1,3 @@
-import { contentFetch as fetch, hasOwnerAccess, ownerAccessKnown, privateContent } from "../../../../paid-access.js?v=20261030secure1";
 import {numberMeaning,lifePath,parseClassicDate,analyzeName,personalYear} from "../classic-core.js?v=1";
 const $=id=>document.getElementById(id);
 const make=(tag,cls,text)=>{
@@ -213,7 +212,6 @@ async function start(){
      nav.append(linkToRequired(blocked));
      return;
    }
-   if (id!=="hello" && !await hasOwnerAccess()) throw Error("PURCHASE_REQUIRED");
    const r=await fetch(manifest[activeIndex].file+"?v=3");
    if(!r.ok)throw Error("Lesson unavailable");
    const lesson=await r.json();
@@ -223,7 +221,7 @@ async function start(){
    console.warn("Классический урок:",error);
    $("classic-lesson-title").textContent="Урок временно недоступен";
    const msg=$("classic-lesson-error");msg.hidden=false;
-   msg.textContent=error.message==="PURCHASE_REQUIRED" ? "🔒 Этот урок входит в закрытые материалы школы. Оплата пока не подключена." : "Не удалось открыть урок. Проверьте интернет и попробуйте снова.";
+   msg.textContent="Не удалось открыть урок. Проверьте интернет и попробуйте снова.";
  }
 }
 start();

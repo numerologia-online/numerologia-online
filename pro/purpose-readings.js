@@ -1,4 +1,3 @@
-import { contentFetch as fetch, hasOwnerAccess, ownerAccessKnown, privateContent } from "../paid-access.js?v=20261030secure1";
 // A separate authored interpretation bank for the four kinds of purpose.
 // Never mutate knowledge/full-report/energies.json or the approved 14 readings.
 const purposeScopes = ["personal", "social", "general", "planetary"];

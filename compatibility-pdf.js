@@ -187,5 +187,5 @@ export const createCompatibilityPdfController = ({ buttons, getBank }) => {
   };
 
   buttons.forEach(button => button.addEventListener("click", download));
-  return { setReport, download };
+  return { setReport };
 };

@@ -1,4 +1,3 @@
-import { contentFetch as fetch, hasOwnerAccess, ownerAccessKnown, privateContent } from "../paid-access.js?v=20261030secure1";
 import { calculateMatrix, parseBirthDate } from "../numerology-core.js?v=5";
 import { loadChildDayReading } from "./child-day-engine.js?v=13";
 
@@ -17,8 +16,10 @@ const matrixSections = byId("child-matrix-sections");
  * A flag, query string, or localStorage value must NEVER unlock paid readings.
  * This static frontend is not DRM: private JSON must be migrated off GitHub Pages. */
 const FREE_CHILD_POINT = "character";
-let verifiedChildOwner = false;
-const hasChildPaidAccess = () => verifiedChildOwner;
+const childEntitlement = { status: "preview", childId: null, birthDate: null };
+const hasChildPaidAccess = () => childEntitlement.status === "active" &&
+  !!childEntitlement.childId && !!birth &&
+  childEntitlement.birthDate === [birth.year, String(birth.month).padStart(2,"0"), String(birth.day).padStart(2,"0")].join("-");
 const childPointIsLocked = point => point.id !== FREE_CHILD_POINT && !hasChildPaidAccess();
 
 const preview = byId("child-preview");
@@ -56,14 +57,14 @@ let selectedPoint = null;
 let selectedElements = [];
 let insightRequestId = 0;
 // Load every approved child energy, not just energy 1. Cache by energy number.
-// Static preview loads CHARACTER ONLY. Full paid banks are served by the protected API.
+// Static preview loads CHARACTER ONLY. Full paid banks must live on REG.RU server after deployment.
 const energyBankRequests = new Map();
 const getEnergyBank = (energy) => {
   const number = Number(energy);
   if (!Number.isInteger(number) || number < 1 || number > 22) return Promise.resolve(null);
   if (!energyBankRequests.has(number)) {
     energyBankRequests.set(number,
-      fetch(hasChildPaidAccess() ? `./data/matrix/sections/energy-${number}.json` : `./data/matrix/free/character-${number}.json?v=1`)
+      fetch(`./data/matrix/free/character-${number}.json?v=1`)
         .then((response) => {
           if (!response.ok) throw new Error("Детская энергия не загрузилась");
           return response.json();
@@ -614,8 +615,6 @@ form.addEventListener("submit", async (event) => {
   const submit = form.querySelector('button[type="submit"]');
   submit.disabled = true;
   try {
-    verifiedChildOwner = await hasOwnerAccess();
-    energyBankRequests.clear();
     birth = entered;
     invalidateChildPdf();
     chosenDate = currentDate();
