@@ -276,6 +276,56 @@
         outline:3px solid #184e39;outline-offset:3px;
       }
     </style>
+    <style id="numi-bright-club-column-20261031">
+      /* Club column is a continuous, full-height visual band across every tariff row. */
+      #account-dialog .numi-tariff-table {
+        border:1px solid #d4bc75;
+        box-shadow:0 5px 22px rgba(110,79,24,.14);
+      }
+      #account-dialog .numi-tariff-head [role=columnheader]:last-child {
+        background:linear-gradient(125deg,#157750,#094d39);
+        color:#fff;font-weight:900;letter-spacing:.045em;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row {
+        align-items:stretch;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row>[role=cell]:last-child {
+        align-self:stretch;min-height:100%;box-sizing:border-box;
+        background:linear-gradient(135deg,#d4efcd 0%,#e6f4dd 55%,#d1ecca 100%);
+        color:#096e43;
+        font-size:clamp(14px,3.8vw,17px);font-weight:900;
+        text-align:center;justify-content:center;
+        border-left:1px solid #bddcb4;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row--feature>[role=cell]:last-child {
+        align-self:stretch;height:auto;
+        background:linear-gradient(135deg,#c4eabe 0%,#e0f2d7 100%);
+      }
+      #account-dialog .numi-tariff-table .numi-club-discount {
+        font:900 clamp(22px,6.2vw,31px)/1.05 Georgia,"Times New Roman",serif!important;
+        letter-spacing:-.045em;color:#087447!important;
+        text-shadow:0 1px 0 rgba(255,255,255,.72);
+      }
+      #account-dialog .numi-tariff-table .numi-club-discount small {
+        margin-top:5px;font:600 10px/1.3 system-ui,sans-serif;
+        letter-spacing:0;color:#386c4f;
+      }
+      #account-dialog .numi-tariff-table .numi-club-free {
+        font:900 clamp(10px,3.1vw,14px)/1.1 system-ui,sans-serif!important;
+        letter-spacing:-.015em;color:#047645!important;
+        overflow-wrap:anywhere;word-break:normal;
+      }
+      #account-dialog .numi-tariff-club .numi-tariff-club-price {
+        color:#086e48;font-size:clamp(26px,7.1vw,36px)!important;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row>[role=cell]:not(:first-child) {
+        padding-inline:4px;
+      }
+      @media(max-width:390px) {
+        #account-dialog .numi-tariff-table .numi-club-discount {font-size:clamp(20px,5.8vw,27px)!important}
+        #account-dialog .numi-tariff-table .numi-club-free {font-size:clamp(10px,2.75vw,12px)!important}
+      }
+    </style>
     <!-- Reversible experiment: subtitles on the eight homepage catalog cards only. -->
     <style id="home-card-subtitles-experiment">
       .products[aria-label="Направления расчётов"] > .product-card {
@@ -715,15 +765,15 @@
           <p class="numi-tariff-caption"><strong>Что вы получаете в клубе каждый месяц</strong><span>Больше возможностей и специальные цены. Подписка необязательна.</span></p>
           <div class="numi-tariff-table" role="table" aria-label="Сравнение цен на разовые покупки и с подпиской">
             <div class="numi-tariff-head" role="row"><span role="columnheader">Раздел</span><span role="columnheader">Разово</span><span role="columnheader">♕ В клубе</span></div>
-            <div class="numi-tariff-row" role="row"><strong role="cell">Полный разбор года</strong><span role="cell">990 ₽</span><span role="cell">490 ₽</span></div>
-            <div class="numi-tariff-row" role="row"><strong role="cell">Полный разбор жизни</strong><span role="cell">990 ₽</span><span role="cell">490 ₽</span></div>
-            <div class="numi-tariff-row" role="row"><strong role="cell">Вопросы «Да или нет?»</strong><span role="cell">19 ₽</span><span role="cell">0 ₽</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Полный разбор года</strong><span role="cell">990 ₽</span><span role="cell" class="numi-club-discount">−50%</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Полный разбор жизни</strong><span role="cell">990 ₽</span><span role="cell" class="numi-club-discount">−50%</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Вопросы «Да или нет?»</strong><span role="cell">19 ₽</span><span role="cell" class="numi-club-free">БЕСПЛАТНО</span></div>
             <div class="numi-tariff-row numi-tariff-row--feature" role="row">
               <div role="cell"><strong>Мужчина или Red Flag</strong><small>Знакомство и инициатива · Подарки и щедрость · Деньги и ответственность · Верность и измены · Семья и отношения · Язык любви</small></div>
               <span role="cell">19–49 ₽<small>за вопрос</small></span>
-              <span role="cell">−50%<small>на вопросы</small></span>
+              <span role="cell" class="numi-club-discount">−50%<small>на вопросы</small></span>
             </div>
-            <div class="numi-tariff-row" role="row"><strong role="cell">Нумерология момента</strong><span role="cell">100 ₽</span><span role="cell">−50%</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Нумерология момента</strong><span role="cell">100 ₽</span><span role="cell" class="numi-club-discount">−50%</span></div>
             <div class="numi-tariff-row" role="row"><strong role="cell">Календарь важных чисел</strong><span role="cell">Недоступно</span><span role="cell">Включено</span></div>
             <div class="numi-tariff-row" role="row"><strong role="cell">Денежные ритуалы</strong><span role="cell">Недоступно</span><span role="cell">В клубе</span></div>
           </div>
