@@ -36,8 +36,10 @@ def http_get(path):
 def main():
     js = pathlib.Path("account-browser.js").read_bytes()
     old_js = subprocess.check_output(["git", "show", OLD_COMMIT + "^:account-browser.js"])
+    previous_js = subprocess.check_output(["git", "show", OLD_COMMIT + ":account-browser.js"])
     old_script = b'account-browser.js?v=1'
-    new_script = b'account-browser.js?v=2'
+    previous_script = b'account-browser.js?v=2'
+    new_script = b'account-browser.js?v=3'
     if js == old_js or b'password_confirm' not in js or b'naSendVerify' in js:
         raise RuntimeError("Unexpected account frontend update")
     ftp = ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=30)
@@ -64,11 +66,12 @@ def main():
         telegram = read(site + "/auth-profile.js")
         if b"NUMI PAID STATIC ACCESS GUARD BEGIN 2026-10-31" not in guard:
             raise RuntimeError("Paid material guard missing; refuse publishing")
-        if original_index.count(old_script) != 1 or new_script in original_index:
-            raise RuntimeError("Unexpected homepage revision; refuse overwriting")
-        if digest(original_js) != digest(old_js):
-            raise RuntimeError("Live account JS differs from expected baseline; refuse overwriting")
-        new_index = original_index.replace(old_script, new_script, 1)
+        versions = [(old_script, old_js), (previous_script, previous_js)]
+        matched = [(tag, baseline) for tag, baseline in versions
+                   if original_index.count(tag) == 1 and digest(original_js) == digest(baseline)]
+        if len(matched) != 1 or new_script in original_index:
+            raise RuntimeError("Unexpected live account UI revision; refuse overwriting")
+        new_index = original_index.replace(matched[0][0], new_script, 1)
         backup_folder = home + "/site-safeguard-backups"
         try:
             ftp.mkd(backup_folder)
