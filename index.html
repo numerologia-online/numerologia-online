@@ -78,6 +78,39 @@
         }
       }
     </style>
+    <style id="numi-saved-list-20261031">
+      /* Compact single-line list, discreet delete action, no prices. */
+      #numi-confirmed-purchases { margin:10px 0 14px; }
+      .numi-saved-row {
+        display:flex;align-items:center;gap:10px;
+        min-height:62px;padding:10px 0;
+        border-bottom:1px solid #e0e4dc;
+      }
+      .numi-saved-row-content { flex:1;min-width:0; }
+      .numi-saved-row-content strong {
+        display:block;font:600 15px/1.35 Georgia,serif;color:#184c3a;
+        overflow-wrap:anywhere;
+      }
+      .numi-saved-row-content small {
+        display:block;margin-top:3px;color:#77877d;
+        font:400 12px/1.3 system-ui,sans-serif;
+      }
+      #account-dialog .numi-saved-remove {
+        display:grid;place-items:center;flex:none;
+        width:38px;height:38px;margin:0;padding:0;
+        border:1px solid #e7ddd2;border-radius:11px;
+        background:transparent;color:#8d736a;font-size:17px;
+        cursor:pointer;
+      }
+      #account-dialog .numi-saved-remove:disabled {opacity:.45;cursor:wait}
+      #account-dialog .numi-saved-remove:focus-visible {outline:2px solid #1c694c;outline-offset:2px}
+      #account-dialog [data-account-content="saved"] .account-back {
+        display:block;width:100%;min-height:48px;margin:0 0 15px;
+        padding:11px 15px;border:1px solid #bdd2c2;border-radius:13px;
+        background:#edf3ed;color:#174b39;text-align:center;
+        font:700 15px/1.35 system-ui,sans-serif;
+      }
+    </style>
     <!-- Reversible experiment: subtitles on the eight homepage catalog cards only. -->
     <style id="home-card-subtitles-experiment">
       .products[aria-label="Направления расчётов"] > .product-card {
@@ -491,12 +524,12 @@
         </div>
 
         <section class="account-panel" data-account-content="saved" hidden>
-          <button class="account-back" type="button" data-account-back>← В кабинет</button>
+          <button class="account-back" type="button" data-account-back>← Назад в личный кабинет</button>
           <h3>Сохранённое</h3>
           <p class="account-panel-intro">Все ваши оплаченные разборы и ответы в одном месте.</p>
           <div class="account-library-group"><span class="account-library-symbol" aria-hidden="true">♡</span><div><strong>Большие разборы</strong><small>Полный разбор жизни, совместимость и другие покупки</small></div></div>
           <div class="account-library-group"><span class="account-library-symbol" aria-hidden="true">✦</span><div><strong>Ответы на вопросы</strong><small>Всё, к чему захочется вернуться</small></div></div>
-          <p class="account-empty-state">История оплаченных материалов появится здесь после подключения покупок к аккаунту. Пока ничего не списываем и не выдаём незавершённую оплату за покупку.</p>
+          <p class="account-empty-state">♡ Здесь пока пусто. Ваши сохранённые разборы и ответы появятся здесь.</p>
           <div class="account-storage-disclaimer"><strong>Как долго доступны покупки ♡</strong><p>Оплаченные разборы и ответы на вопросы будут доступны в личном кабинете 12 месяцев с даты покупки. Мы ограничиваем срок хранения персональных записей, чтобы сервис оставался быстрым, а цены - доступными. Вы сможете сохранить ответ на телефон, сделать скриншоты или скачать PDF, если он предусмотрен разбором. Файлы на вашем устройстве останутся с вами.</p></div>
         </section>
 
@@ -563,7 +596,7 @@
   <script src="artwork-loader.js?v=1" defer></script>
   <script src="install.js?v=4" defer></script>
   <script src="auth-profile.js?v=19" defer></script>
-  <script src="account-browser.js?v=13" defer></script>
+  <script src="account-browser.js?v=14" defer></script>
   <script type="module" src="app.js?v=263"></script>
   </body>
 </html>
