@@ -1,0 +1,110 @@
+name: Read-only Safari visitor flows and paid text boundary audit
+on:
+  push:
+    paths:
+      - .github/workflows/numi-reg-visitor-flow-audit.yml
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Install isolated browser (no site or repo writes)
+        run: |
+          mkdir -p /tmp/numi-visit
+          cd /tmp/numi-visit
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund playwright@1.56.1 >/dev/null
+          npx playwright install --with-deps webkit
+      - name: Open key sections, exercise forms, check guest data and access
+        run: |
+          cd /tmp/numi-visit
+          node - <<'JS'
+          const {webkit}=require('playwright');
+          const ROOT='https://xn--c1adkkdfjbp1a4l.online';
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+            const browser=await webkit.launch({headless:true});
+            const issues=[],findings=[];
+            async function probe(label,url,callback){
+              const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,deviceScaleFactor:2});
+              const errors=[];
+              page.on('pageerror',e=>errors.push('PAGE:'+e.message.slice(0,180)));
+              page.on('console',m=>{if(m.type()==='error')errors.push('CONSOLE:'+m.text().slice(0,180))});
+              try{
+                const response=await page.goto(ROOT+url,{waitUntil:'domcontentloaded',timeout:25000});
+                if(response.status()!==200)throw Error('HTTP '+response.status());
+                await sleep(1800);
+                await callback(page);
+                findings.push({label,success:true,errors:errors.slice(0,5)});
+              }catch(e){issues.push(label+':'+e.message.slice(0,210));findings.push({label,success:false,errors:errors.slice(0,5)})}
+              await page.close();
+            }
+            await probe('homepage_account_modal','/',async page=>{
+              const el=page.locator('[data-account-open="profile"]');
+              await el.click({timeout:17000});
+              await page.locator('#account-dialog[open]').waitFor({timeout:10000});
+              if(await page.locator('#account-profile').isHidden())throw Error('Browser cabinet did not open');
+              await page.locator('#account-close').click();
+              if(await page.locator('#account-dialog').evaluate(el=>el.open))throw Error('Cabinet did not close');
+            });
+            await probe('child_free_matrix','/child/',async page=>{
+              await page.locator('#child-date').fill('09.09.2015');
+              await page.locator('#child-form button[type=submit]').click();
+              await page.locator('#child-result').waitFor({state:'visible',timeout:25000});
+              if(await page.locator('#child-matrix-sections button').count()<5)throw Error('Child matrix point buttons missing');
+              const text=await page.locator('#child-result').innerText();
+              if(text.length<400)throw Error('Child result too short');
+            });
+            await probe('pro_free_matrix','/pro/',async page=>{
+              await page.locator('#pro-birth-date').fill('09.09.1986');
+              await page.locator('#pro-form button[type=submit]').click();
+              await page.locator('#pro-results').waitFor({state:'visible',timeout:25000});
+              if(await page.locator('#pro-point-details').count()!==1)throw Error('Pro answer missing');
+              if(await page.locator('#pro-paywall-banner').isHidden())throw Error('Guest paywall missing');
+            });
+            await probe('redflag_questions','/',async page=>{
+              await page.locator('[data-open-redflag]').click();
+              await page.locator('#redflag-form').waitFor({state:'visible',timeout:14000});
+              await page.locator('#redflag-birth-date').fill('01.02.1997');
+              await page.locator('#redflag-form button[type=submit]').click();
+              await sleep(2500);
+              if(await page.locator('#redflag-categories').innerText().then(s=>s.length)<100)throw Error('RedFlag question categories not rendered');
+            });
+            await probe('year_entry_form','/',async page=>{
+              await page.locator('[data-open-year]').click();
+              await page.locator('#year-form').waitFor({state:'visible',timeout:14000});
+            });
+            const api=await browser.newContext();
+            async function get(path){
+              const r=await api.request.get(ROOT+'/'+path,{timeout:19000,headers:{'Cache-Control':'no-cache'}});
+              return r;
+            }
+            for(const path of ['data/year/energy-1.txt','child/data/matrix/sections/energy-1.json','knowledge/full-report/sections/energy-1.json','pro/purpose/general.json','data/redflag/money/generosity.json']){
+              const r=await get(path);
+              if(![401,403,404,410].includes(r.status()))issues.push('PAID_EXPOSURE:'+path+':'+r.status());
+            }
+            const love=await get('data/redflag/love/published/1-2.json');
+            if(love.status()!==200)issues.push('LOVE_FREE_STATUS:'+love.status());
+            else{
+              const d=await love.json();
+              if(Object.keys(d.entries||{}).join(',')!=='first-step')issues.push('LOVE_PAID_CONTENT_EXPOSED');
+            }
+            const gift=await get('data/redflag/money/gift.json');
+            if(gift.status()!==200)issues.push('GIFT_FREE_MISSING');
+            const compat=await get('data/compatibility/deep/energy-1.json');
+            if(compat.status()!==200)issues.push('COMPAT_FREE_MISSING');
+            else{
+              const d=await compat.json();
+              if(Object.keys(d.blocks||{}).join(',')!=='pairEssence')issues.push('COMPAT_PAID_CONTENT_EXPOSED');
+            }
+            const childFree=await get('child/data/matrix/free/character-1.json');
+            if(childFree.status()!==200)issues.push('CHILD_FREE_MISSING');
+            console.log('VISITOR_AUDIT',JSON.stringify({findings,issues,selected_static_status:{gift:gift.status(),compat:compat.status(),child_free:childFree.status()}}));
+            await api.close();
+            await browser.close();
+            if(issues.length)process.exitCode=1;
+          })().catch(e=>{console.error('FATAL_VISITOR_AUDIT',e.message);process.exitCode=1});
+          JS
