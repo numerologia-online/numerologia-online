@@ -1,5 +1,5 @@
 {
-  "approved_private_commit": "f15c0db5485de63bb1c893708361ec476c98ae4c",
+  "approved_private_commit": "81c946ca36445eac6199d378de08ca279c1f4e68",
   "approved_questions": [
     "yn-man-001",
     "yn-man-002",
@@ -96,8 +96,12 @@
     "yn-home-003",
     "yn-home-004",
     "yn-home-005",
-    "yn-home-006"
+    "yn-home-006",
+    "yn-home-007",
+    "yn-home-008",
+    "yn-home-009",
+    "yn-home-010"
   ],
-  "release_reason": "Publish approved yes-no questions 087 through 096",
-  "version": 13
+  "release_reason": "Publish questions 097-100 and approved question 022 title change",
+  "version": 14
 }
