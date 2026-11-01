@@ -20,6 +20,12 @@ jobs:
       - name: Validate isolated aggregate analytics
         run: |
           python3 -m py_compile analytics/deploy.py
+          python3 - <<'PY'
+          s=open('analytics/deploy.py',encoding='utf-8').read()
+          assert 'public_login_probe' in s
+          assert 'INVALID_CREDENTIALS' in s
+          print('Negative login probe configured')
+          PY
           php -l analytics/public/numi-analytics.php
           node --check moment/analytics.js
           node --check moment/moment.js
