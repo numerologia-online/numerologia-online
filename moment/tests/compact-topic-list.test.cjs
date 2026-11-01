@@ -22,7 +22,8 @@ const source=fs.readFileSync("moment/moment.js","utf8");
 const ctx={document:doc,window:{matchMedia:()=>({matches:true})},fetch:async()=>({ok:true,json:async()=>catalog}),URLSearchParams,location:{search:""},Date,Intl,console};
 vm.runInNewContext(source,ctx,{filename:"moment.js"});
 (async()=>{
-  for(let i=0;i<4;i++)await Promise.resolve();
+  await new Promise(resolve=>setImmediate(resolve));
+  await new Promise(resolve=>setImmediate(resolve));
   assert.equal(elements["category-grid"].children.length,12,"Exactly 12 selectable topics, no All Topics");
   assert(!elements["category-grid"].children.some(x=>x.children.some(y=>y.textContent==="Все темы")),"All topics tile absent");
   assert.equal(elements["questions-panel"].hidden,true,"All questions hidden before selection");
