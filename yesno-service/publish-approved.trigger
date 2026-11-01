@@ -1,12 +1,13 @@
 {
-  "approved_private_commit": "62a73843547c985e0dbe5a6d3b2383b24b6f7b09",
+  "approved_private_commit": "92940d2b52d7035143ca44dead626959c3798522",
   "approved_questions": [
     "yn-man-001",
     "yn-man-002",
     "yn-man-003",
     "yn-man-004",
-    "yn-man-005"
+    "yn-man-005",
+    "yn-man-006"
   ],
-  "release_reason": "Publish ten approved readings for fifth yes-no question",
-  "version": 3
+  "release_reason": "Publish ten approved readings for sixth yes-no question",
+  "version": 4
 }
