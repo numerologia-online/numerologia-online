@@ -97,5 +97,17 @@
       document.querySelector("#standalone-year-error").hidden = false;
     });
   </script>
+  <script src="moment/analytics.js?v=3" defer></script>
+  <script>
+  (() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const send=(type,item)=>window.NumiAnalytics?.send(type,"year",item);
+      send("page","open");
+      document.querySelector("#year-form")?.addEventListener("submit",()=>send("category","calculate"));
+      document.querySelector("#pdf-button")?.addEventListener("click",()=>send("category","pdf_click"));
+      document.querySelector("#pdf-button-top")?.addEventListener("click",()=>send("category","pdf_click"));
+    });
+  })();
+  </script>
 </body>
 </html>
