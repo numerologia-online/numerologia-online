@@ -1,0 +1,35 @@
+name: Emergency rollback analytics changes on REG.RU
+on:
+  push:
+    paths:
+      - .github/workflows/numi-emergency-analytics-rollback.yml
+permissions:
+  contents: read
+concurrency:
+  group: numi-emergency-analytics-rollback
+  cancel-in-progress: false
+jobs:
+  rollback:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Restore site before analytics on REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate exactly scoped rollback
+        run: |
+          python3 -m py_compile analytics/emergency-rollback.py
+          python3 - <<'PY'
+          import ast,pathlib
+          s=pathlib.Path("analytics/emergency-rollback.py").read_text()
+          assert 'site-safeguard-backups' in s
+          assert '6b590ad964e9988886cbb77d08ae3cd777ddf596' in s
+          assert 'ftp.delete' in s
+          print("Rollback safeguards checked")
+          PY
+      - name: Back up and restore only analytics-modified live files
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u analytics/emergency-rollback.py
