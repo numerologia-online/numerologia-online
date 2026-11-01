@@ -1,0 +1,58 @@
+name: Publish 100-question topic readability on REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-yesno-readability-20261101.yml
+permissions:
+  contents: read
+  statuses: write
+concurrency:
+  group: numi-yesno-readability-20261101
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.event.head_commit.message == 'Publish yes-no readability changes to REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify isolated CSS, unchanged question catalog and valid release
+        run: |
+          python3 -m py_compile moment/deploy-yesno-readability-20261101.py
+          node --check moment/yes-no/yes-no.js
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('moment/yes-no')
+          d=json.loads((p/'questions.json').read_text(encoding='utf-8'))
+          assert len(d['categories']) == 7 and len(d['questions']) == 100
+          assert len({q['id'] for q in d['questions']}) == 100
+          assert len({q['title'] for q in d['questions']}) == 100
+          style=(p/'yes-no.css').read_text()
+          assert style.count('{')==style.count('}')
+          assert 'yes-no.css?v=3' in (p/'index.html').read_text()
+          print('Readability and catalog checks passed')
+          PY
+      - name: Back up, publish CSS and update only stylesheet link, verify live public site
+        id: publish
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u moment/deploy-yesno-readability-20261101.py
+      - name: Record live publication result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_OUTCOME: ${{ steps.publish.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request
+          state='success' if os.environ.get('RELEASE_OUTCOME')=='success' else 'failure'
+          body=json.dumps({'state':state,'context':'yesno-readability-live','description':'100-question readability verified on REG.RU' if state=='success' else '100-question readability publication did not verify'}).encode()
+          endpoint='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/statuses/'+os.environ['GITHUB_SHA']
+          req=urllib.request.Request(endpoint,data=body,method='POST',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=20) as response:print('Live result recorded:',state,response.status)
+          PY
