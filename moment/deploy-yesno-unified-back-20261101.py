@@ -96,7 +96,7 @@ def main():
             raise RuntimeError("Production question logic has independent edits")
         updated_html = transform_html(original["index.html"])
         expected = {"index.html": updated_html, "yes-no.css": new_css, "yes-no.js": new_js}
-        if b'← Назад</button>' not in expected["index.html"]: raise RuntimeError("Back text mismatch")
+        if '← Назад</button>'.encode('utf-8') not in expected["index.html"]: raise RuntimeError("Back text mismatch")
         try: ftp.mkd(root + "/site-safeguard-backups")
         except ftplib.error_perm: pass
         ftp.mkd(backup)
