@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish twelve compact Moment topic rows on REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Diagnose Moment topic list JavaScript test before publishing'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -25,7 +25,7 @@ jobs:
           python3 -m py_compile moment/deploy-compact-topic-list-20261101.py
           echo javascript > /tmp/moment-stage
           node --check moment/moment.js
-          node moment/tests/compact-topic-list.test.cjs
+          node moment/tests/compact-topic-list.test.cjs > /tmp/moment-js-validation.log 2>&1 || { tail -35 /tmp/moment-js-validation.log; exit 1; }
           echo catalog > /tmp/moment-stage
           python3 - <<'PY'
           import json
@@ -83,6 +83,10 @@ jobs:
             if os.environ.get('VALIDATION_RESULT')!='success':
               stage=pathlib.Path('/tmp/moment-stage')
               reason='Preflight failed at '+(stage.read_text().strip() if stage.exists() else 'initialization')
+              jslog=pathlib.Path('/tmp/moment-js-validation.log')
+              if stage.exists() and stage.read_text().strip()=='javascript' and jslog.exists():
+                lines=[x.strip() for x in jslog.read_text(errors='replace').splitlines() if x.strip()]
+                if lines:reason='JS: '+(' / '.join(lines[:2]))[:125]
             else:
               logfile=pathlib.Path('/tmp/moment-release-log')
               if logfile.exists():
