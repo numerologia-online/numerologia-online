@@ -18,6 +18,11 @@ jobs:
       - name: Validate preview
         run: |
           python3 -m py_compile analytics/deploy-preview.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('analytics/deploy-preview.py').read_text()
+          assert '"Что интересно посетителям".encode("utf-8")' in s
+          PY
           php -l analytics/public/numi-analytics.php
           python3 - <<'PY'
           from pathlib import Path
