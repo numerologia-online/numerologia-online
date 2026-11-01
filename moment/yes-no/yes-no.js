@@ -5,6 +5,32 @@
     search = $("yn-search"), clear = $("yn-clear"), title = $("yn-title"),
     count = $("yn-count"), more = $("yn-more"), back = $("yn-all"), dialog = $("yn-dialog");
   let catalog = null, active = null, visible = 12;
+  const timeInput = $("yn-time-input"), timeForm = $("yn-time-form"),
+    timeError = $("yn-time-error"), timeResult = $("yn-time-result");
+  const currentTime = () => {
+    const date = new Date();
+    return String(date.getHours()).padStart(2, "0") + ":" +
+      String(date.getMinutes()).padStart(2, "0");
+  };
+  const normalizeTime = value => {
+    const digits = String(value || "").replace(/\D/g, "").slice(0, 4);
+    return digits.length > 2 ? digits.slice(0, 2) + ":" + digits.slice(2) : digits;
+  };
+  const validTime = value => /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+  function confirmTime(value) {
+    if (!validTime(value)) {
+      timeError.hidden = false;
+      timeResult.hidden = true;
+      timeInput.setAttribute("aria-invalid", "true");
+      timeInput.focus();
+      return;
+    }
+    timeError.hidden = true;
+    timeInput.removeAttribute("aria-invalid");
+    timeInput.value = value;
+    timeResult.textContent = "Время вопроса — " + value + ". Момент выбран. Ответ появится после подключения расчётов.";
+    timeResult.hidden = false;
+  }
   const normalize = s => String(s || "").toLocaleLowerCase("ru-RU")
     .replace(/ё/g, "е").replace(/[^а-яa-z0-9 ]/gi, " ").replace(/\s+/g, " ").trim();
   const node = (tag, cls, text) => {
@@ -72,12 +98,28 @@
         node("span", "yn-question-arrow", "→"));
       button.addEventListener("click", () => {
         $("yn-dialog-title").textContent = q.title;
+        timeForm.reset();
+        timeError.hidden = true;
+        timeResult.hidden = true;
+        timeInput.removeAttribute("aria-invalid");
         dialog.showModal();
         document.body.style.overflow = "hidden";
       });
       return button;
     }));
   }
+  timeInput.addEventListener("input", () => {
+    const cleaned = normalizeTime(timeInput.value);
+    if (timeInput.value !== cleaned) timeInput.value = cleaned;
+    timeError.hidden = true;
+    timeInput.removeAttribute("aria-invalid");
+    timeResult.hidden = true;
+  });
+  timeForm.addEventListener("submit", event => {
+    event.preventDefault();
+    confirmTime(normalizeTime(timeInput.value));
+  });
+  $("yn-now").addEventListener("click", () => confirmTime(currentTime()));
   $("yn-close").addEventListener("click", () => dialog.close());
   $("yn-back").addEventListener("click", () => dialog.close());
   dialog.addEventListener("close", () => {document.body.style.overflow = "";});
@@ -91,7 +133,7 @@
   more.addEventListener("click", () => {visible += 12; render();});
   (async () => {
     try {
-      const response = await fetch("./questions.json?v=2", {cache:"no-store"});
+      const response = await fetch("./questions.json?v=2", {cache:"default"});
       if (!response.ok) throw Error("catalog request");
       const data = await response.json();
       if (data.categories?.length !== 7 || data.questions?.length !== 100 ||
