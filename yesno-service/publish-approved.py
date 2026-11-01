@@ -132,15 +132,54 @@ def main():
         if js.count(new_selection) != 1 or js.count(new_error) != 1:
             raise RuntimeError("Unexpected public JS release version")
         old_js = js.replace(new_selection, old_selection).replace(new_error, old_error)
-        if html.count(b'./yes-no.js?v=12') != 1:
+        if js.count(b'./questions.json?v=3') != 1:
+            raise RuntimeError("Unexpected question catalogue version")
+        previous_js = js.replace(b'./questions.json?v=3', b'./questions.json?v=2')
+        previous_old_js = old_js.replace(b'./questions.json?v=3', b'./questions.json?v=2')
+        if html.count(b'./yes-no.js?v=13') != 1:
             raise RuntimeError("Unexpected public HTML release version")
-        old_html = html.replace(b'./yes-no.js?v=12', b'./yes-no.js?v=11')
+        old_html = html.replace(b'./yes-no.js?v=13', b'./yes-no.js?v=12')
+        legacy_html = html.replace(b'./yes-no.js?v=13', b'./yes-no.js?v=11')
 
         code_paths = {
             site + "api/numi-yesno-answer.php": (php, {php, old_php, old_php + b"\n", old_php_with_zero_rejection, old_php_with_zero_rejection + b"\n"}),
-            site + "moment/yes-no/yes-no.js": (js, {js, old_js}),
-            site + "moment/yes-no/index.html": (html, {html, old_html}),
+            site + "moment/yes-no/yes-no.js": (js, {js, previous_js, old_js, previous_old_js}),
+            site + "moment/yes-no/index.html": (html, {html, old_html, legacy_html}),
         }
+
+        # Publish the public question catalogue with a narrow allowlist for title corrections.
+        # Refuse to overwrite any independent live catalogue changes.
+        catalogue_path = site + "moment/yes-no/questions.json"
+        catalogue_blob = (BASE / "moment/yes-no/questions.json").read_bytes()
+        expected_catalogue = as_json(catalogue_blob)
+        live_catalogue_blob = read(catalogue_path)
+        live_catalogue = as_json(live_catalogue_blob)
+        if not isinstance(live_catalogue, dict) or not isinstance(live_catalogue.get("questions"), list):
+            raise RuntimeError("Invalid live question catalogue")
+        normalized = json.loads(json.dumps(live_catalogue, ensure_ascii=False))
+        known_title_changes = {
+            "yn-man-019": {
+                "Стоит ли мне писать ему первой?",
+                "Ответит ли он, если я напишу первой?",
+            },
+            "yn-love-007": {
+                "Сможем ли мы преодолеть нынешние разногласия?",
+                "Найдём ли мы общий язык?",
+            },
+        }
+        title_by_id = {q["id"]: q["title"] for q in expected_catalogue["questions"]}
+        for question in normalized["questions"]:
+            if not isinstance(question, dict) or not isinstance(question.get("id"), str):
+                raise RuntimeError("Invalid live catalogue question")
+            qid = question["id"]
+            if qid in known_title_changes:
+                if question.get("title") not in known_title_changes[qid]:
+                    raise RuntimeError("Unexpected live question title: " + qid)
+                question["title"] = title_by_id[qid]
+        if normalized != expected_catalogue:
+            raise RuntimeError("Live catalogue changed independently; refusing overwrite")
+        code_paths[catalogue_path] = (catalogue_blob, {catalogue_blob, live_catalogue_blob})
+
         for path, (new, allowed_live) in code_paths.items():
             if read(path) not in allowed_live:
                 raise RuntimeError("Live site changed independently; refusing overwrite: " + path)
@@ -182,6 +221,13 @@ def main():
                     code, result = live_answer(data["question_id"], "00:" + str(n).zfill(2))
                     if code != 200 or result.get("answer") != data["answers"][str(n)]:
                         raise RuntimeError("Incorrect live answer: " + data["question_id"] + "/" + str(n))
+            if as_json(read(catalogue_path)) != expected_catalogue:
+                raise RuntimeError("Published catalogue does not match approved catalogue")
+            catalogue_url = WEB + "/moment/yes-no/questions.json?verify=" + str(time.time_ns())
+            with urllib.request.urlopen(catalogue_url, timeout=25) as response:
+                live_web_catalogue = json.load(response)
+            if live_web_catalogue != expected_catalogue:
+                raise RuntimeError("Public website catalogue was not updated")
             if live_answer("yn-man-099", "00:00")[0] != 404:
                 raise RuntimeError("Unknown answer not rejected")
             if live_answer("yn-man-001", "25:99")[0] != 400:

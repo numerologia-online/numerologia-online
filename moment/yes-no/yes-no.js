@@ -167,7 +167,7 @@
   });
   (async () => {
     try {
-      const response = await fetch("./questions.json?v=2", {cache:"default"});
+      const response = await fetch("./questions.json?v=3", {cache:"default"});
       if (!response.ok) throw Error("catalog request");
       const data = await response.json();
       if (data.categories?.length !== 7 || data.questions?.length !== 100 ||

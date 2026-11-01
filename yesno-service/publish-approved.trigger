@@ -1,5 +1,5 @@
 {
-  "approved_private_commit": "11bafa533e57e4588f69ad47e293797248f4def4",
+  "approved_private_commit": "cb7ab2b50de2039e683f0a05c8dc1f9286c8c0cd",
   "approved_questions": [
     "yn-man-001",
     "yn-man-002",
@@ -26,8 +26,18 @@
     "yn-love-003",
     "yn-love-004",
     "yn-love-005",
-    "yn-love-006"
+    "yn-love-006",
+    "yn-love-007",
+    "yn-love-008",
+    "yn-love-009",
+    "yn-love-010",
+    "yn-love-011",
+    "yn-love-012",
+    "yn-love-013",
+    "yn-love-014",
+    "yn-love-015",
+    "yn-work-001"
   ],
-  "release_reason": "Publish approved batch 017 to 026 with corrected question 019 title",
-  "version": 6
+  "release_reason": "Publish approved questions 027 to 036 and sync the corrected public catalogue",
+  "version": 7
 }
