@@ -1,0 +1,36 @@
+name: Publish centered Yes-No entry card on REG.RU
+on:
+  push:
+    paths:
+      - .github/workflows/numi-yesno-entry-card-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: numi-yesno-entry-card-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish centered Yes-No entry card on REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check deployment script and isolated card
+        run: |
+          python3 -m py_compile moment/deploy-yesno-entry-card.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('moment/index.html').read_text()
+          assert s.count('aria-label="Открыть раздел Да или нет — 100 вопросов"')==1
+          assert s.count('Открыть вопросы')==1
+          assert 'ОТДЕЛЬНЫЙ РАЗДЕЛ · 7 ТЕМ' not in s
+          assert 'href="./yes-no/"' in s
+          print('Centered card and link verified')
+          PY
+      - name: Publish only Yes-No card, backup and verify
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u moment/deploy-yesno-entry-card.py
