@@ -1,0 +1,38 @@
+name: Switch REG.RU private content to local-only
+on:
+  push:
+    paths:
+      - .github/workflows/reg-local-only-switch.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-native-content-release
+  cancel-in-progress: false
+jobs:
+  switch:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Switch REG.RU protected texts to self-contained local reads'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Python and PHP syntax before touching production
+        run: |
+          python3 -m py_compile .github/scripts/reg-local-only-switch-20261101.py .github/scripts/reg-local-cache-audit-20261101.py
+          python3 - <<'PY'
+          import importlib.util,pathlib
+          spec=importlib.util.spec_from_file_location('reg_local_only','.github/scripts/reg-local-only-switch-20261101.py')
+          module=importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          pathlib.Path('/tmp/numi-local-only-syntax.php').write_text('<?php\n'+module.NEW_BLOCK,encoding='utf-8')
+          PY
+          php -l /tmp/numi-local-only-syntax.php
+      - name: Verify every cached protected text before switching
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/reg-local-cache-audit-20261101.py
+      - name: Replace only private PHP content reader, backup and verify
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/reg-local-only-switch-20261101.py
