@@ -42,10 +42,9 @@
       <form id="yn-time-form" class="yn-time-form" novalidate>
         <label for="yn-time-input">Время возникновения вопроса</label>
         <div class="yn-time-row">
-          <input id="yn-time-input" name="question-time" type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="--:--" aria-describedby="yn-time-help yn-time-error" spellcheck="false">
+          <input id="yn-time-input" name="question-time" type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="--:--" aria-describedby="yn-time-error" spellcheck="false">
           <button type="button" id="yn-now" class="yn-now-button">Спросить сейчас</button>
         </div>
-        <p id="yn-time-help" class="yn-time-help">Введите часы и минуты или нажмите «Спросить сейчас».</p>
         <p id="yn-time-error" class="yn-time-error" role="alert" hidden>Введите время от 00:00 до 23:59.</p>
       </form>
       <div id="yn-time-result" class="yn-time-result" role="status" aria-live="polite" hidden></div>
