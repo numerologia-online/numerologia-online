@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - name: Validate isolated aggregate analytics
         run: |
           python3 -m py_compile analytics/deploy.py
@@ -25,6 +25,7 @@ jobs:
           node --check moment/moment.js
           node --check moment/yes-no/yes-no.js
           node --check analytics/admin/dashboard.js
+      # Final independent verification rejects unexpected live files and rolls back on failure.
       - name: Deploy with backup, rollback, public checks and owner-only login
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
