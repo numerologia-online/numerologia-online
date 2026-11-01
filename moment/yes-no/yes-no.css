@@ -135,3 +135,7 @@ html, body {max-width:100%;overflow-x:clip}
  #yn-dialog .yn-repeat-note{margin-top:8px;line-height:1.38}
  #yn-dialog .yn-preview-note{margin-top:6px}
 }
+
+/* Prominent answer and centered question, including compact phone layouts. */
+#yn-dialog #yn-dialog-title{text-align:center}
+#yn-dialog .yn-time-result{font-size:clamp(23px,6vw,29px);line-height:1.35;padding:18px 15px;font-weight:700;overflow-wrap:anywhere}

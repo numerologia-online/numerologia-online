@@ -1,0 +1,17 @@
+name: Yes-no prominent answer
+on:
+  push:
+    branches: [fix/yesno-prominent-answer]
+    paths: [.github/workflows/numi-yesno-answer-style.yml]
+permissions:
+  contents: read
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish two style files with backup and guards
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u yesno-service/style/deploy.py
