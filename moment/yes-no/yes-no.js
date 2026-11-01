@@ -41,7 +41,7 @@
     document.querySelector(".yn-directory-sub").hidden = true;
     panel.hidden = false;
     render();
-    panel.scrollIntoView({behavior: "auto", block: "start"});
+    back.scrollIntoView({behavior: "auto", block: "start"});
   }
   function showCategories() {
     active = null;
@@ -51,7 +51,7 @@
     document.querySelector(".yn-directory > .overline").hidden = false;
     document.querySelector(".yn-directory > h1").hidden = false;
     document.querySelector(".yn-directory-sub").hidden = false;
-    grid.scrollIntoView({behavior: "auto", block: "start"});
+    back.scrollIntoView({behavior: "auto", block: "start"});
   }
   function render() {
     if (!catalog || !active) return;
@@ -82,7 +82,10 @@
   $("yn-back").addEventListener("click", () => dialog.close());
   dialog.addEventListener("close", () => {document.body.style.overflow = "";});
   dialog.addEventListener("click", e => {if (e.target === dialog) dialog.close();});
-  back.addEventListener("click", showCategories);
+  back.addEventListener("click", () => {
+    if (active) showCategories();
+    else window.location.assign("../");
+  });
   search.addEventListener("input", () => {visible = 12; render();});
   clear.addEventListener("click", () => {search.value = ""; visible = 12; render(); search.focus();});
   more.addEventListener("click", () => {visible += 12; render();});
