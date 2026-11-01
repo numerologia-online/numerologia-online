@@ -15,6 +15,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Validate preview
         run: |
           python3 -m py_compile analytics/deploy-preview.py
@@ -24,6 +26,7 @@ jobs:
           assert '"Что интересно посетителям".encode("utf-8")' in s
           PY
           php -l analytics/public/numi-analytics.php
+          node --check moment/analytics.js
           python3 - <<'PY'
           from pathlib import Path
           s=Path("analytics/admin/index.html").read_text()
@@ -34,6 +37,8 @@ jobs:
           assert 'data-sort="conversion"' in s
           assert 'loadNames();' in s
           assert 'questionTitles' in s
+          assert 'campaign-rows' in s and 'partner-code' in s
+          assert 'utm_campaign' in Path('moment/analytics.js').read_text()
           assert 'sample=' not in s
           php=open('analytics/public/numi-analytics.php',encoding='utf8').read()
           assert 'axEnsureTable' in php
