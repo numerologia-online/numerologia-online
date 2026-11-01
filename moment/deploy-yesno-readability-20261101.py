@@ -15,9 +15,9 @@ import urllib.request
 HOST = "server172.hosting.reg.ru"
 DOMAIN = "xn--c1adkkdfjbp1a4l.online"
 PAGE = "moment/yes-no"
-OLD_CSS_BLOB = "b084b4e25ca8bfe7331dc5798ec9e6de41b9e57f"
-CSS_VERSION = b'./yes-no.css?v=4'
-OLD_CSS_VERSION = b'./yes-no.css?v=3'
+OLD_CSS_BLOB = "d2c6f91a48e0a4e058868ca41d6eae1ab052bdab"
+CSS_VERSION = b'./yes-no.css?v=5'
+OLD_CSS_VERSION = b'./yes-no.css?v=4'
 
 def checksum(data):
     return hashlib.sha256(data).hexdigest()
@@ -39,7 +39,7 @@ def main():
     source_html = pathlib.Path(PAGE, "index.html").read_bytes()
     if source_html.count(CSS_VERSION) != 1 or source_html.count(b'yn-category-list') < 1:
         raise RuntimeError("New source HTML does not reference the compact-height card styling")
-    if b'.yn-topic{grid-template-columns:29px minmax(0,1fr) 14px;gap:9px;border-radius:12px;padding:8px 12px;min-height:56px}' not in new_css or b'.yn-category-list{gap:7px;width:100%}' not in new_css:
+    if (b'background:#f6f5ef;color:#143d30' not in new_css or b'min-height:32px;border-right:0' not in new_css or b'.yn-topic{grid-template-columns:29px minmax(0,1fr) 14px;gap:9px;border-radius:12px;padding:8px 12px;min-height:56px}' not in new_css):
         raise RuntimeError("Expected compact mobile row styling is absent")
     if new_css.count(b'{') != new_css.count(b'}'):
         raise RuntimeError("CSS syntax braces differ")
@@ -98,7 +98,7 @@ def main():
             for name, data in targets:
                 if checksum(get_public(name)) != checksum(data):
                     raise RuntimeError("Public site differs from released " + name)
-            log(success=True, public_verified=True, changed=changed, css_version=4,
+            log(success=True, public_verified=True, changed=changed, css_version=5,
                 questions_unchanged=True, navigation_unchanged=True)
         except BaseException:
             for name in reversed(changed):
