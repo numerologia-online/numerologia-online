@@ -1,0 +1,17 @@
+name: Publish approved midnight yes-no answers
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/numi-yesno-zero.yml]
+permissions:
+  contents: read
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish two midnight answers and check all twenty readings
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u yesno-service/zero-time/deploy.py
