@@ -1,4 +1,4 @@
-name: Publish beige Moment category cards safely on REG.RU
+name: Publish compact vertical Moment categories on REG.RU
 on:
   push:
     paths:
@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish centered beige Moment topic cards on REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish twelve compact Moment topic rows on REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -22,9 +22,10 @@ jobs:
         id: validate
         run: |
           echo syntax > /tmp/moment-stage
-          python3 -m py_compile moment/deploy-beige-categories-20261101.py
+          python3 -m py_compile moment/deploy-compact-topic-list-20261101.py
           echo javascript > /tmp/moment-stage
           node --check moment/moment.js
+          node moment/tests/compact-topic-list.test.cjs
           echo catalog > /tmp/moment-stage
           python3 - <<'PY'
           import json
@@ -47,9 +48,13 @@ jobs:
           assert '<div class="section-heading">\n        <h2>Выберите, что сейчас важно</h2>' in h
           assert 'Без бесконечных списков' not in h
           assert 'ВАША БИБЛИОТЕКА ВОПРОСОВ' not in h
-          assert 'moment.css?v=2' in h
+          assert 'moment.css?v=3' in h
+          assert 'moment.js?v=2' in h
+          assert 'id="questions-panel" class="questions-panel" hidden' in h
+          assert h.count('id="show-all"')==1
           css=open('moment/moment.css',encoding='utf-8').read()
           assert '.explore .category{background:#f3f0e7' in css
+          assert '.explore .category-grid{display:grid;grid-template-columns:minmax(0,1fr)' in css
           assert css.count('{')==css.count('}')
           print('Simplified Moment heading and all 300 questions validated')
           PY
@@ -61,7 +66,7 @@ jobs:
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           set -o pipefail
-          python3 -u moment/deploy-beige-categories-20261101.py 2>&1 | tee /tmp/moment-release-log
+          python3 -u moment/deploy-compact-topic-list-20261101.py 2>&1 | tee /tmp/moment-release-log
 
       - name: Record actual public deployment verification
         if: always()
@@ -73,7 +78,7 @@ jobs:
           python3 - <<'PY'
           import json,os,urllib.request,pathlib
           passed=os.environ.get('RELEASE_RESULT')=='success'
-          reason='Centered beige Moment topics verified on REG.RU' if passed else 'Moment release failed'
+          reason='12 compact Moment topics verified on REG.RU' if passed else 'Moment release failed'
           if not passed:
             if os.environ.get('VALIDATION_RESULT')!='success':
               stage=pathlib.Path('/tmp/moment-stage')
@@ -82,11 +87,11 @@ jobs:
               logfile=pathlib.Path('/tmp/moment-release-log')
               if logfile.exists():
                 for line in reversed(logfile.read_text(errors='replace').splitlines()):
-                  if line.startswith('MOMENT_BEIGE_CATEGORIES '):
+                  if line.startswith('MOMENT_COMPACT_LIST '):
                     try:reason=json.loads(line.partition(' ')[2]).get('reason','Unknown deployment error')[:120]
                     except Exception:pass
                     break
-          context='moment-beige-categories-live' if passed else 'moment-failure-'+''.join(x if x.isascii() and x.isalnum() else '-' for x in reason.lower())[:70]
+          context='moment-compact-list-live' if passed else 'moment-failure-'+''.join(x if x.isascii() and x.isalnum() else '-' for x in reason.lower())[:70]
           body=json.dumps({'state':'success' if passed else 'failure',
             'context':context,'description':reason[:140]}).encode()
           endpoint='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/statuses/'+os.environ['GITHUB_SHA']
