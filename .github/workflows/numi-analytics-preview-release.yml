@@ -32,6 +32,8 @@ jobs:
           assert 'fetch(' in s
           assert 'data-sort="views"' in s and 'data-sort="orders"' in s
           assert 'data-sort="conversion"' in s
+          assert 'loadNames();' in s
+          assert 'questionTitles' in s
           assert 'sample=' not in s
           php=open('analytics/public/numi-analytics.php',encoding='utf8').read()
           assert 'axEnsureTable' in php
