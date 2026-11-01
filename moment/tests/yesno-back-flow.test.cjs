@@ -22,8 +22,8 @@ class Element {
   showModal() { this.open = true; }
   close() { this.open = false; this.fire("close"); }
 }
-const ids = ["yn-categories","yn-panel","yn-questions","yn-search","yn-clear",
-  "yn-title","yn-count","yn-more","yn-all","yn-dialog","yn-close","yn-back","yn-dialog-title",
+const ids = ["yn-categories","yn-panel","yn-questions",
+  "yn-title","yn-count","yn-all","yn-dialog","yn-close","yn-back","yn-dialog-title",
   "yn-time-input","yn-time-form","yn-time-error","yn-time-result","yn-now"];
 const elements = Object.fromEntries(ids.map(id => [id, new Element(id)]));
 const headings = Object.fromEntries([".yn-directory > .overline",".yn-directory > h1",
@@ -52,7 +52,7 @@ const pause = () => new Promise(resolve => setImmediate(resolve));
   elements["yn-categories"].children[0].fire("click");
   assert.equal(elements["yn-panel"].hidden, false, "Question list opened");
   assert.equal(elements["yn-categories"].hidden, true, "Topic list hidden");
-  assert.equal(elements["yn-questions"].children.length, 12, "First twelve questions displayed");
+  assert.equal(elements["yn-questions"].children.length, 20, "All twenty questions in first topic displayed without searching");
   assert.equal(elements["yn-all"].scrolled, true, "Back button visible above questions");
   elements["yn-questions"].children[0].fire("click");
   assert.equal(elements["yn-dialog"].open, true, "Answer dialog opened");
@@ -79,5 +79,13 @@ const pause = () => new Promise(resolve => setImmediate(resolve));
   elements["yn-all"].fire("click");
   assert.equal(navigation, "../", "Topics Back returns to Numerology Moment");
   assert.equal(catalog.questions.length, 100, "Original hundred questions preserved");
+  assert.equal(elements["yn-count"].textContent, "20 вопросов", "Simple topic count without paging");
+  for (const category of catalog.categories) {
+    const selected = elements["yn-categories"].children.find(item => item.attributes["aria-label"]?.startsWith(category.title + ","));
+    assert.ok(selected, "All categories accessible: " + category.title);
+    selected.fire("click");
+    assert.equal(elements["yn-questions"].children.length, category.count, "Every question shown for " + category.title);
+    elements["yn-all"].fire("click");
+  }
   console.log("PASS: 100 question navigation, HH:MM validation, auto formatting and ask-now preview");
 })().catch(error => {console.error(error); process.exitCode=1;});
