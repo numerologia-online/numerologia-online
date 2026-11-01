@@ -7,8 +7,8 @@
   <meta name="description" content="100 вопросов «Да или нет» — о любви, работе, деньгах, решениях и будущем. Раздел Нумерологии момента.">
   <title>100 вопросов «Да или нет» — Нумерология момента</title>
   <link rel="stylesheet" href="../moment.css?v=1">
-  <link rel="stylesheet" href="./yes-no.css?v=8">
-  <script defer src="./yes-no.js?v=3"></script>
+  <link rel="stylesheet" href="./yes-no.css?v=9">
+  <script defer src="./yes-no.js?v=4"></script>
 </head>
 <body>
   <header class="site-header"><div class="header-inner">
@@ -43,8 +43,20 @@
       <button id="yn-back" type="button" class="yn-back-top">← Назад</button>
       <div class="dialog-top"><span class="overline">ДА / НЕТ · ВАШ ВОПРОС</span><button id="yn-close" type="button" aria-label="Закрыть">×</button></div>
       <p class="dialog-topic">НУМЕРОЛОГИЯ МОМЕНТА</p><h2 id="yn-dialog-title"></h2>
-      <p class="dialog-intro">Вопрос добавлен в каталог. Механизм ответа по точному времени сейчас готовится.</p>
-      <div class="waiting-note"><strong>Ответ пока недоступен</strong><p>Мы готовим 1 440 уникальных авторских трактовок — по одной для каждой минуты суток. Пока это только выбор вопросов: расчёт не выполняется и деньги не списываются.</p></div>
+      <p class="yn-time-intro">Когда вам впервые пришла мысль об этом вопросе? Укажите именно это время — оно важно для нумерологического ответа.</p>
+      <form id="yn-time-form" class="yn-time-form" novalidate>
+        <label for="yn-time-input">Время возникновения вопроса</label>
+        <div class="yn-time-row">
+          <input id="yn-time-input" name="question-time" type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="14:31" aria-describedby="yn-time-help yn-time-error" spellcheck="false">
+          <button type="button" id="yn-now" class="yn-now-button">Спросить сейчас</button>
+        </div>
+        <p id="yn-time-help" class="yn-time-help">Часы и минуты, например 14:31. Или нажмите «Спросить сейчас» — текущее время подставится само.</p>
+        <p id="yn-time-error" class="yn-time-error" role="alert" hidden>Введите время от 00:00 до 23:59.</p>
+        <button id="yn-confirm-time" type="submit" class="yn-confirm-time">Подтвердить время <span aria-hidden="true">→</span></button>
+      </form>
+      <div id="yn-time-result" class="yn-time-result" role="status" aria-live="polite" hidden></div>
+      <p class="yn-repeat-note"><strong>Важно.</strong> Не задавайте один и тот же вопрос слишком часто — выдерживайте хотя бы сутки. Иначе легко начать искать желаемый ответ вместо подсказки. Важнее всего тот самый первый момент, когда вопрос пришёл вам в голову.</p>
+      <p class="yn-preview-note">Ответы пока готовятся: сейчас мы только фиксируем выбранное время. Расчёт не выполняется, деньги не списываются.</p>
     </div>
   </dialog>
 <!-- Numi Insights v2: independent background collector -->
