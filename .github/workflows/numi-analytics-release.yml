@@ -31,6 +31,8 @@ jobs:
           node --check moment/moment.js
           node --check moment/yes-no/yes-no.js
           node --check analytics/admin/dashboard.js
+          grep -q 'reset-access' analytics/admin/index.html
+          grep -q 'request_reset' analytics/admin/dashboard.js
       # Final independent verification rejects unexpected live files and rolls back on failure.
       - name: Deploy with backup, rollback, public checks and owner-only login
         env:
