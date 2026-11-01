@@ -31,9 +31,20 @@
 "use strict";
 (()=>{
  const $=id=>document.getElementById(id);
- let source=[],sortBy="views",desc=true,loaded=false;
+ let source=[],sortBy="views",desc=true,loaded=false;const questionTitles=new Map(),categoryTitles=new Map();
  const num=v=>Number(v||0);
  const label=id=>id.replace(/[_-]+/g," ").replace(/\b[a-z]/g,m=>m.toUpperCase());
+ async function loadNames(){
+   await Promise.all([["moment","/moment/questions.json"],["yes-no","/moment/yes-no/questions.json"]].map(async([section,url])=>{
+     try{
+       const res=await fetch(url,{cache:"force-cache"});if(!res.ok)return;
+       const data=await res.json();
+       for(const q of data.questions||[])if(q.id&&q.title)questionTitles.set(section+":"+q.id,q.title);
+       for(const c of data.categories||[])if(c.id&&c.title)categoryTitles.set(section+":"+c.id,c.title);
+     }catch(_){}
+   }));
+   if(loaded)render();
+ }
  function build(rows){
    const map=new Map();
    function ensure(key,kind,title,section){
@@ -44,10 +55,10 @@
      const n=num(r.event_count),section=String(r.section||"other"),item=String(r.item||"-");
      if(r.event_type==="category"){
        const id=section==="moment"||section==="yes-no"?section+":"+item:section;
-       const v=ensure("c:"+id,"category",label(id),section);
-       v.views+=n;
+       const v=ensure("c:"+id,"category",categoryTitles.get(id)||label(id),section);
+       v.clicks=(v.clicks||0)+n;
      }else if(r.event_type==="question"){
-       const v=ensure("q:"+section+":"+item,"question",label(item),section);
+       const v=ensure("q:"+section+":"+item,"question",questionTitles.get(section+":"+item)||label(item),section);
        v.views+=n;
      }else if(r.event_type==="page"){
        const v=ensure("c:"+section,"category",label(section),section);
@@ -80,7 +91,7 @@
      title.className="name";title.textContent=row.title;
      sub.className="sub";sub.textContent=row.kind==="question"?"Вопрос · "+label(row.section):"Раздел";
      a.append(title,sub);tr.append(a);
-     cell(tr,row.views.toLocaleString("ru-RU"));
+     cell(tr,row.views===0&&row.kind==="category"&&row.clicks!==null?"—":row.views.toLocaleString("ru-RU"),row.views===0&&row.kind==="category"&&row.clicks!==null);
      cell(tr,row.clicks===null?"—":row.clicks.toLocaleString("ru-RU"),row.clicks===null);
      cell(tr,row.ctr===null?"—":row.ctr.toFixed(1)+"%",row.ctr===null);
      cell(tr,row.orders===null?"—":row.orders.toLocaleString("ru-RU"),row.orders===null);
@@ -112,6 +123,6 @@
  $("filter").addEventListener("input",render);
  $("days").addEventListener("change",refresh);
  $("refresh").addEventListener("click",refresh);
- refresh();
+ refresh();loadNames();
 })();
 </script></body></html>
