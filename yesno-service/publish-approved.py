@@ -166,6 +166,10 @@ def main():
                 "Сможем ли мы преодолеть нынешние разногласия?",
                 "Найдём ли мы общий язык?",
             },
+            "yn-love-002": {
+                "Стоит ли дать нашим отношениям второй шанс?",
+                "Стоит ли начинать отношения с бывшим?",
+            },
         }
         title_by_id = {q["id"]: q["title"] for q in expected_catalogue["questions"]}
         for question in normalized["questions"]:
