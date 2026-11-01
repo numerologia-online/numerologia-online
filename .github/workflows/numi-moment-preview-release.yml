@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish verified centered Moment heading on REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish unified milk Back button on Moment page to REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -22,7 +22,7 @@ jobs:
         id: validate
         run: |
           echo syntax > /tmp/moment-stage
-          python3 -m py_compile moment/deploy-simple-title-20261101.py
+          python3 -m py_compile moment/deploy-back-button-20261101.py
           echo javascript > /tmp/moment-stage
           node --check moment/moment.js
           echo catalog > /tmp/moment-stage
@@ -41,6 +41,9 @@ jobs:
           assert h.count('id="question-search"')==1
           assert h.count('id="clear-search"')==1
           assert h.count('href="./yes-no/"')==1
+          assert 'class="moment-back-button"' in h
+          assert '← Назад</a>' in h
+          assert 'class="header-back"' not in h
           print('Simplified Moment heading and all 300 questions validated')
           PY
           echo validated > /tmp/moment-stage
@@ -51,7 +54,7 @@ jobs:
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           set -o pipefail
-          python3 -u moment/deploy-simple-title-20261101.py 2>&1 | tee /tmp/moment-release-log
+          python3 -u moment/deploy-back-button-20261101.py 2>&1 | tee /tmp/moment-release-log
 
       - name: Record actual public deployment verification
         if: always()
@@ -63,7 +66,7 @@ jobs:
           python3 - <<'PY'
           import json,os,urllib.request,pathlib
           passed=os.environ.get('RELEASE_RESULT')=='success'
-          reason='Simplified Moment page verified on REG.RU' if passed else 'Moment release failed'
+          reason='Back button verified on REG.RU' if passed else 'Moment release failed'
           if not passed:
             if os.environ.get('VALIDATION_RESULT')!='success':
               stage=pathlib.Path('/tmp/moment-stage')
@@ -76,7 +79,7 @@ jobs:
                     try:reason=json.loads(line.partition(' ')[2]).get('reason','Unknown deployment error')[:120]
                     except Exception:pass
                     break
-          context='moment-simplified-hero-live' if passed else 'moment-failure-'+''.join(x if x.isascii() and x.isalnum() else '-' for x in reason.lower())[:70]
+          context='moment-back-button-live' if passed else 'moment-failure-'+''.join(x if x.isascii() and x.isalnum() else '-' for x in reason.lower())[:70]
           body=json.dumps({'state':'success' if passed else 'failure',
             'context':context,'description':reason[:140]}).encode()
           endpoint='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/statuses/'+os.environ['GITHUB_SHA']
