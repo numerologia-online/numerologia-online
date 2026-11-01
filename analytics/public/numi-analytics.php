@@ -33,6 +33,16 @@ function axSession(): void {
     ini_set('session.gc_maxlifetime','14400');
     session_start();
 }
+function axOwnerEmail(array $account): bool {
+    // Explicit owner identity AND password verification are required.
+    // Email verification can lag behind account linking; it must not turn
+    // a valid owner's password into an unexplained login failure.
+    $email=$account['email']??null;
+    return is_string($email) && hash_equals(
+        'f289c5906895cbbd1b42d74e4e2e07d531fc1af4e91bcf7e5700835856003d29',
+        hash('sha256',strtolower(trim($email)))
+    );
+}
 function axAdmin(PDO $db): bool {
     axSession();
     $id=$_SESSION['analytics_owner_id']??null;
@@ -42,7 +52,7 @@ function axAdmin(PDO $db): bool {
     $stmt=$db->prepare('SELECT id,email,email_verified_at,password_hash FROM numi_accounts WHERE id=? LIMIT 1');
     $stmt->execute([$id]);
     $account=$stmt->fetch();
-    return is_array($account)&&naTestOwner($account)
+    return is_array($account)&&axOwnerEmail($account)
         &&is_string($account['password_hash']??null)
         &&hash_equals($original,hash('sha256',$account['password_hash']));
 }
@@ -54,7 +64,7 @@ function axLogin(PDO $db,array $body): never {
     naRate($db,$email);
     $stmt=$db->prepare('SELECT id,email,email_verified_at,password_hash FROM numi_accounts WHERE email=? LIMIT 1');
     $stmt->execute([$email]);$account=$stmt->fetch();
-    if (!$account||!naTestOwner($account)
+    if (!$account||!axOwnerEmail($account)
         ||!is_string($account['password_hash']??null)
         ||!password_verify($password,$account['password_hash'])) {
         naRate($db,$email,true);
