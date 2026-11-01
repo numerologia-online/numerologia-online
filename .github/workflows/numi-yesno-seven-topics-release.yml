@@ -1,0 +1,42 @@
+name: Publish seven topic yes-no directory on REG.RU
+on:
+  push:
+    paths:
+      - .github/workflows/numi-yesno-seven-topics-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: numi-yesno-seven-topics-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish seven topic yes-no directory on REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check layout scripts and all 100 questions
+        run: |
+          python3 -m py_compile moment/deploy-yesno-seven-topics.py
+          node --check moment/yes-no/yes-no.js
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('moment/yes-no')
+          d=json.loads((p/'questions.json').read_text(encoding='utf-8'))
+          assert len(d['categories'])==7 and len(d['questions'])==100
+          assert len({q['title'] for q in d['questions']})==100
+          assert all(sum(q['category']==c['id'] for q in d['questions'])==c['count'] for c in d['categories'])
+          h=(p/'index.html').read_text()
+          assert 'yn-category-list' in h and 'section class="hero"' not in h
+          assert 'Все вопросы' not in h
+          assert 'yes-no.js?v=2' in h and 'yes-no.css?v=2' in h
+          print('Seven-topic directory validated without hero/all-questions card')
+          PY
+      - name: Backup, upload four yes-no files and verify exact public hashes
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u moment/deploy-yesno-seven-topics.py
