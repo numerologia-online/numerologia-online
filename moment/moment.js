@@ -5,19 +5,18 @@
   const resultsTitle=$("results-title"),resultsMsg=$("results-message"),showMore=$("show-more"),showAll=$("show-all");
   const dialog=$("question-dialog"),form=$("moment-form"),partnerField=$("partner-field"),eventField=$("event-field");
   const customWrap=$("custom-question-wrap"),customModeField=$("custom-mode-field"),error=$("form-error");
-  let catalog=null,active="all",visibleCount=12,selected=null,custom=false,mode="self";
+  let catalog=null,active=null,visibleCount=12,selected=null,custom=false,mode="self";
   const norm=t=>String(t||"").toLocaleLowerCase("ru-RU").replace(/ё/g,"е").replace(/[^а-яa-z0-9 ]/gi," ").replace(/\s+/g," ").trim();
   const safeDate=(v)=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;const [y,m,d]=v.split("-").map(Number);const date=new Date(Date.UTC(y,m-1,d));return y>=1900&&y<=2100&&date.getUTCFullYear()===y&&date.getUTCMonth()+1===m&&date.getUTCDate()===d;};
   const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");};
   const html=(tag,cls,txt)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(txt!==undefined)el.textContent=txt;return el;};
   function renderCategories(){
     grid.replaceChildren();
-    const all=[{id:"all",title:"Все темы",icon:"✧",description:"",count:catalog.questions.length},...catalog.categories];
-    all.forEach(cat=>{
+    catalog.categories.forEach(cat=>{
       const b=html("button","category"+(active===cat.id?" active":"" ));b.type="button";b.setAttribute("aria-pressed",String(active===cat.id));
       b.append(html("span","category-icon",cat.icon),html("strong","category-title",cat.title),html("span","category-count",cat.count+" вопросов"));
       b.addEventListener("click",()=>{
-        active=cat.id;visibleCount=12;renderCategories();renderQuestions();$("questions-panel").scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});
+        active=cat.id;visibleCount=12;renderCategories();$("category-grid").hidden=true;document.querySelector(".explore .section-heading").hidden=true;$("questions-panel").hidden=false;renderQuestions();$("questions-panel").scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});
       });grid.append(b);
     });
   }
@@ -35,7 +34,7 @@
     const found=filtered(),cat=catalog.categories.find(c=>c.id===active);
     resultsTitle.textContent=search.value.trim()?"Результаты поиска":cat?cat.title:"Все вопросы";
     resultsMsg.textContent=found.length?("Найдено "+found.length+" · показано "+Math.min(visibleCount,found.length)):"Совпадений нет. Можно задать свой вопрос ниже.";
-    showAll.hidden=active==="all";
+    showAll.hidden=false;
     clear.hidden=!search.value;
     list.replaceChildren();
     found.slice(0,visibleCount).forEach((q,i)=>{
@@ -65,7 +64,9 @@
   dialog.addEventListener("close",()=>{document.body.style.overflow="";});
   dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.close();});
   $("ask-own").addEventListener("click",()=>openQuestion(null));
-  $("show-all").addEventListener("click",()=>{active="all";visibleCount=12;renderCategories();renderQuestions();});
+  function backToTopics(){active=null;visibleCount=12;search.value="";$("questions-panel").hidden=true;$("category-grid").hidden=false;document.querySelector(".explore .section-heading").hidden=false;renderCategories();$("category-grid").scrollIntoView({behavior:"auto",block:"start"});}
+  $("show-all").addEventListener("click",backToTopics);
+  document.querySelector(".moment-back-button").addEventListener("click",e=>{if(active){e.preventDefault();backToTopics();}});
   $("show-more").addEventListener("click",()=>{visibleCount+=12;renderQuestions();});
   search.addEventListener("input",()=>{visibleCount=12;renderQuestions();});
   clear.addEventListener("click",()=>{search.value="";visibleCount=12;renderQuestions();search.focus();});
@@ -100,9 +101,9 @@
       if(!Array.isArray(data.categories)||data.categories.length!==12||!Array.isArray(data.questions)||data.questions.length!==300)throw Error("catalog incomplete");
       const seen=new Set();
       for(const q of data.questions){if(!q.id||seen.has(q.id)||!["self","partner","event"].includes(q.mode)||!data.categories.some(c=>c.id===q.category))throw Error("catalog validation");seen.add(q.id);}
-      catalog=data;renderCategories();renderQuestions();
+      catalog=data;renderCategories();
       const params=new URLSearchParams(location.search),topic=params.get("category");
-      if(topic&&data.categories.some(c=>c.id===topic)){active=topic;renderCategories();renderQuestions();}
+      if(topic&&data.categories.some(c=>c.id===topic)){active=topic;renderCategories();$("category-grid").hidden=true;document.querySelector(".explore .section-heading").hidden=true;$("questions-panel").hidden=false;renderQuestions();}
     }catch(err){
       resultsTitle.textContent="Каталог временно недоступен";
       resultsMsg.textContent="Не удалось загрузить вопросы. Попробуйте обновить страницу.";
