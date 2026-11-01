@@ -16,19 +16,14 @@
     return digits.length > 2 ? digits.slice(0, 2) + ":" + digits.slice(2) : digits;
   };
   const validTime = value => /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
-  const syncViewport = () => {
-    const viewport = window.visualViewport;
-    const height = viewport?.height || window.innerHeight;
-    dialog.style.setProperty("--yn-visible-height", height + "px");
-    dialog.style.setProperty("--yn-viewport-mid", ((viewport?.offsetTop || 0) + height / 2) + "px");
-    dialog.classList.toggle("yn-keyboard", document.activeElement === timeInput && window.innerWidth <= 700);
-  };
-  window.visualViewport?.addEventListener("resize", syncViewport);
-  window.visualViewport?.addEventListener("scroll", syncViewport);
-  window.addEventListener("resize", syncViewport);
-  timeInput.addEventListener("focus", syncViewport);
-  timeInput.addEventListener("blur", syncViewport);
-  syncViewport();
+  let questionListScroll = 0;
+  const directoryPage = document.querySelector("main");
+  function closeQuestion() {
+    answerRequest++; answerController?.abort(); timeInput.blur();
+    dialog.hidden = true; directoryPage.hidden = false;
+    document.body.classList.remove("yn-question-page");
+    window.scrollTo(0, questionListScroll);
+  }
   async function confirmTime(value) {
     if (!validTime(value)) {
       timeError.hidden = false;
@@ -41,7 +36,6 @@
     timeInput.removeAttribute("aria-invalid");
     timeInput.value = value;
     timeInput.blur();
-    syncViewport();
     const id = ++answerRequest;
     answerController?.abort();
     timeResult.hidden = false;
@@ -67,7 +61,6 @@
       explanation.className = "yn-answer-explanation";
       explanation.textContent = data.answer.slice(separator + 1).trim();
       timeResult.replaceChildren(verdict, explanation);
-      dialog.scrollTop = 0;
     } catch (error) {
       if (id === answerRequest) timeResult.textContent = "Не удалось получить ответ. Попробуйте ещё раз.";
     } finally {clearTimeout(timer);}
@@ -134,10 +127,13 @@
         timeError.hidden = true;
         timeResult.hidden = true;
         timeInput.removeAttribute("aria-invalid");
-        dialog.showModal();
-        syncViewport();
-        dialog.scrollTop = 0;
-        document.body.style.overflow = "hidden";
+        questionListScroll = window.scrollY;
+        directoryPage.hidden = true;
+        dialog.hidden = false;
+        document.body.classList.add("yn-question-page");
+        window.scrollTo(0, 0);
+        $("yn-back").focus({preventScroll:true});
+
       });
       return button;
     }));
@@ -160,10 +156,11 @@
     confirmTime(normalizeTime(timeInput.value));
   });
   $("yn-now").addEventListener("click", () => confirmTime(currentTime()));
-  $("yn-close").addEventListener("click", () => dialog.close());
-  $("yn-back").addEventListener("click", () => dialog.close());
-  dialog.addEventListener("close", () => {answerRequest++; answerController?.abort(); document.body.style.overflow = "";});
-  dialog.addEventListener("click", e => {if (e.target === dialog) dialog.close();});
+  $("yn-close").addEventListener("click", closeQuestion);
+  $("yn-back").addEventListener("click", closeQuestion);
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !dialog.hidden) closeQuestion();
+  });
   back.addEventListener("click", () => {
     if (active) showCategories();
     else window.location.assign("../");

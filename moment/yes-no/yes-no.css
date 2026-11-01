@@ -233,3 +233,12 @@ body .site-header,body .site-footer{display:none}
 }
 
 .yn-directory:has(#yn-panel[hidden]){padding-top:28px}
+
+/* Question is a document page, never a centered overlay. */
+#yn-dialog[hidden]{display:none}
+#yn-dialog{position:static;inset:auto;transform:none;margin:0;width:100%;max-width:none;height:auto;min-height:100svh;max-height:none;overflow:visible;border:0;border-radius:0;box-shadow:none;background:#fbf9f4;color:#143f32;padding:0;box-sizing:border-box}
+#yn-dialog .dialog-content{position:relative;width:100%;max-width:640px;margin:0 auto;box-sizing:border-box;padding:20px 18px 24px;gap:12px}
+#yn-dialog .dialog-top{display:none}
+#yn-dialog #yn-back{margin-bottom:4px}
+#yn-dialog #yn-dialog-title{font-size:clamp(28px,7.5vw,34px)}
+body.yn-question-page{background:#fbf9f4}
