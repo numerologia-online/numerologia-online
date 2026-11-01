@@ -1,10 +1,10 @@
-import { loadCategoryCatalog, loadQuestionBank } from "./redflag-text-bank.js?v=39";
+import { loadCategoryCatalog, loadQuestionBank } from "./redflag-text-bank.js?v=20261101fix1";
 
 const catalog = await loadCategoryCatalog();
 
 export const REDFLAG_CATEGORIES = catalog.map((category) => ({
   ...category,
-  load: () => category.bank === "money"
-    ? import("./data/redflag/categories/money-questions.js?v=37")
-    : loadQuestionBank(category.bank)
+  // Public question metadata is available without Telegram login.
+  // Paid answer content is fetched independently, on demand.
+  load: () => loadQuestionBank(category.bank)
 }));
