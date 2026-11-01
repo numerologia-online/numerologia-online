@@ -1,0 +1,23 @@
+name: Insights mobile UI release
+on:
+  push:
+    branches: [fix/insights-all-sections-mobile]
+    paths: [.github/workflows/numi-insights-ui-release.yml]
+permissions:
+  contents: read
+jobs:
+  validate-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test insights/tests/*.test.cjs
+      - run: node --check insights/public/insights.js
+      - run: python3 -m py_compile insights/deploy-ui.py
+      - name: Publish only dashboard files with backup and checksum guards
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u insights/deploy-ui.py
