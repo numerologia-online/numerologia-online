@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish analytics preview without login on REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish real analytics without login on REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -18,15 +18,21 @@ jobs:
       - name: Validate preview
         run: |
           python3 -m py_compile analytics/deploy-preview.py
+          php -l analytics/public/numi-analytics.php
           python3 - <<'PY'
           from pathlib import Path
           s=Path("analytics/admin/index.html").read_text()
-          assert 'ДЕМО' in s
+          assert 'ДЕМО' not in s
+          assert 'sample=' not in s
+          assert 'fetch(' in s
+          php=open('analytics/public/numi-analytics.php',encoding='utf8').read()
+          assert 'axEnsureTable' in php
+          assert 'admin_login' not in php
           assert '<form id="login"' not in s
           assert 'dashboard.js?v=1' not in s
           print("Preview is display-only and has no API login")
           PY
-      - name: Publish only the analytics HTML with backup and rollback
+      - name: Publish real stats page and public aggregate API with backups
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
