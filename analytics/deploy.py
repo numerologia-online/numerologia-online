@@ -76,11 +76,12 @@ def validate():
         if proc.returncode:raise RuntimeError("Invalid JavaScript "+p+": "+proc.stderr[:220])
     proc=subprocess.run(["php","-l","analytics/public/numi-analytics.php"],capture_output=True,text=True)
     if proc.returncode:raise RuntimeError("Invalid PHP: "+proc.stdout[:220]+proc.stderr[:220])
-    # Known production-source baseline, before analytics branch merge.
-    BASE_SHA="6b590ad964e9988886cbb77d08ae3cd777ddf596"
+    # Already published live analytics baseline, before password recovery UI.
+    # Only files that match this exact version may be replaced.
+    BASE_SHA="652a6551562db19003676ad3b1f0ecddee8c1104"
     previous={}
-    for old_path in ("moment/index.html","moment/moment.js","moment/yes-no/index.html","moment/yes-no/yes-no.js"):
-        previous[old_path]=subprocess.check_output(["git","show",BASE_SHA+":"+old_path])
+    for src,dest in FILES.items():
+        previous[dest]=subprocess.check_output(["git","show",BASE_SHA+":"+src])
     log(validated=True,assets=len(parts),password_auth=True)
     return parts,previous
 def main():
