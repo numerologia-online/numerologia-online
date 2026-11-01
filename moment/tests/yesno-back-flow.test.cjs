@@ -68,7 +68,7 @@ const pause = () => new Promise(resolve => setImmediate(resolve));
   assert.equal(elements["yn-time-result"].hidden, false, "Manual time confirmed");
   assert.ok(elements["yn-time-result"].textContent.includes("14:31"), "Correct time displayed");
   elements["yn-now"].fire("click");
-  assert.match(elements["yn-time-input"].value, /^([01]\\d|2[0-3]):[0-5]\\d$/, "Now uses a valid local time");
+  assert.match(elements["yn-time-input"].value, /^([01]\d|2[0-3]):[0-5]\d$/, "Now uses a valid local time");
   assert.equal(elements["yn-time-result"].hidden, false, "Ask now confirms immediately");
   elements["yn-back"].fire("click");
   assert.equal(elements["yn-dialog"].open, false, "Answer Back closes dialog");
