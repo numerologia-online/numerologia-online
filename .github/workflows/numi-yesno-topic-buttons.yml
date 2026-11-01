@@ -1,0 +1,17 @@
+name: Restore topic button size
+on:
+  push:
+    branches: [fix/restore-topic-button-size]
+    paths: [.github/workflows/numi-yesno-topic-buttons.yml]
+permissions:
+  contents: read
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish original button sizing with backup and guards
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u yesno-service/topic-buttons/deploy.py
