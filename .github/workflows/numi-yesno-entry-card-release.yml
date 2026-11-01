@@ -27,6 +27,7 @@ jobs:
           assert s.count('Открыть вопросы')==1
           assert 'ОТДЕЛЬНЫЙ РАЗДЕЛ · 7 ТЕМ' not in s
           assert 'href="./yes-no/"' in s
+          assert '100 вопросов' in s
           print('Centered card and link verified')
           PY
       - name: Publish only Yes-No card, backup and verify
