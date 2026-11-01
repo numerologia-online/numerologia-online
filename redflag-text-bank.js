@@ -58,13 +58,16 @@ const ownerJson = (path) => {
   return ownerRequests.get(key);
 };
 const privateQuestion = async (bankName, id) => {
+  const session = initData();
+  if (!session) throw accessError("PURCHASE_REQUIRED", 401);
+  const cacheKey = session + ":" + bankName;
   const bankFile = bankName === "money" ? "money-questions" : bankName;
-  if (!fullBankRequests.has(bankName)) {
+  if (!fullBankRequests.has(cacheKey)) {
     const request = ownerJson("data/redflag/banks/" + bankFile + ".json")
-      .catch((error) => { fullBankRequests.delete(bankName); throw error; });
-    fullBankRequests.set(bankName, request);
+      .catch((error) => { fullBankRequests.delete(cacheKey); throw error; });
+    fullBankRequests.set(cacheKey, request);
   }
-  const bank = await fullBankRequests.get(bankName);
+  const bank = await fullBankRequests.get(cacheKey);
   const question = bank.questions?.find((item) => item.id === id);
   if (!question) throw accessError("PRIVATE_CONTENT_UNAVAILABLE");
   return question;
