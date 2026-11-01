@@ -1,5 +1,5 @@
 {
-  "approved_private_commit": "4a8e65ed76d5fd6896338bd623b878b116da85f9",
+  "approved_private_commit": "ac028c03f0855e02f0d4586e9517abb6c9c83972",
   "approved_questions": [
     "yn-man-001",
     "yn-man-002",
@@ -66,8 +66,18 @@
     "yn-money-013",
     "yn-money-014",
     "yn-money-015",
-    "yn-choice-001"
+    "yn-choice-001",
+    "yn-choice-002",
+    "yn-choice-003",
+    "yn-choice-004",
+    "yn-choice-005",
+    "yn-choice-006",
+    "yn-choice-007",
+    "yn-choice-008",
+    "yn-choice-009",
+    "yn-choice-010",
+    "yn-choice-011"
   ],
-  "release_reason": "Publish approved yes-no questions 057 to 066",
-  "version": 10
+  "release_reason": "Publish approved choices 067 through 076 with no internal calculation details",
+  "version": 11
 }
