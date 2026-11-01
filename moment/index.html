@@ -17,17 +17,11 @@
     </div>
   </header>
   <main>
-    <section class="hero">
-      <div class="shell">
-        <div class="eyebrow"><span class="fine-star">✦</span> НУМЕРОЛОГИЯ МОМЕНТА <span class="fine-star">✦</span></div>
-        <h1>300 вопросов <em>обо всём</em></h1>
-        <p class="hero-sub">Иногда самое важное начинается с одного вопроса. Найдите свой — а момент, когда вы его зададите, мы сохраним для расчёта.</p>
-        <div class="hero-stats"><span><strong>300</strong> вопросов</span><i aria-hidden="true"></i><span><strong>12</strong> тем</span><i aria-hidden="true"></i><span>Ваш собственный момент</span></div>
-        <div class="search-panel">
-          <label for="question-search">Что вас волнует сегодня?</label>
-          <div class="search-field"><span aria-hidden="true">⌕</span><input id="question-search" autocomplete="off" enterkeyhint="search" placeholder="Любовь, работа, переезд, выбор…"><button id="clear-search" type="button" aria-label="Очистить поиск" hidden>×</button></div>
-          <p>Можно найти готовый вопрос или сформулировать свой.</p>
-        </div>
+    <section class="shell" aria-label="300 вопросов о жизни" style="padding-top:clamp(32px,6vw,54px);text-align:center">
+      <h1 style="font:600 clamp(32px,7.5vw,54px)/1.15 'Playfair Display',Georgia,serif;letter-spacing:-.025em;color:#143d30;margin:0">300 вопросов о жизни</h1>
+      <div hidden aria-hidden="true">
+        <input id="question-search" type="search" value="">
+        <button id="clear-search" type="button" hidden>×</button>
       </div>
     </section>
     <section class="shell" aria-label="Да или нет" style="padding-top:34px">
