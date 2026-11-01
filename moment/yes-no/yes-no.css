@@ -1,1 +1,44 @@
-.yn-principle{margin:36px 0 74px;border:1px solid var(--border);background:var(--paper);padding:clamp(24px,5vw,48px);border-radius:22px;max-width:100%;box-shadow:0 12px 45px rgba(25,55,43,.035)}.yn-principle h2{font-family:Georgia,serif;font-size:clamp(25px,4.5vw,37px);font-weight:500;line-height:1.15;margin:14px 0 16px;color:var(--ink)}.yn-principle p:not(.overline){font-size:16px;line-height:1.8;max-width:740px}.yn-principle .yn-principle-small{font-size:13px!important;color:var(--soft);border-top:1px solid var(--border);margin-top:22px;padding-top:18px}.category .category-title{max-width:190px}.question-entry:focus-visible{outline-offset:-3px}@media(max-width:550px){.yn-principle{margin-bottom:45px}.hero{padding-top:52px}}
+/* Compact yes/no directory: seven full-width topic links, no horizontal carousel. */
+html, body {max-width:100%;overflow-x:clip}
+.yn-directory{padding-top:clamp(35px,6vw,64px);padding-bottom:80px}
+.yn-directory>.overline{font-size:12px;letter-spacing:.22em;margin:0 0 15px}
+.yn-directory>h1{font:500 clamp(38px,7vw,62px)/1.13 Georgia,serif;letter-spacing:-.025em;margin:0 0 14px;color:#143d30}
+.yn-directory-sub{font-size:clamp(15px,2.5vw,19px);color:#688477;line-height:1.5;margin:0 0 30px}
+.yn-category-list{display:grid;grid-template-columns:minmax(0,1fr);gap:13px;width:100%;max-width:100%}
+.yn-topic{appearance:none;display:grid;grid-template-columns:66px minmax(0,1fr) 30px;align-items:center;gap:18px;width:100%;min-width:0;text-align:left;padding:20px 25px;border:1px solid #527d6b;border-radius:22px;background:#103f30;color:#fffefa;box-shadow:inset 0 1px 0 #ffffff14;transition:background .15s,border-color .15s}
+.yn-topic:hover,.yn-topic:focus-visible{background:#19503d;border-color:#c6a369}
+.yn-topic-icon{display:flex;justify-content:center;align-items:center;min-height:54px;border-right:1px solid #ba954e;padding-right:14px;color:#d3a95e;font:40px/1 Georgia,serif}
+.yn-topic-copy{min-width:0;display:flex;flex-direction:column;gap:4px}
+.yn-topic-name{font:500 clamp(21px,3vw,30px)/1.23 Georgia,serif;overflow-wrap:anywhere}
+.yn-topic-count{font-size:15px;color:#d4dfd6}
+.yn-topic-arrow{font-size:31px;font-weight:300;line-height:1;text-align:right;color:#fffefa}
+.yn-results{padding-top:0;scroll-margin-top:20px}
+.yn-back-top{border:0;background:none;padding:7px 0 22px;font-weight:700;color:#a67b3b;font-size:15px;text-align:left}
+.yn-results-head .overline{margin:0 0 10px}
+.yn-results-head h2{font:500 clamp(30px,5vw,44px)/1.2 Georgia,serif;margin:0 0 12px;overflow-wrap:anywhere}
+.yn-results-head .results-message{font-size:14px;margin:0 0 22px}
+.yn-search-field{margin:0 0 20px;max-width:680px}
+.yn-search-field label{display:block;font-size:13px;font-weight:700;margin:0 0 9px;color:#547366}
+.yn-questions-list{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+.yn-question{display:grid;grid-template-columns:34px minmax(0,1fr) 24px;gap:13px;align-items:center;width:100%;min-width:0;text-align:left;border:1px solid #dfd3ba;background:#fffdfa;color:#143d30;border-radius:14px;padding:17px 16px;min-height:66px}
+.yn-question:hover{border-color:#b9965b;background:#f8f4e9}
+.yn-question-number{font:16px Georgia,serif;color:#b99555}
+.yn-question-text{font-size:16px;font-weight:650;line-height:1.4;overflow-wrap:anywhere}
+.yn-question-arrow{font-size:23px;color:#b58c4d;line-height:1}
+.yn-error{color:#a13a29;background:#fff2ed;padding:18px;border-radius:13px}
+.yn-results .show-more{margin-top:18px}
+@media(max-width:550px){
+ .yn-directory{padding-top:39px;padding-bottom:58px}
+ .yn-directory>.overline{font-size:10px;letter-spacing:.2em}
+ .yn-directory>h1{font-size:38px}
+ .yn-directory-sub{font-size:15px;margin-bottom:24px}
+ .yn-category-list{gap:10px}
+ .yn-topic{grid-template-columns:48px minmax(0,1fr) 23px;gap:12px;border-radius:17px;padding:16px 14px;min-height:91px}
+ .yn-topic-icon{min-height:46px;font-size:30px;padding-right:9px}
+ .yn-topic-name{font-size:21px}
+ .yn-topic-count{font-size:13px}
+ .yn-topic-arrow{font-size:26px}
+ .yn-question{padding:15px 12px;gap:9px}
+ .yn-question-text{font-size:15px}
+}
+@media(prefers-reduced-motion:reduce){.yn-topic{transition:none}}
