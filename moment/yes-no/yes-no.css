@@ -101,3 +101,37 @@ html, body {max-width:100%;overflow-x:clip}
  #yn-dialog #yn-time-input{width:103px;height:44px;font-size:21px}
  #yn-dialog .yn-now-button{min-height:44px;font-size:12.5px;padding:7px 8px}
 }
+
+/* One-screen Yes/No clock popup: no extra submit control or explanatory example. */
+#yn-dialog{max-height:calc(100dvh - 20px);max-width:480px;overscroll-behavior:contain}
+#yn-dialog .dialog-content{position:relative;padding:14px 17px 17px}
+#yn-dialog #yn-back{min-height:42px;padding:8px 12px;margin:0 auto 9px;font-size:14px}
+#yn-dialog .dialog-top{position:absolute;top:17px;right:15px;width:30px;height:30px}
+#yn-dialog .dialog-top #yn-close{width:30px;height:30px;font-size:21px}
+#yn-dialog .dialog-topic{margin:0 0 3px;font-size:10px;letter-spacing:.08em}
+#yn-dialog #yn-dialog-title{font-size:clamp(26px,5.3vw,31px);line-height:1.08;margin:0 0 9px}
+#yn-dialog .yn-time-intro{font-size:13px;line-height:1.4;margin:0 0 11px}
+#yn-dialog .yn-time-form{padding:11px 12px;border-radius:12px}
+#yn-dialog .yn-time-form>label{font-size:12px;margin:0 0 7px}
+#yn-dialog .yn-time-row{gap:9px}
+#yn-dialog #yn-time-input{width:110px;min-height:44px;height:44px;font-size:21px}
+#yn-dialog .yn-now-button{min-height:44px;font-size:13px;padding:7px 9px}
+#yn-dialog .yn-time-result{margin:8px 0 0;padding:8px 11px;font-size:12px;line-height:1.3}
+#yn-dialog .yn-repeat-note{margin:11px 0 0;font-size:12.5px;line-height:1.48}
+#yn-dialog .yn-preview-note{margin:8px 0 0;font-size:11.5px;line-height:1.4}
+@media(max-width:420px){
+ #yn-dialog .dialog-content{padding:13px 15px 16px}
+ #yn-dialog #yn-back{margin-bottom:9px}
+ #yn-dialog .dialog-top{top:15px;right:13px}
+ #yn-dialog #yn-dialog-title{font-size:clamp(26px,7vw,30px)}
+ #yn-dialog #yn-time-input{width:106px;height:44px}
+ #yn-dialog .yn-time-form{padding:10px 11px}
+}
+@media(max-height:690px){
+ #yn-dialog .dialog-content{padding-top:10px;padding-bottom:12px}
+ #yn-dialog #yn-back{margin-bottom:7px;min-height:40px}
+ #yn-dialog #yn-dialog-title{font-size:26px;margin-bottom:7px}
+ #yn-dialog .yn-time-intro{margin-bottom:8px;line-height:1.32}
+ #yn-dialog .yn-repeat-note{margin-top:8px;line-height:1.38}
+ #yn-dialog .yn-preview-note{margin-top:6px}
+}
