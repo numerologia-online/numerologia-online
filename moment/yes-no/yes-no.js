@@ -39,7 +39,7 @@
     const id = ++answerRequest;
     answerController?.abort();
     timeResult.hidden = false;
-    if (!selectedQuestion || !["yn-man-001", "yn-man-002"].includes(selectedQuestion.id)) {
+    if (!selectedQuestion) {
       timeResult.textContent = "Ответ на этот вопрос ещё готовится.";
       return;
     }
@@ -50,7 +50,7 @@
       const response = await fetch("/api/numi-yesno-answer.php?question=" + encodeURIComponent(selectedQuestion.id) + "&time=" + encodeURIComponent(value), {cache:"no-store", signal:answerController.signal});
       const data = await response.json();
       if (id !== answerRequest) return;
-      if (data.error === "ZERO_TIME_UNDEFINED") {timeResult.textContent = "Для времени 00.00 правило ответа ещё не утверждено.";return;}
+      if (data.error === "ANSWER_NOT_READY") {timeResult.textContent = "Ответ на этот вопрос ещё готовится.";return;}
       if (!response.ok || data.ok !== true || typeof data.answer !== "string") throw Error("answer unavailable");
       const separator = data.answer.indexOf(".");
       if (separator < 0) {timeResult.textContent = data.answer;return;}
