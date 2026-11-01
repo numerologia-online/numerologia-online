@@ -11,6 +11,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deploy:
+    # Legacy backend bundle contains a GitHub runtime fallback. The approved REG.RU
+    # backend now reads only local private files; never reinstall the old bundle.
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
