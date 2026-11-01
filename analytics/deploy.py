@@ -39,6 +39,29 @@ def public_get(path):
             return r.status,r.read(2_000_000)
     except urllib.error.HTTPError as err:
         return err.code,err.read(4096)
+def public_login_probe():
+    """Do not use real credentials; ensure unauthorized password login is handled by PHP."""
+    url="https://"+DOMAIN+"/api/numi-analytics.php"
+    payload=json.dumps({
+        "action":"admin_login",
+        "email":"analytics-probe@invalid.example",
+        "password":"invalid-check-only"
+    }).encode("utf-8")
+    req=Request(url,data=payload,headers={
+        "Origin":"https://"+DOMAIN,
+        "Content-Type":"application/json",
+        "Cache-Control":"no-cache"
+    },method="POST")
+    try:
+        with urlopen(req,timeout=40) as response:
+            code=response.status;body=response.read(2000)
+    except urllib.error.HTTPError as err:
+        code=err.code;body=err.read(2000)
+    try:
+        parsed=json.loads(body)
+    except ValueError:
+        parsed={}
+    return code,parsed.get("error")
 def validate():
     parts={dest:pathlib.Path(src).read_bytes() for src,dest in FILES.items()}
     if not all(parts.values()):raise RuntimeError("Missing source data")
@@ -115,13 +138,21 @@ def main():
             if code!=403:
                 raise RuntimeError("Analytics API is not protected: HTTP "+str(code))
             code,body=public_get("api/numi-analytics.php?action=session")
-            if code!=200:
-                raise RuntimeError("Analytics session check unavailable: HTTP "+str(code))
-            try:
-                status=json.loads(body)
-                if status.get("authenticated") is not False:
-                    raise RuntimeError("Anonymous visitor unexpectedly authenticated")
-            except ValueError:raise RuntimeError("Invalid session-check JSON")
+            if code not in (200,403):
+                raise RuntimeError("Analytics session check unexpected HTTP "+str(code))
+            if code==200:
+                try:
+                    status=json.loads(body)
+                    if status.get("authenticated") is not False:
+                        raise RuntimeError("Anonymous visitor unexpectedly authenticated")
+                except ValueError:raise RuntimeError("Invalid session-check JSON")
+            # Some protected hosting layers return 403 for any anonymous GET
+            # to a private API. Distinguish that from an unreachable PHP handler
+            # by testing rejected credentials through the actual login handler.
+            login_code,login_error=public_login_probe()
+            log(anonymous_session_http=code,negative_login_http=login_code,negative_login_error=login_error)
+            if login_code!=401 or login_error!="INVALID_CREDENTIALS":
+                raise RuntimeError("Login handler not independently verified: HTTP "+str(login_code))
             log(success=True,verified=True,login_required=True,updated_files=len(touched))
         except BaseException:
             for dest in reversed(touched):
