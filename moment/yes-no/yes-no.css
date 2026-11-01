@@ -13,7 +13,7 @@ html, body {max-width:100%;overflow-x:clip}
 .yn-topic-count{font-size:12px;line-height:1.25;color:#6f8478}
 .yn-topic-arrow{font-size:21px;font-weight:300;line-height:1;text-align:right;color:#547366}
 .yn-results{padding-top:0;scroll-margin-top:20px}
-.yn-back-top{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:56px;padding:13px 18px;margin:0 0 24px;border:1px solid #315947;border-radius:14px;background:#103f30;color:#fffefa;box-shadow:0 3px 8px #103f3018;font-weight:750;font-size:17px;line-height:1.25;text-align:center;letter-spacing:.005em}
+.yn-back-top{display:flex;align-items:center;justify-content:center;gap:7px;width:60%;min-width:205px;max-width:300px;min-height:48px;padding:10px 14px;margin:0 auto 28px;border:2px solid #b98b44;border-radius:14px;background:#f3e8d3;color:#143d30;box-shadow:0 5px 15px #143d3026;font-weight:750;font-size:15px;line-height:1.2;text-align:center;letter-spacing:.005em}
 .yn-results-head .overline{margin:0 0 10px}
 .yn-results-head h2{font:500 clamp(30px,5vw,44px)/1.2 Georgia,serif;margin:0 0 12px;overflow-wrap:anywhere}
 .yn-results-head .results-message{font-size:14px;margin:0 0 22px}
@@ -22,7 +22,7 @@ html, body {max-width:100%;overflow-x:clip}
 .yn-questions-list{display:grid;grid-template-columns:minmax(0,1fr);gap:7px}
 .yn-question{display:grid;grid-template-columns:28px minmax(0,1fr) 20px;gap:10px;align-items:center;width:100%;min-width:0;text-align:left;border:1px solid #dfd3ba;background:#fffdfa;color:#143d30;border-radius:12px;padding:11px 14px;min-height:54px}
 .yn-question:hover{border-color:#b9965b;background:#f8f4e9}
-.yn-back-top:hover,.yn-back-top:focus-visible{background:#19503d;border-color:#bd9147}
+.yn-back-top:hover,.yn-back-top:focus-visible{background:#e9d8b5;border-color:#a67b3b}
 .yn-question-number{font:15px Georgia,serif;color:#b99555}
 .yn-question-text{font-size:15px;font-weight:650;line-height:1.32;overflow-wrap:anywhere}
 .yn-question-arrow{font-size:21px;color:#b58c4d;line-height:1}
