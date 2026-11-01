@@ -137,7 +137,7 @@ def main():
         old_html = html.replace(b'./yes-no.js?v=12', b'./yes-no.js?v=11')
 
         code_paths = {
-            site + "api/numi-yesno-answer.php": (php, {php, old_php, old_php_with_zero_rejection}),
+            site + "api/numi-yesno-answer.php": (php, {php, old_php, old_php + b"\n", old_php_with_zero_rejection, old_php_with_zero_rejection + b"\n"}),
             site + "moment/yes-no/yes-no.js": (js, {js, old_js}),
             site + "moment/yes-no/index.html": (html, {html, old_html}),
         }
@@ -162,6 +162,13 @@ def main():
         touched = []
         try:
             for path, blob in modified:
+                if path.startswith(private):
+                    folder = path.rsplit("/", 1)[0]
+                    try:
+                        f.mkd(folder)
+                    except ftplib.error_perm as e:
+                        if not str(e).startswith("550"):
+                            raise
                 touched.append(path)
                 put(path, blob)
                 if path.startswith(private):
