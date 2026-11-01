@@ -167,3 +167,5 @@ html, body {max-width:100%;overflow-x:clip}
 #yn-dialog .yn-time-result{margin:0;padding:22px 18px;border-radius:18px}
 #yn-dialog .yn-repeat-note{margin:2px 0 0;padding:17px 5px 0;border-top:1px solid #d9cbaa;font-size:12px;line-height:1.55;color:#60736a}
 @media(max-width:420px){#yn-dialog .dialog-content{gap:17px;padding:20px 18px 23px}#yn-dialog .yn-time-intro{font-size:13px}#yn-dialog .yn-time-form{padding:18px 14px}}
+
+#yn-dialog{inset:auto;top:50%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);margin:0}
