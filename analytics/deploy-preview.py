@@ -2,13 +2,14 @@
 
 Exactly two allowlisted paths; no account, bot, payment or site home changes.
 """
-import ftplib,hashlib,io,json,os,pathlib,ssl,sys,time,urllib.error
+import ftplib,hashlib,io,json,os,pathlib,ssl,sys,time,urllib.error,subprocess
 from urllib.request import Request,urlopen
 DOMAIN="xn--c1adkkdfjbp1a4l.online"
 HOST="server172.hosting.reg.ru"
 ASSETS={
     "analytics/index.html":pathlib.Path("analytics/admin/index.html").read_bytes(),
     "api/numi-analytics.php":pathlib.Path("analytics/public/numi-analytics.php").read_bytes(),
+    "moment/analytics.js":pathlib.Path("moment/analytics.js").read_bytes(),
 }
 def digest(d):return hashlib.sha256(d).hexdigest()
 def get(path):
@@ -23,6 +24,7 @@ def main():
     if b"fetch(" not in html or b"numi-analytics.php" not in html:raise RuntimeError("Live data fetch missing")
     if b"axAdmin($db)" in php or b"admin_login" in php:raise RuntimeError("Password required")
     if b"axEnsureTable($db)" not in php:raise RuntimeError("Counter initialization missing")
+    if b"numi_campaign" not in ASSETS["moment/analytics.js"]:raise RuntimeError("Campaign attribution missing")
     ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
     ftp.connect(HOST,21);ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"]);ftp.prot_p();ftp.set_pasv(True)
     root=ftp.pwd().rstrip("/")
@@ -36,6 +38,10 @@ def main():
         current={}
         for path in ASSETS:
             current[path]=read(base+"/"+path)
+        # The tracker can change only from the last known published version.
+        baseline=subprocess.check_output(["git","cat-file","blob","389e97a56d66ea8bfe443cb3aec2a889437f3f51"])
+        if current["moment/analytics.js"] not in (baseline,ASSETS["moment/analytics.js"]):
+            raise RuntimeError("Unexpected live tracker; refuse overwrite")
         # Refuse to replace unrelated or unknown live code.
         if b"numi-analytics.php" not in current["api/numi-analytics.php"]: 
             # Existing analytics PHP from this project has the unique header below.
@@ -52,7 +58,7 @@ def main():
         touched=[]
         try:
             # Update API first so old demo never displays invented live data.
-            for path in ["api/numi-analytics.php","analytics/index.html"]:
+            for path in ["moment/analytics.js","analytics/index.html","api/numi-analytics.php"]:
                 data=ASSETS[path]
                 if data!=current[path]:
                     touched.append(path)
