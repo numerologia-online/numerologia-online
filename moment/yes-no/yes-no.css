@@ -150,3 +150,20 @@ html, body {max-width:100%;overflow-x:clip}
 
 /* Center all copy inside the question dialog. */
 #yn-dialog .dialog-content,#yn-dialog .dialog-content p,#yn-dialog .dialog-topic,#yn-dialog .yn-time-form>label,#yn-dialog .yn-time-result,#yn-dialog .yn-answer-explanation{text-align:center}
+
+/* Balanced question layout. Content sets the height, with no empty fixed-height area. */
+#yn-dialog{min-height:0;height:auto}
+#yn-dialog .dialog-content{display:flex;flex-direction:column;align-items:stretch;gap:18px;padding:24px 24px 26px;text-align:center}
+#yn-dialog .dialog-content p,#yn-dialog .dialog-content label,#yn-dialog .dialog-topic,#yn-dialog .yn-answer-explanation{text-align:center}
+#yn-dialog #yn-back{margin:0 auto 3px;width:min(68%,260px);min-height:44px}
+#yn-dialog .dialog-topic{margin:0;font-size:11px;letter-spacing:.13em}
+#yn-dialog #yn-dialog-title{margin:0;font-size:clamp(34px,8.7vw,46px);line-height:1.08;text-align:center;overflow-wrap:anywhere}
+#yn-dialog .yn-time-intro{margin:0 auto;max-width:470px;font-size:14px;line-height:1.55}
+#yn-dialog .yn-time-form{margin:0;padding:20px 18px;border-radius:18px;background:#f2eee3}
+#yn-dialog .yn-time-form>label{display:block;margin:0 0 14px;font-size:15px;line-height:1.4}
+#yn-dialog .yn-time-row{display:flex;flex-direction:column;align-items:center;gap:13px}
+#yn-dialog #yn-time-input{display:block;width:160px;max-width:100%;height:56px;font-size:29px;text-align:center}
+#yn-dialog .yn-now-button{width:100%;min-height:48px;padding:12px;font-size:16px}
+#yn-dialog .yn-time-result{margin:0;padding:22px 18px;border-radius:18px}
+#yn-dialog .yn-repeat-note{margin:2px 0 0;padding:17px 5px 0;border-top:1px solid #d9cbaa;font-size:12px;line-height:1.55;color:#60736a}
+@media(max-width:420px){#yn-dialog .dialog-content{gap:17px;padding:20px 18px 23px}#yn-dialog .yn-time-intro{font-size:13px}#yn-dialog .yn-time-form{padding:18px 14px}}
