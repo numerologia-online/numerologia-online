@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   release:
-    if: github.event.head_commit.message == 'Publish light Yes-No cards to REG.RU'
+    if: github.event.head_commit.message == 'Publish compact question rows and prominent Back to REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -33,7 +33,7 @@ jobs:
           assert len({q['title'] for q in d['questions']}) == 100
           style=(p/'yes-no.css').read_text()
           assert style.count('{')==style.count('}')
-          assert 'yes-no.css?v=5' in (p/'index.html').read_text()
+          assert 'yes-no.css?v=6' in (p/'index.html').read_text()
           print('Readability and catalog checks passed')
           PY
       - name: Back up, publish CSS and update only stylesheet link, verify live public site
