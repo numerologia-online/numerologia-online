@@ -1,5 +1,5 @@
 {
-  "approved_private_commit": "6e322317a658d9064b4339ef561563f814d7dcf9",
+  "approved_private_commit": "f15c0db5485de63bb1c893708361ec476c98ae4c",
   "approved_questions": [
     "yn-man-001",
     "yn-man-002",
@@ -86,8 +86,18 @@
     "yn-future-003",
     "yn-future-004",
     "yn-future-005",
-    "yn-future-006"
+    "yn-future-006",
+    "yn-future-007",
+    "yn-future-008",
+    "yn-future-009",
+    "yn-future-010",
+    "yn-home-001",
+    "yn-home-002",
+    "yn-home-003",
+    "yn-home-004",
+    "yn-home-005",
+    "yn-home-006"
   ],
-  "release_reason": "Publish approved choices and future questions 077 through 086",
-  "version": 12
+  "release_reason": "Publish approved yes-no questions 087 through 096",
+  "version": 13
 }
