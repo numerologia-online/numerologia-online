@@ -169,3 +169,10 @@ html, body {max-width:100%;overflow-x:clip}
 @media(max-width:420px){#yn-dialog .dialog-content{gap:17px;padding:20px 18px 23px}#yn-dialog .yn-time-intro{font-size:13px}#yn-dialog .yn-time-form{padding:18px 14px}}
 
 #yn-dialog{inset:auto;top:50%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);margin:0}
+
+/* Topic selection has its own sage surface; the question list keeps its cream surface. */
+body:has(#yn-panel[hidden]),body:has(#yn-panel[hidden]) main,body:has(#yn-panel[hidden]) .site-header,body:has(#yn-panel[hidden]) .site-footer{background:#dce7dd}
+.yn-directory:has(#yn-panel[hidden]){background:transparent}
+body:has(#yn-panel[hidden]) .yn-topic{background:#f7f8f1;border-color:#bdcebf;box-shadow:0 2px 5px #193f3010}
+body:has(#yn-panel[hidden]) .yn-directory-sub{color:#506d5c}
+body:has(#yn-panel[hidden]) .yn-topic:hover,body:has(#yn-panel[hidden]) .yn-topic:focus-visible{background:#fffdf7;border-color:#a9864d}
