@@ -15,12 +15,13 @@
     }
     return result;
   }
-  const columns={interest:[['impressions','Показы'],['clicks','Нажатия'],['ctr','CTR']],sales:[['offers','К покупке'],['orders','Оплаты'],['conversion','Конверсия']],club:[['checkout_club','Выбор клуба'],['subscriptions','Подписки'],['club_conversion','Конверсия']],sources:[['sessions','Сеансы'],['orders','Оплаты'],['revenue','Выручка, ₽']],days:[['sessions','Сеансы'],['clicks','Нажатия'],['orders','Оплаты']]};
+  const columns={interest:[['impressions','Показы'],['clicks','Нажатия'],['ctr','CTR'],['one_time_orders','Разовые оплаты'],['subscriptions','Оплаченные подписки']],sales:[['offers','К покупке'],['orders','Оплаты'],['conversion','Конверсия']],club:[['checkout_club','Выбор клуба'],['subscriptions','Подписки'],['club_conversion','Конверсия']],sources:[['sessions','Сеансы'],['orders','Оплаты'],['revenue','Выручка, ₽']],days:[['sessions','Сеансы'],['clicks','Нажатия'],['orders','Оплаты']]};
   const metrics={impressions:'Показы карточки',clicks:'Нажатия',opens:'Открытия',ctr:'CTR по сеансам',offers:'Открытия предложения',checkout_once:'Выбор разовой покупки',checkout_club:'Выбор подписки',orders:'Подтверждённые оплаты',subscriptions:'Из них подписки',revenue:'Выручка, ₽',conversion:'Заказы / сеансы строки',club_conversion:'Подписки / сеансы строки',subscription_revenue:'Выручка от подписок, ₽',sessions:'Сеансы',pages:'Открытия страниц',checkouts:'Выбор покупки'};
+  function oneTimeOrders(row){return Math.max(0,Number(row.orders||0)-Number(row.subscriptions||0));}
   function filteredRows(report,view,filters={}){
     let rows=(view==='sources'?report.sources:view==='days'?report.days:report.rows)||[];
     if(!['sources','days'].includes(view))rows=completeSections(rows);
-    rows=rows.map(r=>({...r,title:view==='sources'?(r.source==='unattributed'?'Без источника покупки':r.source==='direct'?'Прямой вход':r.source==='telegram'?'Telegram':r.source):view==='days'?r.day:title(r)}));
+    rows=rows.map(r=>({...r,one_time_orders:oneTimeOrders(r),title:view==='sources'?(r.source==='unattributed'?'Без источника покупки':r.source==='direct'?'Прямой вход':r.source==='telegram'?'Telegram':r.source):view==='days'?r.day:title(r)}));
     const q=String(filters.search||'').toLocaleLowerCase('ru').replace(/ё/g,'е').trim();
     if(!['sources','days'].includes(view))rows=rows.filter(r=>(!filters.section||filters.section==='all'||r.section===filters.section)&&(!filters.kind||filters.kind==='all'||kind(r)===filters.kind));
     if(q)rows=rows.filter(r=>(r.title+' '+(labels[r.section]||'')+' '+(r.campaign||'')).toLocaleLowerCase('ru').replace(/ё/g,'е').includes(q));
@@ -28,12 +29,12 @@
     return rows.sort((a,b)=>{if(!['sources','days'].includes(view)&&(!filters.kind||filters.kind==='all')&&kind(a)!==kind(b)){const rank={section:0,question:1,category:2};return rank[kind(a)]-rank[kind(b)];}const x=a[key],y=b[key];if(x==null)return y==null?a.title.localeCompare(b.title,'ru'):1;if(y==null)return-1;return typeof x==='string'?String(y).localeCompare(x):Number(y)-Number(x)||a.title.localeCompare(b.title,'ru');});
   }
   function csv(rows){
-    const keys=['title','section','item','source','campaign','impressions','clicks','opens','ctr','offers','checkout_once','checkout_club','orders','subscriptions','revenue','conversion','sessions','pages','checkouts'];
-    const names=['Название','Раздел','Код вопроса','Источник','Кампания','Показы','Нажатия','Открытия','CTR, %','Предложения покупки','Выбор разовой покупки','Выбор клуба','Оплаты','Подписки','Выручка, ₽','Конверсия, %','Сеансы','Открытия страниц','Выбор покупки'];
+    const keys=['title','section','item','source','campaign','impressions','clicks','opens','ctr','offers','checkout_once','checkout_club','orders','one_time_orders','subscriptions','revenue','conversion','sessions','pages','checkouts'];
+    const names=['Название','Раздел','Код вопроса','Источник','Кампания','Показы','Нажатия','Открытия','CTR, %','Предложения покупки','Выбор разовой покупки','Выбор клуба','Все оплаты','Разовые оплаты','Оплаченные подписки','Выручка, ₽','Конверсия, %','Сеансы','Открытия страниц','Выбор покупки'];
     const escape=v=>{let s=String(v??'');if(/^[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';};
     return '\ufeff'+[names,...rows.map(r=>keys.map(k=>r[k]))].map(row=>row.map(escape).join(';')).join('\r\n');
   }
-  if(typeof module!=='undefined'&&module.exports)module.exports={filteredRows,csv,kind,pct,completeSections};
+  if(typeof module!=='undefined'&&module.exports)module.exports={filteredRows,csv,kind,pct,completeSections,oneTimeOrders};
   if(typeof document==='undefined')return;
   const $=id=>document.getElementById(id);
   let report=null,view='interest',visible=50,rows=[],requestId=0,controller=null;
@@ -54,7 +55,7 @@
   }
   function render(){
     if(!report)return;
-    const cols=columns[view];rows=filteredRows(report,view,{section:$('section').value,kind:$('kind').value,search:$('search').value,sort:$('sort').value});
+    const cols=columns[view];$('analytics-table').classList.toggle('full-metrics',view==='interest');rows=filteredRows(report,view,{section:$('section').value,kind:$('kind').value,search:$('search').value,sort:$('sort').value});
     const headings={interest:['РАЗДЕЛЫ И ВОПРОСЫ','На что нажимают чаще'],sales:['ОТ ИНТЕРЕСА К ПОКУПКЕ','Что приносит оплаты'],club:['ИСТОЧНИКИ ПОДПИСОК','Из каких вопросов идут в клуб'],sources:['КАНАЛЫ И БЛОГЕРЫ','Откуда приходят покупатели'],days:['ДИНАМИКА','Как меняются посещения']};
     $('table-kicker').textContent=headings[view][0];$('table-heading').textContent=headings[view][1];
     const filterDisabled=['sources','days'].includes(view);$('section').disabled=filterDisabled;$('kind').disabled=filterDisabled;
@@ -63,7 +64,7 @@
     for(const [key,label]of cols){const th=document.createElement('th');th.scope='col';const button=document.createElement('button');button.textContent=label+($('sort').value===key?' ↓':'');button.addEventListener('click',()=>{const option=[...$('sort').options].find(o=>o.value===key);if(!option)$('sort').add(new Option(label,key));$('sort').value=key;render();});th.append(button);head.append(th);} $('table-head').replaceChildren(head);
     const body=$('table-body');body.replaceChildren();for(const [i,r]of rows.slice(0,visible).entries()){
       const tr=document.createElement('tr'),td=document.createElement('td'),button=document.createElement('button'),meta=document.createElement('span');button.className='row-name';button.textContent=(i+1)+'. '+r.title;button.addEventListener('click',()=>detail(r));meta.className='row-meta';meta.textContent=view==='sources'?(r.campaign==='-'?'Без кампании':r.campaign):view==='days'?'Самара':r._no_events?'Раздел · пока нет данных по этой строке':(labels[r.section]||r.section)+' · '+({section:'Раздел',question:'Вопрос',category:'Тема'})[kind(r)];td.append(button,meta);if(kind(r)==='section')tr.classList.add('section-row');tr.append(td);
-      for(const [key] of cols){const cell=document.createElement('td');cell.textContent=format(key,r[key]);if(r[key]===null||r[key]===undefined)cell.className='muted';else if(['orders','subscriptions','revenue'].includes(key)&&r[key]>0)cell.className='positive';tr.append(cell);}body.append(tr);
+      for(const [key,label] of cols){const cell=document.createElement('td');cell.dataset.label=label;cell.textContent=format(key,r[key]);if(r[key]===null||r[key]===undefined)cell.className='muted';else if(['orders','one_time_orders','subscriptions','revenue'].includes(key)&&r[key]>0)cell.className='positive';tr.append(cell);}body.append(tr);
     }
     $('empty').hidden=rows.length>0;$('analytics-table').hidden=!rows.length;$('show-more').hidden=rows.length<=visible;
     $('empty').querySelector('h3').textContent=report.rows.length?'По этим условиям пока нет строк':'Здесь появятся первые цифры';

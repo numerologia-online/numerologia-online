@@ -21,3 +21,5 @@ jobs:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: python3 -u insights/deploy-ui.py
+
+# Release 2.0.2: complete payment metrics beside CTR.

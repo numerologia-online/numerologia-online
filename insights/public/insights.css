@@ -15,3 +15,17 @@ main,.heading,.heading>div,.workspace,.table-heading,.table-heading>div,.filters
  table{max-width:100%}.summary strong{overflow-wrap:anywhere}.link-input{flex-wrap:wrap}.link-input input{flex:1 1 180px}.link-input .button{flex:0 0 auto}
 }
 @media(max-width:350px){main{padding-left:10px;padding-right:10px}.filters{grid-template-columns:minmax(0,1fr)}.filters label{grid-column:1!important}.row-name{font-size:11px}th:first-child,td:first-child{width:44%}}
+
+/* Keep the complete interest funnel together on a phone. */
+.full-metrics th:first-child,.full-metrics td:first-child{width:34%}
+.full-metrics th{overflow-wrap:anywhere}
+@media(max-width:700px){
+ .full-metrics,.full-metrics tbody{display:block;width:100%}
+ .full-metrics thead{display:none}
+ .full-metrics tbody tr{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-bottom:1px solid #dce1d4;padding:14px 8px;gap:8px}
+ .full-metrics td{display:block;border:0;min-width:0;padding:8px 4px;text-align:left;grid-column:span 2;background:#f0f3eb;border-radius:6px;font-size:15px;overflow-wrap:anywhere}
+ .full-metrics td:first-child{grid-column:1/-1;width:auto;padding:0 0 4px;background:transparent}
+ .full-metrics td:nth-child(5),.full-metrics td:nth-child(6){grid-column:span 3}
+ .full-metrics td:not(:first-child)::before{content:attr(data-label);display:block;font-size:10px;font-weight:500;color:#62755e;line-height:1.35;margin-bottom:3px}
+ .full-metrics .row-name{font-size:14px}.full-metrics .row-meta{font-size:10px}
+}
