@@ -4,7 +4,7 @@ Restores seven existing pages/scripts to precise pre-analytics Git SHA.
 Removes analytics-only new files when their bytes match known release content.
 Does not change DNS, databases, bot, payment, account systems or other files.
 """
-import ftplib,hashlib,io,json,os,pathlib,ssl,subprocess,sys,time
+import ftplib,hashlib,io,json,os,pathlib,ssl,subprocess,sys,time,difflib
 BASE="6b590ad964e9988886cbb77d08ae3cd777ddf596"
 DOMAIN="xn--c1adkkdfjbp1a4l.online"
 HOST="server172.hosting.reg.ru"
@@ -28,6 +28,26 @@ def main():
     new={p:pathlib.Path(p).read_bytes() for p in RESTORE}
     for p in RESTORE:
         if old[p]==new[p]:raise RuntimeError("Expected analytics delta missing "+p)
+    def revert_analytics_only(live,old_bytes,new_bytes,path):
+        if live==old_bytes:return live
+        if live==new_bytes:return old_bytes
+        original=old_bytes.decode("utf-8").splitlines(keepends=True)
+        changed=new_bytes.decode("utf-8").splitlines(keepends=True)
+        data=live.decode("utf-8")
+        ops=[op for op in difflib.SequenceMatcher(a=original,b=changed,autojunk=False).get_opcodes() if op[0]!="equal"]
+        if not ops:raise RuntimeError("No tracked analytics changes for "+path)
+        # Apply only exact analytics-added/replaced source fragments to live.
+        # Abort on any ambiguity rather than overwrite unrelated production edits.
+        for tag,i1,i2,j1,j2 in reversed(ops):
+            before="".join(original[i1:i2])
+            after="".join(changed[j1:j2])
+            if after and data.count(after)==1:
+                data=data.replace(after,before,1)
+            elif before and data.count(before)>=1:
+                continue
+            else:
+                raise RuntimeError("Analytics fragment is not identifiable in live "+path)
+        return data.encode("utf-8")
     allowed_new={p:pathlib.Path(src).read_bytes() for p,src in NEW.items()}
     # Published /analytics page can also be a previous login or demo version.
     previous_analytics_versions=[
@@ -55,11 +75,12 @@ def main():
         if sha(read(fullpath) or b"")!=sha(bytes_):raise RuntimeError("FTP checksum mismatch "+fullpath)
     snapshot={}
     try:
+        desired={}
         for path in RESTORE:
             live=read(base+"/"+path)
             if live is None:raise RuntimeError("Missing site file "+path)
-            if live not in (old[path],new[path]):raise RuntimeError("Live differs from preflight and analytics release; stopped "+path)
             snapshot[path]=live
+            desired[path]=revert_analytics_only(live,old[path],new[path],path)
         for path in NEW:
             snapshot[path]=read(base+"/"+path)
         backups=root+"/site-safeguard-backups"
@@ -74,8 +95,8 @@ def main():
         changed=[]
         try:
             for path in RESTORE:
-                if snapshot[path]!=old[path]:
-                    write(base+"/"+path,old[path]);changed.append(path)
+                if snapshot[path]!=desired[path]:
+                    write(base+"/"+path,desired[path]);changed.append(path)
             # Remove only explicitly analytics-created paths, not other assets.
             for path,blob in snapshot.items():
                 if path not in NEW or blob is None:continue
@@ -94,8 +115,8 @@ def main():
                 if read(base+"/"+path) is not None:raise RuntimeError("Failed to remove "+path)
                 changed.append(path)
             for path in RESTORE:
-                if read(base+"/"+path)!=old[path]:raise RuntimeError("Rollback not verified: "+path)
-            log(success=True,restored=[p for p in RESTORE if snapshot[p]!=old[p]],removed=[p for p in NEW if p in changed],backup=name)
+                if read(base+"/"+path)!=desired[path]:raise RuntimeError("Rollback not verified: "+path)
+            log(success=True,restored=[p for p in RESTORE if snapshot[p]!=desired[p]],removed=[p for p in NEW if p in changed],backup=name)
         except BaseException:
             for path in reversed(changed):
                 original=snapshot[path]
