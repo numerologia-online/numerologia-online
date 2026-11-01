@@ -1,0 +1,58 @@
+name: One-time guarded Red Flag restoration on REG.RU
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/numi-redflag-repair-20261101.yml']
+permissions:
+  contents: read
+  statuses: write
+concurrency:
+  group: reg-ru-redflag-repair-20261101
+  cancel-in-progress: false
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Validate Red Flag source and free-only metadata
+        run: |
+          python3 -m py_compile .github/scripts/numi-redflag-repair-20261101.py
+          for file in redflag-public-catalog.js redflag-text-bank.js redflag-categories.js redflag-feature.js app.js; do node --check "$file"; done
+          node --experimental-default-type=module --input-type=module -e '
+            import {PUBLIC_CATEGORIES,PUBLIC_QUESTIONS} from "./redflag-public-catalog.js";
+            if(PUBLIC_CATEGORIES.length!==8)throw Error("Wrong category count");
+            let count=0;
+            for(const c of PUBLIC_CATEGORIES) {
+              const q=PUBLIC_QUESTIONS[c.bank];if(!q?.length)throw Error("Missing question bank "+c.bank);
+              if(q.slice(1).some(x=>x.variants||x.textFile))throw Error("Paid details included in metadata");
+              count+=q.length;
+            }
+            if(count!==81)throw Error("Unexpected question count "+count);
+            console.log("Verified public metadata",count);
+          '
+      - name: Back up, publish and verify only the Red Flag frontend
+        id: release
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi-redflag-repair-20261101.py
+      - name: Record real deployment result on commit
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OUTCOME: ${{ steps.release.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request
+          state='success' if os.environ.get('OUTCOME')=='success' else 'failure'
+          body=json.dumps({'state':state,'context':'redflag-live-repair',
+                           'description': 'REG.RU Red Flag release verified' if state=='success' else 'REG.RU Red Flag repair failed or was rolled back'}).encode()
+          url='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/statuses/'+os.environ['GITHUB_SHA']
+          req=urllib.request.Request(url,data=body,method='POST',headers={
+            'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+            'Accept':'application/vnd.github+json',
+            'Content-Type':'application/json','User-Agent':'numi-redflag-release/1.0'})
+          with urllib.request.urlopen(req,timeout=20) as response:
+            print('Deployment result recorded:',state,response.status)
+          PY
