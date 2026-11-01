@@ -976,5 +976,22 @@
   <script src="auth-profile.js?v=20" defer></script>
   <script src="account-browser.js?v=15" defer></script>
   <script type="module" src="app.js?v=263"></script>
-  </body>
+    <script src="moment/analytics.js?v=3" defer></script>
+  <script>
+  (() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const track=(type,section,item)=>window.NumiAnalytics?.send(type,section,item);
+      track("page","home","open");
+      document.addEventListener("click",event=>{
+        const node=event.target.closest("[data-open-year], [data-open-redflag], [data-open-compatibility], [data-open-personal-day], [data-open-matrix], [data-open-destiny-code]");
+        if(!node)return;
+        const types=[["openYear","year"],["openRedflag","redflag"],["openCompatibility","compatibility"],["openPersonalDay","personal_day"],["openMatrix","matrix"],["openDestinyCode","money"]];
+        const map={"data-open-year":"year","data-open-redflag":"redflag","data-open-compatibility":"compatibility","data-open-personal-day":"personal_day","data-open-matrix":"matrix","data-open-destiny-code":"money"};
+        for(const [attr,section] of Object.entries(map)){if(node.hasAttribute(attr)){track("category",section,"open");break;}}
+      },{capture:true});
+      if(location.hash==="#razbor-goda"||new URLSearchParams(location.search).get("view")==="year")track("category","year","open_from_link");
+    });
+  })();
+  </script>
+</body>
 </html>
