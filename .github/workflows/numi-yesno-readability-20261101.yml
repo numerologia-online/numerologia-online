@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   release:
-    if: github.event.head_commit.message == 'Diagnose and publish unified Back navigation to REG.RU'
+    if: github.event.head_commit.message == 'Report protected release failure reason for unified Back navigation'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -68,7 +68,8 @@ jobs:
                     try:description=str(json.loads(line.partition(' ')[2]).get('message') or json.loads(line.partition(' ')[2]).get('error'))[:130]
                     except Exception:pass
                     break
-          body=json.dumps({'state':state,'context':'yesno-readability-live','description':description}).encode()
+          context='yesno-readability-live' if state=='success' else 'yesno-back-'+''.join(c if c.isalnum() and c.isascii() else '-' for c in description.lower())[:80]
+          body=json.dumps({'state':state,'context':context,'description':description}).encode()
           endpoint='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/statuses/'+os.environ['GITHUB_SHA']
           req=urllib.request.Request(endpoint,data=body,method='POST',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'})
           with urllib.request.urlopen(req,timeout=20) as response:print('Live result recorded:',state,response.status)
