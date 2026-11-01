@@ -1,4 +1,4 @@
-name: Publish compact vertical Moment categories on REG.RU
+name: Publish compact Moment intro spacing safely on REG.RU
 on:
   push:
     paths:
@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish tested compact Moment topic rows on REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish more compact Moment landing page on REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -22,7 +22,7 @@ jobs:
         id: validate
         run: |
           echo syntax > /tmp/moment-stage
-          python3 -m py_compile moment/deploy-compact-topic-list-20261101.py
+          python3 -m py_compile moment/deploy-compact-spacing-20261101.py
           echo javascript > /tmp/moment-stage
           node --check moment/moment.js
           node moment/tests/compact-topic-list.test.cjs > /tmp/moment-js-validation.log 2>&1 || { tail -35 /tmp/moment-js-validation.log; exit 1; }
@@ -48,14 +48,18 @@ jobs:
           assert '<div class="section-heading">\n        <h2>Выберите, что сейчас важно</h2>' in h
           assert 'Без бесконечных списков' not in h
           assert 'ВАША БИБЛИОТЕКА ВОПРОСОВ' not in h
-          assert 'moment.css?v=3' in h
+          assert 'moment.css?v=4' in h
           assert 'moment.js?v=2' in h
           assert 'id="questions-panel" class="questions-panel" hidden' in h
           assert h.count('id="show-all"')==1
+          assert 'gap:7px;padding:clamp(17px,4vw,26px) 18px' in h
+          assert 'aria-label="Да или нет" style="padding-top:18px"' in h
           css=open('moment/moment.css',encoding='utf-8').read()
           assert '.explore .category{background:#f3f0e7' in css
           assert '.explore .category-grid{display:grid;grid-template-columns:minmax(0,1fr)' in css
           assert css.count('{')==css.count('}')
+          assert '.explore{padding-top:clamp(19px,3vw,29px)}' in css
+          assert '  .explore{padding:25px 0 65px}' in css
           print('Simplified Moment heading and all 300 questions validated')
           PY
           echo validated > /tmp/moment-stage
@@ -66,7 +70,7 @@ jobs:
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           set -o pipefail
-          python3 -u moment/deploy-compact-topic-list-20261101.py 2>&1 | tee /tmp/moment-release-log
+          python3 -u moment/deploy-compact-spacing-20261101.py 2>&1 | tee /tmp/moment-release-log
 
       - name: Record actual public deployment verification
         if: always()
@@ -78,7 +82,7 @@ jobs:
           python3 - <<'PY'
           import json,os,urllib.request,pathlib
           passed=os.environ.get('RELEASE_RESULT')=='success'
-          reason='12 compact Moment topics verified on REG.RU' if passed else 'Moment release failed'
+          reason='Compact Moment spacing verified on REG.RU' if passed else 'Moment release failed'
           if not passed:
             if os.environ.get('VALIDATION_RESULT')!='success':
               stage=pathlib.Path('/tmp/moment-stage')
@@ -91,11 +95,11 @@ jobs:
               logfile=pathlib.Path('/tmp/moment-release-log')
               if logfile.exists():
                 for line in reversed(logfile.read_text(errors='replace').splitlines()):
-                  if line.startswith('MOMENT_COMPACT_LIST '):
+                  if line.startswith('MOMENT_COMPACT_SPACING '):
                     try:reason=json.loads(line.partition(' ')[2]).get('reason','Unknown deployment error')[:120]
                     except Exception:pass
                     break
-          context='moment-compact-list-live' if passed else 'moment-failure-'+''.join(x if x.isascii() and x.isalnum() else '-' for x in reason.lower())[:70]
+          context='moment-compact-spacing-live' if passed else 'moment-failure-'+''.join(x if x.isascii() and x.isalnum() else '-' for x in reason.lower())[:70]
           body=json.dumps({'state':'success' if passed else 'failure',
             'context':context,'description':reason[:140]}).encode()
           endpoint='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/statuses/'+os.environ['GITHUB_SHA']
