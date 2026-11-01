@@ -7,8 +7,8 @@
   <meta name="description" content="100 вопросов «Да или нет» — о любви, работе, деньгах, решениях и будущем. Раздел Нумерологии момента.">
   <title>100 вопросов «Да или нет» — Нумерология момента</title>
   <link rel="stylesheet" href="../moment.css?v=1">
-  <link rel="stylesheet" href="./yes-no.css?v=7">
-  <script defer src="./yes-no.js?v=2"></script>
+  <link rel="stylesheet" href="./yes-no.css?v=8">
+  <script defer src="./yes-no.js?v=3"></script>
 </head>
 <body>
   <header class="site-header"><div class="header-inner">
@@ -17,12 +17,12 @@
   </div></header>
   <main>
     <section class="yn-directory shell" aria-label="100 вопросов Да или нет">
+      <button id="yn-all" type="button" class="yn-back-top">← Назад</button>
       <p class="overline">100 ВОПРОСОВ · 7 НАПРАВЛЕНИЙ</p>
       <h1>Выберите тему</h1>
       <p class="yn-directory-sub">Вопросы по темам — быстро и понятно.</p>
       <div id="yn-categories" class="yn-category-list" aria-label="Темы вопросов"></div>
       <div id="yn-panel" class="yn-results" hidden>
-        <button id="yn-all" type="button" class="yn-back-top">← Назад к темам</button>
         <div class="yn-results-head">
           <p class="overline">ДА ИЛИ НЕТ</p>
           <h2 id="yn-title">Вопросы</h2>
@@ -40,11 +40,11 @@
   <footer class="site-footer"><div class="shell"><span>НУМЕРОЛОГИЯ ОНЛАЙН · 9966</span><a href="../">Назад к вопросам момента ↗</a></div></footer>
   <dialog id="yn-dialog" aria-labelledby="yn-dialog-title">
     <div class="dialog-content">
+      <button id="yn-back" type="button" class="yn-back-top">← Назад</button>
       <div class="dialog-top"><span class="overline">ДА / НЕТ · ВАШ ВОПРОС</span><button id="yn-close" type="button" aria-label="Закрыть">×</button></div>
       <p class="dialog-topic">НУМЕРОЛОГИЯ МОМЕНТА</p><h2 id="yn-dialog-title"></h2>
       <p class="dialog-intro">Вопрос добавлен в каталог. Механизм ответа по точному времени сейчас готовится.</p>
       <div class="waiting-note"><strong>Ответ пока недоступен</strong><p>Мы готовим 1 440 уникальных авторских трактовок — по одной для каждой минуты суток. Пока это только выбор вопросов: расчёт не выполняется и деньги не списываются.</p></div>
-      <button id="yn-back" class="secondary-button" type="button">Выбрать другой вопрос</button>
     </div>
   </dialog>
 <!-- Numi Insights v2: independent background collector -->
