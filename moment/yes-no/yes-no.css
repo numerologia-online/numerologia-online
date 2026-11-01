@@ -176,3 +176,47 @@ body:has(#yn-panel[hidden]),body:has(#yn-panel[hidden]) main,body:has(#yn-panel[
 body:has(#yn-panel[hidden]) .yn-topic{background:#f7f8f1;border-color:#bdcebf;box-shadow:0 2px 5px #193f3010}
 body:has(#yn-panel[hidden]) .yn-directory-sub{color:#506d5c}
 body:has(#yn-panel[hidden]) .yn-topic:hover,body:has(#yn-panel[hidden]) .yn-topic:focus-visible{background:#fffdf7;border-color:#a9864d}
+
+/* Compact layout sized to the actually visible viewport, including the phone keyboard. */
+#yn-dialog{top:var(--yn-viewport-mid,50%);max-height:calc(var(--yn-visible-height,100dvh) - 12px);overflow:auto;scroll-padding:8px}
+#yn-dialog .dialog-content{gap:10px;padding:14px 17px 16px}
+#yn-dialog #yn-back{min-height:36px;padding:6px 12px;margin:0 auto;width:min(64%,230px);font-size:13px}
+#yn-dialog .dialog-top{top:15px;right:12px}
+#yn-dialog .dialog-topic{font-size:9px;line-height:1.2;margin:0}
+#yn-dialog #yn-dialog-title{font-size:clamp(28px,7.5vw,34px);line-height:1.08;margin:0}
+#yn-dialog .yn-time-intro{font-size:12px;line-height:1.4;margin:0 auto}
+#yn-dialog .yn-time-form{padding:10px 12px;border-radius:13px}
+#yn-dialog .yn-time-form>label{font-size:12px;margin:0 0 7px}
+#yn-dialog .yn-time-row{gap:8px}
+#yn-dialog #yn-time-input{width:132px;height:44px;min-height:44px;font-size:25px}
+#yn-dialog .yn-now-button{min-height:40px;padding:8px;font-size:14px}
+#yn-dialog .yn-time-result{padding:13px 12px;border-radius:13px}
+#yn-dialog .yn-answer-verdict{font-size:clamp(29px,8vw,36px);line-height:1.1;margin:0 0 8px}
+#yn-dialog .yn-answer-explanation{font-size:clamp(18px,4.8vw,21px);line-height:1.32}
+#yn-dialog .yn-repeat-note{padding:10px 0 0;margin:0;font-size:10px;line-height:1.4}
+#yn-dialog.yn-keyboard .dialog-topic,#yn-dialog.yn-keyboard .yn-time-intro,#yn-dialog.yn-keyboard .yn-repeat-note{display:none}
+#yn-dialog.yn-keyboard .dialog-content{gap:8px;padding:10px 14px}
+#yn-dialog.yn-keyboard #yn-dialog-title{font-size:24px}
+@media(max-height:640px){#yn-dialog .dialog-content{gap:8px}#yn-dialog .yn-repeat-note{font-size:9px}#yn-dialog .yn-answer-explanation{font-size:18px}}
+
+/* The Mini App already has its own title. Keep the directory to one compact screen. */
+body .site-header,body .site-footer{display:none}
+.yn-directory{padding-top:16px;padding-bottom:20px}
+.yn-directory>.yn-back-top{margin-bottom:14px;min-height:38px;padding:7px 12px}
+.yn-directory>.overline{font-size:10px;margin-bottom:9px}
+.yn-directory>h1{font-size:32px;margin-bottom:8px}
+.yn-directory-sub{font-size:14px;line-height:1.35;margin-bottom:16px}
+.yn-category-list{gap:6px}
+.yn-topic{min-height:48px;padding:7px 12px}
+.yn-topic-name{font-size:16px;line-height:1.2}
+.yn-topic-count{font-size:11px}
+.yn-topic-icon{font-size:22px;min-height:26px}
+@media(max-width:700px){
+ .yn-directory{padding-top:14px;padding-bottom:18px}
+ .yn-directory>.yn-back-top{margin-bottom:12px;min-height:36px}
+ .yn-directory>.overline{font-size:9px;margin-bottom:8px}
+ .yn-directory>h1{font-size:28px;margin-bottom:7px}
+ .yn-directory-sub{font-size:13px;margin-bottom:12px}
+ .yn-topic{min-height:48px;padding:6px 11px;grid-template-columns:27px minmax(0,1fr) 16px}
+ .yn-topic-name{font-size:15px}.yn-topic-count{font-size:10px}
+}

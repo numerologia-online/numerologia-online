@@ -16,6 +16,19 @@
     return digits.length > 2 ? digits.slice(0, 2) + ":" + digits.slice(2) : digits;
   };
   const validTime = value => /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+  const syncViewport = () => {
+    const viewport = window.visualViewport;
+    const height = viewport?.height || window.innerHeight;
+    dialog.style.setProperty("--yn-visible-height", height + "px");
+    dialog.style.setProperty("--yn-viewport-mid", ((viewport?.offsetTop || 0) + height / 2) + "px");
+    dialog.classList.toggle("yn-keyboard", document.activeElement === timeInput && window.innerWidth <= 700);
+  };
+  window.visualViewport?.addEventListener("resize", syncViewport);
+  window.visualViewport?.addEventListener("scroll", syncViewport);
+  window.addEventListener("resize", syncViewport);
+  timeInput.addEventListener("focus", syncViewport);
+  timeInput.addEventListener("blur", syncViewport);
+  syncViewport();
   async function confirmTime(value) {
     if (!validTime(value)) {
       timeError.hidden = false;
@@ -27,6 +40,8 @@
     timeError.hidden = true;
     timeInput.removeAttribute("aria-invalid");
     timeInput.value = value;
+    timeInput.blur();
+    syncViewport();
     const id = ++answerRequest;
     answerController?.abort();
     timeResult.hidden = false;
@@ -52,6 +67,7 @@
       explanation.className = "yn-answer-explanation";
       explanation.textContent = data.answer.slice(separator + 1).trim();
       timeResult.replaceChildren(verdict, explanation);
+      dialog.scrollTop = 0;
     } catch (error) {
       if (id === answerRequest) timeResult.textContent = "Не удалось получить ответ. Попробуйте ещё раз.";
     } finally {clearTimeout(timer);}
@@ -119,6 +135,8 @@
         timeResult.hidden = true;
         timeInput.removeAttribute("aria-invalid");
         dialog.showModal();
+        syncViewport();
+        dialog.scrollTop = 0;
         document.body.style.overflow = "hidden";
       });
       return button;
