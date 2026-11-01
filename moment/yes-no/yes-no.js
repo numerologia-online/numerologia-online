@@ -27,7 +27,7 @@
     timeError.hidden = true;
     timeInput.removeAttribute("aria-invalid");
     timeInput.value = value;
-    timeResult.textContent = "Время вопроса — " + value + ". Момент выбран. Ответ появится после подключения расчётов.";
+    timeResult.textContent = "Выбрано время " + value + ".";
     timeResult.hidden = false;
   }
   const node = (tag, cls, text) => {
@@ -100,9 +100,14 @@
   timeInput.addEventListener("input", () => {
     const cleaned = normalizeTime(timeInput.value);
     if (timeInput.value !== cleaned) timeInput.value = cleaned;
-    timeError.hidden = true;
-    timeInput.removeAttribute("aria-invalid");
-    timeResult.hidden = true;
+    if (validTime(cleaned)) {
+      confirmTime(cleaned);
+    } else {
+      timeResult.hidden = true;
+      timeError.hidden = cleaned.length !== 5;
+      if (cleaned.length === 5) timeInput.setAttribute("aria-invalid", "true");
+      else timeInput.removeAttribute("aria-invalid");
+    }
   });
   timeForm.addEventListener("submit", event => {
     event.preventDefault();
