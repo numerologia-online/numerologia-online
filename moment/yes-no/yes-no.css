@@ -242,3 +242,5 @@ body .site-header,body .site-footer{display:none}
 #yn-dialog #yn-back{margin-bottom:4px}
 #yn-dialog #yn-dialog-title{font-size:clamp(28px,7.5vw,34px)}
 body.yn-question-page{background:#fbf9f4}
+
+#yn-dialog .yn-now-button{width:86%;max-width:360px;margin:7px auto 0;align-self:center}

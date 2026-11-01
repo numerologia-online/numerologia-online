@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#143c30">
+  <meta name="description" content="100 вопросов «Да или нет» — о любви, работе, деньгах, решениях и будущем. Раздел Нумерологии момента.">
+  <title>100 вопросов «Да или нет» — Нумерология момента</title>
+  <link rel="stylesheet" href="../moment.css?v=1">
+  <link rel="stylesheet" href="./yes-no.css?v=24">
+  <script defer src="./yes-no.js?v=10"></script>
+</head>
+<body>
+  <header class="site-header"><div class="header-inner">
+    <a href="../../" class="brand">НУМЕРОЛОГИЯ <span>ОНЛАЙН</span><b class="brand-sigil">9966</b></a>
+    <a href="../" class="header-back">← К Нумерологии момента</a>
+  </div></header>
+  <main>
+    <section class="yn-directory shell" aria-label="100 вопросов Да или нет">
+      <button id="yn-all" type="button" class="yn-back-top">← Назад</button>
+      <p class="overline">100 ВОПРОСОВ · 7 НАПРАВЛЕНИЙ</p>
+      <h1>Выберите тему</h1>
+      <p class="yn-directory-sub">Вопросы по темам, быстро и понятно.</p>
+      <div id="yn-categories" class="yn-category-list" aria-label="Темы вопросов"></div>
+      <div id="yn-panel" class="yn-results" hidden>
+        <div class="yn-results-head">
+          <p class="overline">ДА ИЛИ НЕТ</p>
+          <h2 id="yn-title">Вопросы</h2>
+          <p id="yn-count" class="results-message" role="status" aria-live="polite"></p>
+        </div>
+        <div id="yn-questions" class="yn-questions-list"></div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="shell"><span>НУМЕРОЛОГИЯ ОНЛАЙН · 9966</span><a href="../">Назад к вопросам момента ↗</a></div></footer>
+  <section hidden id="yn-dialog" aria-labelledby="yn-dialog-title">
+    <div class="dialog-content">
+      <button id="yn-back" type="button" class="yn-back-top">← Назад</button>
+      <div class="dialog-top"><button id="yn-close" type="button" aria-label="Закрыть">×</button></div>
+      <p class="dialog-topic">НУМЕРОЛОГИЯ МОМЕНТА</p><h2 id="yn-dialog-title"></h2>
+      <p class="yn-time-intro">Вспомните, когда этот вопрос впервые пришёл вам в голову. Укажите именно это время, оно важно для ответа.</p>
+      <form id="yn-time-form" class="yn-time-form" novalidate>
+        <label for="yn-time-input">Время возникновения вопроса</label>
+        <div class="yn-time-row">
+          <input id="yn-time-input" name="question-time" type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="--:--" aria-describedby="yn-time-error" spellcheck="false">
+          <button type="button" id="yn-now" class="yn-now-button">Спросить сейчас</button>
+        </div>
+        <p id="yn-time-error" class="yn-time-error" role="alert" hidden>Введите время от 00:00 до 23:59.</p>
+      </form>
+      <div id="yn-time-result" class="yn-time-result" role="status" aria-live="polite" hidden></div>
+      <p class="yn-repeat-note"><strong>Важно.</strong> Не повторяйте один вопрос чаще раза в сутки. Не обманывайте себя, перебирая время ради желаемого ответа. Подсказка связана с первым моментом и импульсом вопроса. Перебор времени искажает ответ.</p>
+    </div>
+  </section>
+<!-- Numi Insights v2: independent background collector -->
+<script>
+(()=>{const start=()=>{try{const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';s.async=true;document.head.append(s);}catch(_){}};const schedule=()=>{if('requestIdleCallback'in window)requestIdleCallback(start,{timeout:1500});else setTimeout(start,0);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule,{once:true});else schedule();})();
+</script>
+
+</body>
+</html>
