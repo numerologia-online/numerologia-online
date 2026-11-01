@@ -11,6 +11,29 @@
     const map=new Map();for(const row of rows){const key=fn(row);if(!key)continue;map.set(key,(map.get(key)||0)+Number(row.event_count||0));}
     return [...map].sort((a,b)=>b[1]-a[1]);
   }
+  async function post(payload){
+    const response=await fetch("/api/numi-analytics.php",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),cache:"no-store"});
+    const data=await response.json();if(!response.ok||!data.ok)throw Error("LOGIN_FAILED");return data;
+  }
+  function showLogin(){ $("login").hidden=false;$("dashboard").hidden=true; }
+  function showDashboard(){ $("login").hidden=true;$("dashboard").hidden=false; }
+  async function checkLogin(){
+    try{
+      const response=await fetch("/api/numi-analytics.php?action=session",{credentials:"same-origin",cache:"no-store"});
+      const data=await response.json();
+      if(response.ok&&data.authenticated){showDashboard();await refresh();}
+      else{showLogin();$("status").textContent="";}
+    }catch(_){showLogin();$("login-error").textContent="Сервер аналитики пока недоступен.";}
+  }
+  $("login").addEventListener("submit",async e=>{
+    e.preventDefault();const email=$("email").value.trim(),password=$("password").value;
+    $("login-error").textContent="Проверяем вход…";
+    try{
+      await post({action:"admin_login",email,password});
+      $("password").value="";$("login-error").textContent="";showDashboard();await refresh();
+    }catch(_){$("password").value="";$("login-error").textContent="Неверный логин или пароль либо доступ не настроен.";}
+  });
+  $("logout").addEventListener("click",async()=>{try{await post({action:"admin_logout"});}catch(_){}showLogin();$("status").textContent="";});
   async function refresh(){
     $("status").textContent="Обновляем статистику…";
     try{
@@ -25,7 +48,7 @@
       drawRows("questions",aggregate(rows.filter(r=>r.event_type==="question"),r=>r.section+":"+r.item),"Нет данных");
       drawRows("campaigns",aggregate(rows.filter(r=>r.event_type==="campaign"),r=>r.campaign),"Нет данных");
       drawRows("events",aggregate(rows,r=>r.event_type),"Нет данных");
-    }catch(e){$("status").textContent=e.message;}
+    }catch(e){if(String(e.message).includes("Доступ только владельцу"))showLogin();$("status").textContent=e.message;}
   }
-  $("refresh").addEventListener("click",refresh);$("days").addEventListener("change",refresh);refresh();
+  $("refresh").addEventListener("click",refresh);$("days").addEventListener("change",refresh);checkLogin();
 })();
