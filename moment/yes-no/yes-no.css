@@ -1,17 +1,17 @@
 /* Compact yes/no directory: seven full-width topic links, no horizontal carousel. */
 html, body {max-width:100%;overflow-x:clip}
-.yn-directory{padding-top:clamp(35px,6vw,64px);padding-bottom:80px}
+.yn-directory{padding-top:clamp(32px,5vw,56px);padding-bottom:72px}
 .yn-directory>.overline{font-size:12px;letter-spacing:.22em;margin:0 0 15px}
-.yn-directory>h1{font:500 clamp(38px,7vw,62px)/1.13 Georgia,serif;letter-spacing:-.025em;margin:0 0 14px;color:#143d30}
+.yn-directory>h1{font:700 clamp(31px,4.8vw,46px)/1.16 'DM Sans',system-ui,-apple-system,sans-serif;letter-spacing:-.035em;margin:0 0 13px;color:#143d30}
 .yn-directory-sub{font-size:clamp(15px,2.5vw,19px);color:#688477;line-height:1.5;margin:0 0 30px}
-.yn-category-list{display:grid;grid-template-columns:minmax(0,1fr);gap:13px;width:100%;max-width:100%}
-.yn-topic{appearance:none;display:grid;grid-template-columns:66px minmax(0,1fr) 30px;align-items:center;gap:18px;width:100%;min-width:0;text-align:left;padding:20px 25px;border:1px solid #527d6b;border-radius:22px;background:#103f30;color:#fffefa;box-shadow:inset 0 1px 0 #ffffff14;transition:background .15s,border-color .15s}
+.yn-category-list{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;width:min(100%,720px);max-width:100%;margin:0 auto}
+.yn-topic{appearance:none;display:grid;grid-template-columns:50px minmax(0,1fr) 24px;align-items:center;gap:14px;width:100%;min-width:0;text-align:left;padding:17px 20px;border:1px solid #527d6b;border-radius:18px;background:#103f30;color:#fffefa;box-shadow:inset 0 1px 0 #ffffff14;transition:background .15s,border-color .15s}
 .yn-topic:hover,.yn-topic:focus-visible{background:#19503d;border-color:#c6a369}
-.yn-topic-icon{display:flex;justify-content:center;align-items:center;min-height:54px;border-right:1px solid #ba954e;padding-right:14px;color:#d3a95e;font:40px/1 Georgia,serif}
+.yn-topic-icon{display:flex;justify-content:center;align-items:center;min-height:44px;border-right:1px solid #ba954e;padding-right:12px;color:#d3a95e;font:32px/1 Georgia,serif}
 .yn-topic-copy{min-width:0;display:flex;flex-direction:column;gap:4px}
-.yn-topic-name{font:500 clamp(21px,3vw,30px)/1.23 Georgia,serif;overflow-wrap:anywhere}
-.yn-topic-count{font-size:15px;color:#d4dfd6}
-.yn-topic-arrow{font-size:31px;font-weight:300;line-height:1;text-align:right;color:#fffefa}
+.yn-topic-name{font:700 clamp(18px,2.5vw,22px)/1.3 'DM Sans',system-ui,-apple-system,sans-serif;letter-spacing:-.01em;overflow-wrap:break-word}
+.yn-topic-count{font-size:14px;color:#d4dfd6}
+.yn-topic-arrow{font-size:27px;font-weight:300;line-height:1;text-align:right;color:#fffefa}
 .yn-results{padding-top:0;scroll-margin-top:20px}
 .yn-back-top{border:0;background:none;padding:7px 0 22px;font-weight:700;color:#a67b3b;font-size:15px;text-align:left}
 .yn-results-head .overline{margin:0 0 10px}
@@ -28,17 +28,19 @@ html, body {max-width:100%;overflow-x:clip}
 .yn-error{color:#a13a29;background:#fff2ed;padding:18px;border-radius:13px}
 .yn-results .show-more{margin-top:18px}
 @media(max-width:550px){
- .yn-directory{padding-top:39px;padding-bottom:58px}
+ .yn-directory{padding-top:34px;padding-bottom:58px}
  .yn-directory>.overline{font-size:10px;letter-spacing:.2em}
- .yn-directory>h1{font-size:38px}
- .yn-directory-sub{font-size:15px;margin-bottom:24px}
- .yn-category-list{gap:10px}
- .yn-topic{grid-template-columns:48px minmax(0,1fr) 23px;gap:12px;border-radius:17px;padding:16px 14px;min-height:91px}
- .yn-topic-icon{min-height:46px;font-size:30px;padding-right:9px}
- .yn-topic-name{font-size:21px}
+ .yn-directory>h1{font-size:31px}
+ .yn-directory-sub{font-size:15px;margin-bottom:23px}
+ .yn-category-list{gap:11px;width:calc(100% - 24px)}
+ .yn-topic{grid-template-columns:38px minmax(0,1fr) 18px;gap:12px;border-radius:17px;padding:15px 14px;min-height:80px}
+ .yn-topic-icon{min-height:41px;font-size:26px;padding-right:9px}
+ .yn-topic-name{font-size:18px}
  .yn-topic-count{font-size:13px}
- .yn-topic-arrow{font-size:26px}
+ .yn-topic-arrow{font-size:23px}
  .yn-question{padding:15px 12px;gap:9px}
  .yn-question-text{font-size:15px}
 }
 @media(prefers-reduced-motion:reduce){.yn-topic{transition:none}}
+
+@media(max-width:360px){.yn-category-list{width:calc(100% - 10px)}.yn-topic-name{font-size:17px}}
