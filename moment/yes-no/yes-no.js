@@ -2,9 +2,8 @@
 (() => {
   const $ = id => document.getElementById(id);
   const grid = $("yn-categories"), panel = $("yn-panel"), list = $("yn-questions"),
-    search = $("yn-search"), clear = $("yn-clear"), title = $("yn-title"),
-    count = $("yn-count"), more = $("yn-more"), back = $("yn-all"), dialog = $("yn-dialog");
-  let catalog = null, active = null, visible = 12;
+    title = $("yn-title"), count = $("yn-count"), back = $("yn-all"), dialog = $("yn-dialog");
+  let catalog = null, active = null;
   const timeInput = $("yn-time-input"), timeForm = $("yn-time-form"),
     timeError = $("yn-time-error"), timeResult = $("yn-time-result");
   const currentTime = () => {
@@ -31,8 +30,6 @@
     timeResult.textContent = "Время вопроса — " + value + ". Момент выбран. Ответ появится после подключения расчётов.";
     timeResult.hidden = false;
   }
-  const normalize = s => String(s || "").toLocaleLowerCase("ru-RU")
-    .replace(/ё/g, "е").replace(/[^а-яa-z0-9 ]/gi, " ").replace(/\s+/g, " ").trim();
   const node = (tag, cls, text) => {
     const el = document.createElement(tag);
     if (cls) el.className = cls;
@@ -59,8 +56,6 @@
   function openCategory(id) {
     if (!catalog.categories.some(c => c.id === id)) return;
     active = id;
-    visible = 12;
-    search.value = "";
     grid.hidden = true;
     document.querySelector(".yn-directory > .overline").hidden = true;
     document.querySelector(".yn-directory > h1").hidden = true;
@@ -71,7 +66,6 @@
   }
   function showCategories() {
     active = null;
-    search.value = "";
     panel.hidden = true;
     grid.hidden = false;
     document.querySelector(".yn-directory > .overline").hidden = false;
@@ -82,15 +76,10 @@
   function render() {
     if (!catalog || !active) return;
     const category = catalog.categories.find(c => c.id === active);
-    const words = normalize(search.value).split(" ").filter(Boolean);
-    const found = catalog.questions.filter(q => q.category === active &&
-      words.every(w => normalize(q.title).includes(w)));
+    const found = catalog.questions.filter(q => q.category === active);
     title.textContent = category.title;
-    count.textContent = found.length ? "Найдено " + found.length + " · показано " +
-      Math.min(visible, found.length) : "В этой теме совпадений нет.";
-    clear.hidden = !search.value;
-    more.hidden = visible >= found.length;
-    list.replaceChildren(...found.slice(0, visible).map((q, i) => {
+    count.textContent = found.length + " вопросов";
+    list.replaceChildren(...found.map((q, i) => {
       const button = node("button", "yn-question");
       button.type = "button";
       button.append(node("span", "yn-question-number", String(i + 1).padStart(2, "0")),
@@ -128,9 +117,6 @@
     if (active) showCategories();
     else window.location.assign("../");
   });
-  search.addEventListener("input", () => {visible = 12; render();});
-  clear.addEventListener("click", () => {search.value = ""; visible = 12; render(); search.focus();});
-  more.addEventListener("click", () => {visible += 12; render();});
   (async () => {
     try {
       const response = await fetch("./questions.json?v=2", {cache:"default"});
