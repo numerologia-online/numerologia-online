@@ -2,54 +2,116 @@
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Аналитика — Нумерология онлайн</title>
 <style>
 :root{color-scheme:light}body{margin:0;background:#f9f7f3;color:#163e31;font:15px/1.5 system-ui,-apple-system,sans-serif}.wrap{max-width:1080px;margin:30px auto;padding:0 20px}h1{font:500 clamp(30px,5vw,48px)/1.2 Georgia,serif;margin:10px 0}h2{font:500 24px Georgia,serif;margin-top:30px}select,button{font:inherit;padding:10px 14px;border:1px solid #b7b9ac;border-radius:10px;background:white;color:inherit}button{cursor:pointer}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.card{background:white;border:1px solid #e5e0d2;padding:18px;border-radius:14px}.value{font:500 29px Georgia,serif}table{width:100%;border-collapse:collapse;background:white}td,th{text-align:left;padding:10px 12px;border-bottom:1px solid #e8e2d9}td:last-child,th:last-child{text-align:right}.muted{color:#637468;font-size:13px}.notice{padding:15px;border-radius:12px;background:#f0eee5}
- .login{max-width:390px;margin:30px 0;background:white;padding:24px;border:1px solid #e5e0d2;border-radius:16px}.login label{display:block;margin:14px 0 5px}.login input{width:100%;font:inherit;box-sizing:border-box;padding:12px;border:1px solid #b7b9ac;border-radius:9px}.login button{width:100%;margin-top:18px;background:#143d30;color:white}.login[hidden],#dashboard[hidden]{display:none!important}</style></head><body><main class="wrap">
+ .login{max-width:390px;margin:30px 0;background:white;padding:24px;border:1px solid #e5e0d2;border-radius:16px}.login label{display:block;margin:14px 0 5px}.login input{width:100%;font:inherit;box-sizing:border-box;padding:12px;border:1px solid #b7b9ac;border-radius:9px}.login button{width:100%;margin-top:18px;background:#143d30;color:white}.login[hidden],#dashboard[hidden]{display:none!important}.funnel-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:16px 0}.funnel-controls select,.funnel-controls input{padding:10px;border:1px solid #b7b9ac;border-radius:9px;background:#fff;color:inherit;font:inherit}.funnel-controls input{flex:1;min-width:180px}.funnel-wrap{width:100%;overflow-x:auto;border:1px solid #e5e0d2;border-radius:14px;background:white}.funnel{width:100%;min-width:750px;border-collapse:collapse}.funnel th{white-space:nowrap;background:#f3f1ec;position:sticky;top:0}.funnel th:first-child,.funnel td:first-child{text-align:left}.funnel td{font-variant-numeric:tabular-nums}.funnel th button{all:unset;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:4px}.funnel th button[aria-sort="descending"],.funnel th button[aria-sort="ascending"]{font-weight:700;text-decoration-style:solid}.funnel td[data-empty="true"]{color:#888}.funnel .name{font-weight:500}.funnel .sub{font-size:12px;color:#718078;font-weight:400}.funnel .depth{padding-left:20px}.funnel .group-title td{background:#faf8f4;font-weight:600}.funnel .group-title td:first-child{padding-left:12px}@media(max-width:700px){.wrap{padding:0 14px}.funnel th,.funnel td{padding:11px 9px}.funnel-controls{align-items:stretch}} </style></head><body><main class="wrap">
 <p class="muted">НУМЕРОЛОГИЯ ОНЛАЙН · АНАЛИТИКА</p><h1>Что интересно посетителям</h1><p class="muted">Реальные открытия разделов и вопросов. Без регистрации и пароля. Счётчики не содержат имён и данных отдельных посетителей.</p>
 
 <section id="dashboard">
-
-<label for="days">Период</label> <select id="days"><option value="1">Сегодня</option><option value="7" selected>7 дней</option><option value="30">30 дней</option><option value="90">90 дней</option></select> <button type="button" id="refresh">Обновить</button>
-<p id="status" role="status" class="notice">Загружаем реальные данные…</p><div class="cards" id="totals"></div>
-<h2>Популярные разделы</h2><table><thead><tr><th>Раздел</th><th>Открытий</th></tr></thead><tbody id="sections"></tbody></table>
-<h2>Популярные вопросы</h2><table><thead><tr><th>Вопрос</th><th>Открытий</th></tr></thead><tbody id="questions"></tbody></table>
-<h2>Источники рассылок</h2><table><thead><tr><th>Метка кампании</th><th>Переходов</th></tr></thead><tbody id="campaigns"></tbody></table>
-<h2>Сводка по событиям</h2><table><thead><tr><th>Действие</th><th>Количество</th></tr></thead><tbody id="events"></tbody></table>
-<p class="muted">Счётчики показывают действия, не уникальных людей. Числа не включают события до подключения аналитики.</p></section>
+<div class="funnel-controls">
+<label for="days">Период</label>
+<select id="days"><option value="1">Сегодня</option><option value="7" selected>7 дней</option><option value="30">30 дней</option><option value="90">90 дней</option></select>
+<select id="kind" aria-label="Тип строк"><option value="all">Все разделы и вопросы</option><option value="category">Только разделы</option><option value="question">Только вопросы</option></select>
+<input id="filter" type="search" placeholder="Найти раздел или вопрос" aria-label="Фильтр таблицы">
+<button type="button" id="refresh">Обновить</button>
+</div>
+<p id="status" role="status" class="notice">Загружаем реальные данные…</p>
+<div class="funnel-wrap"><table class="funnel" aria-label="Аналитика интереса и продаж">
+<thead><tr>
+<th><button type="button" data-sort="name">Раздел / вопрос</button></th>
+<th><button type="button" data-sort="views">Открытия</button></th>
+<th><button type="button" data-sort="clicks">Переходы</button></th>
+<th><button type="button" data-sort="ctr">CTR</button></th>
+<th><button type="button" data-sort="orders">Оплаты</button></th>
+<th><button type="button" data-sort="conversion">Конверсия в оплату</button></th>
+</tr></thead>
+<tbody id="funnel-rows"><tr><td colspan="6">Загружаем…</td></tr></tbody>
+</table></div>
+<p class="muted">CTR = переходы / показы. Конверсия в оплату = подтверждённые покупки / открытия. Пока показы и подтверждение оплат не подключены, соответствующие показатели обозначены «—», а не выдуманы. Открытия — действия, не уникальные люди.</p>
+</section>
 </main><script>
 "use strict";
 (()=>{
-const $=id=>document.getElementById(id);
-const sum=rows=>rows.reduce((n,r)=>n+Number(r.event_count||0),0);
-function top(rows,key){
- const m=new Map();
- for(const r of rows){const v=key(r);if(v&&v!=="-")m.set(v,(m.get(v)||0)+Number(r.event_count||0));}
- return [...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,40);
-}
-function table(id,items){
- const el=$(id);el.replaceChildren();
- if(!items.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=2;td.textContent="Пока нет данных";tr.append(td);el.append(tr);return;}
- for(const [label,n] of items){const tr=document.createElement("tr"),a=document.createElement("td"),b=document.createElement("td");a.textContent=label;b.textContent=n.toLocaleString("ru-RU");tr.append(a,b);el.append(tr);}
-}
-async function refresh(){
- $("status").textContent="Загружаем реальные данные…";
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
- try{
-  const res=await fetch("/api/numi-analytics.php?days="+encodeURIComponent($("days").value),{cache:"no-store",signal:controller.signal});
-  const data=await res.json();if(!res.ok||!data.ok||!Array.isArray(data.rows))throw Error("Сервер статистики пока недоступен.");
-  const rows=data.rows;
-  const summaries=[["Открытия страниц",sum(rows.filter(r=>r.event_type==="page"))],["Выборы тем",sum(rows.filter(r=>r.event_type==="category"))],["Открытия вопросов",sum(rows.filter(r=>r.event_type==="question"))],["Поиски",sum(rows.filter(r=>r.event_type==="search"))]];
-  $("totals").replaceChildren(...summaries.map(([title,n])=>{const wrap=document.createElement("div"),v=document.createElement("div"),t=document.createElement("div");wrap.className="card";v.className="value";v.textContent=n.toLocaleString("ru-RU");t.textContent=title;wrap.append(v,t);return wrap;}));
-  table("sections",top(rows.filter(r=>r.event_type==="category"),r=>r.section+":"+r.item));
-  table("questions",top(rows.filter(r=>r.event_type==="question"),r=>r.section+":"+r.item));
-  table("campaigns",top(rows.filter(r=>r.campaign&&r.campaign!=="-"),r=>r.campaign));
-  table("events",top(rows,r=>r.event_type));
-  $("status").textContent="Реальная статистика · "+data.period_days+" дн. · "+(rows.length?"Данные обновлены":"Пока нет собранных событий");
- }catch(e){
-  $("status").textContent=e.name==="AbortError"?"Сервер отвечает слишком долго. Нажми «Обновить» позже.":"Не удалось получить данные с сервера. "+(e.message||"");
-  $("totals").replaceChildren();for(const id of ["sections","questions","campaigns","events"])table(id,[]);
- }finally{clearTimeout(timer);}
-}
-$("days").addEventListener("change",refresh);
-$("refresh").addEventListener("click",refresh);
-refresh();
+ const $=id=>document.getElementById(id);
+ let source=[],sortBy="views",desc=true,loaded=false;
+ const num=v=>Number(v||0);
+ const label=id=>id.replace(/[_-]+/g," ").replace(/\b[a-z]/g,m=>m.toUpperCase());
+ function build(rows){
+   const map=new Map();
+   function ensure(key,kind,title,section){
+     if(!map.has(key))map.set(key,{key,kind,title,section,views:0,clicks:null,impressions:null,orders:null});
+     return map.get(key);
+   }
+   for(const r of rows){
+     const n=num(r.event_count),section=String(r.section||"other"),item=String(r.item||"-");
+     if(r.event_type==="category"){
+       const id=section==="moment"||section==="yes-no"?section+":"+item:section;
+       const v=ensure("c:"+id,"category",label(id),section);
+       v.views+=n;
+     }else if(r.event_type==="question"){
+       const v=ensure("q:"+section+":"+item,"question",label(item),section);
+       v.views+=n;
+     }else if(r.event_type==="page"){
+       const v=ensure("c:"+section,"category",label(section),section);
+       v.views+=n;
+     }
+   }
+   return [...map.values()];
+ }
+ function metrics(row){
+   const ctr=row.impressions>0&&row.clicks!==null?100*row.clicks/row.impressions:null;
+   const conversion=row.orders!==null&&row.views>0?100*row.orders/row.views:null;
+   return {...row,ctr,conversion};
+ }
+ function render(){
+   const q=$("filter").value.toLocaleLowerCase("ru").trim(),kind=$("kind").value;
+   const rows=source.filter(r=>(kind==="all"||r.kind===kind)&&(!q||(r.title+" "+r.section).toLocaleLowerCase("ru").includes(q)));
+   rows.sort((a,b)=>{
+     const x=a[sortBy],y=b[sortBy];
+     if(x===null||x===undefined)return y===null||y===undefined? a.title.localeCompare(b.title,"ru"):1;
+     if(y===null||y===undefined)return -1;
+     const v=typeof x==="string"?x.localeCompare(y,"ru"):x-y;
+     return desc?-v:v;
+   });
+   const body=$("funnel-rows");body.replaceChildren();
+   if(!rows.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=6;td.textContent=loaded?"За этот период событий пока нет":"Не удалось загрузить статистику";tr.append(td);body.append(tr);}
+   const cell=(tr,value,empty=false)=>{const td=document.createElement("td");td.textContent=value;if(empty)td.dataset.empty="true";tr.append(td);};
+   for(const row of rows){
+     const tr=document.createElement("tr");
+     const a=document.createElement("td"),title=document.createElement("div"),sub=document.createElement("div");
+     title.className="name";title.textContent=row.title;
+     sub.className="sub";sub.textContent=row.kind==="question"?"Вопрос · "+label(row.section):"Раздел";
+     a.append(title,sub);tr.append(a);
+     cell(tr,row.views.toLocaleString("ru-RU"));
+     cell(tr,row.clicks===null?"—":row.clicks.toLocaleString("ru-RU"),row.clicks===null);
+     cell(tr,row.ctr===null?"—":row.ctr.toFixed(1)+"%",row.ctr===null);
+     cell(tr,row.orders===null?"—":row.orders.toLocaleString("ru-RU"),row.orders===null);
+     cell(tr,row.conversion===null?"—":row.conversion.toFixed(1)+"%",row.conversion===null);
+     body.append(tr);
+   }
+   document.querySelectorAll("[data-sort]").forEach(b=>{
+     const selected=b.dataset.sort===sortBy;b.setAttribute("aria-sort",selected?(desc?"descending":"ascending"):"none");
+     b.textContent=({name:"Раздел / вопрос",views:"Открытия",clicks:"Переходы",ctr:"CTR",orders:"Оплаты",conversion:"Конверсия в оплату"})[b.dataset.sort]+(selected?(desc?" ↓":" ↑"):"");
+   });
+ }
+ async function refresh(){
+   $("status").textContent="Загружаем настоящую статистику…";
+   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
+   try{
+     const res=await fetch("/api/numi-analytics.php?days="+encodeURIComponent($("days").value),{cache:"no-store",signal:controller.signal});
+     const data=await res.json();if(!res.ok||!data.ok||!Array.isArray(data.rows))throw Error("Ответ сервера не содержит статистику");
+     source=build(data.rows).map(metrics);loaded=true;
+     $("status").textContent="Реальные данные · "+data.period_days+" дн. · "+(source.length?"Можно сортировать столбцы":"Пока нет событий");
+   }catch(e){source=[];loaded=false;$("status").textContent=e.name==="AbortError"?"Сервер не ответил за 20 секунд. Попробуй обновить.":"Статистика временно недоступна. "+e.message;}
+   finally{clearTimeout(timeout);render();}
+ }
+ document.querySelectorAll("[data-sort]").forEach(button=>button.addEventListener("click",()=>{
+   const next=button.dataset.sort;
+   if(sortBy===next)desc=!desc;else{sortBy=next;desc=next!=="name";}
+   render();
+ }));
+ $("kind").addEventListener("change",render);
+ $("filter").addEventListener("input",render);
+ $("days").addEventListener("change",refresh);
+ $("refresh").addEventListener("click",refresh);
+ refresh();
 })();
 </script></body></html>
