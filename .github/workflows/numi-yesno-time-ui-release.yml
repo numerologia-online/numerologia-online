@@ -1,4 +1,4 @@
-name: Publish compact Yes-No question dialog on REG.RU
+name: Publish compact Yes-No questions and clock without search on REG.RU
 on:
   push:
     paths:
@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish compact Yes-No clock dialog on REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish one-screen Yes-No questions without search to REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -22,7 +22,7 @@ jobs:
         id: validate
         run: |
           echo python > /tmp/yn-time-stage
-          python3 -m py_compile moment/deploy-yesno-compact-dialog-20261101.py
+          python3 -m py_compile moment/deploy-yesno-compact-no-search-20261101.py
           echo javascript > /tmp/yn-time-stage
           node --check moment/yes-no/yes-no.js
           echo ui-test > /tmp/yn-time-stage
@@ -43,9 +43,13 @@ jobs:
           assert html.count('id="yn-time-result"')==1
           assert 'inputmode="numeric"' in html and 'type="date"' not in html
           assert 'выдерживайте хотя бы сутки' in html
-          assert 'yes-no.js?v=4' in html and 'yes-no.css?v=10' in html
+          assert 'yes-no.js?v=6' in html and 'yes-no.css?v=11' in html
+          assert 'id="yn-search"' not in html and 'id="yn-more"' not in html
+          assert 'id="yn-confirm-time"' not in html
+          assert 'placeholder="--:--"' in html
+          assert 'id="yn-now"' in html
           assert css.count('{')==css.count('}')
-          assert '#yn-dialog .dialog-content{padding:19px 22px 24px}' in css
+          assert '#yn-dialog .dialog-content{position:relative;padding:14px 17px 17px}' in css
           assert '#yn-dialog .yn-time-form{padding:13px 14px' in css
           print('Validated question-time preview and 100 original questions')
           PY
@@ -57,7 +61,7 @@ jobs:
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           set -o pipefail
-          python3 -u moment/deploy-yesno-compact-dialog-20261101.py 2>&1 | tee /tmp/yn-time-release.log
+          python3 -u moment/deploy-yesno-compact-no-search-20261101.py 2>&1 | tee /tmp/yn-time-release.log
       - name: Record verified public deployment result
         if: always()
         env:
@@ -68,7 +72,7 @@ jobs:
           python3 - <<'PY'
           import json,os,pathlib,urllib.request
           success=os.environ.get('DEPLOY_RESULT')=='success'
-          description='Compact Yes-No dialog verified on REG.RU' if success else 'Compact dialog release failed'
+          description='One-screen Yes-No clock and complete topic list verified on REG.RU' if success else 'Compact Yes-No release failed'
           if not success:
             if os.environ.get('VALIDATE_RESULT')!='success':
               s=pathlib.Path('/tmp/yn-time-stage')
@@ -77,12 +81,12 @@ jobs:
               logfile=pathlib.Path('/tmp/yn-time-release.log')
               if logfile.exists():
                 for line in reversed(logfile.read_text(errors='replace').splitlines()):
-                  if 'YESNO_COMPACT_DIALOG ' in line:
-                    try:description=str(json.loads(line.split('YESNO_COMPACT_DIALOG ',1)[1]).get('reason','Unknown'))[:125]
+                  if 'YESNO_COMPACT_NOSEARCH ' in line:
+                    try:description=str(json.loads(line.split('YESNO_COMPACT_NOSEARCH ',1)[1]).get('reason','Unknown'))[:125]
                     except Exception:pass
                     break
           state='success' if success else 'failure'
-          context='yesno-compact-dialog-live' if success else 'yesno-compact-dialog-failed'
+          context='yesno-one-screen-no-search-live' if success else 'yesno-one-screen-no-search-failed'
           body=json.dumps({'state':state,'context':context,'description':description[:140]}).encode()
           req=urllib.request.Request('https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/statuses/'+os.environ['GITHUB_SHA'],data=body,method='POST',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Content-Type':'application/json','Accept':'application/vnd.github+json'})
           with urllib.request.urlopen(req,timeout=20) as response:print('Status recorded:',response.status)
