@@ -39,7 +39,7 @@
     const id = ++answerRequest;
     answerController?.abort();
     timeResult.hidden = false;
-    if (!selectedQuestion || selectedQuestion.id !== "yn-man-001") {
+    if (!selectedQuestion || !["yn-man-001", "yn-man-002"].includes(selectedQuestion.id)) {
       timeResult.textContent = "Ответ на этот вопрос ещё готовится.";
       return;
     }
