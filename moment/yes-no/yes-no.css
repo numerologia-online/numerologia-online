@@ -194,9 +194,6 @@ body:has(#yn-panel[hidden]) .yn-topic:hover,body:has(#yn-panel[hidden]) .yn-topi
 #yn-dialog .yn-answer-verdict{font-size:clamp(29px,8vw,36px);line-height:1.1;margin:0 0 8px}
 #yn-dialog .yn-answer-explanation{font-size:clamp(18px,4.8vw,21px);line-height:1.32}
 #yn-dialog .yn-repeat-note{padding:10px 0 0;margin:0;font-size:10px;line-height:1.4}
-#yn-dialog.yn-keyboard .dialog-topic,#yn-dialog.yn-keyboard .yn-time-intro,#yn-dialog.yn-keyboard .yn-repeat-note{display:none}
-#yn-dialog.yn-keyboard .dialog-content{gap:8px;padding:10px 14px}
-#yn-dialog.yn-keyboard #yn-dialog-title{font-size:24px}
 @media(max-height:640px){#yn-dialog .dialog-content{gap:8px}#yn-dialog .yn-repeat-note{font-size:9px}#yn-dialog .yn-answer-explanation{font-size:18px}}
 
 /* The Mini App already has its own title. Keep the directory to one compact screen. */
