@@ -15,13 +15,16 @@ class Element {
   replaceChildren(...children) { this.children = children; }
   append(...children) { this.children.push(...children); }
   setAttribute(name, value) { this.attributes[name] = value; }
+  removeAttribute(name) { delete this.attributes[name]; }
+  reset() { if (this.id === "yn-time-form") elements["yn-time-input"].value = ""; }
   scrollIntoView() { this.scrolled = true; }
   focus() {}
   showModal() { this.open = true; }
   close() { this.open = false; this.fire("close"); }
 }
 const ids = ["yn-categories","yn-panel","yn-questions","yn-search","yn-clear",
-  "yn-title","yn-count","yn-more","yn-all","yn-dialog","yn-close","yn-back","yn-dialog-title"];
+  "yn-title","yn-count","yn-more","yn-all","yn-dialog","yn-close","yn-back","yn-dialog-title",
+  "yn-time-input","yn-time-form","yn-time-error","yn-time-result","yn-now"];
 const elements = Object.fromEntries(ids.map(id => [id, new Element(id)]));
 const headings = Object.fromEntries([".yn-directory > .overline",".yn-directory > h1",
   ".yn-directory-sub"].map(name => [name, new Element(name)]));
@@ -53,6 +56,20 @@ const pause = () => new Promise(resolve => setImmediate(resolve));
   assert.equal(elements["yn-all"].scrolled, true, "Back button visible above questions");
   elements["yn-questions"].children[0].fire("click");
   assert.equal(elements["yn-dialog"].open, true, "Answer dialog opened");
+  assert.equal(elements["yn-time-result"].hidden, true, "No chosen moment initially");
+  elements["yn-time-input"].value = "2561";
+  elements["yn-time-form"].fire("submit", {preventDefault(){}});
+  assert.equal(elements["yn-time-error"].hidden, false, "Invalid 25:61 time rejected");
+  assert.equal(elements["yn-time-result"].hidden, true, "No confirmation for invalid time");
+  elements["yn-time-input"].value = "1431";
+  elements["yn-time-input"].fire("input");
+  assert.equal(elements["yn-time-input"].value, "14:31", "Digits auto formatted HH:MM");
+  elements["yn-time-form"].fire("submit", {preventDefault(){}});
+  assert.equal(elements["yn-time-result"].hidden, false, "Manual time confirmed");
+  assert.ok(elements["yn-time-result"].textContent.includes("14:31"), "Correct time displayed");
+  elements["yn-now"].fire("click");
+  assert.match(elements["yn-time-input"].value, /^([01]\\d|2[0-3]):[0-5]\\d$/, "Now uses a valid local time");
+  assert.equal(elements["yn-time-result"].hidden, false, "Ask now confirms immediately");
   elements["yn-back"].fire("click");
   assert.equal(elements["yn-dialog"].open, false, "Answer Back closes dialog");
   assert.equal(elements["yn-panel"].hidden, false, "Back returns to questions");
@@ -62,5 +79,5 @@ const pause = () => new Promise(resolve => setImmediate(resolve));
   elements["yn-all"].fire("click");
   assert.equal(navigation, "../", "Topics Back returns to Numerology Moment");
   assert.equal(catalog.questions.length, 100, "Original hundred questions preserved");
-  console.log("PASS: answer → questions → topics → moment; 100 questions unchanged");
+  console.log("PASS: 100 question navigation, HH:MM validation, auto formatting and ask-now preview");
 })().catch(error => {console.error(error); process.exitCode=1;});
