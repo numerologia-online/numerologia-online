@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="index, follow">
+  <meta name="description" content="Нумерологический разбор по дате рождения: матрица судьбы, кармические программы, предназначение и жизненные сферы.">
+  <meta name="theme-color" content="#f8f5ed">
+  <base href="../">
+  <title>Полный личный расчёт | Нумерология Онлайн</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="pro/pro.css?v=65">
+  <link rel="stylesheet" href="shared-offer.css?v=1">
+  <link rel="stylesheet" href="site-support.css?v=3">
+  <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+  <script src="telegram-scroll-guard.js?v=1" defer></script>
+</head>
+<body>
+  <main class="pro-shell">
+    <header class="pro-bar">
+      <a class="pro-back" id="pro-home-link" href="./" aria-label="Вернуться ко всем разделам">← На главную</a>
+      <span class="pro-brand">НУМЕРОЛОГИЯ ONLINE</span>
+    </header>
+    <section class="pro-hero">
+      <p class="pro-eyebrow">ВАШ ПЕРСОНАЛЬНЫЙ РАЗБОР</p>
+      <h1>Полный личный<br>расчёт</h1>
+      <p class="pro-hero-lead">Введите дату рождения и откройте свой полный личный разбор. Сейчас перед вами начнёт раскрываться то, что долго оставалось без слов: ваши сильные стороны, любовь, деньги, предназначение и важные кармические уроки. Этот разбор поможет глубже понять себя и увидеть путь яснее.</p>
+      <a class="pro-school-shortcut" href="pro/schools/">Все школы нумерологии →</a>
+    </section>
+    <form id="pro-form" class="pro-form" novalidate>
+      <label for="pro-birth-date">Ваша дата рождения</label>
+      <div class="pro-form-row">
+        <input id="pro-birth-date" type="text" inputmode="numeric" autocomplete="bday" placeholder="ДД.ММ.ГГГГ" maxlength="10" required>
+        <button type="submit">Открыть мой разбор <span aria-hidden="true">→</span></button>
+      </div>
+      <p id="pro-error" class="pro-error" hidden role="alert"></p>
+    </form>
+    <div id="pro-results" hidden>
+      <section class="pro-paper" aria-labelledby="pro-matrix-title">
+        <div class="pro-title-row">
+          <h2 id="pro-matrix-title">Ваш личный калькулятор жизни</h2>
+        </div>
+        <p id="pro-matrix-start" class="pro-matrix-start"><strong>НАЧНИТЕ ЗДЕСЬ</strong><span class="pro-matrix-free-label">БЕСПЛАТНО</span></p>
+        <div id="pro-diagram" class="pro-diagram"></div>
+        <section id="pro-point-details" class="pro-point-details" role="region" aria-label="Подробный разбор выбранной точки" tabindex="-1" hidden></section>
+        <section id="pro-zone-reading" class="pro-zone-reading" role="region" aria-labelledby="pro-zone-reading-title" tabindex="-1" hidden></section>
+        <section class="pro-zone-picker" aria-labelledby="pro-zone-picker-title">
+          <p class="pro-eyebrow">ИССЛЕДУЙТЕ СВОЮ МАТРИЦУ</p>
+          <h3 id="pro-zone-picker-title">Выберите интересующую сферу</h3>
+          <p class="pro-muted">Ваши персональные числа и темы жизни. Нажмите на интересующий вопрос, чтобы открыть его разбор.</p>
+          <button id="pro-free-impression" class="pro-free-impression" type="button" aria-label="Открыть бесплатно главу Как видят вас другие" hidden>
+            <span class="pro-free-impression-icon" aria-hidden="true">🔓</span>
+            <span class="pro-free-impression-name"><strong>Как видят вас другие</strong><small>Ваш первый полный ответ уже открыт</small></span>
+            <span class="pro-free-impression-cta">БЕСПЛАТНО <span aria-hidden="true">→</span></span>
+          </button>
+          <div id="pro-zone-buttons" class="pro-zone-buttons" role="group" aria-label="Тематические сферы матрицы" hidden></div>
+          <div id="pro-compact-questions" class="pro-compact-questions" aria-label="Персональные вопросы по матрице"></div>
+        </section>
+      </section>
+      <section id="pro-paywall-banner" class="pro-paywall-banner" hidden>
+        <h2>Открыть полный разбор</h2>
+        <button id="pro-paywall-buy" type="button">Варианты доступа</button>
+      </section>
+      <section id="pro-pdf-controls" class="pro-pdf-controls" aria-label="Сохранить персональный полный разбор" hidden>
+        <div class="pro-pdf-intro"><p class="pro-eyebrow">ВАШ ПЕРСОНАЛЬНЫЙ ДОКУМЕНТ</p><h2>Ваш разбор можно сохранить</h2></div>
+        <div id="pro-pdf-buttons" class="pro-pdf-buttons"></div>
+        <p class="pro-pdf-note">Большой документ формируется по вашей дате рождения. Подготовка может занять некоторое время.</p>
+      </section>
+      <!-- Reversible layout experiment: original question section stays in HTML,
+           while its live question buttons move into the compact picker above. -->
+      <section id="pro-question-legacy" class="pro-paper" aria-labelledby="pro-question-title" hidden>
+        <p class="pro-eyebrow">КОНСУЛЬТАЦИЯ ПО ТЕМАМ</p>
+        <h2 id="pro-question-title">О чём хотите узнать?</h2>
+        <p class="pro-muted">Первый ответ «Как видят вас другие» открыт бесплатно. Остальные полные ответы доступны после покупки разбора.</p>
+        <div id="pro-question-buttons" class="pro-question-buttons"></div>
+      </section>
+      <section id="pro-purpose" class="pro-paper" aria-label="Расчёт предназначения"></section>
+      <section class="pro-paper pro-karmic-paper" aria-labelledby="pro-karmic-title">
+        <h2 id="pro-karmic-title">Кармические программы</h2>
+        <div id="pro-karma" class="pro-karma" aria-live="polite"><p class="pro-muted">Ищу программы...</p></div>
+      </section>
+    </div>
+    <footer class="pro-footer">Нумерология Онлайн · Полный личный разбор по дате рождения</footer>
+    <dialog id="pro-paywall-dialog" class="pro-paywall-dialog" aria-labelledby="pro-paywall-dialog-title" aria-describedby="pro-paywall-dialog-note">
+      <div class="pro-paywall-dialog-header">
+        <p class="pro-paywall-dialog-kicker">НУМЕРОЛОГИЯ ONLINE</p>
+        <form method="dialog"><button class="pro-paywall-dialog-close" type="submit" aria-label="Закрыть окно">×</button></form>
+      </div>
+      <div class="pro-paywall-dialog-body">
+        <h2 id="pro-paywall-dialog-title">Откройте полный разбор</h2>
+        <div class="pro-paywall-compare" role="group" aria-label="Способы покупки полного разбора">
+          <section class="pro-paywall-plan pro-paywall-plan-once" aria-labelledby="pro-paywall-once-title">
+            <p class="pro-paywall-plan-kicker"><span>БЕЗ ПОДПИСКИ</span></p>
+            <h3 id="pro-paywall-once-title">Полный<br>разбор</h3>
+            <div class="pro-paywall-plan-price">990 ₽</div>
+            <p class="pro-paywall-plan-detail">Разовая покупка<br>PDF навсегда</p>
+            <div class="pro-paywall-book-art pro-paywall-book-art-once" aria-hidden="true"><span>ПЕРСОНАЛЬНЫЙ<br>РАЗБОР</span><i>✧</i></div>
+            <button id="pro-paywall-one-time" class="pro-paywall-plan-action pro-paywall-plan-action-once" type="button">Купить разово</button>
+          </section>
+          <section class="pro-paywall-plan pro-paywall-plan-club" aria-labelledby="pro-paywall-club-title">
+            <p class="pro-paywall-plan-kicker pro-paywall-plan-kicker-club">♛ ВЫГОДНЕЕ</p>
+            <h3 id="pro-paywall-club-title">Разбор<br>с клубом</h3>
+            <div class="pro-paywall-plan-price">490 ₽</div>
+            <p id="pro-paywall-dialog-note" class="pro-paywall-plan-detail pro-paywall-plan-detail-club">Скидка <strong>500 ₽</strong> на разбор для участников клуба</p>
+            <div class="pro-paywall-book-art pro-paywall-book-art-club" aria-hidden="true"><span>ПЕРСОНАЛЬНЫЙ<br>РАЗБОР</span><i>✧</i><b>+</b></div>
+            <button id="pro-paywall-club" class="pro-paywall-plan-action pro-paywall-plan-action-club" type="button">Вступить в клуб</button>
+          </section>
+        </div>
+        <p class="pro-paywall-billing-summary">В первый месяц: разбор <strong>490 ₽</strong> + клуб <strong>490 ₽</strong> = <strong>980 ₽</strong>. Затем клуб 490 ₽/мес.</p>
+        <p id="pro-paywall-checkout-note" class="pro-paywall-checkout-note" role="status" aria-live="polite" hidden></p>
+
+        <section class="pro-paywall-matrix" aria-labelledby="pro-paywall-matrix-title">
+          <h3 id="pro-paywall-matrix-title">Преимущества клуба</h3>
+          <table class="pro-paywall-matrix-table">
+            <colgroup><col class="pro-paywall-matrix-name"><col class="pro-paywall-matrix-standard"><col class="pro-paywall-matrix-member"></colgroup>
+            <thead><tr>
+              <th scope="col">Преимущества</th>
+              <th scope="col">БЕЗ ПОДПИСКИ</th>
+              <th scope="col">В КЛУБЕ ♛</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <th scope="row"><span class="pro-paywall-row-icon" aria-hidden="true">📅</span><span>Календарь важных чисел<small>Дни риска, удачи, покупок</small></span></th>
+                <td class="pro-paywall-matrix-muted"><span class="pro-paywall-muted-lock">🔒</span> Недоступно</td>
+                <td class="pro-paywall-matrix-in"><strong>✓ Включено</strong><small>Каждый месяц новый</small></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="pro-paywall-row-icon" aria-hidden="true">📖</span><span>Разбор месяца<small>Новая глава вашего года</small></span></th>
+                <td><strong>990 ₽</strong><small>Полный год отдельно</small></td>
+                <td class="pro-paywall-matrix-in"><strong>✓ БЕСПЛАТНО</strong><small>По одной главе каждый месяц</small></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="pro-paywall-row-icon" aria-hidden="true">🔮</span><span>Вопросы «Да или нет?»<small>Ответы на ваши ситуации</small></span></th>
+                <td><strong>19 ₽</strong><small>За один вопрос</small></td>
+                <td class="pro-paywall-matrix-in"><strong>✓ 0 ₽</strong><small>БЕЗЛИМИТНО</small></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="pro-paywall-row-icon" aria-hidden="true">🚩</span><span>Мужчина или Red Flag<small>Все 80 вопросов</small></span></th>
+                <td><strong>19–59 ₽</strong><small>За один вопрос</small></td>
+                <td class="pro-paywall-matrix-in pro-paywall-matrix-discount"><strong>✓ −50%</strong><small>На каждый вопрос</small></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="pro-paywall-row-icon" aria-hidden="true">✨</span><span>Нумерология момента<small>Деньги, любовь, решения</small></span></th>
+                <td><strong>100 ₽*</strong><small>За вопрос</small></td>
+                <td class="pro-paywall-matrix-in pro-paywall-matrix-discount"><strong>✓ −50%</strong><small>На важные вопросы</small></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="pro-paywall-row-icon" aria-hidden="true">🎁</span><span>Большие разборы<small>Совместимость, дети, PDF</small></span></th>
+                <td><strong>990 ₽</strong><small>За разбор</small></td>
+                <td class="pro-paywall-matrix-in pro-paywall-matrix-discount"><strong>✓ −50%</strong><small>Большая скидка</small></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="pro-paywall-row-icon" aria-hidden="true">💰</span><span>Денежные ритуалы<small>Авторские практики богатства</small></span></th>
+                <td class="pro-paywall-matrix-muted"><span class="pro-paywall-muted-lock">🔒</span> Недоступно</td>
+                <td class="pro-paywall-matrix-in"><strong>✓ Только в клубе</strong><small>Новый ритуал каждый месяц</small></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+        <p class="pro-paywall-renewal">Новые разборы оплачиваются отдельно по клубной цене. Автопродление можно отключить в любой момент.</p>
+        <p class="pro-paywall-dialog-disclaimer">Оплата пока не подключена. *Цены будущих клубных сервисов предварительные.</p>
+      </div>
+    </dialog>
+  </main>
+  <a class="site-support-link" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer" aria-label="Техподдержка: написать сообщение в Telegram"><span class="site-support-mark" aria-hidden="true">?</span><span>Техподдержка</span></a>
+  <script type="module" src="pro/pro.js?v=125"></script>
+</body>
+</html>

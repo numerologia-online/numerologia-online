@@ -7,7 +7,6 @@
   <meta name="description" content="Нумерология момента — 300 вопросов о любви, работе, деньгах и жизненных решениях. Каталог и подбор вопроса.">
   <title>300 вопросов обо всём — Нумерология онлайн</title>
   <link rel="stylesheet" href="./moment.css?v=1">
-  <script defer src="./analytics.js?v=1"></script>
   <script defer src="./moment.js?v=1"></script>
 </head>
 <body>
@@ -84,5 +83,10 @@
       <div id="moment-confirmation" class="confirmation" hidden tabindex="-1"><span class="confirmed-icon" aria-hidden="true">✓</span><h3>Ваш момент зафиксирован</h3><p id="confirmed-question"></p><p id="confirmed-time"></p><div class="waiting-note"><strong>Следующий шаг — подключение расчётов</strong><p>Это демонстрация подготовки вопроса, а не готовый нумерологический ответ. Данные не передаются на сервер и не создают покупку.</p></div><button id="ask-another" type="button" class="secondary-button">Выбрать другой вопрос</button></div>
     </div>
   </dialog>
+<!-- Numi Insights v2: independent background collector -->
+<script>
+(()=>{const start=()=>{try{const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';s.async=true;document.head.append(s);}catch(_){}};const schedule=()=>{if('requestIdleCallback'in window)requestIdleCallback(start,{timeout:1500});else setTimeout(start,0);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule,{once:true});else schedule();})();
+</script>
+
 </body>
 </html>

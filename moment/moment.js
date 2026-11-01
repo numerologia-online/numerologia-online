@@ -10,9 +10,6 @@
   const safeDate=(v)=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;const [y,m,d]=v.split("-").map(Number);const date=new Date(Date.UTC(y,m-1,d));return y>=1900&&y<=2100&&date.getUTCFullYear()===y&&date.getUTCMonth()+1===m&&date.getUTCDate()===d;};
   const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");};
   const html=(tag,cls,txt)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(txt!==undefined)el.textContent=txt;return el;};
-  const track=(type,item="-")=>window.NumiAnalytics?.send(type,"moment",item);
-  let searched=false;
-  track("page");
   function renderCategories(){
     grid.replaceChildren();
     const all=[{id:"all",title:"Все темы",icon:"✧",description:"",count:catalog.questions.length},...catalog.categories];
@@ -20,7 +17,6 @@
       const b=html("button","category"+(active===cat.id?" active":"" ));b.type="button";b.setAttribute("aria-pressed",String(active===cat.id));
       b.append(html("span","category-icon",cat.icon),html("strong","category-title",cat.title),html("span","category-count",cat.count+" вопросов"));
       b.addEventListener("click",()=>{
-        if(cat.id!=="all")track("category",cat.id);
         active=cat.id;visibleCount=12;renderCategories();renderQuestions();$("questions-panel").scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});
       });grid.append(b);
     });
@@ -56,7 +52,6 @@
   }
   function openQuestion(question){
     selected=question||null;custom=!question;mode=custom?"self":question.mode;
-    track("question",question?.id||"custom");
     form.reset();$("form-error").hidden=true;$("moment-confirmation").hidden=true;form.hidden=false;
     $("question-title").textContent=custom?"Задайте свой вопрос":question.title;
     const category=question?catalog.categories.find(c=>c.id===question.category):null;
@@ -72,8 +67,8 @@
   $("ask-own").addEventListener("click",()=>openQuestion(null));
   $("show-all").addEventListener("click",()=>{active="all";visibleCount=12;renderCategories();renderQuestions();});
   $("show-more").addEventListener("click",()=>{visibleCount+=12;renderQuestions();});
-  search.addEventListener("input",()=>{if(!searched&&search.value.trim().length>=3){searched=true;track("search");}visibleCount=12;renderQuestions();});
-  clear.addEventListener("click",()=>{search.value="";searched=false;visibleCount=12;renderQuestions();search.focus();});
+  search.addEventListener("input",()=>{visibleCount=12;renderQuestions();});
+  clear.addEventListener("click",()=>{search.value="";visibleCount=12;renderQuestions();search.focus();});
   customModeField.addEventListener("change",e=>{if(e.target.name==="custom-mode"){mode=e.target.value;updateModeFields();}});
   form.addEventListener("submit",e=>{
     e.preventDefault();const q=custom?$("custom-question").value.trim():selected.title;

@@ -5,15 +5,12 @@
   let catalog,active="all",visible=12;
   const normalized=s=>String(s||"").toLocaleLowerCase("ru-RU").replace(/ё/g,"е").replace(/[^а-яa-z0-9 ]/gi," ").replace(/\s+/g," ").trim();
   const node=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;};
-  const track=(type,item="-")=>window.NumiAnalytics?.send(type,"yes-no",item);
-  let searched=false;
-  track("page");
   function renderCategories(){
     const categories=[{id:"all",title:"Все вопросы",icon:"◉",count:catalog.questions.length},...catalog.categories];
     grid.replaceChildren(...categories.map(c=>{
       const b=node("button","category"+(active===c.id?" active":"" ));b.type="button";b.setAttribute("aria-pressed",String(active===c.id));
       b.append(node("span","category-icon",c.icon),node("strong","category-title",c.title),node("span","category-count",c.count+" вопросов"));
-      b.addEventListener("click",()=>{if(c.id!=="all")track("category",c.id);active=c.id;visible=12;renderCategories();render();$("yn-panel").scrollIntoView({behavior:"smooth",block:"start"});});return b;
+      b.addEventListener("click",()=>{active=c.id;visible=12;renderCategories();render();$("yn-panel").scrollIntoView({behavior:"smooth",block:"start"});});return b;
     }));
   }
   function render(){
@@ -31,7 +28,7 @@
     list.replaceChildren(...found.slice(0,visible).map((q,i)=>{
       const b=node("button","question-entry");b.type="button";
       b.append(node("span","question-index",String(i+1).padStart(2,"0")),node("span","question-name",q.title),node("span","arrow","↗"));
-      b.addEventListener("click",()=>{track("question",q.id);$("yn-dialog-title").textContent=q.title;dialog.showModal();document.body.style.overflow="hidden";});
+      b.addEventListener("click",()=>{$("yn-dialog-title").textContent=q.title;dialog.showModal();document.body.style.overflow="hidden";});
       return b;
     }));
   }
@@ -39,8 +36,8 @@
   $("yn-back").addEventListener("click",()=>dialog.close());
   dialog.addEventListener("close",()=>{document.body.style.overflow="";});
   dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.close();});
-  search.addEventListener("input",()=>{if(!searched&&search.value.trim().length>=3){searched=true;track("search");}visible=12;render();});
-  clear.addEventListener("click",()=>{search.value="";searched=false;visible=12;render();search.focus();});
+  search.addEventListener("input",()=>{visible=12;render();});
+  clear.addEventListener("click",()=>{search.value="";visible=12;render();search.focus();});
   more.addEventListener("click",()=>{visible+=12;render();});
   all.addEventListener("click",()=>{active="all";visible=12;renderCategories();render();});
   (async()=>{try{

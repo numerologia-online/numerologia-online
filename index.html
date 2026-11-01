@@ -78,39 +78,6 @@
         }
       }
     </style>
-    <style id="numi-saved-list-20261031">
-      /* Compact single-line list, discreet delete action, no prices. */
-      #numi-confirmed-purchases { margin:10px 0 14px; }
-      .numi-saved-row {
-        display:flex;align-items:center;gap:10px;
-        min-height:62px;padding:10px 0;
-        border-bottom:1px solid #e0e4dc;
-      }
-      .numi-saved-row-content { flex:1;min-width:0; }
-      .numi-saved-row-content strong {
-        display:block;font:600 15px/1.35 Georgia,serif;color:#184c3a;
-        overflow-wrap:anywhere;
-      }
-      .numi-saved-row-content small {
-        display:block;margin-top:3px;color:#77877d;
-        font:400 12px/1.3 system-ui,sans-serif;
-      }
-      #account-dialog .numi-saved-remove {
-        display:grid;place-items:center;flex:none;
-        width:38px;height:38px;margin:0;padding:0;
-        border:1px solid #e7ddd2;border-radius:11px;
-        background:transparent;color:#8d736a;font-size:17px;
-        cursor:pointer;
-      }
-      #account-dialog .numi-saved-remove:disabled {opacity:.45;cursor:wait}
-      #account-dialog .numi-saved-remove:focus-visible {outline:2px solid #1c694c;outline-offset:2px}
-      #account-dialog [data-account-content="saved"] .account-back {
-        display:block;width:100%;min-height:48px;margin:0 0 15px;
-        padding:11px 15px;border:1px solid #bdd2c2;border-radius:13px;
-        background:#edf3ed;color:#174b39;text-align:center;
-        font:700 15px/1.35 system-ui,sans-serif;
-      }
-    </style>
     <style id="numi-account-tariffs-20261031">
       #account-dialog .numi-tariff-lead {display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0 7px}
       #account-dialog .numi-tariff-lead>div {border:1px solid #dddccf;border-radius:13px;padding:12px 10px;min-width:0}
@@ -258,6 +225,88 @@
         #account-dialog .numi-tariff-row strong {font-size:12px}
       }
     </style>
+    <style id="numi-bright-club-column-20261031">
+      /* Club column is a continuous, full-height visual band across every tariff row. */
+      #account-dialog .numi-tariff-table {
+        border:1px solid #d4bc75;
+        box-shadow:0 5px 22px rgba(110,79,24,.14);
+      }
+      #account-dialog .numi-tariff-head [role=columnheader]:last-child {
+        background:linear-gradient(125deg,#157750,#094d39);
+        color:#fff;font-weight:900;letter-spacing:.045em;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row {
+        align-items:stretch;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row>[role=cell]:last-child {
+        align-self:stretch;min-height:100%;box-sizing:border-box;
+        background:linear-gradient(135deg,#d4efcd 0%,#e6f4dd 55%,#d1ecca 100%);
+        color:#096e43;
+        font-size:clamp(14px,3.8vw,17px);font-weight:900;
+        text-align:center;justify-content:center;
+        border-left:1px solid #bddcb4;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row--feature>[role=cell]:last-child {
+        align-self:stretch;height:auto;
+        background:linear-gradient(135deg,#c4eabe 0%,#e0f2d7 100%);
+      }
+      #account-dialog .numi-tariff-table .numi-club-discount {
+        font:900 clamp(22px,6.2vw,31px)/1.05 Georgia,"Times New Roman",serif!important;
+        letter-spacing:-.045em;color:#087447!important;
+        text-shadow:0 1px 0 rgba(255,255,255,.72);
+      }
+      #account-dialog .numi-tariff-table .numi-club-discount small {
+        margin-top:5px;font:600 10px/1.3 system-ui,sans-serif;
+        letter-spacing:0;color:#386c4f;
+      }
+      #account-dialog .numi-tariff-table .numi-club-free {
+        font:900 clamp(10px,3.1vw,14px)/1.1 system-ui,sans-serif!important;
+        letter-spacing:-.015em;color:#047645!important;
+        overflow-wrap:anywhere;word-break:normal;
+      }
+      #account-dialog .numi-tariff-club .numi-tariff-club-price {
+        color:#086e48;font-size:clamp(26px,7.1vw,36px)!important;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row>[role=cell]:not(:first-child) {
+        padding-inline:4px;
+      }
+      @media(max-width:390px) {
+        #account-dialog .numi-tariff-table .numi-club-discount {font-size:clamp(20px,5.8vw,27px)!important}
+        #account-dialog .numi-tariff-table .numi-club-free {font-size:clamp(10px,2.75vw,12px)!important}
+      }
+    </style>
+    <style id="numi-cabinet-full-height-compact-prices-20261031">
+      /* Cabinet stays on screen; a touch below content can never reach the backdrop. */
+      @media (max-width:700px) {
+        #account-dialog:not(.account-dialog--editing):not(:has(input:focus)) {
+          height:calc(100dvh - 22px);
+          max-height:calc(100dvh - 22px);
+          min-height:0;
+          margin:auto;
+          overscroll-behavior:contain;
+          overflow-y:auto;
+          scroll-padding-bottom:24px;
+          padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+        }
+        #account-dialog.account-dialog--editing,
+        #account-dialog:has(input:focus) {height:auto}
+      }
+      #account-dialog [data-account-content="prices"] .numi-tariff-back {
+        min-height:48px;padding:9px 13px;margin:2px 0 10px;
+      }
+      #account-dialog [data-account-content="prices"]>h3 {margin-bottom:9px;font-size:clamp(27px,7vw,35px)}
+      #account-dialog [data-account-content="prices"] .numi-tariff-lead {gap:8px;margin:4px 0 10px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-lead>div {padding:11px 10px;border-radius:16px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-card-icon {font-size:19px;margin-bottom:2px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-club .numi-tariff-club-badge {margin:0 0 5px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-club .numi-tariff-club-price {margin:4px 0 3px;font-size:clamp(25px,6.6vw,34px)!important}
+      #account-dialog [data-account-content="prices"] .numi-tariff-lead small {font-size:11px;line-height:1.32}
+      #account-dialog [data-account-content="prices"] .numi-tariff-card-foot {padding:5px 4px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-caption {margin:9px 0 8px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-caption strong {font-size:20px;margin-bottom:3px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-row>[role=cell] {min-height:53px;padding-top:8px;padding-bottom:8px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-head [role=columnheader] {padding-top:9px;padding-bottom:9px}
+    </style>
     <style id="numi-global-account-back-20261031">
       /* Same prominent gold return action in every cabinet section. */
       #account-dialog .account-panel .account-back.numi-gold-back {
@@ -379,6 +428,32 @@
       #account-dialog .numi-saved-library .numi-saved-row {min-height:59px;padding:9px 0}
       #account-dialog .numi-saved-library .numi-saved-row-content strong {font-size:15px}
     </style>
+    <style id="numi-tariff-legibility-fix-20261031">
+      /* Explicit labels fit even in Telegram's narrow iPhone webview. */
+      #account-dialog .numi-tariff-table .numi-tariff-row {
+        grid-template-columns:minmax(0,1.45fr) minmax(0,.67fr) minmax(0,.98fr);
+      }
+      #account-dialog .numi-tariff-table .numi-club-free strong {
+        display:block;font:900 clamp(9px,2.7vw,12px)/1.15 system-ui,sans-serif;
+        letter-spacing:-.045em;white-space:nowrap;overflow-wrap:normal;
+        color:#086c40;text-shadow:0 1px 0 #fff;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-unavailable {
+        color:#acada5;font-size:24px;font-weight:400;
+      }
+      #account-dialog .numi-tariff-table .numi-club-included strong {
+        display:block;color:#08764a;font:900 26px/1.1 system-ui,sans-serif;
+      }
+      #account-dialog .numi-tariff-table .numi-club-included small {
+        display:block;color:#176846;font:700 clamp(9px,2.65vw,11px)/1.2 system-ui,sans-serif;
+        margin-top:2px;letter-spacing:-.02em;
+      }
+      @media(max-width:390px) {
+        #account-dialog .numi-tariff-table .numi-tariff-row {
+          grid-template-columns:minmax(0,1.4fr) minmax(0,.67fr) minmax(0,1fr);
+        }
+      }
+    </style>
     <style id="numi-angel-seamless-background-20261031">
       /* White illustration pixels blend into the cream card without a visible square. */
       #account-dialog .numi-saved-empty {
@@ -411,8 +486,7 @@
         color:#086c40;text-shadow:0 1px 0 #fff;
       }
       #account-dialog .numi-tariff-table .numi-tariff-unavailable {
-        color:#748479;font:700 clamp(9px,2.6vw,12px)/1.2 system-ui,sans-serif;
-        letter-spacing:-.035em;overflow-wrap:normal;word-break:normal;
+        color:#acada5;font-size:24px;font-weight:400;
       }
       #account-dialog .numi-tariff-table .numi-club-included strong {
         display:block;color:#08764a;font:900 26px/1.1 system-ui,sans-serif;
@@ -859,24 +933,6 @@
           <button class="account-back numi-gold-back" type="button" data-account-back><span aria-hidden="true">←</span> Назад в личный кабинет</button>
           <h3>Сохранённое</h3>
           <p class="account-panel-intro">Ваши разборы и ответы всегда под рукой.</p>
-          <div id="numi-test-checkout" class="numi-test-checkout" hidden>
-            <strong>🧪 Проверка покупки · 0 ₽</strong>
-            <p>Только для владельца. Никаких денег и настоящих прав доступа.</p>
-            <form id="numi-test-checkout-form">
-              <label>Выберите материал
-                <select name="kind" required>
-                  <option value="redflag">Мужчина или Red Flag</option>
-                  <option value="moment">Нумерология момента</option>
-                  <option value="year">Полный разбор года</option>
-                </select>
-              </label>
-              <label>Дата рождения
-                <input type="date" name="birth_date" value="1986-09-09" min="1900-01-01" max="2100-12-31" required>
-              </label>
-              <button type="submit">Провести тестовую покупку · 0 ₽</button>
-            </form>
-            <p id="numi-test-checkout-message" role="status" aria-live="polite"></p>
-          </div>
           <div id="numi-confirmed-purchases" aria-label="Список сохранённых разборов и ответов"></div>
           <div class="account-empty-state numi-saved-empty">
             <div class="numi-saved-angel-title">♡ Ответы на твои вопросы</div>
@@ -914,12 +970,11 @@
               <span role="cell" class="numi-club-discount">−50%<small>на вопросы</small></span>
             </div>
             <div class="numi-tariff-row" role="row"><strong role="cell">Нумерология момента</strong><span role="cell">100 ₽</span><span role="cell" class="numi-club-discount">−50%</span></div>
-            <div class="numi-tariff-row" role="row"><strong role="cell">Календарь важных чисел</strong><span role="cell" class="numi-tariff-unavailable">Недоступно</span><span role="cell" class="numi-club-included"><strong>✓</strong><small>Включено</small></span></div>
-            <div class="numi-tariff-row" role="row"><strong role="cell">Денежные ритуалы</strong><span role="cell" class="numi-tariff-unavailable">Недоступно</span><span role="cell" class="numi-club-included"><strong>✓</strong><small>Только в клубе</small></span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Календарь важных чисел</strong><span role="cell" class="numi-tariff-unavailable">—</span><span role="cell" class="numi-club-included"><strong>✓</strong><small>Включено</small></span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Денежные ритуалы</strong><span role="cell" class="numi-tariff-unavailable">—</span><span role="cell" class="numi-club-included"><strong>✓</strong><small>Только в клубе</small></span></div>
           </div>
           <p class="numi-tariff-footer">Клуб стоит 490 ₽ в месяц. Большие разборы и платные вопросы оплачиваются отдельно по клубной цене. Подключение оплаты пока готовится.</p>
           <button type="button" class="account-primary" id="account-show-offer">Подробнее о преимуществах клуба</button>
-          <button type="button" id="numi-open-test-from-prices" data-account-panel="saved" class="numi-test-price-link" hidden>🧪 Провести тестовую покупку · 0 ₽</button>
         </section>
 
         <section class="account-panel" data-account-content="learning" hidden>
@@ -974,24 +1029,12 @@
   <script src="artwork-loader.js?v=1" defer></script>
   <script src="install.js?v=4" defer></script>
   <script src="auth-profile.js?v=20" defer></script>
-  <script src="account-browser.js?v=15" defer></script>
+  <script src="account-browser.js?v=14" defer></script>
   <script type="module" src="app.js?v=263"></script>
-    <script src="moment/analytics.js?v=3" defer></script>
-  <script>
-  (() => {
-    document.addEventListener("DOMContentLoaded", () => {
-      const track=(type,section,item)=>window.NumiAnalytics?.send(type,section,item);
-      track("page","home","open");
-      document.addEventListener("click",event=>{
-        const node=event.target.closest("[data-open-year], [data-open-redflag], [data-open-compatibility], [data-open-personal-day], [data-open-matrix], [data-open-destiny-code]");
-        if(!node)return;
-        const types=[["openYear","year"],["openRedflag","redflag"],["openCompatibility","compatibility"],["openPersonalDay","personal_day"],["openMatrix","matrix"],["openDestinyCode","money"]];
-        const map={"data-open-year":"year","data-open-redflag":"redflag","data-open-compatibility":"compatibility","data-open-personal-day":"personal_day","data-open-matrix":"matrix","data-open-destiny-code":"money"};
-        for(const [attr,section] of Object.entries(map)){if(node.hasAttribute(attr)){track("category",section,"open");break;}}
-      },{capture:true});
-      if(location.hash==="#razbor-goda"||new URLSearchParams(location.search).get("view")==="year")track("category","year","open_from_link");
-    });
-  })();
-  </script>
+  <!-- Numi Insights v2: independent background collector -->
+<script>
+(()=>{const start=()=>{try{const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';s.async=true;document.head.append(s);}catch(_){}};const schedule=()=>{if('requestIdleCallback'in window)requestIdleCallback(start,{timeout:1500});else setTimeout(start,0);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule,{once:true});else schedule();})();
+</script>
+
 </body>
 </html>

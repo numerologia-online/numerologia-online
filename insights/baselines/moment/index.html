@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#143c30">
+  <meta name="description" content="Нумерология момента — 300 вопросов о любви, работе, деньгах и жизненных решениях. Каталог и подбор вопроса.">
+  <title>300 вопросов обо всём — Нумерология онлайн</title>
+  <link rel="stylesheet" href="./moment.css?v=1">
+  <script defer src="./moment.js?v=1"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../" class="brand" aria-label="На главную Нумерология онлайн">НУМЕРОЛОГИЯ <span>ОНЛАЙН</span><b class="brand-sigil">9966</b></a>
+      <a class="header-back" href="../" aria-label="Вернуться на главную">← На главную</a>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="shell">
+        <div class="eyebrow"><span class="fine-star">✦</span> НУМЕРОЛОГИЯ МОМЕНТА <span class="fine-star">✦</span></div>
+        <h1>300 вопросов <em>обо всём</em></h1>
+        <p class="hero-sub">Иногда самое важное начинается с одного вопроса. Найдите свой — а момент, когда вы его зададите, мы сохраним для расчёта.</p>
+        <div class="hero-stats"><span><strong>300</strong> вопросов</span><i aria-hidden="true"></i><span><strong>12</strong> тем</span><i aria-hidden="true"></i><span>Ваш собственный момент</span></div>
+        <div class="search-panel">
+          <label for="question-search">Что вас волнует сегодня?</label>
+          <div class="search-field"><span aria-hidden="true">⌕</span><input id="question-search" autocomplete="off" enterkeyhint="search" placeholder="Любовь, работа, переезд, выбор…"><button id="clear-search" type="button" aria-label="Очистить поиск" hidden>×</button></div>
+          <p>Можно найти готовый вопрос или сформулировать свой.</p>
+        </div>
+      </div>
+    </section>
+    <section class="shell" aria-label="Да или нет" style="padding-top:34px">
+      <a href="./yes-no/" style="display:flex;justify-content:space-between;align-items:center;gap:22px;padding:clamp(23px,4vw,37px);border-radius:22px;background:#f3f0e7;border:1px solid #d8c9a7;text-decoration:none;box-shadow:0 10px 40px rgba(19,61,47,.045)">
+        <span style="display:block"><span class="overline">ОТДЕЛЬНЫЙ РАЗДЕЛ · 7 ТЕМ</span><strong style="display:block;font-family:Georgia,serif;font-weight:500;font-size:clamp(26px,5vw,37px);margin:10px 0;color:#143d30">Да или нет? <span style="color:#b38a4c">100 вопросов</span></strong><span style="font-size:14px;color:#60796d;line-height:1.6">Мужчина, любовь, деньги, работа, решения и будущее. Выберите свой вопрос.</span></span>
+        <span aria-hidden="true" style="font-size:30px;color:#b38a4c;flex-shrink:0">↗</span>
+      </a>
+    </section>
+    <section class="explore shell" aria-label="Каталог вопросов">
+      <div class="section-heading">
+        <div><p class="overline">ВАША БИБЛИОТЕКА ВОПРОСОВ</p><h2>Выберите, что сейчас важно</h2></div>
+        <p class="section-note">Без бесконечных списков — по темам, с поиском и удобным выбором.</p>
+      </div>
+      <div id="category-grid" class="category-grid" aria-label="Темы"></div>
+      <div id="questions-panel" class="questions-panel">
+        <div class="questions-top">
+          <div><span id="results-kicker" class="overline">ВОПРОСЫ</span><h3 id="results-title">Все вопросы</h3></div>
+          <button type="button" id="show-all" class="text-back" hidden>Показать все темы ↗</button>
+        </div>
+        <div id="results-message" class="results-message" role="status" aria-live="polite"></div>
+        <div id="question-list" class="question-list"></div>
+        <button id="show-more" type="button" class="show-more" hidden>Показать ещё вопросы ↓</button>
+      </div>
+      <section class="own-question" aria-labelledby="own-question-title">
+        <div class="own-symbol" aria-hidden="true">✧</div>
+        <div><p class="overline">ВАШ ВОПРОС</p><h2 id="own-question-title">Не нашли нужную формулировку?</h2><p>Напишите свой вопрос. Мы сохраним его и нужные данные для будущего расчёта, но пока не будем выдавать неподготовленные трактовки.</p></div>
+        <button type="button" id="ask-own" class="primary-button">Сформулировать свой вопрос <span aria-hidden="true">→</span></button>
+      </section>
+    </section>
+    <section class="how-it-works"><div class="shell">
+      <p class="overline">КАК ЭТО РАБОТАЕТ</p><h2>Момент имеет значение</h2>
+      <div class="steps"><div><span>01</span><strong>Выберите вопрос</strong><p>Из каталога или придумайте свой.</p></div><div><span>02</span><strong>Укажите даты</strong><p>Вашу, а для отношений — ещё и второго человека.</p></div><div><span>03</span><strong>Зафиксируйте момент</strong><p>Время подтверждения вопроса станет частью будущего расчёта.</p></div></div>
+      <p class="availability">Раздел готовится к запуску. Каталог работает в режиме предварительного просмотра: платных расчётов, списаний и автоматических ответов пока нет.</p>
+    </div></section>
+  </main>
+  <footer class="site-footer"><div class="shell"><span>НУМЕРОЛОГИЯ ОНЛАЙН · 9966</span><a href="../">Вернуться на сайт ↗</a></div></footer>
+  <dialog id="question-dialog" aria-labelledby="question-title">
+    <div class="dialog-content">
+      <div class="dialog-top"><span class="overline">ВАШ МОМЕНТ · 9966</span><button id="close-dialog" type="button" aria-label="Закрыть">×</button></div>
+      <p id="question-topic" class="dialog-topic">НУМЕРОЛОГИЯ МОМЕНТА</p>
+      <h2 id="question-title">Ваш вопрос</h2>
+      <p class="dialog-intro">Подготовим исходные данные для индивидуального расчёта.</p>
+      <form id="moment-form" novalidate>
+        <div id="custom-question-wrap" class="field" hidden><label for="custom-question">Ваш вопрос</label><textarea id="custom-question" rows="3" maxlength="240" placeholder="Например, стоит ли начинать новое дело?"></textarea><span class="field-hint">Пока это предварительный просмотр — ответ не рассчитывается.</span></div>
+        <div class="field"><label for="birth-one">Ваша дата рождения</label><input id="birth-one" type="date" required min="1900-01-01" max="2100-12-31"></div>
+        <div class="field" id="partner-field" hidden><label for="birth-two">Дата рождения другого человека</label><input id="birth-two" type="date" min="1900-01-01" max="2100-12-31"><span class="field-hint">Для вопросов о чувствах, отношениях и совместимости.</span></div>
+        <div class="field" id="event-field" hidden><label for="event-date">Дата планируемого события</label><input id="event-date" type="date" min="1900-01-01" max="2100-12-31"></div>
+        <fieldset id="custom-mode-field" class="mode-field" hidden><legend>О ком ваш вопрос?</legend><label><input type="radio" name="custom-mode" value="self" checked> Обо мне или о ситуации</label><label><input type="radio" name="custom-mode" value="partner"> О двух людях</label><label><input type="radio" name="custom-mode" value="event"> О выбранной дате</label></fieldset>
+        <div class="moment-clock"><span class="clock-icon" aria-hidden="true">◷</span><div><strong>Момент вопроса</strong><p id="moment-clock-label">Дата и время зафиксируются при подтверждении.</p></div></div>
+        <p id="form-error" role="alert" hidden></p>
+        <button class="primary-button submit-question" type="submit">Зафиксировать мой вопрос <span aria-hidden="true">→</span></button>
+      </form>
+      <div id="moment-confirmation" class="confirmation" hidden tabindex="-1"><span class="confirmed-icon" aria-hidden="true">✓</span><h3>Ваш момент зафиксирован</h3><p id="confirmed-question"></p><p id="confirmed-time"></p><div class="waiting-note"><strong>Следующий шаг — подключение расчётов</strong><p>Это демонстрация подготовки вопроса, а не готовый нумерологический ответ. Данные не передаются на сервер и не создают покупку.</p></div><button id="ask-another" type="button" class="secondary-button">Выбрать другой вопрос</button></div>
+    </div>
+  </dialog>
+</body>
+</html>

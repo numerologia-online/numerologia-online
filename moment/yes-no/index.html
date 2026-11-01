@@ -8,7 +8,6 @@
   <title>100 вопросов «Да или нет» — Нумерология момента</title>
   <link rel="stylesheet" href="../moment.css?v=1">
   <link rel="stylesheet" href="./yes-no.css?v=1">
-  <script defer src="../analytics.js?v=1"></script>
   <script defer src="./yes-no.js?v=1"></script>
 </head>
 <body>
@@ -55,5 +54,10 @@
       <button id="yn-back" class="secondary-button" type="button">Выбрать другой вопрос</button>
     </div>
   </dialog>
+<!-- Numi Insights v2: independent background collector -->
+<script>
+(()=>{const start=()=>{try{const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';s.async=true;document.head.append(s);}catch(_){}};const schedule=()=>{if('requestIdleCallback'in window)requestIdleCallback(start,{timeout:1500});else setTimeout(start,0);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule,{once:true});else schedule();})();
+</script>
+
 </body>
 </html>

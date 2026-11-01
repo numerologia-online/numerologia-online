@@ -1,0 +1,34 @@
+name: Validate analytics v2 against MySQL
+on:
+  push:
+    branches: [feature/analytics-v2-20261101]
+    paths: ['insights/**', '.github/workflows/numi-insights-checks.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: insights_test_only
+          MYSQL_DATABASE: insights_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pinsights_test_only"
+          --health-interval=10s --health-timeout=5s --health-retries=8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate browser scripts and report transforms
+        run: |
+          node --check insights/public/tracker.js
+          node --check insights/public/insights.js
+          node --test insights/tests/dashboard.test.cjs
+          python3 -m py_compile insights/deploy.py
+          php -l insights/public/numi-insights.php
+      - name: Test confirmed payments and attribution using actual MySQL
+        env:
+          NI_TEST_DSN: 'mysql:host=127.0.0.1;port=3306;dbname=insights_test;charset=utf8mb4'
+        run: php insights/tests/report.mysql.php

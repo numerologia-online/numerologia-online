@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+    <script src="telegram-scroll-guard.js?v=1" defer></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#121421" />
+    <title>Нумерология.online</title>
+    <meta name="description" content="Персональные нумерологические разборы." />
+    <meta name="robots" content="index, follow" />
+    <link rel="icon" type="image/png" href="assets/brand-icon-20261018.png" />
+    <link rel="manifest" href="manifest.webmanifest?v=6" />
+    <link rel="apple-touch-icon" sizes="192x192" href="apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Нумерология" />
+    <link rel="stylesheet" href="assets/numi-startup-20261031.css?v=1" />
+    <style id="numi-compact-cabinet-20261031">
+      /* Compact Telegram linking only: keep the original brand look and all content. */
+      #numi-account-entry:has(#numi-account-telegram:not([hidden])) {
+        margin:10px 0 11px;
+        padding:12px 13px;
+        border-radius:17px;
+      }
+      #numi-telegram-link-prompt { text-align:center; }
+      #numi-telegram-link-prompt h3 {
+        margin:0 0 8px;
+        font-size:clamp(18px,4.7vw,21px);
+        line-height:1.2;
+        color:#183f32;
+        font-weight:700;
+      }
+      #numi-telegram-link-prompt p {
+        margin:6px 0 8px;
+        color:#263f35;
+        font-size:13px;
+        line-height:1.42;
+      }
+      #numi-telegram-link-prompt p strong { color:#193e30; }
+      #numi-telegram-link-prompt .numi-account-privacy {
+        margin:9px 0 0;
+        font-size:11px;
+        line-height:1.38;
+        color:#63746a;
+      }
+      #numi-telegram-link-prompt .numi-auth-submit {
+        min-height:43px;
+        margin:9px 0 3px;
+        padding:10px;
+        font-size:14px;
+      }
+      #numi-telegram-link-prompt .numi-auth-link {
+        margin:3px auto 0;
+        padding:5px 0;
+        font-size:12px;
+        text-align:center;
+      }
+      #account-overview .account-section-heading { margin-top:14px; }
+      #account-overview .account-support-tile {
+        display:flex;
+        width:100%;
+        min-height:74px;
+        margin-top:14px;
+        margin-bottom:5px;
+        position:relative;
+        clear:both;
+      }
+    </style>
+    <style id="numi-stable-cabinet-height-20261031">
+      /* The account dialog must not collapse after the email-link form disappears. */
+      @media (max-width:700px) {
+        #account-dialog:not(.account-dialog--editing):not(:has(input:focus)) {
+          min-height:min(78dvh,740px);
+        }
+        #account-dialog.account-dialog--editing,
+        #account-dialog:has(input:focus) {
+          min-height:0;
+        }
+      }
+    </style>
+    <style id="numi-account-tariffs-20261031">
+      #account-dialog .numi-tariff-lead {display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0 7px}
+      #account-dialog .numi-tariff-lead>div {border:1px solid #dddccf;border-radius:13px;padding:12px 10px;min-width:0}
+      #account-dialog .numi-tariff-lead strong {display:block;font-size:17px;line-height:1.3;color:#174632}
+      #account-dialog .numi-tariff-lead small {display:block;margin-top:5px;color:#67776b;font-size:11px;line-height:1.4}
+      #account-dialog .numi-tariff-club {background:#f3f8ef;border-color:#d2dfcc!important}
+      #account-dialog .numi-tariff-club>span {display:block;margin-bottom:3px;font-size:10px;font-weight:800;letter-spacing:.08em;color:#9e762a}
+      #account-dialog .numi-tariff-caption {margin:9px 0 14px;color:#65786c;font-size:12px;line-height:1.45}
+      #account-dialog .numi-tariff-table {border-top:1px solid #d9dfd5}
+      #account-dialog .numi-tariff-head,#account-dialog .numi-tariff-row {display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,.7fr) minmax(0,.73fr);column-gap:7px;align-items:center}
+      #account-dialog .numi-tariff-head {padding:10px 0;background:#f3f5ef;color:#51695c;font-size:10px;font-weight:800;text-transform:uppercase}
+      #account-dialog .numi-tariff-row {padding:12px 0;border-bottom:1px solid #e1e5dd;color:#224c3c;font-size:12px;line-height:1.35}
+      #account-dialog .numi-tariff-row strong {font-weight:700;font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+      #account-dialog .numi-tariff-row>[role=cell]:not(:first-child) {text-align:center;font-weight:700}
+      #account-dialog .numi-tariff-row>[role=cell]:last-child {color:#166444}
+      #account-dialog .numi-tariff-row small {display:block;margin-top:4px;color:#76867b;font-size:11px;font-weight:400;line-height:1.4}
+      #account-dialog .numi-tariff-row--feature {align-items:start;background:#fafbf8}
+      #account-dialog .numi-tariff-footer {margin:14px 0;color:#64796e;font-size:12px;line-height:1.5}
+      @media(max-width:400px) {
+        #account-dialog .numi-tariff-head,#account-dialog .numi-tariff-row {grid-template-columns:minmax(0,1.5fr) minmax(0,.7fr) minmax(0,.7fr);gap:4px}
+        #account-dialog .numi-tariff-row strong {font-size:12px}
+      }
+    </style>
+    <style id="numi-premium-tariffs-20261031">
+      /* Pricing-only visual layer. The cabinet, authentication and payments are untouched. */
+      #account-dialog [data-account-content="prices"] {color:#122e27}
+      #account-dialog [data-account-content="prices"] .numi-tariff-back {
+        display:flex;align-items:center;justify-content:center;gap:12px;
+        width:100%;min-height:55px;padding:12px 16px;margin:3px 0 19px;
+        border:1px solid #c99546;border-radius:16px;
+        background:linear-gradient(125deg,#f3dcaa 0%,#d8ac64 48%,#af792a 100%);
+        box-shadow:0 5px 16px rgba(148,104,38,.20),inset 0 1px 0 rgba(255,255,255,.75);
+        color:#432b12;font:800 clamp(14px,3.8vw,17px)/1.3 system-ui,sans-serif;
+        text-align:center;text-decoration:none;cursor:pointer
+      }
+      #account-dialog .numi-tariff-back span {font-size:25px;line-height:1}
+      #account-dialog [data-account-content="prices"]>h3 {
+        margin:0 0 16px;color:#102f25;
+        font:normal clamp(29px,7.8vw,39px)/1.08 Georgia,"Times New Roman",serif;
+        letter-spacing:-.035em
+      }
+      #account-dialog .numi-tariff-lead {gap:9px;margin:5px 0 20px;align-items:stretch}
+      #account-dialog .numi-tariff-lead>div {
+        display:flex;flex-direction:column;min-width:0;position:relative;
+        padding:16px 12px;border-radius:19px;border:1px solid #e7d8bf;
+        background:linear-gradient(150deg,#fffefa,#f6f0e6);
+        box-shadow:0 6px 18px rgba(66,50,24,.065)
+      }
+      #account-dialog .numi-tariff-card-icon {color:#a07837;font:normal 30px/1 Georgia,serif;margin-bottom:5px}
+      #account-dialog .numi-tariff-lead .numi-tariff-once>strong {
+        color:#143629;font:normal clamp(17px,4.7vw,22px)/1.13 Georgia,serif
+      }
+      #account-dialog .numi-tariff-lead .numi-tariff-once>small {
+        color:#67746b;font-size:12px;line-height:1.4;margin:10px 0
+      }
+      #account-dialog .numi-tariff-card-foot {
+        display:block;margin-top:auto;padding:8px 5px;border-radius:10px;
+        background:#ebe5da;color:#60513b;text-align:center;
+        font:700 11px/1.3 system-ui,sans-serif
+      }
+      #account-dialog .numi-tariff-lead>div.numi-tariff-club {
+        border:1.5px solid #d7a23e!important;
+        background:linear-gradient(138deg,#fffcf5 0%,#f5e5c5 55%,#fff8eb 100%);
+        box-shadow:0 7px 22px rgba(185,132,37,.18), inset 0 1px 0 #fff;
+      }
+      #account-dialog .numi-tariff-club .numi-tariff-club-badge {
+        align-self:flex-start;margin:-4px 0 8px;padding:5px 9px;
+        border-radius:30px;background:linear-gradient(100deg,#9e6b1d,#dbaa4a,#956319);
+        color:#fff;letter-spacing:.07em;font:800 10px/1.2 system-ui,sans-serif
+      }
+      #account-dialog .numi-tariff-club .numi-tariff-club-title {
+        font:normal clamp(24px,6.4vw,31px)/1 Georgia,serif;color:#14583f
+      }
+      #account-dialog .numi-tariff-club .numi-tariff-club-price {
+        margin:9px 0 4px;color:#0d603f;white-space:normal;
+        font:800 clamp(22px,6vw,32px)/1.08 system-ui,sans-serif
+      }
+      #account-dialog .numi-tariff-club .numi-tariff-club-price em {
+        color:#5b513c;font:600 12px/1.2 system-ui,sans-serif;white-space:nowrap
+      }
+      #account-dialog .numi-tariff-club small {color:#4c624e;font-size:12px;line-height:1.45}
+      #account-dialog .numi-tariff-caption {
+        display:block;margin:18px 0 13px;padding:0;
+        color:#536356;font-size:12px;line-height:1.45
+      }
+      #account-dialog .numi-tariff-caption strong {
+        display:block;color:#173c2e;font:normal 22px/1.2 Georgia,serif;margin:0 0 6px
+      }
+      #account-dialog .numi-tariff-caption span {display:block}
+      #account-dialog .numi-tariff-table {
+        overflow:hidden;border:1px solid #e2dccf;border-radius:15px;
+        box-shadow:0 4px 18px rgba(58,48,30,.06)
+      }
+      #account-dialog .numi-tariff-head,#account-dialog .numi-tariff-row {
+        grid-template-columns:minmax(0,1.52fr) minmax(0,.74fr) minmax(0,.79fr);
+        gap:0
+      }
+      #account-dialog .numi-tariff-head {
+        padding:0;background:#f1eee7;color:#364a3f;font-size:10px
+      }
+      #account-dialog .numi-tariff-head [role=columnheader] {
+        padding:12px 7px;text-align:center
+      }
+      #account-dialog .numi-tariff-head [role=columnheader]:first-child {text-align:left;padding-left:10px}
+      #account-dialog .numi-tariff-head [role=columnheader]:last-child {
+        background:linear-gradient(120deg,#17654a,#0f5039);color:#fff
+      }
+      #account-dialog .numi-tariff-row {
+        padding:0;border-bottom:1px solid #e9e5dd;
+        background:linear-gradient(90deg,#fffefa,#fbfaf6);
+        font-size:12px
+      }
+      #account-dialog .numi-tariff-row:last-child {border-bottom:0}
+      #account-dialog .numi-tariff-row>[role=cell] {
+        display:flex;flex-direction:column;justify-content:center;
+        min-width:0;min-height:67px;padding:10px 7px;
+        overflow-wrap:anywhere
+      }
+      #account-dialog .numi-tariff-row>[role=cell]:first-child {padding-left:10px}
+      #account-dialog .numi-tariff-row>[role=cell]:last-child {
+        background:linear-gradient(130deg,#f2f9ee,#e8f2e7);
+        color:#0c6746;font-size:13px;font-weight:800
+      }
+      #account-dialog .numi-tariff-row strong {font-size:13px;line-height:1.3;color:#173e30}
+      #account-dialog .numi-tariff-row small {font-size:10.5px;line-height:1.3}
+      #account-dialog .numi-tariff-row--feature {background:#fffcf7}
+      #account-dialog .numi-tariff-footer {
+        padding:13px;margin:15px 0 12px;border-radius:12px;
+        background:#f7f1e5;border:1px solid #e7d8b8;
+        color:#5d513c;font-size:12px;line-height:1.55
+      }
+      #account-dialog [data-account-content="prices"] #account-show-offer {
+        min-height:50px;border-radius:15px;
+        background:linear-gradient(115deg,#187556,#0c4e39);
+        box-shadow:0 6px 13px rgba(15,89,62,.18);
+        font:750 15px/1.35 system-ui,sans-serif
+      }
+      @media(max-width:390px){
+        #account-dialog .numi-tariff-lead>div {padding:13px 10px}
+        #account-dialog .numi-tariff-head,#account-dialog .numi-tariff-row {
+          grid-template-columns:minmax(0,1.42fr) minmax(0,.72fr) minmax(0,.82fr)
+        }
+        #account-dialog .numi-tariff-row>[role=cell] {padding:10px 5px}
+        #account-dialog .numi-tariff-row>[role=cell]:first-child {padding-left:8px}
+        #account-dialog .numi-tariff-row strong {font-size:12px}
+      }
+    </style>
+    <style id="numi-bright-club-column-20261031">
+      /* Club column is a continuous, full-height visual band across every tariff row. */
+      #account-dialog .numi-tariff-table {
+        border:1px solid #d4bc75;
+        box-shadow:0 5px 22px rgba(110,79,24,.14);
+      }
+      #account-dialog .numi-tariff-head [role=columnheader]:last-child {
+        background:linear-gradient(125deg,#157750,#094d39);
+        color:#fff;font-weight:900;letter-spacing:.045em;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row {
+        align-items:stretch;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row>[role=cell]:last-child {
+        align-self:stretch;min-height:100%;box-sizing:border-box;
+        background:linear-gradient(135deg,#d4efcd 0%,#e6f4dd 55%,#d1ecca 100%);
+        color:#096e43;
+        font-size:clamp(14px,3.8vw,17px);font-weight:900;
+        text-align:center;justify-content:center;
+        border-left:1px solid #bddcb4;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row--feature>[role=cell]:last-child {
+        align-self:stretch;height:auto;
+        background:linear-gradient(135deg,#c4eabe 0%,#e0f2d7 100%);
+      }
+      #account-dialog .numi-tariff-table .numi-club-discount {
+        font:900 clamp(22px,6.2vw,31px)/1.05 Georgia,"Times New Roman",serif!important;
+        letter-spacing:-.045em;color:#087447!important;
+        text-shadow:0 1px 0 rgba(255,255,255,.72);
+      }
+      #account-dialog .numi-tariff-table .numi-club-discount small {
+        margin-top:5px;font:600 10px/1.3 system-ui,sans-serif;
+        letter-spacing:0;color:#386c4f;
+      }
+      #account-dialog .numi-tariff-table .numi-club-free {
+        font:900 clamp(10px,3.1vw,14px)/1.1 system-ui,sans-serif!important;
+        letter-spacing:-.015em;color:#047645!important;
+        overflow-wrap:anywhere;word-break:normal;
+      }
+      #account-dialog .numi-tariff-club .numi-tariff-club-price {
+        color:#086e48;font-size:clamp(26px,7.1vw,36px)!important;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row>[role=cell]:not(:first-child) {
+        padding-inline:4px;
+      }
+      @media(max-width:390px) {
+        #account-dialog .numi-tariff-table .numi-club-discount {font-size:clamp(20px,5.8vw,27px)!important}
+        #account-dialog .numi-tariff-table .numi-club-free {font-size:clamp(10px,2.75vw,12px)!important}
+      }
+    </style>
+    <style id="numi-cabinet-full-height-compact-prices-20261031">
+      /* Cabinet stays on screen; a touch below content can never reach the backdrop. */
+      @media (max-width:700px) {
+        #account-dialog:not(.account-dialog--editing):not(:has(input:focus)) {
+          height:calc(100dvh - 22px);
+          max-height:calc(100dvh - 22px);
+          min-height:0;
+          margin:auto;
+          overscroll-behavior:contain;
+          overflow-y:auto;
+          scroll-padding-bottom:24px;
+          padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+        }
+        #account-dialog.account-dialog--editing,
+        #account-dialog:has(input:focus) {height:auto}
+      }
+      #account-dialog [data-account-content="prices"] .numi-tariff-back {
+        min-height:48px;padding:9px 13px;margin:2px 0 10px;
+      }
+      #account-dialog [data-account-content="prices"]>h3 {margin-bottom:9px;font-size:clamp(27px,7vw,35px)}
+      #account-dialog [data-account-content="prices"] .numi-tariff-lead {gap:8px;margin:4px 0 10px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-lead>div {padding:11px 10px;border-radius:16px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-card-icon {font-size:19px;margin-bottom:2px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-club .numi-tariff-club-badge {margin:0 0 5px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-club .numi-tariff-club-price {margin:4px 0 3px;font-size:clamp(25px,6.6vw,34px)!important}
+      #account-dialog [data-account-content="prices"] .numi-tariff-lead small {font-size:11px;line-height:1.32}
+      #account-dialog [data-account-content="prices"] .numi-tariff-card-foot {padding:5px 4px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-caption {margin:9px 0 8px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-caption strong {font-size:20px;margin-bottom:3px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-row>[role=cell] {min-height:53px;padding-top:8px;padding-bottom:8px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-head [role=columnheader] {padding-top:9px;padding-bottom:9px}
+    </style>
+    <style id="numi-global-account-back-20261031">
+      /* Same prominent gold return action in every cabinet section. */
+      #account-dialog .account-panel .account-back.numi-gold-back {
+        display:flex;align-items:center;justify-content:center;gap:12px;
+        width:100%;min-height:55px;padding:12px 16px;margin:3px 0 19px;
+        border:1px solid #c99546;border-radius:16px;
+        background:linear-gradient(125deg,#f3dcaa 0%,#d8ac64 48%,#af792a 100%);
+        box-shadow:0 5px 16px rgba(148,104,38,.20),inset 0 1px 0 rgba(255,255,255,.75);
+        color:#432b12;font:800 clamp(14px,3.8vw,17px)/1.3 system-ui,sans-serif;
+        text-align:center;text-decoration:none;cursor:pointer;
+      }
+      #account-dialog .account-panel .account-back.numi-gold-back span {
+        font-size:25px;line-height:1;
+      }
+      #account-dialog .account-panel .account-back.numi-gold-back:focus-visible {
+        outline:3px solid #184e39;outline-offset:3px;
+      }
+    </style>
+    <style id="numi-bright-club-column-20261031">
+      /* Club column is a continuous, full-height visual band across every tariff row. */
+      #account-dialog .numi-tariff-table {
+        border:1px solid #d4bc75;
+        box-shadow:0 5px 22px rgba(110,79,24,.14);
+      }
+      #account-dialog .numi-tariff-head [role=columnheader]:last-child {
+        background:linear-gradient(125deg,#157750,#094d39);
+        color:#fff;font-weight:900;letter-spacing:.045em;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row {
+        align-items:stretch;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row>[role=cell]:last-child {
+        align-self:stretch;min-height:100%;box-sizing:border-box;
+        background:linear-gradient(135deg,#d4efcd 0%,#e6f4dd 55%,#d1ecca 100%);
+        color:#096e43;
+        font-size:clamp(14px,3.8vw,17px);font-weight:900;
+        text-align:center;justify-content:center;
+        border-left:1px solid #bddcb4;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row--feature>[role=cell]:last-child {
+        align-self:stretch;height:auto;
+        background:linear-gradient(135deg,#c4eabe 0%,#e0f2d7 100%);
+      }
+      #account-dialog .numi-tariff-table .numi-club-discount {
+        font:900 clamp(22px,6.2vw,31px)/1.05 Georgia,"Times New Roman",serif!important;
+        letter-spacing:-.045em;color:#087447!important;
+        text-shadow:0 1px 0 rgba(255,255,255,.72);
+      }
+      #account-dialog .numi-tariff-table .numi-club-discount small {
+        margin-top:5px;font:600 10px/1.3 system-ui,sans-serif;
+        letter-spacing:0;color:#386c4f;
+      }
+      #account-dialog .numi-tariff-table .numi-club-free {
+        font:900 clamp(10px,3.1vw,14px)/1.1 system-ui,sans-serif!important;
+        letter-spacing:-.015em;color:#047645!important;
+        overflow-wrap:anywhere;word-break:normal;
+      }
+      #account-dialog .numi-tariff-club .numi-tariff-club-price {
+        color:#086e48;font-size:clamp(26px,7.1vw,36px)!important;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-row>[role=cell]:not(:first-child) {
+        padding-inline:4px;
+      }
+      @media(max-width:390px) {
+        #account-dialog .numi-tariff-table .numi-club-discount {font-size:clamp(20px,5.8vw,27px)!important}
+        #account-dialog .numi-tariff-table .numi-club-free {font-size:clamp(10px,2.75vw,12px)!important}
+      }
+    </style>
+    <style id="numi-cabinet-full-height-compact-prices-20261031">
+      /* Cabinet stays on screen; a touch below content can never reach the backdrop. */
+      @media (max-width:700px) {
+        #account-dialog:not(.account-dialog--editing):not(:has(input:focus)) {
+          height:calc(100dvh - 22px);
+          max-height:calc(100dvh - 22px);
+          min-height:0;
+          margin:auto;
+          overscroll-behavior:contain;
+          overflow-y:auto;
+          scroll-padding-bottom:24px;
+          padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+        }
+        #account-dialog.account-dialog--editing,
+        #account-dialog:has(input:focus) {height:auto}
+      }
+      #account-dialog [data-account-content="prices"] .numi-tariff-back {
+        min-height:48px;padding:9px 13px;margin:2px 0 10px;
+      }
+      #account-dialog [data-account-content="prices"]>h3 {margin-bottom:9px;font-size:clamp(27px,7vw,35px)}
+      #account-dialog [data-account-content="prices"] .numi-tariff-lead {gap:8px;margin:4px 0 10px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-lead>div {padding:11px 10px;border-radius:16px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-card-icon {font-size:19px;margin-bottom:2px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-club .numi-tariff-club-badge {margin:0 0 5px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-club .numi-tariff-club-price {margin:4px 0 3px;font-size:clamp(25px,6.6vw,34px)!important}
+      #account-dialog [data-account-content="prices"] .numi-tariff-lead small {font-size:11px;line-height:1.32}
+      #account-dialog [data-account-content="prices"] .numi-tariff-card-foot {padding:5px 4px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-caption {margin:9px 0 8px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-caption strong {font-size:20px;margin-bottom:3px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-row>[role=cell] {min-height:53px;padding-top:8px;padding-bottom:8px}
+      #account-dialog [data-account-content="prices"] .numi-tariff-head [role=columnheader] {padding-top:9px;padding-bottom:9px}
+    </style>
+    <style id="numi-saved-library-structure-20261031">
+      #account-dialog .numi-saved-library > h3 {
+        margin:10px 0 6px;color:#174332;font:normal clamp(28px,7vw,35px)/1.15 Georgia,serif
+      }
+      #account-dialog .numi-saved-library .account-panel-intro {
+        margin:5px 0 15px;color:#668074;font-size:14px;line-height:1.45
+      }
+      #account-dialog .numi-saved-empty {
+        display:flex;flex-direction:column;align-items:center;text-align:center;
+        padding:10px 12px 13px;margin:8px 0;border:1px solid #e3cca1;border-radius:18px;
+        background:linear-gradient(155deg,#fffdf8,#fbf6ed)
+      }
+      #account-dialog .numi-saved-empty[hidden] {display:none!important}
+      #account-dialog .numi-angel {display:block;width:min(100%,190px);height:auto;margin:0 auto 2px;object-fit:contain}
+      #account-dialog .numi-saved-empty h4 {margin:2px 0 5px;color:#184b38;font:normal 22px/1.15 Georgia,serif}
+      #account-dialog .numi-saved-empty p {margin:0;max-width:260px;color:#718278;font-size:12px;line-height:1.4}
+      #account-dialog .numi-saved-retention {margin:12px 0 0;color:#829087;font-size:11px;line-height:1.45}
+      #account-dialog .numi-saved-library #numi-confirmed-purchases {margin:0 0 8px}
+      #account-dialog .numi-saved-library .numi-saved-row {min-height:59px;padding:9px 0}
+      #account-dialog .numi-saved-library .numi-saved-row-content strong {font-size:15px}
+    </style>
+    <style id="numi-tariff-legibility-fix-20261031">
+      /* Explicit labels fit even in Telegram's narrow iPhone webview. */
+      #account-dialog .numi-tariff-table .numi-tariff-row {
+        grid-template-columns:minmax(0,1.45fr) minmax(0,.67fr) minmax(0,.98fr);
+      }
+      #account-dialog .numi-tariff-table .numi-club-free strong {
+        display:block;font:900 clamp(9px,2.7vw,12px)/1.15 system-ui,sans-serif;
+        letter-spacing:-.045em;white-space:nowrap;overflow-wrap:normal;
+        color:#086c40;text-shadow:0 1px 0 #fff;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-unavailable {
+        color:#acada5;font-size:24px;font-weight:400;
+      }
+      #account-dialog .numi-tariff-table .numi-club-included strong {
+        display:block;color:#08764a;font:900 26px/1.1 system-ui,sans-serif;
+      }
+      #account-dialog .numi-tariff-table .numi-club-included small {
+        display:block;color:#176846;font:700 clamp(9px,2.65vw,11px)/1.2 system-ui,sans-serif;
+        margin-top:2px;letter-spacing:-.02em;
+      }
+      @media(max-width:390px) {
+        #account-dialog .numi-tariff-table .numi-tariff-row {
+          grid-template-columns:minmax(0,1.4fr) minmax(0,.67fr) minmax(0,1fr);
+        }
+      }
+    </style>
+    <style id="numi-angel-seamless-background-20261031">
+      /* White illustration pixels blend into the cream card without a visible square. */
+      #account-dialog .numi-saved-empty {
+        background:#fffaf1;
+        background-image:none;
+        overflow:hidden;
+      }
+      #account-dialog .numi-saved-empty .numi-angel {
+        mix-blend-mode:multiply;
+        background:transparent;
+        display:block;
+        margin:0 auto -1px;
+      }
+      #account-dialog .numi-saved-angel-title {
+        margin:3px 0 5px;
+        color:#95651e;
+        font:700 clamp(16px,4.4vw,19px)/1.25 Georgia,"Times New Roman",serif;
+        text-align:center;
+        letter-spacing:.01em;
+      }
+    </style>
+    <style id="numi-tariff-legibility-fix-20261031">
+      /* Explicit labels fit even in Telegram's narrow iPhone webview. */
+      #account-dialog .numi-tariff-table .numi-tariff-row {
+        grid-template-columns:minmax(0,1.45fr) minmax(0,.67fr) minmax(0,.98fr);
+      }
+      #account-dialog .numi-tariff-table .numi-club-free strong {
+        display:block;font:900 clamp(9px,2.7vw,12px)/1.15 system-ui,sans-serif;
+        letter-spacing:-.045em;white-space:nowrap;overflow-wrap:normal;
+        color:#086c40;text-shadow:0 1px 0 #fff;
+      }
+      #account-dialog .numi-tariff-table .numi-tariff-unavailable {
+        color:#acada5;font-size:24px;font-weight:400;
+      }
+      #account-dialog .numi-tariff-table .numi-club-included strong {
+        display:block;color:#08764a;font:900 26px/1.1 system-ui,sans-serif;
+      }
+      #account-dialog .numi-tariff-table .numi-club-included small {
+        display:block;color:#176846;font:700 clamp(9px,2.65vw,11px)/1.2 system-ui,sans-serif;
+        margin-top:2px;letter-spacing:-.02em;
+      }
+      @media(max-width:390px) {
+        #account-dialog .numi-tariff-table .numi-tariff-row {
+          grid-template-columns:minmax(0,1.4fr) minmax(0,.67fr) minmax(0,1fr);
+        }
+      }
+    </style>
+    <style id="numi-owner-test-checkout-20261031">
+      #account-dialog .numi-test-checkout {padding:14px;margin:12px 0 15px;border:1px solid #d6b36d;border-radius:16px;background:#faf1dc}
+      #account-dialog .numi-test-checkout[hidden] {display:none!important}
+      #account-dialog .numi-test-checkout>strong {display:block;font-size:17px;color:#17533d}
+      #account-dialog .numi-test-checkout>p {font-size:12px;color:#687565;line-height:1.45;margin:6px 0 10px}
+      #account-dialog .numi-test-checkout form {display:grid;gap:10px}
+      #account-dialog .numi-test-checkout label {display:grid;gap:5px;font-weight:650;font-size:12px;color:#305a49}
+      #account-dialog .numi-test-checkout select,
+      #account-dialog .numi-test-checkout input {width:100%;min-height:44px;padding:9px;border:1px solid #cbbd98;border-radius:10px;background:#fff;color:#163f30;font:inherit}
+      #account-dialog .numi-test-checkout button {min-height:46px;border:none;border-radius:12px;background:#145b42;color:white;font-weight:750;padding:10px}
+      #account-dialog .numi-test-checkout button:disabled {opacity:.55}
+      #account-dialog .numi-test-answer {margin:9px 0 0;background:#fff9eb;border:1px solid #e0cba2;border-radius:9px;padding:8px;font-size:12px}
+      #account-dialog .numi-test-answer summary {cursor:pointer;color:#165d44;font-weight:700}
+      #account-dialog .numi-test-answer p {margin:7px 0 0;font-size:12px;line-height:1.5}
+      #account-dialog .numi-test-price-link {width:100%;margin:10px 0 0;padding:13px;border:1px solid #ad8f55;border-radius:13px;background:#f8f0db;color:#204e37;font-weight:750}
+      #account-dialog .numi-test-price-link[hidden] {display:none!important}
+    </style>
+    <!-- Reversible experiment: subtitles on the eight homepage catalog cards only. -->
+    <style id="home-card-subtitles-experiment">
+      .products[aria-label="Направления расчётов"] > .product-card {
+        display:flex;
+        flex-direction:column;
+        align-items:flex-start;
+        justify-content:center;
+        gap:4px;
+      }
+      .products[aria-label="Направления расчётов"] > a.product-card.calculation {
+        align-items:flex-start;
+        justify-content:center;
+      }
+      .products[aria-label="Направления расчётов"] .product-title {
+        margin:0;
+      }
+      .products[aria-label="Направления расчётов"] .product-subtitle {
+        display:block;
+        position:relative;
+        z-index:1;
+        max-width:75%;
+        font:500 12.5px/1.27 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+        letter-spacing:0;
+        color:inherit;
+        opacity:.84;
+        text-align:left;
+      }
+      @media(max-width:699px){
+        .products[aria-label="Направления расчётов"] > .product-card {
+          min-height:74px;
+          padding-top:10px;
+          padding-bottom:10px;
+        }
+        .products[aria-label="Направления расчётов"] .product-title,
+        .products[aria-label="Направления расчётов"] .product-subtitle {
+          max-width:100%;
+        }
+        .products[aria-label="Направления расчётов"] .product-subtitle {
+          font-size:11.5px;
+          line-height:1.22;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section id="home" class="screen is-active" aria-labelledby="home-title">
+        <header class="topbar home-topbar">
+          <div class="auth-actions">
+            <button class="auth-button" type="button" data-account-open="profile">
+              <span id="auth-button-check" class="auth-button-check" aria-hidden="true" hidden>✓</span>
+              <span class="auth-button-copy">
+                <span id="auth-button-label" class="auth-button-label">Личный кабинет</span>
+              </span>
+              <span class="auth-button-arrow" aria-hidden="true">↗</span>
+            </button>
+          </div>
+        </header>
+
+        <div class="hero hero-founder">
+          <div class="hero-founder-top">
+            <img class="hero-founder-photo" src="assets/founder-photo-20261027.jpg" width="800" height="800" alt="Татьяна, основатель проекта «Нумерология онлайн»" fetchpriority="high" decoding="async">
+            <div class="hero-founder-intro">
+              <p class="hero-founder-label">ОСНОВАТЕЛЬ ПРОЕКТА</p>
+              <p class="hero-founder-name">Татьяна</p>
+              <p class="hero-founder-role">Автор «Нумерологии онлайн»</p>
+              <a class="hero-founder-button" href="#about-founder">Познакомиться с Татьяной<br>и её методом <span aria-hidden="true">→</span></a>
+            </div>
+          </div>
+          <div class="hero-founder-content">
+            <h1 id="home-title"><span>Персональная нумерология</span><em>Для важных решений<br>и долгожданных перемен</em></h1>
+            <p class="hero-copy">Без эзотерической чуши и сладкой лжи.</p>
+          </div>
+        </div>
+
+        <section class="products" aria-label="Направления расчётов">
+          <button class="product-card day" type="button" data-open-personal-day data-artwork="assets/day.webp"><span class="product-title">Личный день</span><span class="product-subtitle">Каждый день - твой личный расчёт. Подсказки и предупреждения.</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card year-card" type="button" data-open-year data-artwork="assets/year.webp"><span class="product-title">Разбор года</span><span class="product-subtitle">12 месяцев любви, денег, опасных поворотов и важных решений</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <a class="product-card calculation" href="./pro/" data-artwork="assets/full-calculation.webp" aria-label="Полный разбор жизни"><span class="product-title">Полный разбор жизни</span><span class="product-subtitle">Твой навигатор по жизни с конкретными шагами к любви и деньгам</span><span class="product-arrow" aria-hidden="true">→</span></a>
+          <button class="product-card red-flag" type="button" data-open-redflag data-artwork="assets/red-flag.webp"><span class="product-title">Мужчина или Red Flag</span><span class="product-subtitle">80 вопросов об изменах, щедрости, абьюзе и его намерениях</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <button class="product-card compatibility" type="button" data-open-compatibility data-artwork="assets/compatibility.webp"><span class="product-title">Совместимость ❤️</span><span class="product-subtitle">13 ответов, чтобы понять, стоит ли тратить на него время.</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <a class="product-card child" id="children-section" href="./child/" data-artwork="assets/children.webp"><span class="product-title"><strong style="font-size:1.13em;font-weight:900;">Для мам</strong> - всё о ребёнке</span><span class="product-subtitle">Характер, таланты и секреты воспитания, которых не видно сразу</span><span class="product-arrow" aria-hidden="true">→</span></a>
+          <button class="product-card code" type="button" data-open-destiny-code data-artwork="assets/code.webp"><span class="product-title">КОД БОГАТСТВА</span><span class="product-subtitle">Твой денежный код, его активация и ритуалы богатства</span><span class="product-arrow" aria-hidden="true">→</span></button>
+          <a class="product-card horary" id="horary-section" href="./moment/" data-artwork="assets/horary.webp"><span class="product-title">300 вопросов обо всём</span><span class="product-subtitle">Нумерология момента. Ответы на то, что волнует прямо сейчас</span><span class="product-arrow" aria-hidden="true">→</span></a>
+        </section>
+        <section class="school-home-entry" aria-labelledby="school-home-title">
+          <p class="school-home-eyebrow">ПРОФЕССИОНАЛЬНЫЙ РАЗДЕЛ</p>
+          <h2 id="school-home-title">Школа нумерологии</h2>
+          <p>Выберите своё направление. Матрица судьбы уже открыта, новые школы появятся здесь позже.</p>
+          <a class="school-home-button" href="./pro/schools/">Вход для нумерологов <span aria-hidden="true">→</span></a>
+        </section>
+        <section class="products" aria-label="Запись на личный расчёт" style="grid-template-columns:1fr; margin-top:14px;">
+          <button class="product-card appointment" id="appointment-section" type="button" data-coming-soon data-artwork="assets/appointment.jpg"><span class="product-title">Записаться на личный расчёт</span><span class="product-arrow" aria-hidden="true">→</span></button>
+        </section>
+        <style>
+          .founder-story{scroll-margin-top:20px;max-width:760px;margin:30px auto 20px;border:1px solid #dfc18d;border-radius:28px;overflow:hidden;background:#fffdf7;box-shadow:0 14px 38px rgba(71,57,33,.06);box-sizing:border-box}
+          .founder-story-cover{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;background:#f6eee2}
+          .founder-story-body{position:relative;margin-top:-5px;padding:28px clamp(20px,5.5vw,48px) 27px;background:linear-gradient(180deg,#fffdf9 0%,#f9f7ee 100%);border-radius:30px 30px 0 0}
+          .founder-story-rule{display:flex;align-items:center;justify-content:center;gap:13px;margin:0 0 21px;color:#c4a260;font:26px/1 Georgia,serif}
+          .founder-story-rule:before,.founder-story-rule:after{content:"";display:block;height:1px;flex:1;background:#dfc79c}
+          .founder-story-body p{font-family:Georgia,'Times New Roman',serif;font-size:clamp(15px,2.45vw,17px);line-height:1.62;letter-spacing:.002em;color:#345044;margin:0 0 19px}
+          .founder-story-body p:last-child{margin-bottom:0}
+          .founder-story-title{margin:0 0 20px;color:#254e3e;font:400 clamp(28px,6vw,41px)/1.15 Georgia,"Times New Roman",serif;letter-spacing:-.04em}
+          .founder-story-title em{font-style:normal;color:#a4834a}
+          .founder-story-body strong{color:#174b39;font-weight:600}
+          .founder-story-body .founder-story-important{padding:16px 18px;background:rgba(236,228,206,.43);border-left:2px solid #b78e45;border-radius:3px 12px 12px 3px}
+          .founder-story-body .founder-story-important strong{color:#a17b35}
+          .founder-story-body .founder-story-closing{font-style:italic;color:#a18041;margin-top:22px}
+          @media(max-width:480px){
+            .founder-story{margin:24px auto 17px;border-radius:24px}
+            .founder-story-body{padding:23px 19px 24px;border-radius:25px 25px 0 0}
+            .founder-story-body p{font-size:15.5px;line-height:1.6;margin-bottom:16px}
+            .founder-story-body .founder-story-important{padding:13px 14px}
+            .founder-story-rule{margin-bottom:18px}
+          }
+        </style>
+        <section class="founder-story" id="about-founder" aria-labelledby="founder-note-title">
+          <img class="founder-story-cover" src="assets/founder-photo-20261027.jpg" width="800" height="800" loading="lazy" decoding="async" alt="Татьяна, основатель проекта «Нумерология онлайн», на авторском портрете">
+          <div class="founder-story-body">
+            <div class="founder-story-rule" aria-hidden="true">✦</div>
+            <h2 class="founder-story-title" id="founder-note-title">Давайте знакомиться. <em>Я Татьяна.</em></h2>
+            <p>Я создала «Нумерологию онлайн» для женщин, которым нужны не загадочные предсказания, а ответы на настоящие жизненные вопросы. Не долгие эзотерические тексты, а чёткие рекомендации в жизни, отношениях, деньгах, выборе и будущем. Я хотела, чтобы сложные расчёты превратились в понятные ответы, а нумерология стала доступной каждой женщине.</p>
+            <p>Много лет я посвятила изучению разных школ нумерологии, практическим исследованиям и работе с людьми. Со временем даже разработала собственную методику - «Нумерологию момента», которая помогает находить ответы на срочные вопросы здесь и сейчас.</p>
+            <p>Клиентов становилось всё больше. Почти каждая девушка, заказавшая расчёт себе или ребёнку, возвращалась снова и рекомендовала меня подругам, сёстрам, мамам. Сарафанное радио оказалось сильнее любой рекламы. Я повышала цены, но поток людей продолжал расти. Однажды всего за две недели ко мне записались 100 человек.</p>
+            <p>Я поняла, что могу бесконечно повышать цены, но тогда моя помощь станет доступна не каждой. А если оставить цену 10 000 рублей, запись растянется на годы вперёд и смысл помощи «здесь и сейчас» просто пропадёт. Мне же хотелось помогать и тем, кто может заплатить 100 000, и тем, кому сейчас трудно найти даже 1 000 рублей.</p>
+            <p><strong>Так родилась «Нумерология онлайн»</strong> - сервис, за которым стоят годы моей практики, глубокое изучение нумерологии и собственная авторская методика.</p>
+            <p class="founder-story-important"><strong>ВАЖНО - здесь ваши ответы не придумывает и не пишет искусственный интеллект!</strong> Каждую трактовку я пишу и проверяю вручную, опираясь на свои знания и опыт. Сайт лишь выполняет расчёты и подбирает подготовленные мной тексты. Вы получаете не случайный ответ от нейросети, а настоящую авторскую работу нумеролога. Я работаю над сайтом каждый день, лично наполняя его новыми материалами.</p>
+            <p><strong>Я не популярный блогер.</strong> Я просто люблю своё дело и хочу, чтобы мои знания были доступны каждой женщине - без долгого ожидания и больших расходов.</p>
+            <p class="founder-story-closing">С любовью, Татьяна ♡</p>
+          </div>
+        </section>
+        <p style="text-align:center;margin:20px auto 5px;font-size:13px;opacity:.75"><a style="color:inherit;text-underline-offset:4px" href="./guide/">Справочник по нумерологии</a></p>
+      </section>
+
+      <section id="matrix" class="screen" aria-labelledby="matrix-title">
+        <div id="matrix-root" class="matrix-paper">
+          <header class="matrix-panel-topbar">
+            <p class="eyebrow">Полный расчёт</p>
+            <button id="back-matrix-home" class="matrix-close" type="button" aria-label="Вернуться ко всем расчётам">×</button>
+          </header>
+
+          <div class="matrix-intro">
+            <h1 id="matrix-title">Большой расчёт<br />по дате рождения</h1>
+            <div class="matrix-promises" aria-label="Что покажет расчёт">
+              <p>Деньги приходят тяжело</p>
+              <p>Повторяются сценарии в отношениях</p>
+              <p>Силы есть, но непонятно, куда идти</p>
+              <p class="matrix-promise-main">Покажет ваши деньги, любовь, ресурс, сильные стороны и кармические задачи — где вы повторяете старый сценарий и как выбрать свой путь.</p>
+            </div>
+          </div>
+
+          <form id="matrix-form" class="matrix-form" novalidate>
+            <label>
+              <span>Дата рождения</span>
+              <input id="matrix-birth-date" type="text" inputmode="numeric" autocomplete="bday" placeholder="ДД.ММ.ГГГГ" pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}" maxlength="10" required />
+            </label>
+            <p id="matrix-error" class="matrix-error" hidden aria-live="polite"></p>
+            <button class="matrix-submit" type="submit">Рассчитать <span aria-hidden="true">→</span></button>
+          </form>
+
+          <section id="matrix-result" class="matrix-result" hidden aria-live="polite">
+            <div class="matrix-result-heading">
+              <p class="eyebrow">Ваша матрица</p>
+              <h2 id="matrix-result-title">Личный рисунок энергий</h2>
+            </div>
+            <div id="matrix-diagram" class="matrix-diagram" aria-label="Матрица судьбы"></div>
+            <section id="matrix-reading" class="matrix-reading" aria-live="polite" hidden></section>
+          </section>
+        </div>
+      </section>
+
+      <section id="redflag" class="screen" aria-labelledby="redflag-title">
+        <div class="redflag-paper">
+          <header class="redflag-topbar">
+            <button id="back-redflag-home" class="redflag-close" type="button" aria-label="Вернуться ко всем расчётам">×</button>
+          </header>
+
+          <div class="redflag-intro">
+            <h1 id="redflag-title">Мужчина<br />или Red Flag?</h1>
+            <p><strong>Не гадай. Проверь его!</strong> Щедрый или жадный? Верный или гуляет? Узнай по дате рождения.</p>
+          </div>
+
+          <form id="redflag-form" class="redflag-form" novalidate>
+            <label>
+              <span>Дата рождения мужчины</span>
+              <input id="redflag-birth-date" aria-describedby="redflag-error" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}" maxlength="10" required />
+            </label>
+            <p id="redflag-error" class="redflag-error" hidden aria-live="polite"></p>
+            <button class="redflag-submit" type="submit">Проверить мужчину <span aria-hidden="true">→</span></button>
+          </form>
+
+          <section id="redflag-categories" class="redflag-categories" aria-label="Разделы расчёта"></section>
+
+          <p class="redflag-footer">Это ориентир для наблюдения, а не приговор человеку. Сильнее любой даты — то, как он обращается с вами в реальности.</p>
+          <p id="redflag-age-note" class="redflag-ethics-note">Этот раздел предназначен для разбора взрослых людей (18+). Год рождения не требуется.</p>
+        </div>
+      </section>
+
+
+      <section id="compatibility" class="screen" aria-labelledby="compatibility-title">
+        <div class="compatibility-paper">
+          <header class="compatibility-topbar">
+            <p>Отношения и совместимость</p>
+            <button type="button" id="back-compatibility-home" class="compatibility-close" aria-label="Вернуться ко всем расчётам">×</button>
+          </header>
+          <div class="compatibility-intro">
+            <div class="compatibility-ornament" aria-hidden="true">✦ ✧ ✦</div>
+            <h1 id="compatibility-title">Совместимость<br>двух судеб</h1>
+            <p>Говорят, души выбирают друг друга ещё на небесах. И некоторые встречи происходят не случайно. Зачем судьба свела именно вас? В чём предназначение вашего союза, что скрывается за притяжением и есть ли у вашей любви будущее? 13 глубоких ответов по двум датам рождения.</p>
+          </div>
+          <form id="compatibility-form" class="compatibility-form" novalidate>
+            <label><span>Твоя дата рождения</span><input id="compatibility-date-a" type="text" inputmode="numeric" autocomplete="bday" placeholder="ДД.ММ.ГГГГ" maxlength="10" required></label>
+            <label><span>Дата рождения партнёра</span><input id="compatibility-date-b" type="text" inputmode="numeric" placeholder="ДД.ММ.ГГГГ" maxlength="10" required></label>
+            <p class="compatibility-error" id="compatibility-error" hidden role="alert"></p>
+            <button class="compatibility-submit" type="submit">Узнать совместимость <span aria-hidden="true">→</span></button>
+          </form>
+          <section id="compatibility-result" class="compatibility-result" hidden>
+            <div class="compatibility-result-heading"><h2>Ваши 13 вопросов</h2><p id="compatibility-summary"></p></div>
+            <div class="compatibility-pdf-controls compatibility-pdf-controls--top">
+              <button class="compatibility-pdf-button" type="button">Открыть полностью и скачать в PDF</button>
+              <p>Все 13 ответов в одном красивом документе</p>
+            </div>
+            <div id="compatibility-topics" class="compatibility-topics" aria-label="Темы совместимости"></div>
+            <div class="compatibility-pdf-controls compatibility-pdf-controls--bottom">
+              <p>Хочешь сохранить ваш разбор и возвращаться к нему?</p>
+              <button class="compatibility-pdf-button" type="button">Открыть полностью и скачать в PDF</button>
+            </div>
+          </section>
+          <p class="compatibility-footer">Разбор раскрывает возможные сценарии пары. Решения об отношениях всегда остаются за вами.</p>
+        </div>
+      </section>
+
+      <section id="year" class="screen" aria-labelledby="year-title">
+        <div class="year-paper">
+          <header class="year-panel-topbar">
+            <p class="eyebrow">Персональный прогноз</p>
+            <button id="back-home" class="year-close" type="button" aria-label="Вернуться ко всем расчётам">×</button>
+          </header>
+
+          <div class="year-intro">
+            <h1 id="year-title">Ваш год<br />по месяцам</h1>
+            <p>Введите дату рождения и выберите год. Вы увидите ориентиры для денег, любви, отношений, здоровья и своего направления. Разбор можно спокойно прочитать на сайте, а затем сохранить в PDF.</p>
+          </div>
+
+          <form id="year-form" class="calculation-form">
+            <label>
+              <span>Дата рождения</span>
+              <input id="birth-date" type="text" inputmode="tel" autocomplete="bday" placeholder="ДД.ММ.ГГГГ" pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}" maxlength="10" required />
+            </label>
+            <label>
+              <span>Год разбора</span>
+              <input id="report-year" type="text" inputmode="numeric" autocomplete="off" placeholder="Например, 2026" pattern="[0-9]{4}" maxlength="4" required />
+            </label>
+            <button class="primary-button" type="submit">Получить расчёт <span>→</span></button>
+          </form>
+
+          <section id="calculation-loader" class="calculation-loader" hidden aria-live="polite" aria-label="Подготавливаем ваш разбор">
+            <div class="loader-track" role="progressbar" aria-label="Ход расчёта года" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <span id="loader-progress" class="loader-progress"></span>
+            </div>
+            <p id="loader-message" class="loader-message">Считаю ваш январь</p>
+          </section>
+
+          <section id="report" class="report" hidden aria-live="polite">
+            <button id="pdf-button-top" class="pdf-button pdf-button-top" type="button">🔒 Скачать полный PDF</button>
+            <div class="report-lead">
+              <p class="eyebrow" id="report-period">Ваш личный период</p>
+              <h2 id="report-title"></h2>
+              <p class="report-meta" id="report-meta"></p>
+              <p id="report-copy"></p>
+            </div>
+            <div id="year-transition" class="year-transition" aria-label="Периоды личного года"></div>
+            <div class="birthday-note" id="birthday-note"></div>
+            <div id="months" class="months" aria-label="Месяцы разбора"></div>
+            <button id="pdf-button" class="pdf-button" type="button">🔒 Скачать полный PDF</button>
+          </section>
+        </div>
+      </section>
+
+      <section id="destiny-code" class="screen" aria-labelledby="destiny-code-title">
+        <div class="destiny-code-paper">
+          <header class="destiny-code-topbar">
+            <p class="eyebrow">Кармическая нумерология</p>
+            <button id="back-destiny-code-home" class="destiny-code-close" type="button" aria-label="Вернуться ко всем расчётам">×</button>
+          </header>
+
+          <div class="destiny-code-intro">
+            <h1 id="destiny-code-title">Код богатства</h1>
+            <p>Ваш код богатства и три точки денежной линии в личной матрице.</p>
+          </div>
+
+          <form id="destiny-code-form" class="destiny-code-form" novalidate>
+            <label>
+              <span>Дата рождения</span>
+              <input id="destiny-code-birth-date" type="text" inputmode="numeric" autocomplete="bday" placeholder="ДД.ММ.ГГГГ" pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}" maxlength="10" required />
+            </label>
+            <p id="destiny-code-error" class="destiny-code-error" hidden aria-live="polite"></p>
+            <button class="destiny-code-submit" type="submit">Узнать код богатства <span aria-hidden="true">→</span></button>
+          </form>
+
+          <section id="destiny-code-result" class="destiny-code-result" hidden aria-live="polite">
+            <div class="destiny-code-result-heading">
+              <p class="eyebrow">Ваш денежный блок</p>
+              <h2 id="destiny-code-result-title"></h2>
+            </div>
+            <div id="destiny-code-cards" class="destiny-code-cards"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="money-rituals" class="screen" aria-labelledby="money-rituals-title">
+        <div class="money-rituals-paper">
+          <header class="destiny-code-topbar">
+            <p class="eyebrow">Личный денежный ритуал</p>
+            <button id="back-money-rituals" class="destiny-code-close" type="button" aria-label="Вернуться к коду денег">×</button>
+          </header>
+          <div class="money-rituals-intro">
+            <p class="eyebrow">Библиотека практик</p>
+            <h1 id="money-rituals-title">Денежные<br />ритуалы</h1>
+            <p id="money-rituals-code"></p>
+          </div>
+          <div class="money-club-paywall">
+            <p class="money-club-kicker">Только по подписке</p>
+            <h2>Денежная библиотека клуба</h2>
+            <p>Все денежные ритуалы доступны только участницам клуба. Каждый месяц добавляется новый авторский ритуал.</p>
+            <div class="money-club-price"><strong>490 ₽</strong><span>в месяц</span></div>
+            <button id="money-club-join" class="money-club-join" type="button">Вступить в клуб <span aria-hidden="true">→</span></button>
+            <small>Без действующей подписки тексты и инструкции не открываются.</small>
+          </div>
+          <div class="money-rituals-heading"><h2>Ритуалы библиотеки</h2><span>10 ритуалов · 🔒</span></div>
+          <div id="money-rituals-list" class="money-rituals-list" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+
+    <a class="site-support-link" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer" aria-label="Техподдержка: написать сообщение в Telegram"><span class="site-support-mark" aria-hidden="true">?</span><span>Техподдержка</span></a>
+
+    <div class="install-nudge" id="install-nudge" hidden>
+      <section class="install-card" role="dialog" aria-modal="true" aria-labelledby="install-title">
+        <button class="install-x" id="install-dismiss" type="button" aria-label="Закрыть">×</button>
+        <img class="install-mark" src="assets/brand-icon-20261018.png" width="68" height="68" alt="" />
+        <p class="install-kicker">НУМЕРОЛОГИЯ ОНЛАЙН</p>
+        <h2 id="install-title">Давай я буду рядом ♡</h2>
+        <p class="install-copy">Сохрани меня на экран Домой, чтобы твоя матрица и подсказки всегда были под рукой.</p>
+        <div class="install-steps" id="install-steps" aria-label="Как добавить сайт на экран Домой">
+          <div class="install-step">
+            <span class="install-step-symbol" aria-hidden="true">
+              <svg viewBox="0 0 40 40" width="38" height="38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="9" y="16" width="22" height="20" rx="5" fill="#EEF4FF" stroke="#4778B4" stroke-width="2"/>
+                <path d="M20 24V4M20 4L13 11M20 4L27 11" stroke="#3178CC" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span class="install-step-label">Нажми <strong>«Поделиться»</strong> в Safari</span>
+          </div>
+          <div class="install-step">
+            <span class="install-step-number" aria-hidden="true">2</span>
+            <span class="install-step-label">Выбери <strong>«На экран Домой»</strong></span>
+          </div>
+          <div class="install-step">
+            <span class="install-step-number" aria-hidden="true">3</span>
+            <span class="install-step-label">Нажми <strong>«Добавить»</strong></span>
+          </div>
+        </div>
+        <button class="install-primary" id="install-action" type="button" hidden>Установить на телефон</button>
+        <button class="install-later" id="install-later" type="button">Не сейчас</button>
+      </section>
+    </div>
+    <dialog id="money-club-dialog" class="money-club-dialog" aria-labelledby="money-club-title">
+      <header class="money-club-dialog-header"><p>НУМЕРОЛОГИЯ ONLINE</p><button type="button" id="money-club-dialog-close" aria-label="Закрыть окно">×</button></header>
+      <p class="money-club-dialog-kicker">Эксклюзивно для участниц клуба</p>
+      <h2 id="money-club-title">Денежные ритуалы</h2>
+      <div class="money-club-dialog-price"><strong>490 ₽</strong><span>в месяц</span></div>
+      <p>В клубе откроются все денежные ритуалы с вашим личным кодом. Каждый месяц в библиотеке появляется новый авторский ритуал.</p>
+      <p class="money-club-dialog-warning">Подписка и оплата пока не подключены. До запуска клуба ритуалы остаются закрытыми.</p>
+      <form method="dialog"><button class="money-club-dialog-dismiss" type="submit">Вернуться к ритуалам</button></form>
+    </dialog>
+    <dialog id="coming-soon"><button class="dialog-close" type="button" aria-label="Закрыть">×</button><p class="eyebrow">Скоро</p><h2>Это направление уже есть в плане сайта.</h2><p>Сейчас мы сначала доводим до красоты и точности «Разбор года».</p></dialog>
+    <dialog id="account-dialog" class="account-dialog" aria-labelledby="account-title">
+      <div class="account-header">
+        <div><p class="account-kicker">НУМЕРОЛОГИЯ ОНЛАЙН <span id="numi-reg-test-dot-20261031" style="color:#b88b45;font-size:12px" aria-hidden="true">●</span></p><h2 id="account-title">Личный кабинет</h2></div>
+        <button type="button" id="account-close" class="account-close" aria-label="Закрыть">×</button>
+      </div>
+      <section id="account-login">
+        <p class="account-intro">Внутри Telegram вход выполняется автоматически, без регистрации, паролей и переходов в браузер.</p>
+        <p id="account-status" class="account-status" role="status" hidden></p>
+        <button type="button" class="account-secondary" id="account-retry" hidden>Повторить проверку</button>
+        <a class="account-primary account-telegram-link" href="https://t.me/Numerologiaonline_bot?startapp">Открыть мини-приложение в Telegram</a>
+        <p class="account-muted">Номер телефона не запрашиваем. Содержимое оплаченных разборов пока не защищено личным кабинетом.</p>
+      </section>
+      <section id="account-profile" hidden>
+        <div id="account-overview">
+          <div class="account-identity">
+            <span class="account-avatar" id="account-avatar-letter" aria-hidden="true"></span>
+            <div class="account-identity-main">
+              <p id="account-identity-label" class="account-identity-label">Ваш профиль</p>
+              <h3 id="account-person-name"></h3>
+            </div>
+            <span id="account-verified" class="account-verified" aria-label="Аккаунт подтверждён" hidden>✓</span>
+          </div>
+          <p id="account-preview-warning" class="account-preview-warning" hidden></p>
+          <p id="account-browser-note" class="account-browser-note" hidden>Кабинет доступен прямо на сайте. Пока вход через VK и почту не подключён, дата рождения сохраняется только в этом браузере. Покупки и подписку будем синхронизировать после подключения авторизации.</p>
+          <div class="account-section-heading">Мой кабинет</div>
+          <div class="account-tiles account-navigation">
+            <button type="button" class="account-tile" data-account-panel="saved"><span class="account-tile-icon" aria-hidden="true">♡</span><strong>Сохранённое</strong><small>Разборы и ответы на вопросы</small></button>
+            <button type="button" class="account-tile" data-account-panel="prices"><span class="account-tile-icon" aria-hidden="true">₽</span><strong>Тарифы</strong><small>Все варианты доступа</small></button>
+            <button type="button" class="account-tile" data-account-panel="learning"><span class="account-tile-icon" aria-hidden="true">✧</span><strong>Моё обучение</strong><small>Школы, уроки и практика</small></button>
+            <button type="button" class="account-tile" data-account-panel="settings"><span class="account-tile-icon" aria-hidden="true">◎</span><strong>Мои данные</strong><small>Дата рождения и настройки профиля</small></button>
+          </div>
+          <a class="account-tile account-support-tile" href="https://t.me/Kod_9966" target="_blank" rel="noopener noreferrer"><strong>Техподдержка <span aria-hidden="true">↗</span></strong><small>Помощь с доступом и разборами</small></a>
+        </div>
+
+        <section class="account-panel numi-saved-library" data-account-content="saved" hidden>
+          <button class="account-back numi-gold-back" type="button" data-account-back><span aria-hidden="true">←</span> Назад в личный кабинет</button>
+          <h3>Сохранённое</h3>
+          <p class="account-panel-intro">Ваши разборы и ответы всегда под рукой.</p>
+          <div id="numi-confirmed-purchases" aria-label="Список сохранённых разборов и ответов"></div>
+          <div class="account-empty-state numi-saved-empty">
+            <div class="numi-saved-angel-title">♡ Ответы на твои вопросы</div>
+            <img class="numi-angel" src="assets/numi-angel-soft-20261031.webp" width="310" height="300" loading="lazy" decoding="async" alt="Нежный ангел с крылышками держит сердце с ответами">
+            <h4>Здесь пока пусто</h4>
+            <p>Ваши сохранённые разборы и ответы появятся здесь.</p>
+          </div>
+          <p class="numi-saved-retention">Сохранённые материалы доступны в течение 12 месяцев. При необходимости вы можете сохранить их на устройство.</p>
+        </section>
+
+        <section class="account-panel" data-account-content="club" hidden>
+          <button class="account-back numi-gold-back" type="button" data-account-back><span aria-hidden="true">←</span> Назад в личный кабинет</button>
+          <h3>Мой клуб</h3>
+          <div class="account-plan-summary"><span>СТАТУС КЛУБА</span><strong>Пока не подключён</strong><p>С запуском подписки здесь появятся срок действия, условия продления и управление клубом.</p></div>
+          <div class="account-club-benefits"><strong>Участникам клуба</strong><p>Специальные цены на большие разборы, доступ к клубным материалам и новые возможности по мере запуска.</p></div>
+          <button type="button" class="account-primary" data-account-panel="prices">Посмотреть тарифы</button>
+        </section>
+
+        <section class="account-panel" data-account-content="prices" hidden>
+          <button class="account-back numi-tariff-back" type="button" data-account-back><span aria-hidden="true">←</span> Назад в личный кабинет</button>
+          <h3>Мои тарифы</h3>
+          <div class="numi-tariff-lead">
+            <div class="numi-tariff-once"><span class="numi-tariff-card-icon" aria-hidden="true">◇</span><strong>Разовые покупки</strong><small>Выбирайте только то, что интересно</small><span class="numi-tariff-card-foot">Без подписки</span></div>
+            <div class="numi-tariff-club"><span class="numi-tariff-club-badge">♕ ВЫГОДНЕЕ</span><strong class="numi-tariff-club-title">Клуб</strong><strong class="numi-tariff-club-price">490 ₽ <em>/ мес.</em></strong><small>Скидки на разборы, бесплатные вопросы и закрытые материалы</small></div>
+          </div>
+          <p class="numi-tariff-caption"><strong>Что вы получаете в клубе каждый месяц</strong><span>Больше возможностей и специальные цены. Подписка необязательна.</span></p>
+          <div class="numi-tariff-table" role="table" aria-label="Сравнение цен на разовые покупки и с подпиской">
+            <div class="numi-tariff-head" role="row"><span role="columnheader">Раздел</span><span role="columnheader">Разово</span><span role="columnheader">♕ В клубе</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Полный разбор года</strong><span role="cell">990 ₽</span><span role="cell" class="numi-club-discount">−50%</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Полный разбор жизни</strong><span role="cell">990 ₽</span><span role="cell" class="numi-club-discount">−50%</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Вопросы «Да или нет?»</strong><span role="cell">19 ₽</span><span role="cell" class="numi-club-free"><strong>БЕСПЛАТНО</strong></span></div>
+            <div class="numi-tariff-row numi-tariff-row--feature" role="row">
+              <div role="cell"><strong>Мужчина или Red Flag</strong><small>Знакомство · Подарки · Деньги · Верность · Семья · Язык любви</small></div>
+              <span role="cell">19–49 ₽<small>за вопрос</small></span>
+              <span role="cell" class="numi-club-discount">−50%<small>на вопросы</small></span>
+            </div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Нумерология момента</strong><span role="cell">100 ₽</span><span role="cell" class="numi-club-discount">−50%</span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Календарь важных чисел</strong><span role="cell" class="numi-tariff-unavailable">—</span><span role="cell" class="numi-club-included"><strong>✓</strong><small>Включено</small></span></div>
+            <div class="numi-tariff-row" role="row"><strong role="cell">Денежные ритуалы</strong><span role="cell" class="numi-tariff-unavailable">—</span><span role="cell" class="numi-club-included"><strong>✓</strong><small>Только в клубе</small></span></div>
+          </div>
+          <p class="numi-tariff-footer">Клуб стоит 490 ₽ в месяц. Большие разборы и платные вопросы оплачиваются отдельно по клубной цене. Подключение оплаты пока готовится.</p>
+          <button type="button" class="account-primary" id="account-show-offer">Подробнее о преимуществах клуба</button>
+        </section>
+
+        <section class="account-panel" data-account-content="learning" hidden>
+          <button class="account-back numi-gold-back" type="button" data-account-back><span aria-hidden="true">←</span> Назад в личный кабинет</button>
+          <h3>Моё обучение</h3>
+          <p class="account-panel-intro">Уроки и практические задания в школе нумерологии.</p>
+          <a class="account-primary account-panel-link" href="./pro/schools/">Перейти к школам →</a>
+          <p class="account-muted">История обучения и достижения будут отображаться здесь после синхронизации аккаунта.</p>
+        </section>
+
+        <section class="account-panel" data-account-content="settings" hidden>
+          <button class="account-back numi-gold-back" type="button" data-account-back><span aria-hidden="true">←</span> Назад в личный кабинет</button>
+          <h3>Мои данные</h3>
+          <div class="account-birth-section">
+            <label class="account-label" for="account-birth">Моя дата рождения</label>
+            <p class="account-field-hint">Введите дату вручную</p>
+            <input id="account-birth" class="account-date" type="text" inputmode="numeric" autocomplete="bday" autocapitalize="off" spellcheck="false" maxlength="10" placeholder="ДД.ММ.ГГГГ" aria-describedby="account-birth-note">
+            <div class="account-actions">
+              <button type="button" class="account-primary" id="account-birth-save">Сохранить дату</button>
+              <button type="button" class="account-secondary" id="account-birth-delete">Очистить</button>
+            </div>
+            <p id="account-birth-note" class="account-muted" role="status" aria-live="polite"></p>
+          </div>
+          <div class="account-birth-section" id="numi-subscription-settings">
+            <h4 class="account-label">Моя подписка</h4>
+            <p class="account-muted"><strong>Статус:</strong> подписка пока не подключена.</p>
+            <p class="account-field-hint">Когда появится подписка, здесь будут её срок действия и управление продлением.</p>
+            <div class="account-actions">
+              <button type="button" class="account-primary" disabled title="Будет доступно после подключения подписки">Продлить</button>
+              <button type="button" class="account-secondary" disabled title="Будет доступно после подключения подписки">Отменить продление</button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </dialog>
+    <dialog id="year-paywall-dialog" class="year-paywall-dialog" aria-labelledby="year-paywall-title">
+  <header class="year-paywall-top"><span>НУМЕРОЛОГИЯ ОНЛАЙН</span><button id="year-paywall-close" type="button" aria-label="Закрыть">×</button></header>
+  <h2 id="year-paywall-title">Откройте весь год</h2>
+  <p>Прошедшие месяцы можно читать бесплатно. Текущий и будущие месяцы, а также полный PDF доступны после покупки годового разбора.</p>
+  <div class="year-paywall-price-note">🔒 Полный год и PDF</div>
+  <p class="year-paywall-unavailable">Оплата пока не подключена. До её запуска платные месяцы и PDF закрыты.</p>
+  <button class="year-paywall-back" type="button">Вернуться к месяцам</button>
+</dialog>
+    <dialog id="pdf-preview" class="pdf-preview-dialog">
+      <div class="pdf-preview-topbar">
+        <p>ВАШ PDF-РАЗБОР</p>
+        <button id="pdf-preview-close" type="button" aria-label="Закрыть предпросмотр">×</button>
+      </div>
+      <div id="pdf-preview-pages" class="pdf-preview-pages" aria-label="Предпросмотр вашего разбора"></div>
+      <button id="pdf-download-button" class="pdf-download-button" type="button">Скачать PDF <span>↓</span></button>
+    </dialog>
+  <script src="artwork-loader.js?v=1" defer></script>
+  <script src="install.js?v=4" defer></script>
+  <script src="auth-profile.js?v=20" defer></script>
+  <script src="account-browser.js?v=14" defer></script>
+  <script type="module" src="app.js?v=263"></script>
+  </body>
+</html>

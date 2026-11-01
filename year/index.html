@@ -97,17 +97,10 @@
       document.querySelector("#standalone-year-error").hidden = false;
     });
   </script>
-  <script src="moment/analytics.js?v=3" defer></script>
-  <script>
-  (() => {
-    document.addEventListener("DOMContentLoaded", () => {
-      const send=(type,item)=>window.NumiAnalytics?.send(type,"year",item);
-      send("page","open");
-      document.querySelector("#year-form")?.addEventListener("submit",()=>send("category","calculate"));
-      document.querySelector("#pdf-button")?.addEventListener("click",()=>send("category","pdf_click"));
-      document.querySelector("#pdf-button-top")?.addEventListener("click",()=>send("category","pdf_click"));
-    });
-  })();
-  </script>
+<!-- Numi Insights v2: independent background collector -->
+<script>
+(()=>{const start=()=>{try{const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';s.async=true;document.head.append(s);}catch(_){}};const schedule=()=>{if('requestIdleCallback'in window)requestIdleCallback(start,{timeout:1500});else setTimeout(start,0);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule,{once:true});else schedule();})();
+</script>
+
 </body>
 </html>
