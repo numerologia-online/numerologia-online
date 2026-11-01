@@ -78,7 +78,7 @@ def validate():
     if proc.returncode:raise RuntimeError("Invalid PHP: "+proc.stdout[:220]+proc.stderr[:220])
     # Already published live analytics baseline, before password recovery UI.
     # Only files that match this exact version may be replaced.
-    BASE_SHA="652a6551562db19003676ad3b1f0ecddee8c1104"
+    BASE_SHA="db8fabb6150dd47c728221659bfe7d2fd29444e7"
     previous={}
     for src,dest in FILES.items():
         previous[dest]=subprocess.check_output(["git","show",BASE_SHA+":"+src])
