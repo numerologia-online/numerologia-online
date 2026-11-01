@@ -1,5 +1,5 @@
 {
-  "approved_private_commit": "24e1e23496de322e376f03a383daf6121845a9dc",
+  "approved_private_commit": "11bafa533e57e4588f69ad47e293797248f4def4",
   "approved_questions": [
     "yn-man-001",
     "yn-man-002",
@@ -16,8 +16,18 @@
     "yn-man-013",
     "yn-man-014",
     "yn-man-015",
-    "yn-man-016"
+    "yn-man-016",
+    "yn-man-017",
+    "yn-man-018",
+    "yn-man-019",
+    "yn-man-020",
+    "yn-love-001",
+    "yn-love-002",
+    "yn-love-003",
+    "yn-love-004",
+    "yn-love-005",
+    "yn-love-006"
   ],
-  "release_reason": "Publish approved questions 007-016 in one verified batch of 100 answers",
-  "version": 5
+  "release_reason": "Publish approved batch 017 to 026 with corrected question 019 title",
+  "version": 6
 }
