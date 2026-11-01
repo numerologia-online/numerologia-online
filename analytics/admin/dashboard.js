@@ -13,7 +13,7 @@
   }
   async function post(payload){
     const response=await fetch("/api/numi-analytics.php",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),cache:"no-store"});
-    const data=await response.json();if(!response.ok||!data.ok)throw Error("LOGIN_FAILED");return data;
+    const data=await response.json();if(!response.ok||!data.ok)throw Error(data?.error||"LOGIN_FAILED");return data;
   }
   function showLogin(){ $("login").hidden=false;$("dashboard").hidden=true; }
   function showDashboard(){ $("login").hidden=true;$("dashboard").hidden=false; }
@@ -31,7 +31,21 @@
     try{
       await post({action:"admin_login",email,password});
       $("password").value="";$("login-error").textContent="";showDashboard();await refresh();
-    }catch(_){$("password").value="";$("login-error").textContent="Неверный логин или пароль либо доступ не настроен.";}
+    }catch(e){$("password").value="";$("login-error").textContent=e.message==="TOO_MANY_ATTEMPTS"?"Слишком много попыток. Попробуйте позже.":e.message==="ANALYTICS_UNAVAILABLE"?"Сервер аналитики временно недоступен.":"Пароль не подошёл или у аккаунта пока нет подтверждённого доступа владельца."; }
+  });
+  $("reset-access").addEventListener("click",async()=>{
+    const email=$("email").value.trim();
+    if(!email||!$("email").checkValidity()){$("reset-info").textContent="Сначала укажи свой email выше.";return;}
+    $("reset-info").textContent="Отправляем ссылку…";
+    try{
+      const response=await fetch("/api/numi-account.php",{
+        method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({action:"request_reset",email})
+      });
+      if(response.status===429){$("reset-info").textContent="Слишком много запросов. Попробуй чуть позже.";return;}
+      if(!response.ok){$("reset-info").textContent="Письмо сейчас отправить не удалось.";return;}
+      $("reset-info").textContent="Если почта подтверждена в аккаунте, ссылка для смены пароля придёт на этот email. Проверь входящие и спам.";
+    }catch(_){$("reset-info").textContent="Не удалось связаться с сервером. Попробуй чуть позже.";}
   });
   $("logout").addEventListener("click",async()=>{try{await post({action:"admin_logout"});}catch(_){}showLogin();$("status").textContent="";});
   async function refresh(){
