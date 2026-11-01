@@ -3,21 +3,36 @@
 <style>
 :root{color-scheme:light}body{margin:0;background:#f9f7f3;color:#163e31;font:15px/1.5 system-ui,-apple-system,sans-serif}.wrap{max-width:1080px;margin:30px auto;padding:0 20px}h1{font:500 clamp(30px,5vw,48px)/1.2 Georgia,serif;margin:10px 0}h2{font:500 24px Georgia,serif;margin-top:30px}select,button{font:inherit;padding:10px 14px;border:1px solid #b7b9ac;border-radius:10px;background:white;color:inherit}button{cursor:pointer}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.card{background:white;border:1px solid #e5e0d2;padding:18px;border-radius:14px}.value{font:500 29px Georgia,serif}table{width:100%;border-collapse:collapse;background:white}td,th{text-align:left;padding:10px 12px;border-bottom:1px solid #e8e2d9}td:last-child,th:last-child{text-align:right}.muted{color:#637468;font-size:13px}.notice{padding:15px;border-radius:12px;background:#f0eee5}
  .login{max-width:390px;margin:30px 0;background:white;padding:24px;border:1px solid #e5e0d2;border-radius:16px}.login label{display:block;margin:14px 0 5px}.login input{width:100%;font:inherit;box-sizing:border-box;padding:12px;border:1px solid #b7b9ac;border-radius:9px}.login button{width:100%;margin-top:18px;background:#143d30;color:white}.login[hidden],#dashboard[hidden]{display:none!important}</style></head><body><main class="wrap">
-<p class="muted">НУМЕРОЛОГИЯ ОНЛАЙН · ЗАКРЫТАЯ ПАНЕЛЬ</p><h1>Что интересно посетителям</h1><p class="muted">Агрегированные открытия разделов и вопросов. Без имён, IP, Telegram ID и истории конкретных посетителей.</p>
-<form id="login" class="login" autocomplete="on">
-<h2>Вход для владельца</h2>
-<p class="muted">Войдите по email и паролю вашего аккаунта «Нумерология онлайн». Вход через Telegram здесь не открывает статистику.</p>
-<label for="email">Email</label><input id="email" type="email" autocomplete="username" required maxlength="191">
-<label for="password">Пароль</label><input id="password" type="password" autocomplete="current-password" required>
-<button type="submit">Войти в аналитику</button><button type="button" id="reset-access" style="margin-top:10px;width:100%;background:transparent;color:#143d30;border:0;text-decoration:underline">Не подходит пароль? Получить ссылку для восстановления</button><p id="reset-info" role="status" class="muted"></p><p id="login-error" role="alert" class="muted"></p>
-</form>
-<section id="dashboard" hidden>
-<div style="display:flex;justify-content:flex-end"><button type="button" id="logout">Выйти</button></div>
+<p class="muted">НУМЕРОЛОГИЯ ОНЛАЙН · ПРЕДПРОСМОТР ПАНЕЛИ</p><h1>Что интересно посетителям</h1><p class="muted">Панель доступна для просмотра без входа. Пока показаны только демонстрационные цифры, а настоящая статистика остаётся закрытой.</p>
+
+<section id="dashboard">
+
 <label for="days">Период</label> <select id="days"><option value="1">Сегодня</option><option value="7" selected>7 дней</option><option value="30">30 дней</option><option value="90">90 дней</option></select> <button type="button" id="refresh">Обновить</button>
-<p id="status" role="status" class="notice">Загружаем…</p><div class="cards" id="totals"></div>
+<p id="status" role="status" class="notice">ДЕМО · Это пример оформления, не реальные посещения</p><div class="cards" id="totals"></div>
 <h2>Популярные разделы</h2><table><thead><tr><th>Раздел</th><th>Открытий</th></tr></thead><tbody id="sections"></tbody></table>
 <h2>Популярные вопросы</h2><table><thead><tr><th>Вопрос</th><th>Открытий</th></tr></thead><tbody id="questions"></tbody></table>
 <h2>Источники рассылок</h2><table><thead><tr><th>Метка кампании</th><th>Переходов</th></tr></thead><tbody id="campaigns"></tbody></table>
 <h2>Сводка по событиям</h2><table><thead><tr><th>Действие</th><th>Количество</th></tr></thead><tbody id="events"></tbody></table>
 <p class="muted">Счётчики показывают действия, не уникальных людей. Числа не включают события до подключения аналитики.</p></section>
-</main><script src="./dashboard.js?v=1"></script></body></html>
+</main><script>
+"use strict";
+(()=>{
+const $=id=>document.getElementById(id);
+const sample={1:[94,31,57,9],7:[548,189,312,43],30:[2132,709,1190,167],90:[6050,2030,3345,478]};
+const groups=[
+["sections",[["Мужчина и Red Flag",29],["Будущее и события",24],["Любовь и отношения",18],["Да или нет",14],["Работа и деньги",9]]],
+["questions",[["Напишет ли он первым?",20],["Есть ли будущее у отношений?",16],["Сбудется ли задуманное?",15],["Стоит ли менять работу?",12],["Принесёт ли проект прибыль?",10]]],
+["campaigns",[["Утренняя рассылка",47],["Вечерняя рассылка",24],["Прямой заход",11]]],
+["events",[["Открытия страниц",94],["Открытия категорий",31],["Открытия вопросов",57],["Поиск",9]]]
+];
+function render(){
+ const [pages,cats,questions,search]=sample[Number($("days").value)]||sample[7];
+ const vals=[["Просмотры страниц",pages],["Выборы тем",cats],["Открытия вопросов",questions],["Поиски",search]];
+ $("totals").replaceChildren(...vals.map(([label,v])=>{const a=document.createElement("div");a.className="card";const b=document.createElement("div");b.className="value";b.textContent=v.toLocaleString("ru-RU");const c=document.createElement("div");c.textContent=label;a.append(b,c);return a;}));
+ for(const [id,rows] of groups){const el=$(id);el.replaceChildren(...rows.map(([label,v])=>{const tr=document.createElement("tr"),td=document.createElement("td"),num=document.createElement("td");td.textContent=label;num.textContent=Math.round(v*pages/94).toLocaleString("ru-RU");tr.append(td,num);return tr;}));}
+}
+$("days").addEventListener("change",render);
+$("refresh").addEventListener("click",render);
+render();
+})();
+</script></body></html>
