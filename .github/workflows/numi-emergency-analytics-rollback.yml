@@ -26,6 +26,7 @@ jobs:
           assert 'site-safeguard-backups' in s
           assert '6b590ad964e9988886cbb77d08ae3cd777ddf596' in s
           assert 'ftp.delete' in s
+          assert 'revert_analytics_only' in s
           print("Rollback safeguards checked")
           PY
       - name: Back up and restore only analytics-modified live files
