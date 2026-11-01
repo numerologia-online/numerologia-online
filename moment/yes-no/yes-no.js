@@ -3,7 +3,7 @@
   const $ = id => document.getElementById(id);
   const grid = $("yn-categories"), panel = $("yn-panel"), list = $("yn-questions"),
     title = $("yn-title"), count = $("yn-count"), back = $("yn-all"), dialog = $("yn-dialog");
-  let catalog = null, active = null;
+  let catalog = null, active = null, selectedQuestion = null, answerRequest = 0, answerController = null;
   const timeInput = $("yn-time-input"), timeForm = $("yn-time-form"),
     timeError = $("yn-time-error"), timeResult = $("yn-time-result");
   const currentTime = () => {
@@ -16,7 +16,7 @@
     return digits.length > 2 ? digits.slice(0, 2) + ":" + digits.slice(2) : digits;
   };
   const validTime = value => /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
-  function confirmTime(value) {
+  async function confirmTime(value) {
     if (!validTime(value)) {
       timeError.hidden = false;
       timeResult.hidden = true;
@@ -27,8 +27,26 @@
     timeError.hidden = true;
     timeInput.removeAttribute("aria-invalid");
     timeInput.value = value;
-    timeResult.textContent = "Выбрано время " + value + ".";
+    const id = ++answerRequest;
+    answerController?.abort();
     timeResult.hidden = false;
+    if (!selectedQuestion || selectedQuestion.id !== "yn-man-001") {
+      timeResult.textContent = "Ответ на этот вопрос ещё готовится.";
+      return;
+    }
+    timeResult.textContent = "Подготавливаем ответ.";
+    answerController = new AbortController();
+    const timer = setTimeout(() => answerController?.abort(), 12000);
+    try {
+      const response = await fetch("/api/numi-yesno-answer.php?question=" + encodeURIComponent(selectedQuestion.id) + "&time=" + encodeURIComponent(value), {cache:"no-store", signal:answerController.signal});
+      const data = await response.json();
+      if (id !== answerRequest) return;
+      if (data.error === "ZERO_TIME_UNDEFINED") {timeResult.textContent = "Для времени 00.00 правило ответа ещё не утверждено.";return;}
+      if (!response.ok || data.ok !== true || typeof data.answer !== "string") throw Error("answer unavailable");
+      timeResult.textContent = data.answer;
+    } catch (error) {
+      if (id === answerRequest) timeResult.textContent = "Не удалось получить ответ. Попробуйте ещё раз.";
+    } finally {clearTimeout(timer);}
   }
   const node = (tag, cls, text) => {
     const el = document.createElement(tag);
@@ -86,6 +104,7 @@
         node("span", "yn-question-text", q.title),
         node("span", "yn-question-arrow", "→"));
       button.addEventListener("click", () => {
+        answerRequest++; answerController?.abort(); selectedQuestion = q;
         $("yn-dialog-title").textContent = q.title;
         timeForm.reset();
         timeError.hidden = true;
@@ -98,6 +117,7 @@
     }));
   }
   timeInput.addEventListener("input", () => {
+    answerRequest++; answerController?.abort();
     const cleaned = normalizeTime(timeInput.value);
     if (timeInput.value !== cleaned) timeInput.value = cleaned;
     if (validTime(cleaned)) {
@@ -116,7 +136,7 @@
   $("yn-now").addEventListener("click", () => confirmTime(currentTime()));
   $("yn-close").addEventListener("click", () => dialog.close());
   $("yn-back").addEventListener("click", () => dialog.close());
-  dialog.addEventListener("close", () => {document.body.style.overflow = "";});
+  dialog.addEventListener("close", () => {answerRequest++; answerController?.abort(); document.body.style.overflow = "";});
   dialog.addEventListener("click", e => {if (e.target === dialog) dialog.close();});
   back.addEventListener("click", () => {
     if (active) showCategories();
