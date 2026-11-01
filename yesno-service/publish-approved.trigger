@@ -1,5 +1,5 @@
 {
-  "approved_private_commit": "ac028c03f0855e02f0d4586e9517abb6c9c83972",
+  "approved_private_commit": "6e322317a658d9064b4339ef561563f814d7dcf9",
   "approved_questions": [
     "yn-man-001",
     "yn-man-002",
@@ -76,8 +76,18 @@
     "yn-choice-008",
     "yn-choice-009",
     "yn-choice-010",
-    "yn-choice-011"
+    "yn-choice-011",
+    "yn-choice-012",
+    "yn-choice-013",
+    "yn-choice-014",
+    "yn-choice-015",
+    "yn-future-001",
+    "yn-future-002",
+    "yn-future-003",
+    "yn-future-004",
+    "yn-future-005",
+    "yn-future-006"
   ],
-  "release_reason": "Publish approved choices 067 through 076 with no internal calculation details",
-  "version": 11
+  "release_reason": "Publish approved choices and future questions 077 through 086",
+  "version": 12
 }
