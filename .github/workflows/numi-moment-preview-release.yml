@@ -11,15 +11,19 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish simple 300 questions of life heading to REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Diagnose and publish simple Moment heading on REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Validate complete moment preview without touching production
+        id: validate
         run: |
+          echo syntax > /tmp/moment-stage
           python3 -m py_compile moment/deploy-simple-title-20261101.py
+          echo javascript > /tmp/moment-stage
           node --check moment/moment.js
+          echo catalog > /tmp/moment-stage
           python3 - <<'PY'
           import json
           d=json.load(open('moment/questions.json',encoding='utf-8'))
@@ -37,25 +41,42 @@ jobs:
           assert h.count('href="./yes-no/"')==1
           print('Simplified Moment heading and all 300 questions validated')
           PY
+          echo validated > /tmp/moment-stage
       - name: Back up and publish only Moment index.html with live checksum
         id: release
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
-        run: python3 -u moment/deploy-simple-title-20261101.py
+        run: |
+          set -o pipefail
+          python3 -u moment/deploy-simple-title-20261101.py 2>&1 | tee /tmp/moment-release-log
 
       - name: Record actual public deployment verification
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_RESULT: ${{ steps.release.outcome }}
+          VALIDATION_RESULT: ${{ steps.validate.outcome }}
         run: |
           python3 - <<'PY'
-          import json,os,urllib.request
+          import json,os,urllib.request,pathlib
           passed=os.environ.get('RELEASE_RESULT')=='success'
+          reason='Simplified Moment page verified on REG.RU' if passed else 'Moment release failed'
+          if not passed:
+            if os.environ.get('VALIDATION_RESULT')!='success':
+              stage=pathlib.Path('/tmp/moment-stage')
+              reason='Preflight failed at '+(stage.read_text().strip() if stage.exists() else 'initialization')
+            else:
+              logfile=pathlib.Path('/tmp/moment-release-log')
+              if logfile.exists():
+                for line in reversed(logfile.read_text(errors='replace').splitlines()):
+                  if line.startswith('NUMI_MOMENT_SIMPLIFY '):
+                    try:reason=json.loads(line.partition(' ')[2]).get('reason','Unknown deployment error')[:120]
+                    except Exception:pass
+                    break
+          context='moment-simplified-hero-live' if passed else 'moment-failure-'+''.join(x if x.isascii() and x.isalnum() else '-' for x in reason.lower())[:70]
           body=json.dumps({'state':'success' if passed else 'failure',
-            'context':'moment-simplified-hero-live',
-            'description':'Simplified Moment page verified on REG.RU' if passed else 'Moment publication failed, see workflow checks'}).encode()
+            'context':context,'description':reason[:140]}).encode()
           endpoint='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/statuses/'+os.environ['GITHUB_SHA']
           req=urllib.request.Request(endpoint,data=body,method='POST',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'})
           with urllib.request.urlopen(req,timeout=20) as response:print(response.status)
