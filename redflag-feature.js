@@ -1,6 +1,6 @@
 // Red Flag deliberately needs only day and month, with no birth-year dependence.
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=73";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=20261101fix1";
 
 const home = document.querySelector("#home");
 const redFlag = document.querySelector("#redflag");
@@ -252,8 +252,15 @@ const ensureAnswer = (question, state) => {
   state.answerRequests.set(id, request);
   void request.then((response) => {
     if (profile === activeProfile) state.answers.set(id, response);
-  }, () => {
-    if (profile === activeProfile) state.answerErrors.set(id, "Не удалось загрузить ответ. Закрой и открой вопрос ещё раз.");
+  }, (requestError) => {
+    if (profile === activeProfile) {
+      const message = requestError?.code === "PURCHASE_REQUIRED"
+        ? "🔒 Это платный ответ. Оплата пока не подключена."
+        : requestError?.code === "CONTENT_NOT_PUBLISHED"
+          ? "Авторский ответ для этого вопроса ещё готовится."
+          : "Не удалось загрузить ответ. Закрой и открой вопрос ещё раз.";
+      state.answerErrors.set(id, message);
+    }
   }).finally(() => {
     if (state.answerRequests.get(id) === request) state.answerRequests.delete(id);
     if (profile === activeProfile && state.expanded && state.activeQuestionId === id) {
