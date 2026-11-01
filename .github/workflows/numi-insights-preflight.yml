@@ -1,0 +1,27 @@
+name: Analytics v2 live compatibility preflight
+on:
+  push:
+    branches: [feature/analytics-v2-20261101]
+    paths: [.github/workflows/numi-insights-preflight.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Read function signatures only
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,re,json
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30);f.connect("server172.hosting.reg.ru",21);f.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"]);f.prot_p();root=f.pwd().rstrip("/")
+          def read(p):
+           b=io.BytesIO();f.retrbinary("RETR "+root+p,b.write);return b.getvalue().decode("utf8","replace")
+          for p in ["/private/numi-account-20261031/core.php","/private/db.php","/www/xn--c1adkkdfjbp1a4l.online/api/numi-account.php"]:
+           s=read(p)
+           print("PREFLIGHT "+json.dumps(dict(path=p,functions=re.findall(r"function\s+(\w+)\s*\(",s),requires=re.findall(r"(?:require|include)(?:_once)?\s*([^;]+);",s)),ensure_ascii=False),flush=True)
+          f.quit()
+          PY
