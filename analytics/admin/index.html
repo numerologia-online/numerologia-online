@@ -25,13 +25,26 @@
 </tr></thead>
 <tbody id="funnel-rows"><tr><td colspan="6">Загружаем…</td></tr></tbody>
 </table></div>
+<h2>Блогеры и рекламные каналы</h2>
+<p class="muted">У каждого блогера своя метка. Переходы и открытия разделов считаем уже сейчас. Оплаты и выручка появятся только после подключения подтверждений от платёжной системы.</p>
+<div class="funnel-wrap"><table class="funnel" aria-label="Эффективность рекламных каналов">
+<thead><tr><th>Источник</th><th>Переходы по ссылке</th><th>Открытия страниц</th><th>Интерес к разделам</th><th>Покупки</th><th>Конверсия</th><th>Выручка</th></tr></thead>
+<tbody id="campaign-rows"><tr><td colspan="7">Загружаем…</td></tr></tbody></table></div>
+<h2>Партнёрская ссылка</h2>
+<p class="muted">Введи короткую латинскую метку блогера, чтобы получить ссылку с отслеживанием переходов.</p>
+<div class="funnel-controls">
+<input id="partner-code" type="text" inputmode="latin" placeholder="Например, anna" maxlength="48" aria-label="Код блогера">
+<button type="button" id="generate-link">Создать ссылку</button>
+<button type="button" id="copy-link">Копировать</button>
+</div>
+<p id="partner-link" class="notice" style="overflow-wrap:anywhere">Ссылка появится здесь.</p>
 <p class="muted">CTR = переходы / показы. Конверсия в оплату = подтверждённые покупки / открытия. Пока показы и подтверждение оплат не подключены, соответствующие показатели обозначены «—», а не выдуманы. Открытия — действия, не уникальные люди.</p>
 </section>
 </main><script>
 "use strict";
 (()=>{
  const $=id=>document.getElementById(id);
- let source=[],sortBy="views",desc=true,loaded=false;const questionTitles=new Map(),categoryTitles=new Map();
+ let source=[],sortBy="views",desc=true,loaded=false,rawEvents=[];const questionTitles=new Map(),categoryTitles=new Map();
  const num=v=>Number(v||0);
  const label=id=>id.replace(/[_-]+/g," ").replace(/\b[a-z]/g,m=>m.toUpperCase());
  async function loadNames(){
@@ -72,6 +85,29 @@
    const conversion=row.orders!==null&&row.views>0?100*row.orders/row.views:null;
    return {...row,ctr,conversion};
  }
+ function renderCampaigns(){
+   const rows=new Map();
+   for(const evt of rawEvents){
+     const campaign=String(evt.campaign||"-");
+     if(campaign==="-")continue;
+     if(!rows.has(campaign))rows.set(campaign,{name:campaign,visits:0,pages:0,interest:0});
+     const item=rows.get(campaign),amount=num(evt.event_count);
+     if(evt.event_type==="campaign")item.visits+=amount;
+     if(evt.event_type==="page")item.pages+=amount;
+     if(evt.event_type==="category"||evt.event_type==="question")item.interest+=amount;
+   }
+   const tbody=$("campaign-rows");tbody.replaceChildren();
+   const sorted=[...rows.values()].sort((a,b)=>b.visits-a.visits||b.interest-a.interest);
+   if(!sorted.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=7;td.textContent="Пока нет переходов с партнёрскими метками";tr.append(td);tbody.append(tr);return;}
+   for(const a of sorted){
+     const tr=document.createElement("tr");
+     for(const [i,value] of [a.name,a.visits,a.pages,a.interest,"—","—","—"].entries()){
+       const td=document.createElement("td");td.textContent=typeof value==="number"?value.toLocaleString("ru-RU"):value;
+       if(i>=4)td.dataset.empty="true";tr.append(td);
+     }
+     tbody.append(tr);
+   }
+ }
  function render(){
    const q=$("filter").value.toLocaleLowerCase("ru").trim(),kind=$("kind").value;
    const rows=source.filter(r=>(kind==="all"||r.kind===kind)&&(!q||(r.title+" "+r.section).toLocaleLowerCase("ru").includes(q)));
@@ -98,6 +134,7 @@
      cell(tr,row.conversion===null?"—":row.conversion.toFixed(1)+"%",row.conversion===null);
      body.append(tr);
    }
+   renderCampaigns();
    document.querySelectorAll("[data-sort]").forEach(b=>{
      const selected=b.dataset.sort===sortBy;b.setAttribute("aria-sort",selected?(desc?"descending":"ascending"):"none");
      b.textContent=({name:"Раздел / вопрос",views:"Открытия",clicks:"Переходы",ctr:"CTR",orders:"Оплаты",conversion:"Конверсия в оплату"})[b.dataset.sort]+(selected?(desc?" ↓":" ↑"):"");
@@ -109,9 +146,9 @@
    try{
      const res=await fetch("/api/numi-analytics.php?days="+encodeURIComponent($("days").value),{cache:"no-store",signal:controller.signal});
      const data=await res.json();if(!res.ok||!data.ok||!Array.isArray(data.rows))throw Error("Ответ сервера не содержит статистику");
-     source=build(data.rows).map(metrics);loaded=true;
+     rawEvents=data.rows;source=build(data.rows).map(metrics);loaded=true;
      $("status").textContent="Реальные данные · "+data.period_days+" дн. · "+(source.length?"Можно сортировать столбцы":"Пока нет событий");
-   }catch(e){source=[];loaded=false;$("status").textContent=e.name==="AbortError"?"Сервер не ответил за 20 секунд. Попробуй обновить.":"Статистика временно недоступна. "+e.message;}
+   }catch(e){source=[];rawEvents=[];loaded=false;$("status").textContent=e.name==="AbortError"?"Сервер не ответил за 20 секунд. Попробуй обновить.":"Статистика временно недоступна. "+e.message;}
    finally{clearTimeout(timeout);render();}
  }
  document.querySelectorAll("[data-sort]").forEach(button=>button.addEventListener("click",()=>{
@@ -123,6 +160,22 @@
  $("filter").addEventListener("input",render);
  $("days").addEventListener("change",refresh);
  $("refresh").addEventListener("click",refresh);
+ let lastLink="";
+ $("generate-link").addEventListener("click",()=>{
+   const code=$("partner-code").value.trim().toLowerCase();
+   if(!/^[a-z0-9_-]{1,48}$/.test(code)){
+     lastLink="";$("partner-link").textContent="Используй латинские буквы, цифры, дефис или подчёркивание (до 48 символов).";return;
+   }
+   const url=new URL("/",location.origin);
+   url.searchParams.set("utm_source","blogger");
+   url.searchParams.set("utm_campaign",code);
+   lastLink=url.href;$("partner-link").textContent=lastLink;
+ });
+ $("copy-link").addEventListener("click",async()=>{
+   if(!lastLink){$("partner-link").textContent="Сначала создай ссылку.";return;}
+   try{await navigator.clipboard.writeText(lastLink);$("partner-link").textContent="Скопировано: "+lastLink;}
+   catch(_){$("partner-link").textContent="Ссылка готова: "+lastLink;}
+ });
  refresh();loadNames();
 })();
 </script></body></html>
