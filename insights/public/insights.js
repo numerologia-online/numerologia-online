@@ -30,7 +30,7 @@
   let report=null,view='interest',visible=50,rows=[],requestId=0,controller=null;
   const setStatus=(text,error=false)=>{$('status').textContent=text;$('status').classList.toggle('error',error);$('status').hidden=!text;};
   const format=(key,value)=>key==='ctr'||key==='conversion'?pct(value):key==='revenue'?money.format(Number(value||0)):value===null||value===undefined?'—':number.format(Number(value));
-  const dateISO=d=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Samara',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+  const dateISO=d=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Samara',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
   async function api(url,options={}){
     const response=await fetch(url,{credentials:'same-origin',cache:'no-store',...options});let data;
     try{data=await response.json();}catch(_){throw Error('Сервер вернул страницу вместо данных. Код '+response.status+'.');}
@@ -63,7 +63,7 @@
     const id=++requestId;controller?.abort();controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),15000);$('refresh').disabled=true;setStatus('Обновляем показатели…');
     try{const data=await api('/api/numi-insights.php?from='+encodeURIComponent($('date-from').value)+'&to='+encodeURIComponent($('date-to').value),{signal:controller.signal});if(id!==requestId)return;report=data;dashboardVisible();
       $('total-sessions').textContent=number.format(data.totals.sessions);$('total-clicks').textContent=number.format(data.rows.reduce((n,r)=>n+r.clicks,0));$('total-orders').textContent=number.format(data.totals.orders);$('total-club').textContent='из них подписок — '+number.format(data.totals.subscriptions);$('total-revenue').textContent=money.format(data.totals.revenue);
-      $('updated').textContent='Обновлено '+new Date(data.generated_at).toLocaleString('ru-RU',{timeZone:'Asia/Samara'})+' · Самара · Заказов без источника: '+data.totals.unattributed+'.';
+      $('updated').textContent='Обновлено '+new Date(data.generated_at).toLocaleString('ru-RU',{timeZone:'Europe/Samara'})+' · Самара · Заказов без источника: '+data.totals.unattributed+'.';
       setStatus('');render();
     }catch(e){if(id!==requestId)return;if(e.code==='OWNER_LOGIN_REQUIRED')loginVisible();setStatus(e.name==='AbortError'?'Сервер не ответил за 15 секунд. Можно повторить кнопкой «Обновить».':e.message,true);}
     finally{clearTimeout(timeout);if(id===requestId)$('refresh').disabled=false;}

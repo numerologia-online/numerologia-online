@@ -19,7 +19,7 @@ creation. One-time purchases require matching product section; club purchases
 use the last club choice. Missing attribution remains explicitly unassigned.
 Custom-question text, birth dates, passwords, raw referrer/query and IP are not
 collected. Titles come from authored public UI. Sessions represent tabs, not people.
-DNT and GPC are respected. Report dates use Asia/Samara, storage uses UTC.
+DNT and GPC are respected. Report dates use Europe/Samara, storage uses UTC.
 
 Integration for the future checkout implementation: preserve the same account
 session cookie and call `window.NumiInsights?.checkout('once'|'club')` on the

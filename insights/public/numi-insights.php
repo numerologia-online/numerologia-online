@@ -73,10 +73,10 @@ function niRow(string $section,string $item,string $title=''): array {
     return ['section'=>$section,'item'=>$item,'title'=>$title,'impressions'=>0,'clicks'=>0,'opens'=>0,'offers'=>0,'checkout_once'=>0,'checkout_club'=>0,'orders'=>0,'subscriptions'=>0,'revenue'=>0,'ctr'=>null,'conversion'=>null,'_impressed'=>0,'_clicked'=>0,'_opened'=>0,'_buyers'=>[]];
 }
 function niReport(PDO $db,string $from,string $to): array {
-    $start=$from.' 00:00:00';$end=(new DateTimeImmutable($to,new DateTimeZone('Asia/Samara')))->modify('+1 day')->format('Y-m-d').' 00:00:00';
+    $start=$from.' 00:00:00';$end=(new DateTimeImmutable($to,new DateTimeZone('Europe/Samara')))->modify('+1 day')->format('Y-m-d').' 00:00:00';
     // Store UTC, interpret date controls in Samara time (UTC+4).
-    $start=(new DateTimeImmutable($start,new DateTimeZone('Asia/Samara')))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
-    $end=(new DateTimeImmutable($end,new DateTimeZone('Asia/Samara')))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+    $start=(new DateTimeImmutable($start,new DateTimeZone('Europe/Samara')))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+    $end=(new DateTimeImmutable($end,new DateTimeZone('Europe/Samara')))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
     $q=$db->prepare("SELECT section,item,MAX(title) title,
       SUM(event_type='impression') impressions,SUM(event_type='click') clicks,SUM(event_type IN ('open','page')) opens,
       SUM(event_type='offer') offers,SUM(event_type='checkout_once') checkout_once,SUM(event_type='checkout_club') checkout_club,
@@ -95,7 +95,7 @@ function niReport(PDO $db,string $from,string $to): array {
     $intent=$db->prepare("SELECT section,item,title,source,campaign FROM numi_insights_intents WHERE account_id=? AND plan=? AND created_at<=? AND created_at>=DATE_SUB(?,INTERVAL 24 HOUR) AND (?='club' OR section=?) ORDER BY created_at DESC LIMIT 1");
     foreach($orders as $o){
         $club=niIsClub($o['product_code']);$clubTotal+=(int)$club;$amount=(int)$o['amount_kopeks']/100;$revenue+=$amount;$section=niSection($o['product_code']);$plan=$club?'club':'once';
-        $paidDay=(new DateTimeImmutable($o['verified_at'],new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Asia/Samara'))->format('Y-m-d');
+        $paidDay=(new DateTimeImmutable($o['verified_at'],new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Europe/Samara'))->format('Y-m-d');
         if(!isset($dayMap[$paidDay]))$dayMap[$paidDay]=['day'=>$paidDay,'sessions'=>0,'clicks'=>0,'orders'=>0];$dayMap[$paidDay]['orders']++;
         $intent->execute([$o['account_id'],$plan,$o['created_at'],$o['created_at'],$plan,$section]);$a=$intent->fetch(PDO::FETCH_ASSOC);
         if($a){$attributed++;}else{$a=['section'=>$section,'item'=>'-','title'=>'','source'=>'unattributed','campaign'=>'-'];}
@@ -110,7 +110,7 @@ function niReport(PDO $db,string $from,string $to): array {
         unset($r['_impressed'],$r['_clicked'],$r['_opened'],$r['_buyers']);}unset($r);
     $q=$db->prepare('SELECT COUNT(DISTINCT session_id) FROM numi_insights_events WHERE created_at>=? AND created_at<?');$q->execute([$start,$end]);$sessions=(int)$q->fetchColumn();
     ksort($dayMap);
-    return ['ok'=>true,'version'=>NI_VERSION,'from'=>$from,'to'=>$to,'timezone'=>'Asia/Samara','rows'=>array_values($rows),'sources'=>array_values($sources),'days'=>array_values($dayMap),
+    return ['ok'=>true,'version'=>NI_VERSION,'from'=>$from,'to'=>$to,'timezone'=>'Europe/Samara','rows'=>array_values($rows),'sources'=>array_values($sources),'days'=>array_values($dayMap),
       'totals'=>['sessions'=>$sessions,'orders'=>count($orders),'subscriptions'=>$clubTotal,'revenue'=>$revenue,'attributed'=>$attributed,'unattributed'=>count($orders)-$attributed],
       'payment_status'=>'waiting_for_provider','attribution'=>'last_checkout_click_24h','generated_at'=>gmdate('c')];
 }
@@ -144,7 +144,7 @@ function niMain(): never {
         $owner=niOwner(naCurrent($db));
         if($action==='session')niReply(200,['ok'=>true,'owner'=>$owner]);
         if(!$owner)niReply(401,['ok'=>false,'error'=>'OWNER_LOGIN_REQUIRED']);
-        $today=(new DateTimeImmutable('now',new DateTimeZone('Asia/Samara')))->format('Y-m-d');
+        $today=(new DateTimeImmutable('now',new DateTimeZone('Europe/Samara')))->format('Y-m-d');
         $from=$_GET['from']??$today;$to=$_GET['to']??$today;
         foreach([$from,$to] as $day)if(!is_string($day)||!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$day)||(new DateTimeImmutable($day))->format('Y-m-d')!==$day)niReply(400,['ok'=>false,'error'=>'BAD_DATE']);
         if($from>$to||$to>$today||(strtotime($to)-strtotime($from))>366*86400)niReply(400,['ok'=>false,'error'=>'BAD_RANGE']);
