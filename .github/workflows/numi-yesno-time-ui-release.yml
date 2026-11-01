@@ -1,0 +1,87 @@
+name: Publish per-question clock for 100 Yes-No questions on REG.RU
+on:
+  push:
+    paths:
+      - .github/workflows/numi-yesno-time-ui-release.yml
+permissions:
+  contents: read
+  statuses: write
+concurrency:
+  group: numi-yesno-time-ui-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish per-question HHMM time selector on REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate typed time, now button, navigation and catalog
+        id: validate
+        run: |
+          echo python > /tmp/yn-time-stage
+          python3 -m py_compile moment/deploy-yesno-time-input-20261101.py
+          echo javascript > /tmp/yn-time-stage
+          node --check moment/yes-no/yes-no.js
+          echo ui-test > /tmp/yn-time-stage
+          node moment/tests/yesno-back-flow.test.cjs
+          echo catalog > /tmp/yn-time-stage
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('moment/yes-no')
+          html=(root/'index.html').read_text(encoding='utf-8')
+          css=(root/'yes-no.css').read_text(encoding='utf-8')
+          data=json.loads((root/'questions.json').read_text(encoding='utf-8'))
+          assert len(data['categories'])==7 and len(data['questions'])==100
+          assert len({q['id'] for q in data['questions']})==100
+          assert len({q['title'] for q in data['questions']})==100
+          assert html.count('id="yn-time-input"')==1
+          assert html.count('id="yn-now"')==1
+          assert html.count('id="yn-time-result"')==1
+          assert 'inputmode="numeric"' in html and 'type="date"' not in html
+          assert 'выдерживайте хотя бы сутки' in html
+          assert 'yes-no.js?v=4' in html and 'yes-no.css?v=9' in html
+          assert css.count('{')==css.count('}')
+          print('Validated question-time preview and 100 original questions')
+          PY
+          echo passed > /tmp/yn-time-stage
+      - name: Back up and publish only Yes-No html css js to REG.RU
+        id: deploy
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -o pipefail
+          python3 -u moment/deploy-yesno-time-input-20261101.py 2>&1 | tee /tmp/yn-time-release.log
+      - name: Record verified public deployment result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPLOY_RESULT: ${{ steps.deploy.outcome }}
+          VALIDATE_RESULT: ${{ steps.validate.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os,pathlib,urllib.request
+          success=os.environ.get('DEPLOY_RESULT')=='success'
+          description='Per-question time picker published and verified on REG.RU' if success else 'Question time UI release failed'
+          if not success:
+            if os.environ.get('VALIDATE_RESULT')!='success':
+              s=pathlib.Path('/tmp/yn-time-stage')
+              description='Validation failed at '+(s.read_text().strip() if s.exists() else 'initialization')
+            else:
+              logfile=pathlib.Path('/tmp/yn-time-release.log')
+              if logfile.exists():
+                for line in reversed(logfile.read_text(errors='replace').splitlines()):
+                  if 'YESNO_TIME_UI ' in line:
+                    try:description=str(json.loads(line.split('YESNO_TIME_UI ',1)[1]).get('error','Unknown'))[:125]
+                    except Exception:pass
+                    break
+          state='success' if success else 'failure'
+          context='yesno-question-clock-live' if success else 'yesno-question-clock-failed'
+          body=json.dumps({'state':state,'context':context,'description':description[:140]}).encode()
+          req=urllib.request.Request('https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/statuses/'+os.environ['GITHUB_SHA'],data=body,method='POST',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Content-Type':'application/json','Accept':'application/vnd.github+json'})
+          with urllib.request.urlopen(req,timeout=20) as response:print('Status recorded:',response.status)
+          PY
