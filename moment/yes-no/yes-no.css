@@ -5,13 +5,13 @@ html, body {max-width:100%;overflow-x:clip}
 .yn-directory>h1{font:700 clamp(31px,4.8vw,46px)/1.16 'DM Sans',system-ui,-apple-system,sans-serif;letter-spacing:-.035em;margin:0 0 13px;color:#143d30}
 .yn-directory-sub{font-size:clamp(15px,2.5vw,19px);color:#688477;line-height:1.5;margin:0 0 30px}
 .yn-category-list{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;width:100%;max-width:100%;margin:0 auto}
-.yn-topic{appearance:none;display:grid;grid-template-columns:36px minmax(0,1fr) 18px;align-items:center;gap:10px;width:100%;min-width:0;text-align:left;padding:10px 16px;min-height:62px;border:1px solid #527d6b;border-radius:13px;background:#103f30;color:#fffefa;box-shadow:inset 0 1px 0 #ffffff14;transition:background .15s,border-color .15s}
-.yn-topic:hover,.yn-topic:focus-visible{background:#19503d;border-color:#c6a369}
-.yn-topic-icon{display:flex;justify-content:center;align-items:center;min-height:32px;border-right:1px solid #ba954e;padding-right:8px;color:#d3a95e;font:24px/1 Georgia,serif}
+.yn-topic{appearance:none;display:grid;grid-template-columns:36px minmax(0,1fr) 18px;align-items:center;gap:10px;width:100%;min-width:0;text-align:left;padding:10px 16px;min-height:62px;border:1px solid #d5dcd1;border-radius:13px;background:#f6f5ef;color:#143d30;box-shadow:0 1px 2px #143d3008;transition:background .15s,border-color .15s}
+.yn-topic:hover,.yn-topic:focus-visible{background:#edf2ea;border-color:#b99a69}
+.yn-topic-icon{display:flex;justify-content:center;align-items:center;min-height:32px;border-right:0;padding-right:0;color:#bd9147;font:24px/1 Georgia,serif}
 .yn-topic-copy{min-width:0;display:flex;flex-direction:column;gap:1px}
 .yn-topic-name{font:650 clamp(16px,2vw,19px)/1.22 'DM Sans',system-ui,-apple-system,sans-serif;letter-spacing:-.015em;overflow-wrap:break-word}
-.yn-topic-count{font-size:12px;line-height:1.25;color:#d4dfd6}
-.yn-topic-arrow{font-size:21px;font-weight:300;line-height:1;text-align:right;color:#fffefa}
+.yn-topic-count{font-size:12px;line-height:1.25;color:#6f8478}
+.yn-topic-arrow{font-size:21px;font-weight:300;line-height:1;text-align:right;color:#547366}
 .yn-results{padding-top:0;scroll-margin-top:20px}
 .yn-back-top{border:0;background:none;padding:7px 0 22px;font-weight:700;color:#a67b3b;font-size:15px;text-align:left}
 .yn-results-head .overline{margin:0 0 10px}
