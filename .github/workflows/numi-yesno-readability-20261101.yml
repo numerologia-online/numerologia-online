@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   release:
-    if: github.event.head_commit.message == 'Report protected release failure reason for unified Back navigation'
+    if: github.event.head_commit.message == 'Locate exact Yes-No Back validation failure'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -22,9 +22,13 @@ jobs:
       - name: Verify isolated CSS, unchanged question catalog and valid release
         id: validate
         run: |
+          echo python-syntax > /tmp/yesno-validation-stage
           python3 -m py_compile moment/deploy-yesno-unified-back-20261101.py
+          echo js-syntax > /tmp/yesno-validation-stage
           node --check moment/yes-no/yes-no.js
+          echo browser-navigation-test > /tmp/yesno-validation-stage
           node moment/tests/yesno-back-flow.test.cjs
+          echo catalog-integrity > /tmp/yesno-validation-stage
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -39,6 +43,7 @@ jobs:
           assert 'yes-no.js?v=3' in (p/'index.html').read_text()
           print('Readability and catalog checks passed')
           PY
+          echo all-pass > /tmp/yesno-validation-stage
       - name: Back up, publish CSS and update only stylesheet link, verify live public site
         id: publish
         env:
@@ -59,7 +64,9 @@ jobs:
           state='success' if os.environ.get('RELEASE_OUTCOME')=='success' else 'failure'
           description='Back navigation verified live on REG.RU' if state=='success' else 'Deployment failed before diagnostics'
           if state=='failure':
-            if os.environ.get('VALIDATION_OUTCOME')!='success':description='Predeployment validation failed'
+            if os.environ.get('VALIDATION_OUTCOME')!='success':
+              stagefile=pathlib.Path('/tmp/yesno-validation-stage')
+              description='Predeployment validation failed at '+(stagefile.read_text().strip() if stagefile.exists() else 'initialization')
             else:
               logfile=pathlib.Path('/tmp/yesno-back-release.log')
               if logfile.exists():
