@@ -4,10 +4,18 @@
   if (window.NumiAnalytics) return;
   const dnt=navigator.globalPrivacyControl===true ||
     navigator.doNotTrack==="1" || window.doNotTrack==="1";
+  // Partner attribution survives navigation within the same browser tab.
+  // Only a validated short campaign tag is retained; no visitor identifier.
   const campaign=(()=>{
     const p=new URLSearchParams(location.search);
-    const tag=p.get("utm_campaign")||p.get("campaign")||"";
-    return /^[a-z0-9_-]{1,48}$/i.test(tag)?tag.toLowerCase():"-";
+    const entered=p.get("utm_campaign")||p.get("utm_source")||p.get("campaign")||"";
+    const safe=t=>/^[a-z0-9_-]{1,48}$/i.test(t)?t.toLowerCase():null;
+    if(dnt)return "-";
+    if(entered&&safe(entered)){
+      try{sessionStorage.setItem("numi_campaign",safe(entered));}catch(_){}
+      return safe(entered);
+    }
+    try{return safe(sessionStorage.getItem("numi_campaign")||"")||"-";}catch(_){return "-";}
   })();
   function send(type,section,item="-"){
     if(dnt||!["page","category","question","search","campaign"].includes(type))return;
@@ -19,5 +27,5 @@
     }catch(_){}
   }
   window.NumiAnalytics={send};
-  if(campaign!=="-")send("campaign","entry","-",campaign);
+  if(campaign!=="-" && /(?:utm_campaign|utm_source|campaign)=/.test(location.search))send("campaign","entry");
 })();
