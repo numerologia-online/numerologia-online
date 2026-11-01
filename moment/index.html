@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#143c30">
   <meta name="description" content="Нумерология момента — 300 вопросов о любви, работе, деньгах и жизненных решениях. Каталог и подбор вопроса.">
   <title>300 вопросов обо всём — Нумерология онлайн</title>
-  <link rel="stylesheet" href="./moment.css?v=2">
-  <script defer src="./moment.js?v=1"></script>
+  <link rel="stylesheet" href="./moment.css?v=3">
+  <script defer src="./moment.js?v=2"></script>
 </head>
 <body>
   <header class="site-header">
@@ -36,10 +36,10 @@
         <h2>Выберите, что сейчас важно</h2>
       </div>
       <div id="category-grid" class="category-grid" aria-label="Темы"></div>
-      <div id="questions-panel" class="questions-panel">
+      <div id="questions-panel" class="questions-panel" hidden>
+        <button type="button" id="show-all" class="moment-topic-back" hidden>← Назад</button>
         <div class="questions-top">
           <div><span id="results-kicker" class="overline">ВОПРОСЫ</span><h3 id="results-title">Все вопросы</h3></div>
-          <button type="button" id="show-all" class="text-back" hidden>Показать все темы ↗</button>
         </div>
         <div id="results-message" class="results-message" role="status" aria-live="polite"></div>
         <div id="question-list" class="question-list"></div>
