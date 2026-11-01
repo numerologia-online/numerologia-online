@@ -97,7 +97,8 @@ def run():
         log(backup_ready=True,private_server_only=True)
         try:
             # core.php is the only active file modified, with a verified backup first.
-            write(core,target);changed=True
+            changed=True
+            write(core,target)
             status,health=http("content-health")
             if status!=200 or health.get("configured") is not True or health.get("payments_enabled") is not False:
                 raise RuntimeError("Post-switch backend health check failed")
