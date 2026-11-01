@@ -43,7 +43,15 @@
       if (id !== answerRequest) return;
       if (data.error === "ZERO_TIME_UNDEFINED") {timeResult.textContent = "Для времени 00.00 правило ответа ещё не утверждено.";return;}
       if (!response.ok || data.ok !== true || typeof data.answer !== "string") throw Error("answer unavailable");
-      timeResult.textContent = data.answer;
+      const separator = data.answer.indexOf(".");
+      if (separator < 0) {timeResult.textContent = data.answer;return;}
+      const verdict = document.createElement("strong");
+      verdict.className = "yn-answer-verdict";
+      verdict.textContent = data.answer.slice(0, separator + 1);
+      const explanation = document.createElement("p");
+      explanation.className = "yn-answer-explanation";
+      explanation.textContent = data.answer.slice(separator + 1).trim();
+      timeResult.replaceChildren(verdict, explanation);
     } catch (error) {
       if (id === answerRequest) timeResult.textContent = "Не удалось получить ответ. Попробуйте ещё раз.";
     } finally {clearTimeout(timer);}
