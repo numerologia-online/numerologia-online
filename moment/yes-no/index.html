@@ -7,8 +7,8 @@
   <meta name="description" content="100 вопросов «Да или нет» — о любви, работе, деньгах, решениях и будущем. Раздел Нумерологии момента.">
   <title>100 вопросов «Да или нет» — Нумерология момента</title>
   <link rel="stylesheet" href="../moment.css?v=1">
-  <link rel="stylesheet" href="./yes-no.css?v=1">
-  <script defer src="./yes-no.js?v=1"></script>
+  <link rel="stylesheet" href="./yes-no.css?v=2">
+  <script defer src="./yes-no.js?v=2"></script>
 </head>
 <body>
   <header class="site-header"><div class="header-inner">
@@ -16,32 +16,25 @@
     <a href="../" class="header-back">← К Нумерологии момента</a>
   </div></header>
   <main>
-    <section class="hero"><div class="shell">
-      <div class="eyebrow">НУМЕРОЛОГИЯ МОМЕНТА · ДА / НЕТ</div>
-      <h1>Один вопрос. <em>Один момент.</em></h1>
-      <p class="hero-sub">100 вопросов, на которые хочется получить ясный ответ. Выберите свою тему — о любви, мужчине, работе, деньгах или важном решении.</p>
-      <div class="hero-stats"><span><strong>100</strong> вопросов</span><i aria-hidden="true"></i><span><strong>7</strong> тем</span><i aria-hidden="true"></i><span>Ваш особенный момент</span></div>
-      <div class="search-panel">
-        <label for="yn-search">О чём хотите спросить?</label>
-        <div class="search-field"><span aria-hidden="true">⌕</span><input id="yn-search" autocomplete="off" placeholder="Напишет, работа, переезд, деньги…"><button id="yn-clear" aria-label="Очистить поиск" type="button" hidden>×</button></div>
-        <p>Выбирайте точную формулировку — или просто просмотрите темы.</p>
-      </div>
-    </div></section>
-    <section class="explore shell" aria-label="Вопросы Да или Нет">
-      <div class="section-heading"><div><p class="overline">100 ВОПРОСОВ · 7 НАПРАВЛЕНИЙ</p><h2>Выберите свою тему</h2></div><p class="section-note">Легко найти именно тот вопрос, который сейчас не даёт покоя.</p></div>
-      <div id="yn-categories" class="category-grid" aria-label="Категории Да или Нет"></div>
-      <div id="yn-panel" class="questions-panel">
-        <div class="questions-top"><div><span class="overline">ДА / НЕТ</span><h3 id="yn-title">Все вопросы</h3></div><button id="yn-all" type="button" class="text-back" hidden>Все темы ↗</button></div>
-        <p id="yn-count" class="results-message" role="status" aria-live="polite">Открываем вопросы…</p>
-        <div id="yn-questions" class="question-list"></div>
+    <section class="yn-directory shell" aria-label="100 вопросов Да или нет">
+      <p class="overline">100 ВОПРОСОВ · 7 НАПРАВЛЕНИЙ</p>
+      <h1>Выберите тему</h1>
+      <p class="yn-directory-sub">Вопросы по темам — быстро и понятно.</p>
+      <div id="yn-categories" class="yn-category-list" aria-label="Темы вопросов"></div>
+      <div id="yn-panel" class="yn-results" hidden>
+        <button id="yn-all" type="button" class="yn-back-top">← К выбору темы</button>
+        <div class="yn-results-head">
+          <p class="overline">ДА ИЛИ НЕТ</p>
+          <h2 id="yn-title">Вопросы</h2>
+          <p id="yn-count" class="results-message" role="status" aria-live="polite"></p>
+        </div>
+        <div class="yn-search-field">
+          <label for="yn-search">Найти вопрос в теме</label>
+          <div class="search-field"><span aria-hidden="true">⌕</span><input id="yn-search" autocomplete="off" placeholder="Начните вводить вопрос…"><button id="yn-clear" aria-label="Очистить поиск" type="button" hidden>×</button></div>
+        </div>
+        <div id="yn-questions" class="yn-questions-list"></div>
         <button id="yn-more" type="button" class="show-more" hidden>Показать ещё вопросы ↓</button>
       </div>
-      <section class="yn-principle">
-        <p class="overline">ВАЖНО О МОМЕНТЕ ВОПРОСА</p>
-        <h2>Не задавайте один и тот же вопрос много раз</h2>
-        <p>Значение имеет момент, когда вы впервые сформулировали вопрос. Если повторять его в надежде услышать другой ответ, подсказка теряет смысл. Ответы могут меняться, но это не делает их вернее. Не пытайтесь обмануть себя.</p>
-        <p class="yn-principle-small">Система времени и 1 440 авторских трактовок находится в разработке. Сейчас открыт каталог вопросов без расчётов и ответов.</p>
-      </section>
     </section>
   </main>
   <footer class="site-footer"><div class="shell"><span>НУМЕРОЛОГИЯ ОНЛАЙН · 9966</span><a href="../">Назад к вопросам момента ↗</a></div></footer>
