@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish one-screen Yes-No questions without search to REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish corrected one-screen Yes-No interface to REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -42,7 +42,7 @@ jobs:
           assert html.count('id="yn-now"')==1
           assert html.count('id="yn-time-result"')==1
           assert 'inputmode="numeric"' in html and 'type="date"' not in html
-          assert 'выдерживайте хотя бы сутки' in html
+          assert 'чаще раза в сутки' in html
           assert 'yes-no.js?v=6' in html and 'yes-no.css?v=11' in html
           assert 'id="yn-search"' not in html and 'id="yn-more"' not in html
           assert 'id="yn-confirm-time"' not in html
