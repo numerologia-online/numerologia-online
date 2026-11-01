@@ -12,7 +12,7 @@
     return [...map].sort((a,b)=>b[1]-a[1]);
   }
   async function post(payload){
-    const response=await fetch("/api/numi-analytics.php",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),cache:"no-store"});
+    const response=await fetch("/api/numi-analytics.php",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),cache:"no-store",signal:AbortSignal.timeout(20000)});
     const data=await response.json();if(!response.ok||!data.ok)throw Error(data?.error||"LOGIN_FAILED");return data;
   }
   function showLogin(){ $("login").hidden=false;$("dashboard").hidden=true; }
@@ -31,7 +31,7 @@
     try{
       await post({action:"admin_login",email,password});
       $("password").value="";$("login-error").textContent="";showDashboard();await refresh();
-    }catch(e){$("password").value="";$("login-error").textContent=e.message==="TOO_MANY_ATTEMPTS"?"Слишком много попыток. Попробуйте позже.":e.message==="ANALYTICS_UNAVAILABLE"?"Сервер аналитики временно недоступен.":"Пароль не подошёл или у аккаунта пока нет подтверждённого доступа владельца."; }
+    }catch(e){$("password").value="";$("login-error").textContent=e.name==="TimeoutError"?"Сервер слишком долго отвечает. Попробуйте обновить страницу.":e.message==="TOO_MANY_ATTEMPTS"?"Временно ограничено число попыток. Подождите несколько минут.":e.message==="ANALYTICS_UNAVAILABLE"?"Сервер аналитики временно недоступен.":"Вход не выполнен. Проверьте пароль или воспользуйтесь восстановлением ниже."; }
   });
   $("reset-access").addEventListener("click",async()=>{
     const email=$("email").value.trim();
