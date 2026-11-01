@@ -1,0 +1,14 @@
+const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),{webcrypto}=require('node:crypto');
+const source=fs.readFileSync(require('node:path').join(__dirname,'../public/tracker.js'),'utf8');
+function environment(dnt=false){
+  const listeners={},timers=[],requests=[],storage=new Map();let prevented=0;
+  class Element{constructor(){this.id='';}closest(selector){if(selector.includes('button')||selector.includes('.product-card'))return this;return null;}matches(selector){return selector.includes('.product-card');}hasAttribute(attr){return attr==='data-open-redflag';}getAttribute(){return null;}}
+  const body={classList:{contains:()=>false}};
+  const document={body,referrer:'',visibilityState:'visible',querySelector:()=>({id:'home'}),querySelectorAll:()=>[],addEventListener:(key,fn,opts)=>{listeners[key]={fn,opts};}};
+  const window={addEventListener:()=>{}};
+  const context={window,document,navigator:{doNotTrack:dnt?'1':'0'},location:{pathname:'/',search:'',hostname:'example.org'},crypto:webcrypto,Element,URL,URLSearchParams,Set,WeakSet,WeakMap,Blob,AbortController,MutationObserver:class{observe(){}},setTimeout:fn=>{timers.push(fn);return timers.length;},clearTimeout:()=>{},sessionStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},fetch:async(url,options)=>{requests.push({url,options});throw Error('collector offline');}};
+  vm.runInNewContext(source,context);return {window,listeners,timers,requests,Element,event:target=>({target,preventDefault:()=>prevented++}),prevented:()=>prevented};
+}
+test('DNT prevents tracking without modifying the page',()=>{const e=environment(true);assert.equal(e.window.NumiInsights,undefined);assert.deepEqual(Object.keys(e.listeners),[]);});
+test('navigation clicks are passive and remain usable if collector fails',async()=>{const e=environment();assert.equal(e.window.NumiInsights.version,'2.0.0');assert.equal(e.listeners.click.opts.passive,true);const event=e.event(new e.Element());e.listeners.click.fn(event);assert.equal(e.prevented(),0);await e.timers[0]();assert.equal(e.requests.length,1);const body=JSON.parse(e.requests[0].options.body);assert.ok(body.events.some(x=>x.type==='click'&&x.section==='redflag'));assert.ok(!JSON.stringify(body).includes('birth'));assert.equal(e.prevented(),0);});
+test('client exposes checkout intent only, never a paid event',()=>{const e=environment();assert.equal(e.window.NumiInsights.paid,undefined);e.window.NumiInsights.checkout('club');assert.equal(e.prevented(),0);});

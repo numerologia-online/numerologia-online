@@ -25,7 +25,7 @@ jobs:
         run: |
           node --check insights/public/tracker.js
           node --check insights/public/insights.js
-          node --test insights/tests/dashboard.test.cjs
+          node --test insights/tests/*.test.cjs
           python3 -m py_compile insights/deploy.py
           php -l insights/public/numi-insights.php
       - name: Test confirmed payments and attribution using actual MySQL

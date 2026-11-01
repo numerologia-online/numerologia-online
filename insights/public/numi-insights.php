@@ -70,7 +70,7 @@ function niSection(string $code): string {
 }
 function niIsClub(string $code): bool {return preg_match('/club|subscription|membership/i',$code)===1;}
 function niRow(string $section,string $item,string $title=''): array {
-    return ['section'=>$section,'item'=>$item,'title'=>$title,'impressions'=>0,'clicks'=>0,'opens'=>0,'offers'=>0,'checkout_once'=>0,'checkout_club'=>0,'orders'=>0,'subscriptions'=>0,'revenue'=>0,'ctr'=>null,'conversion'=>null,'_impressed'=>0,'_clicked'=>0,'_opened'=>0,'_buyers'=>[]];
+    return ['section'=>$section,'item'=>$item,'title'=>$title,'impressions'=>0,'clicks'=>0,'opens'=>0,'offers'=>0,'checkout_once'=>0,'checkout_club'=>0,'orders'=>0,'subscriptions'=>0,'revenue'=>0,'subscription_revenue'=>0,'ctr'=>null,'conversion'=>null,'club_conversion'=>null,'_impressed'=>0,'_clicked'=>0,'_opened'=>0,'_buyers'=>[]];
 }
 function niReport(PDO $db,string $from,string $to): array {
     $start=$from.' 00:00:00';$end=(new DateTimeImmutable($to,new DateTimeZone('Europe/Samara')))->modify('+1 day')->format('Y-m-d').' 00:00:00';
@@ -100,13 +100,13 @@ function niReport(PDO $db,string $from,string $to): array {
         $intent->execute([$o['account_id'],$plan,$o['created_at'],$o['created_at'],$plan,$section]);$a=$intent->fetch(PDO::FETCH_ASSOC);
         if($a){$attributed++;}else{$a=['section'=>$section,'item'=>'-','title'=>'','source'=>'unattributed','campaign'=>'-'];}
         $key=$a['section'].':'.$a['item'];if(!isset($rows[$key]))$rows[$key]=niRow($a['section'],$a['item'],$a['title']);
-        $rows[$key]['orders']++;$rows[$key]['subscriptions']+=(int)$club;$rows[$key]['revenue']+=$amount;$rows[$key]['_buyers'][$o['account_id']]=true;
+        $rows[$key]['orders']++;$rows[$key]['subscriptions']+=(int)$club;$rows[$key]['revenue']+=$amount;if($club)$rows[$key]['subscription_revenue']+=$amount;$rows[$key]['_buyers'][$o['account_id']]=true;
         $sk=$a['source'].':'.$a['campaign'];if(!isset($sources[$sk]))$sources[$sk]=['source'=>$a['source'],'campaign'=>$a['campaign'],'sessions'=>0,'pages'=>0,'clicks'=>0,'checkouts'=>0,'orders'=>0,'subscriptions'=>0,'revenue'=>0];
         $sources[$sk]['orders']++;$sources[$sk]['subscriptions']+=(int)$club;$sources[$sk]['revenue']+=$amount;
     }
     foreach($rows as &$r){$r['ctr']=$r['_impressed']>0?round(100*$r['_clicked']/$r['_impressed'],2):null;
         // Orders/session is a conversion ratio, not unique-person conversion.
-        $den=max($r['_opened'],$r['_clicked']);$r['conversion']=$den>0?round(100*$r['orders']/$den,2):null;
+        $den=max($r['_opened'],$r['_clicked']);$r['conversion']=$den>0?round(100*$r['orders']/$den,2):null;$r['club_conversion']=$den>0?round(100*$r['subscriptions']/$den,2):null;
         unset($r['_impressed'],$r['_clicked'],$r['_opened'],$r['_buyers']);}unset($r);
     $q=$db->prepare('SELECT COUNT(DISTINCT session_id) FROM numi_insights_events WHERE created_at>=? AND created_at<?');$q->execute([$start,$end]);$sessions=(int)$q->fetchColumn();
     ksort($dayMap);

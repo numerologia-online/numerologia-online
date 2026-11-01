@@ -17,7 +17,7 @@ $types=['impression','click','open','checkout_once','checkout_club'];foreach($ty
 $insert->execute(['00000000-0000-4000-8000-000000000020',$sid,'page','moment','-','300 вопросов','blogger','anna','2026-10-31 20:30:00']);
 $intent=$db->prepare('INSERT INTO numi_insights_intents VALUES(?,?,?,?,?,?,?,?,?,?)');
 foreach(['once','club'] as $i=>$plan)$intent->execute([sprintf('00000000-0000-4000-8000-%012d',30+$i),$sid,$account,'moment','q_1','Что он чувствует?',$plan,'blogger','anna','2026-11-01 08:00:00']);
-$order=$db->prepare('INSERT INTO numi_orders VALUES(?,?,?,?,?,?,?,?,?,?,?)');
+$order=$db->prepare('INSERT INTO numi_orders VALUES(?,?,?,?,?,?,?,?,?,?)');
 $fixtures=[['moment','paid','bank','2026-11-01 08:05:00',9900],['club_monthly','paid','bank','2026-11-01 08:06:00',49000],['moment','pending','bank',null,9900],['moment','refunded','bank','2026-11-01 08:05:00',9900],['moment','paid','sandbox','2026-11-01 08:05:00',9900],['moment','paid','bank',null,9900],['moment','paid','bank','2026-11-01 08:05:00',0]];
 foreach($fixtures as $i=>[$product,$status,$provider,$verified,$amount])$order->execute([sprintf('00000000-0000-4000-8000-%012d',50+$i),$account,$product,'q_1',$amount,'RUB',$provider,$status,$verified,'2026-11-01 08:04:00']);
 $r=niReport($db,'2026-11-01','2026-11-01');
@@ -27,6 +27,7 @@ check($r['totals']['attributed']===2&&$r['totals']['unattributed']===0,'last eli
 $q=array_values(array_filter($r['rows'],fn($x)=>$x['item']==='q_1'))[0];
 check($q['clicks']===1&&$q['impressions']===1,'event UUID deduplicates delivery retries');
 check($q['ctr']===100.0&&$q['orders']===2&&$q['subscriptions']===1,'question funnel and CTR correct');
+check((float)$q['subscription_revenue']===490.0&&$q['club_conversion']===100.0,'club conversion and revenue are separate from one-time orders');
 check($r['totals']['sessions']===1&&count($r['days'])===1,'Samara timezone includes prior UTC evening');
 check($r['sources'][0]['orders']===2,'campaign gets confirmed orders');
 echo "MySQL report integration passed\n";

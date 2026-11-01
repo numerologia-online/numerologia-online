@@ -7,8 +7,8 @@
   const pct=v=>v===null||v===undefined?'—':Number(v).toLocaleString('ru-RU',{maximumFractionDigits:1})+'%';
   const title=r=>r.title||labels[r.section]||r.section||r.source||r.day;
   const kind=r=>r.item==='-'?'section':r.item?.startsWith('cat:')?'category':'question';
-  const columns={interest:[['impressions','Показы'],['clicks','Нажатия'],['ctr','CTR']],sales:[['offers','К покупке'],['orders','Оплаты'],['conversion','Конверсия']],club:[['checkout_club','Выбор клуба'],['subscriptions','Подписки'],['revenue','Выручка, ₽']],sources:[['sessions','Сеансы'],['orders','Оплаты'],['revenue','Выручка, ₽']],days:[['sessions','Сеансы'],['clicks','Нажатия'],['orders','Оплаты']]};
-  const metrics={impressions:'Показы карточки',clicks:'Нажатия',opens:'Открытия',ctr:'CTR по сеансам',offers:'Открытия предложения',checkout_once:'Выбор разовой покупки',checkout_club:'Выбор подписки',orders:'Подтверждённые оплаты',subscriptions:'Из них подписки',revenue:'Выручка, ₽',conversion:'Заказы / сеансы строки',sessions:'Сеансы',pages:'Открытия страниц',checkouts:'Выбор покупки'};
+  const columns={interest:[['impressions','Показы'],['clicks','Нажатия'],['ctr','CTR']],sales:[['offers','К покупке'],['orders','Оплаты'],['conversion','Конверсия']],club:[['checkout_club','Выбор клуба'],['subscriptions','Подписки'],['club_conversion','Конверсия']],sources:[['sessions','Сеансы'],['orders','Оплаты'],['revenue','Выручка, ₽']],days:[['sessions','Сеансы'],['clicks','Нажатия'],['orders','Оплаты']]};
+  const metrics={impressions:'Показы карточки',clicks:'Нажатия',opens:'Открытия',ctr:'CTR по сеансам',offers:'Открытия предложения',checkout_once:'Выбор разовой покупки',checkout_club:'Выбор подписки',orders:'Подтверждённые оплаты',subscriptions:'Из них подписки',revenue:'Выручка, ₽',conversion:'Заказы / сеансы строки',club_conversion:'Подписки / сеансы строки',subscription_revenue:'Выручка от подписок, ₽',sessions:'Сеансы',pages:'Открытия страниц',checkouts:'Выбор покупки'};
   function filteredRows(report,view,filters={}){
     let rows=(view==='sources'?report.sources:view==='days'?report.days:report.rows)||[];
     rows=rows.map(r=>({...r,title:view==='sources'?(r.source==='unattributed'?'Без источника покупки':r.source==='direct'?'Прямой вход':r.source==='telegram'?'Telegram':r.source):view==='days'?r.day:title(r)}));
@@ -29,7 +29,7 @@
   const $=id=>document.getElementById(id);
   let report=null,view='interest',visible=50,rows=[],requestId=0,controller=null;
   const setStatus=(text,error=false)=>{$('status').textContent=text;$('status').classList.toggle('error',error);$('status').hidden=!text;};
-  const format=(key,value)=>key==='ctr'||key==='conversion'?pct(value):key==='revenue'?money.format(Number(value||0)):value===null||value===undefined?'—':number.format(Number(value));
+  const format=(key,value)=>['ctr','conversion','club_conversion'].includes(key)?pct(value):['revenue','subscription_revenue'].includes(key)?money.format(Number(value||0)):value===null||value===undefined?'—':number.format(Number(value));
   const dateISO=d=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Samara',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
   async function api(url,options={}){
     const response=await fetch(url,{credentials:'same-origin',cache:'no-store',...options});let data;
