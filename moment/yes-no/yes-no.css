@@ -12,6 +12,9 @@ html, body {max-width:100%;overflow-x:clip}
 .yn-topic-name{font:650 clamp(16px,2vw,19px)/1.22 'DM Sans',system-ui,-apple-system,sans-serif;letter-spacing:-.015em;overflow-wrap:break-word}
 .yn-topic-count{font-size:12px;line-height:1.25;color:#6f8478}
 .yn-topic-arrow{font-size:21px;font-weight:300;line-height:1;text-align:right;color:#547366}
+.site-header .header-back{display:none}
+.yn-directory>.yn-back-top{scroll-margin-top:18px;margin-bottom:29px}
+#yn-dialog .yn-back-top{width:min(65%,260px);min-width:165px;margin:0 auto 18px}
 .yn-results{padding-top:0;scroll-margin-top:20px}
 .yn-back-top{display:flex;align-items:center;justify-content:center;gap:7px;width:60%;min-width:205px;max-width:300px;min-height:48px;padding:10px 14px;margin:0 auto 28px;border:2px solid #b98b44;border-radius:14px;background:#f3e8d3;color:#143d30;box-shadow:0 5px 15px #143d3026;font-weight:750;font-size:15px;line-height:1.2;text-align:center;letter-spacing:.005em}
 .yn-results-head .overline{margin:0 0 10px}
