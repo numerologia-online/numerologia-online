@@ -1,5 +1,5 @@
 {
-  "approved_private_commit": "81c946ca36445eac6199d378de08ca279c1f4e68",
+  "approved_private_commit": "430640f5867d217a850f8f5f27c9aeeba39c4da6",
   "approved_questions": [
     "yn-man-001",
     "yn-man-002",
@@ -102,6 +102,6 @@
     "yn-home-009",
     "yn-home-010"
   ],
-  "release_reason": "Publish questions 097-100 and approved question 022 title change",
-  "version": 14
+  "release_reason": "Publish user-approved revised readings for first two yes-no questions",
+  "version": 15
 }
