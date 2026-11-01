@@ -41,7 +41,7 @@ def main():
             # Existing analytics PHP from this project has the unique header below.
             if b"NUMI_AGG_ANALYTICS" not in current["api/numi-analytics.php"] or b"axOriginAllowed" not in current["api/numi-analytics.php"]:
                 raise RuntimeError("Unexpected API file; not replacing")
-        if b"Что интересно посетителям" not in current["analytics/index.html"]:
+        if "Что интересно посетителям".encode("utf-8") not in current["analytics/index.html"]:
             raise RuntimeError("Unexpected live HTML; not replacing")
         backups=root+"/site-safeguard-backups"
         try:ftp.mkd(backups)
