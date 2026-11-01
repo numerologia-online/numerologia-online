@@ -1,0 +1,36 @@
+name: Publish real year and homepage click analytics to REG.RU
+on:
+  push:
+    paths:
+      - .github/workflows/numi-year-analytics-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: numi-year-analytics-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish real year analytics on REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate tracking with no personal information
+        run: |
+          python3 -m py_compile analytics/deploy-year-tracking.py
+          python3 - <<'PY'
+          from pathlib import Path
+          h=Path('index.html').read_text()
+          y=Path('year/index.html').read_text()
+          assert 'moment/analytics.js?v=3' in h and 'moment/analytics.js?v=3' in y
+          assert 'data-open-year' in h and 'year-form' in y
+          assert 'birth-date").value' not in y
+          print('Tracking checks passed')
+          PY
+      - name: Publish guarded HTML files, backup and verify
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u analytics/deploy-year-tracking.py
