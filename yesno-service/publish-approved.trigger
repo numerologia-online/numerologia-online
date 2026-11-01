@@ -1,5 +1,5 @@
 {
-  "approved_private_commit": "cb7ab2b50de2039e683f0a05c8dc1f9286c8c0cd",
+  "approved_private_commit": "24f664e5280d038fd6e751a0e6ae41582d105dd6",
   "approved_questions": [
     "yn-man-001",
     "yn-man-002",
@@ -36,8 +36,18 @@
     "yn-love-013",
     "yn-love-014",
     "yn-love-015",
-    "yn-work-001"
+    "yn-work-001",
+    "yn-work-002",
+    "yn-work-003",
+    "yn-work-004",
+    "yn-work-005",
+    "yn-work-006",
+    "yn-work-007",
+    "yn-work-008",
+    "yn-work-009",
+    "yn-work-010",
+    "yn-work-011"
   ],
-  "release_reason": "Publish approved questions 027 to 036 and sync the corrected public catalogue",
-  "version": 7
+  "release_reason": "Publish ten approved career questions 037 to 046",
+  "version": 8
 }
