@@ -84,7 +84,7 @@
         '<form id="numi-email-form" novalidate>',
           '<label>Email<input name="email" type="email" inputmode="email" autocomplete="username" maxlength="191" required placeholder="Ваша почта"></label>',
           '<label>Пароль<input name="password" type="password" autocomplete="current-password" maxlength="200" required placeholder="Введите пароль"></label>',
-          '<label id="numi-confirm-label" hidden>Повторите пароль<input name="password_confirm" type="password" autocomplete="new-password" maxlength="200" placeholder="Повторите пароль"></label>',
+          '<label id="numi-confirm-label" hidden>Повторите пароль<input name="password_confirm" type="password" autocomplete="new-password" minlength="9" maxlength="200" placeholder="Повторите пароль"></label>',
           '<button type="submit" class="numi-auth-submit">Войти в кабинет</button>',
         '</form>',
         '<form id="numi-reset-form" hidden>',
@@ -92,8 +92,8 @@
           '<button type="submit" class="numi-auth-submit">Отправить ссылку</button>',
         '</form>',
         '<form id="numi-new-password-form" hidden>',
-          '<label>Новый пароль<input name="password" type="password" autocomplete="new-password" maxlength="200" required></label>',
-          '<label>Повторите новый пароль<input name="password_confirm" type="password" autocomplete="new-password" maxlength="200" required></label>',
+          '<label>Новый пароль<input name="password" type="password" autocomplete="new-password" minlength="9" maxlength="200" required></label>',
+          '<label>Повторите новый пароль<input name="password_confirm" type="password" autocomplete="new-password" minlength="9" maxlength="200" required></label>',
           '<button type="submit" class="numi-auth-submit">Сохранить новый пароль</button>',
         '</form>',
         '<button id="numi-forgot" type="button" class="numi-auth-link">Забыли пароль?</button>',
@@ -121,8 +121,8 @@
         '<form id="numi-set-email-form" hidden>',
           '<p>Это для тех, кто ещё не регистрировался через почту. Придумайте пароль для входа на сайт.</p>',
           '<label>Email<input name="email" type="email" inputmode="email" autocomplete="email" required></label>',
-          '<label>Придумайте пароль<input name="password" type="password" autocomplete="new-password" maxlength="200" required></label>',
-          '<label>Повторите пароль<input name="password_confirm" type="password" autocomplete="new-password" maxlength="200" required></label>',
+          '<label>Придумайте пароль<input name="password" type="password" autocomplete="new-password" minlength="9" maxlength="200" required></label>',
+          '<label>Повторите пароль<input name="password_confirm" type="password" autocomplete="new-password" minlength="9" maxlength="200" required></label>',
           '<button type="submit" class="numi-auth-submit">Привязать почту</button>',
         '</form>',
         '<form id="numi-existing-email-form" hidden>',
@@ -195,6 +195,7 @@
     document.getElementById("numi-back-login").hidden=!reset&&!password;
     document.querySelectorAll("[data-numi-tab]").forEach(btn=>btn.classList.toggle("is-active",btn.dataset.numiTab===mode));
     emailForm.querySelector('input[name="password"]').autocomplete=mode==="register"?"new-password":"current-password";
+    emailForm.querySelector('input[name="password"]').minLength=mode==="register"?9:0;
     const confirmation = document.getElementById("numi-confirm-label");
     confirmation.hidden=mode!=="register";
     confirmation.querySelector("input").required=mode==="register";
@@ -269,6 +270,7 @@
     const email=String(fields.get("email")||"").trim();
     const password=String(fields.get("password")||"");
     if(!email||!password){alertMessage("Введите email и пароль.");return;}
+    if(selected==="register" && password.length<9){alertMessage("Придумайте пароль не короче 9 символов.");return;}
     if(selected==="register" && password!==String(fields.get("password_confirm")||"")){alertMessage("Пароли не совпадают. Проверьте повтор пароля.");return;}
     await perform(selected==="register"?"register":"login",{email,password},selected==="register"?
       "Проверьте почту: мы отправили ссылку подтверждения.":null);
@@ -283,7 +285,7 @@
   passForm.addEventListener("submit",async event=>{
     event.preventDefault();
     const password=String(new FormData(passForm).get("password")||"");
-    if(!password){alertMessage("Введите новый пароль.");return;}
+    if(password.length<9){alertMessage("Новый пароль должен содержать не менее 9 символов.");return;}
     if(password!==String(new FormData(passForm).get("password_confirm")||"")){alertMessage("Пароли не совпадают. Проверьте повтор пароля.");return;}
     await perform("reset_password",{token:resetToken,password},"Пароль изменён. Теперь войдите.");
     if(!message.hidden&&message.classList.contains("is-success")){
@@ -327,6 +329,7 @@
   setEmailForm.addEventListener("submit",async event=>{
     event.preventDefault();
     const form=new FormData(setEmailForm);
+    if(String(form.get("password")||"").length<9){alertMessage("Придумайте пароль не короче 9 символов.");return;}
     await perform("set_email",{
       email:String(form.get("email")||""),
       password:String(form.get("password")||"")
