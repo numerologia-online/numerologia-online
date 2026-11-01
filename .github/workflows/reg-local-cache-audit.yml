@@ -1,0 +1,18 @@
+name: Read-only REG.RU private content cache audit
+on:
+  push:
+    paths:
+      - .github/workflows/reg-local-cache-audit.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify current private cache without modifying REG.RU
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/reg-local-cache-audit-20261101.py
