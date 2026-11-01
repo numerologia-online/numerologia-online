@@ -147,3 +147,6 @@ html, body {max-width:100%;overflow-x:clip}
 #yn-dialog{width:min(640px,calc(100% - 12px));max-width:calc(100% - 12px);min-height:min(680px,calc(100dvh - 24px));max-height:calc(100dvh - 12px)}
 #yn-dialog .dialog-content{padding:20px 20px 24px}
 @media(max-width:420px){#yn-dialog .dialog-content{padding:18px 17px 22px}}
+
+/* Center all copy inside the question dialog. */
+#yn-dialog .dialog-content,#yn-dialog .dialog-content p,#yn-dialog .dialog-topic,#yn-dialog .yn-time-form>label,#yn-dialog .yn-time-result,#yn-dialog .yn-answer-explanation{text-align:center}
