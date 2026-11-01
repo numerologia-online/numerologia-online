@@ -48,3 +48,27 @@ html, body {max-width:100%;overflow-x:clip}
 @media(prefers-reduced-motion:reduce){.yn-topic{transition:none}}
 
 @media(max-width:360px){.yn-category-list{width:100%}.yn-topic-name{font-size:15.5px}}
+
+/* Moment question-time input: each question gets its own lightweight, keyboard-first HH:MM flow. */
+#yn-dialog .yn-time-intro{font-size:15px;line-height:1.55;color:#456457;margin:2px 0 18px}
+#yn-dialog .yn-time-form{padding:18px;border:1px solid #d8c9a7;background:#f3f0e7;border-radius:17px}
+#yn-dialog .yn-time-form>label{display:block;margin:0 0 10px;font-size:14px;font-weight:750;color:#143d30}
+#yn-dialog .yn-time-row{display:flex;align-items:stretch;gap:10px}
+#yn-dialog #yn-time-input{width:138px;min-width:0;height:49px;border:1.5px solid #c6ad80;border-radius:12px;background:#fffdfa;color:#143d30;text-align:center;font:700 24px/1.1 'DM Sans',system-ui,sans-serif;letter-spacing:.06em;font-variant-numeric:tabular-nums}
+#yn-dialog #yn-time-input::placeholder{color:#a6aa9f;font-weight:500}
+#yn-dialog #yn-time-input[aria-invalid="true"]{border-color:#b34d3a}
+#yn-dialog .yn-now-button{flex:1;min-width:0;min-height:49px;border:1px solid #143d30;border-radius:12px;background:#143d30;color:#fff;font-size:14px;font-weight:750;padding:9px 12px}
+#yn-dialog .yn-now-button:hover,#yn-dialog .yn-now-button:focus-visible{background:#265747}
+#yn-dialog .yn-time-help{font-size:12px;line-height:1.5;color:#687d72;margin:10px 1px 0}
+#yn-dialog .yn-time-error{font-size:12px;line-height:1.4;font-weight:700;color:#a13a29;margin:9px 0 0}
+#yn-dialog .yn-confirm-time{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;margin:14px 0 0;min-height:43px;padding:9px 14px;border:1px solid #b99862;border-radius:11px;background:#fffdfa;color:#143d30;font-size:14px;font-weight:750}
+#yn-dialog .yn-confirm-time:hover{background:#e9dec8}
+#yn-dialog .yn-time-result{margin:13px 0 0;padding:13px 14px;border:1px solid #cfb785;border-radius:12px;background:#fbf6e8;color:#143d30;font-size:14px;line-height:1.5;font-weight:650}
+#yn-dialog .yn-repeat-note{margin:19px 1px 0;color:#4f665b;font-size:13px;line-height:1.6}
+#yn-dialog .yn-repeat-note strong{color:#143d30}
+#yn-dialog .yn-preview-note{margin:15px 1px 0;color:#8b897e;font-size:12px;line-height:1.5}
+@media(max-width:420px){
+  #yn-dialog .yn-time-form{padding:14px}
+  #yn-dialog #yn-time-input{width:112px;font-size:22px}
+  #yn-dialog .yn-now-button{font-size:13px;padding:8px}
+}
