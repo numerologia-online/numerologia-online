@@ -1,5 +1,5 @@
 {
-  "approved_private_commit": "24f664e5280d038fd6e751a0e6ae41582d105dd6",
+  "approved_private_commit": "fcea0f30836120cc80b15c35ed83407f7c5dd8c3",
   "approved_questions": [
     "yn-man-001",
     "yn-man-002",
@@ -46,8 +46,18 @@
     "yn-work-008",
     "yn-work-009",
     "yn-work-010",
-    "yn-work-011"
+    "yn-work-011",
+    "yn-work-012",
+    "yn-work-013",
+    "yn-work-014",
+    "yn-work-015",
+    "yn-money-001",
+    "yn-money-002",
+    "yn-money-003",
+    "yn-money-004",
+    "yn-money-005",
+    "yn-money-006"
   ],
-  "release_reason": "Publish ten approved career questions 037 to 046",
-  "version": 8
+  "release_reason": "Publish approved questions 047-056, career and business finance",
+  "version": 9
 }
