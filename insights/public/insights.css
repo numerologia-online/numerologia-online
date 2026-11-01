@@ -26,3 +26,7 @@ main,.heading,.heading>div,.workspace,.table-heading,.table-heading>div,.filters
  .full-metrics .row-name{font-size:10px;line-height:1.35}
  .full-metrics .row-meta{font-size:8px;line-height:1.3}
 }
+
+/* Give the final column breathing room inside the table edge. */
+.full-metrics th:last-child,.full-metrics td:last-child{padding-right:10px}
+@media(max-width:700px){.table-scroll{padding-right:8px}.full-metrics th:last-child,.full-metrics td:last-child{padding-right:5px}}
