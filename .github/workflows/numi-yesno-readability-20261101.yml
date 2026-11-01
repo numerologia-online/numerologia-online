@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   release:
-    if: github.event.head_commit.message == 'Publish clear half-width Back button to REG.RU'
+    if: github.event.head_commit.message == 'Publish consistent Back navigation to REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -21,8 +21,9 @@ jobs:
           fetch-depth: 0
       - name: Verify isolated CSS, unchanged question catalog and valid release
         run: |
-          python3 -m py_compile moment/deploy-yesno-readability-20261101.py
+          python3 -m py_compile moment/deploy-yesno-unified-back-20261101.py
           node --check moment/yes-no/yes-no.js
+          node moment/tests/yesno-back-flow.test.cjs
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -33,7 +34,8 @@ jobs:
           assert len({q['title'] for q in d['questions']}) == 100
           style=(p/'yes-no.css').read_text()
           assert style.count('{')==style.count('}')
-          assert 'yes-no.css?v=7' in (p/'index.html').read_text()
+          assert 'yes-no.css?v=8' in (p/'index.html').read_text()
+          assert 'yes-no.js?v=3' in (p/'index.html').read_text()
           print('Readability and catalog checks passed')
           PY
       - name: Back up, publish CSS and update only stylesheet link, verify live public site
@@ -41,7 +43,7 @@ jobs:
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
-        run: python3 -u moment/deploy-yesno-readability-20261101.py
+        run: python3 -u moment/deploy-yesno-unified-back-20261101.py
       - name: Record live publication result
         if: always()
         env:
