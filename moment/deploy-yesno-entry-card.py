@@ -4,7 +4,7 @@ from urllib.request import Request,urlopen
 HOST="server172.hosting.reg.ru"
 DOMAIN="xn--c1adkkdfjbp1a4l.online"
 OLD_BLOB="be9d6aa95a6e243e6ec9df2709bf40a5423424cd"
-PATTERN=rb'    <section class="shell" aria-label="Да или нет" style="padding-top:34px">.*?    </section>'
+PATTERN='    <section class="shell" aria-label="Да или нет" style="padding-top:34px">.*?    </section>'.encode('utf-8')
 def section(source):
     matches=re.findall(PATTERN,source,re.S)
     if len(matches)!=1:raise RuntimeError("Expected one exact Yes/No entry card, found "+str(len(matches)))
