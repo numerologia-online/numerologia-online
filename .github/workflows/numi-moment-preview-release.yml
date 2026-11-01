@@ -1,23 +1,24 @@
-name: Publish 300-question moment preview safely on REG.RU
+name: Publish simplified Moment heading safely on REG.RU
 on:
   push:
     paths:
       - .github/workflows/numi-moment-preview-release.yml
 permissions:
   contents: read
+  statuses: write
 concurrency:
   group: numi-moment-preview-release
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish isolated numerology moment preview on REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish simple 300 questions of life heading to REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Validate complete moment preview without touching production
         run: |
-          python3 -m py_compile moment/deploy-moment-preview.py
+          python3 -m py_compile moment/deploy-simple-title-20261101.py
           node --check moment/moment.js
           python3 - <<'PY'
           import json
@@ -28,10 +29,34 @@ jobs:
           assert len({x['id'] for x in d['questions']}) == 300
           assert set(x['category'] for x in d['questions']) == set(x['id'] for x in d['categories'])
           assert set(x['mode'] for x in d['questions']) <= {'self','partner','event'}
-          print('Moment preview: 300 unique questions in 12 categories validated')
+          h=open('moment/index.html',encoding='utf-8').read()
+          assert '<section class="hero">' not in h
+          assert '300 вопросов о жизни</h1>' in h
+          assert h.count('id="question-search"')==1
+          assert h.count('id="clear-search"')==1
+          assert h.count('href="./yes-no/"')==1
+          print('Simplified Moment heading and all 300 questions validated')
           PY
-      - name: Publish isolated preview with complete backup and live checks
+      - name: Back up and publish only Moment index.html with live checksum
+        id: release
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
-        run: python3 -u moment/deploy-moment-preview.py
+        run: python3 -u moment/deploy-simple-title-20261101.py
+
+      - name: Record actual public deployment verification
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_RESULT: ${{ steps.release.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request
+          passed=os.environ.get('RELEASE_RESULT')=='success'
+          body=json.dumps({'state':'success' if passed else 'failure',
+            'context':'moment-simplified-hero-live',
+            'description':'Simplified Moment page verified on REG.RU' if passed else 'Moment publication failed, see workflow checks'}).encode()
+          endpoint='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/statuses/'+os.environ['GITHUB_SHA']
+          req=urllib.request.Request(endpoint,data=body,method='POST',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=20) as response:print(response.status)
+          PY
