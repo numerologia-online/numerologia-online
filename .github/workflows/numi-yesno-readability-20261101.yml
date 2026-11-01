@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   release:
-    if: github.event.head_commit.message == 'Publish consistent Back navigation to REG.RU'
+    if: github.event.head_commit.message == 'Diagnose and publish unified Back navigation to REG.RU'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -20,6 +20,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Verify isolated CSS, unchanged question catalog and valid release
+        id: validate
         run: |
           python3 -m py_compile moment/deploy-yesno-unified-back-20261101.py
           node --check moment/yes-no/yes-no.js
@@ -43,17 +44,31 @@ jobs:
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
-        run: python3 -u moment/deploy-yesno-unified-back-20261101.py
+        run: |
+          set -o pipefail
+          python3 -u moment/deploy-yesno-unified-back-20261101.py 2>&1 | tee /tmp/yesno-back-release.log
       - name: Record live publication result
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_OUTCOME: ${{ steps.publish.outcome }}
+          VALIDATION_OUTCOME: ${{ steps.validate.outcome }}
         run: |
           python3 - <<'PY'
-          import json,os,urllib.request
+          import json,os,urllib.request,pathlib
           state='success' if os.environ.get('RELEASE_OUTCOME')=='success' else 'failure'
-          body=json.dumps({'state':state,'context':'yesno-readability-live','description':'100-question readability verified on REG.RU' if state=='success' else '100-question readability publication did not verify'}).encode()
+          description='Back navigation verified live on REG.RU' if state=='success' else 'Deployment failed before diagnostics'
+          if state=='failure':
+            if os.environ.get('VALIDATION_OUTCOME')!='success':description='Predeployment validation failed'
+            else:
+              logfile=pathlib.Path('/tmp/yesno-back-release.log')
+              if logfile.exists():
+                for line in reversed(logfile.read_text(errors='replace').splitlines()):
+                  if line.startswith('YESNO_UNIFIED_BACK '):
+                    try:description=str(json.loads(line.partition(' ')[2]).get('message') or json.loads(line.partition(' ')[2]).get('error'))[:130]
+                    except Exception:pass
+                    break
+          body=json.dumps({'state':state,'context':'yesno-readability-live','description':description}).encode()
           endpoint='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/statuses/'+os.environ['GITHUB_SHA']
           req=urllib.request.Request(endpoint,data=body,method='POST',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'})
           with urllib.request.urlopen(req,timeout=20) as response:print('Live result recorded:',state,response.status)
