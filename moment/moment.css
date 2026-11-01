@@ -6,8 +6,8 @@
 
 
 /* Moment beige topic cards: consistent with the Yes/No feature card. */
-.explore{padding-top:clamp(36px,6vw,55px)}
-.explore .section-heading{display:flex;justify-content:center;align-items:center;gap:0;margin-bottom:28px;text-align:center}
+.explore{padding-top:clamp(19px,3vw,29px)}
+.explore .section-heading{display:flex;justify-content:center;align-items:center;gap:0;margin-bottom:18px;text-align:center}
 .explore .section-heading h2{font:500 clamp(29px,5.5vw,43px)/1.17 'Playfair Display',Georgia,serif;letter-spacing:-.025em;color:#143d30;margin:0 auto;max-width:700px}
 .explore .category-grid{gap:13px;margin-bottom:30px}
 .explore .category{background:#f3f0e7;border:1px solid #d8c9a7;border-radius:20px;min-height:130px;padding:18px 14px;text-align:center;align-items:center;justify-content:center;gap:6px;box-shadow:0 7px 25px #133d2f0b;transform:none}
@@ -18,8 +18,8 @@
 .explore .category-count{display:block;margin:0;padding:0;font-size:13px;font-weight:600;line-height:1.2;color:#867d6e}
 .explore .questions-panel{border-color:#d8c9a7;background:#fffdfa;box-shadow:0 9px 28px #133d2f0a}
 @media(max-width:650px){
-  .explore{padding:42px 0 65px}
-  .explore .section-heading{margin-bottom:23px}
+  .explore{padding:25px 0 65px}
+  .explore .section-heading{margin-bottom:15px}
   .explore .section-heading h2{font-size:clamp(28px,7.6vw,36px)}
   .explore .category-grid{gap:10px;margin-bottom:24px}
   .explore .category{min-height:116px;padding:13px 9px;border-radius:17px;gap:5px}
