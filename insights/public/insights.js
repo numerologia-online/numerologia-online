@@ -15,7 +15,7 @@
     }
     return result;
   }
-  const columns={interest:[['impressions','Показы'],['clicks','Нажатия'],['ctr','CTR'],['one_time_orders','Разовые оплаты'],['subscriptions','Оплаченные подписки']],sales:[['offers','К покупке'],['orders','Оплаты'],['conversion','Конверсия']],club:[['checkout_club','Выбор клуба'],['subscriptions','Подписки'],['club_conversion','Конверсия']],sources:[['sessions','Сеансы'],['orders','Оплаты'],['revenue','Выручка, ₽']],days:[['sessions','Сеансы'],['clicks','Нажатия'],['orders','Оплаты']]};
+  const columns={interest:[['impressions','Показы'],['clicks','Нажатия'],['ctr','CTR'],['one_time_orders','Разовые оплаты'],['subscriptions','Подписки']],sales:[['offers','К покупке'],['orders','Оплаты'],['conversion','Конверсия']],club:[['checkout_club','Выбор клуба'],['subscriptions','Подписки'],['club_conversion','Конверсия']],sources:[['sessions','Сеансы'],['orders','Оплаты'],['revenue','Выручка, ₽']],days:[['sessions','Сеансы'],['clicks','Нажатия'],['orders','Оплаты']]};
   const metrics={impressions:'Показы карточки',clicks:'Нажатия',opens:'Открытия',ctr:'CTR по сеансам',offers:'Открытия предложения',checkout_once:'Выбор разовой покупки',checkout_club:'Выбор подписки',orders:'Подтверждённые оплаты',subscriptions:'Из них подписки',revenue:'Выручка, ₽',conversion:'Заказы / сеансы строки',club_conversion:'Подписки / сеансы строки',subscription_revenue:'Выручка от подписок, ₽',sessions:'Сеансы',pages:'Открытия страниц',checkouts:'Выбор покупки'};
   function oneTimeOrders(row){return Math.max(0,Number(row.orders||0)-Number(row.subscriptions||0));}
   function filteredRows(report,view,filters={}){

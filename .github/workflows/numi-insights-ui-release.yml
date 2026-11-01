@@ -23,3 +23,5 @@ jobs:
         run: python3 -u insights/deploy-ui.py
 
 # Release 2.0.2: complete payment metrics beside CTR.
+
+# Release 2.0.3: restore compact comparison table on phones.
