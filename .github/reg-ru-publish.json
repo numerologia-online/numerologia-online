@@ -1,22 +1,45 @@
 {
   "mode": "publish",
   "files": [
-    "pro/schools/angel/index.html",
-    "pro/schools/index.html",
-    "sitemap.xml"
+    "pro/school/construction-model.js",
+    "pro/school/learning.js",
+    "pro/school/learning.css",
+    "pro/school/lessons/diagonals.json",
+    "pro/school/lessons/channels.json",
+    "pro/school/lessons/build-independent.json",
+    "pro/school/points.js",
+    "pro/school/school.js",
+    "pro/school/lesson/lesson.js",
+    "pro/school/lessons/internal.json",
+    "pro/school/lessons/reduce.json",
+    "pro/school/lessons/base.json",
+    "pro/school/lessons/purpose.json",
+    "pro/school/lessons/topics.json",
+    "pro/school/lessons/final.json",
+    "pro/school/lesson/index.html",
+    "pro/school/index.html",
+    "pro/school/lessons-manifest.json"
   ],
-  "create_angel_course": true,
-  "patches": {
-    "pro/schools/index.html": {
-      "before": "        <div class=\"academy-school academy-school--future\" aria-label=\"Квадрат Пифагора - в разработке\">",
-      "after": "        <a href=\"pro/schools/angel/\" class=\"academy-school academy-school--ready academy-school--classic\">\n          <span class=\"academy-school-number\" aria-hidden=\"true\">11:11</span>\n          <h3>Ангельская нумерология</h3>\n          <p class=\"academy-school-description\">9 уроков · Повторяющиеся числа · Зеркальные часы · Справочник · Практика</p>\n          <span class=\"academy-arrow\" aria-hidden=\"true\">→</span>\n        </a>\n        <div class=\"academy-school academy-school--future\" aria-label=\"Квадрат Пифагора - в разработке\">",
-      "expected_sha256": "95eacf27f70f84cad86c23bfdf830f1049de6215b786b105d0964ef1d98b93a3"
-    },
-    "sitemap.xml": {
-      "before": "</urlset>",
-      "after": "  <url><loc>https://xn--c1adkkdfjbp1a4l.online/pro/schools/angel/</loc></url>\n</urlset>",
-      "expected_sha256": "8b010ba214694db6e9c46a98fa46e42285d24b72ea3cc332e887cf552c014326"
-    }
+  "create_matrix_learning": true,
+  "expected_sha256": {
+    "pro/school/construction-model.js": null,
+    "pro/school/learning.js": null,
+    "pro/school/learning.css": null,
+    "pro/school/lessons/diagonals.json": null,
+    "pro/school/lessons/channels.json": null,
+    "pro/school/lessons/build-independent.json": null,
+    "pro/school/points.js": "f29aea06f1b0aa0996d7a4d792ad9b9aca0f73e15cddcd0c066d436a6fc0e82a",
+    "pro/school/school.js": "18a33d688673ff145cdc1cc6be058a8763d6d582704a368af84fdcfe91c03199",
+    "pro/school/lesson/lesson.js": "e675d1c2a0636a85e32b350ca3ffb0440df939857211f9db5801d80d9a26d185",
+    "pro/school/lessons/internal.json": "45e7bc2f8f268e03c5669f96925f5c545fc064daeaab891d8ab8f32804887cbc",
+    "pro/school/lessons/reduce.json": "ddd635e8ae1e627541572e4a07f52d2ba1cc916877e7f1e169403e22f59210ff",
+    "pro/school/lessons/base.json": "262fa5bb5ed8882ec9bcbde9d9655014c6d4546113bfebf90d60b56389805c5c",
+    "pro/school/lessons/purpose.json": "6489cee1f075129498093163b37658625df01063b94ea8d62e75bea5816eef2b",
+    "pro/school/lessons/topics.json": "7c5ef7c9b0c640467dda81fabeb5cd4fc427374083b859f35d7bf813139f5ff2",
+    "pro/school/lessons/final.json": "b0c5dc947725e1b991b666e702f110225791a78d1a45f80715bf515847285bb8",
+    "pro/school/lesson/index.html": "9a89d60935046a7553124ce09634393b2addec23c37fd3555cb26a7aa64324b2",
+    "pro/school/index.html": "c649145e598fe23fc10a8ea0edfc7808bd1877c1c754dc9207c012292a7e28de",
+    "pro/school/lessons-manifest.json": "69ac26b944ff8b2b724b223a62b25815014bc3bc1abde22a3340bb6801aa4e79"
   },
-  "note": "Owner requested researched angel numerology direction in self-study. Publish course and exact navigation/sitemap additions; preserve other live pages."
+  "note": "Owner requested comprehensive Matrix of Destiny self-study audit and improvement, excluding energy descriptions. Publish sequential 31-point learning, practice, three new lessons and structural corrections. Keep calculations and energy source files unchanged."
 }
