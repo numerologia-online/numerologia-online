@@ -1,6 +1,6 @@
 {
   "schema": "pro-school-lessons-manifest-v1",
-  "version": "2026-10-18-unified-ancestral-diagonals",
+  "version": "2026-11-02-learning-path-31-points",
   "lessons": [
     {
       "id": "start",
@@ -9,7 +9,9 @@
       "minutes": 14,
       "index": 1,
       "file": "pro/school/lessons/start.json",
-      "module": "01 · ОСНОВЫ"
+      "module": "01 · СТАВИМ И СЧИТАЕМ ТОЧКИ",
+      "track": "construction",
+      "prerequisites": []
     },
     {
       "id": "reduce",
@@ -18,7 +20,11 @@
       "minutes": 12,
       "index": 2,
       "file": "pro/school/lessons/reduce.json",
-      "module": "01 · ОСНОВЫ"
+      "module": "01 · СТАВИМ И СЧИТАЕМ ТОЧКИ",
+      "track": "construction",
+      "prerequisites": [
+        "start"
+      ]
     },
     {
       "id": "base",
@@ -27,7 +33,11 @@
       "minutes": 17,
       "index": 3,
       "file": "pro/school/lessons/base.json",
-      "module": "02 · СТРОИМ И СЧИТАЕМ"
+      "module": "01 · СТАВИМ И СЧИТАЕМ ТОЧКИ",
+      "track": "construction",
+      "prerequisites": [
+        "reduce"
+      ]
     },
     {
       "id": "corners",
@@ -36,34 +46,115 @@
       "minutes": 14,
       "index": 4,
       "file": "pro/school/lessons/corners.json",
-      "module": "02 · СТРОИМ И СЧИТАЕМ"
+      "module": "01 · СТАВИМ И СЧИТАЕМ ТОЧКИ",
+      "track": "construction",
+      "prerequisites": [
+        "base"
+      ]
     },
     {
       "id": "internal",
-      "title": "Внутренние цифры: оси, диагонали и каналы",
+      "title": "Три внутренние оси: по одной точке за раз",
       "level": "Расчёты",
       "minutes": 22,
       "index": 5,
       "file": "pro/school/lessons/internal.json",
-      "module": "02 · СТРОИМ И СЧИТАЕМ"
+      "module": "02 · СОБИРАЕМ ПОЛНУЮ МАТРИЦУ",
+      "track": "construction",
+      "prerequisites": [
+        "corners"
+      ]
+    },
+    {
+      "id": "diagonals",
+      "title": "Родовые диагонали: восемь внутренних точек",
+      "level": "Построение",
+      "minutes": 20,
+      "file": "pro/school/lessons/diagonals.json",
+      "index": 6,
+      "track": "construction",
+      "module": "02 · СОБИРАЕМ ПОЛНУЮ МАТРИЦУ",
+      "prerequisites": [
+        "internal"
+      ]
+    },
+    {
+      "id": "tail",
+      "title": "Кармический хвост: порядок имеет значение",
+      "level": "Связки",
+      "minutes": 15,
+      "index": 7,
+      "file": "pro/school/lessons/tail.json",
+      "module": "02 · СОБИРАЕМ ПОЛНУЮ МАТРИЦУ",
+      "track": "construction",
+      "prerequisites": [
+        "diagonals"
+      ]
+    },
+    {
+      "id": "channels",
+      "title": "Деньги и отношения: три точки диагонали",
+      "level": "Построение",
+      "minutes": 20,
+      "file": "pro/school/lessons/channels.json",
+      "index": 8,
+      "track": "construction",
+      "module": "02 · СОБИРАЕМ ПОЛНУЮ МАТРИЦУ",
+      "prerequisites": [
+        "tail"
+      ]
+    },
+    {
+      "id": "purpose",
+      "title": "Предназначение: три уровня расчёта",
+      "level": "Продвинутый уровень",
+      "minutes": 22,
+      "index": 9,
+      "file": "pro/school/lessons/purpose.json",
+      "module": "02 · СОБИРАЕМ ПОЛНУЮ МАТРИЦУ",
+      "track": "construction",
+      "prerequisites": [
+        "channels"
+      ]
+    },
+    {
+      "id": "build-independent",
+      "title": "Соберите все 31 точку самостоятельно",
+      "level": "Контроль построения",
+      "minutes": 30,
+      "file": "pro/school/lessons/build-independent.json",
+      "index": 10,
+      "track": "construction",
+      "module": "02 · СОБИРАЕМ ПОЛНУЮ МАТРИЦУ",
+      "prerequisites": [
+        "purpose"
+      ]
     },
     {
       "id": "energies-a",
       "title": "Энергии 1-11: характер действия",
       "level": "Трактовки",
       "minutes": 18,
-      "index": 6,
+      "index": 11,
       "file": "pro/school/lessons/energies-a.json",
-      "module": "03 · ЗНАКОМИМСЯ С ЭНЕРГИЯМИ"
+      "module": "03 · ЗНАКОМИМСЯ С ЭНЕРГИЯМИ",
+      "track": "energies",
+      "prerequisites": [
+        "build-independent"
+      ]
     },
     {
       "id": "energies-b",
       "title": "Энергии 12-22: перемены и зрелость",
       "level": "Трактовки",
       "minutes": 18,
-      "index": 7,
+      "index": 12,
       "file": "pro/school/lessons/energies-b.json",
-      "module": "03 · ЗНАКОМИМСЯ С ЭНЕРГИЯМИ"
+      "module": "03 · ЗНАКОМИМСЯ С ЭНЕРГИЯМИ",
+      "track": "energies",
+      "prerequisites": [
+        "build-independent"
+      ]
     },
     {
       "id": "energy-01-02",
@@ -72,7 +163,11 @@
       "minutes": 18,
       "file": "pro/school/lessons/energy-01-02.json",
       "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
-      "index": 8
+      "index": 13,
+      "track": "energies",
+      "prerequisites": [
+        "build-independent"
+      ]
     },
     {
       "id": "energy-03-04",
@@ -81,7 +176,11 @@
       "minutes": 18,
       "file": "pro/school/lessons/energy-03-04.json",
       "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
-      "index": 9
+      "index": 14,
+      "track": "energies",
+      "prerequisites": [
+        "build-independent"
+      ]
     },
     {
       "id": "energy-05-06",
@@ -90,7 +189,11 @@
       "minutes": 18,
       "file": "pro/school/lessons/energy-05-06.json",
       "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
-      "index": 10
+      "index": 15,
+      "track": "energies",
+      "prerequisites": [
+        "build-independent"
+      ]
     },
     {
       "id": "energy-07-08",
@@ -99,7 +202,11 @@
       "minutes": 18,
       "file": "pro/school/lessons/energy-07-08.json",
       "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
-      "index": 11
+      "index": 16,
+      "track": "energies",
+      "prerequisites": [
+        "build-independent"
+      ]
     },
     {
       "id": "energy-09-10",
@@ -108,7 +215,11 @@
       "minutes": 18,
       "file": "pro/school/lessons/energy-09-10.json",
       "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
-      "index": 12
+      "index": 17,
+      "track": "energies",
+      "prerequisites": [
+        "build-independent"
+      ]
     },
     {
       "id": "energy-11-12",
@@ -117,7 +228,11 @@
       "minutes": 18,
       "file": "pro/school/lessons/energy-11-12.json",
       "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
-      "index": 13
+      "index": 18,
+      "track": "energies",
+      "prerequisites": [
+        "build-independent"
+      ]
     },
     {
       "id": "energy-13-14",
@@ -126,7 +241,11 @@
       "minutes": 18,
       "file": "pro/school/lessons/energy-13-14.json",
       "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
-      "index": 14
+      "index": 19,
+      "track": "energies",
+      "prerequisites": [
+        "build-independent"
+      ]
     },
     {
       "id": "energy-15-16",
@@ -135,7 +254,11 @@
       "minutes": 18,
       "file": "pro/school/lessons/energy-15-16.json",
       "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
-      "index": 15
+      "index": 20,
+      "track": "energies",
+      "prerequisites": [
+        "build-independent"
+      ]
     },
     {
       "id": "energy-17-18",
@@ -144,7 +267,11 @@
       "minutes": 18,
       "file": "pro/school/lessons/energy-17-18.json",
       "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
-      "index": 16
+      "index": 21,
+      "track": "energies",
+      "prerequisites": [
+        "build-independent"
+      ]
     },
     {
       "id": "energy-19-20",
@@ -153,7 +280,11 @@
       "minutes": 18,
       "file": "pro/school/lessons/energy-19-20.json",
       "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
-      "index": 17
+      "index": 22,
+      "track": "energies",
+      "prerequisites": [
+        "build-independent"
+      ]
     },
     {
       "id": "energy-21-22",
@@ -162,25 +293,27 @@
       "minutes": 18,
       "file": "pro/school/lessons/energy-21-22.json",
       "module": "04 · ИЗУЧАЕМ КАЖДУЮ ЭНЕРГИЮ",
-      "index": 18
-    },
-    {
-      "id": "tail",
-      "title": "Кармический хвост: порядок имеет значение",
-      "level": "Связки",
-      "minutes": 15,
-      "index": 19,
-      "file": "pro/school/lessons/tail.json",
-      "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ"
+      "index": 23,
+      "track": "energies",
+      "prerequisites": [
+        "build-independent"
+      ]
     },
     {
       "id": "topics",
       "title": "Отношения, деньги, род и ресурсы",
       "level": "Сферы жизни",
       "minutes": 15,
-      "index": 20,
+      "index": 24,
       "file": "pro/school/lessons/topics.json",
-      "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ"
+      "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ",
+      "track": "reading",
+      "prerequisites": [
+        "build-independent",
+        "energies-a",
+        "energies-b"
+      ],
+      "outcome": "Отличаю тематическую подсветку от рассчитанной линии и связываю позиции с запросом."
     },
     {
       "id": "money-practice",
@@ -189,7 +322,14 @@
       "minutes": 24,
       "file": "pro/school/lessons/money-practice.json",
       "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ",
-      "index": 21
+      "index": 25,
+      "track": "reading",
+      "prerequisites": [
+        "build-independent",
+        "energies-a",
+        "energies-b"
+      ],
+      "outcome": "Вручную нахожу денежный вход, баланс и точку под долларом."
     },
     {
       "id": "love-practice",
@@ -198,7 +338,14 @@
       "minutes": 23,
       "file": "pro/school/lessons/love-practice.json",
       "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ",
-      "index": 22
+      "index": 26,
+      "track": "reading",
+      "prerequisites": [
+        "build-independent",
+        "energies-a",
+        "energies-b"
+      ],
+      "outcome": "Считаю линию отношений и формулирую вопросы без готового прогноза."
     },
     {
       "id": "lineage-practice",
@@ -207,7 +354,14 @@
       "minutes": 24,
       "file": "pro/school/lessons/lineage-practice.json",
       "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ",
-      "index": 23
+      "index": 27,
+      "track": "reading",
+      "prerequisites": [
+        "build-independent",
+        "energies-a",
+        "energies-b"
+      ],
+      "outcome": "Проверяю восемь диагональных точек через основной центр."
     },
     {
       "id": "talents-practice",
@@ -216,25 +370,30 @@
       "minutes": 23,
       "file": "pro/school/lessons/talents-practice.json",
       "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ",
-      "index": 24
-    },
-    {
-      "id": "purpose",
-      "title": "Предназначение: три уровня расчёта",
-      "level": "Продвинутый уровень",
-      "minutes": 16,
-      "index": 25,
-      "file": "pro/school/lessons/purpose.json",
-      "module": "05 · ЛИНИИ И СФЕРЫ ЖИЗНИ"
+      "index": 28,
+      "track": "reading",
+      "prerequisites": [
+        "build-independent",
+        "energies-a",
+        "energies-b"
+      ],
+      "outcome": "Связываю три позиции верхней оси с проверяемыми навыками."
     },
     {
       "id": "consult",
       "title": "Как связать числа в живой разбор",
       "level": "Практика",
       "minutes": 15,
-      "index": 26,
+      "index": 29,
       "file": "pro/school/lessons/consult.json",
-      "module": "06 · УЧИМСЯ КОНСУЛЬТИРОВАТЬ"
+      "module": "06 · УЧИМСЯ КОНСУЛЬТИРОВАТЬ",
+      "track": "reading",
+      "prerequisites": [
+        "build-independent",
+        "energies-a",
+        "energies-b"
+      ],
+      "outcome": "Собираю разбор от запроса до одного практического действия."
     },
     {
       "id": "case-clinic",
@@ -243,7 +402,14 @@
       "minutes": 32,
       "file": "pro/school/lessons/case-clinic.json",
       "module": "06 · УЧИМСЯ КОНСУЛЬТИРОВАТЬ",
-      "index": 27
+      "index": 30,
+      "track": "reading",
+      "prerequisites": [
+        "build-independent",
+        "energies-a",
+        "energies-b"
+      ],
+      "outcome": "Проверяю весь ход учебной консультации на разобранном кейсе."
     },
     {
       "id": "case-independent",
@@ -252,16 +418,30 @@
       "minutes": 35,
       "file": "pro/school/lessons/case-independent.json",
       "module": "06 · УЧИМСЯ КОНСУЛЬТИРОВАТЬ",
-      "index": 28
+      "index": 31,
+      "track": "reading",
+      "prerequisites": [
+        "build-independent",
+        "energies-a",
+        "energies-b"
+      ],
+      "outcome": "Переношу расчёт и структуру консультации на новую дату."
     },
     {
       "id": "final",
       "title": "Самостоятельный разбор: итоговая практика",
       "level": "Проверка знаний",
       "minutes": 20,
-      "index": 29,
+      "index": 32,
       "file": "pro/school/lessons/final.json",
-      "module": "06 · УЧИМСЯ КОНСУЛЬТИРОВАТЬ"
+      "module": "06 · УЧИМСЯ КОНСУЛЬТИРОВАТЬ",
+      "track": "reading",
+      "prerequisites": [
+        "build-independent",
+        "energies-a",
+        "energies-b"
+      ],
+      "outcome": "Самостоятельно строю матрицу и оформляю целостный учебный разбор."
     }
   ]
 }
