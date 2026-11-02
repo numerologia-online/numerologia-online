@@ -1,45 +1,18 @@
 {
   "mode": "publish",
   "files": [
-    "pro/school/construction-model.js",
-    "pro/school/learning.js",
-    "pro/school/learning.css",
-    "pro/school/lessons/diagonals.json",
-    "pro/school/lessons/channels.json",
-    "pro/school/lessons/build-independent.json",
-    "pro/school/points.js",
     "pro/school/school.js",
     "pro/school/lesson/lesson.js",
-    "pro/school/lessons/internal.json",
-    "pro/school/lessons/reduce.json",
-    "pro/school/lessons/base.json",
-    "pro/school/lessons/purpose.json",
-    "pro/school/lessons/topics.json",
-    "pro/school/lessons/final.json",
-    "pro/school/lesson/index.html",
     "pro/school/index.html",
-    "pro/school/lessons-manifest.json"
+    "pro/school/lesson/index.html",
+    "pro/schools/index.html"
   ],
-  "create_matrix_learning": true,
   "expected_sha256": {
-    "pro/school/construction-model.js": null,
-    "pro/school/learning.js": null,
-    "pro/school/learning.css": null,
-    "pro/school/lessons/diagonals.json": null,
-    "pro/school/lessons/channels.json": null,
-    "pro/school/lessons/build-independent.json": null,
-    "pro/school/points.js": "f29aea06f1b0aa0996d7a4d792ad9b9aca0f73e15cddcd0c066d436a6fc0e82a",
-    "pro/school/school.js": "18a33d688673ff145cdc1cc6be058a8763d6d582704a368af84fdcfe91c03199",
-    "pro/school/lesson/lesson.js": "e675d1c2a0636a85e32b350ca3ffb0440df939857211f9db5801d80d9a26d185",
-    "pro/school/lessons/internal.json": "45e7bc2f8f268e03c5669f96925f5c545fc064daeaab891d8ab8f32804887cbc",
-    "pro/school/lessons/reduce.json": "ddd635e8ae1e627541572e4a07f52d2ba1cc916877e7f1e169403e22f59210ff",
-    "pro/school/lessons/base.json": "262fa5bb5ed8882ec9bcbde9d9655014c6d4546113bfebf90d60b56389805c5c",
-    "pro/school/lessons/purpose.json": "6489cee1f075129498093163b37658625df01063b94ea8d62e75bea5816eef2b",
-    "pro/school/lessons/topics.json": "7c5ef7c9b0c640467dda81fabeb5cd4fc427374083b859f35d7bf813139f5ff2",
-    "pro/school/lessons/final.json": "b0c5dc947725e1b991b666e702f110225791a78d1a45f80715bf515847285bb8",
-    "pro/school/lesson/index.html": "9a89d60935046a7553124ce09634393b2addec23c37fd3555cb26a7aa64324b2",
-    "pro/school/index.html": "c649145e598fe23fc10a8ea0edfc7808bd1877c1c754dc9207c012292a7e28de",
-    "pro/school/lessons-manifest.json": "69ac26b944ff8b2b724b223a62b25815014bc3bc1abde22a3340bb6801aa4e79"
+    "pro/school/school.js": "5b2c178bc9333d588a7ea3f124777666a3877c64cfcdbcd574f083b85a9a5b3b",
+    "pro/school/lesson/lesson.js": "2b411a3316fc64abc5b42f66d19efebcff35f7fdfe60bbc0d7144ef70d33d90d",
+    "pro/school/index.html": "62aca4ab94e5c014b255f9dbb64db06da892ea3455adaef82f3f7c0edfe97079",
+    "pro/school/lesson/index.html": "2fa26ec6fa188854a2e232fde91bd163a6c0db74117c3bb9c568c09eb8d622d6",
+    "pro/schools/index.html": "847f5a7c4e3742e255bd819c739cbff87107d854b32b595a4ef9351d8fdde3c1"
   },
-  "note": "Owner requested comprehensive Matrix of Destiny self-study audit and improvement, excluding energy descriptions. Publish sequential 31-point learning, practice, three new lessons and structural corrections. Keep calculations and energy source files unchanged."
+  "note": "Live browser QA exposed cached older school HTML on return. Version school navigation and the academy entry so updated lessons use the same current interface. No learning content or other routes changed."
 }
