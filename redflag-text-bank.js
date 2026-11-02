@@ -95,6 +95,18 @@ const approvedLoveAnswer = async (question, profile, free) => {
   return { answer: text };
 };
 const calculateAnswer = async (bankName, publicQuestion, free, profile) => {
+  if (bankName === "love" && publicQuestion.id === "romance") {
+    const { day, month } = profile.classic.birthDate;
+    const key = day + "-" + month;
+    if (["1-1", "2-1", "3-1", "4-1"].includes(key)) {
+      const approved = await ownerJson("data/redflag/love/romance.json");
+      const text = approved.entries?.[key];
+      if (approved.questionId !== "romance" || typeof text !== "string" || !text.trim()) {
+        throw accessError("ANSWER_NOT_FOUND");
+      }
+      return { answer: text };
+    }
+  }
   if (publicQuestion.status === "in-progress") {
     throw accessError("CONTENT_NOT_PUBLISHED");
   }
