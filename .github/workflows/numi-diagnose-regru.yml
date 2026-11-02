@@ -21,7 +21,7 @@ jobs:
         run: |
           python3 -m py_compile scripts/diagnose-regru-detail.py
           python3 -u scripts/diagnose-regru-detail.py
-          echo "REG.RU dependency audit completed"
+          echo "REG.RU public HTTP delivery audit completed"
       - name: Save non-sensitive report to GitHub
         run: |
           git config user.name "github-actions[bot]"
