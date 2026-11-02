@@ -1,0 +1,18 @@
+{
+  "mode": "publish",
+  "private_commit": "07a635b1452356e7f2f9abc676d320bff346e2fe",
+  "expected_live_manifest_sha256": "825ed62a8ccd6f9780d379b5fda67a873323bd4641fab315b10bd14f422c95cd",
+  "approved_manifest_sha256": "9c80574bddd65fb110d2128ae31a05587efb078269d05200ac9d6996a8fd3c1c",
+  "approved_paths": [
+    "pro/school/lessons/internal.json",
+    "pro/school/lessons/reduce.json",
+    "pro/school/lessons/base.json",
+    "pro/school/lessons/purpose.json",
+    "pro/school/lessons/topics.json",
+    "pro/school/lessons/final.json",
+    "pro/school/lessons/diagonals.json",
+    "pro/school/lessons/channels.json",
+    "pro/school/lessons/build-independent.json"
+  ],
+  "note": "Owner requested complete improvement of Matrix school structure, excluding energy descriptions. Publish these nine reviewed structural lessons through existing protected storage. Keep all author energies and existing access policy unchanged."
+}
