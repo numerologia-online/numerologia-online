@@ -4,18 +4,29 @@ on:
     paths:
       - .github/workflows/numi-diagnose-regru.yml
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: reg-ru-diagnostic
   cancel-in-progress: false
 jobs:
   inspect:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-      - name: Check live FTPS files without writing
+      - name: Compare live files and validate syntax without changing REG.RU
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
-        run: python3 -u scripts/diagnose-regru-files.py
+        run: |
+          python3 -m py_compile scripts/diagnose-regru-detail.py
+          python3 -u scripts/diagnose-regru-detail.py
+      - name: Save non-sensitive report to GitHub
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add diagnostics/regru-current.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record REG.RU file diagnostic"
+            git push
+          fi
