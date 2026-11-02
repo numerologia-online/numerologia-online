@@ -37,5 +37,25 @@ jobs:
               for line in text.splitlines():
                   if re.match(r"\s*(?:RewriteCond|RewriteRule|Require|Deny|Allow|Order|Redirect|SSLOptions|Header)",line,re.I):
                       print("RULE",line[:700])
+          import difflib
+          def read_public(path):
+              out=io.BytesIO()
+              ftp.retrbinary("RETR "+path,out.write)
+              return out.getvalue().decode("utf-8")
+          backup_root=home+"/site-safeguard-backups"
+          candidates=sorted(x for x in ftp.nlst(backup_root) if x.rsplit("/",1)[-1].startswith("privacy-policy-"))
+          print("PRIVACY BACKUPS",len(candidates))
+          if candidates:
+              folder=candidates[0]
+              if not folder.startswith("/"):folder=backup_root+"/"+folder.rsplit("/",1)[-1]
+              old=read_public(folder+"/index.html.bak")
+              new=read_public(site+"/index.html")
+              print("BACKUP SELECTED",folder.rsplit("/",1)[-1])
+              for label,text in [("BEFORE",old),("NOW",new)]:
+                  print(label,"SCRIPTS",re.findall(r'<script[^>]*src="([^"]+)"[^>]*>',text))
+                  print(label,"STYLES",re.findall(r'<link[^>]*href="([^"]+)"[^>]*>',text))
+              for line in difflib.unified_diff(old.splitlines(),new.splitlines(),n=1):
+                  if len(line)>1000:line=line[:1000]+" [truncated long line]"
+                  print("DIFF",line)
           ftp.quit()
           PY
