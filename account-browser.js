@@ -58,11 +58,6 @@
         INVALID_RESET_REQUEST:"Проверьте новый пароль и ссылку.",
         TELEGRAM_INVALID:"Не удалось подтвердить Telegram. Откройте мини-приложение заново.",
         ACCOUNT_TEMPORARILY_UNAVAILABLE:"Вход временно недоступен, попробуйте позже.",
-        INVALID_SAVED_ITEM:"Не удалось определить запись.",
-        SAVED_ITEM_NOT_FOUND:"Запись уже недоступна.",
-        TEST_NOT_ENABLED:"Тестовые покупки разрешены только владельцу.",
-        INVALID_TEST_PRODUCT:"Неизвестный пробный разбор.",
-        INVALID_TEST_DATE:"Проверьте дату рождения.",
         EMAIL_ALREADY_VERIFIED:"Почта уже привязана.",
         IDENTITY_ALREADY_LINKED:"Этот Telegram уже привязан к другому аккаунту.",
         TELEGRAM_EMAIL_CONFLICT:"Для безопасности эти аккаунты нельзя объединить автоматически. Покупки не изменены."
@@ -84,7 +79,7 @@
         '<form id="numi-email-form" novalidate>',
           '<label>Email<input name="email" type="email" inputmode="email" autocomplete="username" maxlength="191" required placeholder="Ваша почта"></label>',
           '<label>Пароль<input name="password" type="password" autocomplete="current-password" maxlength="200" required placeholder="Введите пароль"></label>',
-          '<label id="numi-confirm-label" hidden>Повторите пароль<input name="password_confirm" type="password" autocomplete="new-password" minlength="9" maxlength="200" placeholder="Повторите пароль"></label>',
+          '<label id="numi-confirm-label" hidden>Повторите пароль<input name="password_confirm" type="password" autocomplete="new-password" maxlength="200" placeholder="Повторите пароль"></label>',
           '<button type="submit" class="numi-auth-submit">Войти в кабинет</button>',
         '</form>',
         '<form id="numi-reset-form" hidden>',
@@ -92,8 +87,8 @@
           '<button type="submit" class="numi-auth-submit">Отправить ссылку</button>',
         '</form>',
         '<form id="numi-new-password-form" hidden>',
-          '<label>Новый пароль<input name="password" type="password" autocomplete="new-password" minlength="9" maxlength="200" required></label>',
-          '<label>Повторите новый пароль<input name="password_confirm" type="password" autocomplete="new-password" minlength="9" maxlength="200" required></label>',
+          '<label>Новый пароль<input name="password" type="password" autocomplete="new-password" maxlength="200" required></label>',
+          '<label>Повторите новый пароль<input name="password_confirm" type="password" autocomplete="new-password" maxlength="200" required></label>',
           '<button type="submit" class="numi-auth-submit">Сохранить новый пароль</button>',
         '</form>',
         '<button id="numi-forgot" type="button" class="numi-auth-link">Забыли пароль?</button>',
@@ -121,8 +116,8 @@
         '<form id="numi-set-email-form" hidden>',
           '<p>Это для тех, кто ещё не регистрировался через почту. Придумайте пароль для входа на сайт.</p>',
           '<label>Email<input name="email" type="email" inputmode="email" autocomplete="email" required></label>',
-          '<label>Придумайте пароль<input name="password" type="password" autocomplete="new-password" minlength="9" maxlength="200" required></label>',
-          '<label>Повторите пароль<input name="password_confirm" type="password" autocomplete="new-password" minlength="9" maxlength="200" required></label>',
+          '<label>Придумайте пароль<input name="password" type="password" autocomplete="new-password" maxlength="200" required></label>',
+          '<label>Повторите пароль<input name="password_confirm" type="password" autocomplete="new-password" maxlength="200" required></label>',
           '<button type="submit" class="numi-auth-submit">Привязать почту</button>',
         '</form>',
         '<form id="numi-existing-email-form" hidden>',
@@ -151,6 +146,7 @@
     logoutRow.append(logoutButton);
     accountSettings.append(logoutRow);
   }
+
   const tgBox = document.getElementById("numi-account-telegram");
   const emailForm = document.getElementById("numi-email-form");
   const resetForm = document.getElementById("numi-reset-form");
@@ -195,7 +191,6 @@
     document.getElementById("numi-back-login").hidden=!reset&&!password;
     document.querySelectorAll("[data-numi-tab]").forEach(btn=>btn.classList.toggle("is-active",btn.dataset.numiTab===mode));
     emailForm.querySelector('input[name="password"]').autocomplete=mode==="register"?"new-password":"current-password";
-    emailForm.querySelector('input[name="password"]').minLength=mode==="register"?9:0;
     const confirmation = document.getElementById("numi-confirm-label");
     confirmation.hidden=mode!=="register";
     confirmation.querySelector("input").required=mode==="register";
@@ -270,7 +265,6 @@
     const email=String(fields.get("email")||"").trim();
     const password=String(fields.get("password")||"");
     if(!email||!password){alertMessage("Введите email и пароль.");return;}
-    if(selected==="register" && password.length<9){alertMessage("Придумайте пароль не короче 9 символов.");return;}
     if(selected==="register" && password!==String(fields.get("password_confirm")||"")){alertMessage("Пароли не совпадают. Проверьте повтор пароля.");return;}
     await perform(selected==="register"?"register":"login",{email,password},selected==="register"?
       "Проверьте почту: мы отправили ссылку подтверждения.":null);
@@ -285,7 +279,7 @@
   passForm.addEventListener("submit",async event=>{
     event.preventDefault();
     const password=String(new FormData(passForm).get("password")||"");
-    if(password.length<9){alertMessage("Новый пароль должен содержать не менее 9 символов.");return;}
+    if(!password){alertMessage("Введите новый пароль.");return;}
     if(password!==String(new FormData(passForm).get("password_confirm")||"")){alertMessage("Пароли не совпадают. Проверьте повтор пароля.");return;}
     await perform("reset_password",{token:resetToken,password},"Пароль изменён. Теперь войдите.");
     if(!message.hidden&&message.classList.contains("is-success")){
@@ -329,7 +323,6 @@
   setEmailForm.addEventListener("submit",async event=>{
     event.preventDefault();
     const form=new FormData(setEmailForm);
-    if(String(form.get("password")||"").length<9){alertMessage("Придумайте пароль не короче 9 символов.");return;}
     await perform("set_email",{
       email:String(form.get("email")||""),
       password:String(form.get("password")||"")
@@ -338,94 +331,24 @@
 
   async function updatePurchases() {
     if(!savedPanel||!current) return;
-    let container=document.getElementById("numi-confirmed-purchases");
-    if(!container){
-      container=document.createElement("div");
-      container.id="numi-confirmed-purchases";
-      container.setAttribute("aria-label","Ваши сохранённые разборы и ответы");
-      savedPanel.querySelector(".account-panel-intro")?.insertAdjacentElement("afterend",container);
-    }
     try {
       const result=await request("purchases");
-      const purchases=Array.isArray(result.purchases)?result.purchases:[];
-      container.replaceChildren();
-      const testBox=document.getElementById("numi-test-checkout");
-      if(testBox) testBox.hidden=result.test_enabled!==true;
-      const testLink=document.getElementById("numi-open-test-from-prices");
-      if(testLink) testLink.hidden=result.test_enabled!==true;
-      for(const purchase of purchases){
-        const item=document.createElement("div");
-        item.className="numi-saved-row";
-        const content=document.createElement("div");
-        content.className="numi-saved-row-content";
-        const title=document.createElement("strong");
-        title.textContent=(purchase.is_test?"🧪 ТЕСТ · ":"")+(purchase.product_code||"Сохранённый разбор");
-        const detail=document.createElement("small");
-        const date=String(purchase.created_at||"").slice(0,10);
-        detail.textContent=date && /^\\d{4}-\\d{2}-\\d{2}$/.test(date)
-          ? "Сохранено "+date.slice(8,10)+"."+date.slice(5,7)+"."+date.slice(0,4)
-          : "Ваш сохранённый материал";
-        content.append(title,detail);
-        if(purchase.is_test){
-          const description=document.createElement("small");
-          description.textContent="Дата: "+String(purchase.resource_id||"").split(":").pop()+" · Деньги не списаны";
-          content.append(description);
-          const details=document.createElement("details");
-          details.className="numi-test-answer";
-          const summary=document.createElement("summary");
-          summary.textContent="Открыть пробный ответ";
-          const answer=document.createElement("p");
-          answer.textContent=purchase.test_answer||"Пробный ответ без оплаты";
-          details.append(summary,answer);
-          content.append(details);
-        }
-        const remove=document.createElement("button");
-        remove.type="button";
-        remove.className="numi-saved-remove";
-        remove.setAttribute("aria-label","Удалить из сохранённого");
-        remove.title="Удалить из сохранённого";
-        remove.textContent="🗑";
-        remove.addEventListener("click",async ()=>{
-          if(remove.disabled) return;
-          remove.disabled=true;
-          try {
-            await request("hide_saved",{entitlement_id:purchase.entitlement_id});
-            item.remove();
-            savedPanel.querySelector(".account-empty-state")?.toggleAttribute("hidden",container.children.length>0);
-          } catch(err) {
-            remove.disabled=false;
-            alertMessage(err.message||"Не удалось удалить запись.");
-          }
-        });
-        item.append(content,remove);
-        container.append(item);
+      let container=document.getElementById("numi-confirmed-purchases");
+      if(!container){
+        container=document.createElement("div");
+        container.id="numi-confirmed-purchases";
+        savedPanel.querySelector(".account-panel-intro")?.insertAdjacentElement("afterend",container);
       }
-      savedPanel.querySelector(".account-empty-state")?.toggleAttribute("hidden",purchases.length>0);
-    }catch(_){ /* Never pretend a payment or a saved record has been verified. */ }
+      container.replaceChildren();
+      for(const purchase of result.purchases||[]){
+        const item=document.createElement("div"); item.className="numi-purchase-entry";
+        const title=document.createElement("strong");title.textContent=purchase.product_code;
+        const detail=document.createElement("small");detail.textContent="Код материала: "+purchase.resource_id;
+        item.append(title,detail);container.append(item);
+      }
+      savedPanel.querySelector(".account-empty-state")?.toggleAttribute("hidden",(result.purchases||[]).length>0);
+    }catch(_){ /* Never claim payments without a verified server result */ }
   }
-  // Owner-only interface; backend checks verified email for EVERY write.
-  document.getElementById("numi-test-checkout-form")?.addEventListener("submit",async event=>{
-    event.preventDefault();
-    const form=event.currentTarget;
-    const submit=form.querySelector("button[type=submit]");
-    const note=document.getElementById("numi-test-checkout-message");
-    const kind=form.querySelector("[name=kind]")?.value;
-    const birth_date=form.querySelector("[name=birth_date]")?.value;
-    if(!kind||!birth_date)return;
-    if(submit)submit.disabled=true;
-    try{
-      const response=await request("test_purchase",{kind,birth_date});
-      if(note)note.textContent=response.already_exists
-        ?"Этот тестовый ответ уже сохранён. Повторной покупки не было."
-        :"Тестовая покупка готова: 0 ₽, без списаний. Ответ появился ниже.";
-      await updatePurchases();
-    }catch(err){
-      if(note)note.textContent=err.message||"Не удалось провести тест.";
-    }finally{
-      if(submit)submit.disabled=false;
-    }
-  });
-
   // Browser birth dates persist in the account, Telegram birth dates still use the existing verified endpoint.
   document.getElementById("account-birth-save")?.addEventListener("click",async ()=>{
     if(isTelegram()||!current||!birthInput) return;
