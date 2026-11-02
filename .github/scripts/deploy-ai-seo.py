@@ -32,7 +32,7 @@ def main():
    if original==prepared[p]:continue
    if release[p]['before'] is None:
     if original is not None:raise RuntimeError('New page already exists: '+p)
-   elif original is None or digest(original)!=release[p]['before']:raise RuntimeError('Live page changed; release stopped without writes: '+p)
+   elif original is None or (digest(original)!=release[p]['before'] and digest(original+b'\n')!=release[p]['before']):raise RuntimeError('Live page changed; release stopped without writes: '+p)
   print('Preflight passed for '+str(len(prepared))+' files',flush=True)
   backup=home+'/site-safeguard-backups/ai-seo-'+str(int(time.time()));ftp.mkd(backup)
   for p,b in originals.items():
