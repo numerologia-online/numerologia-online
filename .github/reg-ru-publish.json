@@ -1,16 +1,14 @@
 {
   "mode": "publish",
   "files": [
-    "assets/telegram-web-app-20261102.js",
     "index.html"
   ],
-  "create_startup_sdk": true,
   "patches": {
     "index.html": {
-      "before": "<script src=\"https://telegram.org/js/telegram-web-app.js\" defer></script>",
-      "after": "<script src=\"/assets/telegram-web-app-20261102.js\" defer onload=\"try{window.Telegram.WebApp.ready()}catch(e){}\"></script>",
-      "expected_sha256": "e58a69c609c78a9f446a9068e349eb56e08f51b913fead56181b1d6c3ccf96a0"
+      "before": "</head>",
+      "after": "    <style id=\"numi-redflag-card-contrast-20261102\">\n      .products > .product-card.red-flag::before {\n        background: linear-gradient(90deg, rgba(246,249,244,.98) 0%, rgba(246,249,244,.94) 62%, rgba(246,249,244,.65) 78%, rgba(246,249,244,.04) 100%);\n        opacity: 1;\n      }\n      .products > .product-card.red-flag .product-title,\n      .products > .product-card.red-flag .product-subtitle {\n        color: #78252d;\n      }\n    </style>\n</head>",
+      "expected_sha256": "2510760eac2b35e1680a86911e38dcd391b332b2c8bfb8d6169c2705766ca5cd"
     }
   },
-  "note": "Owner requested fixing stalled Telegram opening. Serve unchanged official SDK locally and signal readiness before later deferred account scripts. Preserve all other live bytes."
+  "note": "Owner requested readable Red Flag card on live REG.RU. Apply only scoped contrast CSS to current live HTML; preserve all other bytes."
 }
