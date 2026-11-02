@@ -1,5 +1,5 @@
 {
-  "approved_private_commit": "138262d85b2ceb9fef1fbedcedc6728370fd9f35",
+  "approved_private_commit": "427a34c293148d1877f4d01819717399c3740bb2",
   "approved_questions": [
     "yn-man-001",
     "yn-man-002",
@@ -102,6 +102,6 @@
     "yn-home-009",
     "yn-home-010"
   ],
-  "release_reason": "Publish approved revised readings for questions 003 and 004",
-  "version": 16
+  "release_reason": "Publish approved 19 precise corrections across 17 yes-no answer files",
+  "version": 17
 }
