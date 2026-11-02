@@ -23,6 +23,15 @@ def valid_path(p):
         return False
     pieces=p.split("/")
     return all(x and x not in (".","..") and not x.startswith(".") for x in pieces)
+def valid_source_record(entry, previous_entry, changed):
+    if not isinstance(entry,dict):return False
+    source=entry.get("source");sha=entry.get("sha");ref=entry.get("ref")
+    if not (valid_path(source) and hex_sha(sha,40) and hex_sha(ref,40)):
+        return False
+    # Existing legacy references are already cached and are never fetched here.
+    # New or changed entries must still use the reviewed site/ source namespace.
+    return source.startswith("site/") or (not changed and entry==previous_entry)
+
 def connect():
     ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
     ftp.connect(HOST,21);ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
@@ -101,8 +110,7 @@ def run():
             if not isinstance(entry,dict):
                 raise RuntimeError("Invalid private content record")
             source=entry.get("source");sha=entry.get("sha");ref=entry.get("ref")
-            if (not isinstance(source,str) or not source.startswith("site/") or
-                not valid_path(source) or not hex_sha(sha,40) or not hex_sha(ref,40)):
+            if not valid_source_record(entry,previous.get(path),path in diff):
                 raise RuntimeError("Invalid private content source or checksum")
         local_names={entry.rsplit("/",1)[-1] for entry in ftp.nlst(server+"/cache")}
         # All old blobs must remain available; publication never deletes them.
