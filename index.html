@@ -584,7 +584,7 @@
 .product-card:has(.numi-large-report-prices){height:auto;min-height:145px}
 </style><script>
 document.addEventListener("DOMContentLoaded",()=>{
- const selectors=[".products > .year-card",".products > .calculation",".products > .compatibility",".year-intro",".compatibility-intro","#year-paywall-dialog"];
+ const selectors=["#year-paywall-dialog"];
  for(const selector of selectors) for(const target of document.querySelectorAll(selector)){
   if(target.querySelector(":scope > .numi-large-report-prices"))continue;
   const badge=document.createElement("span");badge.className="numi-large-report-prices";
