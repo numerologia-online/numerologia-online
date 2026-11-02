@@ -1,0 +1,27 @@
+name: Publish visitor analytics settings to REG.RU
+on:
+  push:
+    paths:
+      - .github/workflows/numi-analytics-settings-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish analytics preference controls on REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate consent page, precise patches and tests
+        run: |
+          python3 -m py_compile scripts/publish-analytics-settings.py
+          python3 -m json.tool scripts/analytics-settings-patches.json >/dev/null
+          node --test scripts/tests/analytics-settings.test.cjs
+      - name: Publish settings and six consent-gated scripts with rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u scripts/publish-analytics-settings.py
