@@ -42,6 +42,38 @@ def main():
                 tmp.write(live);tmp.flush()
                 check=subprocess.run(["node","--check",tmp.name],capture_output=True,text=True)
                 report.setdefault("syntax",[]).append({"file":name,"valid":check.returncode==0,"error_type":"SyntaxError" if check.returncode else None})
+        # Inspect transitive static and dynamic ES-module dependencies on live REG.RU.
+        import posixpath
+        roots=["app.js","year-feature.js","matrix-feature.js","redflag-feature.js",
+               "compatibility-feature.js","personal-day-feature.js","destiny-code-feature.js"]
+        scanned=set()
+        queue=list(roots)
+        missing=[]
+        parse_errors=[]
+        while queue and len(scanned)<120:
+            name=queue.pop(0)
+            if name in scanned:continue
+            scanned.add(name)
+            data=remote(name)
+            if data is None:
+                missing.append({"from":"entry","path":name})
+                continue
+            value=data.decode("utf-8","replace")
+            patterns=[
+                r"""\\bfrom\\s+['"]([^'"]+)['"]""",
+                r"""\\bimport\\s*\\(\\s*['"]([^'"]+)['"]""",
+                r"""\\bimport\\s+['"]([^'"]+)['"]"""
+            ]
+            references=[]
+            for pattern in patterns:
+                references.extend(re.findall(pattern,value))
+            for ref in references:
+                if not ref.startswith("."):continue
+                child=posixpath.normpath(posixpath.join(posixpath.dirname(name),ref.split("?",1)[0]))
+                if child.startswith("../"):continue
+                if remote(child) is None:missing.append({"from":name,"path":child})
+                elif child.endswith(".js") and child not in scanned and child not in queue:queue.append(child)
+        report["dependency_audit"]={"scanned":len(scanned),"missing":missing,"files":sorted(scanned)}
         index=remote("index.html") or b""
         report["index_checks"]={k: (v in index) for k,v in {
             "telegram_script":b"auth-profile.js?v=20",
