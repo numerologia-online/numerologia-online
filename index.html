@@ -1047,6 +1047,54 @@
   <script src="auth-profile.js?v=20" defer></script>
   <script src="account-browser.js?v=14" defer></script>
   <script type="module" src="app.js?v=20261101fix1"></script>
+  <!-- Cookie notice: optional analytics only by explicit choice; essential storage remains available. -->
+  <style>
+    #numi-cookie-notice[hidden]{display:none!important}
+    #numi-cookie-notice{position:fixed;z-index:2147483000;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(530px,calc(100% - 24px));box-sizing:border-box;padding:17px 19px 16px;background:#fffdf7;border:1px solid #dfd4bd;border-radius:18px;box-shadow:0 10px 36px rgba(8,34,25,.19);color:#203b2e;font:14px/1.45 system-ui,-apple-system,sans-serif;text-align:left}
+    #numi-cookie-notice strong{display:block;margin:0 0 6px;font-size:16px;color:#174b37}
+    #numi-cookie-notice p{margin:0 0 12px;color:#465b4e}
+    #numi-cookie-notice a{color:#126043;text-decoration:underline;text-underline-offset:2px}
+    #numi-cookie-actions{display:flex;gap:9px;flex-wrap:wrap}
+    #numi-cookie-actions button{flex:1 1 180px;min-height:43px;padding:10px 12px;border-radius:11px;border:1px solid #1a5b42;font:700 13px/1.3 system-ui,-apple-system,sans-serif;cursor:pointer}
+    #numi-cookie-essential{background:#fffdf7;color:#1a5b42}
+    #numi-cookie-all{background:#195940;color:#fff}
+    #numi-cookie-actions button:focus-visible{outline:3px solid #c69a52;outline-offset:3px}
+    @media(max-width:430px){#numi-cookie-notice{padding:14px 15px}#numi-cookie-actions button{flex-basis:100%}}
+  </style>
+  <section id="numi-cookie-notice" role="region" aria-label="Настройки cookie" hidden>
+    <strong>Мы используем cookie</strong>
+    <p>Необходимые cookie и данные браузера помогают сайту работать, сохранять настройки и обеспечивать вход в личный кабинет. Необязательную статистику включаем только с вашего разрешения. <a href="/privacy.html">Подробнее</a>.</p>
+    <div id="numi-cookie-actions">
+      <button id="numi-cookie-essential" type="button">Только необходимые</button>
+      <button id="numi-cookie-all" type="button">Разрешить все</button>
+    </div>
+  </section>
+  <script>
+  (()=>{'use strict';
+    const key='numi_analytics_permission',box=document.getElementById('numi-cookie-notice');
+    if(!box)return;
+    let existing=null;
+    try{existing=localStorage.getItem(key);}catch(_){}
+    if(existing==='allow'||existing==='deny')return;
+    box.hidden=false;
+    function choose(choice){
+      try{
+        localStorage.setItem(key,choice);
+        if(choice==='deny'){
+          for(const k of ['ni2_session','ni2_source','ni2_campaign']){
+            try{sessionStorage.removeItem(k);}catch(_){}
+          }
+        }
+        box.hidden=true;
+        if(choice==='allow')location.reload();
+      }catch(_){
+        box.hidden=true;
+      }
+    }
+    document.getElementById('numi-cookie-essential').addEventListener('click',()=>choose('deny'));
+    document.getElementById('numi-cookie-all').addEventListener('click',()=>choose('allow'));
+  })();
+  </script>
   <!-- Numi Insights v2: independent background collector -->
 <script>
 (()=>{const start=()=>{try{if(localStorage.getItem('numi_analytics_permission')!=='allow'||navigator.doNotTrack==='1'||navigator.globalPrivacyControl===true)return;const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';s.async=true;document.head.append(s);}catch(_){}};const schedule=()=>{if('requestIdleCallback'in window)requestIdleCallback(start,{timeout:1500});else setTimeout(start,0);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule,{once:true});else schedule();})();
