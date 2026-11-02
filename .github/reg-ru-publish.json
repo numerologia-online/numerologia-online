@@ -1,6 +1,6 @@
 {
   "mode": "check",
   "files": [],
-  "inspect_matrix_school": true,
-  "note": "Read-only follow-up: lesson files are 0644. Inspect exact school HTTP access directives; no public access or security settings changed."
+  "inspect_matrix_private_manifest": true,
+  "note": "Read-only current manifest checksum before updating nine structural school lessons in existing protected storage; preserve access policy and all energy descriptions."
 }
