@@ -737,8 +737,26 @@ const warmChildPdf=()=>{
   else window.setTimeout(warm,320);
 };
 
-const showChildPdfOffer = () => {
+// Every locked child point opens the same offer; the free chapter stays readable.
+document.addEventListener("click", (event) => {
+  if (!birth || hasChildPaidAccess()) return;
+  const target = event.target.closest("[data-child-topic], [data-child-point], .child-lock-buy");
+  if (!target) return;
+  const point = target.dataset.childTopic || target.dataset.childPoint;
+  if (point === FREE_CHILD_POINT) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  void showChildPdfOffer();
+}, true);
+const showChildPdfOffer = async () => {
   if (!birth) return;
+  if (!hasChildPaidAccess()) {
+    try {
+      const { openSharedOffer } = await import("../shared-offer.js?v=20261102alllocks");
+      await openSharedOffer({ product: "полный разбор ребёнка", title: "Откройте полный разбор ребёнка", oncePrice: 990, memberPrice: 490 });
+    } catch (error) { alert("Не удалось открыть варианты покупки. Попробуйте ещё раз."); }
+    return;
+  }
   const dateISO = birth.year + "-" + pad(birth.month) + "-" + pad(birth.day);
   const pdfDate = byId("child-pdf-confirm-date");
   pdfDate.textContent = pad(birth.day) + "." + pad(birth.month) + "." + birth.year;
