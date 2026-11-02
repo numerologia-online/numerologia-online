@@ -242,6 +242,16 @@ const clearError = () => {
 };
 
 // Resolve only the opened question. Cache its result for this calculated date.
+const showQuestionOffer = async (question) => {
+  const rates = REDFLAG_PRICE_PAIRS[question.priceRub];
+  if (!rates) return;
+  const { openSharedOffer } = await import("./shared-offer.js?v=20261102alllocks");
+  await openSharedOffer({
+    product: "ответ на вопрос «" + question.title + "»",
+    title: question.title, itemKind: "question",
+    oncePrice: rates.regular, memberPrice: rates.subscription, clubMonthly: 490
+  });
+};
 const ensureAnswer = (question, state) => {
   const id = question.id;
   if (state.answers.has(id) || state.answerRequests.has(id)) return;
@@ -252,8 +262,15 @@ const ensureAnswer = (question, state) => {
   state.answerRequests.set(id, request);
   void request.then((response) => {
     if (profile === activeProfile) state.answers.set(id, response);
-  }, () => {
-    if (profile === activeProfile) state.answerErrors.set(id, "Не удалось загрузить ответ. Закрой и открой вопрос ещё раз.");
+  }, async (error) => {
+    if (profile !== activeProfile) return;
+    if (error?.code === "PURCHASE_REQUIRED" || error?.status === 401 || error?.status === 403) {
+      state.activeQuestionId = null;
+      try { await showQuestionOffer(question); }
+      catch (_) { state.answerErrors.set(id, "Не удалось открыть варианты покупки. Попробуйте ещё раз."); }
+    } else {
+      state.answerErrors.set(id, "Не удалось загрузить ответ. Закрой и открой вопрос ещё раз.");
+    }
   }).finally(() => {
     if (state.answerRequests.get(id) === request) state.answerRequests.delete(id);
     if (profile === activeProfile && state.expanded && state.activeQuestionId === id) {
