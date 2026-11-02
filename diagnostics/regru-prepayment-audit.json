@@ -4,16 +4,16 @@
     {
       "path": "",
       "status": 200,
-      "bytes": 78961,
+      "bytes": 82056,
       "mime": "text/html",
-      "elapsed_ms": 1166
+      "elapsed_ms": 1129
     },
     {
       "path": "contacts.html",
       "status": 200,
       "bytes": 2961,
       "mime": "text/html",
-      "elapsed_ms": 963,
+      "elapsed_ms": 708,
       "has_operator_requisites": true
     },
     {
@@ -21,42 +21,42 @@
       "status": 200,
       "bytes": 22931,
       "mime": "text/html",
-      "elapsed_ms": 1041
+      "elapsed_ms": 888
     },
     {
       "path": "offer.html",
       "status": 200,
       "bytes": 84415,
       "mime": "text/html",
-      "elapsed_ms": 949
+      "elapsed_ms": 1156
     },
     {
       "path": "refunds.html",
       "status": 200,
       "bytes": 66905,
       "mime": "text/html",
-      "elapsed_ms": 1239
+      "elapsed_ms": 1052
     },
     {
       "path": "terms.html",
       "status": 200,
       "bytes": 47340,
       "mime": "text/html",
-      "elapsed_ms": 1188
+      "elapsed_ms": 852
     },
     {
       "path": "disclaimer.html",
       "status": 200,
       "bytes": 33436,
       "mime": "text/html",
-      "elapsed_ms": 937
+      "elapsed_ms": 877
     },
     {
       "path": "analytics-settings.html",
       "status": 200,
       "bytes": 8821,
       "mime": "text/html",
-      "elapsed_ms": 780
+      "elapsed_ms": 921
     }
   ],
   "assets": [
@@ -65,7 +65,7 @@
       "status": 200,
       "bytes": 7913,
       "mime": "application/javascript",
-      "elapsed_ms": 573,
+      "elapsed_ms": 699,
       "http_matches_ftp": true
     },
     {
@@ -73,7 +73,7 @@
       "status": 200,
       "bytes": 19076,
       "mime": "application/javascript",
-      "elapsed_ms": 1156,
+      "elapsed_ms": 856,
       "http_matches_ftp": true
     },
     {
@@ -81,7 +81,7 @@
       "status": 200,
       "bytes": 24084,
       "mime": "application/javascript",
-      "elapsed_ms": 916,
+      "elapsed_ms": 678,
       "http_matches_ftp": true
     },
     {
@@ -89,7 +89,7 @@
       "status": 200,
       "bytes": 481,
       "mime": "application/javascript",
-      "elapsed_ms": 573,
+      "elapsed_ms": 688,
       "http_matches_ftp": true
     },
     {
@@ -97,7 +97,7 @@
       "status": 200,
       "bytes": 15350,
       "mime": "text/html",
-      "elapsed_ms": 1166,
+      "elapsed_ms": 672,
       "http_matches_ftp": true
     }
   ],
@@ -107,19 +107,19 @@
       "status": 200,
       "bytes": 38,
       "mime": "application/json; charset=utf-8",
-      "elapsed_ms": 938
+      "elapsed_ms": 720
     },
     {
       "path": "api/numi-account.php",
       "status": 405,
-      "elapsed_ms": 784
+      "elapsed_ms": 707
     }
   ],
   "security_checks": {
     "paid_static_guard_present": true,
     "htaccess_present": true,
     "footer_present": true,
-    "cookie_notice_on_live_html": false,
+    "cookie_notice_on_live_html": true,
     "analytics_choice_link": true,
     "contacts_link": true,
     "offer_link": true,
@@ -138,22 +138,22 @@
     {
       "path": ".git/config",
       "status": 403,
-      "elapsed_ms": 976
+      "elapsed_ms": 777
     },
     {
       "path": "site-safeguard-backups/",
       "status": 404,
-      "elapsed_ms": 1181
+      "elapsed_ms": 675
     },
     {
       "path": "api/.env",
       "status": 403,
-      "elapsed_ms": 740
+      "elapsed_ms": 999
     },
     {
       "path": "api/config.php",
       "status": 404,
-      "elapsed_ms": 949
+      "elapsed_ms": 679
     }
   ]
 }
