@@ -719,6 +719,197 @@
       "year-feature.js"
     ]
   },
+  "http_audit": [
+    {
+      "name": "account-browser.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 879
+    },
+    {
+      "name": "app.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 720
+    },
+    {
+      "name": "auth-profile.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 873
+    },
+    {
+      "name": "compatibility-engine.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 724
+    },
+    {
+      "name": "compatibility-feature.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 814
+    },
+    {
+      "name": "destiny-code-feature.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 866
+    },
+    {
+      "name": "full-report-library.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 776
+    },
+    {
+      "name": "full-report-pdf.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 923
+    },
+    {
+      "name": "index.html",
+      "status": 200,
+      "content_type": "text/html",
+      "matches_ftp": true,
+      "elapsed_ms": 1006
+    },
+    {
+      "name": "karmic-programs.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 629
+    },
+    {
+      "name": "matrix-feature.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 768
+    },
+    {
+      "name": "money-pdf.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 765
+    },
+    {
+      "name": "numerology-core.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 618
+    },
+    {
+      "name": "pdf-public-outro.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 618
+    },
+    {
+      "name": "personal-day-feature.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 623
+    },
+    {
+      "name": "personal-month-links.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 472
+    },
+    {
+      "name": "redflag-categories.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 470
+    },
+    {
+      "name": "redflag-classic.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 457
+    },
+    {
+      "name": "redflag-engine.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 618
+    },
+    {
+      "name": "redflag-feature.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 791
+    },
+    {
+      "name": "redflag-profile.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 643
+    },
+    {
+      "name": "redflag-public-catalog.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 767
+    },
+    {
+      "name": "redflag-text-bank.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 469
+    },
+    {
+      "name": "shared-offer.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 455
+    },
+    {
+      "name": "year-access.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 457
+    },
+    {
+      "name": "year-content.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 456
+    },
+    {
+      "name": "year-feature.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "matches_ftp": true,
+      "elapsed_ms": 752
+    }
+  ],
   "index_checks": {
     "telegram_script": true,
     "app_script": true,
