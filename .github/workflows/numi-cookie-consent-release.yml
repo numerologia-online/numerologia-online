@@ -1,0 +1,27 @@
+name: Publish compact cookie consent on REG.RU
+on:
+  push:
+    paths:
+      - .github/workflows/numi-cookie-consent-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish compact cookie consent on REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate isolated cookie release
+        run: |
+          python3 -m py_compile scripts/publish-cookie-consent.py
+          test -s index.html
+          grep -q 'id="numi-cookie-notice"' index.html
+      - name: Back up live homepage, publish only cookie notice, verify HTTP
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u scripts/publish-cookie-consent.py
