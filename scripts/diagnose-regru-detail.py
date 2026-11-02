@@ -29,13 +29,11 @@ def main():
                 changes=[op for op in difflib.SequenceMatcher(a=old,b=new,autojunk=False).get_opcodes() if op[0]!="equal"]
                 entry["changed_regions"]=len(changes)
                 entry["changed_line_ranges"]=[{"remote":[a+1,b],"github":[c+1,d],"kind":tag} for tag,a,b,c,d in changes[:18]]
-                if name.endswith(".js"):
             report["files"].append(entry)
         source=remote("app.js")
         if source:
-            imports = re.findall(rb"import\\s*\\(\\s*[\x27\\\"]\\./([^\x27\\\"]+)", source)
-            for item in imports:
-                name=item.decode("utf-8","replace").split("?")[0]
+            for item in source.decode("utf-8","replace").split('import("./')[1:]:
+                name=item.split('"',1)[0].split("?",1)[0]
                 report["modules"].append({"name":name,"present":remote(name) is not None})
         for name in ["app.js","auth-profile.js","account-browser.js","redflag-feature.js","compatibility-feature.js","destiny-code-feature.js"]:
             live=remote(name)
