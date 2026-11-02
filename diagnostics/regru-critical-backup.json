@@ -1,0 +1,10 @@
+{
+  "status": "verified",
+  "backup_folder": "site-safeguard-backups/reference-critical-20261102T135735Z",
+  "archive": "site-critical.tar.gz",
+  "files": 25,
+  "archive_sha256": "53e427a476c06c5314c04a8889ddfffa9bb1b3a951707dd8c70017eb1991cf0e",
+  "archive_bytes": 139365,
+  "scope": "critical frontend and legal pages, .htaccess; not full site; no database",
+  "production_modified": false
+}
