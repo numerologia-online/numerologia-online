@@ -1,0 +1,94 @@
+name: Repair REG.RU SEO domain and sitemap
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/numi-seo-domain-repair.yml']
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Back up and fix verified live public SEO metadata
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,json,hashlib,time,re,urllib.request,xml.etree.ElementTree as ET
+          from html.parser import HTMLParser
+          BASE="https://xn--c1adkkdfjbp1a4l.online/"
+          OLD="https://numerologia-online.github.io/numerologia-online/"
+          PATHS=["child/index.html","day.html","guide/22-energii/index.html","guide/chislo-zhiznennogo-puti/index.html","guide/denezhnye-ritualy/index.html","guide/finansovyi-potencial/index.html","guide/harakter-muzhchiny/index.html","guide/horarnaya-numerologiya/index.html","guide/index.html","guide/karmicheskie-programmy/index.html","guide/karmicheskii-hvost/index.html","guide/klassicheskaya-numerologiya/index.html","guide/kod-deneg/index.html","guide/kvadrat-pifagora/index.html","guide/lichnyi-den/index.html","guide/lichnyi-mesyac/index.html","guide/matrica-sudby/index.html","guide/muzhchina-red-flag/index.html","guide/otnosheniya-po-date/index.html","guide/prednaznachenie/index.html","guide/prognoz-na-segodnya/index.html","guide/psihomatrica/index.html","guide/razbor-goda/index.html","guide/sovmestimost-po-date/index.html","guide/srochnyi-vopros/index.html","index.html","moment/index.html","pro/index.html","year/index.html"]
+          def transform(p,s):
+              if p=="robots.txt":return "User-agent: *\nAllow: /\n\nSitemap: "+BASE+"sitemap.xml\n"
+              if p=="sitemap.xml":
+                  return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+"\n".join("  <url><loc>"+BASE+("" if x=="index.html" else re.sub("index.html$","",x))+"</loc></url>" for x in PATHS)+"\n</urlset>\n"
+              s=s.replace(OLD,BASE)
+              url=BASE+("" if p=="index.html" else re.sub("index.html$","",p))
+              if not re.search(r'rel=["\x27]canonical["\x27]',s):
+                  if s.count("</head>")!=1:raise RuntimeError("Head layout mismatch: "+p)
+                  s=s.replace("</head>",'<link rel="canonical" href="'+url+'">\n</head>')
+              if p=="index.html":
+                  s,n=re.subn(r"<title>[\s\S]*?</title>","<title>Нумерология по дате рождения онлайн | Нумерология.online</title>",s)
+                  if n!=1:raise RuntimeError("Title layout mismatch")
+                  s,n=re.subn(r'(<meta\s+name="description"\s+content=")[^"]*(")',r'\g<1>Нумерология по дате рождения. Личный день, совместимость, матрица судьбы, разбор года и характер мужчины. Бесплатные расчёты и авторские разборы.\2',s)
+                  if n!=1:raise RuntimeError("Description layout mismatch")
+              return s
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect("server172.hosting.reg.ru",21);ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"]);ftp.prot_p()
+          home=ftp.pwd().rstrip("/");site=home+"/www/xn--c1adkkdfjbp1a4l.online"
+          def read(p):
+              out=io.BytesIO();ftp.retrbinary("RETR "+p,out.write)
+              if out.tell()>3000000:raise RuntimeError("File exceeds limit")
+              return out.getvalue()
+          def put(p,b):
+              ftp.storbinary("STOR "+p,io.BytesIO(b))
+              if read(p)!=b:raise RuntimeError("Readback failed: "+p)
+          def mkdir(p):
+              cur=""
+              for part in p.split("/"):
+                  if not part:continue
+                  cur+="/"+part
+                  try:ftp.mkd(cur)
+                  except ftplib.error_perm as e:
+                      if not str(e).startswith("550"):raise
+          original={p:read(site+"/"+p) for p in PATHS+["robots.txt","sitemap.xml"]}
+          updated={p:transform(p,b.decode("utf-8")).encode("utf-8") for p,b in original.items()}
+          class Validate(HTMLParser):
+              def __init__(self):super().__init__();self.canonical=[]
+              def handle_starttag(self,t,a):
+                  d=dict(a)
+                  if t=="link" and d.get("rel")=="canonical":self.canonical.append(d.get("href"))
+          for p in PATHS:
+              v=Validate();v.feed(updated[p].decode())
+              expected=BASE+("" if p=="index.html" else re.sub("index.html$","",p))
+              if v.canonical!=[expected] or OLD.encode() in updated[p]:raise RuntimeError("Canonical validation failed: "+p)
+          locs=[e.text for e in ET.fromstring(updated["sitemap.xml"]).iter("{http://www.sitemaps.org/schemas/sitemap/0.9}loc")]
+          if len(locs)!=len(PATHS) or len(set(locs))!=len(locs):raise RuntimeError("Sitemap validation failed")
+          backup=home+"/site-safeguard-backups/seo-domain-"+str(int(time.time()));mkdir(backup)
+          for p,b in original.items():
+              mkdir(backup+"/"+str(__import__("pathlib").PurePosixPath(p).parent));put(backup+"/"+p,b)
+          applied=[]
+          try:
+              for p,b in updated.items():
+                  if read(site+"/"+p)!=original[p]:raise RuntimeError("Concurrent edit: "+p)
+                  applied.append(p);put(site+"/"+p,b)
+              for p,b in updated.items():
+                  url=BASE+("" if p=="index.html" else re.sub("index.html$","",p))+"?seo_verify="+str(int(time.time()))
+                  req=urllib.request.Request(url,headers={"Cache-Control":"no-cache"})
+                  with urllib.request.urlopen(req,timeout=30) as res:
+                      actual=res.read(3000001)
+                      if res.status!=200 or res.headers.get("X-Robots-Tag","").lower().find("noindex")>=0:raise RuntimeError("Indexability check failed")
+                  if actual!=b:raise RuntimeError("HTTP differs: "+p)
+              print("SEO SUCCESS: 29 canonical pages, 23 guide pages fixed, 29 same-domain sitemap URLs, robots fixed, 31 HTTP readbacks verified; backups outside www; no calculator logic or private content modified")
+          except BaseException:
+              for p in reversed(applied):put(site+"/"+p,original[p])
+              print("SEO ROLLBACK completed");raise
+          finally:ftp.quit()
+          
+          PY
