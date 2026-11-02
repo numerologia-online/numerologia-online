@@ -1,0 +1,44 @@
+name: Diagnose REG.RU HTTPS startup (read only)
+on:
+  push:
+    paths:
+      - .github/workflows/reg-https-startup-diagnostic.yml
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Check DNS and TLS without changing server
+        run: |
+          python3 -u - <<'PY'
+          import socket,ssl,time,urllib.request,concurrent.futures
+          domain="xn--c1adkkdfjbp1a4l.online"
+          for host in [domain,"www."+domain,"server172.hosting.reg.ru"]:
+              try:
+                  addresses=sorted({x[4][0] for x in socket.getaddrinfo(host,443,type=socket.SOCK_STREAM)})
+                  print("DNS",host,addresses,flush=True)
+              except Exception as e: print("DNS ERROR",host,type(e).__name__,str(e),flush=True)
+          start=time.monotonic()
+          try:
+              with socket.create_connection((domain,443),timeout=15) as raw:
+                  with ssl.create_default_context().wrap_socket(raw,server_hostname=domain) as tls:
+                      cert=tls.getpeercert()
+                      print("TLS",round(time.monotonic()-start,3),tls.version(),"expiry",cert.get("notAfter"),"names",cert.get("subjectAltName"),flush=True)
+          except Exception as e: print("TLS ERROR",type(e).__name__,str(e),flush=True)
+          def check(path):
+              start=time.monotonic()
+              try:
+                  response=urllib.request.urlopen("https://"+domain+path,timeout=20)
+                  body=response.read()
+                  print("HTTP",path,response.status,"seconds",round(time.monotonic()-start,3),"bytes",len(body),flush=True)
+              except Exception as e:print("HTTP ERROR",path,type(e).__name__,str(e),flush=True)
+          with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+              list(pool.map(check,["/","/contacts.html","/assets/telegram-web-app-20261102.js"]))
+          PY
+      - name: Compare HTTP protocol negotiation
+        run: |
+          for protocol in --http1.1 --http2; do
+            curl "$protocol" -sS -o /dev/null --connect-timeout 10 --max-time 20 -w 'status=%{http_code} tls=%{time_appconnect} first=%{time_starttransfer} total=%{time_total} protocol=%{http_version}\n' https://xn--c1adkkdfjbp1a4l.online/ || true
+          done
