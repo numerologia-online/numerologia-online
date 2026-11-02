@@ -264,7 +264,42 @@ const ensureAnswer = (question, state) => {
   });
 };
 
-// Keep pricing in compact question metadata; never fetch the large answer JSON here.
+// Prices are explicit pairs: keep the agreed 39/19 and 79/39 rounding.
+const REDFLAG_PRICE_PAIRS = {
+  10: { regular: 20, subscription: 10 },
+  29: { regular: 39, subscription: 19 },
+  49: { regular: 79, subscription: 39 }
+};
+const priceStyles = document.createElement("style");
+priceStyles.id = "redflag-subscription-prices-20261102";
+priceStyles.textContent = `
+  #redflag .redflag-price-pair {
+    display: flex; flex: 0 0 auto; flex-direction: column;
+    align-items: flex-end; gap: 5px; max-width: 110px;
+  }
+  #redflag .redflag-price-pair .redflag-question-price {
+    display: block; padding: 5px 9px; font-size: 12px;
+    line-height: 1.1; font-weight: 750;
+  }
+  #redflag .redflag-price-pair .redflag-subscription-price {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 3px; padding: 7px 9px; border: 1px solid #943c65;
+    border-radius: 14px; background: #943c65; color: #fff;
+    box-shadow: 0 3px 8px rgba(148,60,101,.2);
+    font-size: 10px; font-weight: 750; line-height: 1.15;
+    white-space: nowrap;
+  }
+  #redflag .redflag-subscription-price strong {
+    color: inherit; font-size: 18px; font-weight: 900; line-height: 1;
+  }
+  @media (max-width: 360px) {
+    #redflag .redflag-price-pair { max-width: 88px; }
+    #redflag .redflag-price-pair .redflag-subscription-price { padding: 6px 7px; }
+  }
+`;
+document.head.append(priceStyles);
+
+// Render both rates without fetching paid answer content.
 const fillQuestionButton = (button, question, showExpand = false) => {
   const label = document.createElement("span");
   label.className = "redflag-question-label";
@@ -276,10 +311,24 @@ const fillQuestionButton = (button, question, showExpand = false) => {
     free.textContent = "БЕСПЛАТНО";
     button.append(free);
   } else if (Number.isInteger(question.priceRub)) {
+    const rates = REDFLAG_PRICE_PAIRS[question.priceRub];
+    const pair = document.createElement("span");
+    pair.className = "redflag-price-pair";
     const price = document.createElement("span");
     price.className = "redflag-question-price";
-    price.textContent = question.priceRub + " ₽";
-    button.append(price);
+    price.textContent = (rates ? rates.regular : question.priceRub) + " ₽";
+    pair.append(price);
+    if (rates) {
+      const subscription = document.createElement("span");
+      subscription.className = "redflag-subscription-price";
+      const caption = document.createElement("span");
+      caption.textContent = "По подписке";
+      const amount = document.createElement("strong");
+      amount.textContent = rates.subscription + " ₽";
+      subscription.append(caption, amount);
+      pair.append(subscription);
+    }
+    button.append(pair);
   }
   if (showExpand) {
     const plus = document.createElement("b");
