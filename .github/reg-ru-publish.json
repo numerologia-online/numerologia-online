@@ -1,14 +1,16 @@
 {
   "mode": "publish",
   "files": [
+    "contacts.html",
     "index.html"
   ],
+  "create_contacts_page": true,
   "patches": {
     "index.html": {
-      "before": "<p style=\"text-align:center;margin:20px auto 5px;font-size:13px;opacity:.75\"><a style=\"color:inherit;text-underline-offset:4px\" href=\"./guide/\">Справочник по нумерологии</a></p>",
-      "after": "",
-      "expected_sha256": "a1bbc1d6f6f31a0119e8ed57a128a5e87369f1168c2a4ff68b079b6bbcf443b2"
+      "before": "<a href=\"/analytics-settings.html\" style=\"color:#195840;text-decoration:underline;text-underline-offset:4px;font-weight:650\">Настройки аналитики</a>",
+      "after": "<a href=\"/contacts.html\" style=\"color:#195840;text-decoration:underline;text-underline-offset:4px;font-weight:650\">Контакты и реквизиты</a>\n          <span aria-hidden=\"true\" style=\"padding:0 9px;color:#96a497\">·</span>\n          <a href=\"/analytics-settings.html\" style=\"color:#195840;text-decoration:underline;text-underline-offset:4px;font-weight:650\">Настройки аналитики</a>",
+      "expected_sha256": "240794d0f343165d5bb35c7c007c98f228b3e09c175c4460d3d0f98328470cbd"
     }
   },
-  "note": "Owner requested removal of only the guide link at the bottom of the homepage. Preserve all other live bytes."
+  "note": "Owner requested publication of contacts already added in GitHub. Create contacts.html and add only its footer link to current live homepage."
 }
