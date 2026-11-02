@@ -1,0 +1,11 @@
+{
+  "status": "verified",
+  "backup_folder": "site-safeguard-backups/reference-live-20261102T134447Z",
+  "archive": "live-webroot.tar.gz",
+  "manifest": "manifest.json",
+  "files": 638,
+  "archive_sha256": "8fa01ab58aa39436e386ebd99338461eadb849ebf2ca6aa928d9b71f0340fd99",
+  "archive_bytes": 7810166,
+  "database_included": false,
+  "live_site_modified": false
+}
