@@ -89,7 +89,7 @@ const openPersonalDayFeature = async () => {
 window.setTimeout(() => getPersonalDayFeature().catch(() => {}), 900);
 
 const getDestinyCodeFeature = () => {
-  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=20261102alllocks");
+  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=20261102wealthfix1");
   return destinyCodeFeatureLoading;
 };
 
@@ -193,3 +193,4 @@ if (Object.prototype.hasOwnProperty.call(telegramSectionCards, telegramView)) {
   const card = document.querySelector(telegramSectionCards[telegramView]);
   if (card) card.click();
 }
+

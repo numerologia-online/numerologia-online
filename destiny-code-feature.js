@@ -1,5 +1,4 @@
 import { createMoneyPdfButton } from "./money-pdf.js?v=10";
-import { loadFullReportKnowledge, loadFullReportSection } from "./full-report-library.js?v=3";
 import { calculateMatrix } from "./numerology-core.js?v=1";
 
 const home = document.querySelector("#home");
@@ -77,35 +76,35 @@ const createMoneyDisclosure = ({ label, lead, text, advice = "", ritual = "", ri
   return details;
 };
 
-let moneyBlocksRequest;
-
-const loadMoneyBlocks = () => {
-  if (!moneyBlocksRequest) {
-    moneyBlocksRequest = fetch("data/money-blocks.json?v=2").then((response) => {
-      if (!response.ok) throw new Error("Не удалось загрузить денежные блоки");
-      return response.json();
-    });
-  }
-  return moneyBlocksRequest;
+// Protected interpretations are served only after server-side authorization.
+const loadMoneyBlocks = async () => {
+  const initData = window.Telegram?.WebApp?.initData || new URLSearchParams(window.location.hash.slice(1)).get("tgWebAppData") || "";
+  if (!initData) return null;
+  const response = await fetch("/api/numi-paid-content.php", {
+    method: "POST", credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ init_data: initData, path: "data/money-blocks.json" })
+  });
+  if (response.status === 401 || response.status === 403) return null;
+  if (!response.ok) throw new Error("MONEY_CONTENT_UNAVAILABLE");
+  const payload = await response.json();
+  if (!payload.ok || !payload.content) throw new Error("MONEY_CONTENT_UNAVAILABLE");
+  return payload.content;
 };
 
 const MONEY_CARDS = [
   { key: "moneyBlock", label: "Что блокирует деньги", fallback: "Почему деньги могут не приходить" }
 ];
 
-const moneyCard = async ({ key, label, fallback }, energy) => {
-  const blocks = await loadMoneyBlocks();
-  const custom = key === "moneyBlock" ? blocks[String(energy)] : null;
-  if (custom) return { label, lead: label, text: custom.paragraphs };
-
-  const section = await loadFullReportSection(energy);
-  const source = section.sections?.[key];
-  return {
-    label,
-    lead: source?.title || fallback,
-    text: source?.paragraphs?.filter((paragraph) => !["Что это значит для вас", "Как проявляется в плюсе", "Где уходит в минус", "Что делать прямо сейчас"].includes(paragraph)) || ["Расшифровка этой денежной точки готовится."],
-    advice: "Смотрите на этот сценарий как на ориентир для своих решений, а не как на приговор."
-  };
+const moneyCard = async ({ label }, energy) => {
+  try {
+    const blocks = await loadMoneyBlocks();
+    const custom = blocks?.[String(energy)];
+    if (custom?.paragraphs?.length) return { label, lead: label, text: custom.paragraphs };
+    return { label, lead: label + " 🔒", text: "Для чтения расшифровки войдите в аккаунт с доступом к этому материалу. Ваш код денег и его активация доступны ниже." };
+  } catch {
+    return { label, lead: label, text: "Расшифровка временно не загрузилась. Попробуйте рассчитать ещё раз. Ваш код денег и его активация уже доступны." };
+  }
 };
 
 const createMoneyPathOffer = ({ title, text }) => {
@@ -210,7 +209,7 @@ const openMoneyRituals = (code) => {
   window.scrollTo({ top: 0, behavior: "instant" });
 };
 
-const buildCode = async (birthDate, energies) => {
+const buildCode = async (birthDate) => {
   const lifePath = reduceClassic(sumDigits(`${String(birthDate.day).padStart(2, "0")}${String(birthDate.month).padStart(2, "0")}${birthDate.year}`), true);
   const birthday = reduceClassic(birthDate.day, true);
   const birthMonth = reduceClassic(birthDate.month, true);
@@ -281,8 +280,8 @@ form.addEventListener("submit", async (event) => {
   button.disabled = true;
   button.textContent = "Считаю ваш код...";
   try {
-    const { energies } = await loadFullReportKnowledge();
-    const code = await buildCode(birthDate, energies);
+    error.hidden = true;
+    const code = await buildCode(birthDate);
     resultTitle.textContent = code.title;
     cards.replaceChildren(
       code.cards[0] && createCard(code.cards[0]),
@@ -321,3 +320,4 @@ form.addEventListener("submit", async (event) => {
     button.innerHTML = "Узнать код денег <span aria-hidden=\"true\">→</span>";
   }
 });
+
