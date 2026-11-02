@@ -30,19 +30,19 @@ def main():
                 entry["changed_regions"]=len(changes)
                 entry["changed_line_ranges"]=[{"remote":[a+1,b],"github":[c+1,d],"kind":tag} for tag,a,b,c,d in changes[:18]]
                 if name.endswith(".js"):
-                    entry["remote_imports"]=re.findall(r'(?:from\\s*|import\\s*\\()\\s*["\\\'](\\.[^"\\\']+)',live.decode("utf-8","replace"))[:25]
-                    entry["github_imports"]=re.findall(r'(?:from\\s*|import\\s*\\()\\s*["\\\'](\\.[^"\\\']+)',local.decode("utf-8","replace"))[:25]
+                    entry["remote_imports"]=re.findall(r'(?:from\s*|import\s*\()\s*["\\'](\.[^"\\']+)',live.decode("utf-8","replace"))[:25]
+                    entry["github_imports"]=re.findall(r'(?:from\s*|import\s*\()\s*["\\'](\.[^"\\']+)',local.decode("utf-8","replace"))[:25]
             report["files"].append(entry)
         source=remote("app.js")
         if source:
-            imports=re.findall(rb'import\\s*\\(\\s*["\\\']\\./([^"\\\']+)',source)
+            imports=re.findall(rb'import\s*\(\s*["\\']\./([^"\\']+)',source)
             for item in imports:
                 name=item.decode("utf-8","replace").split("?")[0]
                 report["modules"].append({"name":name,"present":remote(name) is not None})
         for name in ["app.js","auth-profile.js","account-browser.js","redflag-feature.js","compatibility-feature.js","destiny-code-feature.js"]:
             live=remote(name)
             if live is None:continue
-            with tempfile.NamedTemporaryFile(suffix=".js") as tmp:
+            with tempfile.NamedTemporaryFile(suffix=".mjs") as tmp:
                 tmp.write(live);tmp.flush()
                 check=subprocess.run(["node","--check",tmp.name],capture_output=True,text=True)
                 report.setdefault("syntax",[]).append({"file":name,"valid":check.returncode==0,"error_type":"SyntaxError" if check.returncode else None})
@@ -57,6 +57,6 @@ def main():
         try:f.quit()
         except BaseException:f.close()
     pathlib.Path("diagnostics").mkdir(exist_ok=True)
-    pathlib.Path("diagnostics/regru-current.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\\n",encoding="utf-8")
+    pathlib.Path("diagnostics/regru-current.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("RESULT",json.dumps({"different":[x["name"] for x in report["files"] if x["status"]=="different"],"missing_modules":[x for x in report["modules"] if not x["present"]],"invalid_js":[x for x in report.get("syntax",[]) if not x["valid"]]},ensure_ascii=False),flush=True)
 if __name__=="__main__":main()
