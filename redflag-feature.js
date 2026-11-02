@@ -53,7 +53,7 @@ const parseRedFlagDate = (value) => {
 
 // Share the exact currently calculated answer, not a second calculation.
 // The server route reuses the verified sender used by "Личный расчёт дня".
-const REDFLAG_SITE_URL = "https://numerologia-online.github.io/numerologia-online/?view=redflag";
+const REDFLAG_SITE_URL = "https://xn--c1adkkdfjbp1a4l.online/?view=redflag";
 const REDFLAG_BOT_URL = "https://t.me/Numerologiaonline_bot";
 const REDFLAG_SAVE_URL = "https://numerologia-online-bot.tankraft431.workers.dev/api/save-redflag";
 const REDFLAG_TICKET_URL = "https://xn--c1adkkdfjbp1a4l.online/api/redflag-save.php";
@@ -252,15 +252,8 @@ const ensureAnswer = (question, state) => {
   state.answerRequests.set(id, request);
   void request.then((response) => {
     if (profile === activeProfile) state.answers.set(id, response);
-  }, (requestError) => {
-    if (profile === activeProfile) {
-      const message = requestError?.code === "PURCHASE_REQUIRED"
-        ? "🔒 Это платный ответ. Оплата пока не подключена."
-        : requestError?.code === "CONTENT_NOT_PUBLISHED"
-          ? "Авторский ответ для этого вопроса ещё готовится."
-          : "Не удалось загрузить ответ. Закрой и открой вопрос ещё раз.";
-      state.answerErrors.set(id, message);
-    }
+  }, () => {
+    if (profile === activeProfile) state.answerErrors.set(id, "Не удалось загрузить ответ. Закрой и открой вопрос ещё раз.");
   }).finally(() => {
     if (state.answerRequests.get(id) === request) state.answerRequests.delete(id);
     if (profile === activeProfile && state.expanded && state.activeQuestionId === id) {
