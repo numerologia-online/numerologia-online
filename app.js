@@ -24,59 +24,59 @@ const loadStylesheet = (href) => new Promise((resolve, reject) => {
 });
 
 const getYearFeature = () => {
-    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=38");
+    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=38&reload=20261102a");
   return yearFeatureLoading;
 };
 
 const openYearFeature = async () => {
   const [feature] = await Promise.all([
     getYearFeature(),
-    yearStylesLoading ??= loadStylesheet("year-polish.css?v=25")
+    yearStylesLoading ??= loadStylesheet("year-polish.css?v=25&reload=20261102a")
   ]);
   feature.openYear();
 };
 
 const getMatrixFeature = () => {
-  if (!matrixFeatureLoading) matrixFeatureLoading = import("./matrix-feature.js?v=36");
+  if (!matrixFeatureLoading) matrixFeatureLoading = import("./matrix-feature.js?v=36&reload=20261102a");
   return matrixFeatureLoading;
 };
 
 const openMatrixFeature = async () => {
   const [feature] = await Promise.all([
     getMatrixFeature(),
-    matrixStylesLoading ??= loadStylesheet("matrix-polish.css?v=7")
+    matrixStylesLoading ??= loadStylesheet("matrix-polish.css?v=7&reload=20261102a")
   ]);
   feature.openMatrix();
 };
 
 const getRedFlagFeature = () => {
-  if (!redFlagFeatureLoading) redFlagFeatureLoading = import("./redflag-feature.js?v=20261101fix1");
+  if (!redFlagFeatureLoading) redFlagFeatureLoading = import("./redflag-feature.js?v=20261101fix1&reload=20261102a");
   return redFlagFeatureLoading;
 };
 
 const openRedFlagFeature = async () => {
   const [feature] = await Promise.all([
     getRedFlagFeature(),
-    redFlagStylesLoading ??= loadStylesheet("redflag-polish.css?v=14")
+    redFlagStylesLoading ??= loadStylesheet("redflag-polish.css?v=14&reload=20261102a")
   ]);
   feature.openRedFlag();
 };
 
 const getCompatibilityFeature = () => {
-  if (!compatibilityFeatureLoading) compatibilityFeatureLoading = import("./compatibility-feature.js?v=6");
+  if (!compatibilityFeatureLoading) compatibilityFeatureLoading = import("./compatibility-feature.js?v=6&reload=20261102a");
   return compatibilityFeatureLoading;
 };
 
 const openCompatibilityFeature = async () => {
   const [feature] = await Promise.all([
     getCompatibilityFeature(),
-    compatibilityStylesLoading ??= loadStylesheet("compatibility-polish.css?v=7")
+    compatibilityStylesLoading ??= loadStylesheet("compatibility-polish.css?v=7&reload=20261102a")
   ]);
   feature.openCompatibility();
 };
 
 const getPersonalDayFeature = () => {
-  if (!personalDayFeatureLoading) personalDayFeatureLoading = import("./personal-day-feature.js?v=58");
+  if (!personalDayFeatureLoading) personalDayFeatureLoading = import("./personal-day-feature.js?v=58&reload=20261102a");
   return personalDayFeatureLoading;
 };
 
@@ -89,14 +89,14 @@ const openPersonalDayFeature = async () => {
 window.setTimeout(() => getPersonalDayFeature().catch(() => {}), 900);
 
 const getDestinyCodeFeature = () => {
-  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=27");
+  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=27&reload=20261102a");
   return destinyCodeFeatureLoading;
 };
 
 const openDestinyCodeFeature = async () => {
   const [feature] = await Promise.all([
     getDestinyCodeFeature(),
-    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=6")
+    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=6&reload=20261102a")
   ]);
   feature.openDestinyCode();
 };
@@ -104,7 +104,7 @@ const openDestinyCodeFeature = async () => {
 const openMoneyCodeClientLink = async () => {
   const [feature] = await Promise.all([
     getDestinyCodeFeature(),
-    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=6")
+    destinyCodeStylesLoading ??= loadStylesheet("destiny-code.css?v=6&reload=20261102a")
   ]);
   feature.openDestinyCode({ clientOnly: true });
   const backButton = document.querySelector("#back-destiny-code-home");
@@ -150,7 +150,7 @@ window.addEventListener("open-matrix-for-date", (event) => {
   if (!date || !target) return;
   Promise.all([
     getMatrixFeature(),
-    matrixStylesLoading ??= loadStylesheet("matrix-polish.css?v=7")
+    matrixStylesLoading ??= loadStylesheet("matrix-polish.css?v=7&reload=20261102a")
   ]).then(([feature]) => feature.openMatrixForDate(date, target))
     .catch(() => alert("Не удалось открыть полный расчёт. Обновите страницу и попробуйте ещё раз."));
 });
