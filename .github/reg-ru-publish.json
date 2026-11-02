@@ -1,20 +1,22 @@
 {
   "mode": "publish",
   "files": [
-    "app.js",
-    "index.html"
+    "pro/schools/angel/index.html",
+    "pro/schools/index.html",
+    "sitemap.xml"
   ],
+  "create_angel_course": true,
   "patches": {
-    "app.js": {
-      "before": "redflag-feature.js?v=20261102alllocks\"",
-      "after": "redflag-feature.js?v=20261102alllocks2\"",
-      "expected_sha256": "5e884cf4e1152b58c30d900eaf6ce3a2855dd148e0955d906713552dd56310a0"
+    "pro/schools/index.html": {
+      "before": "        <div class=\"academy-school academy-school--future\" aria-label=\"Квадрат Пифагора - в разработке\">",
+      "after": "        <a href=\"pro/schools/angel/\" class=\"academy-school academy-school--ready academy-school--classic\">\n          <span class=\"academy-school-number\" aria-hidden=\"true\">11:11</span>\n          <h3>Ангельская нумерология</h3>\n          <p class=\"academy-school-description\">9 уроков · Повторяющиеся числа · Зеркальные часы · Справочник · Практика</p>\n          <span class=\"academy-arrow\" aria-hidden=\"true\">→</span>\n        </a>\n        <div class=\"academy-school academy-school--future\" aria-label=\"Квадрат Пифагора - в разработке\">",
+      "expected_sha256": "95eacf27f70f84cad86c23bfdf830f1049de6215b786b105d0964ef1d98b93a3"
     },
-    "index.html": {
-      "before": "src=\"app.js?v=20261102alllocks\"",
-      "after": "src=\"app.js?v=20261102alllocks2\"",
-      "expected_sha256": "3c2bf389aece4ae7f9fc2c98ea82651bab7f2379a8ea397e675e4c66f9a86aa7"
+    "sitemap.xml": {
+      "before": "</urlset>",
+      "after": "  <url><loc>https://xn--c1adkkdfjbp1a4l.online/pro/schools/angel/</loc></url>\n</urlset>",
+      "expected_sha256": "8b010ba214694db6e9c46a98fa46e42285d24b72ea3cc332e887cf552c014326"
     }
   },
-  "note": "Refresh both module URLs so returning mobile clients get final per-question popup handling."
+  "note": "Owner requested researched angel numerology direction in self-study. Publish course and exact navigation/sitemap additions; preserve other live pages."
 }
