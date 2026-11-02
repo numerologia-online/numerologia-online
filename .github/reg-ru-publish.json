@@ -2,5 +2,5 @@
   "mode": "check",
   "files": [],
   "inspect_matrix_school": true,
-  "note": "Read-only school file metadata audit: browser reports hosting 403 for calculation lessons. Do not upload, delete or alter permissions."
+  "note": "Read-only follow-up: lesson files are 0644. Inspect exact school HTTP access directives; no public access or security settings changed."
 }
