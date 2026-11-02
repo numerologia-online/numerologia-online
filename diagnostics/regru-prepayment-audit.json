@@ -1,0 +1,159 @@
+{
+  "type": "REG.RU read-only pre-YooKassa audit",
+  "pages": [
+    {
+      "path": "",
+      "status": 200,
+      "bytes": 78961,
+      "mime": "text/html",
+      "elapsed_ms": 1166
+    },
+    {
+      "path": "contacts.html",
+      "status": 200,
+      "bytes": 2961,
+      "mime": "text/html",
+      "elapsed_ms": 963,
+      "has_operator_requisites": true
+    },
+    {
+      "path": "privacy.html",
+      "status": 200,
+      "bytes": 22931,
+      "mime": "text/html",
+      "elapsed_ms": 1041
+    },
+    {
+      "path": "offer.html",
+      "status": 200,
+      "bytes": 84415,
+      "mime": "text/html",
+      "elapsed_ms": 949
+    },
+    {
+      "path": "refunds.html",
+      "status": 200,
+      "bytes": 66905,
+      "mime": "text/html",
+      "elapsed_ms": 1239
+    },
+    {
+      "path": "terms.html",
+      "status": 200,
+      "bytes": 47340,
+      "mime": "text/html",
+      "elapsed_ms": 1188
+    },
+    {
+      "path": "disclaimer.html",
+      "status": 200,
+      "bytes": 33436,
+      "mime": "text/html",
+      "elapsed_ms": 937
+    },
+    {
+      "path": "analytics-settings.html",
+      "status": 200,
+      "bytes": 8821,
+      "mime": "text/html",
+      "elapsed_ms": 780
+    }
+  ],
+  "assets": [
+    {
+      "path": "app.js",
+      "status": 200,
+      "bytes": 7913,
+      "mime": "application/javascript",
+      "elapsed_ms": 573,
+      "http_matches_ftp": true
+    },
+    {
+      "path": "auth-profile.js",
+      "status": 200,
+      "bytes": 19076,
+      "mime": "application/javascript",
+      "elapsed_ms": 1156,
+      "http_matches_ftp": true
+    },
+    {
+      "path": "account-browser.js",
+      "status": 200,
+      "bytes": 24084,
+      "mime": "application/javascript",
+      "elapsed_ms": 916,
+      "http_matches_ftp": true
+    },
+    {
+      "path": "service-worker.js",
+      "status": 200,
+      "bytes": 481,
+      "mime": "application/javascript",
+      "elapsed_ms": 573,
+      "http_matches_ftp": true
+    },
+    {
+      "path": "pro/index.html",
+      "status": 200,
+      "bytes": 15350,
+      "mime": "text/html",
+      "elapsed_ms": 1166,
+      "http_matches_ftp": true
+    }
+  ],
+  "api": [
+    {
+      "path": "api/profile.php",
+      "status": 200,
+      "bytes": 38,
+      "mime": "application/json; charset=utf-8",
+      "elapsed_ms": 938
+    },
+    {
+      "path": "api/numi-account.php",
+      "status": 405,
+      "elapsed_ms": 784
+    }
+  ],
+  "security_checks": {
+    "paid_static_guard_present": true,
+    "htaccess_present": true,
+    "footer_present": true,
+    "cookie_notice_on_live_html": false,
+    "analytics_choice_link": true,
+    "contacts_link": true,
+    "offer_link": true,
+    "refunds_link": true,
+    "privacy_link": true,
+    "disclaimer_link": true,
+    "telegram_auth_script": true,
+    "browser_auth_script": true,
+    "main_app_script": true,
+    "blocked_.git/config": true,
+    "blocked_site-safeguard-backups/": true,
+    "blocked_api/.env": true,
+    "blocked_api/config.php": true
+  },
+  "observations": [
+    {
+      "path": ".git/config",
+      "status": 403,
+      "elapsed_ms": 976
+    },
+    {
+      "path": "site-safeguard-backups/",
+      "status": 404,
+      "elapsed_ms": 1181
+    },
+    {
+      "path": "api/.env",
+      "status": 403,
+      "elapsed_ms": 740
+    },
+    {
+      "path": "api/config.php",
+      "status": 404,
+      "elapsed_ms": 949
+    }
+  ]
+}
