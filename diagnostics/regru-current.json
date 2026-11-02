@@ -1,0 +1,698 @@
+{
+  "diagnostic": "read-only",
+  "production": "REG.RU",
+  "files": [
+    {
+      "name": "index.html",
+      "status": "different",
+      "remote_bytes": 78961,
+      "github_bytes": 82289,
+      "remote_hash": "0495579e76e03312",
+      "github_hash": "631fe2cf8605e538",
+      "changed_regions": 3,
+      "changed_line_ranges": [
+        {
+          "remote": [
+            652,
+            652
+          ],
+          "github": [
+            652,
+            651
+          ],
+          "kind": "delete"
+        },
+        {
+          "remote": [
+            669,
+            668
+          ],
+          "github": [
+            668,
+            668
+          ],
+          "kind": "insert"
+        },
+        {
+          "remote": [
+            1051,
+            1050
+          ],
+          "github": [
+            1051,
+            1098
+          ],
+          "kind": "insert"
+        }
+      ]
+    },
+    {
+      "name": "app.js",
+      "status": "match",
+      "remote_bytes": 7913,
+      "github_bytes": 7913,
+      "remote_hash": "3c0e00f6050043b2",
+      "github_hash": "3c0e00f6050043b2"
+    },
+    {
+      "name": "auth-profile.js",
+      "status": "match",
+      "remote_bytes": 19076,
+      "github_bytes": 19076,
+      "remote_hash": "3eb216138a2cc750",
+      "github_hash": "3eb216138a2cc750"
+    },
+    {
+      "name": "account-browser.js",
+      "status": "different",
+      "remote_bytes": 24084,
+      "github_bytes": 28676,
+      "remote_hash": "aef1173d8e938616",
+      "github_hash": "8aafc0056f4c6fb9",
+      "changed_regions": 13,
+      "changed_line_ranges": [
+        {
+          "remote": [
+            61,
+            60
+          ],
+          "github": [
+            61,
+            65
+          ],
+          "kind": "insert"
+        },
+        {
+          "remote": [
+            82,
+            82
+          ],
+          "github": [
+            87,
+            87
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            90,
+            91
+          ],
+          "github": [
+            95,
+            96
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            119,
+            120
+          ],
+          "github": [
+            124,
+            125
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            149,
+            149
+          ],
+          "github": [
+            154,
+            153
+          ],
+          "kind": "delete"
+        },
+        {
+          "remote": [
+            194,
+            193
+          ],
+          "github": [
+            198,
+            198
+          ],
+          "kind": "insert"
+        },
+        {
+          "remote": [
+            268,
+            267
+          ],
+          "github": [
+            273,
+            273
+          ],
+          "kind": "insert"
+        },
+        {
+          "remote": [
+            282,
+            282
+          ],
+          "github": [
+            288,
+            288
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            326,
+            325
+          ],
+          "github": [
+            332,
+            332
+          ],
+          "kind": "insert"
+        },
+        {
+          "remote": [
+            334,
+            333
+          ],
+          "github": [
+            341,
+            347
+          ],
+          "kind": "insert"
+        },
+        {
+          "remote": [
+            336,
+            340
+          ],
+          "github": [
+            350,
+            401
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            342,
+            350
+          ],
+          "github": [
+            403,
+            404
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            352,
+            351
+          ],
+          "github": [
+            406,
+            428
+          ],
+          "kind": "insert"
+        }
+      ]
+    },
+    {
+      "name": "year-feature.js",
+      "status": "match",
+      "remote_bytes": 42216,
+      "github_bytes": 42216,
+      "remote_hash": "3ec19790e6c40f66",
+      "github_hash": "3ec19790e6c40f66"
+    },
+    {
+      "name": "matrix-feature.js",
+      "status": "match",
+      "remote_bytes": 20360,
+      "github_bytes": 20360,
+      "remote_hash": "a755e511debfc18a",
+      "github_hash": "a755e511debfc18a"
+    },
+    {
+      "name": "redflag-feature.js",
+      "status": "different",
+      "remote_bytes": 24335,
+      "github_bytes": 24729,
+      "remote_hash": "3c9085f49ea68e18",
+      "github_hash": "2c71320759f98194",
+      "changed_regions": 2,
+      "changed_line_ranges": [
+        {
+          "remote": [
+            56,
+            56
+          ],
+          "github": [
+            56,
+            56
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            255,
+            256
+          ],
+          "github": [
+            255,
+            263
+          ],
+          "kind": "replace"
+        }
+      ]
+    },
+    {
+      "name": "redflag-categories.js",
+      "status": "match",
+      "remote_bytes": 400,
+      "github_bytes": 400,
+      "remote_hash": "992e4059b77fbc45",
+      "github_hash": "992e4059b77fbc45"
+    },
+    {
+      "name": "compatibility-feature.js",
+      "status": "different",
+      "remote_bytes": 7410,
+      "github_bytes": 6446,
+      "remote_hash": "706ae52b18f58624",
+      "github_hash": "8616932a6c409dfb",
+      "changed_regions": 7,
+      "changed_line_ranges": [
+        {
+          "remote": [
+            4,
+            4
+          ],
+          "github": [
+            4,
+            4
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            36,
+            52
+          ],
+          "github": [
+            36,
+            36
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            83,
+            85
+          ],
+          "github": [
+            67,
+            67
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            121,
+            121
+          ],
+          "github": [
+            103,
+            103
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            128,
+            129
+          ],
+          "github": [
+            110,
+            109
+          ],
+          "kind": "delete"
+        },
+        {
+          "remote": [
+            133,
+            133
+          ],
+          "github": [
+            113,
+            113
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            151,
+            150
+          ],
+          "github": [
+            131,
+            131
+          ],
+          "kind": "insert"
+        }
+      ]
+    },
+    {
+      "name": "personal-day-feature.js",
+      "status": "match",
+      "remote_bytes": 19092,
+      "github_bytes": 19092,
+      "remote_hash": "1ae9fdd008f0c2fa",
+      "github_hash": "1ae9fdd008f0c2fa"
+    },
+    {
+      "name": "destiny-code-feature.js",
+      "status": "different",
+      "remote_bytes": 17011,
+      "github_bytes": 16901,
+      "remote_hash": "c13134dd6c1b2db8",
+      "github_hash": "3f5260a1f3b76e5b",
+      "changed_regions": 13,
+      "changed_line_ranges": [
+        {
+          "remote": [
+            16,
+            16
+          ],
+          "github": [
+            16,
+            15
+          ],
+          "kind": "delete"
+        },
+        {
+          "remote": [
+            31,
+            31
+          ],
+          "github": [
+            30,
+            30
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            75,
+            75
+          ],
+          "github": [
+            74,
+            74
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            81,
+            80
+          ],
+          "github": [
+            80,
+            80
+          ],
+          "kind": "insert"
+        },
+        {
+          "remote": [
+            90,
+            89
+          ],
+          "github": [
+            90,
+            99
+          ],
+          "kind": "insert"
+        },
+        {
+          "remote": [
+            111,
+            123
+          ],
+          "github": [
+            121,
+            140
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            134,
+            142
+          ],
+          "github": [
+            151,
+            151
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            146,
+            148
+          ],
+          "github": [
+            155,
+            157
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            157,
+            168
+          ],
+          "github": [
+            166,
+            172
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            170,
+            179
+          ],
+          "github": [
+            174,
+            174
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            182,
+            203
+          ],
+          "github": [
+            177,
+            178
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            205,
+            204
+          ],
+          "github": [
+            180,
+            185
+          ],
+          "kind": "insert"
+        },
+        {
+          "remote": [
+            304,
+            304
+          ],
+          "github": [
+            285,
+            285
+          ],
+          "kind": "replace"
+        }
+      ]
+    },
+    {
+      "name": "year-polish.css",
+      "status": "match",
+      "remote_bytes": 19669,
+      "github_bytes": 19669,
+      "remote_hash": "a61eb0edda4c4043",
+      "github_hash": "a61eb0edda4c4043"
+    },
+    {
+      "name": "matrix-polish.css",
+      "status": "match",
+      "remote_bytes": 12476,
+      "github_bytes": 12476,
+      "remote_hash": "395f8daac0b2ffc3",
+      "github_hash": "395f8daac0b2ffc3"
+    },
+    {
+      "name": "redflag-polish.css",
+      "status": "match",
+      "remote_bytes": 15155,
+      "github_bytes": 15155,
+      "remote_hash": "71b97352736f8fec",
+      "github_hash": "71b97352736f8fec"
+    },
+    {
+      "name": "compatibility-polish.css",
+      "status": "different",
+      "remote_bytes": 14357,
+      "github_bytes": 6644,
+      "remote_hash": "1c9a5c14f33ff7f6",
+      "github_hash": "a14c87c7d5eb03bf",
+      "changed_regions": 2,
+      "changed_line_ranges": [
+        {
+          "remote": [
+            53,
+            52
+          ],
+          "github": [
+            53,
+            63
+          ],
+          "kind": "insert"
+        },
+        {
+          "remote": [
+            63,
+            197
+          ],
+          "github": [
+            74,
+            73
+          ],
+          "kind": "delete"
+        }
+      ]
+    },
+    {
+      "name": "destiny-code.css",
+      "status": "different",
+      "remote_bytes": 14370,
+      "github_bytes": 7848,
+      "remote_hash": "93b8b714e862c148",
+      "github_hash": "d1137c1ff9b37006",
+      "changed_regions": 2,
+      "changed_line_ranges": [
+        {
+          "remote": [
+            36,
+            36
+          ],
+          "github": [
+            36,
+            36
+          ],
+          "kind": "replace"
+        },
+        {
+          "remote": [
+            46,
+            146
+          ],
+          "github": [
+            46,
+            45
+          ],
+          "kind": "delete"
+        }
+      ]
+    },
+    {
+      "name": "contacts.html",
+      "status": "match",
+      "remote_bytes": 2961,
+      "github_bytes": 2961,
+      "remote_hash": "03e8db69ea0c6501",
+      "github_hash": "03e8db69ea0c6501"
+    },
+    {
+      "name": "analytics-settings.html",
+      "status": "match",
+      "remote_bytes": 8821,
+      "github_bytes": 8821,
+      "remote_hash": "6aedba65807fad3d",
+      "github_hash": "6aedba65807fad3d"
+    }
+  ],
+  "modules": [
+    {
+      "name": "year-feature.js",
+      "present": true
+    },
+    {
+      "name": "matrix-feature.js",
+      "present": true
+    },
+    {
+      "name": "redflag-feature.js",
+      "present": true
+    },
+    {
+      "name": "compatibility-feature.js",
+      "present": true
+    },
+    {
+      "name": "personal-day-feature.js",
+      "present": true
+    },
+    {
+      "name": "destiny-code-feature.js",
+      "present": true
+    }
+  ],
+  "errors": [],
+  "syntax": [
+    {
+      "file": "app.js",
+      "valid": true,
+      "error_type": null
+    },
+    {
+      "file": "auth-profile.js",
+      "valid": true,
+      "error_type": null
+    },
+    {
+      "file": "account-browser.js",
+      "valid": true,
+      "error_type": null
+    },
+    {
+      "file": "redflag-feature.js",
+      "valid": true,
+      "error_type": null
+    },
+    {
+      "file": "compatibility-feature.js",
+      "valid": true,
+      "error_type": null
+    },
+    {
+      "file": "destiny-code-feature.js",
+      "valid": true,
+      "error_type": null
+    }
+  ],
+  "index_checks": {
+    "telegram_script": true,
+    "app_script": true,
+    "cookie_popup": false,
+    "contact_link": true
+  }
+}
