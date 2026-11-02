@@ -1,18 +1,14 @@
 {
   "mode": "publish",
   "files": [
-    "pro/school/school.js",
-    "pro/school/lesson/lesson.js",
-    "pro/school/index.html",
-    "pro/school/lesson/index.html",
-    "pro/schools/index.html"
+    "index.html"
   ],
-  "expected_sha256": {
-    "pro/school/school.js": "5b2c178bc9333d588a7ea3f124777666a3877c64cfcdbcd574f083b85a9a5b3b",
-    "pro/school/lesson/lesson.js": "2b411a3316fc64abc5b42f66d19efebcff35f7fdfe60bbc0d7144ef70d33d90d",
-    "pro/school/index.html": "62aca4ab94e5c014b255f9dbb64db06da892ea3455adaef82f3f7c0edfe97079",
-    "pro/school/lesson/index.html": "2fa26ec6fa188854a2e232fde91bd163a6c0db74117c3bb9c568c09eb8d622d6",
-    "pro/schools/index.html": "847f5a7c4e3742e255bd819c739cbff87107d854b32b595a4ef9351d8fdde3c1"
+  "patches": {
+    "index.html": {
+      "before": "<nav class=\"hero-founder-links\" aria-label=\"Об авторе и статьи\"><a href=\"#about-founder\">Об авторе <span aria-hidden=\"true\">↗</span></a><a href=\"/guide/\">Статьи <span aria-hidden=\"true\">↗</span></a></nav>",
+      "after": "<a class=\"hero-founder-button\" href=\"#about-founder\">Об авторе и статьи<br>о нумерологии <span aria-hidden=\"true\">→</span></a>",
+      "expected_sha256": "a295f638695c195edd84f1fb4960c8b31234e28b55a31296f477cd5e0687d4e5"
+    }
   },
-  "note": "Live browser QA exposed cached older school HTML on return. Version school navigation and the academy entry so updated lessons use the same current interface. No learning content or other routes changed."
+  "note": "Restore the original outlined founder button, changing its label only. Preserve magazine and all other live content."
 }
