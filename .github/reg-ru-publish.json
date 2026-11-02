@@ -1,16 +1,16 @@
 {
   "mode": "publish",
   "files": [
-    "contacts.html",
+    "assets/telegram-web-app-20261102.js",
     "index.html"
   ],
-  "create_contacts_page": true,
+  "create_startup_sdk": true,
   "patches": {
     "index.html": {
-      "before": "<a href=\"/analytics-settings.html\" style=\"color:#195840;text-decoration:underline;text-underline-offset:4px;font-weight:650\">Настройки аналитики</a>",
-      "after": "<a href=\"/contacts.html\" style=\"color:#195840;text-decoration:underline;text-underline-offset:4px;font-weight:650\">Контакты и реквизиты</a>\n          <span aria-hidden=\"true\" style=\"padding:0 9px;color:#96a497\">·</span>\n          <a href=\"/analytics-settings.html\" style=\"color:#195840;text-decoration:underline;text-underline-offset:4px;font-weight:650\">Настройки аналитики</a>",
-      "expected_sha256": "240794d0f343165d5bb35c7c007c98f228b3e09c175c4460d3d0f98328470cbd"
+      "before": "<script src=\"https://telegram.org/js/telegram-web-app.js\" defer></script>",
+      "after": "<script src=\"/assets/telegram-web-app-20261102.js\" defer onload=\"try{window.Telegram.WebApp.ready()}catch(e){}\"></script>",
+      "expected_sha256": "e58a69c609c78a9f446a9068e349eb56e08f51b913fead56181b1d6c3ccf96a0"
     }
   },
-  "note": "Owner requested publication of contacts already added in GitHub. Create contacts.html and add only its footer link to current live homepage."
+  "note": "Owner requested fixing stalled Telegram opening. Serve unchanged official SDK locally and signal readiness before later deferred account scripts. Preserve all other live bytes."
 }
