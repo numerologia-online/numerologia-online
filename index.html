@@ -599,7 +599,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  }
 },{once:true});
 </script>
-<style id="numi-articles-entry-style">.numi-articles-entry{display:flex;align-items:center;justify-content:space-between;gap:18px;max-width:1040px;margin:16px auto 24px;padding:20px 24px;background:#193f33;color:#fff!important;border:1px solid #375a44;border-radius:16px;text-decoration:none;box-shadow:0 6px 20px #193f3312}.numi-articles-entry strong{display:block;font-size:23px;line-height:1.25}.numi-articles-entry small{display:block;margin-top:6px;color:#e2e9d8;font-size:13px;line-height:1.5}.numi-articles-entry>span:last-child{font-size:28px}.numi-articles-entry:focus-visible{outline:3px solid #b89b62;outline-offset:4px}@media(max-width:600px){.numi-articles-entry{margin:12px 0 20px;padding:18px 20px}}</style></head>
+<style id="numi-editorial-links">.hero-founder-links{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-top:20px}.hero-founder-links a{display:inline-flex;gap:8px;align-items:center;min-height:44px;color:#204d3e;text-decoration:none;font:400 16px/1.3 Georgia,serif;border-bottom:1px solid #b9a47b;padding:3px 0}.hero-founder-links a span{font-family:Arial,sans-serif;font-size:17px}.hero-founder-links a:focus-visible,.founder-journal-link:focus-visible{outline:2px solid #a58a58;outline-offset:5px}.founder-story-body a.founder-journal-link{display:inline-block;color:#254d3e;font:400 19px/1.5 Georgia,serif;text-decoration:none;border-bottom:1px solid #af9974;padding:5px 0;margin-top:12px}@media(max-width:400px){.hero-founder-links{gap:17px;margin-top:12px}.hero-founder-links a{font-size:15px}}</style></head>
   <body>
     <main class="app-shell">
       <section id="home" class="screen is-active" aria-labelledby="home-title">
@@ -622,7 +622,7 @@ document.addEventListener("DOMContentLoaded",()=>{
               <p class="hero-founder-label">ОСНОВАТЕЛЬ ПРОЕКТА</p>
               <p class="hero-founder-name">Татьяна</p>
               <p class="hero-founder-role">Автор «Нумерологии онлайн»</p>
-              <a class="hero-founder-button" href="#about-founder">Познакомиться с Татьяной<br>и её методом <span aria-hidden="true">→</span></a>
+              <nav class="hero-founder-links" aria-label="Об авторе и статьи"><a href="#about-founder">Об авторе <span aria-hidden="true">↗</span></a><a href="/guide/">Статьи <span aria-hidden="true">↗</span></a></nav>
             </div>
           </div>
           <div class="hero-founder-content">
@@ -631,7 +631,7 @@ document.addEventListener("DOMContentLoaded",()=>{
           </div>
         </div>
 
-        <a href="/guide/" class="numi-articles-entry"><span><strong>Статьи</strong><small>О детях, отношениях, деньгах и нумерологии</small></span><span aria-hidden="true">→</span></a>
+        
         <section class="products" aria-label="Направления расчётов">
           <button class="product-card day" type="button" data-open-personal-day data-artwork="assets/day.webp"><span class="product-title">Личный день</span><span class="product-subtitle">Каждый день - твой личный расчёт. Подсказки и предупреждения.</span><span class="product-arrow" aria-hidden="true">→</span></button>
           <button class="product-card year-card" type="button" data-open-year data-artwork="assets/year.webp"><span class="product-title">Разбор года</span><span class="product-subtitle">12 месяцев любви, денег, опасных поворотов и важных решений</span><span class="product-arrow" aria-hidden="true">→</span></button>
@@ -685,7 +685,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <p><strong>Так родилась «Нумерология онлайн»</strong> - сервис, за которым стоят годы моей практики, глубокое изучение нумерологии и собственная авторская методика.</p>
             <p class="founder-story-important"><strong>ВАЖНО - здесь ваши ответы не придумывает и не пишет искусственный интеллект!</strong> Каждую трактовку я пишу и проверяю вручную, опираясь на свои знания и опыт. Сайт лишь выполняет расчёты и подбирает подготовленные мной тексты. Вы получаете не случайный ответ от нейросети, а настоящую авторскую работу нумеролога. Я работаю над сайтом каждый день, лично наполняя его новыми материалами.</p>
             <p><strong>Я не популярный блогер.</strong> Я просто люблю своё дело и хочу, чтобы мои знания были доступны каждой женщине - без долгого ожидания и больших расходов.</p>
-            <p class="founder-story-closing">С любовью, Татьяна ♡</p>
+            <p><a class="founder-journal-link" href="/guide/">Статьи по нумерологии <span aria-hidden="true">↗</span></a></p><p class="founder-story-closing">С любовью, Татьяна ♡</p>
           </div>
         </section>
         
@@ -1143,4 +1143,5 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 </body>
 </html>
+
 
