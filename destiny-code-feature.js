@@ -167,8 +167,14 @@ const RITUAL_TITLES = Object.freeze([
   "Денежное намерение на новый месяц"
 ]);
 
-const showClubOffer = () => {
-  if (clubDialog && !clubDialog.open) clubDialog.showModal();
+const showClubOffer = async () => {
+  try {
+    const { openSharedOffer } = await import("./shared-offer.js?v=20261102alllocks");
+    await openSharedOffer({
+      product: "денежные ритуалы", title: "Денежные ритуалы по подписке",
+      subscriptionOnly: true, clubMonthly: 490, memberPrice: 0
+    });
+  } catch (error) { alert("Не удалось открыть варианты подписки. Попробуйте ещё раз."); }
 };
 document.querySelector("#money-club-dialog-close")?.addEventListener("click", () => clubDialog.close());
 clubDialog?.addEventListener("click", (event) => {
