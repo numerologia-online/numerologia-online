@@ -2,5 +2,6 @@
   "mode": "check",
   "files": [],
   "inspect_matrix_private_manifest": true,
-  "note": "Read-only current manifest checksum before updating nine structural school lessons in existing protected storage; preserve access policy and all energy descriptions."
+  "school_metadata_snapshot": true,
+  "note": "Read-only exact path/hash/reference metadata snapshot to preserve all unrelated protected sources during nine-lesson school update. No author text, credentials, access rights or website files changed."
 }
