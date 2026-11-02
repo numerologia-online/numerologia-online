@@ -573,6 +573,31 @@
         color: #78252d;
       }
     </style>
+<style id="numi-large-report-prices-20261102">
+.numi-large-report-prices{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:12px 0 3px;font-family:system-ui,sans-serif;letter-spacing:0;line-height:1.2;text-align:left}
+.numi-large-report-prices .numi-report-regular{padding:6px 10px;border:1px solid #d7cbd0;border-radius:12px;background:#fff9fc;color:#684b5a;font-size:13px;font-weight:750;white-space:nowrap}
+.numi-large-report-prices .numi-report-member{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 11px;border-radius:12px;background:#943c65;color:#fff;font-size:12px;font-weight:750;box-shadow:0 3px 9px #943c6526}
+.numi-large-report-prices .numi-report-member strong{font-size:17px;color:inherit;font-weight:900}
+.numi-large-report-prices .numi-report-member em{font-size:12px;color:inherit;font-style:normal;font-weight:900;border-left:1px solid #ffffff66;padding-left:6px}
+.product-card .numi-large-report-prices{position:relative;z-index:1;max-width:100%;margin-top:10px}
+.product-card:has(.numi-large-report-prices){height:auto;min-height:145px}
+</style><script>
+document.addEventListener("DOMContentLoaded",()=>{
+ const selectors=[".products > .year-card",".products > .calculation",".products > .compatibility",".year-intro",".compatibility-intro","#year-paywall-dialog"];
+ for(const selector of selectors) for(const target of document.querySelectorAll(selector)){
+  if(target.querySelector(":scope > .numi-large-report-prices"))continue;
+  const badge=document.createElement("span");badge.className="numi-large-report-prices";
+  badge.innerHTML='<span class="numi-report-regular">990 ₽</span><span class="numi-report-member">По подписке <strong>490 ₽</strong><em>−50%</em></span>';
+  target.append(badge);
+ }
+ for(const row of document.querySelectorAll(".numi-tariff-row")){
+  const title=row.querySelector("strong[role=cell]")?.textContent||"";
+  if(/Полный разбор года|Полный разбор жизни|Совместимость/.test(title)){
+   const cell=row.querySelector(".numi-club-discount");if(cell)cell.innerHTML='−50%<small>По подписке 490 ₽</small>';
+  }
+ }
+},{once:true});
+</script>
 </head>
   <body>
     <main class="app-shell">
