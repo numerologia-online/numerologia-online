@@ -14,5 +14,5 @@
     "pro/school/lessons/channels.json",
     "pro/school/lessons/build-independent.json"
   ],
-  "note": "Owner requested complete improvement of Matrix school structure, excluding energy descriptions. Publish these nine reviewed structural lessons through existing protected storage. Keep all author energies and existing access policy unchanged."
+  "note": "Owner requested complete improvement of Matrix school structure, excluding energy descriptions. Publish these nine reviewed structural lessons through existing protected storage. Keep all author energies and existing access policy unchanged. Compatibility check preserves the five existing cached legacy references unchanged."
 }
