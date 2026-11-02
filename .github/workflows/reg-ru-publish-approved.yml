@@ -120,6 +120,15 @@ jobs:
               if mode == "check":
                   print("READ-ONLY CHECK OK. No files uploaded or deleted.")
                   if manifest.get("inspect_matrix_school") is True:
+                      for rules_path in (".htaccess", "pro/.htaccess", "pro/school/.htaccess", "pro/school/lessons/.htaccess"):
+                          try:
+                              rules = read_remote(ftp, rules_path, limit=100000).decode("utf-8", errors="replace")
+                              print("MATRIX_RULES_FILE", rules_path)
+                              for line in rules.splitlines():
+                                  if any(token in line.lower() for token in ("school", "json", "filesmatch", "deny from", "require all", "rewriterule", "rewritecond")):
+                                      print("MATRIX_RULE", line)
+                          except ftplib.error_perm:
+                              print("MATRIX_RULES_MISSING", rules_path)
                       for folder in ("pro/school", "pro/school/lessons"):
                           for name, facts in ftp.mlsd(folder):
                               if name.endswith((".json", ".js", ".html", ".css")):
