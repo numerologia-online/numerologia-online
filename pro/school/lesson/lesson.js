@@ -121,13 +121,13 @@ function renderNavigation() {
   const prev=manifest[index-1],next=manifest[index+1];
   const link=(item,txt,cl)=>{
     const a=make("a",cl,txt);
-    a.href="pro/school/lesson/?id="+encodeURIComponent(item.id);
+    a.href="pro/school/lesson/?id="+encodeURIComponent(item.id)+"&v=20261102learn2";
     return a;
   };
   if(prev)nav.append(link(prev,"← Предыдущий урок","school-secondary school-lesson-prev"));
   if(next)nav.append(link(next,readCompleted().has(id)?"Следующий урок →":"Посмотреть следующий урок →","school-primary school-lesson-next"));
   const all=make("a","school-lesson-all","Вся программа");
-  all.href="pro/school/";
+  all.href="pro/school/?v=20261102learn2";
   nav.append(all);
 }
 function renderCaseWorkbook(root,lessonId){
@@ -172,7 +172,7 @@ function renderLesson(data) {
   else{const outcome=manifest[index].outcome;if(outcome)outcomes.append(make("p","","После урока: "+outcome));outcomes.append(make("p","","Порядок работы: прочитайте материал, выполните упражнение и проверьте понимание."));}
   $("lesson-hero").append(outcomes);
   const route=make("nav","school-route-nav");route.setAttribute("aria-label","Этапы урока");
-  for(const[key,text]of[["lesson-content","1. Разобраться"],...(skill?[["lesson-drawing","2. Попробовать"]]:[]),["lesson-quiz",skill?"3. Проверить":"2. Проверить"]]){const a=make("a","",text);a.href="pro/school/lesson/?id="+encodeURIComponent(id)+"#"+key;route.append(a);}$("lesson-hero").append(route);
+  for(const[key,text]of[["lesson-content","1. Разобраться"],...(skill?[["lesson-drawing","2. Попробовать"]]:[]),["lesson-quiz",skill?"3. Проверить":"2. Проверить"]]){const a=make("a","",text);a.href="pro/school/lesson/?id="+encodeURIComponent(id)+"&v=20261102learn2#"+key;route.append(a);}$("lesson-hero").append(route);
   const root=$("lesson-content");
   root.hidden=false;
   root.replaceChildren();
@@ -253,7 +253,7 @@ async function start() {
     const current=manifest[index];
     const firstMissing=(current.prerequisites||[]).map(key=>manifest.find(item=>item.id===key)).find(item=>item&&!completed.has(item.id));
     if(firstMissing){
-      const notice=make("aside","school-prereq-note");notice.append(document.createTextNode("Для этого урока пригодится: "+firstMissing.title+". "));const a=make("a","","Повторить →");a.href="pro/school/lesson/?id="+encodeURIComponent(firstMissing.id);notice.append(a);$("lesson-hero").before(notice);
+      const notice=make("aside","school-prereq-note");notice.append(document.createTextNode("Для этого урока пригодится: "+firstMissing.title+". "));const a=make("a","","Повторить →");a.href="pro/school/lesson/?id="+encodeURIComponent(firstMissing.id)+"&v=20261102learn2";notice.append(a);$("lesson-hero").before(notice);
     }
     const response=await fetch(manifest[index].file+"?v=20261102learn1");
     if(!response.ok)throw Error("Материал урока не найден");
