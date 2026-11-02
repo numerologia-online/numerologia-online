@@ -13,7 +13,21 @@ const loaderTrack = calculationLoader.querySelector(".loader-track");
 const loaderProgress = document.querySelector("#loader-progress");
 const submitButton = form.querySelector(".primary-button");
 const yearPaywallDialog = document.querySelector("#year-paywall-dialog");
-const showYearPaywall = () => { if (!yearPaywallDialog.open) yearPaywallDialog.showModal(); };
+const showYearPaywall = async () => {
+  try {
+    const { openSharedOffer } = await import("./shared-offer.js?v=1");
+    await openSharedOffer({
+      product: "полный разбор года",
+      title: "Откройте полный разбор года",
+      oncePrice: 990,
+      memberPrice: 490,
+      clubMonthly: 490
+    });
+  } catch (error) {
+    console.error("Окно покупки разбора года:", error);
+    alert("Не удалось открыть варианты доступа. Проверьте интернет и попробуйте снова.");
+  }
+};
 document.querySelector("#year-paywall-close")?.addEventListener("click", () => yearPaywallDialog.close());
 document.querySelector(".year-paywall-back")?.addEventListener("click", () => yearPaywallDialog.close());
 yearPaywallDialog.addEventListener("click", event => {
