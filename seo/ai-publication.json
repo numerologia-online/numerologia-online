@@ -1,6 +1,6 @@
 {
   "child/index.html": {
-    "before": "559cf2cb6fce028f49a440ee45e343648b37f808d8baaabdb39cef68d0c6d5f6",
+    "before": "512c926eac73b5a3648144dbc7dbe8a0af5585996069bf3ce918099249759ff2",
     "after": "f9364934cd9aaeb73e34552386ce686a740e8d0a9a394a99ea00e07b9586e78e"
   },
   "day.html": {
@@ -100,8 +100,8 @@
     "after": "ec1ff77467b07999555b92f8a476ade4baff060942f0962540e0ee5ef627b846"
   },
   "index.html": {
-    "before": "67f9bea764ebeca84f11bbabeba99145ea16537e636a2255c965ec0cf0c5a1e8",
-    "after": "d822a1c5ac3faa6d8e91dfd56412005064e1cbbf69c88ae2bf67b67e1e20f15a"
+    "before": "57ca6644d4a27f1790a516ccd8e74b58ce21911390c002747652c24adc5f34e3",
+    "after": "07220be604421d14b5f2068775d37fbe97b96d158691a20ec05d3f29de5fbefd"
   },
   "moment/index.html": {
     "before": "b076c19bf11ee83b37466d94aba21167d5c00a334d8f31811af0fd84db442bc1",
