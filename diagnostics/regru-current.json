@@ -689,6 +689,36 @@
       "error_type": null
     }
   ],
+  "dependency_audit": {
+    "scanned": 24,
+    "missing": [],
+    "files": [
+      "app.js",
+      "compatibility-engine.js",
+      "compatibility-feature.js",
+      "destiny-code-feature.js",
+      "full-report-library.js",
+      "full-report-pdf.js",
+      "karmic-programs.js",
+      "matrix-feature.js",
+      "money-pdf.js",
+      "numerology-core.js",
+      "pdf-public-outro.js",
+      "personal-day-feature.js",
+      "personal-month-links.js",
+      "redflag-categories.js",
+      "redflag-classic.js",
+      "redflag-engine.js",
+      "redflag-feature.js",
+      "redflag-profile.js",
+      "redflag-public-catalog.js",
+      "redflag-text-bank.js",
+      "shared-offer.js",
+      "year-access.js",
+      "year-content.js",
+      "year-feature.js"
+    ]
+  },
   "index_checks": {
     "telegram_script": true,
     "app_script": true,
