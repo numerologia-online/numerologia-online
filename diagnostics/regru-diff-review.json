@@ -1,0 +1,1041 @@
+{
+  "kind": "read-only production difference review",
+  "files": [
+    {
+      "name": "account-browser.js",
+      "live_bytes": 24084,
+      "github_bytes": 28676,
+      "live_hash": "aef1173d8e938616",
+      "github_hash": "8aafc0056f4c6fb9",
+      "changes": [
+        {
+          "kind": "insert",
+          "live_range": [
+            61,
+            60
+          ],
+          "github_range": [
+            61,
+            65
+          ],
+          "live_lines": [],
+          "github_lines": [
+            "        INVALID_SAVED_ITEM:\"Не удалось определить запись.\",",
+            "        SAVED_ITEM_NOT_FOUND:\"Запись уже недоступна.\",",
+            "        TEST_NOT_ENABLED:\"Тестовые покупки разрешены только владельцу.\",",
+            "        INVALID_TEST_PRODUCT:\"Неизвестный пробный разбор.\",",
+            "        INVALID_TEST_DATE:\"Проверьте дату рождения.\","
+          ],
+          "live_line_count": 0,
+          "github_line_count": 5
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            82,
+            82
+          ],
+          "github_range": [
+            87,
+            87
+          ],
+          "live_lines": [
+            "[sensitive line hidden]"
+          ],
+          "github_lines": [
+            "[sensitive line hidden]"
+          ],
+          "live_line_count": 1,
+          "github_line_count": 1
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            90,
+            91
+          ],
+          "github_range": [
+            95,
+            96
+          ],
+          "live_lines": [
+            "[sensitive line hidden]",
+            "[sensitive line hidden]"
+          ],
+          "github_lines": [
+            "[sensitive line hidden]",
+            "[sensitive line hidden]"
+          ],
+          "live_line_count": 2,
+          "github_line_count": 2
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            119,
+            120
+          ],
+          "github_range": [
+            124,
+            125
+          ],
+          "live_lines": [
+            "[sensitive line hidden]",
+            "[sensitive line hidden]"
+          ],
+          "github_lines": [
+            "[sensitive line hidden]",
+            "[sensitive line hidden]"
+          ],
+          "live_line_count": 2,
+          "github_line_count": 2
+        },
+        {
+          "kind": "delete",
+          "live_range": [
+            149,
+            149
+          ],
+          "github_range": [
+            154,
+            153
+          ],
+          "live_lines": [
+            ""
+          ],
+          "github_lines": [],
+          "live_line_count": 1,
+          "github_line_count": 0
+        },
+        {
+          "kind": "insert",
+          "live_range": [
+            194,
+            193
+          ],
+          "github_range": [
+            198,
+            198
+          ],
+          "live_lines": [],
+          "github_lines": [
+            "[sensitive line hidden]"
+          ],
+          "live_line_count": 0,
+          "github_line_count": 1
+        },
+        {
+          "kind": "insert",
+          "live_range": [
+            268,
+            267
+          ],
+          "github_range": [
+            273,
+            273
+          ],
+          "live_lines": [],
+          "github_lines": [
+            "[sensitive line hidden]"
+          ],
+          "live_line_count": 0,
+          "github_line_count": 1
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            282,
+            282
+          ],
+          "github_range": [
+            288,
+            288
+          ],
+          "live_lines": [
+            "[sensitive line hidden]"
+          ],
+          "github_lines": [
+            "[sensitive line hidden]"
+          ],
+          "live_line_count": 1,
+          "github_line_count": 1
+        },
+        {
+          "kind": "insert",
+          "live_range": [
+            326,
+            325
+          ],
+          "github_range": [
+            332,
+            332
+          ],
+          "live_lines": [],
+          "github_lines": [
+            "[sensitive line hidden]"
+          ],
+          "live_line_count": 0,
+          "github_line_count": 1
+        },
+        {
+          "kind": "insert",
+          "live_range": [
+            334,
+            333
+          ],
+          "github_range": [
+            341,
+            347
+          ],
+          "live_lines": [],
+          "github_lines": [
+            "    let container=document.getElementById(\"numi-confirmed-purchases\");",
+            "    if(!container){",
+            "      container=document.createElement(\"div\");",
+            "      container.id=\"numi-confirmed-purchases\";",
+            "      container.setAttribute(\"aria-label\",\"Ваши сохранённые разборы и ответы\");",
+            "      savedPanel.querySelector(\".account-panel-intro\")?.insertAdjacentElement(\"afterend\",container);",
+            "    }"
+          ],
+          "live_line_count": 0,
+          "github_line_count": 7
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            336,
+            340
+          ],
+          "github_range": [
+            350,
+            401
+          ],
+          "live_lines": [
+            "      let container=document.getElementById(\"numi-confirmed-purchases\");",
+            "      if(!container){",
+            "        container=document.createElement(\"div\");",
+            "        container.id=\"numi-confirmed-purchases\";",
+            "        savedPanel.querySelector(\".account-panel-intro\")?.insertAdjacentElement(\"afterend\",container);"
+          ],
+          "github_lines": [
+            "      const purchases=Array.isArray(result.purchases)?result.purchases:[];",
+            "      container.replaceChildren();",
+            "      const testBox=document.getElementById(\"numi-test-checkout\");",
+            "      if(testBox) testBox.hidden=result.test_enabled!==true;",
+            "      const testLink=document.getElementById(\"numi-open-test-from-prices\");",
+            "      if(testLink) testLink.hidden=result.test_enabled!==true;",
+            "      for(const purchase of purchases){",
+            "        const item=document.createElement(\"div\");",
+            "        item.className=\"numi-saved-row\";",
+            "        const content=document.createElement(\"div\");",
+            "        content.className=\"numi-saved-row-content\";",
+            "        const title=document.createElement(\"strong\");",
+            "        title.textContent=(purchase.is_test?\"🧪 ТЕСТ · \":\"\")+(purchase.product_code||\"Сохранённый разбор\");",
+            "        const detail=document.createElement(\"small\");",
+            "        const date=String(purchase.created_at||\"\").slice(0,10);",
+            "        detail.textContent=date && /^\\\\d{4}-\\\\d{2}-\\\\d{2}$/.test(date)",
+            "          ? \"Сохранено \"+date.slice(8,10)+\".\"+date.slice(5,7)+\".\"+date.slice(0,4)",
+            "          : \"Ваш сохранённый материал\";",
+            "        content.append(title,detail);",
+            "        if(purchase.is_test){",
+            "          const description=document.createElement(\"small\");",
+            "          description.textContent=\"Дата: \"+String(purchase.resource_id||\"\").split(\":\").pop()+\" · Деньги не списаны\";",
+            "          content.append(description);",
+            "          const details=document.createElement(\"details\");",
+            "          details.className=\"numi-test-answer\";",
+            "          const summary=document.createElement(\"summary\");",
+            "          summary.textContent=\"Открыть пробный ответ\";",
+            "          const answer=document.createElement(\"p\");"
+          ],
+          "live_line_count": 5,
+          "github_line_count": 52
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            342,
+            350
+          ],
+          "github_range": [
+            403,
+            404
+          ],
+          "live_lines": [
+            "      container.replaceChildren();",
+            "      for(const purchase of result.purchases||[]){",
+            "        const item=document.createElement(\"div\"); item.className=\"numi-purchase-entry\";",
+            "        const title=document.createElement(\"strong\");title.textContent=purchase.product_code;",
+            "        const detail=document.createElement(\"small\");detail.textContent=\"Код материала: \"+purchase.resource_id;",
+            "        item.append(title,detail);container.append(item);",
+            "      }",
+            "      savedPanel.querySelector(\".account-empty-state\")?.toggleAttribute(\"hidden\",(result.purchases||[]).length>0);",
+            "    }catch(_){ /* Never claim payments without a verified server result */ }"
+          ],
+          "github_lines": [
+            "      savedPanel.querySelector(\".account-empty-state\")?.toggleAttribute(\"hidden\",purchases.length>0);",
+            "    }catch(_){ /* Never pretend a payment or a saved record has been verified. */ }"
+          ],
+          "live_line_count": 9,
+          "github_line_count": 2
+        },
+        {
+          "kind": "insert",
+          "live_range": [
+            352,
+            351
+          ],
+          "github_range": [
+            406,
+            428
+          ],
+          "live_lines": [],
+          "github_lines": [
+            "  // Owner-only interface; backend checks verified email for EVERY write.",
+            "  document.getElementById(\"numi-test-checkout-form\")?.addEventListener(\"submit\",async event=>{",
+            "    event.preventDefault();",
+            "    const form=event.currentTarget;",
+            "    const submit=form.querySelector(\"button[type=submit]\");",
+            "    const note=document.getElementById(\"numi-test-checkout-message\");",
+            "    const kind=form.querySelector(\"[name=kind]\")?.value;",
+            "    const birth_date=form.querySelector(\"[name=birth_date]\")?.value;",
+            "    if(!kind||!birth_date)return;",
+            "    if(submit)submit.disabled=true;",
+            "    try{",
+            "      const response=await request(\"test_purchase\",{kind,birth_date});",
+            "      if(note)note.textContent=response.already_exists",
+            "        ?\"Этот тестовый ответ уже сохранён. Повторной покупки не было.\"",
+            "        :\"Тестовая покупка готова: 0 ₽, без списаний. Ответ появился ниже.\";",
+            "      await updatePurchases();",
+            "    }catch(err){",
+            "      if(note)note.textContent=err.message||\"Не удалось провести тест.\";",
+            "    }finally{",
+            "      if(submit)submit.disabled=false;",
+            "    }",
+            "  });",
+            ""
+          ],
+          "live_line_count": 0,
+          "github_line_count": 23
+        }
+      ]
+    },
+    {
+      "name": "redflag-feature.js",
+      "live_bytes": 24335,
+      "github_bytes": 24729,
+      "live_hash": "3c9085f49ea68e18",
+      "github_hash": "2c71320759f98194",
+      "changes": [
+        {
+          "kind": "replace",
+          "live_range": [
+            56,
+            56
+          ],
+          "github_range": [
+            56,
+            56
+          ],
+          "live_lines": [
+            "const REDFLAG_SITE_URL = \"https://xn--c1adkkdfjbp1a4l.online/?view=redflag\";"
+          ],
+          "github_lines": [
+            "const REDFLAG_SITE_URL = \"https://numerologia-online.github.io/numerologia-online/?view=redflag\";"
+          ],
+          "live_line_count": 1,
+          "github_line_count": 1
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            255,
+            256
+          ],
+          "github_range": [
+            255,
+            263
+          ],
+          "live_lines": [
+            "  }, () => {",
+            "    if (profile === activeProfile) state.answerErrors.set(id, \"Не удалось загрузить ответ. Закрой и открой вопрос ещё раз.\");"
+          ],
+          "github_lines": [
+            "  }, (requestError) => {",
+            "    if (profile === activeProfile) {",
+            "      const message = requestError?.code === \"PURCHASE_REQUIRED\"",
+            "        ? \"🔒 Это платный ответ. Оплата пока не подключена.\"",
+            "        : requestError?.code === \"CONTENT_NOT_PUBLISHED\"",
+            "          ? \"Авторский ответ для этого вопроса ещё готовится.\"",
+            "          : \"Не удалось загрузить ответ. Закрой и открой вопрос ещё раз.\";",
+            "      state.answerErrors.set(id, message);",
+            "    }"
+          ],
+          "live_line_count": 2,
+          "github_line_count": 9
+        }
+      ]
+    },
+    {
+      "name": "compatibility-feature.js",
+      "live_bytes": 7410,
+      "github_bytes": 6446,
+      "live_hash": "706ae52b18f58624",
+      "github_hash": "8616932a6c409dfb",
+      "changes": [
+        {
+          "kind": "replace",
+          "live_range": [
+            4,
+            4
+          ],
+          "github_range": [
+            4,
+            4
+          ],
+          "live_lines": [
+            "import { openSharedOffer } from \"./shared-offer.js?v=1\";"
+          ],
+          "github_lines": [
+            "import { createCompatibilityPdfController } from \"./compatibility-pdf.js?v=2\";"
+          ],
+          "live_line_count": 1,
+          "github_line_count": 1
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            36,
+            52
+          ],
+          "github_range": [
+            36,
+            36
+          ],
+          "live_lines": [
+            "const offer = Object.freeze({",
+            "  product: \"полную совместимость\",",
+            "  title: \"Откройте все 13 ответов\",",
+            "  oncePrice: 990,",
+            "  memberPrice: 490,",
+            "  clubMonthly: 490",
+            "});",
+            "const showOffer = () => {",
+            "  openSharedOffer(offer).catch(error => {",
+            "    console.error(\"Окно покупки:\", error);",
+            "    alert(\"Не удалось открыть варианты доступа. Проверьте интернет и попробуйте снова.\");",
+            "  });",
+            "};",
+            "pdfButtons.forEach(button => {",
+            "  button.textContent = \"Открыть полностью и скачать в PDF\";",
+            "  button.addEventListener(\"click\", showOffer);",
+            "});"
+          ],
+          "github_lines": [
+            "const { setReport: setPdfReport } = createCompatibilityPdfController({ buttons: pdfButtons, getBank });"
+          ],
+          "live_line_count": 17,
+          "github_line_count": 1
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            83,
+            85
+          ],
+          "github_range": [
+            67,
+            67
+          ],
+          "live_lines": [
+            "const showTopic = async (topic, article, isFree) => {",
+            "  // Только первый вопрос. Не загружаем банк ответов для остальных 12.",
+            "  if (!isFree) { showOffer(); return; }"
+          ],
+          "github_lines": [
+            "const showTopic = async (topic, article) => {"
+          ],
+          "live_line_count": 3,
+          "github_line_count": 1
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            121,
+            121
+          ],
+          "github_range": [
+            103,
+            103
+          ],
+          "live_lines": [
+            "    card.className = \"compatibility-topic \" + (index === 0 ? \"is-free\" : \"is-locked\");"
+          ],
+          "github_lines": [
+            "    card.className = \"compatibility-topic\";"
+          ],
+          "live_line_count": 1,
+          "github_line_count": 1
+        },
+        {
+          "kind": "delete",
+          "live_range": [
+            128,
+            129
+          ],
+          "github_range": [
+            110,
+            109
+          ],
+          "live_lines": [
+            "    button.querySelector(\".compatibility-topic-icon\").textContent = index === 0 ? \"+\" : \"🔒\";",
+            "    button.setAttribute(\"aria-label\", index === 0 ? \"Открыть бесплатный ответ: \" + topic.title : \"Открыть варианты покупки: \" + topic.title);"
+          ],
+          "github_lines": [],
+          "live_line_count": 2,
+          "github_line_count": 0
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            133,
+            133
+          ],
+          "github_range": [
+            113,
+            113
+          ],
+          "live_lines": [
+            "    button.addEventListener(\"click\", () => showTopic(topic, card, index === 0));"
+          ],
+          "github_lines": [
+            "    button.addEventListener(\"click\", () => showTopic(topic, card));"
+          ],
+          "live_line_count": 1,
+          "github_line_count": 1
+        },
+        {
+          "kind": "insert",
+          "live_range": [
+            151,
+            150
+          ],
+          "github_range": [
+            131,
+            131
+          ],
+          "live_lines": [],
+          "github_lines": [
+            "  setPdfReport({ topics, dateA: aField.value, dateB: bField.value });"
+          ],
+          "live_line_count": 0,
+          "github_line_count": 1
+        }
+      ]
+    },
+    {
+      "name": "destiny-code-feature.js",
+      "live_bytes": 17011,
+      "github_bytes": 16901,
+      "live_hash": "c13134dd6c1b2db8",
+      "github_hash": "3f5260a1f3b76e5b",
+      "changes": [
+        {
+          "kind": "delete",
+          "live_range": [
+            16,
+            16
+          ],
+          "github_range": [
+            16,
+            15
+          ],
+          "live_lines": [
+            "const clubDialog = document.querySelector(\"#money-club-dialog\");"
+          ],
+          "github_lines": [],
+          "live_line_count": 1,
+          "github_line_count": 0
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            31,
+            31
+          ],
+          "github_range": [
+            30,
+            30
+          ],
+          "live_lines": [
+            "// Premium ritual cards never reveal content without verified club access."
+          ],
+          "github_lines": [
+            "singleOpenDisclosure(ritualsList, \"details.money-ritual\");"
+          ],
+          "live_line_count": 1,
+          "github_line_count": 1
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            75,
+            75
+          ],
+          "github_range": [
+            74,
+            74
+          ],
+          "live_lines": [
+            "  const ctaMarkup = cta ? `<a class=\"destiny-code-full-report-link\" href=\"${cta.href}\">${cta.label}</a>` : \"\";"
+          ],
+          "github_lines": [
+            "  const ctaMarkup = cta ? `<a class=\"destiny-code-telegram-link\" href=\"${cta.href}\" target=\"_blank\" rel=\"noopener noreferrer\">${cta.label}</a>` : \"\";"
+          ],
+          "live_line_count": 1,
+          "github_line_count": 1
+        },
+        {
+          "kind": "insert",
+          "live_range": [
+            81,
+            80
+          ],
+          "github_range": [
+            80,
+            80
+          ],
+          "live_lines": [],
+          "github_lines": [
+            "let moneyRitualsRequest;"
+          ],
+          "live_line_count": 0,
+          "github_line_count": 1
+        },
+        {
+          "kind": "insert",
+          "live_range": [
+            90,
+            89
+          ],
+          "github_range": [
+            90,
+            99
+          ],
+          "live_lines": [],
+          "github_lines": [
+            "};",
+            "",
+            "const loadMoneyRituals = () => {",
+            "  if (!moneyRitualsRequest) {",
+            "    moneyRitualsRequest = fetch(\"data/money-rituals.json?v=2\").then((response) => {",
+            "      if (!response.ok) throw new Error(\"Не удалось загрузить денежные ритуалы\");",
+            "      return response.json();",
+            "    });",
+            "  }",
+            "  return moneyRitualsRequest;"
+          ],
+          "live_line_count": 0,
+          "github_line_count": 10
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            111,
+            123
+          ],
+          "github_range": [
+            121,
+            140
+          ],
+          "live_lines": [
+            "const createMoneyPathOffer = ({ title, text }) => {",
+            "  const details = createMoneyDisclosure({",
+            "    label: \"В полном разборе матрицы судьбы\",",
+            "    lead: title,",
+            "    text,",
+            "    cta: {",
+            "      label: \"Перейти к полному разбору →\",",
+            "      href: \"./pro/\"",
+            "    }",
+            "  });",
+            "  details.classList.add(\"destiny-code-disclosure--full-report\");",
+            "  return details;",
+            "};"
+          ],
+          "github_lines": [
+            "const telegramOrderText = encodeURIComponent(`Татьяна, добрый день!",
+            "",
+            "Хочу заказать у вас полный личный разбор судьбы и своей жизни.",
+            "",
+            "Скажите, пожалуйста, это правда, что сейчас при заказе полного разбора вы дарите",
+            "",
+            "🎁 БЕСПЛАТНО — разборы 2026 и 2027 годов",
+            "🎁 В ПОДАРОК — 10 денежных ритуалов с моим личным кодом?",
+            "",
+            "Подскажите, пожалуйста, как можно записаться, что нужно от меня и какая стоимость на данный момент? Буду ждать вашего ответа.`);",
+            "",
+            "const createMoneyPathOffer = ({ title, text }) => createMoneyDisclosure({",
+            "  label: \"Полный личный разбор\",",
+            "  lead: title,",
+            "  text,",
+            "  cta: {",
+            "    label: \"Написать Татьяне →\",",
+            "    href: `https://t.me/Kod_9966?text=${telegramOrderText}`",
+            "  }",
+            "});"
+          ],
+          "live_line_count": 13,
+          "github_line_count": 20
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            134,
+            142
+          ],
+          "github_range": [
+            151,
+            151
+          ],
+          "live_lines": [
+            "const createActivationDisclosure = (code) => {",
+            "  // Free activation of the personal code, distinct from 10 paid club rituals.",
+            "  const details = createMoneyDisclosure({",
+            "    ...createActivationContent(code),",
+            "    label: \"Бесплатно\"",
+            "  });",
+            "  details.classList.add(\"destiny-code-disclosure--free\");",
+            "  return details;",
+            "};"
+          ],
+          "github_lines": [
+            "const createActivationDisclosure = (code) => createMoneyDisclosure(createActivationContent(code));"
+          ],
+          "live_line_count": 9,
+          "github_line_count": 1
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            146,
+            148
+          ],
+          "github_range": [
+            155,
+            157
+          ],
+          "live_lines": [
+            "    label: \"Только по подписке · 490 ₽/мес.\",",
+            "    lead: \"Денежные ритуалы для вашего кода\",",
+            "    text: `Код ${code}. 10 авторских ритуалов уже в библиотеке, каждый месяц добавляем новый.`"
+          ],
+          "github_lines": [
+            "    label: \"Денежная библиотека\",",
+            "    lead: \"10 денежных ритуалов с вашим личным кодом денег\",",
+            "    text: `Код ${code} · практики, которые можно сохранить себе.`"
+          ],
+          "live_line_count": 3,
+          "github_line_count": 3
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            157,
+            168
+          ],
+          "github_range": [
+            166,
+            172
+          ],
+          "live_lines": [
+            "const RITUAL_TITLES = Object.freeze([",
+            "  \"Активация денежного талисмана\",",
+            "  \"Карта желания на деньги\",",
+            "  \"Конверт большой цели\",",
+            "  \"Первая оплата месяца\",",
+            "  \"Кошелёк, который помнит изобилие\",",
+            "  \"Купюра растущей луны\",",
+            "  \"Денежное письмо в будущее\",",
+            "  \"Ритуал для большой покупки\",",
+            "  \"Ритуал доверия переменам\",",
+            "  \"Денежное намерение на новый месяц\"",
+            "]);"
+          ],
+          "github_lines": [
+            "const createRitual = (ritual, code) => {",
+            "  const details = document.createElement(\"details\");",
+            "  details.className = \"money-ritual\";",
+            "  const render = (value) => value.replaceAll(\"{code}\", code);",
+            "  details.innerHTML = `<summary><span class=\"money-ritual-icon\" aria-hidden=\"true\">${ritual.icon}</span><span><b>${ritual.title}</b><small>${ritual.when}</small></span><i aria-hidden=\"true\">",
+            "  return details;",
+            "};"
+          ],
+          "live_line_count": 12,
+          "github_line_count": 7
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            170,
+            179
+          ],
+          "github_range": [
+            174,
+            174
+          ],
+          "live_lines": [
+            "const showClubOffer = () => {",
+            "  if (clubDialog && !clubDialog.open) clubDialog.showModal();",
+            "};",
+            "document.querySelector(\"#money-club-dialog-close\")?.addEventListener(\"click\", () => clubDialog.close());",
+            "clubDialog?.addEventListener(\"click\", (event) => {",
+            "  if (event.target === clubDialog) clubDialog.close();",
+            "});",
+            "document.querySelector(\"#money-club-join\")?.addEventListener(\"click\", showClubOffer);",
+            "",
+            "const openMoneyRituals = (code) => {"
+          ],
+          "github_lines": [
+            "const openMoneyRituals = async (code) => {"
+          ],
+          "live_line_count": 10,
+          "github_line_count": 1
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            182,
+            203
+          ],
+          "github_range": [
+            177,
+            178
+          ],
+          "live_lines": [
+            "  ritualsCode.textContent = \"Ваш код денег \" + code;",
+            "  const list = document.createDocumentFragment();",
+            "  RITUAL_TITLES.forEach((name, index) => {",
+            "    const button = document.createElement(\"button\");",
+            "    button.type = \"button\";",
+            "    button.className = \"money-ritual-locked\";",
+            "    button.setAttribute(\"aria-label\", \"Ритуал \" + (index + 1) + \" «\" + name + \"». Доступен по подписке\");",
+            "    const number = document.createElement(\"span\");",
+            "    number.className = \"money-ritual-locked-number\";",
+            "    number.textContent = String(index + 1).padStart(2, \"0\");",
+            "    const title = document.createElement(\"span\");",
+            "    title.className = \"money-ritual-locked-title\";",
+            "    title.textContent = name;",
+            "    const lock = document.createElement(\"span\");",
+            "    lock.className = \"money-ritual-locked-icon\";",
+            "    lock.textContent = \"🔒\";",
+            "    lock.setAttribute(\"aria-hidden\", \"true\");",
+            "    button.append(number, title, lock);",
+            "    button.addEventListener(\"click\", showClubOffer);",
+            "    list.append(button);",
+            "  });",
+            "  ritualsList.replaceChildren(list);"
+          ],
+          "github_lines": [
+            "  ritualsCode.textContent = `Ваш код денег: ${code}`;",
+            "  ritualsList.innerHTML = `<p class=\"money-rituals-loading\">Открываю денежную библиотеку…</p>`;"
+          ],
+          "live_line_count": 22,
+          "github_line_count": 2
+        },
+        {
+          "kind": "insert",
+          "live_range": [
+            205,
+            204
+          ],
+          "github_range": [
+            180,
+            185
+          ],
+          "live_lines": [],
+          "github_lines": [
+            "  try {",
+            "    const rituals = await loadMoneyRituals();",
+            "    ritualsList.replaceChildren(...rituals.map((ritual) => createRitual(ritual, code)));",
+            "  } catch {",
+            "    ritualsList.innerHTML = `<p class=\"money-rituals-loading\">Не удалось открыть ритуалы. Обновите страницу и попробуйте ещё раз.</p>`;",
+            "  }"
+          ],
+          "live_line_count": 0,
+          "github_line_count": 6
+        },
+        {
+          "kind": "replace",
+          "live_range": [
+            304,
+            304
+          ],
+          "github_range": [
+            285,
+            285
+          ],
+          "live_lines": [
+            "           ...code.cards.slice(1)"
+          ],
+          "github_lines": [
+            "          ...code.cards.slice(1)"
+          ],
+          "live_line_count": 1,
+          "github_line_count": 1
+        }
+      ]
+    },
+    {
+      "name": "compatibility-polish.css",
+      "live_bytes": 14357,
+      "github_bytes": 6644,
+      "live_hash": "1c9a5c14f33ff7f6",
+      "github_hash": "a14c87c7d5eb03bf",
+      "changes": [
+        {
+          "kind": "insert",
+          "live_range": [
+            53,
+            52
+          ],
+          "github_range": [
+            53,
+            63
+          ],
+          "live_lines": [],
+          "github_lines": [
+            "/* Центрируем приветственный блок по высоте, пока результат не рассчитан. */",
+            "@media(max-width:600px){",
+            "  #compatibility:has(#compatibility-result[hidden]) .compatibility-paper{",
+            "    min-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));",
+            "    display:flex;",
+            "    flex-direction:column;",
+            "  }",
+            "  #compatibility:has(#compatibility-result[hidden]) .compatibility-intro{margin-top:auto}",
+            "  #compatibility:has(#compatibility-result[hidden]) .compatibility-form{margin-bottom:auto}",
+            "}",
+            ""
+          ],
+          "live_line_count": 0,
+          "github_line_count": 11
+        },
+        {
+          "kind": "delete",
+          "live_range": [
+            63,
+            197
+          ],
+          "github_range": [
+            74,
+            73
+          ],
+          "live_lines": [
+            "",
+            "/* Версия 2: лёгкое премиальное оформление, только статические CSS-градиенты.",
+            "   Никаких картинок, веб-шрифтов, анимации фона и дополнительных загрузок. */",
+            "#compatibility{",
+            "  --cp-ink:#3b3044;--cp-muted:#6d6675;--cp-accent:#935f77;",
+            "  --cp-outline:#e8d0d8;",
+            "  background:",
+            "    radial-gradient(ellipse at 10% 9%,rgba(237,201,209,.27),transparent 36%),",
+            "    radial-gradient(ellipse at 97% 42%,rgba(237,210,219,.22),transparent 32%),",
+            "    linear-gradient(165deg,#fcfaf6,#fdf6f5 60%,#faf7f2);",
+            "}",
+            "#compatibility .compatibility-paper{width:100%;max-width:700px;padding:12px clamp(11px,3.5vw,25px) 36px}",
+            "#compatibility .compatibility-topbar{padding:3px 0 12px}",
+            "#compatibility .compatibility-topbar p{font-size:clamp(10px,2.6vw,12px);letter-spacing:.17em;color:#91697c}",
+            "#compatibility .compatibility-close{width:43px;height:43px;background:#fffdfa;border-color:#e5ccd6;box-shadow:0 4px 12px #73516b0d}",
+            "#compatibility .compatibility-intro{padding:12px 3px 9px}",
+            "#compatibility .compatibility-ornament{font-size:16px;margin-bottom:10px;color:#b58b9d}",
+            "#compatibility .compatibility-intro h1{margin:0;font:400 clamp(35px,9.5vw,56px)/1.02 Georgia,\"Times New Roman\",serif;letter-spacing:-.044em;color:#3d3448}",
+            "#compatibility .compatibility-intro h1::after,",
+            "#compatibility .compatibility-result-heading h2::after{",
+            "  content:\"\";display:block;width:91px;height:1px;margin:15px auto 0;",
+            "  background:linear-gradient(90deg,transparent,#bf9a79,transparent);",
+            "}",
+            "#compatibility .compatibility-intro p{max-width:43ch;margin:13px auto 0;font-size:clamp(13px,3.5vw,15px);line-height:1.55;color:#716c7c}",
+            "#compatibility .compatibility-form{",
+            "  gap:13px;margin:17px 0 0;padding:clamp(17px,4.1vw,25px);border-radius:25px;",
+            "  background:radial-gradient(ellipse at 100% 0%,rgba(241,211,219,.38),transparent 58%),linear-gradient(145deg,#fffefa,#fff9f8);",
+            "  border-color:#e5cbd5;box-shadow:0 10px 27px #65425812;"
+          ],
+          "github_lines": [],
+          "live_line_count": 135,
+          "github_line_count": 0
+        }
+      ]
+    },
+    {
+      "name": "destiny-code.css",
+      "live_bytes": 14370,
+      "github_bytes": 7848,
+      "live_hash": "93b8b714e862c148",
+      "github_hash": "d1137c1ff9b37006",
+      "changes": [
+        {
+          "kind": "replace",
+          "live_range": [
+            36,
+            36
+          ],
+          "github_range": [
+            36,
+            36
+          ],
+          "live_lines": [
+            ".destiny-code-full-report-link,.destiny-code-rituals-open{display:flex;align-items:center;justify-content:center;min-height:48px;margin-top:16px;padding:0 16px;border:1px solid rgba(155,98,2"
+          ],
+          "github_lines": [
+            ".destiny-code-telegram-link,.destiny-code-rituals-open{display:flex;align-items:center;justify-content:center;min-height:48px;margin-top:16px;padding:0 16px;border:1px solid rgba(155,98,25,."
+          ],
+          "live_line_count": 1,
+          "github_line_count": 1
+        },
+        {
+          "kind": "delete",
+          "live_range": [
+            46,
+            146
+          ],
+          "github_range": [
+            46,
+            45
+          ],
+          "live_lines": [
+            "",
+            "/* Денежная библиотека клуба. Только CSS, без изображений и новых загрузок. */",
+            ".money-rituals-intro{padding:25px 0 18px}",
+            ".money-rituals-intro h1{font-size:clamp(40px,10vw,61px);line-height:1}",
+            ".money-club-paywall{",
+            "  padding:22px clamp(17px,4vw,26px);margin:8px 0 24px;",
+            "  border:1px solid #d8bc8b;border-radius:24px;",
+            "  background:radial-gradient(ellipse at 95% 5%,rgba(244,218,171,.4),transparent 52%),linear-gradient(140deg,#fffefa,#f9f3e8);",
+            "  box-shadow:0 10px 24px rgba(103,77,45,.09);",
+            "}",
+            ".money-club-kicker,.money-club-dialog-kicker{margin:0;color:#a17a46;font-size:11px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}",
+            ".money-club-paywall h2{margin:12px 0;color:#304f43;font:400 clamp(25px,6.2vw,33px)/1.15 Georgia,serif}",
+            ".money-club-paywall>p:not(.money-club-kicker){margin:8px 0 0;color:#616b62;font-size:14px;line-height:1.56}",
+            ".money-club-price{display:flex;align-items:baseline;gap:9px;margin:18px 0 13px}",
+            ".money-club-price strong{color:#175741;font-size:clamp(37px,9vw,48px);letter-spacing:-.05em;line-height:1}",
+            ".money-club-price span{color:#6f716b;font-size:15px}",
+            ".money-club-join,.money-club-dialog-dismiss{",
+            "  display:flex;justify-content:center;align-items:center;gap:10px;",
+            "  width:100%;min-height:49px;border:0;border-radius:14px;",
+            "  background:linear-gradient(110deg,#174f3c,#247454);color:#fff;",
+            "  font:800 15px/1.3 system-ui,sans-serif;cursor:pointer;",
+            "}",
+            ".money-club-paywall small{display:block;margin:11px 0 0;color:#858078;font-size:11px;line-height:1.45}",
+            ".money-rituals-heading{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 10px}",
+            ".money-rituals-heading h2{margin:0;color:#3f3850;font:400 clamp(23px,5.5vw,29px)/1.2 Georgia,serif}",
+            ".money-rituals-heading span{color:#988374;font-size:11px;white-space:nowrap}",
+            ".money-rituals-list{gap:8px}",
+            ".money-ritual-locked{"
+          ],
+          "github_lines": [],
+          "live_line_count": 101,
+          "github_line_count": 0
+        }
+      ]
+    }
+  ]
+}
