@@ -1,26 +1,14 @@
 {
   "mode": "publish",
   "files": [
-    "pro/school/school.js",
-    "pro/school/lesson/lesson.js",
-    "pro/school/index.html",
-    "pro/school/lesson/index.html",
-    "pro/schools/index.html",
-    "pro/school/learning.css",
-    "pro/school/lessons/diagonals.json",
-    "pro/school/lessons/channels.json",
-    "pro/school/lessons/build-independent.json"
+    "index.html"
   ],
-  "expected_sha256": {
-    "pro/school/school.js": "7916322173a78b3f2b26a0e80bb585362971b47f5367e4fa3d98ba0bcb6960dc",
-    "pro/school/lesson/lesson.js": "b184dab9be55ef61c84a17f3ad79365312e3a7233170fee148d176ca6dbea618",
-    "pro/school/index.html": "b33468284c92dd6de1a5230381b43d9d5c7971c8b4c9866d97d4b0f160830ada",
-    "pro/school/lesson/index.html": "b28da9612fb5d2a1583d1966065b7f5f29f7e1dbd393c4ca75af581e3befcccd",
-    "pro/schools/index.html": "aa08186f70fded4caa77e2416d9797d60a5f00601ce1701b7defa71144850fd1",
-    "pro/school/learning.css": "48f6fc811bd4a4b9300b5830e2004966e323a416e9203a2a1cd57e7446f6e1cd",
-    "pro/school/lessons/diagonals.json": "fba2595bcfd64575f25d3a607f734d4dd49105e51c22987cefcc13149fed1324",
-    "pro/school/lessons/channels.json": "ca63719101f9dbdf3fb96aad12239d5e2340a5bf245e606f412a291e7be1e074",
-    "pro/school/lessons/build-independent.json": "fd515dbbd1c886f0d9750ae60f36cb2a9e83c6c0f8c87c5339a0f3c74cccfb2f"
+  "patches": {
+    "index.html": {
+      "before": "<a class=\"founder-journal-link\" href=\"/guide/\">Статьи по нумерологии <span aria-hidden=\"true\">↗</span></a>",
+      "after": "<a class=\"founder-journal-link\" href=\"/guide/\" style=\"display:flex;align-items:center;justify-content:space-between;gap:14px;box-sizing:border-box;width:100%;min-height:82px;margin:16px 0 6px;padding:15px 18px 15px 20px;border:1px solid #c9b58e;border-radius:16px;background:linear-gradient(115deg,#fcfaf4,#f2ecde);color:#244a3b;font:400 clamp(19px,4.7vw,24px)/1.2 Georgia,serif;text-decoration:none;box-shadow:0 5px 15px rgba(93,73,40,.06)\"><span>Нумерологический журнал</span><span aria-hidden=\"true\" style=\"display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border:1px solid #c9b58e;border-radius:50%;color:#806c4a;font:400 25px/1 Georgia,serif\">→</span></a>",
+      "expected_sha256": "efaa5c88266e89ac8a106c7a937fa879cbe0eb93fb4599feeb592fee0c11aa86"
+    }
   },
-  "note": "Connect Matrix lessons to existing Telegram-verified protected reader; preserve authorization and all energy texts. Keep new structural lesson payloads in private storage, public JSON files contain only stubs. Preserve public construction trainer and current navigation."
+  "note": "Replace author-story journal text link with elegant lightweight outlined button, leaving all other live homepage content intact."
 }
