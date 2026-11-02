@@ -134,7 +134,9 @@ jobs:
                       try:
                           originals[name] = read_remote(ftp, name)
                       except ftplib.error_perm as error:
-                          if name == "contacts.html" and str(error).startswith("550") and manifest.get("create_contacts_page") is True:
+                          allowed_new = ((name == "contacts.html" and manifest.get("create_contacts_page") is True)
+                                         or (name == "assets/telegram-web-app-20261102.js" and manifest.get("create_startup_sdk") is True))
+                          if allowed_new and str(error).startswith("550"):
                               originals[name] = None
                           else:
                               raise RuntimeError("Refusing to create an unverified new file: " + name)
