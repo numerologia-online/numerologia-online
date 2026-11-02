@@ -69,6 +69,12 @@ jobs:
                   or not re.fullmatch(r"[0-9a-f]{64}", patch["expected_sha256"])):
                   raise SystemExit("Invalid approved patch. No files modified.")
 
+          expected_sources = manifest.get("expected_sha256", {})
+          if (not isinstance(expected_sources, dict) or set(expected_sources) - set(prepared)
+              or any(value is not None and (not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value))
+                     for value in expected_sources.values())):
+              raise SystemExit("Invalid expected source versions. No files modified.")
+
           host = os.environ.get("REG_FTP_HOST", "").strip()
           user = os.environ.get("REG_FTP_USER", "").strip()
           password = os.environ.get("REG_FTP_PASSWORD", "")
@@ -143,11 +149,20 @@ jobs:
                       except ftplib.error_perm as error:
                           allowed_new = ((name == "contacts.html" and manifest.get("create_contacts_page") is True)
                                          or (name == "assets/telegram-web-app-20261102.js" and manifest.get("create_startup_sdk") is True)
-                                         or (name == "pro/schools/angel/index.html" and manifest.get("create_angel_course") is True))
+                                         or (name == "pro/schools/angel/index.html" and manifest.get("create_angel_course") is True)
+                                         or (manifest.get("create_matrix_learning") is True and name in {
+                                             "pro/school/construction-model.js", "pro/school/learning.js", "pro/school/learning.css",
+                                             "pro/school/lessons/diagonals.json", "pro/school/lessons/channels.json",
+                                             "pro/school/lessons/build-independent.json"}))
                           if allowed_new and str(error).startswith("550"):
                               originals[name] = None
                           else:
                               raise RuntimeError("Refusing to create an unverified new file: " + name)
+                  for name, expected in expected_sources.items():
+                      original = originals[name]
+                      actual = hashlib.sha256(original).hexdigest() if original is not None else None
+                      if actual != expected:
+                          raise RuntimeError("Live source changed since review: " + name + ". No files modified.")
                   for name, patch in patches.items():
                       original = originals[name]
                       if hashlib.sha256(original).hexdigest() != patch["expected_sha256"]:
