@@ -133,8 +133,11 @@ jobs:
                   for name in prepared:
                       try:
                           originals[name] = read_remote(ftp, name)
-                      except ftplib.error_perm:
-                          raise RuntimeError("Refusing to create an unverified new file: " + name)
+                      except ftplib.error_perm as error:
+                          if name == "contacts.html" and str(error).startswith("550") and manifest.get("create_contacts_page") is True:
+                              originals[name] = None
+                          else:
+                              raise RuntimeError("Refusing to create an unverified new file: " + name)
                   for name, patch in patches.items():
                       original = originals[name]
                       if hashlib.sha256(original).hexdigest() != patch["expected_sha256"]:
@@ -152,6 +155,8 @@ jobs:
                   ftp.cwd("site-safeguard-backups")
                   stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
                   for name in originals:
+                      if originals[name] is None:
+                          continue
                       backup = stamp + "-" + hashlib.sha256(name.encode()).hexdigest()[:10] + "-" + pathlib.PurePosixPath(name).name
                       put_remote(ftp, backup, originals[name])
                       print("BACKUP:", name, "saved outside public website")
@@ -166,7 +171,10 @@ jobs:
                       print("Upload failed. Restoring original versions.")
                       for name in reversed(uploaded):
                           try:
-                              put_remote(ftp, name, originals[name])
+                              if originals[name] is None:
+                                  ftp.delete(name)
+                              else:
+                                  put_remote(ftp, name, originals[name])
                               print("RESTORED:", name)
                           except Exception:
                               print("ROLLBACK FAILED:", name)
