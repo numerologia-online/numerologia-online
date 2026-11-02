@@ -264,8 +264,9 @@ const ensureAnswer = (question, state) => {
     if (profile === activeProfile) state.answers.set(id, response);
   }, async (error) => {
     if (profile !== activeProfile) return;
-    if (error?.code === "PURCHASE_REQUIRED" || error?.status === 401 || error?.status === 403) {
+    if (!question.isFree) {
       state.activeQuestionId = null;
+      renderCategories();
       try { await showQuestionOffer(question); }
       catch (_) { state.answerErrors.set(id, "Не удалось открыть варианты покупки. Попробуйте ещё раз."); }
     } else {
