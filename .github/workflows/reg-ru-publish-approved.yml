@@ -119,6 +119,15 @@ jobs:
               print("REG.RU: verified encrypted connection and exact website directory")
               if mode == "check":
                   print("READ-ONLY CHECK OK. No files uploaded or deleted.")
+                  if manifest.get("inspect_matrix_school") is True:
+                      for folder in ("pro/school", "pro/school/lessons"):
+                          for name, facts in ftp.mlsd(folder):
+                              if name.endswith((".json", ".js", ".html", ".css")):
+                                  print("MATRIX_FILE", folder + "/" + name,
+                                        "mode=" + facts.get("unix.mode", "?"),
+                                        "perm=" + facts.get("perm", "?"),
+                                        "size=" + facts.get("size", "?"))
+
                   root = ftp.pwd()
                   for item in ftp.nlst():
                       candidate = item.rsplit("/",1)[-1]
