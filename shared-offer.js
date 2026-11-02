@@ -77,7 +77,7 @@ export async function openSharedOffer({
   findNode(dialog, ".pro-paywall-plan-once .pro-paywall-plan-price").textContent = oncePrice + " ₽";
   findNode(dialog, ".pro-paywall-plan-club .pro-paywall-plan-price").textContent = memberPrice + " ₽";
   findNode(dialog, ".pro-paywall-plan-detail-club").textContent =
-    "Скидка " + (oncePrice - memberPrice) + " ₽ на разбор для участников клуба";
+    "−50% по подписке — " + memberPrice + " ₽ за полный разбор";
   findNode(dialog, ".pro-paywall-plan-once .pro-paywall-plan-detail").textContent = "Все ответы и PDF навсегда";
   findNode(dialog, ".pro-paywall-book-art-once span").textContent = "ЛИЧНЫЙ РАЗБОР";
   findNode(dialog, ".pro-paywall-book-art-club span").textContent = "ЛИЧНЫЙ РАЗБОР";
