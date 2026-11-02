@@ -30,12 +30,10 @@ def main():
                 entry["changed_regions"]=len(changes)
                 entry["changed_line_ranges"]=[{"remote":[a+1,b],"github":[c+1,d],"kind":tag} for tag,a,b,c,d in changes[:18]]
                 if name.endswith(".js"):
-                    entry["remote_imports"]=re.findall(r'(?:from\s*|import\s*\()\s*["\\'](\.[^"\\']+)',live.decode("utf-8","replace"))[:25]
-                    entry["github_imports"]=re.findall(r'(?:from\s*|import\s*\()\s*["\\'](\.[^"\\']+)',local.decode("utf-8","replace"))[:25]
             report["files"].append(entry)
         source=remote("app.js")
         if source:
-            imports=re.findall(rb'import\s*\(\s*["\\']\./([^"\\']+)',source)
+            imports = re.findall(rb"import\\s*\\(\\s*[\x27\\\"]\\./([^\x27\\\"]+)", source)
             for item in imports:
                 name=item.decode("utf-8","replace").split("?")[0]
                 report["modules"].append({"name":name,"present":remote(name) is not None})
