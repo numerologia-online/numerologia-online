@@ -1,0 +1,33 @@
+name: Preserve live REG.RU reference snapshot
+on:
+  push:
+    paths:
+      - .github/workflows/numi-preserve-live-reference.yml
+permissions:
+  contents: write
+concurrency:
+  group: reg-ru-full-snapshot
+  cancel-in-progress: false
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate snapshot script
+        run: python3 -m py_compile scripts/backup-live-reference.py
+      - name: Store an immutable copy outside the public website
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u scripts/backup-live-reference.py
+      - name: Save only manifest summary, never backed-up content
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add diagnostics/regru-reference-backup.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record verified REG.RU reference snapshot"
+            git push
+          fi
