@@ -8,13 +8,13 @@ const error=byId("school-error"),lessonList=byId("school-lesson-list"),progressL
 const formulaForm=byId("school-formula-form"),formulaDate=byId("school-formula-date"),formulaError=byId("school-formula-error"),formulaList=byId("school-formula-list");
 const tabButtons=[...document.querySelectorAll("[data-school-panel]")];
 let lessons=[],arcana=[],activeArcanaIndex=0;
-const lessonLink=item=>"pro/school/lesson/?id="+encodeURIComponent(item.id)+"&v=20261102learn2";
+const lessonLink=item=>"pro/school/lesson/?id="+encodeURIComponent(item.id)+"&v=20261102learn3";
 function showPanel(key){for(const section of document.querySelectorAll(".school-panel"))section.hidden=section.id!=="school-"+key;tabButtons.forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.schoolPanel===key)));if(key==="trainer"&&!byId("school-construction-trainer").childElementCount)mountConstruction(byId("school-construction-trainer"),{lessonId:byId("school-trainer-skill").value,standalone:true});}
 tabButtons.forEach(b=>b.addEventListener("click",()=>{showPanel(b.dataset.schoolPanel);document.querySelector(".school-tabs").scrollIntoView({block:"start",behavior:"smooth"});}));
 function renderLessonList(){
  const completed=readLearningProgress(),next=lessons.find(l=>!completed.has(l.id));
  progressLabel.textContent=lessons.filter(l=>completed.has(l.id)).length+" из "+lessons.length+" пройдено";
- const resume=byId("school-resume-link");resume.href=next?lessonLink(next):"pro/school/lesson/?id=build-independent&v=20261102learn2";
+ const resume=byId("school-resume-link");resume.href=next?lessonLink(next):"pro/school/lesson/?id=build-independent&v=20261102learn3";
  resume.replaceChildren(make("span","",next?(completed.size?"Продолжить обучение →":"Начать с первого урока →"):"Повторить самостоятельное построение →"));
  resume.append(make("small","",next?next.title:"Соберите матрицу на новой дате"));
  byId("school-route-progress").textContent=lessons.filter(l=>l.track==="construction"&&completed.has(l.id)).length+" из "+lessons.filter(l=>l.track==="construction").length+" навыков построения подтверждено";
@@ -69,7 +69,7 @@ function renderArcana() {
 
 async function startSchool(){
  const lessonResponse=await fetch("pro/school/lessons-manifest.json?v=20261102learn1",{cache:"no-cache"});
- if(!lessonResponse.ok)throw Error("Программа недоступна");const data=await lessonResponse.json();if(!Array.isArray(data.lessons)||!data.lessons.length)throw Error("Нет уроков");lessons=data.lessons;renderLessonList();buildFormulaSheet({day:14,month:7,year:1990});
+ if(!lessonResponse.ok)throw Error("Программа недоступна");const data=await lessonResponse.json();if(!Array.isArray(data.lessons)||!data.lessons.length)throw Error("Нет уроков");lessons=data.lessons;renderLessonList();buildFormulaSheet({day:14,month:7,year:1990});if(location.hash==="#school-trainer")showPanel("trainer");
  try{const response=await fetch("pro/school/arcana.json?v=1");if(!response.ok)throw Error();const data=await response.json();if(data.arcana?.length!==22)throw Error();arcana=data.arcana;renderArcanaButtons();renderArcana();}catch{arcanaContent.textContent="Справочник энергий временно не загрузился. Уроки и тренажёр доступны; попробуйте обновить страницу.";}
 }
 window.addEventListener("pageshow",()=>{if(lessons.length)renderLessonList();});window.addEventListener("storage",()=>{if(lessons.length)renderLessonList();});
