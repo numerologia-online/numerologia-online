@@ -24,7 +24,7 @@ const loadStylesheet = (href) => new Promise((resolve, reject) => {
 });
 
 const getYearFeature = () => {
-    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=38");
+    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=20261102sharedoffer2");
   return yearFeatureLoading;
 };
 
