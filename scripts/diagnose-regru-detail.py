@@ -74,6 +74,31 @@ def main():
                 if remote(child) is None:missing.append({"from":name,"path":child})
                 elif child.endswith(".js") and child not in scanned and child not in queue:queue.append(child)
         report["dependency_audit"]={"scanned":len(scanned),"missing":missing,"files":sorted(scanned)}
+        # Confirm that browsers can retrieve the same modules that FTPS stores.
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        from urllib.request import Request, urlopen
+        from urllib.error import HTTPError, URLError
+        import time
+        http_names=sorted(set(["index.html","app.js","auth-profile.js","account-browser.js"]+list(scanned)))
+        ftp_expected={name:remote(name) for name in http_names}
+        def fetch_public(name):
+            start=time.monotonic()
+            req=Request("https://"+DOMAIN+"/"+name+"?numi_verify="+str(time.time_ns()),
+                        headers={"Cache-Control":"no-cache","User-Agent":"NumiSiteAvailabilityCheck/1.0"})
+            try:
+                with urlopen(req,timeout=15) as res:
+                    payload=res.read(1000000)
+                    status=res.status
+                    ctype=res.headers.get("Content-Type","")
+                expected=ftp_expected[name]
+                return {"name":name,"status":status,"content_type":ctype,
+                        "matches_ftp":expected==payload if expected is not None else False,
+                        "elapsed_ms":int((time.monotonic()-start)*1000)}
+            except Exception as exc:
+                return {"name":name,"error":type(exc).__name__,
+                        "elapsed_ms":int((time.monotonic()-start)*1000)}
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            report["http_audit"]=sorted(list(pool.map(fetch_public,http_names)),key=lambda x:x["name"])
         index=remote("index.html") or b""
         report["index_checks"]={k: (v in index) for k,v in {
             "telegram_script":b"auth-profile.js?v=20",
