@@ -1,0 +1,44 @@
+{
+  "changes": {
+    "index.html": [
+      [
+        "const start=()=>{try{const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';",
+        "const start=()=>{try{if(localStorage.getItem('numi_analytics_permission')!=='allow'||navigator.doNotTrack==='1'||navigator.globalPrivacyControl===true)return;const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';"
+      ],
+      [
+        "          <a href=\"/disclaimer.html\" style=\"color:#195840;text-decoration:underline;text-underline-offset:4px;font-weight:650\">Дисклеймер</a>",
+        "          <a href=\"/disclaimer.html\" style=\"color:#195840;text-decoration:underline;text-underline-offset:4px;font-weight:650\">Дисклеймер</a>\n          <span aria-hidden=\"true\" style=\"padding:0 9px;color:#96a497\">·</span>\n          <a href=\"/analytics-settings.html\" style=\"color:#195840;text-decoration:underline;text-underline-offset:4px;font-weight:650\">Настройки аналитики</a>"
+      ]
+    ],
+    "year/index.html": [
+      [
+        "const start=()=>{try{const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';",
+        "const start=()=>{try{if(localStorage.getItem('numi_analytics_permission')!=='allow'||navigator.doNotTrack==='1'||navigator.globalPrivacyControl===true)return;const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';"
+      ]
+    ],
+    "pro/index.html": [
+      [
+        "const start=()=>{try{const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';",
+        "const start=()=>{try{if(localStorage.getItem('numi_analytics_permission')!=='allow'||navigator.doNotTrack==='1'||navigator.globalPrivacyControl===true)return;const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';"
+      ]
+    ],
+    "child/index.html": [
+      [
+        "const start=()=>{try{const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';",
+        "const start=()=>{try{if(localStorage.getItem('numi_analytics_permission')!=='allow'||navigator.doNotTrack==='1'||navigator.globalPrivacyControl===true)return;const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';"
+      ]
+    ],
+    "moment/index.html": [
+      [
+        "const start=()=>{try{const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';",
+        "const start=()=>{try{if(localStorage.getItem('numi_analytics_permission')!=='allow'||navigator.doNotTrack==='1'||navigator.globalPrivacyControl===true)return;const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';"
+      ]
+    ],
+    "moment/yes-no/index.html": [
+      [
+        "const start=()=>{try{const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';",
+        "const start=()=>{try{if(localStorage.getItem('numi_analytics_permission')!=='allow'||navigator.doNotTrack==='1'||navigator.globalPrivacyControl===true)return;const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';"
+      ]
+    ]
+  }
+}
