@@ -41,7 +41,7 @@ jobs:
           sensitive_content = ("data/year/", "data/redflag/", "child/data/matrix/sections/",
                                "child/data/matrix/karmic-tail/", "knowledge/full-report/",
                                "pro/purpose/", "pro/karmic-programs.json", "pro/guidance/")
-          allowed_extensions = {".js", ".css", ".html", ".json", ".svg", ".txt"}
+          allowed_extensions = {".js", ".css", ".html", ".json", ".svg", ".txt", ".xml"}
           prepared = {}
           for item in files:
               if not isinstance(item, str) or not item or "\\" in item or "\x00" in item:
@@ -130,12 +130,20 @@ jobs:
                           continue
                   ftp.cwd(root)
               else:
+                  if manifest.get("create_angel_course") is True:
+                      try:
+                          ftp.mkd("pro/schools/angel")
+                      except ftplib.error_perm:
+                          root = ftp.pwd()
+                          ftp.cwd("pro/schools/angel")
+                          ftp.cwd(root)
                   for name in prepared:
                       try:
                           originals[name] = read_remote(ftp, name)
                       except ftplib.error_perm as error:
                           allowed_new = ((name == "contacts.html" and manifest.get("create_contacts_page") is True)
-                                         or (name == "assets/telegram-web-app-20261102.js" and manifest.get("create_startup_sdk") is True))
+                                         or (name == "assets/telegram-web-app-20261102.js" and manifest.get("create_startup_sdk") is True)
+                                         or (name == "pro/schools/angel/index.html" and manifest.get("create_angel_course") is True))
                           if allowed_new and str(error).startswith("550"):
                               originals[name] = None
                           else:
