@@ -1,0 +1,85 @@
+{
+  "check": "Public DNS read-only",
+  "results": [
+    {
+      "name": "xn--c1adkkdfjbp1a4l.online",
+      "type": "A",
+      "resolver": "google",
+      "status": 0,
+      "answers": [
+        {
+          "type": 1,
+          "data": "31.31.196.214",
+          "TTL": 3600
+        }
+      ]
+    },
+    {
+      "name": "xn--c1adkkdfjbp1a4l.online",
+      "type": "A",
+      "resolver": "cloudflare",
+      "status": 0,
+      "answers": [
+        {
+          "type": 1,
+          "data": "31.31.196.214",
+          "TTL": 3600
+        }
+      ]
+    },
+    {
+      "name": "xn--c1adkkdfjbp1a4l.online",
+      "type": "AAAA",
+      "resolver": "google",
+      "status": 0,
+      "answers": []
+    },
+    {
+      "name": "xn--c1adkkdfjbp1a4l.online",
+      "type": "AAAA",
+      "resolver": "cloudflare",
+      "status": 0,
+      "answers": []
+    },
+    {
+      "name": "www.xn--c1adkkdfjbp1a4l.online",
+      "type": "A",
+      "resolver": "google",
+      "status": 0,
+      "answers": [
+        {
+          "type": 1,
+          "data": "31.31.196.214",
+          "TTL": 3600
+        }
+      ]
+    },
+    {
+      "name": "www.xn--c1adkkdfjbp1a4l.online",
+      "type": "A",
+      "resolver": "cloudflare",
+      "status": 0,
+      "answers": [
+        {
+          "type": 1,
+          "data": "31.31.196.214",
+          "TTL": 3600
+        }
+      ]
+    },
+    {
+      "name": "www.xn--c1adkkdfjbp1a4l.online",
+      "type": "AAAA",
+      "resolver": "google",
+      "status": 0,
+      "answers": []
+    },
+    {
+      "name": "www.xn--c1adkkdfjbp1a4l.online",
+      "type": "AAAA",
+      "resolver": "cloudflare",
+      "status": 0,
+      "answers": []
+    }
+  ]
+}
