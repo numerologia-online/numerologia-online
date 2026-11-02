@@ -1,148 +1,40 @@
-import { calculateMatrix, parseBirthDate } from "../../numerology-core.js?v=5";
-import { pointCatalog } from "./points.js?v=3";
-
-const byId = (id) => document.getElementById(id);
-const error = byId("school-error");
-const lessonsPanel = byId("school-lessons");
-const lessonList = byId("school-lesson-list");
-const progressLabel = byId("school-progress");
-const arcanaButtons = byId("school-arcana-buttons");
-const arcanaContent = byId("school-arcana-content");
-const trainForm = byId("school-train-form");
-const trainDateLabel = byId("school-train-date");
-const trainPoint = byId("school-train-point");
-const trainAnswer = byId("school-train-answer");
-const trainFeedback = byId("school-train-feedback");
-const tabButtons = [...document.querySelectorAll("[data-school-panel]")];
-
-const make = (tag, className, value) => {
-  const item = document.createElement(tag);
-  if (className) item.className = className;
-  if (value !== undefined) item.textContent = String(value);
-  return item;
-};
-const addParagraph = (parent, value, className) => {
-  if (value) parent.append(make("p", className, value));
-};
-const storageKey = "numerologia-online-pro-school-v1";
-function readProgress() {
-  try {
-    const items = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    return new Set(Array.isArray(items) ? items.filter((item) => typeof item === "string") : []);
-  } catch { return new Set(); }
+import { calculateMatrix } from "../../numerology-core.js?v=5";
+import { constructionSteps, purposeSteps, learningBirthDate, readLearningProgress, LESSON_SKILLS } from "./construction-model.js?v=20261102learn1";
+import { mountConstruction } from "./learning.js?v=20261102learn1";
+const byId=id=>document.getElementById(id);
+const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
+const addParagraph=(root,value,cls)=>{if(value)root.append(make("p",cls,value));};
+const error=byId("school-error"),lessonList=byId("school-lesson-list"),progressLabel=byId("school-progress"),arcanaButtons=byId("school-arcana-buttons"),arcanaContent=byId("school-arcana-content");
+const formulaForm=byId("school-formula-form"),formulaDate=byId("school-formula-date"),formulaError=byId("school-formula-error"),formulaList=byId("school-formula-list");
+const tabButtons=[...document.querySelectorAll("[data-school-panel]")];
+let lessons=[],arcana=[],activeArcanaIndex=0;
+const lessonLink=item=>"pro/school/lesson/?id="+encodeURIComponent(item.id);
+function showPanel(key){for(const section of document.querySelectorAll(".school-panel"))section.hidden=section.id!=="school-"+key;tabButtons.forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.schoolPanel===key)));if(key==="trainer"&&!byId("school-construction-trainer").childElementCount)mountConstruction(byId("school-construction-trainer"),{lessonId:byId("school-trainer-skill").value,standalone:true});}
+tabButtons.forEach(b=>b.addEventListener("click",()=>{showPanel(b.dataset.schoolPanel);document.querySelector(".school-tabs").scrollIntoView({block:"start",behavior:"smooth"});}));
+function renderLessonList(){
+ const completed=readLearningProgress(),next=lessons.find(l=>!completed.has(l.id));
+ progressLabel.textContent=lessons.filter(l=>completed.has(l.id)).length+" из "+lessons.length+" пройдено";
+ const resume=byId("school-resume-link");resume.href=next?lessonLink(next):"pro/school/lesson/?id=build-independent";
+ resume.replaceChildren(make("span","",next?(completed.size?"Продолжить обучение →":"Начать с первого урока →"):"Повторить самостоятельное построение →"));
+ resume.append(make("small","",next?next.title:"Соберите матрицу на новой дате"));
+ byId("school-route-progress").textContent=lessons.filter(l=>l.track==="construction"&&completed.has(l.id)).length+" из "+lessons.filter(l=>l.track==="construction").length+" навыков построения подтверждено";
+ lessonList.replaceChildren();const groups=[];
+ lessons.forEach((lesson,position)=>{const title=lesson.module||"Программа";let g=groups.at(-1);if(!g||g.title!==title){g={title,items:[]};groups.push(g);}g.items.push({lesson,position});});
+ for(const group of groups){const section=make("section","school-lesson-module");section.append(make("h3","school-lesson-module-title",group.title),make("p","school-module-progress",group.items.filter(({lesson})=>completed.has(lesson.id)).length+" из "+group.items.length+" уроков пройдено"));const list=make("div","school-lesson-module-list");
+ for(const{lesson,position}of group.items){const passed=completed.has(lesson.id),link=make("a","school-lesson-link"+(passed?" completed":"")+(lesson.id===next?.id?" is-recommended":""));link.href=lessonLink(lesson);const summary=make("span","school-lesson-summary");summary.append(make("strong","",lesson.title),make("small","",lesson.level+" · "+lesson.minutes+" мин"));
+ const outcome=LESSON_SKILLS[lesson.id]?.outcome||lesson.outcome;if(outcome)summary.append(make("small","school-skill-outcome",outcome));
+ link.append(make("span","school-lesson-number",passed?"✓":position+1),summary,make("span","school-lesson-arrow","→"));list.append(link);}
+ section.append(list);lessonList.append(section);}
 }
-let completed = readProgress();
-function saveProgress() {
-  try { localStorage.setItem(storageKey, JSON.stringify([...completed])); } catch { /* Можно заниматься без сохранения. */ }
+function buildFormulaSheet(birth){
+ const steps=constructionSteps(birth);formulaList.replaceChildren();
+ for(const group of [...new Set(steps.map(n=>n.group))]){const section=make("section","school-formula-group");section.append(make("h3","",group));const cards=make("div","school-formula-cards");
+ for(const point of steps.filter(n=>n.group===group)){const card=make("article","school-formula-card"),head=make("div","school-formula-title");head.append(make("span","",point.number+". "+point.title),make("strong","",point.value));card.append(head,make("p","school-equation",point.expression),make("p","school-reference-location",point.position),make("p","school-reference-location",point.rule));cards.append(card);}section.append(cards);formulaList.append(section);}
+ const details=make("details","school-formula-group");details.append(make("summary","","Предназначение и показатели рода — отдельно от 31 точки"));purposeSteps(calculateMatrix(birth)).forEach(p=>{details.append(make("h3","",p.title),make("p","school-equation",p.expression),make("p","school-reference-location",p.rule));});formulaList.append(details);
 }
-
-let lessons = [];
-let arcana = [];
-let activeArcanaIndex = 0;
-let practiceDateIndex = 0;
-let practicePointIndex = 0;
-
-const exampleDates = [
-  "14.07.1990", "08.09.1987", "29.02.2000", "31.12.1979",
-  "15.08.1992", "24.11.2001", "06.05.1995", "23.02.1988",
-  "16.06.1970", "28.03.2003", "17.12.1999", "05.01.2010"
-];
-const practicePoints = pointCatalog;
-
-const formulaForm = byId("school-formula-form");
-const formulaDate = byId("school-formula-date");
-const formulaError = byId("school-formula-error");
-const formulaList = byId("school-formula-list");
-
-function buildFormulaSheet(birth) {
-  const matrix = calculateMatrix(birth);
-  formulaList.replaceChildren();
-  const groups = [...new Set(pointCatalog.map(point => point.group))];
-  groups.forEach((groupName) => {
-    const section = make("section","school-formula-group");
-    section.append(make("h3","",groupName));
-    const cards = make("div","school-formula-cards");
-    pointCatalog.filter(point => point.group === groupName).forEach((point) => {
-      const card = make("article","school-formula-card");
-      const header = make("div","school-formula-title");
-      header.append(make("span","",point.title),make("strong","",point.get(matrix)));
-      card.append(header,make("p","school-equation",point.work(matrix,birth)));
-      cards.append(card);
-    });
-    section.append(cards);
-    formulaList.append(section);
-  });
-}
-formulaDate.addEventListener("input", () => {
-  const digits = formulaDate.value.replace(/\D/g,"").slice(0,8);
-  formulaDate.value = [digits.slice(0,2),digits.slice(2,4),digits.slice(4,8)].filter(Boolean).join(".");
-  formulaError.hidden = true;
-});
-formulaForm.addEventListener("submit",(event)=>{
-  event.preventDefault();
-  const birth = parseBirthDate(formulaDate.value);
-  if (!birth) {
-    formulaError.textContent = "Введите существующую дату в формате ДД.ММ.ГГГГ (не раньше 1900 года).";
-    formulaError.hidden = false;
-    return;
-  }
-  formulaError.hidden = true;
-  buildFormulaSheet(birth);
-});
-
-function showPanel(key) {
-  for (const section of document.querySelectorAll(".school-panel")) {
-    section.hidden = section.id !== "school-" + key;
-  }
-  tabButtons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.schoolPanel === key)));
-}
-tabButtons.forEach((button) => button.addEventListener("click", () => {
-  showPanel(button.dataset.schoolPanel);
-  document.querySelector(".school-tabs").scrollIntoView({block:"start",behavior:"smooth"});
-}));
-
-function updateProgress() {
-  const count = lessons.filter((item) => completed.has(item.id)).length;
-  progressLabel.textContent = `${count} из ${lessons.length} пройдено`;
-}
-function renderLessonList() {
-  completed = readProgress();
-  lessonList.replaceChildren();
-  const groups = [];
-  lessons.forEach((lesson,position)=>{
-    const title=lesson.module||"ПРОГРАММА ОБУЧЕНИЯ";
-    const last=groups.at(-1);
-    if(last&&last.title===title)last.items.push({lesson,position});
-    else groups.push({title,items:[{lesson,position}]});
-  });
-  for (const group of groups) {
-    const items=group.items;
-    if (!items.length) continue;
-    const section = make("section","school-lesson-module");
-    section.append(make("h3","school-lesson-module-title",group.title));
-    const list = make("div","school-lesson-module-list");
-    items.forEach(({lesson,position}) => {
-      const unlocked=lessons.slice(0,position).every(previous=>completed.has(previous.id));
-      const link=make(unlocked?"a":"div","school-lesson-link"+(unlocked?"":" is-locked"));
-      if(unlocked)link.href = "pro/school/lesson/?id=" + encodeURIComponent(lesson.id);
-      else{
-        link.setAttribute("aria-disabled","true");
-        link.title="Откроется после успешного прохождения предыдущих уроков";
-      }
-      if(completed.has(lesson.id))link.classList.add("completed");
-      const number=make("span","school-lesson-number",completed.has(lesson.id)?"✓":position+1);
-      const summary=make("span","school-lesson-summary");
-      summary.append(make("strong","",lesson.title));
-      summary.append(make("small","",lesson.level+" · "+lesson.minutes+" мин"));
-      if(!unlocked)summary.append(make("small","school-lesson-locked-hint","Откроется после предыдущих уроков"));
-      link.append(number,summary,make("span","school-lesson-arrow",unlocked?"→":"🔒"));
-      list.append(link);
-    });
-    section.append(list);
-    lessonList.append(section);
-  }
-  updateProgress();
-}
+formulaDate.addEventListener("input",()=>{const d=formulaDate.value.replace(/\D/g,"").slice(0,8);formulaDate.value=[d.slice(0,2),d.slice(2,4),d.slice(4,8)].filter(Boolean).join(".");formulaError.hidden=true;});
+formulaForm.addEventListener("submit",e=>{e.preventDefault();const birth=learningBirthDate(formulaDate.value);if(!birth){formulaError.textContent="Введите существующую дату ДД.ММ.ГГГГ от 1900 года до сегодня.";formulaError.hidden=false;return;}formulaError.hidden=true;buildFormulaSheet(birth);});
+byId("school-trainer-skill").addEventListener("change",()=>mountConstruction(byId("school-construction-trainer"),{lessonId:byId("school-trainer-skill").value,standalone:true}));
 function renderArcanaButtons() {
   arcanaButtons.replaceChildren();
   arcana.forEach((item,index)=>{
@@ -175,75 +67,10 @@ function renderArcana() {
   arcanaContent.append(dl);
 }
 
-function getTrainingMatrix() {
-  const date=exampleDates[practiceDateIndex];
-  const [day,month,year]=date.split(".").map(Number);
-  return {date,birth:{day,month,year},matrix:calculateMatrix({day,month,year})};
+async function startSchool(){
+ const lessonResponse=await fetch("pro/school/lessons-manifest.json?v=20261102learn1",{cache:"no-cache"});
+ if(!lessonResponse.ok)throw Error("Программа недоступна");const data=await lessonResponse.json();if(!Array.isArray(data.lessons)||!data.lessons.length)throw Error("Нет уроков");lessons=data.lessons;renderLessonList();buildFormulaSheet({day:14,month:7,year:1990});
+ try{const response=await fetch("pro/school/arcana.json?v=1");if(!response.ok)throw Error();const data=await response.json();if(data.arcana?.length!==22)throw Error();arcana=data.arcana;renderArcanaButtons();renderArcana();}catch{arcanaContent.textContent="Справочник энергий временно не загрузился. Уроки и тренажёр доступны; попробуйте обновить страницу.";}
 }
-function renderTrainer() {
-  const {date}=getTrainingMatrix();
-  trainDateLabel.textContent=date;
-  trainPoint.value=String(practicePointIndex);
-  trainAnswer.value="";
-  trainFeedback.textContent="";
-}
-trainPoint.replaceChildren();
-practicePoints.forEach((item,index)=>{
-  const option=make("option","",item.title);
-  option.value=String(index);
-  trainPoint.append(option);
-});
-trainPoint.addEventListener("change",()=>{
-  practicePointIndex=Number(trainPoint.value);
-  trainAnswer.value="";
-  trainFeedback.textContent="";
-});
-trainForm.addEventListener("submit",(event)=>{
-  event.preventDefault();
-  const value=Number(trainAnswer.value);
-  if (!Number.isInteger(value)||value<1||value>22) {
-    trainFeedback.textContent="Введите целое число от 1 до 22.";
-    return;
-  }
-  const {birth,matrix}=getTrainingMatrix();
-  const point=practicePoints[practicePointIndex];
-  const expected=point.get(matrix);
-  const formula=point.work(matrix,birth);
-  trainFeedback.textContent = value===expected
-    ? `Верно! ${formula}. Хотите ещё? Выберите следующую точку или другую дату.`
-    : `Пока не совпало. Правильный ответ: ${expected}. Проверяем: ${formula}. Попробуйте другую точку.`;
-});
-byId("school-train-next").addEventListener("click",()=>{
-  practiceDateIndex=(practiceDateIndex+1)%exampleDates.length;
-  practicePointIndex=(practicePointIndex+1)%practicePoints.length;
-  renderTrainer();
-});
-
-async function startSchool() {
-  try {
-    const [lessonResponse,arcanaResponse]=await Promise.all([
-      fetch("pro/school/lessons-manifest.json?v=4"),
-      fetch("pro/school/arcana.json?v=1")
-    ]);
-    if(!lessonResponse.ok||!arcanaResponse.ok)throw new Error("Учебная база недоступна");
-    const [lessonData,arcanaData]=await Promise.all([lessonResponse.json(),arcanaResponse.json()]);
-    if(lessonData.schema!=="pro-school-lessons-manifest-v1"||arcanaData.schema!=="pro-school-arcana-v1"
-      || !Array.isArray(lessonData.lessons)||lessonData.lessons.length<1||arcanaData.arcana?.length!==22)throw new Error("Учебная база неполная");
-    lessons=lessonData.lessons;
-    arcana=arcanaData.arcana;
-    renderLessonList();
-    renderArcanaButtons();
-    renderArcana();
-    renderTrainer();
-    buildFormulaSheet({ day:14, month:7, year:1990 });
-  }catch(cause) {
-    error.hidden=false;
-    error.textContent="Не удалось открыть уроки. Обновите страницу и попробуйте снова.";
-    lessonList.textContent="Программа временно недоступна.";
-  }
-}
-window.addEventListener("pageshow",()=>{if(lessons.length)renderLessonList()});
-window.addEventListener("storage",event=>{
-  if(event.key===storageKey&&lessons.length)renderLessonList();
-});
-startSchool();
+window.addEventListener("pageshow",()=>{if(lessons.length)renderLessonList();});window.addEventListener("storage",()=>{if(lessons.length)renderLessonList();});
+startSchool().catch(()=>{error.hidden=false;error.textContent="Не удалось загрузить программу. Проверьте соединение и обновите страницу.";lessonList.textContent="Уроки временно недоступны.";});
