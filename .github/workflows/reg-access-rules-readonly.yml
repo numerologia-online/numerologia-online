@@ -20,7 +20,7 @@ jobs:
           import ftplib,ssl,socket,os,re,io,hashlib
           host=os.environ["REG_FTP_HOST"].strip()
           ptr=socket.gethostbyaddr(host)[0].rstrip(".").lower()
-          if not re.fullmatch(r"[a-z0-9.-]+\\.hosting\\.reg\\.ru",ptr):raise SystemExit("Host mismatch")
+          if not re.fullmatch(r"[a-z0-9.-]+\.hosting\.reg\.ru",ptr):raise SystemExit("Host mismatch")
           if host not in {a[4][0] for a in socket.getaddrinfo(ptr,21,type=socket.SOCK_STREAM)}:raise SystemExit("DNS mismatch")
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
           ftp.connect(ptr,21);ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"]);ftp.prot_p()
@@ -35,7 +35,7 @@ jobs:
               text=data.decode("utf-8",errors="replace")
               print("RULE FILE sha256",hashlib.sha256(data).hexdigest())
               for line in text.splitlines():
-                  if re.match(r"\\s*(?:RewriteCond|RewriteRule|Require|Deny|Allow|Order|Redirect|SSLOptions|Header)",line,re.I):
+                  if re.match(r"\s*(?:RewriteCond|RewriteRule|Require|Deny|Allow|Order|Redirect|SSLOptions|Header)",line,re.I):
                       print("RULE",line[:700])
           ftp.quit()
           PY
