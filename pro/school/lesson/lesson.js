@@ -12,6 +12,34 @@ const readCompleted=readLearningProgress;
 let lesson,manifest,index=-1,practiceComplete=false;
 const params=new URLSearchParams(location.search);
 const id=params.get("id")||"start";
+async function loadLessonContent(item){
+  if(item.id==="start"){
+    const response=await fetch(item.file+"?v=20261102learn1");
+    if(!response.ok)throw Error("Материал урока не найден");
+    return response.json();
+  }
+  const initData=window.Telegram?.WebApp?.initData;
+  if(typeof initData!=="string"||!initData)throw Object.assign(Error("Требуется подтверждённый аккаунт"),{code:"AUTH_REQUIRED"});
+  const response=await fetch("/api/numi-paid-content.php",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData,path:item.file})});
+  if(response.status===401||response.status===403)throw Object.assign(Error("Доступ не подтверждён"),{code:response.status===401?"AUTH_REQUIRED":"ACCESS_REQUIRED"});
+  if(!response.ok)throw Error("Сервис уроков временно недоступен");
+  const result=await response.json();if(result.ok!==true||!result.content||typeof result.content!=="object")throw Error("Некорректный ответ сервиса уроков");
+  return result.content;
+}
+function renderAccessRequired(code){
+  const item=manifest[index];
+  document.title=item.title+" | Самоучитель по матрице судьбы";
+  $("lesson-count").textContent="УРОК "+(index+1)+" ИЗ "+manifest.length+" · "+item.level;
+  $("lesson-title").textContent=item.title;
+  $("lesson-lead").textContent=LESSON_SKILLS[id]?.goal||item.outcome||"Учебный материал самоучителя.";
+  const root=$("lesson-content");root.hidden=false;root.replaceChildren();
+  const card=make("section","school-access-card");
+  card.append(make("h2","",code==="AUTH_REQUIRED"?"Откройте урок через свой аккаунт":"Проверьте доступ к самоучителю"),make("p","",code==="AUTH_REQUIRED"?"Текст этого урока открывается через аккаунт в мини-приложении Telegram. Перейдите в приложение, чтобы проверить доступ к материалам.":"Сервер пока не подтвердил доступ к материалам этого урока для вашего аккаунта. Проверьте его в мини-приложении Telegram."));
+  const actions=make("div","learning-actions"),telegram=make("a","school-primary","Открыть в Telegram");telegram.href="https://t.me/Numerologiaonline_bot?startapp";telegram.target="_blank";telegram.rel="noopener";actions.append(telegram);
+  const retry=make("button","learning-secondary","Проверить доступ ещё раз");retry.type="button";retry.addEventListener("click",()=>location.reload());actions.append(retry);card.append(actions);
+  const trainer=make("a","school-access-practice","Потренироваться в построении →");trainer.href="pro/school/?v=20261102learn3#school-trainer";card.append(trainer);root.append(card);
+  $("lesson-drawing").hidden=true;$("lesson-quiz").hidden=true;renderNavigation();
+}
 const practiceRequired=()=>Boolean(LESSON_SKILLS[id]);
 function syncPracticeGate(){
  const root=$("lesson-quiz"),blocked=practiceRequired()&&!practiceComplete;
@@ -121,13 +149,13 @@ function renderNavigation() {
   const prev=manifest[index-1],next=manifest[index+1];
   const link=(item,txt,cl)=>{
     const a=make("a",cl,txt);
-    a.href="pro/school/lesson/?id="+encodeURIComponent(item.id)+"&v=20261102learn2";
+    a.href="pro/school/lesson/?id="+encodeURIComponent(item.id)+"&v=20261102learn3";
     return a;
   };
   if(prev)nav.append(link(prev,"← Предыдущий урок","school-secondary school-lesson-prev"));
   if(next)nav.append(link(next,readCompleted().has(id)?"Следующий урок →":"Посмотреть следующий урок →","school-primary school-lesson-next"));
   const all=make("a","school-lesson-all","Вся программа");
-  all.href="pro/school/?v=20261102learn2";
+  all.href="pro/school/?v=20261102learn3";
   nav.append(all);
 }
 function renderCaseWorkbook(root,lessonId){
@@ -172,7 +200,7 @@ function renderLesson(data) {
   else{const outcome=manifest[index].outcome;if(outcome)outcomes.append(make("p","","После урока: "+outcome));outcomes.append(make("p","","Порядок работы: прочитайте материал, выполните упражнение и проверьте понимание."));}
   $("lesson-hero").append(outcomes);
   const route=make("nav","school-route-nav");route.setAttribute("aria-label","Этапы урока");
-  for(const[key,text]of[["lesson-content","1. Разобраться"],...(skill?[["lesson-drawing","2. Попробовать"]]:[]),["lesson-quiz",skill?"3. Проверить":"2. Проверить"]]){const a=make("a","",text);a.href="pro/school/lesson/?id="+encodeURIComponent(id)+"&v=20261102learn2#"+key;route.append(a);}$("lesson-hero").append(route);
+  for(const[key,text]of[["lesson-content","1. Разобраться"],...(skill?[["lesson-drawing","2. Попробовать"]]:[]),["lesson-quiz",skill?"3. Проверить":"2. Проверить"]]){const a=make("a","",text);a.href="pro/school/lesson/?id="+encodeURIComponent(id)+"&v=20261102learn3#"+key;route.append(a);}$("lesson-hero").append(route);
   const root=$("lesson-content");
   root.hidden=false;
   root.replaceChildren();
@@ -253,15 +281,14 @@ async function start() {
     const current=manifest[index];
     const firstMissing=(current.prerequisites||[]).map(key=>manifest.find(item=>item.id===key)).find(item=>item&&!completed.has(item.id));
     if(firstMissing){
-      const notice=make("aside","school-prereq-note");notice.append(document.createTextNode("Для этого урока пригодится: "+firstMissing.title+". "));const a=make("a","","Повторить →");a.href="pro/school/lesson/?id="+encodeURIComponent(firstMissing.id)+"&v=20261102learn2";notice.append(a);$("lesson-hero").before(notice);
+      const notice=make("aside","school-prereq-note");notice.append(document.createTextNode("Для этого урока пригодится: "+firstMissing.title+". "));const a=make("a","","Повторить →");a.href="pro/school/lesson/?id="+encodeURIComponent(firstMissing.id)+"&v=20261102learn3";notice.append(a);$("lesson-hero").before(notice);
     }
-    const response=await fetch(manifest[index].file+"?v=20261102learn1");
-    if(!response.ok)throw Error("Материал урока не найден");
-    lesson=await response.json();
+    lesson=await loadLessonContent(manifest[index]);
     if(lesson.id!==id||!Array.isArray(lesson.sections)||!Array.isArray(lesson.questions))
       throw Error("Материал урока неполный");
     renderLesson(lesson);
   }catch(error){
+    if(error.code==="AUTH_REQUIRED"||error.code==="ACCESS_REQUIRED"){renderAccessRequired(error.code);return;}
     console.error("Школа: урок",error);
     const notice=$("lesson-error");
     notice.hidden=false;
