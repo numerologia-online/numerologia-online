@@ -1,14 +1,20 @@
 {
   "mode": "publish",
   "files": [
-    "year-feature.js"
+    "index.html",
+    "pro/index.html"
   ],
   "patches": {
-    "year-feature.js": {
-      "before": "const showYearPaywall = () => { if (!yearPaywallDialog.open) yearPaywallDialog.showModal(); };",
-      "after": "const showYearPaywall = async () => {\n  try {\n    const { openSharedOffer } = await import(\"./shared-offer.js?v=1\");\n    await openSharedOffer({\n      product: \"полный разбор года\",\n      title: \"Откройте полный разбор года\",\n      oncePrice: 990,\n      memberPrice: 490,\n      clubMonthly: 490\n    });\n  } catch (error) {\n    console.error(\"Окно покупки разбора года:\", error);\n    alert(\"Не удалось открыть варианты доступа. Проверьте интернет и попробуйте снова.\");\n  }\n};",
-      "expected_sha256": "3ec19790e6c40f66c2341ef7e325cddc07be426ab28cd4e5f858ce4dacf325de"
+    "index.html": {
+      "before": "const selectors=[\".products > .year-card\",\".products > .calculation\",\".products > .compatibility\",\".year-intro\",\".compatibility-intro\",\"#year-paywall-dialog\"];",
+      "after": "const selectors=[\"#year-paywall-dialog\"];",
+      "expected_sha256": "14e687ffd31949732818c9e2520be0a0512731b66747e987f631789d8c02fd9b"
+    },
+    "pro/index.html": {
+      "before": "const selectors=[\".pro-hero\",\"#pro-paywall-banner\",\"#pro-paywall-dialog .pro-paywall-dialog-body\"];",
+      "after": "const selectors=[\"#pro-paywall-banner\",\"#pro-paywall-dialog .pro-paywall-dialog-body\"];",
+      "expected_sha256": "0d068cc82f04c81aa49fd20ce389676201d2fb51d1d319980773cf46775938fe"
     }
   },
-  "note": "Owner requests same approved purchase modal everywhere. Route year paid months and PDF buttons to shared offer cloned from life report; compatibility already uses it. Preserve access checks and other live bytes."
+  "note": "Correct scope per owner: remove added prices from homepage navigation and all free intro screens. Keep paid purchase offers only. Preserve artwork and other live content."
 }
