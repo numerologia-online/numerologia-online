@@ -1,0 +1,44 @@
+name: Inspect reference backup workflow status
+on:
+  push:
+    paths:
+      - .github/workflows/numi-check-backup-status.yml
+permissions:
+  contents: write
+  actions: read
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect backup run states
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json, subprocess, pathlib
+          repo="numerologia-online/numerologia-online"
+          names=["numi-backup-inventory.yml","numi-preserve-live-reference.yml"]
+          out={}
+          for name in names:
+              p=subprocess.run(["gh","api","repos/"+repo+"/actions/workflows/"+name+"/runs","-f","per_page=3"],capture_output=True,text=True)
+              if p.returncode:
+                  p=subprocess.run(["gh","api","-X","GET","repos/"+repo+"/actions/workflows/"+name+"/runs","-f","per_page=3"],capture_output=True,text=True)
+              if p.returncode==0:
+                  data=json.loads(p.stdout)
+                  out[name]=[{"id":r["id"],"status":r["status"],"conclusion":r["conclusion"],"url":r["html_url"]} for r in data.get("workflow_runs",[])[:3]]
+              else:out[name]={"error":"Workflow status unavailable"}
+          pathlib.Path("diagnostics").mkdir(exist_ok=True)
+          pathlib.Path("diagnostics/regru-backup-run-status.json").write_text(json.dumps(out,indent=2)+"\n")
+          print(json.dumps(out))
+          PY
+      - name: Save backup status metadata
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add diagnostics/regru-backup-run-status.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record REG.RU backup workflow status"
+            git push
+          fi
