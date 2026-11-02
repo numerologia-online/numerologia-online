@@ -26,7 +26,7 @@
 .product-card:has(.numi-large-report-prices){height:auto;min-height:145px}
 </style><script>
 document.addEventListener("DOMContentLoaded",()=>{
- const selectors=[".pro-hero","#pro-paywall-banner","#pro-paywall-dialog .pro-paywall-dialog-body"];
+ const selectors=["#pro-paywall-banner","#pro-paywall-dialog .pro-paywall-dialog-body"];
  for(const selector of selectors) for(const target of document.querySelectorAll(selector)){
   if(target.querySelector(":scope > .numi-large-report-prices"))continue;
   const badge=document.createElement("span");badge.className="numi-large-report-prices";
