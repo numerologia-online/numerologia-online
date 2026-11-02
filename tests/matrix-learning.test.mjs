@@ -109,7 +109,13 @@ for(const [id,spec]of Object.entries(LESSON_SKILLS)){
 for(const lessonId of ['base','final']){
   const root=setup();for(const id of ['lesson-hero','lesson-count','lesson-title','lesson-lead','lesson-main-rule','lesson-content','lesson-drawing','lesson-quiz','lesson-navigation','lesson-error']){const n=new Node('section');n.id=id;root.append(n);}
   const manifest=JSON.parse(fs.readFileSync(new URL('../pro/school/lessons-manifest.json',import.meta.url)));
-  globalThis.location={search:'?id='+lessonId};globalThis.fetch=async path=>({ok:true,json:async()=>JSON.parse(fs.readFileSync(new URL('../'+path.split('?')[0],import.meta.url)))});
+  globalThis.location={search:'?id='+lessonId};window.Telegram={WebApp:{initData:'isolated-unit-test'}};
+  globalThis.fetch=async(path,options)=>{
+    const secure=path==='/api/numi-paid-content.php',file=secure?JSON.parse(options.body).path:path.split('?')[0];
+    if(secure){assert.equal(options.method,'POST');assert.equal(options.cache,'no-store');assert.equal(JSON.parse(options.body).init_data,'isolated-unit-test');}
+    const content=JSON.parse(fs.readFileSync(new URL('../'+file,import.meta.url)));
+    return {ok:true,status:200,json:async()=>secure?{ok:true,content}:content};
+  };
   if(lessonId==='base')localStorage.setItem('numi-school-building-v2:base',JSON.stringify({date:'14.07.1990',mode:'practice',solved:[],assisted:[]}));
   await import('../pro/school/lesson/lesson.js?test='+lessonId);await new Promise(resolve=>setTimeout(resolve,0));
   const quiz=document.getElementById('lesson-quiz');assert.ok(quiz.querySelector('form'));
@@ -127,4 +133,16 @@ for(const lessonId of ['base','final']){
   const form=quiz.querySelector('form');form.emit('submit');assert.ok(quiz.textContent.includes('Остался вопрос'));
   data.questions.forEach((q,i)=>{form.querySelectorAll('input').find(n=>n.name==='quiz-'+i&&n.value===String(q.correct)).checked=true;});form.emit('submit');assert.ok(readLearningProgress().has(lessonId));
 }
-console.log('PASS: '+dates+' dates; all 10 practice flows; incorrect answers; resume; leap date; independent control; blocked storage; lesson quiz gate and draft.');
+for(const state of ['anonymous','denied']){
+  const root=setup();for(const id of ['lesson-hero','lesson-count','lesson-title','lesson-lead','lesson-main-rule','lesson-content','lesson-drawing','lesson-quiz','lesson-navigation','lesson-error']){const n=new Node('section');n.id=id;root.append(n);}
+  globalThis.location={search:'?id=base'};let privateCalls=0;
+  if(state==='denied')window.Telegram={WebApp:{initData:'isolated-denied-test'}};
+  globalThis.fetch=async path=>{
+    if(path==='/api/numi-paid-content.php'){privateCalls++;return {ok:false,status:403};}
+    assert.ok(path.includes('lessons-manifest.json'),'must never fall back to a protected public JSON');
+    return {ok:true,json:async()=>JSON.parse(fs.readFileSync(new URL('../pro/school/lessons-manifest.json',import.meta.url)))};
+  };
+  await import('../pro/school/lesson/lesson.js?test='+state);await new Promise(resolve=>setTimeout(resolve,0));
+  assert.ok(root.querySelector('.school-access-card'));assert.equal(document.getElementById('lesson-quiz').hidden,true);assert.equal(privateCalls,state==='denied'?1:0);
+}
+console.log('PASS: '+dates+' dates; all 10 practice flows; errors; resume; independent control; blocked storage; quiz gate; draft; protected loader and denied access without public fallback.');
