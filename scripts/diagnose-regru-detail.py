@@ -60,9 +60,9 @@ def main():
                 continue
             value=data.decode("utf-8","replace")
             patterns=[
-                r"""\\bfrom\\s+['"]([^'"]+)['"]""",
-                r"""\\bimport\\s*\\(\\s*['"]([^'"]+)['"]""",
-                r"""\\bimport\\s+['"]([^'"]+)['"]"""
+                r"""\bfrom\s+['"]([^'"]+)['"]""",
+                r"""\bimport\s*\(\s*['"]([^'"]+)['"]""",
+                r"""\bimport\s+['"]([^'"]+)['"]"""
             ]
             references=[]
             for pattern in patterns:
