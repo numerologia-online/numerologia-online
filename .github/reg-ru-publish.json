@@ -1,14 +1,6 @@
 {
-  "mode": "publish",
-  "files": [
-    "index.html"
-  ],
-  "patches": {
-    "index.html": {
-      "before": "<nav class=\"hero-founder-links\" aria-label=\"Об авторе и статьи\"><a href=\"#about-founder\">Об авторе <span aria-hidden=\"true\">↗</span></a><a href=\"/guide/\">Статьи <span aria-hidden=\"true\">↗</span></a></nav>",
-      "after": "<a class=\"hero-founder-button\" href=\"#about-founder\">Об авторе и статьи<br>о нумерологии <span aria-hidden=\"true\">→</span></a>",
-      "expected_sha256": "a295f638695c195edd84f1fb4960c8b31234e28b55a31296f477cd5e0687d4e5"
-    }
-  },
-  "note": "Restore the original outlined founder button, changing its label only. Preserve magazine and all other live content."
+  "mode": "check",
+  "files": [],
+  "inspect_matrix_school": true,
+  "note": "Read-only school file metadata audit: browser reports hosting 403 for calculation lessons. Do not upload, delete or alter permissions."
 }
