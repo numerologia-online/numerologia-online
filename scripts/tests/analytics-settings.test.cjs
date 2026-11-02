@@ -51,6 +51,7 @@ test('all page analytics bootstraps refuse collection until permission',()=>{
         document:{readyState:'complete',head:{append:()=>attached++},createElement:()=>({}),
           addEventListener:()=>{}},
         window:{requestIdleCallback:(cb)=>cb()},
+        requestIdleCallback:(cb)=>cb(),
         setTimeout:(cb)=>cb()
       };
       vm.runInNewContext(bootstrap,context);
