@@ -1,0 +1,24 @@
+name: Check live VPN DNS records
+on:
+  push:
+    paths:
+      - .github/workflows/numi-dns-vpn-check.yml
+permissions:
+  contents: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check A and AAAA through public resolvers read-only
+        run: python3 -u scripts/diagnose-vpn-dns.py
+      - name: Save safe DNS report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add diagnostics/regru-vpn-dns.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record VPN DNS diagnostic"
+            git push
+          fi
