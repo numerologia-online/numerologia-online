@@ -1,21 +1,14 @@
 {
   "mode": "publish",
   "files": [
-    "auth-profile.js",
     "index.html"
   ],
   "patches": {
-    "auth-profile.js": {
-      "before": "      setMessage(\"Автоматический вход не удался: \" + (err?.message || \"Нет соединения с сервером.\"), !!raw);\n    } finally {\n      loading = false;\n    }\n  }\n\n  accountButton.addEventListener(\"click\", () => {\n    // The ordinary website opens its cabinet without Telegram redirect.\n    if (!mini) {\n      showBrowserCabinet();\n      if (!dialog.open) dialog.showModal();\n      return;\n    }\n    if (user) showProfile();\n    else if (!loading) {\n      loginView.hidden = false;\n      profileView.hidden = true;\n    }\n    if (!dialog.open) dialog.showModal();",
-      "after": "      setMessage(\"Автоматический вход не удался: \" + (err?.message || \"Нет соединения с сервером.\"), !!raw);\n      if (dialog.open) dialog.close();\n    } finally {\n      loading = false;\n    }\n  }\n\n  accountButton.addEventListener(\"click\", () => {\n    // The ordinary website opens its cabinet without Telegram redirect.\n    if (!mini) {\n      showBrowserCabinet();\n      if (!dialog.open) dialog.showModal();\n      return;\n    }\n    if (!user) {\n      if (!loading) void identify();\n      return;\n    }\n    showProfile();\n    if (!dialog.open) dialog.showModal();",
-      "expected_sha256": "8acbe19954244db333ac69eb10cdd2841fff73acab1794e34aee08752a256876"
-    },
     "index.html": {
-      "before": "auth-profile.js?v=17",
-      "after": "auth-profile.js?v=18",
-      "expected_sha256": "854979ca6e2d9568a6c07ec7ee184d674a7cc6be621166dfc0a68cb77dbbb63c"
+      "before": "<p style=\"text-align:center;margin:20px auto 5px;font-size:13px;opacity:.75\"><a style=\"color:inherit;text-underline-offset:4px\" href=\"./guide/\">Справочник по нумерологии</a></p>",
+      "after": "",
+      "expected_sha256": "a1bbc1d6f6f31a0119e8ed57a128a5e87369f1168c2a4ff68b079b6bbcf443b2"
     }
   },
-  "tested_preview_commit": "22fea4290f2d37b0979cdffc636fd5d74169c57e",
-  "note": "Owner requested removal of the failed Telegram login popup on preview and production. Publish the validated account-button guard and cache version only; keep Telegram validation and every other live-page byte."
+  "note": "Owner requested removal of only the guide link at the bottom of the homepage. Preserve all other live bytes."
 }
