@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://numerologia-online.github.io/numerologia-online/sitemap.xml
+Sitemap: https://xn--c1adkkdfjbp1a4l.online/sitemap.xml

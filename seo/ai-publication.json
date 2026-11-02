@@ -1,0 +1,134 @@
+{
+  "child/index.html": {
+    "before": "512c926eac73b5a3648144dbc7dbe8a0af5585996069bf3ce918099249759ff2",
+    "after": "f9364934cd9aaeb73e34552386ce686a740e8d0a9a394a99ea00e07b9586e78e"
+  },
+  "day.html": {
+    "before": "7c92f7d978963b06b0a19a35184cd2dfa651d0f1b6067e74b61b32215d53b28f",
+    "after": "d7f40774bc3e1e7f30c78df86caa17bdfcd33bd0c50937bc4d0486dc79a0603b"
+  },
+  "guide/22-energii/index.html": {
+    "before": "72307dca5fb0cc88649c5e5ddb803ad3e00d60e49c3d3a5ec05444a6ccd097ca",
+    "after": "596565cad453f8c97d4b507c84c4d3dca15be5c1414823fe7f0dc6150fa8d272"
+  },
+  "guide/chislo-zhiznennogo-puti/index.html": {
+    "before": "4f1e8dd4264e2d91bf0a79b5b046e964ac9621f69694a100ed4604c11f6de7dd",
+    "after": "c04c8b0de8618af81bd7d8808664751129f42774edc66d29fc2f4bee71523450"
+  },
+  "guide/denezhnye-ritualy/index.html": {
+    "before": "c8f9c722085e03bd0fb528efb02feea2daaac65da7907e3ae6f0bc3bfc991d32",
+    "after": "e14e01d6fd4ec83edd166aea03acc93042fec888a7fcdae84f2a260c8b579227"
+  },
+  "guide/finansovyi-potencial/index.html": {
+    "before": "9fef658e1b4d9d9ca609082769e6155c0b28dc26a75e9e6c118af37fb9a190ee",
+    "after": "9682ce959206bb1af9cb2b8c85a33a9cb169a6038fa04122d2fc56f72133becf"
+  },
+  "guide/harakter-muzhchiny/index.html": {
+    "before": "79ba913a247e3a6432cff0738a2c7d4e379c8c2db8347f470303cc487f172e3d",
+    "after": "036afb7301d46ea237f1efe454f1e560b229b4a6ff30430fb482801b2dda58a3"
+  },
+  "guide/horarnaya-numerologiya/index.html": {
+    "before": "8ec39c68fd8bd290fcc2247733d52d58632753bd26892b078fabc8cf6e01f548",
+    "after": "1653e0b95753e16f4a632af37b36955b998488705a9109d8bf431b55e54134a6"
+  },
+  "guide/index.html": {
+    "before": "34bab8949685f58980431445e5da91adcd2b69b8538872ab61f12e670bd40927",
+    "after": "8ee9766f148c925afe9411c7a4a598e76db2ad6122112b6ea19d4660dbb74f1c"
+  },
+  "guide/karmicheskie-programmy/index.html": {
+    "before": "63f662e3a41eeb114d7a8223895ed1d12e95916519313d0c76fd15afc8c1d04d",
+    "after": "907e70c397cb28ae5898eae0bc67f17b0e2ff22aa26a2cb00580289214bf9a6e"
+  },
+  "guide/karmicheskii-hvost/index.html": {
+    "before": "af22947a9e5a5ce44b02053894d71e523c60b808ac12c394bea61dd54512947b",
+    "after": "ba213888b93ae8af420a44da0542d4a5c8d97cc482277fce5f48c45e656e1546"
+  },
+  "guide/klassicheskaya-numerologiya/index.html": {
+    "before": "d16bf6441a6a0cfd35ffbfb61881a8ef2da3e4f50fff3e9f6c473d35ed5195ed",
+    "after": "ebb1c0da1fe9d6dc04fc1acbeb22c478f888bb765467d9b8681577c4a6f36d34"
+  },
+  "guide/kod-deneg/index.html": {
+    "before": "f973f4de244c417af9339f9bbcbed4e345bfa161365ef9949a77f79d9dfece5c",
+    "after": "be465bffa2a76af436ece8dca3bbb8e6a007976978f047451b38f3ef50c39b94"
+  },
+  "guide/kvadrat-pifagora/index.html": {
+    "before": "76e722abac7b0a70fae0159a282aabcdd4cc0b7ab29fcd25ab40797f00a8e3c1",
+    "after": "4ef43508ba6df951a012d0e1a8a977550aebea68f29edd846a0b260ecb6d0ecb"
+  },
+  "guide/lichnyi-den/index.html": {
+    "before": "07d60d7e83f07f6fb2abc49d3a46283bd07a77664f7507b52a95916c7a3877b7",
+    "after": "9dcf7b6a291095ce775c1353212c669a0083cf62944da501d2a51240ce0fcd5d"
+  },
+  "guide/lichnyi-mesyac/index.html": {
+    "before": "68ec400a090c21fcd3c2149d9c41f51663186677d798df7c70ac1497c0bf3dd6",
+    "after": "3fcfbeb00b0902040fad52b410579f9ec59ff2bf5c8ac3e11b861b8264211581"
+  },
+  "guide/matrica-sudby/index.html": {
+    "before": "5c0093e36bd33e9a533fb7e6804fa5cd462aa71c1aa4f0068f533c3993bf2aff",
+    "after": "08a69339b763519d1d424a73dace1b671d3bab235dbc72efbbbf5fb513aed3e2"
+  },
+  "guide/muzhchina-red-flag/index.html": {
+    "before": "cbf55b0364c7426811d0d0f619fcc5244461dbdc36d92539eb783f762b20a77f",
+    "after": "fe5d47938ca9b6f7f561235dd2736679448b07e0d7782bc8511a6fc5076b53ee"
+  },
+  "guide/otnosheniya-po-date/index.html": {
+    "before": "37be6becb47f533ac15616f0a82ba802c83207b2a0f409b21d73ab9596978fd4",
+    "after": "516f51a9f7f026754a626648ce4638cc075fd82defe8a6580713bd98ffe1d892"
+  },
+  "guide/prednaznachenie/index.html": {
+    "before": "0b85ae3bd2980e4e913425df8147426b9c8c59e41730ebc7fcda6bd49c7866c0",
+    "after": "90220623df5dae85651cb09248e338e6bd6a548f513aafae111d287007941248"
+  },
+  "guide/prognoz-na-segodnya/index.html": {
+    "before": "b4e36b98d769f231f47af18b969790fedb2f6732eecc58d5ee418ee965754181",
+    "after": "6ac9609f0c6d93692f98c2c61ac5aefda263ca68c3ca78474b345d063c6650af"
+  },
+  "guide/psihomatrica/index.html": {
+    "before": "3c1b330b966398537ccfc64cefecc1b60a1db996362dcaed750ac7a849a26b18",
+    "after": "a825b27121aaf1bb3cf72d1863ee1f77bf5de70340d1b97fa565102cfd4c65cd"
+  },
+  "guide/razbor-goda/index.html": {
+    "before": "2d28505c6bccebaa17cd74e9de64ac17b52cb72cc6ec9b1e8221b0118219b575",
+    "after": "00e3356afe9855efb813759f32d3d5e6c1e3c2c4aa33f34a39f102941850d821"
+  },
+  "guide/sovmestimost-po-date/index.html": {
+    "before": "3b72f900d122d908073007ff0a84fa2089a2437813dd58b531662663e22512cb",
+    "after": "c27342d5c335259e5fe7641cacc17c99a608aed9b4476d127f9db47bc72edd95"
+  },
+  "guide/srochnyi-vopros/index.html": {
+    "before": "5ad1ab556bdac308bb67df32563027a2aa229bf596769239755eb21f7b07f4c6",
+    "after": "ec1ff77467b07999555b92f8a476ade4baff060942f0962540e0ee5ef627b846"
+  },
+  "index.html": {
+    "before": "67f9bea764ebeca84f11bbabeba99145ea16537e636a2255c965ec0cf0c5a1e8",
+    "after": "d822a1c5ac3faa6d8e91dfd56412005064e1cbbf69c88ae2bf67b67e1e20f15a"
+  },
+  "moment/index.html": {
+    "before": "b076c19bf11ee83b37466d94aba21167d5c00a334d8f31811af0fd84db442bc1",
+    "after": "12c33276674a20d86c993edbda7839880a482bb6d8d63a627d6c67b61f166382"
+  },
+  "pro/index.html": {
+    "before": "eea23fcafeb96d61fc6096ef5435edd51b9da90e944fab37a7a96d307763a189",
+    "after": "2e46becc65fe40495c6ae620cad124f7ca73811221028ca340f5756176bf8b38"
+  },
+  "year/index.html": {
+    "before": "94ae2856471ca09be0e9a3da8b828660a4c30e90e590aef165efe46e34656d7e",
+    "after": "628bc754b3eeeed65c77c5e83be3f3764a44b181e3f0025b9d088d7256338818"
+  },
+  "robots.txt": {
+    "before": "aab3857dc7166a032bd6ee5f3d552212dd96837bfe26a846c33bea42f66f00db",
+    "after": "aab3857dc7166a032bd6ee5f3d552212dd96837bfe26a846c33bea42f66f00db"
+  },
+  "sitemap.xml": {
+    "before": "d5d004dee33e287caa3ec80cd7a9a1fd5ce4ad8a56a279863268e647c074135d",
+    "after": "8b010ba214694db6e9c46a98fa46e42285d24b72ea3cc332e887cf552c014326"
+  },
+  "author.html": {
+    "before": null,
+    "after": "9cdfb7686bf323cba96464f82450cd7b2f4837e860466deb8d6042aa5119780c"
+  },
+  "methods.html": {
+    "before": null,
+    "after": "40725cfe3a2c7ce8a25acd8cbf900e96ec68b1d475976e84c7fc7b043e2f1054"
+  }
+}
