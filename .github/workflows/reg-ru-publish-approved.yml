@@ -27,7 +27,7 @@ jobs:
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 - <<'PY'
-          import ftplib, hashlib, io, json, os, pathlib, re, socket, ssl, time
+          import base64, ftplib, hashlib, io, json, os, pathlib, re, socket, ssl, time
 
           manifest = json.loads(pathlib.Path(".github/reg-ru-publish.json").read_text("utf-8"))
           mode = manifest.get("mode")
@@ -123,6 +123,12 @@ jobs:
                       data = read_remote(ftp, home.rstrip("/") + "/private/numi-content-reg-20261031/manifest.json", limit=2000000)
                       print("MATRIX_PRIVATE_MANIFEST_SHA256", hashlib.sha256(data).hexdigest())
                       parsed = json.loads(data)
+                      if manifest.get("school_metadata_snapshot") is True:
+                          if set(parsed) - {"version", "files"} or any(set(e) != {"sha", "source", "ref"} for e in parsed.get("files", {}).values()):
+                              raise RuntimeError("Unexpected metadata snapshot format")
+                          for offset in range(0, len(data), 3000):
+                              print("MATRIX_METADATA_CHUNK", offset, base64.b64encode(data[offset:offset+3000]).decode("ascii"))
+
                       print("MATRIX_PRIVATE_SCHOOL_REFS", json.dumps({p: e for p, e in parsed.get("files", {}).items() if p.startswith("pro/school/lessons/")}, sort_keys=True))
 
                   if manifest.get("inspect_matrix_school") is True:
