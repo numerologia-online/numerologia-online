@@ -1,0 +1,83 @@
+name: Consolidate REG.RU domain and link public guide
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/numi-seo-domain-redirects.yml']
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Preserve server rules and verify redirects and guide discovery
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,time,urllib.request,urllib.error,re
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect("server172.hosting.reg.ru",21);ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"]);ftp.prot_p()
+          home=ftp.pwd().rstrip("/");site=home+"/www/xn--c1adkkdfjbp1a4l.online"
+          def read(p):
+              out=io.BytesIO();ftp.retrbinary("RETR "+p,out.write);return out.getvalue()
+          def put(p,b):
+              ftp.storbinary("STOR "+p,io.BytesIO(b))
+              if read(p)!=b:raise RuntimeError("Readback failed")
+          try:oldht=read(site+"/.htaccess")
+          except ftplib.error_perm as e:
+              if not str(e).startswith("550"):raise
+              oldht=None
+          block=b"""# BEGIN NUMI CANONICAL DOMAIN
+          RewriteEngine On
+          RewriteCond %{HTTPS} !=on [OR]
+          RewriteCond %{HTTP_HOST} ^www\\.xn--c1adkkdfjbp1a4l\\.online$ [NC]
+          RewriteRule ^ https://xn--c1adkkdfjbp1a4l.online%{REQUEST_URI} [R=301,L,NE]
+          # END NUMI CANONICAL DOMAIN
+          
+          """
+          if oldht and b"BEGIN NUMI CANONICAL DOMAIN" in oldht:raise RuntimeError("Canonical block already exists")
+          newht=block+(oldht or b"")
+          oldindex=read(site+"/index.html")
+          needle=b'<footer class="numi-site-legal-footer"'
+          link=b'<nav aria-label="'+ "Справочник нумерологии".encode()+b'" style="text-align:center;margin:20px auto"><a href="/guide/" style="color:#195840;text-decoration:underline;text-underline-offset:4px">'+ "Справочник нумерологии".encode()+b'</a></nav>\n        '
+          if oldindex.count(needle)!=1 or b'href="/guide/"' in oldindex:raise RuntimeError("Unexpected footer layout")
+          newindex=oldindex.replace(needle,link+needle,1)
+          backup=home+"/site-safeguard-backups/seo-redirects-"+str(int(time.time()));ftp.mkd(backup)
+          if oldht is not None:put(backup+"/htaccess.bak",oldht)
+          put(backup+"/index.html",oldindex)
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,req,fp,code,msg,h,newurl):return None
+          opener=urllib.request.build_opener(NoRedirect())
+          def get(url):
+              try:r=opener.open(url,timeout=25)
+              except urllib.error.HTTPError as e:r=e
+              with r:return r.status,r.headers.get("Location"),r.read(3000000)
+          changed=[]
+          try:
+              if read(site+"/index.html")!=oldindex:raise RuntimeError("Concurrent homepage edit")
+              changed.append(".htaccess");put(site+"/.htaccess",newht)
+              for origin in ["http://xn--c1adkkdfjbp1a4l.online","https://www.xn--c1adkkdfjbp1a4l.online"]:
+                  code,location,_=get(origin+"/guide/")
+                  if code!=301 or location!="https://xn--c1adkkdfjbp1a4l.online/guide/":raise RuntimeError("Canonical redirect did not match")
+              code,_,_=get("https://xn--c1adkkdfjbp1a4l.online/guide/")
+              if code!=200:raise RuntimeError("HTTPS loop or unavailable page")
+              changed.append("index.html");put(site+"/index.html",newindex)
+              code,_,body=get("https://xn--c1adkkdfjbp1a4l.online/?seo_link_check="+str(time.time_ns()))
+              if code!=200 or body!=newindex:raise RuntimeError("Homepage verification failed")
+              code,_,_=get("https://xn--c1adkkdfjbp1a4l.online/seo-audit-missing-20261102")
+              if code!=404:raise RuntimeError("404 handling changed")
+              print("SEO REDIRECT SUCCESS: HTTP and www redirect 301 to HTTPS main domain preserving path; primary HTTPS 200; missing page 404; homepage guide link verified; original rules retained; backup saved")
+          except BaseException:
+              for name in reversed(changed):
+                  if name=="index.html":put(site+"/index.html",oldindex)
+                  elif oldht is None:ftp.delete(site+"/.htaccess")
+                  else:put(site+"/.htaccess",oldht)
+              print("SEO REDIRECT ROLLBACK completed");raise
+          finally:ftp.quit()
+          
+          PY
