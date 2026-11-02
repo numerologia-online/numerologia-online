@@ -257,6 +257,12 @@ const ensureAnswer = (question, state) => {
   if (state.answers.has(id) || state.answerRequests.has(id)) return;
   const profile = activeProfile;
   if (!profile) return;
+  if (!question.isFree && question.id.startsWith("comic-verdict-")) {
+    state.activeQuestionId = null;
+    renderCategories();
+    void showQuestionOffer(question).catch(() => {});
+    return;
+  }
   state.answerErrors.delete(id);
   const request = Promise.resolve().then(() => question.answer(profile));
   state.answerRequests.set(id, request);
