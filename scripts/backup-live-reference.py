@@ -66,7 +66,11 @@ def main():
             info.mtime=0
             archive.addfile(info,io.BytesIO(raw))
             if n%250==0:print("SNAPSHOT stage=read files="+str(n)+"/"+str(len(entries)),flush=True)
-        source_sha=hashlib.sha256(archive_path.read_bytes()).hexdigest()
+        source_hash=hashlib.sha256()
+        with archive_path.open("rb") as digest_source:
+          for chunk in iter(lambda:digest_source.read(1024*1024),b""):
+            source_hash.update(chunk)
+        source_sha=source_hash.hexdigest()
         manifest["archive_sha256"]=source_sha
         manifest["archive_bytes"]=archive_path.stat().st_size
         report=json.dumps(manifest,indent=2,ensure_ascii=False).encode("utf-8")
