@@ -119,6 +119,12 @@ jobs:
               print("REG.RU: verified encrypted connection and exact website directory")
               if mode == "check":
                   print("READ-ONLY CHECK OK. No files uploaded or deleted.")
+                  if manifest.get("inspect_matrix_private_manifest") is True:
+                      data = read_remote(ftp, home.rstrip("/") + "/private/numi-content-reg-20261031/manifest.json", limit=2000000)
+                      print("MATRIX_PRIVATE_MANIFEST_SHA256", hashlib.sha256(data).hexdigest())
+                      parsed = json.loads(data)
+                      print("MATRIX_PRIVATE_SCHOOL_REFS", json.dumps({p: e for p, e in parsed.get("files", {}).items() if p.startswith("pro/school/lessons/")}, sort_keys=True))
+
                   if manifest.get("inspect_matrix_school") is True:
                       for rules_path in (".htaccess", "pro/.htaccess", "pro/school/.htaccess", "pro/school/lessons/.htaccess"):
                           try:
