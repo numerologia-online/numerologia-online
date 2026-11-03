@@ -1,0 +1,171 @@
+name: Publish free money-block interpretation for every visitor
+on:
+  push:
+    paths:
+      - .github/workflows/numi-free-money-blocks-release-20261103.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish free money-block interpretation on REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JSON public scope and JavaScript source syntax
+        run: |
+          node --check destiny-code-feature.js
+          node --check app.js
+          python3 - <<'PY'
+          import json,pathlib
+          obj=json.loads(pathlib.Path('money-blocks-free.json').read_text('utf-8'))
+          assert sorted(map(int,obj.keys()))==list(range(1,23))
+          assert all(set(record)=={'lead','paragraphs'} and len(record['paragraphs'])==3 for record in obj.values())
+          assert all(all(isinstance(p,str) and p.strip() for p in record['paragraphs']) for record in obj.values())
+          assert 'money-blocks-free.json?v=20261103open1' in pathlib.Path('destiny-code-feature.js').read_text('utf-8')
+          assert '20261103freeblock1' in pathlib.Path('app.js').read_text('utf-8')
+          assert '20261103freeblock1' in pathlib.Path('index.html').read_text('utf-8')
+          print('PUBLIC_SCOPE_VALIDATED 22 interpretations, no ritual library')
+          PY
+      - name: Targeted production update with off-public backups and rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,hashlib,io,json,os,pathlib,ssl,subprocess,tempfile,time
+          repo=pathlib.Path('.')
+          free='money-blocks-free.json'
+          feature='destiny-code-feature.js'
+          app='app.js'
+          index='index.html'
+          names=[feature,app,index]
+          source={name:(repo/name).read_text('utf-8') for name in names}
+          public_bytes=(repo/free).read_bytes()
+          expected_sha=hashlib.sha256(public_bytes).hexdigest()
+          items=json.loads(public_bytes)
+          if sorted(map(int,items))!=list(range(1,23)):
+              raise RuntimeError('Free interpretation not 22 entries')
+          if any(set(entry)!={'lead','paragraphs'} for entry in items.values()):
+              raise RuntimeError('Unexpected money-block data fields')
+          old_comment='// Protected interpretations are served only after server-side authorization.'
+          new_comment='// This one interpretation is free for everyone'
+          def one(s,old,new,label):
+              if s.count(old)!=1:
+                  raise RuntimeError('Unexpected live '+label+': '+str(s.count(old))+' matches; no changes')
+              return s.replace(old,new,1)
+          def loader(s,needle):
+              start=s.index(needle)
+              end=s.index('const MONEY_CARDS = [',start)
+              return s[start:end]
+          new_loader=loader(source[feature],new_comment)
+          if 'fetch("./money-blocks-free.json?v=20261103open1"' not in new_loader:
+              raise RuntimeError('Unexpected free money loader')
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=24)
+          f.connect('server172.hosting.reg.ru',21)
+          f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          f.prot_p()
+          f.set_pasv(True)
+          home=f.pwd()
+          f.cwd('www/xn--c1adkkdfjbp1a4l.online')
+          if 'index.html' not in [x.rsplit('/',1)[-1] for x in f.nlst()]:
+              raise RuntimeError('Wrong site root')
+          def read(name):
+              buf=io.BytesIO()
+              f.retrbinary('RETR '+name,buf.write)
+              return buf.getvalue()
+          def put(name,b):
+              f.storbinary('STOR '+name,io.BytesIO(b))
+              if hashlib.sha256(read(name)).digest()!=hashlib.sha256(b).digest():
+                  raise RuntimeError('Upload verification failed '+name)
+          old={name:read(name) for name in names}
+          try:
+              exists=read(free)
+          except ftplib.error_perm as error:
+              if not str(error).startswith('550'):raise
+              exists=None
+          if exists is not None:
+              raise RuntimeError('Free JSON already exists; refusing overwrite')
+          for name in names:
+              print('LIVE_BEFORE',name,hashlib.sha256(old[name]).hexdigest(),flush=True)
+          live_feature=old[feature].decode('utf-8')
+          old_loader=loader(live_feature,old_comment)
+          if '/api/numi-paid-content.php' not in old_loader or 'data/money-blocks.json' not in old_loader:
+              raise RuntimeError('Old paid loader unexpected')
+          live_feature=one(live_feature,old_loader,new_loader,'money-block fetch')
+          paid_fallback='return { label, lead: label + " 🔒", text: "Для чтения расшифровки войдите в аккаунт с доступом к этому материалу. Ваш код денег и его активация доступны ниже." };'
+          free_fallback='return { label, lead: label, text: "Расшифровка для этого числа временно недоступна. Пожалуйста, попробуйте рассчитать ещё раз." };'
+          live_feature=one(live_feature,paid_fallback,free_fallback,'money-block fallback')
+          if 'const createRitualsCta' not in live_feature or 'const showClubOffer' not in live_feature:
+              raise RuntimeError('Club guard unexpectedly missing')
+          live_app=one(old[app].decode('utf-8'),
+             'import("./destiny-code-feature.js?v=20261102wealthfix1")',
+             'import("./destiny-code-feature.js?v=20261103freeblock1")','feature import')
+          live_index=one(old[index].decode('utf-8'),
+             'src="app.js?v=20261103tariffs2"',
+             'src="app.js?v=20261103freeblock1"','homepage app import')
+          new={
+             feature:live_feature.encode('utf-8'),
+             app:live_app.encode('utf-8'),
+             index:live_index.encode('utf-8')
+          }
+          for name in [feature,app]:
+              with tempfile.NamedTemporaryFile(suffix='.mjs') as temp:
+                  temp.write(new[name]);temp.flush()
+                  check=subprocess.run(['node','--check',temp.name],capture_output=True,text=True)
+                  if check.returncode:
+                      raise RuntimeError(name+' syntax error '+check.stderr[:850])
+          if new[feature].count(b'money-blocks-free.json')!=1:
+              raise RuntimeError('Unexpected money-block references')
+          f.cwd(home)
+          try:f.mkd('site-safeguard-backups')
+          except ftplib.error_perm:pass
+          f.cwd('site-safeguard-backups')
+          stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+          for name,data in old.items():
+              put(stamp+'-free-money-blocks-'+name,data)
+              print('BACKUP VERIFIED',name,flush=True)
+          f.cwd(home)
+          f.cwd('www/xn--c1adkkdfjbp1a4l.online')
+          completed=[]
+          try:
+              put(free,public_bytes)
+              completed.append(free)
+              print('FREE CONTENT PUBLISHED',len(items),'interpretations',expected_sha,flush=True)
+              for name in names:
+                  completed.append(name)
+                  put(name,new[name])
+                  print('PUBLISHED VERIFIED',name,hashlib.sha256(new[name]).hexdigest(),flush=True)
+              from urllib.request import Request,urlopen
+              url='https://xn--c1adkkdfjbp1a4l.online/'+free+'?verification=20261103open1'
+              req=Request(url,headers={'User-Agent':'NumiPublicFreeContentVerifier/1.0','Cache-Control':'no-cache'})
+              try:
+                  with urlopen(req,timeout=17) as response:
+                      http_data=response.read()
+                  remote=json.loads(http_data)
+                  if sorted(map(int,remote))!=list(range(1,23)):
+                      raise RuntimeError('Public GET returned incorrect data')
+                  print('PUBLIC UNAUTHENTICATED HTTP VERIFIED',len(remote),'interpretations',flush=True)
+              except Exception as e:
+                  print('PUBLIC HTTP CHECK FAILED',type(e).__name__,str(e)[:200],flush=True)
+                  raise
+          except Exception:
+              print('RELEASE FAILED; ROLLING BACK',flush=True)
+              for name in reversed(completed):
+                  try:
+                      if name==free:
+                          f.delete(free)
+                          print('REMOVED NEW PUBLIC JSON',flush=True)
+                      else:
+                          put(name,old[name])
+                          print('ROLLBACK VERIFIED',name,flush=True)
+                  except Exception as rollback:
+                      print('ROLLBACK FAILED',name,str(rollback)[:180],flush=True)
+              raise
+          finally:
+              f.quit()
+          print('FREE MONEY BLOCK RELEASE SUCCESS',flush=True)
+          PY
