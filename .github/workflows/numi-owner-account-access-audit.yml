@@ -1,0 +1,90 @@
+name: Verify live owner identity and unpaid content access
+on:
+  push:
+    paths:
+      - .github/workflows/numi-owner-account-access-audit.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read live owner bindings and verify unpaid requests are denied
+        env:
+          FTP_USER: ${{ secrets.REG_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import concurrent.futures,ftplib,hashlib,io,json,os,secrets,ssl,urllib.request,urllib.error
+          domain='xn--c1adkkdfjbp1a4l.online';base='https://'+domain+'/'
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          ftp.connect('server172.hosting.reg.ru',21);ftp.login(os.environ['FTP_USER'],os.environ['FTP_PASSWORD']);ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/');site=home+'/www/'+domain
+          def log(kind,data):print('OWNER_ACCESS_AUDIT '+kind+' '+json.dumps(data,ensure_ascii=False,sort_keys=True),flush=True)
+          def read(path):
+              out=io.BytesIO()
+              try:ftp.retrbinary('RETR '+path,out.write)
+              except ftplib.error_perm:return b''
+              return out.getvalue()
+          def request(path,body=None,headers=None):
+              h={'Cache-Control':'no-cache','User-Agent':'NumiAccessAudit/1.0'};h.update(headers or {})
+              if body is not None:h['Content-Type']='application/json'
+              req=urllib.request.Request(base+path,data=json.dumps(body).encode() if body is not None else None,headers=h)
+              try:
+                  with urllib.request.urlopen(req,timeout=15) as r:return r.status,r.read(80000)
+              except urllib.error.HTTPError as e:return e.code,e.read(80000)
+          token=secrets.token_urlsafe(30);probe='numi-access-audit-'+secrets.token_hex(9)+'.php'
+          php=r'''<?php
+          declare(strict_types=1);
+          header('Content-Type: application/json; charset=UTF-8');header('Cache-Control: no-store');
+          if(!hash_equals('__TOKEN__',$_SERVER['HTTP_X_NUMI_AUDIT']??'')){http_response_code(404);exit;}
+          try {
+            $home=dirname(__DIR__,3);
+            require_once $home.'/private/numi-account-20261031/core.php';
+            require_once $home.'/private/numi-content-reg-20261031/core.php';
+            $db=naDB();$db->exec('SET TRANSACTION READ ONLY');$db->beginTransaction();
+            $owner=(string)numiConfig()['owner_id'];
+            $q=$db->prepare('SELECT account_id FROM numi_identities WHERE provider=? AND provider_user_id=?');$q->execute(['telegram',$owner]);$tg=$q->fetchAll(PDO::FETCH_COLUMN);
+            $q=$db->prepare('SELECT id,email_verified_at FROM numi_accounts WHERE SHA2(LOWER(email),256)=?');$q->execute(['f289c5906895cbbd1b42d74e4e2e07d531fc1af4e91bcf7e5700835856003d29']);$em=$q->fetchAll(PDO::FETCH_ASSOC);
+            $verified=array_values(array_filter($em,fn($a)=>!empty($a['email_verified_at'])));
+            $columns=$db->query('SHOW COLUMNS FROM numi_accounts')->fetchAll(PDO::FETCH_COLUMN);
+            $counts=[];
+            $sqls=[
+              'active_entitlements'=>"SELECT COUNT(*) FROM numi_entitlements WHERE status='active' AND (expires_at IS NULL OR expires_at>UTC_TIMESTAMP())",
+              'active_without_paid_verified_order'=>"SELECT COUNT(*) FROM numi_entitlements e LEFT JOIN numi_orders o ON o.id=e.order_id WHERE e.status='active' AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP()) AND (o.id IS NULL OR o.status<>'paid' OR o.verified_at IS NULL)",
+              'active_order_account_or_product_mismatch'=>"SELECT COUNT(*) FROM numi_entitlements e JOIN numi_orders o ON o.id=e.order_id WHERE e.status='active' AND (e.account_id<>o.account_id OR e.product_code<>o.product_code OR e.resource_id<>o.resource_id)",
+              'confirmed_real_orders'=>"SELECT COUNT(*) FROM numi_orders WHERE status='paid' AND verified_at IS NOT NULL"
+            ];
+            foreach($sqls as $key=>$sql)$counts[$key]=(int)$db->query($sql)->fetchColumn();
+            $db->rollBack();
+            echo json_encode(['ok'=>true,'telegram_owner_id_matches_expected'=>$owner==='1499318117','telegram_owner_bindings'=>count($tg),'management_email_accounts'=>count($em),'management_verified_accounts'=>count($verified),'same_account'=>count($verified)===1&&in_array($verified[0]['id'],$tg,true),'owner_role_columns'=>array_values(array_intersect($columns,['role','is_owner','is_admin'])),'counts'=>$counts]);
+          }catch(Throwable $e){if(isset($db)&&$db->inTransaction())$db->rollBack();http_response_code(503);echo json_encode(['ok'=>false,'error_class'=>get_class($e)]);}
+          '''.replace('__TOKEN__',token).encode()
+          try:
+              for label,path in [('content_core',home+'/private/numi-content-reg-20261031/core.php'),('account_core',home+'/private/numi-account-20261031/core.php'),('school_gate',home+'/private/numi-school-owner-20261103/gate.php')]:
+                  b=read(path);s=b.decode('utf-8','replace')
+                  log(label,{'bytes':len(b),'git_sha':hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest(),'account_cookie_checked':('__Host-numi_session' in s or 'naCurrent(' in s),'telegram_signature_checked':'numiTelegramUser(' in s,'has_test_owner':'function naTestOwner(' in s,'management_hash_checked':'f289c5906895cbbd1b42d74e4e2e07d531fc1af4e91bcf7e5700835856003d29' in s,'purchase_check':'PURCHASE_REQUIRED' in s,'real_order_check':"o.status='paid'" in s})
+              ftp.storbinary('STOR '+site+'/api/'+probe,io.BytesIO(php))
+              status,body=request('api/'+probe,headers={'X-Numi-Audit':token});log('database',{'status':status,'result':json.loads(body)})
+              ftp.delete(site+'/api/'+probe)
+              core=read(home+'/private/numi-content-reg-20261031/core.php').decode('utf-8','replace')
+              for line in core.splitlines():
+                  if any(x in line for x in ['function numiIsOwner','TELEGRAM_AUTH_REQUIRED','PURCHASE_REQUIRED','payments_enabled','naCurrent(',"$raw=$body['init_data']"]):log('content_policy_line',line[:500])
+              targets=['data/year/energy-1.txt','data/year/odd/energy-1.txt','data/redflag/love/published/1-2.json','data/redflag/banks/love.json','pro/data/matrix/energy-1.json','child/data/matrix/energy-1.json','pro/school/lessons/draw-matrix.json','pro/school/learning.js','pro/schools/classic/lessons.json','pro/schools/angel/angel.js']
+              def check(path):
+                  try:status,b=request(path);return {'path':path,'status':status,'bytes':len(b)}
+                  except Exception as e:return {'path':path,'error':type(e).__name__}
+              with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+                  for x in pool.map(check,targets):log('anonymous_direct',x)
+              attempts=[('api/numi-miniapp.php',{}),('api/numi-paid-content.php',{'path':'data/year/energy-1.txt','owner':True,'user':{'id':'1499318117'}}),('api/numi-redflag-content.php',{'path':'data/redflag/love/published/1-2.json'}),('api/numi-account.php',{'action':'session'}),('api/numi-account.php',{'action':'purchases'}),('api/numi-school.php',{'action':'content','path':'pro/school/lessons/draw-matrix.json'})]
+              for path,body in attempts:
+                  status,b=request(path,body);data=json.loads(b);log('anonymous_api',{'path':path,'status':status,'ok':data.get('ok'),'error':data.get('error'),'authenticated':data.get('authenticated')})
+              log('complete',{'database_writes':0,'auth_changes':0,'payment_changes':0})
+          finally:
+              try:ftp.delete(site+'/api/'+probe)
+              except ftplib.error_perm:pass
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
