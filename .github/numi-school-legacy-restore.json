@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "note": "Only update protected Matrix lesson/lesson.js: rule first, example 31.10.1988 second. Safeguard all other school files, all existing site changes, owner protection and client PDF.",
+  "note": "Publish one existing protected source: pro/school/lesson/lesson.js. Only fifth Matrix lesson: three selectable axes, four diagonals, five channel points. Other site files, paid content, owner access and client PDF unchanged.",
   "base_git_blob_sha": {
     "pro/school/index.html": "fbd6c7da7cc1c8cf4d4fabaaaf40980fd06624f6",
     "pro/school/school.js": "ce89ccefad588ae73d9c9f46c623287e682b4aee",
     "pro/school/lesson/index.html": "dbf7734b5dc5bd11e21a23c6f63f95fe60e03143",
-    "pro/school/lesson/lesson.js": "ad2028fbddf880707d9245edd327f8de034db82d"
+    "pro/school/lesson/lesson.js": "3b5a57d39c09da9c82b712bdd54a2c2e3f9d7b71"
   },
-  "release_request": "matrix-rule22-date-example-20261103-v4"
+  "release_request": "matrix-internal-clarity-20261103-v5"
 }
