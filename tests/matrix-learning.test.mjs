@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { calculateMatrix, reduce22 } from '../numerology-core.js';
 import { nodesFor } from '../pro/pro-points.js';
 import { constructionSteps, purposeSteps, reductionTasks, BUILD_ORDER, LESSON_SKILLS, learningBirthDate, readLearningProgress, markLearningLesson } from '../pro/school/construction-model.js';
-import { mountConstruction } from '../pro/school/learning.js';
+import { mountConstruction, mountLessonGuide } from '../pro/school/learning.js';
 
 // Small DOM event harness: exercises public controls without a browser dependency.
 class Node {
@@ -13,7 +13,10 @@ class Node {
   get classList(){const node=this;return {add(...v){node.className=[...new Set([...node.className.split(' ').filter(Boolean),...v])].join(' ');},remove(...v){node.className=node.className.split(' ').filter(c=>!v.includes(c)).join(' ');},contains(v){return node.className.split(' ').includes(v);},toggle(v,force){const add=force??!this.contains(v);if(add)this.add(v);else this.remove(v);return add;}};}
   get lastChild(){return this.children.at(-1);}
   get childElementCount(){return this.children.length;}
-  append(...nodes){for(let node of nodes){if(typeof node==='string')node=new Node('#text',node);node.parentNode=this;this.children.push(node);}}
+  append(...nodes){for(let node of nodes){if(typeof node==='string')node=new Node('#text',node);if(node.parentNode)node.remove();node.parentNode=this;this.children.push(node);}}
+  remove(){if(this.parentNode){const p=this.parentNode;p.children=p.children.filter(n=>n!==this);this.parentNode=null;}}
+  showModal(){this.open=true;}
+  close(){this.open=false;}
   replaceChildren(...nodes){this.children=[];this._text='';this.append(...nodes);}
   before(node){const p=this.parentNode;p.children.splice(p.children.indexOf(this),0,node);node.parentNode=p;}
   insertBefore(node,before){this.children.splice(this.children.indexOf(before),0,node);node.parentNode=this;}
@@ -21,7 +24,7 @@ class Node {
   getAttribute(k){return k==='class'?this.className:this.attributes[k]??this[k]??null;}
   removeAttribute(k){delete this.attributes[k];}
   addEventListener(k,fn){(this.events[k]??=[]).push(fn);}
-  emit(k){for(const fn of this.events[k]||[])fn({preventDefault(){},target:this});}
+  emit(k,extra={}){for(const fn of this.events[k]||[])fn({preventDefault(){},target:this,...extra});}
   focus(){document.activeElement=this;}
   scrollIntoView(){}
   setCustomValidity(v){this.validationMessage=v;}
@@ -120,15 +123,18 @@ for(const lessonId of ['base','final']){
   await import('../pro/school/lesson/lesson.js?test='+lessonId);await new Promise(resolve=>setTimeout(resolve,0));
   const quiz=document.getElementById('lesson-quiz');assert.ok(quiz.querySelector('form'));
   if(lessonId==='base'){
-    assert.ok(quiz.querySelector('fieldset').disabled);const drawing=document.getElementById('lesson-drawing');
+    assert.ok(quiz.querySelector('fieldset').disabled);assert.equal(document.getElementById('lesson-drawing').hidden,true);click(root,'Практика');const drawing=document.getElementById('lesson-drawing');assert.equal(drawing.hidden,false);assert.equal(document.getElementById('lesson-content').hidden,true);
     const api={getState:()=>JSON.parse(localStorage.getItem('numi-school-building-v2:base'))};
     for(const [i,task]of constructionSteps({day:14,month:7,year:1990}).slice(0,5).entries()){
       drawing.querySelectorAll('g').find(n=>n.getAttribute('aria-label').startsWith('Позиция '+task.number+'.')).emit('click');input(drawing.querySelector('.learning-answer input'),task.value);drawing.querySelector('.learning-answer').emit('submit');drawing.querySelector('.learning-next').emit('click');
     }
     assert.equal(quiz.querySelector('fieldset').disabled,false,'quiz unlocked after real practice');
   }else{
+    const guide=document.getElementById('lesson-content');guide.querySelectorAll('.lesson-step-tab').at(-1).emit('click');
     const editors=root.querySelectorAll('.school-case-field textarea');assert.equal(editors.length,5);input(editors[0],'Учебный вопрос');assert.ok(localStorage.getItem('numerologia-online-school-case-final').includes('Учебный вопрос'));
   }
+  click(root,'Проверка');assert.equal(quiz.hidden,false);assert.equal(quiz.querySelectorAll('fieldset').filter(n=>!n.hidden).length,1);
+  quiz.querySelectorAll('.lesson-step-tab')[1].emit('click');assert.equal(quiz.querySelectorAll('fieldset')[1].hidden,false);
   const data=JSON.parse(fs.readFileSync(new URL('../pro/school/lessons/'+lessonId+'.json',import.meta.url)));
   const form=quiz.querySelector('form');form.emit('submit');assert.ok(quiz.textContent.includes('Остался вопрос'));
   data.questions.forEach((q,i)=>{form.querySelectorAll('input').find(n=>n.name==='quiz-'+i&&n.value===String(q.correct)).checked=true;});form.emit('submit');assert.ok(readLearningProgress().has(lessonId));
@@ -145,4 +151,30 @@ for(const state of ['anonymous','denied']){
   await import('../pro/school/lesson/lesson.js?test='+state);await new Promise(resolve=>setTimeout(resolve,0));
   assert.ok(root.querySelector('.school-access-card'));assert.equal(document.getElementById('lesson-quiz').hidden,true);assert.equal(privateCalls,state==='denied'?1:0);
 }
-console.log('PASS: '+dates+' dates; all 10 practice flows; errors; resume; independent control; blocked storage; quiz gate; draft; protected loader and denied access without public fallback.');
+const swipe=(node,dx,dy=0,target=node)=>{node.emit('touchstart',{target,touches:[{clientX:180,clientY:120}]});node.emit('touchend',{target,changedTouches:[{clientX:180+dx,clientY:120+dy}]});};
+{
+  const root=setup(),lesson=JSON.parse(fs.readFileSync(new URL('../pro/school/lessons/start.json',import.meta.url))),original=JSON.stringify(lesson);let practice=0;
+  const api=mountLessonGuide(root,{lesson,onPractice:()=>practice++});
+  assert.equal(root.children[0].tagName,'figure','diagram is the first content');assert.equal(root.querySelectorAll('.lesson-slide').length,1);assert.equal(root.querySelectorAll('g').length,4,'first drawing step has only the rhombus');
+  assert.ok(root.querySelector('.lesson-slide-body').textContent.includes(lesson.sections[0].text));
+  click(root,'Далее →');assert.equal(api.getState().at,1);assert.equal(root.querySelectorAll('g').length,8,'square is added at the next step');
+  swipe(root.querySelector('.lesson-slide'),-90,4);assert.equal(api.getState().at,2);assert.equal(root.querySelectorAll('g').length,9,'center appears at step three');
+  swipe(root.querySelector('.lesson-slide'),4,150);assert.equal(api.getState().at,2,'vertical scrolling cannot change the step');
+  root.querySelector('.lesson-step-tab.is-active').emit('keydown',{key:'ArrowLeft'});assert.equal(api.getState().at,1,'keyboard navigation');
+  root.querySelector('g').emit('click');assert.equal(root.querySelector('.lesson-point-detail').hidden,false,'preview diagram responds to a point');
+  click(root,'⤢ Увеличить');assert.equal(root.querySelector('.lesson-zoom-dialog').open,true);click(root,'Закрыть ×');assert.equal(root.querySelector('.lesson-zoom-dialog'),null);
+  api.goTo(api.getState().total-1);click(root,'К практике →');assert.equal(practice,1);assert.equal(JSON.stringify(lesson),original,'source paragraphs remain unchanged');
+  const restored=mountLessonGuide(root,{lesson});assert.equal(restored.getState().at,lesson.sections.length-1,'reading position is retained');
+}
+{
+  const root=setup(),api=mountConstruction(root,{lessonId:'base',embedded:true});assert.equal(api.getState().mode,'practice');
+  const strip=root.querySelector('.lesson-step-strip');assert.ok(strip.querySelectorAll('button')[1].disabled,'future unchecked step is unavailable');
+  swipe(root.querySelector('.learning-task'),-100,2);assert.equal(api.getState().at,0,'swipe cannot bypass checking');assert.equal(api.getState().solved.length,0);
+  solveOne(root,api,LESSON_SKILLS.base);root.querySelector('.lesson-step-strip').querySelectorAll('button')[1].emit('click');assert.equal(api.getState().at,1);
+  swipe(root.querySelector('.learning-task'),100,2);assert.equal(api.getState().at,0,'completed steps can be reviewed');assert.equal(root.querySelector('.learning-answer input').disabled,true);
+}
+{
+  const root=setup(),lesson={id:'energy-01-02',sections:[{heading:'Первый авторский раздел',text:'Точный авторский текст А.'},{heading:'Второй авторский раздел',text:'Точный авторский текст Б.'}],takeaway:'Авторский вывод.'},before=JSON.stringify(lesson);
+  const api=mountLessonGuide(root,{lesson});api.goTo(1);assert.ok(root.querySelector('.lesson-slide-body').textContent.includes(lesson.sections[1].text));assert.equal(JSON.stringify(lesson),before);
+}
+console.log('PASS: '+dates+' dates; all 10 practice flows; diagram first; single horizontal step; swipe and keyboard navigation; zoom; reading resume; quiz pager; unchanged author text; protected access and practice gates.');
