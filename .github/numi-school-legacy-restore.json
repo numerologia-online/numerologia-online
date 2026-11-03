@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "note": "One-file protected Matrix lesson text change only: clarify how the three positions along the selected axis are computed and placed in the fifth lesson step two. No geometry, calculation code, other pages, access or client PDF changes.",
+  "note": "Only rename the five friendly buttons, their result labels and the heading of the fifth step in protected Matrix lesson JS. All calculations, visual positions, other site pages, access and client PDF remain unchanged.",
   "base_git_blob_sha": {
     "pro/school/index.html": "fbd6c7da7cc1c8cf4d4fabaaaf40980fd06624f6",
     "pro/school/school.js": "ce89ccefad588ae73d9c9f46c623287e682b4aee",
     "pro/school/lesson/index.html": "dbf7734b5dc5bd11e21a23c6f63f95fe60e03143",
-    "pro/school/lesson/lesson.js": "568e93e596e69eaf0df383d09fa3aa60f6f29f78"
+    "pro/school/lesson/lesson.js": "b0bcedaa65c68e489482ea89732a37e845af953a"
   },
-  "release_request": "matrix-internal-axis-plain-text-20261103-v7"
+  "release_request": "matrix-lesson5-friendly-labels-20261103-v8"
 }
