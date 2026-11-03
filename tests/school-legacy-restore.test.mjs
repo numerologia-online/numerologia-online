@@ -127,6 +127,42 @@ test("Fifth lesson diagram has no empty 186-unit tail and keeps all 31 points in
   }
 });
 
+test("Fifth lesson second step describes where every number goes for the selected axis", async () => {
+  const source=await read("pro/school/lesson/lesson.js");
+  const match=source.match(/function guidedText\(isFull\)\{[\s\S]*?\n\}/);
+  assert.ok(match,"Only the existing step description is updated");
+  const {calculateMatrix}=await import("../numerology-core.js");
+  const format=(values)=> {
+    const total=values.reduce((a,b)=>a+b,0);
+    let n=total,extra=[];
+    while(n>22){n=String(n).split("").reduce((a,d)=>a+Number(d),0);extra.push(n)}
+    return values.join(" + ")+" = "+total+extra.map(x=>" → "+x).join("");
+  };
+  const readText=Function("id","step","currentBirth","getInternalSelection","calculateMatrix","compactSumFormula",
+    "internalStages","cornerStages","stepDescriptions",
+    match[0]+";return guidedText(true)");
+  const selections=[
+    {label:"Верхняя ось",base:"top",spoke:"topSpoke"},
+    {label:"Левая ось",base:"left",spoke:"leftSpoke"},
+    {label:"Правая ось",base:"right",spoke:"rightSpoke"}
+  ];
+  for(const date of [{day:9,month:9,year:1986},{day:31,month:10,year:1988},{day:14,month:7,year:1990}])
+    for(const selected of selections){
+      const m=calculateMatrix(date),p=m[selected.spoke];
+      const t=readText("internal",1,date,()=>selected,calculateMatrix,format,[],[],[]);
+      assert.ok(t.includes(selected.label.toLowerCase()));
+      assert.ok(t.includes("1. Складываем "+format([m[selected.base],m.center])));
+      assert.ok(t.includes("2. Складываем "+format([m[selected.base],p.near])));
+      assert.ok(t.includes("3. Складываем "+format([p.near,m.center])));
+      assert.ok(t.includes([m[selected.base],p.outer,p.near,p.core,m.center].join(" → ")));
+    }
+  const top=readText("internal",1,{day:9,month:9,year:1986},()=>selections[0],calculateMatrix,format,[],[],[]);
+  assert.match(top,/9 → 21 → 12 → 15 → 3/);
+  assert.match(top,/Записываем 12 между крайним числом 9 и центром/);
+  assert.match(top,/Записываем 21 между 9 и 12/);
+  assert.match(top,/Записываем 15 между 12 и центром/);
+});
+
 test("Protected lesson delivery and owner-only white-label PDF survive", async () => {
   const js = await read("pro/school/lesson/lesson.js");
   const gate = await read("server/school-access/private/gate.php");
