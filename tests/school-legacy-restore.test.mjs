@@ -35,14 +35,27 @@ test("First school lesson starts with an empty hand-drawn matrix and no digit ex
   assert.doesNotMatch(source, /mountLessonGuide|mountConstruction/);
 });
 
-test("Matrix lesson two explains the complete 1–22 boundary and progressive sums", async () => {
+test("Matrix lesson two teaches the rule first, then computes 31.10.1988 without requesting personal data", async () => {
   const script = await read("pro/school/lesson/lesson.js");
-  assert.match(script, /все числа от 1 до 22 включительно оставляем без изменений/);
-  assert.match(script, /Это относится ко всем числам, а не только к 11, 15 и 22/);
-  assert.match(script, /23 → 2 \+ 3 = 5/);
-  assert.match(script, /24 → 2 \+ 4 = 6/);
-  assert.match(script, /29 → 2 \+ 9 = 11/);
-  assert.match(script, /1999 → 1 \+ 9 \+ 9 \+ 9 = 28 → 2 \+ 8 = 10/);
+  const {calculateMatrix,reduce22}=await import("../numerology-core.js");
+  const example=calculateMatrix({day:31,month:10,year:1988});
+  assert.equal(example.left,4,"31 becomes 4");
+  assert.equal(example.top,10,"10 is preserved");
+  assert.equal(example.right,8,"1988 becomes 26 then 8");
+  assert.equal(reduce22(22),22);
+  assert.equal(reduce22(23),5);
+  assert.match(script, /Какие числа оставляем, а какие сокращаем/);
+  assert.match(script, /Разбираем дату 31\.10\.1988/);
+  assert.match(script, /Любое число в этом диапазоне оставляем как есть/);
+  assert.match(script, /Слева — день 31/);
+  assert.match(script, /31 больше 22, поэтому 3 \+ 1 = 4/);
+  assert.match(script, /Сверху — месяц 10/);
+  assert.match(script, /10 не больше 22, поэтому оставляем 10/);
+  assert.match(script, /Справа — год 1988/);
+  assert.match(script, /1 \+ 9 \+ 8 \+ 8 = 26/);
+  assert.match(script, /\$\("lesson-date-form"\)\.hidden=true/);
+  assert.match(script, /if\(exampleStep\)drawBasic\(calculateMatrix\(\{day:31,month:10,year:1988\}\)\)/);
+  assert.doesNotMatch(script, /Обязательно введите дату рождения ниже/);
 });
 
 test("Protected lesson delivery and owner-only white-label PDF survive", async () => {
