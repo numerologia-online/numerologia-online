@@ -63,7 +63,7 @@ def patch_journal(original):
         pattern = re.compile(
             r'<details class="story-row" data-search="([^"]*)"><summary><h3>'
             + re.escape(title)
-            + r'</h3><span class="soon">Скоро <b aria-hidden="true">\\+</b></span>'
+            + r'</h3><span class="soon">Скоро <b aria-hidden="true">\+</b></span>'
             + r'</summary><div class="draft-copy">.*?</div></details>',
             re.DOTALL,
         )
