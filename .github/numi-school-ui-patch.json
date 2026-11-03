@@ -1,0 +1,15 @@
+{
+  "patches": {
+    "pro/school/index.html": {
+      "before": "      <section class=\"school-learning-route\" aria-labelledby=\"school-route-title\">\n        <h2 id=\"school-route-title\">От пустого листа к своей матрице</h2>\n        <p>Сначала учимся ставить и считать точки. Затем изучаем энергии и связываем их в разбор. Один урок — один понятный навык.</p>\n        <ol class=\"school-route-stages\"><li><strong>1. Построить</strong>Расположение → расчёт → 31 точка на новой дате</li><li><strong>2. Понять энергии</strong>Значения и проявления в авторских уроках</li><li><strong>3. Собрать разбор</strong>Линии, сочетания, практика и самопроверка</li></ol>\n        <a id=\"school-resume-link\" class=\"school-resume\" href=\"pro/school/lesson/?id=start&v=20261103mobile1\">Начать с первого урока →</a>\n        <p id=\"school-route-progress\" class=\"school-route-progress\">Загружаю прогресс…</p>\n        <p class=\"school-storage-note\">Рекомендуемый порядок виден в программе. Уроки можно повторять в удобном порядке. Тексты открываются при подтверждённом доступе к самоучителю. Прогресс сохраняется в этом браузере.</p>\n      </section>\n",
+      "after": "",
+      "expected_sha256": "658e4b6640168e0cccadf95c200d88204a3b1d8b552c4eecb0a7661ba396dc80"
+    },
+    "pro/school/school.js": {
+      "before": " const resume=byId(\"school-resume-link\");resume.href=next?lessonLink(next):\"pro/school/lesson/?id=build-independent&v=20261103mobile1\";\n resume.replaceChildren(make(\"span\",\"\",next?(completed.size?\"Продолжить обучение →\":\"Начать с первого урока →\"):\"Повторить самостоятельное построение →\"));\n resume.append(make(\"small\",\"\",next?next.title:\"Соберите матрицу на новой дате\"));\n byId(\"school-route-progress\").textContent=lessons.filter(l=>l.track===\"construction\"&&completed.has(l.id)).length+\" из \"+lessons.filter(l=>l.track===\"construction\").length+\" навыков построения подтверждено\";\n",
+      "after": "",
+      "expected_sha256": "ebeffa6a041a58fd25b309619b5a0ff525737af0ee67b2e4a859ff1f92a79ab4"
+    }
+  },
+  "note": "Remove only the duplicate introductory route block and its four JavaScript updates. Preserve every lesson, tab, trainer, price and access rule."
+}
