@@ -69,13 +69,10 @@ jobs:
               if marker not in old_section:
                   raise RuntimeError('Unexpected old subscription UI; refusing change')
           new=live.replace(old_section,new_section,1)
-          replacements=[
-              ("'🔒 Открыть по подписке <span aria-hidden=\\"true\\">↓</span>'",
-               "'Подписка 490 ₽/мес <span aria-hidden=\\"true\\">↓</span>'"),
-              ("'Скрыть условия подписки <span aria-hidden=\\"true\\">↑</span>'",
-               "'Скрыть преимущества подписки <span aria-hidden=\\"true\\">↑</span>'")
-          ]
-          for before,after in replacements:
+          for before,after in [
+              ('Открыть по подписке','Подписка 490 ₽/мес'),
+              ('Скрыть условия подписки','Скрыть преимущества подписки')
+          ]:
               if new.count(before)!=1:
                   raise RuntimeError('Unexpected toggle code; refusing change')
               new=new.replace(before,after,1)
