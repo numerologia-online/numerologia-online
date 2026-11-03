@@ -189,12 +189,12 @@ const monthCalendar = (_birth, date = new Date()) => {
       <p class="personal-month-teaser-footnote">Пример оформления. Личные даты доступны по подписке.</p>
       <p class="personal-month-teaser-copy">Ваш календарь лучших дней, важных шансов и дат риска на ${esc(monthTitle(date))}.</p>
     </div>
-    <button type="button" class="personal-month-open" aria-expanded="false" aria-controls="personal-month-subscription">🔒 Открыть по подписке <span aria-hidden="true">↓</span></button>
+    <button type="button" class="personal-month-open" aria-expanded="false" aria-controls="personal-month-subscription">Что входит в подписку <span aria-hidden="true">↓</span></button>
     <div class="personal-month-subscription" id="personal-month-subscription" hidden>
-      <div class="personal-month-subscription-symbol" aria-hidden="true">🔒</div>
-      <h4>Важные числа - только по подписке</h4>
-      <p>Узнавайте свои лучшие даты, важные шансы и дни, когда по нумерологической трактовке стоит внимательнее относиться к покупкам и решениям.</p>
-      <p class="personal-month-subscription-note">Месячная подписка ещё готовится. Оплата пока не подключена.</p>
+      <h4>Ваш календарь и больше возможностей</h4>
+      <p><strong>Важные числа месяца.</strong> Личные даты для покупок, решений и новых возможностей.</p>
+      <p><strong>Разбор месяца.</strong> Новая глава вашего года каждый месяц.</p>
+      <p><strong>Клубные преимущества.</strong> Вопросы «да или нет» без лимита, денежные ритуалы и скидка 50% на большие разборы и вопросы о мужчине.</p>
     </div>
   </section>`;
 };
@@ -264,8 +264,8 @@ export const openPersonalDay = () => {
       importantButton.setAttribute("aria-expanded", String(!expanded));
       subscriptionInfo.hidden = expanded;
       importantButton.innerHTML = expanded
-        ? '🔒 Открыть по подписке <span aria-hidden="true">↓</span>'
-        : 'Скрыть условия подписки <span aria-hidden="true">↑</span>';
+        ? 'Что входит в подписку <span aria-hidden="true">↓</span>'
+        : 'Скрыть преимущества <span aria-hidden="true">↑</span>';
       if (!expanded) {
         requestAnimationFrame(() => {
           const targetTop = subscriptionInfo.getBoundingClientRect().top;
