@@ -80,13 +80,13 @@ jobs:
               if b'year-seo-cta-20261103' not in updated:
                   end=required_one(rb'</head>',updated,'head')
                   updated=updated[:end.start()]+style+b'\n'+updated[end.start():]
-              updated=updated.replace(b'Разбор года по месяцам | Нумерология Онлайн',
+              updated=updated.replace('Разбор года по месяцам | Нумерология Онлайн'.encode(),
                                      'Разбор года по дате рождения | Нумерология онлайн'.encode())
               updated=updated.replace(b'"Разбор года по месяцам"',
                                      '"Разбор года по дате рождения"'.encode())
               if (updated.count(b'class="year-cta"')!=3 or
                   updated.count(b'href="/year/"')!=3 or
-                  updated.count(b'<h1>Разбор года по дате рождения</h1>')!=1 or
+                  updated.count('<h1>Разбор года по дате рождения</h1>'.encode())!=1 or
                   updated.count(b'<link rel="canonical"')!=1):
                   raise RuntimeError('Final page validation failed')
               print('PREFLIGHT SUCCESS: preserving existing shell and unrelated links',flush=True)
