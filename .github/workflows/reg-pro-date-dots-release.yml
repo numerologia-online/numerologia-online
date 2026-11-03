@@ -1,0 +1,28 @@
+name: Fix iPhone date dots in full report on REG.RU
+on:
+  push:
+    paths:
+      - .github/numi-pro-date-dots-release.json
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-school-owner-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish iPhone date dots to REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test automatic date dots, deletion, PDF isolation and syntax
+        run: |
+          node --check pro/pro.js
+          node --test tests/pro-birth-date-input.test.mjs tests/school-client-entry.test.mjs tests/owner-access.test.mjs
+          python3 -m py_compile .github/scripts/reg-pro-date-dots-release.py
+          python3 -m json.tool .github/numi-pro-date-dots-release.json >/dev/null
+      - name: Back up and publish only full-report date input source and version
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/reg-pro-date-dots-release.py
