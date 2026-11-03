@@ -43,7 +43,7 @@ def main():
         raise RuntimeError("Public prices source not recognized")
     if prices.count(b'<h1>') != 1 or prices.count(b'href="/contacts.html"') != 1:
         raise RuntimeError("Incomplete public prices page")
-    for phrase in ("990 ₽", "490 ₽", "100 ₽", "19 ₽", "79 ₽",
+    for phrase in ("990 ₽", "490 ₽", "50 ₽", "25 ₽", "19 ₽", "79 ₽",
                    "ИП Чалынина Татьяна Олеговна", "633011166908"):
         if phrase.encode() not in prices:
             raise RuntimeError("A verified price or business detail is absent")
