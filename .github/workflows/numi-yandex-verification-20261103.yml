@@ -1,0 +1,78 @@
+name: Publish Yandex Webmaster verification file to REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-yandex-verification-20261103.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload only Yandex verification HTML and check live URL
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,ssl,os,io,pathlib,urllib.request,hashlib,time
+          FILE='yandex_e6bd09e3f3cf88f1.html'
+          CODE='e6bd09e3f3cf88f1'
+          DOMAIN='xn--c1adkkdfjbp1a4l.online'
+          content=pathlib.Path(FILE).read_bytes()
+          if b'Verification: '+CODE.encode() not in content or len(content)>500 or b'<script' in content.lower():
+              raise RuntimeError('Verification source does not match expected token')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p()
+          home=ftp.pwd().rstrip('/')
+          site=home+'/www/'+DOMAIN
+          def read(path):
+              out=io.BytesIO()
+              try:ftp.retrbinary('RETR '+path,out.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              return out.getvalue()
+          def put(path,data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              if read(path)!=data:raise RuntimeError('FTP file readback failed')
+          path=site+'/'+FILE
+          wrote=False
+          try:
+              if read(site+'/index.html') is None:
+                  raise RuntimeError('Expected live website root missing')
+              before=read(path)
+              if before is not None and before!=content:
+                  raise RuntimeError('Unexpected existing verification file, no overwrite')
+              try:
+                  if before is None:
+                      wrote=True
+                      put(path,content)
+                  url='https://'+DOMAIN+'/'+FILE+'?verify='+str(time.time_ns())
+                  req=urllib.request.Request(url,headers={'Cache-Control':'no-cache'})
+                  with urllib.request.urlopen(req,timeout=30) as response:
+                      actual=response.read(1000)
+                      if response.status!=200 or actual!=content:
+                          raise RuntimeError('Live HTTP verification differs')
+                  print('YANDEX WEBMASTER VERIFIED FILE PUBLISHED:',FILE,flush=True)
+                  print('YANDEX PUBLIC HTTP CHECK SUCCESS: status=200, exact token and file content',flush=True)
+              except BaseException:
+                  if wrote:
+                      try:
+                          ftp.delete(path)
+                          print('ROLLBACK: verification file removed after failed check',flush=True)
+                      except BaseException as e:
+                          print('ROLLBACK ERROR',str(e)[:120],flush=True)
+                  raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
