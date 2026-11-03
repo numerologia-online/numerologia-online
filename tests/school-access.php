@@ -11,6 +11,11 @@ function numiIsOwner(?array $user,array $config):bool{return $user!==null&&hash_
 function numiManifest():array{return ['files'=>['pro/school/lessons/base.json'=>['cached'=>true]]];}
 function numiPrivateRead(string $path,array $config):string{return '{"canonical":true}';}
 $config=['owner_id'=>'123456789'];$now=1793680000;$key='isolated-test-purpose-key';$binding=hash('sha256','session-a');
+$managementHash=hash('sha256','owner@example.invalid');
+check(nsManagementAccount(['email'=>'OWNER@example.invalid','email_verified_at'=>'2026-11-03'],$managementHash),'verified management email recognized from trusted account row');
+check(!nsManagementAccount(['email'=>'owner@example.invalid','email_verified_at'=>null],$managementHash),'unverified email cannot impersonate management');
+check(!nsManagementAccount(['email'=>'visitor@example.invalid','email_verified_at'=>'2026-11-03'],$managementHash),'another verified email denied');
+check(!nsManagementAccount(null,$managementHash),'missing account denied');
 $token=nsCookie($config['owner_id'],$key,$binding,$now);
 check(nsValidCookie($token,$config['owner_id'],$key,$binding,$now),'confirmed owner cookie');
 check(!nsValidCookie($token,'987654321',$key,$binding,$now),'other account cannot use owner cookie');
