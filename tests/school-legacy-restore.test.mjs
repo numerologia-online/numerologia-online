@@ -35,6 +35,16 @@ test("First school lesson starts with an empty hand-drawn matrix and no digit ex
   assert.doesNotMatch(source, /mountLessonGuide|mountConstruction/);
 });
 
+test("Matrix lesson two explains the complete 1–22 boundary and progressive sums", async () => {
+  const script = await read("pro/school/lesson/lesson.js");
+  assert.match(script, /все числа от 1 до 22 включительно оставляем без изменений/);
+  assert.match(script, /Это относится ко всем числам, а не только к 11, 15 и 22/);
+  assert.match(script, /23 → 2 \+ 3 = 5/);
+  assert.match(script, /24 → 2 \+ 4 = 6/);
+  assert.match(script, /29 → 2 \+ 9 = 11/);
+  assert.match(script, /1999 → 1 \+ 9 \+ 9 \+ 9 = 28 → 2 \+ 8 = 10/);
+});
+
 test("Protected lesson delivery and owner-only white-label PDF survive", async () => {
   const js = await read("pro/school/lesson/lesson.js");
   const gate = await read("server/school-access/private/gate.php");
