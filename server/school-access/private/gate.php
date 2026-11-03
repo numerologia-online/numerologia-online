@@ -81,15 +81,48 @@ function nsHeaders(): void {
     header('X-Content-Type-Options: nosniff');
     header('X-Robots-Tag: noindex, nofollow');
 }
-function nsFile(string $root, string $path, array $allowed, array $config): string {
+function nsFile(string $root, string $path, array $allowed, array $config, ?string $sourceRoot = null): string {
     if (!nsAllowed($path, $allowed)) throw new RuntimeException('NOT_FOUND');
     if (str_ends_with($path, '.json') && isset(numiManifest()['files'][$path])) return numiPrivateRead($path, $config);
-    $base = realpath($root);
-    $file = realpath($root.'/'.$path);
-    if ($base === false || $file === false || !str_starts_with($file, $base.'/') || !is_file($file) || is_link($root.'/'.$path) || filesize($file)>2_000_000) throw new RuntimeException('NOT_FOUND');
+    $sourceRoot ??= __DIR__.'/sources';
+    $base = realpath($sourceRoot);
+    $candidate = $sourceRoot.'/'.hash('sha256',$path);
+    $file = realpath($candidate);
+    if ($base === false || $file === false || !str_starts_with($file, $base.'/') || !is_file($file) || is_link($candidate) || filesize($file)>2_000_000) throw new RuntimeException('NOT_FOUND');
     $body = file_get_contents($file);
     if (!is_string($body)) throw new RuntimeException('READ_FAILED');
     return $body;
+}
+function nsReference(string $reference, string $context, array $allowed): string {
+    if ($reference==='' || $reference[0]==='#' || preg_match('~^(?:[a-z][a-z0-9+.-]*:|//)~i',$reference)) return $reference;
+    $parts=parse_url($reference);
+    if (!is_array($parts)) return $reference;
+    $path=$parts['path']??'';
+    if ($path==='') return $reference;
+    $path=$path[0]==='/'?$path:dirname('/'.ltrim($context,'/')).'/'.$path;
+    $segments=[];
+    foreach(explode('/',$path)as$segment){if($segment===''||$segment==='.')continue;if($segment==='..'){array_pop($segments);continue;}$segments[]=$segment;}
+    $trailing=str_ends_with($path,'/');$path='/'.implode('/',$segments);if($path!=='/'&&$trailing)$path.='/';
+    $logical=ltrim($path,'/');if(str_ends_with($logical,'/'))$logical.='index.html';
+    $query=isset($parts['query'])?$parts['query']:'';$fragment=isset($parts['fragment'])?'#'.$parts['fragment']:'';
+    return nsAllowed($logical,$allowed)?'/api/numi-school.php?file='.rawurlencode($logical).($query!==''?'&'.$query:'').$fragment:$path.($query!==''?'?'.$query:'').$fragment;
+}
+function nsRewriteJs(string $source,string $path,array $allowed):string{
+    return preg_replace_callback('~(\b(?:from|import)\s*(?:\(\s*)?)([\x22\x27])([^\x22\x27]+)\2~',function($m)use($path,$allowed){return $m[1].$m[2].nsReference($m[3],$path,$allowed).$m[2];},$source);
+}
+function nsRewriteHtml(string $source,string $path,array $allowed):string{
+    $context=$path;
+    if(preg_match('~<base\b[^>]*href=[\x22\x27]([^\x22\x27]+)~i',$source,$base)){
+        $resolved=nsReference($base[1],$path,[]);$context=ltrim($resolved,'/').(str_ends_with($resolved,'/')?'index.html':'');
+    }else{
+        $baseHref='/'.trim(dirname($path),'/').'/';
+        $source=preg_replace('~<head([^>]*)>~i','<head$1><base href="'.$baseHref.'">',$source,1);
+    }
+    $source=preg_replace_callback('~<(?:script|link)\b[^>]*>~i',function($tag)use($context,$allowed){return preg_replace_callback('~\b(src|href)=([\x22\x27])([^\x22\x27]+)\2~i',fn($m)=>$m[1].'='.$m[2].htmlspecialchars(nsReference(html_entity_decode($m[3],ENT_QUOTES),$context,$allowed),ENT_QUOTES).$m[2],$tag[0]);},$source);
+    return str_ireplace('</head>','<script src="/assets/numi-school-fetch-20261103.js?v=1"></script></head>',$source);
+}
+function nsRewriteCss(string $source,string $path,array $allowed):string{
+    return preg_replace_callback('~url\(\s*([\x22\x27]?)([^)\x22\x27]+)\1\s*\)~i',fn($m)=>'url('.$m[1].nsReference(trim($m[2]),$path,$allowed).$m[1].')',$source);
 }
 function nsServe(string $root): never {
     nsHeaders();
@@ -123,7 +156,7 @@ function nsServe(string $root): never {
             if ($method!=='HEAD') readfile(__DIR__.'/offer.html');
             exit;
         }
-        $path = nsPath((string)($_SERVER['REQUEST_URI'] ?? ''));
+        $path = isset($_GET['file']) && is_string($_GET['file']) ? $_GET['file'] : nsPath((string)($_SERVER['REQUEST_URI'] ?? ''));
         if ($path===null || nsPublic($path) || !nsAllowed($path,$allowed)) nsJson(404, ['ok'=>false,'error'=>'NOT_FOUND']);
         if (!nsOwner($config,$key)) {
             if (!str_ends_with($path,'.html')) nsJson(403, ['ok'=>false,'error'=>'SCHOOL_SUBSCRIPTION_REQUIRED']);
@@ -133,7 +166,14 @@ function nsServe(string $root): never {
         }
         $types = ['html'=>'text/html; charset=UTF-8','js'=>'text/javascript; charset=UTF-8','css'=>'text/css; charset=UTF-8','json'=>'application/json; charset=UTF-8','svg'=>'image/svg+xml','md'=>'text/plain; charset=UTF-8'];
         header('Content-Type: '.$types[strtolower(pathinfo($path,PATHINFO_EXTENSION))]);
-        if ($method!=='HEAD') echo nsFile($root,$path,$allowed,$config);
+        if ($method!=='HEAD') {
+            $source=nsFile($root,$path,$allowed,$config);
+            $extension=strtolower(pathinfo($path,PATHINFO_EXTENSION));
+            if($extension==='js')$source=nsRewriteJs($source,$path,$allowed);
+            if($extension==='html')$source=nsRewriteHtml($source,$path,$allowed);
+            if($extension==='css')$source=nsRewriteCss($source,$path,$allowed);
+            echo $source;
+        }
         exit;
     } catch (Throwable $error) {
         error_log('NUMI_SCHOOL_GATE:'.get_class($error));
