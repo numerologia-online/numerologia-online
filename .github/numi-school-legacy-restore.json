@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "note": "Only rename the five friendly buttons, their result labels and the heading of the fifth step in protected Matrix lesson JS. All calculations, visual positions, other site pages, access and client PDF remain unchanged.",
+  "note": "Only format explanatory paragraph in step 2 (axes) of fifth Matrix lesson: steps 1, 2, 3 separated by newline and visible via white-space pre-line. Exactly one protected JS file; preserve all calculations, diagrams, other lessons, owner access and client PDF.",
   "base_git_blob_sha": {
     "pro/school/index.html": "fbd6c7da7cc1c8cf4d4fabaaaf40980fd06624f6",
     "pro/school/school.js": "ce89ccefad588ae73d9c9f46c623287e682b4aee",
     "pro/school/lesson/index.html": "dbf7734b5dc5bd11e21a23c6f63f95fe60e03143",
-    "pro/school/lesson/lesson.js": "b0bcedaa65c68e489482ea89732a37e845af953a"
+    "pro/school/lesson/lesson.js": "747bd1d2f21539145972920bc61bcc5dd9428a1c"
   },
-  "release_request": "matrix-lesson5-friendly-labels-20261103-v8"
+  "release_request": "matrix-lesson5-axes-readable-lines-20261103-v9"
 }
