@@ -1,4 +1,4 @@
-name: Publish year SEO story with 3 CTAs to REG.RU
+name: Publish approved year article to REG.RU safely
 on:
   push:
     branches: [main]
@@ -10,82 +10,114 @@ concurrency:
   group: reg-ru-manual-publication
   cancel-in-progress: false
 jobs:
-  release:
+  publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Guard, back up, publish, and verify only year article on REG.RU
+      - name: Back up live article, preserve shell, publish approved body and verify
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 -u - <<'PY'
-          import ftplib,ssl,os,io,pathlib,hashlib,time,urllib.request
-          path='guide/razbor-goda/index.html'
-          old_blob_sha='24d997a8466a5caae5905829f14910a5790035b2'
-          content=pathlib.Path(path).read_bytes()
-          def gitsha(b):
-           return hashlib.sha1(b'blob '+str(len(b)).encode()+b'\\x00'+b).hexdigest()
-          # Ensure only expected publication content is released
-          if content.count(b'class="year-cta"') != 3 or content.count(b'href="/year/"') != 3:
-           raise RuntimeError('SEO CTAs do not match reviewed article')
-          if 'Навигатор на всю жизнь'.encode() not in content:raise RuntimeError('Missing article subtitle')
-          if not content.count(b'year-seo-cta-20261103'):raise RuntimeError('Missing dedicated button styling')
-          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          import ftplib,ssl,os,io,pathlib,re,hashlib,time,urllib.request,json
+          PATH='guide/razbor-goda/index.html'
+          DOMAIN='xn--c1adkkdfjbp1a4l.online'
+          src=pathlib.Path(PATH).read_bytes()
+          def sha(x):return hashlib.sha256(x).hexdigest()
+          def required_one(pattern,data,label):
+              matches=list(re.finditer(pattern,data,re.DOTALL))
+              if len(matches)!=1:raise RuntimeError('UNEXPECTED '+label+' count='+str(len(matches))+'; no publication')
+              return matches[0]
+          desired_story=required_one(rb'<div class="hero">.*?</article>',src,'approved story').group()
+          style=required_one(rb'<style id="year-seo-cta-20261103">.*?</style>',src,'CTA style').group()
+          if (desired_story.count(b'class="year-cta"')!=3
+              or desired_story.count(b'href="/year/"')!=3
+              or b'2006' not in desired_story
+              or 'Навигатор на всю жизнь'.encode() not in desired_story):
+              raise RuntimeError('Approved story/CTA requirements missing')
+          meta_patterns=[
+              (rb'<title>[^<]*</title>', 'title'),
+              (rb'<meta name="description" content="[^"]*">','description'),
+              (rb'<meta property="og:title" content="[^"]*">','og:title'),
+              (rb'<meta property="og:description" content="[^"]*">','og:description'),
+          ]
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
           ftp.prot_p()
           home=ftp.pwd().rstrip('/')
-          root=home+'/www/xn--c1adkkdfjbp1a4l.online'
-          def read(p):
-           b=io.BytesIO();ftp.retrbinary('RETR '+p,b.write)
-           if b.tell()>2000000:raise RuntimeError('Unexpected oversized file')
-           return b.getvalue()
-          def put(p,b):
-           ftp.storbinary('STOR '+p,io.BytesIO(b))
-           if read(p)!=b:raise RuntimeError('FTPS verification mismatch')
-          target=root+'/'+path
-          changed=False
+          base=home+'/www/'+DOMAIN
+          target=base+'/'+PATH
+          def read(path):
+              out=io.BytesIO()
+              def append(b):
+                  if out.tell()+len(b)>2500000:raise RuntimeError('Oversized remote file')
+                  out.write(b)
+              ftp.retrbinary('RETR '+path,append)
+              return out.getvalue()
+          def write(path,content):
+              ftp.storbinary('STOR '+path,io.BytesIO(content))
+              if read(path)!=content:raise RuntimeError('FTP readback failed')
+          written=False
+          original=None
           try:
-           if read(root+'/index.html')[:20].lower().find(b'<!doctype html')<0:
-            raise RuntimeError('Unexpected website root')
-           original=read(target)
-           if original==content:print('Article already published on REG.RU',flush=True)
-           elif gitsha(original)!=old_blob_sha:
-            raise RuntimeError('Live article differs from reviewed source. No changes made. Blob '+gitsha(original))
-           else:
-            backup=home+'/site-safeguard-backups'
-            folder=backup+'/year-seo-story-'+str(int(time.time()))
-            ftp.mkd(folder)
-            put(folder+'/razbor-goda-index.html.bak',original)
-            print('ORIGINAL BACKED UP OUTSIDE WWW',flush=True)
-            if read(target)!=original:raise RuntimeError('Concurrent edit detected before release')
-            try:
-             changed=True
-             put(target,content)
-             print('ONE FILE PUBLISHED: '+path,flush=True)
-            except BaseException:
-             if changed:
-              put(target,original)
-              print('ROLLBACK COMPLETE',flush=True)
-             raise
-           url='https://xn--c1adkkdfjbp1a4l.online/guide/razbor-goda/?year_seo_check='+str(time.time_ns())
-           req=urllib.request.Request(url,headers={'Cache-Control':'no-cache','User-Agent':'Mozilla/5.0'})
-           with urllib.request.urlopen(req,timeout=35) as resp:
-            public=resp.read(2000000)
-            if resp.status!=200 or 'noindex' in resp.headers.get('X-Robots-Tag','').lower():
-             raise RuntimeError('Public HTTP status or indexability check failed')
-           if public!=content:raise RuntimeError('Published HTTP content differs from source')
-           print('YEAR SEO STORY LIVE SUCCESS: all 3 CTAs, HTTP 200, content verified',flush=True)
+              if not read(base+'/index.html').lower().startswith(b'<!doctype html'):
+                  raise RuntimeError('Unexpected REG.RU site root')
+              original=read(target)
+              old_story=required_one(rb'<div class="hero">.*?</article>',original,'live story')
+              # Never replace unexpected article or an unrelated custom landing page.
+              if b'razbor-goda' not in original or not (b'Разбор' in original or 'Разбор'.encode() in original):
+                  raise RuntimeError('Unexpected live year article; no publication')
+              if b'year-seo-cta-20261103' in original and original!=src:
+                  raise RuntimeError('Another revised year story is live; no overwrite')
+              updated=original[:old_story.start()]+desired_story+original[old_story.end():]
+              for pattern,label in meta_patterns:
+                  current=required_one(pattern,updated,'live '+label)
+                  replacement=required_one(pattern,src,'approved '+label).group()
+                  updated=updated[:current.start()]+replacement+updated[current.end():]
+              if b'year-seo-cta-20261103' not in updated:
+                  end=required_one(rb'</head>',updated,'head')
+                  updated=updated[:end.start()]+style+b'\n'+updated[end.start():]
+              updated=updated.replace(b'Разбор года по месяцам | Нумерология Онлайн',
+                                     'Разбор года по дате рождения | Нумерология онлайн'.encode())
+              updated=updated.replace(b'"Разбор года по месяцам"',
+                                     '"Разбор года по дате рождения"'.encode())
+              if (updated.count(b'class="year-cta"')!=3 or
+                  updated.count(b'href="/year/"')!=3 or
+                  updated.count(b'<h1>Разбор года по дате рождения</h1>')!=1 or
+                  updated.count(b'<link rel="canonical"')!=1):
+                  raise RuntimeError('Final page validation failed')
+              print('PREFLIGHT SUCCESS: preserving existing shell and unrelated links',flush=True)
+              if updated!=original:
+                  backup_root=home+'/site-safeguard-backups'
+                  try:ftp.mkd(backup_root)
+                  except ftplib.error_perm:ftp.cwd(backup_root)
+                  folder=backup_root+'/seo-year-approved-'+str(int(time.time()))
+                  ftp.mkd(folder)
+                  write(folder+'/razbor-goda-index.html.bak',original)
+                  print('BACKUP SAVED outside public www; sha256='+sha(original),flush=True)
+                  if read(target)!=original:raise RuntimeError('Concurrent update, no writes')
+                  written=True
+                  write(target,updated)
+                  print('PUBLISHED ONLY '+PATH,flush=True)
+              url='https://'+DOMAIN+'/guide/razbor-goda/?publication_check='+str(time.time_ns())
+              req=urllib.request.Request(url,headers={'Cache-Control':'no-cache','User-Agent':'Mozilla/5.0'})
+              with urllib.request.urlopen(req,timeout=40) as res:
+                  public=res.read(2500001)
+                  if res.status!=200 or 'noindex' in res.headers.get('X-Robots-Tag','').lower():
+                      raise RuntimeError('Search-friendly HTTP check failed')
+              if public!=updated:raise RuntimeError('Public site response differs from FTP content')
+              print('YEAR SEO LIVE SUCCESS: HTTP 200, body, metadata, 3 buttons verified, no other pages modified',flush=True)
           except BaseException:
-           if changed:
-            try:
-             put(target,original)
-             print('ROLLBACK VERIFIED after failed HTTP check',flush=True)
-            except Exception as e:print('ROLLBACK FAILED',str(e)[:120],flush=True)
-           raise
+              if written and original is not None:
+                  try:
+                      write(target,original)
+                      print('ROLLED BACK TO ORIGINAL',flush=True)
+                  except Exception as e:print('ROLLBACK FAILED',str(e)[:250],flush=True)
+              raise
           finally:
-           try:ftp.quit()
-           except BaseException:ftp.close()
+              try:ftp.quit()
+              except BaseException:ftp.close()
           PY
