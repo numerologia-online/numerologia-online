@@ -1,6 +1,6 @@
 import { calculateMatrix } from "../../numerology-core.js?v=5";
 import { constructionSteps, purposeSteps, learningBirthDate, readLearningProgress, LESSON_SKILLS } from "./construction-model.js?v=20261102learn1";
-import { mountConstruction } from "./learning.js?v=20261102learn1";
+import { mountConstruction } from "./learning.js?v=20261103mobile1";
 const byId=id=>document.getElementById(id);
 const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
 const addParagraph=(root,value,cls)=>{if(value)root.append(make("p",cls,value));};
@@ -8,13 +8,13 @@ const error=byId("school-error"),lessonList=byId("school-lesson-list"),progressL
 const formulaForm=byId("school-formula-form"),formulaDate=byId("school-formula-date"),formulaError=byId("school-formula-error"),formulaList=byId("school-formula-list");
 const tabButtons=[...document.querySelectorAll("[data-school-panel]")];
 let lessons=[],arcana=[],activeArcanaIndex=0;
-const lessonLink=item=>"pro/school/lesson/?id="+encodeURIComponent(item.id)+"&v=20261102learn3";
+const lessonLink=item=>"pro/school/lesson/?id="+encodeURIComponent(item.id)+"&v=20261103mobile1";
 function showPanel(key){for(const section of document.querySelectorAll(".school-panel"))section.hidden=section.id!=="school-"+key;tabButtons.forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.schoolPanel===key)));if(key==="trainer"&&!byId("school-construction-trainer").childElementCount)mountConstruction(byId("school-construction-trainer"),{lessonId:byId("school-trainer-skill").value,standalone:true});}
 tabButtons.forEach(b=>b.addEventListener("click",()=>{showPanel(b.dataset.schoolPanel);document.querySelector(".school-tabs").scrollIntoView({block:"start",behavior:"smooth"});}));
 function renderLessonList(){
  const completed=readLearningProgress(),next=lessons.find(l=>!completed.has(l.id));
  progressLabel.textContent=lessons.filter(l=>completed.has(l.id)).length+" из "+lessons.length+" пройдено";
- const resume=byId("school-resume-link");resume.href=next?lessonLink(next):"pro/school/lesson/?id=build-independent&v=20261102learn3";
+ const resume=byId("school-resume-link");resume.href=next?lessonLink(next):"pro/school/lesson/?id=build-independent&v=20261103mobile1";
  resume.replaceChildren(make("span","",next?(completed.size?"Продолжить обучение →":"Начать с первого урока →"):"Повторить самостоятельное построение →"));
  resume.append(make("small","",next?next.title:"Соберите матрицу на новой дате"));
  byId("school-route-progress").textContent=lessons.filter(l=>l.track==="construction"&&completed.has(l.id)).length+" из "+lessons.filter(l=>l.track==="construction").length+" навыков построения подтверждено";
