@@ -68,7 +68,7 @@ jobs:
               original=read(target)
               old_story=required_one(rb'<div class="hero">.*?</article>',original,'live story')
               # Never replace unexpected article or an unrelated custom landing page.
-              if b'razbor-goda' not in original or not (b'Разбор' in original or 'Разбор'.encode() in original):
+              if b'razbor-goda' not in original or 'Разбор'.encode() not in original:
                   raise RuntimeError('Unexpected live year article; no publication')
               if b'year-seo-cta-20261103' in original and original!=src:
                   raise RuntimeError('Another revised year story is live; no overwrite')
