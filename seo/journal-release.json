@@ -1,10 +1,10 @@
 {
-  "guide/journal.css": {
-    "before": "1afa544560b43b46250eed57e5248e8d39ae10d1d93df0e6954e8ebb44b87343",
-    "after": "022d7deb8e3450bc3788a6449e2b1b6f96c04649864ded8411a42d3f276d4519"
-  },
   "guide/index.html": {
-    "before": "e9dab8f9472229fee338fefb41b1c392dce8b2d9059588ec9a75f4997f902418",
-    "after": "38bd4c3453889a388335cc15091077e38e5c1bb5b789d528d5d0bb16cf8eb66c"
+    "before": "38bd4c3453889a388335cc15091077e38e5c1bb5b789d528d5d0bb16cf8eb66c",
+    "after": "f41cac5a62bfa3ca0cddbe0733cb4992966275169eefa795ed8c9954064d9961"
+  },
+  "guide/journal.css": {
+    "before": "022d7deb8e3450bc3788a6449e2b1b6f96c04649864ded8411a42d3f276d4519",
+    "after": "83a2394f4e458e837edca953fa0e60cbce13cdb2c4572030e804822cf4d960fb"
   }
 }
