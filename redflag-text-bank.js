@@ -35,13 +35,13 @@ const publicJson = (path) => {
 
 // The authenticated REG.RU server returns complete paid data only to the owner
 // until a verified payment ledger is connected. Never put a private token here.
-const ownerJson = (path) => {
-  const key = initData() + ":" + path;
+const ownerJson = (path, dateKey = "") => {
+  const key = initData() + ":" + path + (dateKey ? ":" + dateKey : "");
   if (!ownerRequests.has(key)) {
     const request = fetch(AUTH_BASE + "/api/numi-redflag-content.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ init_data: initData(), path }),
+      body: JSON.stringify({ init_data: initData(), path, ...(dateKey ? { date_key: dateKey } : {}) }),
       cache: "no-store",
       signal: AbortSignal.timeout(25000)
     }).then(async (response) => {
@@ -96,16 +96,16 @@ const approvedLoveAnswer = async (question, profile, free) => {
 };
 const calculateAnswer = async (bankName, publicQuestion, free, profile) => {
   if (bankName === "love" && publicQuestion.id === "romance") {
+    // All 366 dates are served from one protected JSONL bank; the API
+    // selects only this person's date after server-side entitlement checks.
     const { day, month } = profile.classic.birthDate;
-    const key = day + "-" + month;
-    if (["1-1", "2-1", "3-1", "4-1"].includes(key)) {
-      const approved = await ownerJson("data/redflag/love/romance.json");
-      const text = approved.entries?.[key];
-      if (approved.questionId !== "romance" || typeof text !== "string" || !text.trim()) {
-        throw accessError("ANSWER_NOT_FOUND");
-      }
-      return { answer: text };
+    const dateKey = day + "-" + month;
+    const selected = await ownerJson("data/redflag/love/romance.jsonl", dateKey);
+    if (selected.questionId !== "romance" || selected.dateKey !== dateKey ||
+        typeof selected.answer !== "string" || !selected.answer.trim()) {
+      throw accessError("ANSWER_NOT_FOUND");
     }
+    return { answer: selected.answer };
   }
   if (publicQuestion.status === "in-progress") {
     throw accessError("CONTENT_NOT_PUBLISHED");
