@@ -1,0 +1,30 @@
+name: Owner-requested temporary school access and subscription display
+on:
+  push:
+    paths:
+      - .github/numi-school-access-release.json
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-school-owner-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify school owner boundaries and existing lesson behavior
+        run: |
+          php -l server/school-access/private/gate.php
+          php -l server/school-access/public/numi-school.php
+          php tests/school-access.php
+          node --check assets/numi-school-access-20261103.js
+          node tests/matrix-learning.test.mjs
+          python3 -m py_compile .github/scripts/reg-school-access-release.py
+      - name: Guard reviewed versions, back up and apply the owner-requested school scope
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/reg-school-access-release.py

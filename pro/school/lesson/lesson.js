@@ -13,14 +13,8 @@ let lesson,manifest,index=-1,practiceComplete=false,lessonView="lesson";
 const params=new URLSearchParams(location.search);
 const id=params.get("id")||"start";
 async function loadLessonContent(item){
-  if(item.id==="start"){
-    const response=await fetch(item.file+"?v=20261102learn1");
-    if(!response.ok)throw Error("Материал урока не найден");
-    return response.json();
-  }
-  const initData=window.Telegram?.WebApp?.initData;
-  if(typeof initData!=="string"||!initData)throw Object.assign(Error("Требуется подтверждённый аккаунт"),{code:"AUTH_REQUIRED"});
-  const response=await fetch("/api/numi-paid-content.php",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData,path:item.file})});
+  const initData=window.Telegram?.WebApp?.initData||"";
+  const response=await fetch("/api/numi-school.php",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"content",init_data:initData,path:item.file})});
   if(response.status===401||response.status===403)throw Object.assign(Error("Доступ не подтверждён"),{code:response.status===401?"AUTH_REQUIRED":"ACCESS_REQUIRED"});
   if(!response.ok)throw Error("Сервис уроков временно недоступен");
   const result=await response.json();if(result.ok!==true||!result.content||typeof result.content!=="object")throw Error("Некорректный ответ сервиса уроков");
@@ -266,3 +260,4 @@ async function start() {
   }
 }
 start();
+

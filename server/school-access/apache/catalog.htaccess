@@ -1,0 +1,4 @@
+# NUMI SCHOOL OWNER ACCESS BEGIN 2026-11-03
+RewriteEngine On
+RewriteRule ^(?!(?:index\.html|schools\.css)$).+ /api/numi-school.php [END]
+# NUMI SCHOOL OWNER ACCESS END 2026-11-03

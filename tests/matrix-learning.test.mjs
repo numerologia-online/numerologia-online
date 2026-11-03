@@ -114,7 +114,7 @@ for(const lessonId of ['base','final']){
   const manifest=JSON.parse(fs.readFileSync(new URL('../pro/school/lessons-manifest.json',import.meta.url)));
   globalThis.location={search:'?id='+lessonId};window.Telegram={WebApp:{initData:'isolated-unit-test'}};
   globalThis.fetch=async(path,options)=>{
-    const secure=path==='/api/numi-paid-content.php',file=secure?JSON.parse(options.body).path:path.split('?')[0];
+    const secure=path==='/api/numi-school.php',file=secure?JSON.parse(options.body).path:path.split('?')[0];
     if(secure){assert.equal(options.method,'POST');assert.equal(options.cache,'no-store');assert.equal(JSON.parse(options.body).init_data,'isolated-unit-test');}
     const content=JSON.parse(fs.readFileSync(new URL('../'+file,import.meta.url)));
     return {ok:true,status:200,json:async()=>secure?{ok:true,content}:content};
@@ -144,12 +144,12 @@ for(const state of ['anonymous','denied']){
   globalThis.location={search:'?id=base'};let privateCalls=0;
   if(state==='denied')window.Telegram={WebApp:{initData:'isolated-denied-test'}};
   globalThis.fetch=async path=>{
-    if(path==='/api/numi-paid-content.php'){privateCalls++;return {ok:false,status:403};}
+    if(path==='/api/numi-school.php'){privateCalls++;return {ok:false,status:403};}
     assert.ok(path.includes('lessons-manifest.json'),'must never fall back to a protected public JSON');
     return {ok:true,json:async()=>JSON.parse(fs.readFileSync(new URL('../pro/school/lessons-manifest.json',import.meta.url)))};
   };
   await import('../pro/school/lesson/lesson.js?test='+state);await new Promise(resolve=>setTimeout(resolve,0));
-  assert.ok(root.querySelector('.school-access-card'));assert.equal(document.getElementById('lesson-quiz').hidden,true);assert.equal(privateCalls,state==='denied'?1:0);
+  assert.ok(root.querySelector('.school-access-card'));assert.equal(document.getElementById('lesson-quiz').hidden,true);assert.equal(privateCalls,1);
 }
 const swipe=(node,dx,dy=0,target=node)=>{node.emit('touchstart',{target,touches:[{clientX:180,clientY:120}]});node.emit('touchend',{target,changedTouches:[{clientX:180+dx,clientY:120+dy}]});};
 {
@@ -178,3 +178,4 @@ const swipe=(node,dx,dy=0,target=node)=>{node.emit('touchstart',{target,touches:
   const api=mountLessonGuide(root,{lesson});api.goTo(1);assert.ok(root.querySelector('.lesson-slide-body').textContent.includes(lesson.sections[1].text));assert.equal(JSON.stringify(lesson),before);
 }
 console.log('PASS: '+dates+' dates; all 10 practice flows; diagram first; single horizontal step; swipe and keyboard navigation; zoom; reading resume; quiz pager; unchanged author text; protected access and practice gates.');
+
