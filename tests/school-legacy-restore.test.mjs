@@ -161,10 +161,10 @@ test("Fifth lesson second step describes where every number goes for the selecte
   assert.match(top,/Записываем 12 между крайним числом 9 и центром/);
   assert.match(top,/Записываем 21 между 9 и 12/);
   assert.match(top,/Записываем 15 между 12 и центром/);
-  assert.match(top,/\\n\\nШаг 1\\. Складываем 9 \\+ 3 = 12\\.\\nЗаписываем 12/);
-  assert.match(top,/\\n\\nШаг 2\\. Складываем 9 \\+ 12 = 21\\.\\nЗаписываем 21/);
-  assert.match(top,/\\n\\nШаг 3\\. Складываем 12 \\+ 3 = 15\\.\\nЗаписываем 15/);
-  assert.match(source,/\\$\\("lesson-step-text"\\)\\.style\\.whiteSpace=id==="internal"&&step===1\\?"pre-line":""/);
+  assert.ok(top.includes("\n\nШаг 1. Складываем 9 + 3 = 12.\nЗаписываем 12"));
+  assert.ok(top.includes("\n\nШаг 2. Складываем 9 + 12 = 21.\nЗаписываем 21"));
+  assert.ok(top.includes("\n\nШаг 3. Складываем 12 + 3 = 15.\nЗаписываем 15"));
+  assert.ok(source.includes('$("lesson-step-text").style.whiteSpace=id==="internal"&&step===1?"pre-line":"";'));
 });
 
 test("Fifth Matrix lesson uses friendly line names without changing five formulas", async () => {
