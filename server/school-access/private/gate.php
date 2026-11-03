@@ -19,6 +19,10 @@ function nsValidCookie(string $raw, string $owner, string $key, string $binding,
     if (!hash_equals($owner, $m[1]) || !hash_equals($binding, $m[3]) || (int)$m[2] <= $now || (int)$m[2] > $now + NS_TTL) return false;
     return hash_equals(hash_hmac('sha256', $m[1].'.'.$m[2].'.'.$m[3], $key), $m[4]);
 }
+function nsManagementAccount(?array $account, string $verifiedEmailHash = 'f289c5906895cbbd1b42d74e4e2e07d531fc1af4e91bcf7e5700835856003d29'): bool {
+    return $account !== null && !empty($account['email_verified_at']) && is_string($account['email'] ?? null)
+        && hash_equals($verifiedEmailHash, hash('sha256', strtolower($account['email'])));
+}
 function nsAccountOwner(string $ownerId): bool {
     if (empty($_COOKIE['__Host-numi_session'])) return false;
     try {
@@ -26,7 +30,7 @@ function nsAccountOwner(string $ownerId): bool {
         $db = naDB();
         $account = naCurrent($db);
         if (!$account) return false;
-        if (naTestOwner($account)) return true;
+        if (nsManagementAccount($account)) return true;
         $query = $db->prepare('SELECT 1 FROM numi_identities WHERE account_id=? AND provider=? AND provider_user_id=? LIMIT 1');
         $query->execute([(string)$account['id'], 'telegram', $ownerId]);
         return (bool)$query->fetchColumn();
