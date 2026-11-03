@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /* First-party analytics v2. Client events never create orders or grant access. */
-const NI_VERSION='2.0.0';
+const NI_VERSION='2.1.0';
 const NI_OWNER_HASH='f289c5906895cbbd1b42d74e4e2e07d531fc1af4e91bcf7e5700835856003d29';
 const NI_SECTIONS=['home','day','year','full','redflag','compatibility','children','money','moment','yes-no','school','club','other'];
 const NI_TYPES=['page','impression','click','open','category','offer','checkout_once','checkout_club','search'];
@@ -89,18 +89,17 @@ function niReport(PDO $db,string $from,string $to): array {
     $q=$db->prepare("SELECT source,campaign,COUNT(DISTINCT session_id) sessions,SUM(event_type='page') pages,SUM(event_type='click') clicks,SUM(event_type IN ('checkout_once','checkout_club')) checkouts FROM numi_insights_events WHERE created_at>=? AND created_at<? GROUP BY source,campaign");$q->execute([$start,$end]);
     $sources=[];foreach($q->fetchAll(PDO::FETCH_ASSOC) as $r){foreach(['sessions','pages','clicks','checkouts'] as $k)$r[$k]=(int)$r[$k];$r+=['orders'=>0,'subscriptions'=>0,'revenue'=>0];$sources[$r['source'].':'.$r['campaign']]=$r;}
     $q=$db->prepare("SELECT DATE(DATE_ADD(created_at,INTERVAL 4 HOUR)) day,COUNT(DISTINCT session_id) sessions,SUM(event_type='click') clicks FROM numi_insights_events WHERE created_at>=? AND created_at<? GROUP BY day ORDER BY day");$q->execute([$start,$end]);$days=$q->fetchAll(PDO::FETCH_ASSOC);
-    $q=$db->prepare("SELECT id,account_id,product_code,resource_id,amount_kopeks,currency,created_at,verified_at FROM numi_orders WHERE status='paid' AND verified_at IS NOT NULL AND verified_at>=? AND verified_at<? AND amount_kopeks>0 AND currency='RUB' AND provider IS NOT NULL AND provider<>'test' AND provider<>'sandbox' ORDER BY verified_at LIMIT 10000");$q->execute([$start,$end]);
+    $q=$db->prepare("SELECT id,product_code,resource_id,amount_kopeks,currency,created_at,verified_at FROM numi_orders WHERE status='paid' AND verified_at IS NOT NULL AND verified_at>=? AND verified_at<? AND amount_kopeks>0 AND currency='RUB' AND provider IS NOT NULL AND provider<>'test' AND provider<>'sandbox' ORDER BY verified_at LIMIT 10000");$q->execute([$start,$end]);
     $orders=$q->fetchAll(PDO::FETCH_ASSOC);$attributed=0;$clubTotal=0;$revenue=0;
     $dayMap=[];foreach($days as $d){$d['sessions']=(int)$d['sessions'];$d['clicks']=(int)$d['clicks'];$d['orders']=0;$dayMap[$d['day']]=$d;}
-    $intent=$db->prepare("SELECT section,item,title,source,campaign FROM numi_insights_intents WHERE account_id=? AND plan=? AND created_at<=? AND created_at>=DATE_SUB(?,INTERVAL 24 HOUR) AND (?='club' OR section=?) ORDER BY created_at DESC LIMIT 1");
     foreach($orders as $o){
         $club=niIsClub($o['product_code']);$clubTotal+=(int)$club;$amount=(int)$o['amount_kopeks']/100;$revenue+=$amount;$section=niSection($o['product_code']);$plan=$club?'club':'once';
         $paidDay=(new DateTimeImmutable($o['verified_at'],new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Europe/Samara'))->format('Y-m-d');
         if(!isset($dayMap[$paidDay]))$dayMap[$paidDay]=['day'=>$paidDay,'sessions'=>0,'clicks'=>0,'orders'=>0];$dayMap[$paidDay]['orders']++;
-        $intent->execute([$o['account_id'],$plan,$o['created_at'],$o['created_at'],$plan,$section]);$a=$intent->fetch(PDO::FETCH_ASSOC);
-        if($a){$attributed++;}else{$a=['section'=>$section,'item'=>'-','title'=>'','source'=>'unattributed','campaign'=>'-'];}
+        // Until checkout passes anonymous order context, report payments only by product.
+        $a=['section'=>$section,'item'=>'-','title'=>'','source'=>'unattributed','campaign'=>'-'];
         $key=$a['section'].':'.$a['item'];if(!isset($rows[$key]))$rows[$key]=niRow($a['section'],$a['item'],$a['title']);
-        $rows[$key]['orders']++;$rows[$key]['subscriptions']+=(int)$club;$rows[$key]['revenue']+=$amount;if($club)$rows[$key]['subscription_revenue']+=$amount;$rows[$key]['_buyers'][$o['account_id']]=true;
+        $rows[$key]['orders']++;$rows[$key]['subscriptions']+=(int)$club;$rows[$key]['revenue']+=$amount;if($club)$rows[$key]['subscription_revenue']+=$amount;
         $sk=$a['source'].':'.$a['campaign'];if(!isset($sources[$sk]))$sources[$sk]=['source'=>$a['source'],'campaign'=>$a['campaign'],'sessions'=>0,'pages'=>0,'clicks'=>0,'checkouts'=>0,'orders'=>0,'subscriptions'=>0,'revenue'=>0];
         $sources[$sk]['orders']++;$sources[$sk]['subscriptions']+=(int)$club;$sources[$sk]['revenue']+=$amount;
     }
@@ -112,7 +111,7 @@ function niReport(PDO $db,string $from,string $to): array {
     ksort($dayMap);
     return ['ok'=>true,'version'=>NI_VERSION,'from'=>$from,'to'=>$to,'timezone'=>'Europe/Samara','rows'=>array_values($rows),'sources'=>array_values($sources),'days'=>array_values($dayMap),
       'totals'=>['sessions'=>$sessions,'orders'=>count($orders),'subscriptions'=>$clubTotal,'revenue'=>$revenue,'attributed'=>$attributed,'unattributed'=>count($orders)-$attributed],
-      'payment_status'=>'waiting_for_provider','attribution'=>'last_checkout_click_24h','generated_at'=>gmdate('c')];
+      'payment_status'=>'waiting_for_provider','attribution'=>'aggregate_product_only','generated_at'=>gmdate('c')];
 }
 function niMain(): never {
     header('Cache-Control: no-store, private, max-age=0');header('X-Content-Type-Options: nosniff');header('X-Frame-Options: DENY');header('Referrer-Policy: no-referrer');
@@ -131,13 +130,13 @@ function niMain(): never {
             $sid=$events[0]['session'];foreach($events as $e)if($e['session']!==$sid)throw new InvalidArgumentException('SESSION');
             $limit=$db->prepare('SELECT COUNT(*) FROM numi_insights_events WHERE session_id=? AND created_at>DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 MINUTE)');$limit->execute([$sid]);
             if((int)$limit->fetchColumn()>240)niReply(429,['ok'=>false,'error'=>'RATE_LIMIT']);
-            $user=naCurrent($db);$account=$user['id']??null;
+            // Aggregate collection does not read visitor accounts or cookies.
+            $account=null;
             $insert=$db->prepare('INSERT IGNORE INTO numi_insights_events(id,session_id,event_type,section,item,title,source,campaign) VALUES(?,?,?,?,?,?,?,?)');
             $save=$db->prepare('INSERT IGNORE INTO numi_insights_intents(id,session_id,account_id,section,item,title,plan,source,campaign) VALUES(?,?,?,?,?,?,?,?,?)');
             $db->beginTransaction();
             foreach($events as $e){$insert->execute([$e['id'],$sid,$e['type'],$e['section'],$e['item'],$e['title'],$e['source'],$e['campaign']]);
                 if(in_array($e['type'],['checkout_once','checkout_club'],true))$save->execute([$e['id'],$sid,$account,$e['section'],$e['item'],$e['title'],$e['type']==='checkout_club'?'club':'once',$e['source'],$e['campaign']]);}
-            if($account){$db->prepare('UPDATE numi_insights_intents SET account_id=? WHERE session_id=? AND account_id IS NULL')->execute([$account,$sid]);}
             $db->commit();niReply(200,['ok'=>true,'accepted'=>count($events)]);
         }
         if($method!=='GET')niReply(405,['ok'=>false,'error'=>'METHOD']);

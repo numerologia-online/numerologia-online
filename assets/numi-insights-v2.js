@@ -2,21 +2,19 @@
 (() => {
   'use strict';
   try {
-    if (window.NumiInsights || navigator.doNotTrack === '1' || navigator.globalPrivacyControl) return;
+    if (window.NumiInsights) return;
     const endpoint = '/api/numi-insights.php';
     const labels = {home:'Главная',day:'Личный день',year:'Разбор года',full:'Полный разбор жизни',redflag:'Мужчина или Red Flag',compatibility:'Совместимость',children:'Для мам',money:'Код богатства',moment:'300 вопросов', 'yes-no':'Да или нет',school:'Школа',club:'Клуб'};
     const uuid = () => crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=crypto.getRandomValues(new Uint8Array(1))[0]&15;return(c==='x'?r:(r&3)|8).toString(16);});
-    const get = key => {try{return sessionStorage.getItem(key);}catch(_){return null;}};
-    const put = (key,value) => {try{sessionStorage.setItem(key,value);}catch(_){}};
-    const validId = value => /^[a-f0-9-]{36}$/i.test(value || '');
-    let session = get('ni2_session');if(!validId(session)){session=uuid();put('ni2_session',session);}
+    // A fresh random page identifier: never stored and never linked to an account.
+    const session=uuid();
     const tag = (v,max=64) => typeof v==='string'&&new RegExp('^[a-z0-9_.:-]{1,'+max+'}$','i').test(v)?v.toLowerCase():null;
     const params=new URLSearchParams(location.search);
     let source=tag(params.get('utm_source'),96),campaign=tag(params.get('utm_campaign'));
     if(!source){try{source=tag(new URL(document.referrer).hostname.replace(/^www\./,''),96);}catch(_){}}
     if(source && source===location.hostname)source=null;
-    source=source||get('ni2_source')||(window.Telegram?.WebApp?.initData?'telegram':'direct');
-    campaign=campaign||get('ni2_campaign')||'-';put('ni2_source',source);put('ni2_campaign',campaign);
+    source=source||(window.Telegram?.WebApp?.initData?'telegram':'direct');
+    campaign=campaign||'-';
     const hash = text => {let h=2166136261;for(const ch of text){h^=ch.codePointAt(0);h=Math.imul(h,16777619);}return 'q_'+(h>>>0).toString(16);};
     const clean = text => String(text||'').replace(/\s+/g,' ').replace(/[<>@\x00-\x1f]/g,'').replace(/\d{2}[.\/-]\d{2}[.\/-]\d{4}/g,'').trim().slice(0,170);
     const safe = fn => (...args) => {try{return fn(...args);}catch(_){return undefined;}};
@@ -39,7 +37,7 @@
     async function flush(){
       clearTimeout(timer);timer=0;if(sending||!queue.length||failures>=3)return;
       sending=true;const batch=queue.splice(0,20);const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),2500);
-      try{const response=await fetch(endpoint,{method:'POST',credentials:'same-origin',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({events:batch}),signal:controller.signal});if(!response.ok)throw Error('collector');failures=0;}
+      try{const response=await fetch(endpoint,{method:'POST',credentials:'omit',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({events:batch}),signal:controller.signal});if(!response.ok)throw Error('collector');failures=0;}
       catch(_){failures++;queue.unshift(...batch);}
       finally{clearTimeout(timeout);sending=false;if(queue.length&&failures<3)timer=setTimeout(flush,failures?5000:1500);}
     }
@@ -85,8 +83,8 @@
     let scheduled=false;const schedule=safe(()=>{if(scheduled)return;scheduled=true;setTimeout(safe(()=>{scheduled=false;scan();}),160);});
     new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','open']});
     window.addEventListener('pageshow',schedule,{passive:true});
-    document.addEventListener('visibilitychange',safe(()=>{if(document.visibilityState==='hidden'&&queue.length){const batch=queue.splice(0,20);if(!navigator.sendBeacon(endpoint,new Blob([JSON.stringify({events:batch})],{type:'application/json'})))queue.unshift(...batch);}}));
-    window.NumiInsights=Object.freeze({version:'2.0.0',checkout:plan=>send(plan==='club'?'checkout_club':'checkout_once',lastQuestion||row(pageSection()))});
+    document.addEventListener('visibilitychange',safe(()=>{if(document.visibilityState==='hidden'&&queue.length){const batch=queue.splice(0,20);fetch(endpoint,{method:'POST',credentials:'omit',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({events:batch})}).catch(()=>{});}}));
+    window.NumiInsights=Object.freeze({version:'2.1.0',checkout:plan=>send(plan==='club'?'checkout_club':'checkout_once',lastQuestion||row(pageSection()))});
     scan();
   } catch(_) { /* Analytics must never interrupt the site. */ }
 })();

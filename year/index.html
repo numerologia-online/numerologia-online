@@ -101,9 +101,8 @@
   </script>
 <!-- Numi Insights v2: independent background collector -->
 <script>
-(()=>{const start=()=>{try{if(localStorage.getItem('numi_analytics_permission')!=='allow'||navigator.doNotTrack==='1'||navigator.globalPrivacyControl===true)return;const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.0.0';s.async=true;document.head.append(s);}catch(_){}};const schedule=()=>{if('requestIdleCallback'in window)requestIdleCallback(start,{timeout:1500});else setTimeout(start,0);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule,{once:true});else schedule();})();
+(()=>{const start=()=>{try{const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.1.0';s.async=true;document.head.append(s);}catch(_){}};const schedule=()=>{if('requestIdleCallback'in window)requestIdleCallback(start,{timeout:1500});else setTimeout(start,0);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule,{once:true});else schedule();})();
 </script>
 
 </body>
 </html>
-

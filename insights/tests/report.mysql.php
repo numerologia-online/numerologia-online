@@ -23,11 +23,12 @@ foreach($fixtures as $i=>[$product,$status,$provider,$verified,$amount])$order->
 $r=niReport($db,'2026-11-01','2026-11-01');
 check($r['totals']['orders']===2,'only provider-confirmed non-test payments count');
 check($r['totals']['subscriptions']===1&&(float)$r['totals']['revenue']===589.0,'subscription and revenue correct');
-check($r['totals']['attributed']===2&&$r['totals']['unattributed']===0,'last eligible checkout attribution');
+check($r['totals']['attributed']===0&&$r['totals']['unattributed']===2,'aggregate report never links legacy account identities to questions');
 $q=array_values(array_filter($r['rows'],fn($x)=>$x['item']==='q_1'))[0];
 check($q['clicks']===1&&$q['impressions']===1,'event UUID deduplicates delivery retries');
-check($q['ctr']===100.0&&$q['orders']===2&&$q['subscriptions']===1,'question funnel and CTR correct');
-check((float)$q['subscription_revenue']===490.0&&$q['club_conversion']===100.0,'club conversion and revenue are separate from one-time orders');
+check($q['ctr']===100.0&&$q['orders']===0&&$q['subscriptions']===0,'question interest never invents payment attribution');
+check((float)$q['subscription_revenue']===0.0&&$q['club_conversion']===0.0,'unlinked club payments never attributed to a question');
 check($r['totals']['sessions']===1&&count($r['days'])===1,'Samara timezone includes prior UTC evening');
-check($r['sources'][0]['orders']===2,'campaign gets confirmed orders');
+check(array_sum(array_column($r['sources'],'orders'))===2,'confirmed totals preserved without identifying buyers');
+check(array_values(array_filter($r['sources'],fn($x)=>$x['source']==='unattributed'))[0]['orders']===2,'unlinked payments explicitly labelled');
 echo "MySQL report integration passed\n";

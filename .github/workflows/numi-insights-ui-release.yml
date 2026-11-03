@@ -1,29 +1,40 @@
-name: Insights mobile UI release
+name: Publish aggregate site counters
 on:
   push:
-    branches: [fix/insights-all-sections-mobile]
+    branches: [main]
     paths: [.github/workflows/numi-insights-ui-release.yml]
 permissions:
   contents: read
 jobs:
   validate-and-release:
+    if: github.event.head_commit.message == 'Count site activity without persistent visitor identifiers'
     runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: insights_test_only
+          MYSQL_DATABASE: insights_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pinsights_test_only"
+          --health-interval=10s --health-timeout=5s --health-retries=8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: node --test insights/tests/*.test.cjs
-      - run: node --check insights/public/insights.js
+      - run: node --check insights/public/tracker.js && node --check insights/public/insights.js
+      - run: php -l insights/public/numi-insights.php
+      - name: Verify aggregate reports against isolated MySQL
+        env:
+          NI_TEST_DSN: 'mysql:host=127.0.0.1;port=3306;dbname=insights_test;charset=utf8mb4'
+        run: php insights/tests/report.mysql.php
       - run: python3 -m py_compile insights/deploy-ui.py
-      - name: Publish only dashboard files with backup and checksum guards
+      - name: Publish only existing analytics with backup and checksum guards
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: python3 -u insights/deploy-ui.py
-
-# Release 2.0.2: complete payment metrics beside CTR.
-
-# Release 2.0.3: restore compact comparison table on phones.
-
-# Release 2.0.4: right edge spacing.
