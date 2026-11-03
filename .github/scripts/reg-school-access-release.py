@@ -72,14 +72,17 @@ def run():
    if str(error).startswith('550'):return None
    raise
   return out.getvalue()
+ known_dirs=set()
  def mkdir(path):
   current=''
   for part in pathlib.PurePosixPath(path).parts:
    if part=='/':continue
    current+='/'+part
+   if current in known_dirs:continue
    try:ftp.mkd(current)
    except ftplib.error_perm as error:
     if not str(error).startswith('550'):raise
+   known_dirs.add(current)
  def write(path,data):
   mkdir(str(pathlib.PurePosixPath(path).parent));ftp.storbinary('STOR '+path,io.BytesIO(data))
   if read(path)!=data:raise RuntimeError('Upload integrity mismatch')
