@@ -1,18 +1,5 @@
 {
-  "mode": "publish",
-  "expected": {
-    "@private/allowlist.json": null,
-    "@private/gate.php": null,
-    "@private/offer.html": null,
-    "api/numi-school.php": null,
-    "assets/numi-school-access-20261103.css": null,
-    "assets/numi-school-access-20261103.js": null,
-    "index.html": "7d0c6dfa21d6297e316b2ff52224f03493beb1b9812aa3b93055c7d44d1aec55",
-    "pro/school/.htaccess": null,
-    "pro/school/lesson/lesson.js": "5350492d1ca7fa3d8d4daa2d82c33476b2765e60d3b55e65aabb08f0e8ccab15",
-    "pro/schools/.htaccess": null,
-    "pro/schools/index.html": "bffaa8261ec318269003facf2d14b580b347dd52c0056ed97c8c6f642fae2563"
-  },
-  "revision": 4,
-  "note": "Owner requested 8-school button, temporary management-only access to all study materials, subscription display at 150 RUB/month, readiness labels for unfinished directions."
+  "mode": "preflight",
+  "expected": {},
+  "revision": 5
 }
