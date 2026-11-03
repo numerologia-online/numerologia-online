@@ -1,0 +1,103 @@
+name: Publish final personal year SEO polish to REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-personal-year-seo-polish-20261103.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish only the personal-year article after exact source verification
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib, ssl, os, io, pathlib, hashlib, time, urllib.request, json, re
+          DOMAIN="xn--c1adkkdfjbp1a4l.online"
+          PAGE="guide/lichnyi-god-po-date-rozhdeniya/index.html"
+          ORIGINAL_BLOB_SHA="c194ac137756fed46526546ed3c2734b4de37917"
+          source=pathlib.Path(PAGE).read_bytes()
+          def git_sha(blob):
+              return hashlib.sha1(b"blob "+str(len(blob)).encode()+b"\0"+blob).hexdigest()
+          def assert_page(data):
+              if data.count(b'<details class="year-panel"')!=9 or data.count(b'<h3 class="year-heading">')!=9 or data.count(b'class="year-cta')!=3:
+                  raise RuntimeError("Year sections or CTA count changed")
+              if data.count(b'<link rel="canonical"')!=1 or data.count(b'<h1>')!=1:
+                  raise RuntimeError("Canonical or H1 mismatch")
+              m=re.search(rb'<script type="application/ld\+json">(.*?)</script>',data,re.S)
+              if m is None:raise RuntimeError("Missing article JSON-LD")
+              graph=json.loads(m.group(1))
+              article=next((x for x in graph.get("@graph",[]) if x.get("@type")=="Article"),None)
+              if not article or article.get("datePublished")!="2026-11-03" or article.get("dateModified")!="2026-11-03":
+                  raise RuntimeError("Missing exact article publication dates")
+              if article.get("author",{}).get("@id")!="https://"+DOMAIN+"/author.html#person":
+                  raise RuntimeError("Author identity mismatch")
+          assert_page(source)
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
+          ftp.connect("server172.hosting.reg.ru",21)
+          ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          ftp.prot_p()
+          home=ftp.pwd().rstrip("/")
+          site=home+"/www/"+DOMAIN
+          target=site+"/"+PAGE
+          def read(p):
+              buf=io.BytesIO()
+              def collect(chunk):
+                  if buf.tell()+len(chunk)>3000000:raise RuntimeError("Remote file too large")
+                  buf.write(chunk)
+              ftp.retrbinary("RETR "+p,collect)
+              return buf.getvalue()
+          def write(p,blob):
+              ftp.storbinary("STOR "+p,io.BytesIO(blob))
+              if read(p)!=blob:raise RuntimeError("FTP integrity verification failed")
+          original=None
+          written=False
+          try:
+              if not read(site+"/index.html").lower().startswith(b"<!doctype html"):
+                  raise RuntimeError("Cannot verify live website root")
+              original=read(target)
+              if original==source:
+                  print("ALREADY LIVE: correct SEO page",flush=True)
+              else:
+                  if git_sha(original)!=ORIGINAL_BLOB_SHA:
+                      raise RuntimeError("Live article changed since review, refused to overwrite; no uploads")
+                  backup_root=home+"/site-safeguard-backups"
+                  try:ftp.mkd(backup_root)
+                  except ftplib.error_perm:ftp.cwd(backup_root)
+                  backup_dir=backup_root+"/year-seo-final-"+str(int(time.time()))
+                  ftp.mkd(backup_dir)
+                  write(backup_dir+"/index.html.bak",original)
+                  print("BACKUP OUTSIDE PUBLIC SITE VERIFIED",flush=True)
+                  if read(target)!=original:raise RuntimeError("Concurrent update; cancelled")
+                  written=True
+                  write(target,source)
+                  print("UPDATED ONLY YEAR ARTICLE",flush=True)
+              url="https://"+DOMAIN+"/guide/lichnyi-god-po-date-rozhdeniya/?seo_test="+str(time.time_ns())
+              request=urllib.request.Request(url,headers={"Cache-Control":"no-cache","User-Agent":"Mozilla/5.0"})
+              with urllib.request.urlopen(request,timeout=40) as resp:
+                  public=resp.read(3000001)
+                  if resp.status!=200 or "noindex" in resp.headers.get("X-Robots-Tag","").lower():
+                      raise RuntimeError("HTTP or indexability check failed")
+              if public!=source:raise RuntimeError("Public page differs from approved source")
+              print("LIVE SEO CHECK PASSED: HTTP 200, 9 H3 headings, Person + Article dates, byline, 3 CTAs",flush=True)
+          except BaseException:
+              if written and original is not None:
+                  try:
+                      write(target,original)
+                      print("ROLLBACK COMPLETED",flush=True)
+                  except Exception as e:
+                      print("CRITICAL ROLLBACK FAILED",str(e)[:150],flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
