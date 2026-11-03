@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Fix numeric date entry on iOS: auto-insert separators after dd/mm with Backspace support. Touch exactly pro/pro.js and its cache-busted pro/index.html reference, keep client-PDF owner gate, all report calculations, and all other site files unchanged.",
+  "note": "iPhone dots input fix. Match exact unchanged live pro/pro.js by checksum; update only the unique pro.js script tag in live pro/index.html while retaining all other live page modifications, with backups and rollback.",
   "baseline": {
     "pro/pro.js": "400c96afc2d958578d162a0ce027e675646fb15b",
     "pro/index.html": "8db427c02abc38d13644393aae856a0138e327e1"
@@ -9,5 +9,5 @@
     "pro/pro.js": "d99dd21ad6c42fc011e611d2deff3071280659ac",
     "pro/index.html": "2e169bd41a01bfc94952db179f04ac00a8297084"
   },
-  "release_request": "iphone-date-auto-dots-20261103-v2-retest"
+  "release_request": "iphone-date-auto-dots-20261103-v3-live-html-patch"
 }
