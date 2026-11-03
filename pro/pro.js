@@ -1394,9 +1394,18 @@ function renderKarmic(matrix, programsBank, tailsBank, deepening) {
   compactKarmicList(tailPlaces.length);
 }
 
-input.addEventListener("input",()=>{
-  const digits=input.value.replace(/\D/g,"").slice(0,8);
-  input.value=[digits.slice(0,2),digits.slice(2,4),digits.slice(4,8)].filter(Boolean).join(".");
+// iPhone's numeric keypad has no dot. Add separators as soon as the
+// day/month are complete, while allowing Backspace to remove them normally.
+function formatProBirthDate(value, deleting = false) {
+  const digits=String(value).replace(/\D/g,"").slice(0,8);
+  let formatted=digits.slice(0,2);
+  if(digits.length>2||(digits.length===2&&!deleting))formatted+="."+digits.slice(2,4);
+  if(digits.length>4||(digits.length===4&&!deleting))formatted+="."+digits.slice(4,8);
+  return formatted;
+}
+input.addEventListener("input",(event)=>{
+  const deleting=String(event.inputType||"").startsWith("delete");
+  input.value=formatProBirthDate(input.value,deleting);
   error.hidden=true;
 });
 
