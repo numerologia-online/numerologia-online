@@ -436,11 +436,14 @@ function guidedText(isFull){
       const middle=m[selected.spoke].near;
       const outer=m[selected.spoke].outer;
       const inner=m[selected.spoke].core;
-      return "Выбрана "+selected.label.toLowerCase()+". На её краю стоит "+edge+", а в центре матрицы — "+m.center+". "+
-        "1. Складываем "+compactSumFormula([edge,m.center],middle)+". Записываем "+middle+" между крайним числом "+edge+" и центром. "+
-        "2. Складываем "+compactSumFormula([edge,middle],outer)+". Записываем "+outer+" между "+edge+" и "+middle+". "+
-        "3. Складываем "+compactSumFormula([middle,m.center],inner)+". Записываем "+inner+" между "+middle+" и центром. "+
-        "Теперь от края линии к центру числа идут так: "+[edge,outer,middle,inner,m.center].join(" → ")+". "+
+      return "Выбрана "+selected.label.toLowerCase()+". На её краю стоит "+edge+", а в центре матрицы — "+m.center+".\n\n"+
+        "Шаг 1. Складываем "+compactSumFormula([edge,m.center],middle)+".\n"+
+        "Записываем "+middle+" между крайним числом "+edge+" и центром.\n\n"+
+        "Шаг 2. Складываем "+compactSumFormula([edge,middle],outer)+".\n"+
+        "Записываем "+outer+" между "+edge+" и "+middle+".\n\n"+
+        "Шаг 3. Складываем "+compactSumFormula([middle,m.center],inner)+".\n"+
+        "Записываем "+inner+" между "+middle+" и центром.\n\n"+
+        "Теперь от края линии к центру числа идут так: "+[edge,outer,middle,inner,m.center].join(" → ")+".\n"+
         "Выберите другую ось кнопками над схемой, чтобы разобрать её точно так же.";
     }
   }
@@ -523,6 +526,8 @@ function drawCurrent() {
   else drawBasic(m);
   $("lesson-step-count").textContent=guidedCount();
   $("lesson-step-title").textContent=guidedTitle(full);
+  // Preserve line breaks only in the three-axis instructions of lesson five.
+  $("lesson-step-text").style.whiteSpace=id==="internal"&&step===1?"pre-line":"";
   $("lesson-step-text").textContent=guidedText(full);
   const formulaBlock=$("lesson-step-formula");
   if((id==="reduce"||id==="base")&&step===1){
