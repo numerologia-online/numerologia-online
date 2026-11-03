@@ -166,6 +166,17 @@ jobs:
                           continue
                   ftp.cwd(root)
               else:
+                  school_sources = [p for p in prepared if p.startswith(("pro/school/", "pro/schools/")) and p not in ("pro/schools/index.html", "pro/schools/schools.css")]
+                  if school_sources:
+                      for rules_path in ("pro/school/.htaccess", "pro/schools/.htaccess"):
+                          try:
+                              rules = read_remote(ftp, rules_path, limit=100000)
+                          except ftplib.error_perm as error:
+                              if not str(error).startswith("550"):
+                                  raise
+                              rules = b""
+                          if b"NUMI SCHOOL OWNER ACCESS BEGIN 2026-11-03" in rules:
+                              raise RuntimeError("School sources are owner-only. Update the protected school snapshots; do not republish them as public files.")
                   if manifest.get("create_angel_course") is True:
                       try:
                           ftp.mkd("pro/schools/angel")
