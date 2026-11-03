@@ -81,21 +81,38 @@ def main():
             raise RuntimeError("FTP write verification failed")
 
     originals = {}
+    planned = {}
     updated = []
     stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
     try:
         ftp.cwd(site)
         if "index.html" not in [name.rsplit("/", 1)[-1] for name in ftp.nlst()]:
             raise RuntimeError("REG.RU site root not verified")
-        # Abort before any write if the deployed file differs from the reviewed baseline.
+        # Only the JS must match its exact source baseline. The live HTML has
+        # unrelated updates: preserve every byte except the uniquely matched
+        # version query on the module script. Refuse any unexpected markup.
+        old_tag = b'<script type="module" src="pro/pro.js?v=20261103schoolpdf1"></script>'
+        new_tag = b'<script type="module" src="pro/pro.js?v=20261103dots1"></script>'
         for name in FILES:
             current = read(site + "/" + name)
             current_sha = gitsha(current)
-            if current_sha not in (baseline[name], expected[name]):
-                raise RuntimeError("Live file has unrelated changes, refusing overwrite: " + name)
+            if name == "pro/index.html":
+                if current.count(old_tag) == 1 and current.count(new_tag) == 0:
+                    new_data = current.replace(old_tag, new_tag, 1)
+                elif current.count(new_tag) == 1 and current.count(old_tag) == 0:
+                    new_data = current
+                else:
+                    raise RuntimeError("Unable to identify the current script tag on live HTML")
+                if b'id="pro-birth-date" type="text" inputmode="numeric"' not in new_data:
+                    raise RuntimeError("Date field changed on the live page, aborting")
+            else:
+                if current_sha not in (baseline[name], expected[name]):
+                    raise RuntimeError("Live JS has unrelated changes, refusing overwrite: " + name)
+                new_data = desired[name]
             originals[name] = current
+            planned[name] = new_data
             print("PREFLIGHT", name, "current", current_sha,
-                  "new", expected[name], "changed", current != desired[name], flush=True)
+                  "new", gitsha(new_data), "changed", current != new_data, flush=True)
 
         backup = home + "/site-safeguard-backups/pro-date-dots-" + stamp
         ftp.mkd(backup)
@@ -104,17 +121,17 @@ def main():
         write(backup + "/manifest.json", json.dumps({
             "files": list(FILES),
             "original_sha256": {name: sha256(data) for name, data in originals.items()},
-            "updated_sha256": {name: sha256(data) for name, data in desired.items()}
+            "updated_sha256": {name: sha256(data) for name, data in planned.items()}
         }, sort_keys=True).encode())
         print("BACKUP_VERIFIED", backup, flush=True)
 
         try:
             for name in FILES:
-                if originals[name] == desired[name]:
+                if originals[name] == planned[name]:
                     continue
                 updated.append(name)
-                write(site + "/" + name, desired[name])
-                print("PUBLISHED", name, sha256(desired[name]), flush=True)
+                write(site + "/" + name, planned[name])
+                print("PUBLISHED", name, sha256(planned[name]), flush=True)
 
             status, live_js = http("/pro/pro.js?date-dots-release=" + stamp)
             if status != 200 or b"function formatProBirthDate(value, deleting = false)" not in live_js:
