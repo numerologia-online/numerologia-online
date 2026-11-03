@@ -1,4 +1,4 @@
-name: Publish the reviewed two-file school interface patch
+name: Publish reviewed protected school reading layout
 on:
   push:
     paths:
@@ -25,7 +25,7 @@ jobs:
           import ftplib,hashlib,io,json,os,pathlib,ssl,time,urllib.request,urllib.error
           release=json.loads(pathlib.Path('.github/numi-school-ui-patch.json').read_text())
           patches=release['patches']
-          if set(patches)!={'pro/school/index.html','pro/school/school.js'}:raise RuntimeError('Only the two reviewed UI sources are allowed')
+          if set(patches)!={'pro/school/learning.css','pro/school/lesson/index.html'}:raise RuntimeError('Only reviewed lesson reading sources are allowed')
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
           ftp.connect('server172.hosting.reg.ru',21);ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p();ftp.set_pasv(True)
           home=ftp.pwd().rstrip('/');root=home+'/private/numi-school-owner-20261103/sources';stamp=str(int(time.time()))
@@ -37,10 +37,16 @@ jobs:
           originals={};prepared={};targets={}
           for name,patch in patches.items():
               target=root+'/'+hashlib.sha256(name.encode()).hexdigest();old=read(target)
-              if hashlib.sha256(old).hexdigest()!=patch['expected_sha256']:raise RuntimeError('Reviewed school source changed')
-              before=patch['before'].encode();after=patch['after'].encode()
-              if not before or old.count(before)!=1:raise RuntimeError('Exact duplicate component not found')
-              originals[name]=old;prepared[name]=old.replace(before,after,1);targets[name]=target
+              new=old
+              changes=patch.get('replacements',[])
+              if not 1<=len(changes)<=3:raise RuntimeError('Invalid reviewed replacements')
+              for change in changes:
+                  before=change['before'].encode();after=change['after'].encode()
+                  if not before or not after or before==after:raise RuntimeError('Invalid source patch')
+                  if new.count(before)==1:new=new.replace(before,after,1)
+                  elif new.count(after)==1:pass
+                  else:raise RuntimeError('Protected source differs from reviewed source: '+name)
+              originals[name]=old;prepared[name]=new;targets[name]=target
           backup=home+'/site-safeguard-backups/school-ui-'+stamp
           ftp.mkd(backup)
           for name,data in originals.items():write(backup+'/'+hashlib.sha256(name.encode()).hexdigest(),data)
@@ -53,7 +59,7 @@ jobs:
               req=urllib.request.Request('https://xn--c1adkkdfjbp1a4l.online/pro/school/',headers={'Cache-Control':'no-cache'})
               with urllib.request.urlopen(req,timeout=25)as response:
                   if response.status!=200 or b'school-subscription-offer' not in response.read():raise RuntimeError('Existing access lock changed')
-              print('SCHOOL_UI_PATCH_SUCCESS: duplicate introduction removed; lesson tabs, lesson program and existing access preserved.')
+              print('SCHOOL_READING_PATCH_SUCCESS: full page scroll for lesson and practice; existing owner-only access preserved.')
           except Exception:
               for name in reversed(touched):install(name,originals[name])
               raise
