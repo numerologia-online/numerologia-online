@@ -1,0 +1,48 @@
+name: Audit protected romance routing and bank without changes
+on:
+  push:
+    paths:
+      - .github/workflows/numi-romance-live-audit-20261103.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Audit romance live before 366 bank release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Read-only inspect REG.RU protected content layout
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,json,hashlib,re
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          ftp.connect('server172.hosting.reg.ru',21);ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          base=home+'/private/numi-content-reg-20261031'
+          site=home+'/www/xn--c1adkkdfjbp1a4l.online'
+          def read(path):
+              b=io.BytesIO();ftp.retrbinary('RETR '+path,b.write);return b.getvalue()
+          manifest=json.loads(read(base+'/manifest.json'))
+          print('LIVE_MANIFEST_PATHS',len(manifest['files']),flush=True)
+          for path in ['data/redflag/love/romance.json','data/redflag/love/romance.jsonl']:
+              entry=manifest['files'].get(path)
+              if not entry:
+                  print('LIVE_ROMANCE_SOURCE',path,'NONE',flush=True);continue
+              data=read(base+'/cache/'+entry['sha'])
+              print('LIVE_ROMANCE_SOURCE',path,'SHA',entry['sha'],'BYTES',len(data),'QUESTIONS',len(json.loads(data)['entries']) if path.endswith('.json') else 'JSONL',flush=True)
+          for path in ['core.php','manifest.json']:
+              b=read(base+'/'+path)
+              print('LIVE_PROTECTED',path,'SHA256',hashlib.sha256(b).hexdigest(),'SIZE',len(b),'HAS_SELECTION',b'date_key' in b,flush=True)
+          for path in ['redflag-text-bank.js','redflag-categories.js','redflag-feature.js','app.js','index.html']:
+              b=read(site+'/'+path)
+              s=b.decode('utf-8')
+              version=[]
+              for dep in ['redflag-text-bank.js','redflag-categories.js','redflag-feature.js','app.js']:
+                  hits=re.findall(r'(?:src=|import\\()[^\\n]{0,120}'+re.escape(dep)+r'\\?v=[^\\"\\x27 ]+',s)
+                  if hits:version.extend(hits[:2])
+              print('LIVE_PUBLIC',path,'SHA256',hashlib.sha256(b).hexdigest(),'BYTES',len(b),'HAS_4_DATE_ROMANCE',('approved.entries' in s and 'romance.json' in s),'VERSIONS',str(version)[:800],flush=True)
+          ftp.quit()
+          PY
