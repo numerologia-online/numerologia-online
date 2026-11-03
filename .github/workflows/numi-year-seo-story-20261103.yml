@@ -82,7 +82,7 @@ jobs:
                   updated=updated[:end.start()]+style+b'\n'+updated[end.start():]
               updated=updated.replace('Разбор года по месяцам | Нумерология Онлайн'.encode(),
                                      'Разбор года по дате рождения | Нумерология онлайн'.encode())
-              updated=updated.replace(b'"Разбор года по месяцам"',
+              updated=updated.replace('"Разбор года по месяцам"'.encode(),
                                      '"Разбор года по дате рождения"'.encode())
               if (updated.count(b'class="year-cta"')!=3 or
                   updated.count(b'href="/year/"')!=3 or
