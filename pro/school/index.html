@@ -7,15 +7,14 @@
   <meta name="robots" content="noindex,nofollow">
   <base href="../../">
   <title>Матрица судьбы — самоучитель | Нумерология Онлайн</title>
-  <meta name="description" content="Самоучитель по матрице судьбы: уроки, 22 энергии, тренажёр и готовый полный расчёт.">
+  <meta name="description" content="Самоучитель по матрице судьбы: уроки, 22 энергии, тренажёр и персональный PDF для клиентов.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="pro/school/school.css?v=11">
-  <link rel="stylesheet" href="pro/school/learning.css?v=20261103mobile1">
 </head>
 <body>
   <div class="school-shell">
     <header class="school-top">
-      <a href="pro/schools/?v=20261103mobile1" class="school-back">← К направлениям</a>
+      <a href="pro/schools/" class="school-back">← К направлениям</a>
       <span class="school-brand">НУМЕРОЛОГИЯ ONLINE</span>
     </header>
     <main>
@@ -27,7 +26,7 @@
       <nav class="school-tabs" aria-label="Разделы самоучителя">
         <button type="button" data-school-panel="lessons" aria-pressed="true">Уроки</button>
         <button type="button" data-school-panel="trainer" aria-pressed="false">Тренажёр</button>
-        <button type="button" data-school-panel="formulas" aria-pressed="false">31 точка и формулы</button>
+        <button type="button" data-school-panel="formulas" aria-pressed="false">28 формул</button>
         <button type="button" data-school-panel="arcana" aria-pressed="false">22 энергии</button>
       </nav>
       <p id="school-error" class="school-error" role="alert" hidden></p>
@@ -44,16 +43,26 @@
         </div>
       </section>
       <section id="school-trainer" class="school-panel" aria-label="Тренажёр расчётов" hidden>
-        <p class="school-overline">ПОСТРОЕНИЕ, А НЕ УГАДЫВАНИЕ</p>
-        <h2>Потренируйтесь на схеме</h2>
-        <p class="school-section-lead">Выберите навык. Сначала можно разобрать пример, затем самостоятельно найти место и рассчитать каждую точку. Подсказка не выдаёт ответ сразу.</p>
-        <label class="school-trainer-choice" for="school-trainer-skill">Что тренируем?
-          <select id="school-trainer-skill"><option value="base">Пять основных чисел</option><option value="start">Расположение основных точек</option><option value="reduce">Правило 22</option><option value="corners">Четыре угла</option><option value="internal">Три внутренние оси</option><option value="diagonals">Родовые диагонали</option><option value="tail">Нижняя линия и хвост</option><option value="channels">Деньги и отношения</option><option value="purpose">Предназначение</option><option value="build-independent">Вся матрица: 31 точка</option></select>
-        </label><div id="school-construction-trainer"></div>
+        <p class="school-overline">ПРАКТИКА БЕЗ ПОДСКАЗОК</p>
+        <h2>Посчитайте сами</h2>
+        <p class="school-section-lead">Решайте задачи на новых датах рождения. Считайте числа по разным датам рождения и сразу проверяйте себя. Если что-то не совпало, откройте формулу нужной точки.</p>
+        <div class="school-practice-card">
+          <p class="school-overline">ДАТА ДЛЯ ТРЕНИРОВКИ</p>
+          <p id="school-train-date" class="school-train-date">14.07.1990</p>
+          <form id="school-train-form" novalidate>
+            <label for="school-train-point">Какую точку рассчитать?</label>
+            <select id="school-train-point"></select>
+            <label for="school-train-answer">Введите число от 1 до 22</label>
+            <input id="school-train-answer" type="number" min="1" max="22" inputmode="numeric" required>
+            <button type="submit" class="school-primary">Проверить ответ</button>
+          </form>
+          <p id="school-train-feedback" class="school-feedback" role="status" aria-live="polite"></p>
+          <button id="school-train-next" type="button" class="school-secondary">Другая дата →</button>
+        </div>
       </section>
-      <section id="school-formulas" class="school-panel" aria-label="Справочник формул 31 точки" hidden>
+      <section id="school-formulas" class="school-panel" aria-label="Справочник формул 28 точек" hidden>
         <p class="school-overline">ПРОВЕРЯЕМАЯ АРИФМЕТИКА</p>
-        <h2>31 точка по шагам</h2>
+        <h2>28 точек по шагам</h2>
         <p class="school-section-lead">Введите дату рождения и проследите все формулы: из каких чисел складывается каждая точка и что получается после приведения к 22. Здесь показана текущая учебная схема нашего сайта; вспомогательные точки в других школах могут располагаться иначе.</p>
         <form id="school-formula-form" class="school-formula-form" novalidate>
           <label for="school-formula-date">Дата рождения для примера</label>
@@ -84,6 +93,6 @@
     </main>
     <footer class="school-footer">Нумерология Онлайн · Самоучитель · Прогресс сохраняется в этом браузере</footer>
   </div>
-  <script type="module" src="pro/school/school.js?v=20261103mobile1"></script>
+  <script type="module" src="pro/school/school.js?v=20261103legacy1"></script>
 </body>
 </html>
