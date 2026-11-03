@@ -1,0 +1,95 @@
+name: SEO live read-only audit 2026-11-03
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-seo-readonly-audit-20261103.yml
+permissions:
+  contents: read
+jobs:
+  live-seo-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Read-only live REG.RU crawler visibility and content inspection
+        run: |
+          python3 - <<'PY'
+          import concurrent.futures,html.parser,json,re,time,urllib.parse,urllib.request,urllib.error,xml.etree.ElementTree as ET,collections
+          BASE='https://xn--c1adkkdfjbp1a4l.online/'
+          HEADERS={'User-Agent':'Mozilla/5.0 (compatible; SEOAudit/1.0; +https://example.com/bot)','Accept':'text/html,application/xml,*/*'}
+          def fetch(url):
+              req=urllib.request.Request(url,headers=HEADERS)
+              started=time.perf_counter()
+              try:
+                  with urllib.request.urlopen(req,timeout=24) as res:
+                      body=res.read(2400000)
+                      return {'url':res.url,'status':res.status,'mime':res.headers.get('content-type',''),'xrobots':res.headers.get('x-robots-tag',''),'body':body,'seconds':round(time.perf_counter()-started,2),'server':res.headers.get('server','')}
+              except Exception as err:
+                  return {'url':url,'status':0,'error':str(err)[:190],'body':b'','seconds':round(time.perf_counter()-started,2)}
+          class Scan(html.parser.HTMLParser):
+              def __init__(self):
+                  super().__init__();self.titles=[];self.h1=[];self.h2=[];self.descriptions=[];self.robots=[];self.canonicals=[];self.links=[];self.scripts=0;self.imgs=0;self.ld=[];self.text=[];self.stack=[];self.hide=0
+              def handle_starttag(self,tag,attrs):
+                  a=dict(attrs)
+                  if tag=='title':self.stack.append('title')
+                  if tag=='h1':self.stack.append('h1')
+                  if tag=='h2':self.stack.append('h2')
+                  if tag in ('script','style','noscript'):self.hide+=1
+                  if tag=='script':
+                      self.scripts+=1
+                  if tag=='img':self.imgs+=1
+                  if tag=='meta':
+                      k=a.get('name','').lower()
+                      if k=='description':self.descriptions.append(a.get('content',''))
+                      if k=='robots':self.robots.append(a.get('content',''))
+                  if tag=='link' and a.get('rel','').lower()=='canonical':self.canonicals.append(a.get('href',''))
+                  if tag=='a':self.links.append(a.get('href',''))
+              def handle_endtag(self,tag):
+                  if tag in ('title','h1','h2'):
+                      for i in range(len(self.stack)-1,-1,-1):
+                          if self.stack[i]==tag:self.stack.pop(i);break
+                  if tag in ('script','style','noscript'):self.hide=max(0,self.hide-1)
+              def handle_data(self,data):
+                  s=data.strip()
+                  if not s or self.hide:return
+                  if self.stack and self.stack[-1]=='title':self.titles.append(s)
+                  if self.stack and self.stack[-1]=='h1':self.h1.append(s)
+                  if self.stack and self.stack[-1]=='h2':self.h2.append(s)
+                  self.text.append(s)
+          for p in ['robots.txt','sitemap.xml']:
+              r=fetch(BASE+p)
+              print('ESSENTIAL',p,'status',r['status'],'seconds',r['seconds'],'mime',r.get('mime'),'bytes',len(r['body']),'error',r.get('error',''))
+              print('ESSENTIAL_CONTENT',p,r['body'][:380].decode('utf-8','replace').replace('\\n',' '))
+              if p=='sitemap.xml': sitemap=r
+          paths=[]
+          if sitemap['status']==200:
+              try:
+                  root=ET.fromstring(sitemap['body'])
+                  paths=[x.text.strip() for x in root.findall('.//{*}loc') if x.text]
+              except Exception as e:print('XML_ERROR',str(e)[:120])
+          print('SITEMAP_TOTAL',len(paths),'UNIQUE',len(set(paths)))
+          targets=list(dict.fromkeys([BASE,BASE+'guide/',BASE+'prices.html',BASE+'robots.txt'] + paths))
+          targets=[t for t in targets if not t.endswith('robots.txt')]
+          report=[]
+          def inspect(url):
+              r=fetch(url)
+              if r['status']!=200:
+                  return {'url':url.replace(BASE,''),'status':r['status'],'error':r.get('error',''),'seconds':r['seconds']}
+              h=Scan()
+              try:h.feed(r['body'].decode('utf-8','replace'))
+              except Exception as e:print('PARSE_ERROR',url,str(e)[:50])
+              words=len(re.findall(r'[\\wа-яА-ЯёЁ]+',' '.join(h.text),re.UNICODE))
+              path=url.replace(BASE,'')
+              c=h.canonicals[0] if h.canonicals else ''
+              return {'url':path or '/', 'status':r['status'],'seconds':r['seconds'],'bytes':len(r['body']),'words':words,'title':h.titles[0] if h.titles else '', 'description':h.descriptions[0] if h.descriptions else '', 'h1':h.h1[:3], 'h2':len(h.h2),'robots':h.robots,'xrobots':r['xrobots'], 'canon':c,'canon_correct':c.rstrip('/')==r['url'].rstrip('/') if c else False, 'link_count':len(h.links),'scripts':h.scripts,'imgs':h.imgs, 'noindex': any('noindex' in v.lower() for v in h.robots+[r['xrobots']])}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=9) as pool:
+              report=list(pool.map(inspect,targets))
+          for item in report:
+              print('PAGE',json.dumps(item,ensure_ascii=False,separators=(',',':')))
+          accessible=[r for r in report if r['status']==200]
+          errors=[r for r in report if r['status']!=200]
+          print('TOTALS',json.dumps({'checked':len(report),'ok':len(accessible),'failed':len(errors),'noindex':[r['url'] for r in accessible if r['noindex']],'missing_canonical':[r['url'] for r in accessible if not r['canon']],'wrong_canonical':[r['url'] for r in accessible if r['canon'] and not r['canon_correct']],'no_h1':[r['url'] for r in accessible if not r['h1']],'no_description':[r['url'] for r in accessible if not r['description']],'low_word_pages':[r['url'] for r in accessible if r['words']<130],'worst_seconds':sorted([(r['seconds'],r['url']) for r in accessible],reverse=True)[:7]},ensure_ascii=False))
+          print('TITLE_DUPLICATES',json.dumps({k:v for k,v in collections.defaultdict(list,((t,[r['url'] for r in accessible if r.get('title')==t]) for t in {r.get('title','') for r in accessible})).items() if len(v)>1},ensure_ascii=False))
+          for u in ['https://www.xn--c1adkkdfjbp1a4l.online/','http://xn--c1adkkdfjbp1a4l.online/','https://xn--c1adkkdfjbp1a4l.online/guide/numerologiya-s-nulya/']:
+              z=fetch(u);print('DOMAIN_VARIANT',u,'status',z['status'],'redirect_target',z['url'],'seconds',z['seconds'],'error',z.get('error',''))
+          PY
