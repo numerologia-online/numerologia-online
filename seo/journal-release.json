@@ -1,38 +1,18 @@
 {
-  "author.html": {
-    "before": "717bfe31f066227ce3ea91455742ebe8b5c8545aab9b9e19bdfc13975bfe7646",
-    "after": "8618b578c46d4f30f6bdd2c5cb78ed572a442df17a838bf748025bc90978fd43"
-  },
-  "index.html": {
-    "before": "a0f2e799ad1dce76b3db02f47741fdeb222983be74f43ca8f91a9c92f4fa36c6",
-    "after": "a295f638695c195edd84f1fb4960c8b31234e28b55a31296f477cd5e0687d4e5"
-  },
-  "guide/articles.js": {
-    "before": "a528c03dde2356dfc44d8f4457b9ef731381bb9be7be2c4cb4e84f121510d973",
-    "after": "0636d44acd346ddb074934621828ea6f90103d87d199ed495095d04378561fe3"
+  "guide/index.html": {
+    "before": "9692c0833860e215dccf2a68a6b75519b8d79d299baf55e0e9e4f2767bb0721d",
+    "after": "bf0bc9e4a58f5b107f159495f484bc3678ed662f125426a71f3935d97f6f352b"
   },
   "guide/journal.css": {
+    "before": "26dea6f96f76cb5237ad8f26c3c5a5649a9f75a5a27fdd36283a9b6c822ad730",
+    "after": "45a2a0fadced69fb5abcf2dff6845938e04efbcef34ae5c6cda7ef7fd2bf13ba"
+  },
+  "guide/articles.js": {
+    "before": "0636d44acd346ddb074934621828ea6f90103d87d199ed495095d04378561fe3",
+    "after": "6809f481af55e198e165c913ccad4c64225692f605b3c44627f3ae8b9342be26"
+  },
+  "guide/images/tatiana-journal.webp": {
     "before": null,
-    "after": "26dea6f96f76cb5237ad8f26c3c5a5649a9f75a5a27fdd36283a9b6c822ad730"
-  },
-  "guide/index.html": {
-    "before": "a61e374c6d9ea695f8b8bc25b703cb561e614be8de5e62e0b381a5905b9c0ff2",
-    "after": "9692c0833860e215dccf2a68a6b75519b8d79d299baf55e0e9e4f2767bb0721d"
-  },
-  "guide/sovmestimost-po-date/index.html": {
-    "before": "710ac17a3f21ea315fcd2dbaf997e1ac6d423d69600364d42b76d1a651bac70b",
-    "after": "ee839eb417a658d73917fdaa4a7b8339bf25ed10c7a6882e9b0d7201f17075d5"
-  },
-  "guide/images/new-season.webp": {
-    "before": null,
-    "after": "0ee0398fe7291a670c9bc8eea2bacec9f740f19b71d66b76d998e65e2bd53277"
-  },
-  "guide/images/childhood.webp": {
-    "before": null,
-    "after": "cb8087e5f92b894315d41f54d8b5cdd841913816e10ce869e70ccef735f92b58"
-  },
-  "guide/images/quiet-life.webp": {
-    "before": null,
-    "after": "6a0ad9e939327e048e493d083738338d51e7afa587027e33d34825b55a42192a"
+    "after": "a96664ea96aceb8354715aeea7634ca0fa03ce119a20200352e9bee5a255e3ea"
   }
 }

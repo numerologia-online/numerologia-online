@@ -5,7 +5,7 @@ def digest(b):return hashlib.sha256(b).hexdigest()
 def main():
  release=json.loads((ROOT/'seo/journal-release.json').read_text());prepared={}
  for p,e in release.items():
-  if p not in ["author.html","index.html","guide/articles.js","guide/journal.css","guide/index.html","guide/sovmestimost-po-date/index.html","guide/images/new-season.webp","guide/images/childhood.webp","guide/images/quiet-life.webp"]:raise RuntimeError('Disallowed release path')
+  if p not in ["author.html","index.html","guide/articles.js","guide/journal.css","guide/index.html","guide/sovmestimost-po-date/index.html","guide/images/new-season.webp","guide/images/childhood.webp","guide/images/quiet-life.webp","guide/images/tatiana-journal.webp"]:raise RuntimeError('Disallowed release path')
   b=(ROOT/p).read_bytes()
   if digest(b)!=e['after']:raise RuntimeError('Source checksum mismatch')
   if e['before']!=e['after']:prepared[p]=b
@@ -56,7 +56,7 @@ def main():
     if actual!=b:raise RuntimeError('HTTP content differs: '+p)
     return p
    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:verified=list(pool.map(verify,prepared.items()))
-   print('JOURNAL SUCCESS: '+str(len(verified))+' live HTTP files verified; 57 topics; 3 WebP images total 61386 bytes',flush=True)
+   print('JOURNAL SUCCESS: '+str(len(verified))+' live HTTP files verified; 57 topics; portrait WebP added',flush=True)
   except BaseException:
    for p in reversed(applied):
     if originals[p] is None:ftp.delete(site+'/'+p)
