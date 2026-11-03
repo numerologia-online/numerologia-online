@@ -91,7 +91,10 @@ def run():
   core=read(home+'/private/numi-content-reg-20261031/core.php') or b''
   account=read(home+'/private/numi-account-20261031/core.php') or b''
   if not all(s in core for s in (b'function numiTelegramUser',b'function numiPrivateRead',b'function numiIsOwner')):raise RuntimeError('Existing content owner verifier unavailable')
-  if not all(s in account for s in (b'function naCurrent',b'function naTestOwner',b'function naDB')):raise RuntimeError('Existing management account verifier unavailable')
+  account_functions={s.decode():s in account for s in (b'function naCurrent',b'function naTestOwner',b'function naDB')}
+  if not all(account_functions.values()):
+   log(account_core_present=bool(account),account_core_sha256=sha(account),account_functions=account_functions)
+   raise RuntimeError('Existing management account verifier unavailable')
   originals={name:read(target(name)) for name in SOURCES}
   actual={name:sha(data) for name,data in originals.items()}
   expected=release.get('expected',{})
