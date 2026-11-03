@@ -1,18 +1,6 @@
 {
-  "guide/index.html": {
-    "before": "9692c0833860e215dccf2a68a6b75519b8d79d299baf55e0e9e4f2767bb0721d",
-    "after": "bf0bc9e4a58f5b107f159495f484bc3678ed662f125426a71f3935d97f6f352b"
-  },
   "guide/journal.css": {
-    "before": "26dea6f96f76cb5237ad8f26c3c5a5649a9f75a5a27fdd36283a9b6c822ad730",
-    "after": "45a2a0fadced69fb5abcf2dff6845938e04efbcef34ae5c6cda7ef7fd2bf13ba"
-  },
-  "guide/articles.js": {
-    "before": "0636d44acd346ddb074934621828ea6f90103d87d199ed495095d04378561fe3",
-    "after": "6809f481af55e198e165c913ccad4c64225692f605b3c44627f3ae8b9342be26"
-  },
-  "guide/images/tatiana-journal.webp": {
-    "before": null,
-    "after": "a96664ea96aceb8354715aeea7634ca0fa03ce119a20200352e9bee5a255e3ea"
+    "before": "45a2a0fadced69fb5abcf2dff6845938e04efbcef34ae5c6cda7ef7fd2bf13ba",
+    "after": "1afa544560b43b46250eed57e5248e8d39ae10d1d93df0e6954e8ebb44b87343"
   }
 }
