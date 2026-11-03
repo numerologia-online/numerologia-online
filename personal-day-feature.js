@@ -189,12 +189,23 @@ const monthCalendar = (_birth, date = new Date()) => {
       <p class="personal-month-teaser-footnote">Пример оформления. Личные даты доступны по подписке.</p>
       <p class="personal-month-teaser-copy">Ваш календарь лучших дней, важных шансов и дат риска на ${esc(monthTitle(date))}.</p>
     </div>
-    <button type="button" class="personal-month-open" aria-expanded="false" aria-controls="personal-month-subscription">Что входит в подписку <span aria-hidden="true">↓</span></button>
-    <div class="personal-month-subscription" id="personal-month-subscription" hidden>
-      <h4>Ваш календарь и больше возможностей</h4>
-      <p><strong>Важные числа месяца.</strong> Личные даты для покупок, решений и новых возможностей.</p>
-      <p><strong>Разбор месяца.</strong> Новая глава вашего года каждый месяц.</p>
-      <p><strong>Клубные преимущества.</strong> Вопросы «да или нет» без лимита, денежные ритуалы и скидка 50% на большие разборы и вопросы о мужчине.</p>
+    <button type="button" class="personal-month-open" aria-expanded="false" aria-controls="personal-month-subscription">Подписка 490 ₽/мес <span aria-hidden="true">↓</span></button>
+    <div class="personal-month-subscription" id="personal-month-subscription" hidden style="padding:22px 19px;border:1px solid #d6c5a4;border-radius:22px;background:#fcfaf5;color:#25473f;text-align:left;box-shadow:0 10px 28px rgba(40,57,49,.07)">
+      <p style="margin:0 0 9px;color:#9a7d53;font:800 11px/1.3 system-ui,sans-serif;letter-spacing:.13em;text-align:left">КЛУБ «НУМЕРОЛОГИЯ ОНЛАЙН»</p>
+      <h4 style="margin:0 0 16px;color:#25483f;font:700 clamp(22px,5.5vw,27px)/1.18 Georgia,serif;text-align:left">Ваши важные даты и многое другое</h4>
+      <div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin:0 0 20px;padding:14px 16px;border-radius:16px;background:#eaf1e9">
+        <strong style="color:#214d40;font:700 34px/1 Georgia,serif">490 ₽</strong>
+        <span style="color:#53685c;font:600 15px/1.3 system-ui,sans-serif">в месяц</span>
+      </div>
+      <p style="margin:0 0 9px;color:#324d45;font:700 15px/1.4 system-ui,sans-serif;text-align:left">В клубную подписку входит</p>
+      <ul style="margin:0;padding:0;list-style:none;text-align:left">
+        <li style="padding:11px 0;border-bottom:1px solid #e8e1d5;color:#475c54;font-size:14px;line-height:1.5"><strong style="color:#25483f">Важные числа месяца</strong> — личный календарь благоприятных дней, новых возможностей и дат, когда лучше быть внимательнее.</li>
+        <li style="padding:11px 0;border-bottom:1px solid #e8e1d5;color:#475c54;font-size:14px;line-height:1.5"><strong style="color:#25483f">Личный разбор месяца</strong> — персональные нумерологические подсказки на каждый месяц.</li>
+        <li style="padding:11px 0;border-bottom:1px solid #e8e1d5;color:#475c54;font-size:14px;line-height:1.5"><strong style="color:#25483f">Разбор года</strong> — доступ к главе текущего месяца.</li>
+        <li style="padding:11px 0;border-bottom:1px solid #e8e1d5;color:#475c54;font-size:14px;line-height:1.5"><strong style="color:#25483f">«Да или нет» без ограничений</strong> — задавайте вопросы, когда нужен ответ.</li>
+        <li style="padding:11px 0;border-bottom:1px solid #e8e1d5;color:#475c54;font-size:14px;line-height:1.5"><strong style="color:#25483f">Скидка 50%</strong> — на большие разборы, совместимость и вопросы «Мужчина / Red Flag».</li>
+        <li style="padding:11px 0;color:#475c54;font-size:14px;line-height:1.5"><strong style="color:#25483f">Денежные ритуалы</strong> — новые материалы каждый месяц.</li>
+      </ul>
     </div>
   </section>`;
 };
@@ -264,8 +275,8 @@ export const openPersonalDay = () => {
       importantButton.setAttribute("aria-expanded", String(!expanded));
       subscriptionInfo.hidden = expanded;
       importantButton.innerHTML = expanded
-        ? 'Что входит в подписку <span aria-hidden="true">↓</span>'
-        : 'Скрыть преимущества <span aria-hidden="true">↑</span>';
+        ? 'Подписка 490 ₽/мес <span aria-hidden="true">↓</span>'
+        : 'Скрыть преимущества подписки <span aria-hidden="true">↑</span>';
       if (!expanded) {
         requestAnimationFrame(() => {
           const targetTop = subscriptionInfo.getBoundingClientRect().top;
