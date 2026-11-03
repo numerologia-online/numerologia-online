@@ -16,7 +16,8 @@ test("Original school layout and simple trainer are restored without the new con
   assert.match(script, /function buildFormulaSheet\(birth\)/);
   assert.doesNotMatch(script, /mountConstruction/);
   assert.doesNotMatch(home, /pro\/school\/learning\.css/);
-  assert.match(originalPoints, /export const pointCatalog = \[/);
+  assert.match(originalPoints, /export const pointCatalog\s*=\s*baseline\.map\(/);
+  assert.match(home, /31 точка по шагам/);
 });
 
 test("First school lesson starts with an empty hand-drawn matrix and no digit exercises", async () => {
