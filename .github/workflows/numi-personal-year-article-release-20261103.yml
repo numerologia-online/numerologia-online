@@ -1,0 +1,120 @@
+name: Publish personal-year article and journal link to REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-personal-year-article-release-20261103.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Safely publish one new article plus journal link and sitemap entry
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,io,ssl,os,pathlib,re,time,hashlib,urllib.request
+          DOMAIN="xn--c1adkkdfjbp1a4l.online"
+          SLUG="lichnyi-god-po-date-rozhdeniya"
+          ARTICLE="guide/"+SLUG+"/index.html"
+          LINK='<a class="story-row" href="/guide/'+SLUG+'/" data-search="Как рассчитать личный год по дате рождения. Значения годов от 1 до 9"><h3>Как рассчитать личный год по дате рождения. Значения от 1 до 9</h3><span class="ready">Читать ↗</span></a>'.encode()
+          YEAR_SECTION='<section class="topic-section" data-section="year" id="year">'.encode()
+          ENTRY=('  <url><loc>https://'+DOMAIN+'/guide/'+SLUG+'/</loc></url>\n').encode()
+          fresh=pathlib.Path(ARTICLE).read_bytes()
+          if (fresh.count(b'class="year-panel"')!=9 or fresh.count(b'class="year-cta')!=3 or
+              fresh.count(b'<link rel="canonical"')!=1 or b'noindex' in fresh):
+              raise RuntimeError("The source article failed validation")
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
+          ftp.connect("server172.hosting.reg.ru",21)
+          ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          ftp.prot_p()
+          home=ftp.pwd().rstrip('/')
+          site=home+'/www/'+DOMAIN
+          targets={}
+          originals={}
+          written=[]
+          def read(path):
+              result=io.BytesIO()
+              def save(part):
+                  if result.tell()+len(part)>3_000_000:raise RuntimeError("Oversized remote file")
+                  result.write(part)
+              try:ftp.retrbinary('RETR '+path,save)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              return result.getvalue()
+          def write(path,data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              if read(path)!=data:raise RuntimeError("FTP readback mismatch: "+path)
+          def assert_http(path,expected):
+              url='https://'+DOMAIN+'/'+path.replace('index.html','')+'?yeararticle='+str(time.time_ns())
+              request=urllib.request.Request(url,headers={'Cache-Control':'no-cache','User-Agent':'Mozilla/5.0'})
+              with urllib.request.urlopen(request,timeout=35) as response:
+                  actual=response.read(3_000_001)
+                  if response.status!=200 or 'noindex' in response.headers.get('X-Robots-Tag','').lower():
+                      raise RuntimeError("Bad HTTP response "+path)
+              if actual!=expected:raise RuntimeError("Public content mismatch "+path)
+          try:
+              if read(site+'/index.html') is None:raise RuntimeError("Wrong website root")
+              originals[ARTICLE]=read(site+'/'+ARTICLE)
+              if originals[ARTICLE] is not None and originals[ARTICLE]!=fresh:raise RuntimeError("Different article already exists. No overwrite.")
+              targets[ARTICLE]=fresh
+              for path in ("guide/index.html","sitemap.xml"):
+                  originals[path]=read(site+'/'+path)
+                  if originals[path] is None:raise RuntimeError("Required live file missing "+path)
+              journal=originals["guide/index.html"]
+              if journal.count(YEAR_SECTION)!=1:raise RuntimeError("Journal structure has changed")
+              yr=journal.find(YEAR_SECTION)
+              grid=journal.find(b'<div class="story-grid">',yr)
+              if grid<yr or grid>yr+450:raise RuntimeError("Unexpected journal year grid")
+              position=grid+len(b'<div class="story-grid">')
+              if journal.count(('href="/guide/'+SLUG+'/"').encode())>1:raise RuntimeError("Duplicate journal links")
+              targets["guide/index.html"]=journal if LINK in journal else journal[:position]+LINK+journal[position:]
+              sitemap=originals["sitemap.xml"]
+              if sitemap.count(b'</urlset>')!=1:raise RuntimeError("Unexpected sitemap")
+              targets["sitemap.xml"]=sitemap if ENTRY.strip() in sitemap else sitemap.replace(b'</urlset>',ENTRY+b'</urlset>')
+              if targets["guide/index.html"].count(('href="/guide/'+SLUG+'/"').encode())!=1:raise RuntimeError("Journal link count invalid")
+              if targets["sitemap.xml"].count(('https://'+DOMAIN+'/guide/'+SLUG+'/').encode())!=1:raise RuntimeError("Sitemap URL count invalid")
+              print("PRECHECK: 1 new article, journal and sitemap only; 9 panels, 3 CTAs",flush=True)
+              backup_root=home+'/site-safeguard-backups'
+              try:ftp.mkd(backup_root)
+              except ftplib.error_perm:ftp.cwd(backup_root)
+              backup=backup_root+'/year-cycle-article-'+str(int(time.time()))
+              ftp.mkd(backup)
+              for path,original in originals.items():
+                  if original is not None and original!=targets[path]:
+                      write(backup+'/'+hashlib.sha256(path.encode()).hexdigest()[:10]+'.bak',original)
+              print("BACKUP COMPLETE outside www",flush=True)
+              try:
+                  ftp.mkd(site+'/guide/'+SLUG)
+              except ftplib.error_perm:
+                  ftp.cwd(site+'/guide/'+SLUG)
+              for path in (ARTICLE,"guide/index.html","sitemap.xml"):
+                  if originals[path]==targets[path]:continue
+                  if read(site+'/'+path)!=originals[path]:raise RuntimeError("Concurrent change detected "+path)
+                  written.append(path)
+                  write(site+'/'+path,targets[path])
+                  print("PUBLISHED "+path,flush=True)
+              for path in (ARTICLE,"guide/index.html","sitemap.xml"):
+                  assert_http(path,targets[path])
+              print("LIVE SUCCESS: ARTICLE, JOURNAL LINK, SITEMAP AND THREE CTA VERIFIED",flush=True)
+          except BaseException:
+              for path in reversed(written):
+                  try:
+                      if originals[path] is None:ftp.delete(site+'/'+path)
+                      else:write(site+'/'+path,originals[path])
+                      print("ROLLED BACK "+path,flush=True)
+                  except Exception as e:print("ROLLBACK FAILED "+path+" "+str(e),flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
