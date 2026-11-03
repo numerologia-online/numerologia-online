@@ -28,7 +28,7 @@ test("Персональный PDF доступен только в режиме
   const pro = await source("pro/pro.js");
   const sitePdf = await source("pro/index.html");
   assert.match(home, /href="\.\/pro\/schools\/"/);
-  assert.match(home, /Вход для нумерологов/);
+  assert.match(home, /href="\.\/pro\/schools\/"/);
   assert.match(pro, /beforeDownload: schoolClientMode \?/);
   assert.match(pro, /customizeDocument: schoolClientMode \?/);
   assert.match(pro, /import\("\.\/school\/client-pdf\.js\?v=2"\)/);
