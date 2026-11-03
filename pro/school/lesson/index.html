@@ -11,12 +11,12 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="pro/school/school.css?v=11">
   <link rel="stylesheet" href="pro/school/lesson/lesson.css?v=19">
-  <link rel="stylesheet" href="pro/school/learning.css?v=20261102learn3">
+  <link rel="stylesheet" href="pro/school/learning.css?v=20261103mobile1">
 </head>
-<body>
+<body class="school-compact-lesson">
   <div class="school-shell school-lesson-shell">
     <header class="school-top">
-      <a href="pro/school/?v=20261102learn3" class="school-back">← К программе обучения</a>
+      <a href="pro/school/?v=20261103mobile1" class="school-back">← К программе обучения</a>
       <span class="school-brand">САМОУЧИТЕЛЬ · МАТРИЦА СУДЬБЫ</span>
     </header>
     <main>
@@ -27,42 +27,14 @@
         <aside id="lesson-main-rule" class="school-main-rule" aria-label="Главное правило урока" hidden></aside>
       </section>
       <p id="lesson-error" class="school-error" role="alert" hidden></p>
-      <article id="lesson-content" class="school-lesson-reading" aria-live="polite"></article>
-      <section id="lesson-drawing" class="school-drawing" aria-label="Построение матрицы" hidden>
-        <div class="school-drawing-intro">
-          <p class="school-overline">ПРАКТИКА НА БУМАГЕ</p>
-          <h2 id="lesson-drawing-title">Рисуем и считаем вместе</h2>
-          <p id="lesson-drawing-description">Откройте тетрадь и записывайте расчёты по шагам.</p>
-        </div>
-        <form id="lesson-date-form" class="school-date-form">
-          <label for="lesson-date">Дата рождения</label>
-          <div class="school-date-row">
-            <input id="lesson-date" inputmode="numeric" maxlength="10" placeholder="Введите любую дату" autocomplete="off" required>
-            <button id="lesson-date-submit" type="submit" aria-label="Использовать выбранную дату">Использовать</button>
-          </div>
-          <p id="lesson-date-error" class="school-date-error" role="alert" hidden></p>
-          <p id="lesson-date-confirmed" class="school-date-confirmed" role="status" hidden></p>
-        </form>
-        <div class="school-visual-grid">
-          <div class="school-diagram-frame"><div id="lesson-diagram" class="school-diagram" aria-live="polite"></div></div>
-          <div class="school-step-panel">
-            <p id="lesson-step-count" class="school-overline"></p>
-            <h3 id="lesson-step-title"></h3>
-            <p id="lesson-step-text"></p>
-            <div id="lesson-step-formula" class="school-step-formula"></div>
-            <div class="school-step-buttons">
-              <button id="lesson-step-back" type="button">← Назад</button>
-              <button id="lesson-step-next" type="button">Следующий шаг →</button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <article id="lesson-content" class="school-lesson-reading" aria-label="Пошаговый урок"></article>
+      <section id="lesson-drawing" class="school-drawing" aria-label="Практика построения матрицы" hidden></section>
       <section id="lesson-quiz" class="school-lesson-quiz" aria-label="Проверка знаний"></section>
       <nav id="lesson-navigation" class="school-lesson-navigation" aria-label="Перемещение между уроками"></nav>
     </main>
     <footer class="school-footer">Самоучитель · Продолжайте в своём темпе</footer>
   </div>
   <script src="assets/telegram-web-app-20261102.js"></script>
-  <script type="module" src="pro/school/lesson/lesson.js?v=20261102learn3"></script>
+  <script type="module" src="pro/school/lesson/lesson.js?v=20261103mobile1"></script>
 </body>
 </html>
