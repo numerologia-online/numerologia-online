@@ -49,7 +49,10 @@ test("A forged browser ticket cannot impersonate the owner", () => {
 test("Public URL and school mode cannot unlock the full report", () => {
   const code = fs.readFileSync(new URL("../pro/pro.js", import.meta.url), "utf8");
   const html = fs.readFileSync(new URL("../pro/index.html", import.meta.url), "utf8");
-  assert.match(code, /const hasPaidAccess = \(\) => verifiedOwner && !ownerSeeFree;/);
+  assert.match(code, /const hasPaidAccess = \\(\\) => schoolClientMode/);
+  assert.match(code, /schoolClientMode\\s*\\?\\s*verifiedSchoolClientOwner/);
+  assert.match(code, /verifiedOwner && !ownerSeeFree/);
+  assert.match(code, /result\\?\\.owner !== true/);
   assert.doesNotMatch(code, /const paywallPreviewMode =/);
   assert.doesNotMatch(code, /schoolClientMode \|\| \(paywallPreviewMode/);
   assert.doesNotMatch(html, /id="pro-paywall-preview"/);
