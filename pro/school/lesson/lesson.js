@@ -153,7 +153,7 @@ function drawAllPositions(matrix) {
         opacity:muted?.48:1
       });
       marker.textContent=isMoney?"$":"♥";
-      const title=makeSvg("title");title.textContent=isMoney?"Под долларом — точка денег":"Под сердцем — точка отношений";
+      const title=makeSvg("title");title.textContent=isMoney?"Денежная точка":"Любовная точка";
       marker.append(title);
       svg.append(marker);
     }
@@ -269,7 +269,7 @@ const internalStages=[
   {title:"Рассчитайте три оси",text:"Выберите верхнюю, левую или правую ось над схемой. На каждой оси посчитайте по порядку три числа: среднее (вершина + центр), внешнее (вершина + среднее), ближайшее к центру (среднее + центр). Формулы показаны для вашей даты."},
   {title:"Разберите родовые диагонали",text:"Выбирайте диагонали над схемой по очереди: верхнюю левую, верхнюю правую, нижнюю правую и нижнюю левую. Для каждой сначала найдите внутреннюю точку (угол + центр), затем внешнюю (угол + внутренняя)."},
   {title:"Постройте нижнюю линию",text:"Два дополнительных нижних числа рассчитываются последовательно из центра и нижней точки."},
-  {title:"Считайте денежную и любовную линии",text:"Выбирайте пять позиций над схемой по порядку. На рисунке подсвечиваются числа, участвующие в расчёте. Значки $ и ♥ отмечают денежную и любовную точки."}
+  {title:"Строим линии денег и любви",text:"Выбирайте пять позиций над схемой по порядку. На рисунке подсвечиваются числа, участвующие в расчёте. Значки $ и ♥ отмечают денежную и любовную точки."}
 ];
 const internalFocus=[
  ["top","right","bottom","left","center","topLeft","topRight","bottomRight","bottomLeft"],
@@ -291,11 +291,11 @@ const internalSelections={
     {label:"Снизу слева",keys:["bottomLeft","center","bottomLeftNear","bottomLeftOuter"],corner:"bottomLeft"}
   ],
   4:[
-    {label:"1. Вход в деньги",keys:["right","center","rightNear"]},
-    {label:"2. Вход в отношения",keys:["bottom","center","tailFirst"]},
-    {label:"3. Баланс",keys:["rightNear","tailFirst","wellbeing"]},
-    {label:"4. Под долларом $",keys:["rightNear","wellbeing","moneyPoint"]},
-    {label:"5. Под сердцем ♥",keys:["tailFirst","wellbeing","loveHeart"]}
+    {label:"1. Начало денежной линии",keys:["right","center","rightNear"]},
+    {label:"2. Начало линии любви",keys:["bottom","center","tailFirst"]},
+    {label:"3. Общая точка двух линий",keys:["rightNear","tailFirst","wellbeing"]},
+    {label:"4. Денежная точка $",keys:["rightNear","wellbeing","moneyPoint"]},
+    {label:"5. Любовная точка ♥",keys:["tailFirst","wellbeing","loveHeart"]}
   ]
 };
 function getInternalSelection(){
@@ -377,11 +377,11 @@ function showInternalStep(root,m){
   }
   if(step===4&&selected){
     const channels=[
-      ["Вход в деньги:",compactSumFormula([m.right,m.center],m.channels.moneyEntry)],
-      ["Вход в отношения:",compactSumFormula([m.bottom,m.center],m.channels.loveEntry)],
-      ["Баланс:",compactSumFormula([m.channels.moneyEntry,m.channels.loveEntry],m.channels.balance)],
-      ["Под долларом $:",compactSumFormula([m.channels.moneyEntry,m.channels.balance],m.channels.moneyPoint)],
-      ["Под сердцем ♥:",compactSumFormula([m.channels.loveEntry,m.channels.balance],m.channels.lovePoint)]
+      ["Начало денежной линии:",compactSumFormula([m.right,m.center],m.channels.moneyEntry)],
+      ["Начало линии любви:",compactSumFormula([m.bottom,m.center],m.channels.loveEntry)],
+      ["Общая точка двух линий:",compactSumFormula([m.channels.moneyEntry,m.channels.loveEntry],m.channels.balance)],
+      ["Денежная точка $:",compactSumFormula([m.channels.moneyEntry,m.channels.balance],m.channels.moneyPoint)],
+      ["Любовная точка ♥:",compactSumFormula([m.channels.loveEntry,m.channels.balance],m.channels.lovePoint)]
     ];
     showCompactCalculations(root,[channels[internalDetail]||channels[0]]);
     return;
@@ -396,11 +396,11 @@ function showInternalStep(root,m){
       ["Слева сверху / внешняя:",compactSumFormula([m.corners.topLeft,m.diagonals.topLeft.near],m.diagonals.topLeft.outer)]],
     [["Нижняя первая:",compactSumFormula([m.center,m.bottom],m.tail.first)],
       ["Нижняя вторая:",compactSumFormula([m.bottom,m.tail.first],m.tail.second)]],
-    [["Вход в деньги:",compactSumFormula([m.right,m.center],m.channels.moneyEntry)],
-      ["Вход в отношения:",compactSumFormula([m.bottom,m.center],m.channels.loveEntry)],
-      ["Баланс:",compactSumFormula([m.channels.moneyEntry,m.channels.loveEntry],m.channels.balance)],
-      ["Под долларом:",compactSumFormula([m.channels.moneyEntry,m.channels.balance],m.channels.moneyPoint)],
-      ["Под сердцем:",compactSumFormula([m.channels.loveEntry,m.channels.balance],m.channels.lovePoint)]]
+    [["Начало денежной линии:",compactSumFormula([m.right,m.center],m.channels.moneyEntry)],
+      ["Начало линии любви:",compactSumFormula([m.bottom,m.center],m.channels.loveEntry)],
+      ["Общая точка двух линий:",compactSumFormula([m.channels.moneyEntry,m.channels.loveEntry],m.channels.balance)],
+      ["Денежная точка $:",compactSumFormula([m.channels.moneyEntry,m.channels.balance],m.channels.moneyPoint)],
+      ["Любовная точка ♥:",compactSumFormula([m.channels.loveEntry,m.channels.balance],m.channels.lovePoint)]]
   ];
   showCompactCalculations(root,examples[step]);
 }
