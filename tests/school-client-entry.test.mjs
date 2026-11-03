@@ -13,7 +13,7 @@ test("Школа использует полный разбор и PDF осно�
   assert.equal(lessonBank.lessons.length, 12);
   assert.equal(energyBank.arcana.length, 22);
   assert.match(school, /href="pro\/\?from=school"/);
-  assert.match(school, /Рассчитать для клиента/);
+  assert.match(school, /Создать клиентский PDF/);
   assert.match(professional, /href="pro\/schools\/"/);
   assert.match(professional, /id="pro-pdf-controls"/);
   assert.match(feature, /createFullReportPdfController/);
@@ -32,7 +32,7 @@ test("Персональный PDF доступен только в режиме
   assert.match(pro, /beforeDownload: schoolClientMode \?/);
   assert.match(pro, /customizeDocument: schoolClientMode \?/);
   assert.match(pro, /import\("\.\/school\/client-pdf\.js\?v=2"\)/);
-  assert.match(sitePdf, /src="pro\/pro\.js\?v=84"/);
+  assert.match(sitePdf, /src="pro\/pro\.js\?v=20261103schoolpdf1"/);
   assert.match(publicPdf, /beforeDownload = null, customizeDocument = null/);
   assert.match(publicPdf, /if \(typeof beforeDownload === "function"\) return;/);
   assert.match(schoolForm, /Имя клиента/);
@@ -48,4 +48,19 @@ test("Персональный PDF доступен только в режиме
   assert.match(schoolForm, /documentDefinition\.background =/);
   assert.match(schoolForm, /documentDefinition\.footer =/);
   assert.match(clientStyles, /school-client-dialog/);
+});
+
+test("Школьный PDF требует подтверждённого владельца REG.RU и не открывает обычный разбор", async () => {
+  const pro = await source("pro/pro.js");
+  const main = await source("pro/index.html");
+  const school = await source("pro/school/index.html");
+  assert.match(pro, /schoolClientMode\s*\?\s*verifiedSchoolClientOwner/);
+  assert.match(pro, /fetch\("\/api\/numi-school\.php"/);
+  assert.match(pro, /action: "session"/);
+  assert.match(pro, /result\?\.ok !== true \|\| result\?\.owner !== true/);
+  assert.match(pro, /if \(schoolClientMode\) void verifySchoolClientOwner\(\)/);
+  assert.match(pro, /if \(!schoolClientMode\) restoreCalculatedBirth\(\)/);
+  assert.match(pro, /document\.body\.classList\.add\("pro-school-client-mode"\)/);
+  assert.match(school, /href="pro\/\?from=school"/);
+  assert.doesNotMatch(main, /data-owner-grant=/);
 });
