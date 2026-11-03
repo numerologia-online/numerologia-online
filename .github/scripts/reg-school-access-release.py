@@ -13,8 +13,8 @@ SOURCES={
  '@private/offer.html':'server/school-access/private/offer.html',
  'assets/numi-school-access-20261103.css':'assets/numi-school-access-20261103.css',
  'assets/numi-school-access-20261103.js':'assets/numi-school-access-20261103.js',
+ 'assets/numi-school-fetch-20261103.js':'assets/numi-school-fetch-20261103.js',
  'api/numi-school.php':'server/school-access/public/numi-school.php',
- 'pro/school/lesson/lesson.js':'pro/school/lesson/lesson.js',
  'pro/schools/index.html':'pro/schools/index.html',
  'index.html':None,
  'pro/school/.htaccess':'server/school-access/apache/matrix.htaccess',
@@ -35,6 +35,7 @@ def verify():
   if status!=200 or json.loads(data).get('owner') is not False:raise RuntimeError('Anonymous or forged owner status accepted')
  status,data,_=http('api/numi-school.php',{'action':'content','path':'pro/school/lessons/start.json','owner':True})
  if status!=403:raise RuntimeError('Anonymous lesson API access accepted')
+ if http('api/numi-school.php?file=pro%2Fschool%2Fschool.js&owner=true')[0]!=403:raise RuntimeError('Anonymous authenticated source route accepted')
  html=['pro/school/','pro/school/lesson/?id=start','pro/school/lesson/?id=base','pro/schools/classic/','pro/schools/classic/lesson/?id=hello','pro/schools/angel/']
  assets=['pro/school/school.js','pro/school/construction-model.js','pro/school/lessons/start.json','pro/school/lessons/base.json','pro/schools/classic/lessons/hello.json','pro/schools/classic/manifest.json','pro/schools/angel/index.html?owner=true']
  def check(path):
@@ -42,7 +43,7 @@ def verify():
   if path in html or path.endswith('owner=true'):
    if status!=200 or '150 ₽'.encode() not in data or 'school-subscription-offer'.encode() not in data:raise RuntimeError('Direct school page did not show subscription offer: '+path)
    if b'private, no-store' not in headers.get('Cache-Control','').encode():raise RuntimeError('School page may be publicly cached')
-  elif status!=403:raise RuntimeError('Direct school source remains public: '+path)
+  elif status not in (403,404):raise RuntimeError('Direct school source remains public: '+path)
   return True
  with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:list(pool.map(check,html+assets))
  status,data,_=http('pro/schools/')
@@ -97,12 +98,19 @@ def run():
    raise RuntimeError('Existing management account verifier unavailable')
   originals={name:read(target(name)) for name in SOURCES}
   actual={name:sha(data) for name,data in originals.items()}
+  allowed=json.loads(pathlib.Path('server/school-access/private/allowlist.json').read_text())
+  school_originals={name:read(site+'/'+name) for name in allowed}
+  school_hashes={name:sha(data) for name,data in school_originals.items()}
+  canonical=json.loads(read(home+'/private/numi-content-reg-20261031/manifest.json')).get('files',{})
+  missing=[name for name,data in school_originals.items() if data is None and name not in canonical and pathlib.PurePosixPath(name).suffix in ('.html','.js','.css')]
+  if missing:raise RuntimeError('Current school application source missing: '+missing[0])
   expected=release.get('expected',{})
   if not isinstance(expected,dict) or set(expected)-set(SOURCES):raise RuntimeError('Invalid expected file scope')
   if any(actual[name]!=value for name,value in expected.items()):raise RuntimeError('Live reviewed source changed; nothing modified')
   if release['mode']=='preflight':
-   log(preflight=True,expected=actual,owner_verifiers_available=True,files_modified=0);return
+   log(preflight=True,expected=actual,expected_school_sources=school_hashes,owner_verifiers_available=True,files_modified=0);return
   if set(expected)!=set(SOURCES):raise RuntimeError('Every school release target requires a reviewed live version')
+  if release.get('expected_school_sources')!=school_hashes:raise RuntimeError('Reviewed school source changed; nothing modified')
   prepared={}
   for name,source in SOURCES.items():
    old=originals[name]
@@ -120,13 +128,24 @@ def run():
   for name,data in originals.items():
    if data is not None:write(backup+'/'+hashlib.sha256(name.encode()).hexdigest()+'.original',data)
   write(backup+'/scope.json',json.dumps({'paths':list(SOURCES),'sha256':actual},sort_keys=True).encode())
-  touched=[]
+  for name,data in school_originals.items():
+   if data is not None:
+    snapshot=pathlib.Path('pro/school/lesson/lesson.js').read_bytes() if name=='pro/school/lesson/lesson.js' else data
+    install(private+'/sources/'+hashlib.sha256(name.encode()).hexdigest(),snapshot)
+  touched=[];moved=[]
   try:
    for name,data in prepared.items():
     touched.append(name);install(target(name),data)
+   for name,data in school_originals.items():
+    if data is not None:
+     moved_target=backup+'/sources/'+hashlib.sha256(name.encode()).hexdigest()
+     mkdir(str(pathlib.PurePosixPath(moved_target).parent));ftp.rename(site+'/'+name,moved_target);moved.append(name)
    verify()
   except Exception:
    rollback=[]
+   for name in reversed(moved):
+    try:ftp.rename(backup+'/sources/'+hashlib.sha256(name.encode()).hexdigest(),site+'/'+name)
+    except Exception:rollback.append(name)
    for name in reversed(touched):
     try:
      if originals[name] is None:ftp.delete(target(name))
@@ -134,7 +153,7 @@ def run():
     except Exception:rollback.append(name)
    log(rolled_back=not rollback,rollback_failures=rollback)
    raise
-  log(published=True,files=len(prepared),owner_only=True,school_monthly_price=150,author_texts_modified=0,central_login_modified=False)
+  log(published=True,files=len(prepared),school_sources_protected=len(moved),owner_only=True,school_monthly_price=150,author_texts_modified=0,central_login_modified=False)
  finally:
   try:ftp.quit()
   except Exception:pass
