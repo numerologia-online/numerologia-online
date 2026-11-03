@@ -58,6 +58,58 @@ test("Matrix lesson two teaches the rule first, then computes 31.10.1988 without
   assert.doesNotMatch(script, /Обязательно введите дату рождения ниже/);
 });
 
+test("Fifth Matrix lesson highlights exactly the chosen axis, diagonal or money/love calculation", async () => {
+  const source=await read("pro/school/lesson/lesson.js");
+  const {calculateMatrix,reduce22}=await import("../numerology-core.js");
+  const {nodesFor}=await import("../pro/pro-points.js");
+  const config=source.match(/const internalSelections=\{[\s\S]*?\n\};/)?.[0];
+  assert.ok(config,"Choose within existing five steps");
+  const selections=Function(config+";return internalSelections;")();
+  assert.deepEqual([1,2,4].map(step=>selections[step].length),[3,4,5]);
+  assert.match(source,/button\.setAttribute\("aria-pressed",String\(active\)\)/);
+  assert.match(source,/root\.style\.display="none"/);
+  assert.match(source,/const focus=id==="internal"\?getInternalFocus\(\):\[\]/);
+  assert.match(source,/\$\("lesson-drawing"\)\.querySelector\("\.school-visual-grid"\)\.before\(root\)/);
+  assert.match(source,/if\(id==="internal"\)internalDetail=0/);
+  assert.match(source,/\["1\. Средняя:",compactSumFormula\(\[base,m\.center\],part\.near\)\]/);
+  assert.match(source,/\["2\. Внешняя:",compactSumFormula\(\[base,part\.near\],part\.outer\)\]/);
+  assert.match(source,/\["3\. Ближе к центру:",compactSumFormula\(\[part\.near,m\.center\],part\.core\)\]/);
+  assert.match(source,/\["1\. Внутренняя:",compactSumFormula\(\[base,m\.center\],part\.near\)\]/);
+  assert.match(source,/marker\.textContent=isMoney\?"\$":"♥"/);
+  for(const birth of [
+    {day:14,month:7,year:1990},{day:9,month:9,year:1986},
+    {day:31,month:10,year:1988},{day:22,month:11,year:2009},
+    {day:29,month:12,year:1979}
+  ]){
+    const m=calculateMatrix(birth);
+    const nodes=new Map(nodesFor(birth,m).map(p=>[p.key,p.value]));
+    assert.equal(nodes.size,31);
+    for(const group of [1,2,4])for(const selection of selections[group]){
+      for(const point of selection.keys)
+        assert.ok(nodes.has(point),"All focused positions exist: "+point);
+      assert.ok(selection.keys.includes("center")||group===4);
+      if(group===1){
+        const part=m[selection.spoke],start=m[selection.base];
+        assert.equal(part.near,reduce22(start+m.center));
+        assert.equal(part.outer,reduce22(start+part.near));
+        assert.equal(part.core,reduce22(part.near+m.center));
+      }
+      if(group===2){
+        const part=m.diagonals[selection.corner],start=m.corners[selection.corner];
+        assert.equal(part.near,reduce22(start+m.center));
+        assert.equal(part.outer,reduce22(start+part.near));
+      }
+    }
+    assert.equal(nodes.get("rightNear"),m.channels.moneyEntry);
+    assert.equal(nodes.get("tailFirst"),m.channels.loveEntry);
+    assert.equal(nodes.get("wellbeing"),m.channels.balance);
+    assert.equal(nodes.get("moneyPoint"),m.channels.moneyPoint);
+    assert.equal(nodes.get("loveHeart"),m.channels.lovePoint);
+  }
+  assert.deepEqual(selections[4].map(x=>x.keys.at(-1)),
+    ["rightNear","tailFirst","wellbeing","moneyPoint","loveHeart"]);
+});
+
 test("Protected lesson delivery and owner-only white-label PDF survive", async () => {
   const js = await read("pro/school/lesson/lesson.js");
   const gate = await read("server/school-access/private/gate.php");
