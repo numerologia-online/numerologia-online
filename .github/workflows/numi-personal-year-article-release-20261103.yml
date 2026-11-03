@@ -25,7 +25,7 @@ jobs:
           DOMAIN="xn--c1adkkdfjbp1a4l.online"
           SLUG="lichnyi-god-po-date-rozhdeniya"
           ARTICLE="guide/"+SLUG+"/index.html"
-          LINK='<a class="story-row" href="/guide/'+SLUG+'/" data-search="Как рассчитать личный год по дате рождения. Значения годов от 1 до 9"><h3>Как рассчитать личный год по дате рождения. Значения от 1 до 9</h3><span class="ready">Читать ↗</span></a>'.encode()
+          LINK=('<a class="story-row" href="/guide/'+SLUG+'/" data-search="Как рассчитать личный год по дате рождения. Значения годов от 1 до 9"><h3>Как рассчитать личный год по дате рождения. Значения от 1 до 9</h3><span class="ready">Читать ↗</span></a>').encode()
           YEAR_SECTION='<section class="topic-section" data-section="year" id="year">'.encode()
           ENTRY=('  <url><loc>https://'+DOMAIN+'/guide/'+SLUG+'/</loc></url>\n').encode()
           fresh=pathlib.Path(ARTICLE).read_bytes()
