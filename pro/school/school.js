@@ -14,10 +14,6 @@ tabButtons.forEach(b=>b.addEventListener("click",()=>{showPanel(b.dataset.school
 function renderLessonList(){
  const completed=readLearningProgress(),next=lessons.find(l=>!completed.has(l.id));
  progressLabel.textContent=lessons.filter(l=>completed.has(l.id)).length+" из "+lessons.length+" пройдено";
- const resume=byId("school-resume-link");resume.href=next?lessonLink(next):"pro/school/lesson/?id=build-independent&v=20261103mobile1";
- resume.replaceChildren(make("span","",next?(completed.size?"Продолжить обучение →":"Начать с первого урока →"):"Повторить самостоятельное построение →"));
- resume.append(make("small","",next?next.title:"Соберите матрицу на новой дате"));
- byId("school-route-progress").textContent=lessons.filter(l=>l.track==="construction"&&completed.has(l.id)).length+" из "+lessons.filter(l=>l.track==="construction").length+" навыков построения подтверждено";
  lessonList.replaceChildren();const groups=[];
  lessons.forEach((lesson,position)=>{const title=lesson.module||"Программа";let g=groups.at(-1);if(!g||g.title!==title){g={title,items:[]};groups.push(g);}g.items.push({lesson,position});});
  for(const group of groups){const section=make("section","school-lesson-module");section.append(make("h3","school-lesson-module-title",group.title),make("p","school-module-progress",group.items.filter(({lesson})=>completed.has(lesson.id)).length+" из "+group.items.length+" уроков пройдено"));const list=make("div","school-lesson-module-list");
