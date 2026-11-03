@@ -1,14 +1,22 @@
 {
   "mode": "publish",
   "files": [
-    "index.html"
+    "pro/school/learning.js",
+    "pro/school/learning.css",
+    "pro/school/lesson/lesson.js",
+    "pro/school/lesson/index.html",
+    "pro/school/school.js",
+    "pro/school/index.html",
+    "pro/schools/index.html"
   ],
-  "patches": {
-    "index.html": {
-      "before": "<a class=\"founder-journal-link\" href=\"/guide/\">Статьи по нумерологии <span aria-hidden=\"true\">↗</span></a>",
-      "after": "<a class=\"founder-journal-link\" href=\"/guide/\" style=\"display:flex;align-items:center;justify-content:space-between;gap:14px;box-sizing:border-box;width:100%;min-height:82px;margin:16px 0 6px;padding:15px 18px 15px 20px;border:1px solid #c9b58e;border-radius:16px;background:linear-gradient(115deg,#fcfaf4,#f2ecde);color:#244a3b;font:400 clamp(19px,4.7vw,24px)/1.2 Georgia,serif;text-decoration:none;box-shadow:0 5px 15px rgba(93,73,40,.06)\"><span>Нумерологический журнал</span><span aria-hidden=\"true\" style=\"display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border:1px solid #c9b58e;border-radius:50%;color:#806c4a;font:400 25px/1 Georgia,serif\">→</span></a>",
-      "expected_sha256": "efaa5c88266e89ac8a106c7a937fa879cbe0eb93fb4599feeb592fee0c11aa86"
-    }
+  "expected_sha256": {
+    "pro/school/learning.js": "c3acf88c34fecb6f7c2f0dbf7e0885aff5658e5348dbd527ea674cbb2d17be1e",
+    "pro/school/learning.css": "a0bdc88bd49eca5be9ff38c04c534e4986fecb80bbc8fddc9c3fb6c2b4324269",
+    "pro/school/lesson/lesson.js": "cb05d4b842a448411bd2824971bd6d5de0d67fc3b6ad90410965f6404cbdec3c",
+    "pro/school/lesson/index.html": "c6580b74721fe7c16d105f49b4f9c7a6b07cdec457aff92a58033d2d7abdfdea",
+    "pro/school/school.js": "1a0fd2c83efba51f062aad41e0c5f216db74a398b764040f431ab883e3107af3",
+    "pro/school/index.html": "0108817f3d75d4082772b7555ab6171cc14353b98de77c1a95c9ee925a82e370",
+    "pro/schools/index.html": "4d2bdee3fc8bc16d2c86712f4bd1d46405a3d4c362d95d33c776f5101e50b5d8"
   },
-  "note": "Replace author-story journal text link with elegant lightweight outlined button, leaving all other live homepage content intact."
+  "note": "Owner requested compact phone-first Matrix self-study: interactive diagram first, horizontal step cards with numbered tabs and swipe, one question at a time. Preserve all lesson texts, energies, calculations, access checks and existing learning progress."
 }
