@@ -1,10 +1,14 @@
 {
   "guide/index.html": {
-    "before": "38bd4c3453889a388335cc15091077e38e5c1bb5b789d528d5d0bb16cf8eb66c",
-    "after": "f41cac5a62bfa3ca0cddbe0733cb4992966275169eefa795ed8c9954064d9961"
+    "before": "f41cac5a62bfa3ca0cddbe0733cb4992966275169eefa795ed8c9954064d9961",
+    "after": "534a31a0cae5c1d634444fa65e3f7a416d52923c5e65fa4c64224504ff2bce97"
   },
   "guide/journal.css": {
-    "before": "022d7deb8e3450bc3788a6449e2b1b6f96c04649864ded8411a42d3f276d4519",
-    "after": "83a2394f4e458e837edca953fa0e60cbce13cdb2c4572030e804822cf4d960fb"
+    "before": "83a2394f4e458e837edca953fa0e60cbce13cdb2c4572030e804822cf4d960fb",
+    "after": "c5999fe5d1d93c5c4d3cd8cad7f47bffb0a8ab3604cf275d4c0c3676575a5fcf"
+  },
+  "guide/articles.js": {
+    "before": "6809f481af55e198e165c913ccad4c64225692f605b3c44627f3ae8b9342be26",
+    "after": "1957dd7799f202f5de2355eafd6d5d55b31038c744247d35ffab25637559529f"
   }
 }
