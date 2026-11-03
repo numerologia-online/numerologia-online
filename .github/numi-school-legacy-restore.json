@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "note": "Restore only four protected Matrix school interface files from the proven 2026-10-31 design, while retaining existing server protection, other site changes, 32 lesson texts, owner access and current client PDF.",
+  "base_git_blob_sha": {
+    "pro/school/index.html": "ea1ca120180633f18c7d7cf1271aac651c4c8247",
+    "pro/school/school.js": "974eae22411e2619ee3c32d2658ca224a9ea4636",
+    "pro/school/lesson/index.html": "d7d2bab55c1f8de3c846ccb26c2c2b5b15f3a8a7",
+    "pro/school/lesson/lesson.js": "be7d513e865268f6f78b77471917117f308581d6"
+  }
+}
