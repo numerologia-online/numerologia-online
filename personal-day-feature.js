@@ -231,7 +231,7 @@ const monthCalendar = (_birth, date = new Date()) => {
   </section>`;
 };
 /* Personal day club uses the same tariff cards, gold accents and bright green column as My Tariffs. */
-const dayClubTariffCss = \`
+const dayClubTariffCss = `
 .personal-day-result .numi-day-club-offer{margin-top:13px;padding:13px 12px 15px;border:1px solid #d4bc75;border-radius:20px;background:#fffdfa;color:#143629;box-shadow:0 8px 24px rgba(100,75,28,.09);text-align:left}
 .numi-day-club-offer,.numi-day-club-offer *{box-sizing:border-box}
 .numi-day-club-offer .numi-tariff-lead{display:grid;grid-template-columns:1fr 1fr;gap:9px;align-items:stretch;margin:3px 0 14px}
@@ -271,7 +271,7 @@ const dayClubTariffCss = \`
 .numi-day-club-offer .numi-tariff-unavailable{color:#8c9a93}
 .numi-day-club-offer .numi-tariff-footer{margin:14px 0 0;padding:12px;border:1px solid #e7d8b8;border-radius:12px;background:#f7f1e5;color:#5d513c;font:12px/1.5 system-ui,sans-serif;text-align:left}
 @media(max-width:390px){.numi-day-club-offer .numi-tariff-lead>div{padding:13px 9px}.numi-day-club-offer .numi-tariff-head,.numi-day-club-offer .numi-tariff-row{grid-template-columns:minmax(0,1.42fr) minmax(0,.72fr) minmax(0,.82fr)}.numi-day-club-offer .numi-tariff-row>[role=cell]{padding:10px 4px}.numi-day-club-offer .numi-tariff-row>[role=cell]:first-child{padding-left:7px}.numi-day-club-offer .numi-tariff-row strong{font-size:12px}}
-\`;
+`;
 const ensureDayClubTariffStyles = () => {
   if (document.getElementById("numi-day-club-tariffs-20261103")) return;
   const el = document.createElement("style");
