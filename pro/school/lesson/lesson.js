@@ -304,7 +304,7 @@ function guidedCount(){
   return "ШАГ "+(step-first+1)+" ИЗ "+(guidedEnd()-first+1);
 }
 function guidedTitle(isFull){
-  if(id==="reduce")return step===1?"Проверьте числа по правилу 22":"Запомните границу 22 энергий";
+  if(id==="reduce")return step===1?"Какие числа оставляем, а какие сокращаем":"Разбираем дату 31.10.1988";
   if(id==="corners")return cornerStages[step].title;
   if(id==="internal")return internalStages[step].title;
   return isFull?"Разберите внутренние числа":stepTitles[step];
@@ -312,8 +312,8 @@ function guidedTitle(isFull){
 function guidedText(isFull){
   if(id==="reduce"){
     return step===1
-      ?"Посмотрите на день, месяц и год своей даты. Числа от 1 до 22 оставляем без изменений, а большие сокращаем сложением цифр. Ниже показаны ваши вычисления."
-      :"Запомните простое правило: все числа от 1 до 22 включительно оставляем без изменений. Это относится ко всем числам, а не только к 11, 15 и 22. Если получилось число 23 или больше, складываем его цифры. Если результат всё ещё больше 22, складываем цифры ещё раз. Посмотрите примеры ниже и переходите к тесту.";
+      ?"В матрице судьбы используются числа от 1 до 22 включительно. Любое число в этом диапазоне оставляем как есть: 11, 15 и 22 тоже не сокращаем. Если число больше 22, складываем его цифры. Если снова получилось больше 22, повторяем сложение. Не вычитаем 22 из числа."
+      :"Посмотрим на дату 31.10.1988. Слева записываем день рождения, сверху — месяц, справа — сумму цифр года. Если полученное число больше 22, сокращаем его сложением цифр. На схеме показан результат каждого расчёта.";
   }
   if(id==="corners")return cornerStages[step].text;
   if(id==="internal")return internalStages[step].text;
@@ -321,13 +321,40 @@ function guidedText(isFull){
 }
 function showRulePractice(root){
   showCompactCalculations(root,[
-    ["Оставляем 1–22:","1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22"],
-    ["Складываем цифры:","23 → 2 + 3 = 5 · 24 → 2 + 4 = 6 · 25 → 2 + 5 = 7 · 26 → 2 + 6 = 8 · 27 → 2 + 7 = 9"],
-    ["Ещё примеры:","28 → 2 + 8 = 10 · 29 → 2 + 9 = 11 · 30 → 3 + 0 = 3 · 31 → 3 + 1 = 4"],
-    ["Если сумма больше 22:","1999 → 1 + 9 + 9 + 9 = 28 → 2 + 8 = 10"]
+    ["Оставляем без изменений:","Все числа от 1 до 22 включительно."],
+    ["Складываем цифры:","Все числа больше 22 (начиная с 23)."],
+    ["Повторяем при необходимости:","Если сумма цифр снова больше 22, складываем её цифры ещё раз."]
+  ]);
+}
+function showRuleDateExample(root){
+  showCompactCalculations(root,[
+    ["Слева — день 31:","31 больше 22, поэтому 3 + 1 = 4."],
+    ["Сверху — месяц 10:","10 не больше 22, поэтому оставляем 10."],
+    ["Справа — год 1988:","1 + 9 + 8 + 8 = 26. 26 больше 22, поэтому 2 + 6 = 8."]
   ]);
 }
 function drawCurrent() {
+  if(id==="reduce"){
+    // В этом уроке сначала объясняем правило, затем показываем одну учебную дату.
+    // Не просим вводить дату и не подменяем учебный пример данными другого ученика.
+    const exampleStep=step===2;
+    const frame=diagram.parentElement;
+    frame.hidden=!exampleStep;
+    const grid=frame.parentElement;
+    grid.style.gridTemplateColumns=exampleStep?"":"minmax(0,1fr)";
+    if(exampleStep)drawBasic(calculateMatrix({day:31,month:10,year:1988}));
+    else diagram.replaceChildren();
+    $("lesson-step-count").textContent=guidedCount();
+    $("lesson-step-title").textContent=guidedTitle(false);
+    $("lesson-step-text").textContent=guidedText(false);
+    $("lesson-step-formula").hidden=false;
+    if(exampleStep)showRuleDateExample($("lesson-step-formula"));
+    else showRulePractice($("lesson-step-formula"));
+    $("lesson-step-back").disabled=step<=guidedStart();
+    $("lesson-step-next").disabled=false;
+    $("lesson-step-next").textContent=exampleStep?"К тесту →":"Следующий шаг →";
+    return;
+  }
   if(id==="start"){
     const info=firstLessonSteps[step];
     drawFirstLessonOutline();
@@ -419,7 +446,9 @@ function setupDiagram(){
     // Первый урок - построение ПУСТОЙ схемы. Ввод даты появится в следующих уроках.
     $("lesson-date-form").hidden=true;
   }else if(id==="reduce"){
-    $("lesson-drawing-description").textContent="Откройте тетрадь, проверяйте и записывайте каждый шаг. Обязательно введите дату рождения ниже и нажмите «Использовать» - иначе числа в кружках не появятся.";
+    $("lesson-drawing-title").textContent="Сначала правило, затем пример";
+    $("lesson-drawing-description").textContent="На первом шаге изучим правило 22 энергий. На втором разберём дату 31.10.1988 и заполним три основных кружка.";
+    $("lesson-date-form").hidden=true;
   }
   step=id==="start"?0:([0,1,1,0,0][index]??0);
   $("lesson-step-back").addEventListener("click",()=>{
