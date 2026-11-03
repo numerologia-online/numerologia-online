@@ -190,26 +190,98 @@ const monthCalendar = (_birth, date = new Date()) => {
       <p class="personal-month-teaser-copy">Ваш календарь лучших дней, важных шансов и дат риска на ${esc(monthTitle(date))}.</p>
     </div>
     <button type="button" class="personal-month-open" aria-expanded="false" aria-controls="personal-month-subscription">Подписка 490 ₽/мес <span aria-hidden="true">↓</span></button>
-    <div class="personal-month-subscription" id="personal-month-subscription" hidden style="padding:22px 19px;border:1px solid #d6c5a4;border-radius:22px;background:#fcfaf5;color:#25473f;text-align:left;box-shadow:0 10px 28px rgba(40,57,49,.07)">
-      <p style="margin:0 0 9px;color:#9a7d53;font:800 11px/1.3 system-ui,sans-serif;letter-spacing:.13em;text-align:left">КЛУБ «НУМЕРОЛОГИЯ ОНЛАЙН»</p>
-      <h4 style="margin:0 0 16px;color:#25483f;font:700 clamp(22px,5.5vw,27px)/1.18 Georgia,serif;text-align:left">Ваши важные даты и многое другое</h4>
-      <div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin:0 0 20px;padding:14px 16px;border-radius:16px;background:#eaf1e9">
-        <strong style="color:#214d40;font:700 34px/1 Georgia,serif">490 ₽</strong>
-        <span style="color:#53685c;font:600 15px/1.3 system-ui,sans-serif">в месяц</span>
+    <div class="personal-month-subscription numi-day-club-offer" id="personal-month-subscription" hidden>
+      <div class="numi-tariff-lead">
+        <div class="numi-tariff-once">
+          <span class="numi-tariff-card-icon" aria-hidden="true">◇</span>
+          <strong>Разовые покупки</strong>
+          <small>Выбирайте только то, что интересно</small>
+          <span class="numi-tariff-card-foot">Без подписки</span>
+        </div>
+        <div class="numi-tariff-club">
+          <span class="numi-tariff-club-badge">♕ ВЫГОДНЕЕ</span>
+          <strong class="numi-tariff-club-title">Клуб</strong>
+          <strong class="numi-tariff-club-price">490 ₽ <em>/ мес.</em></strong>
+          <small>Скидки, бесплатные вопросы и закрытые материалы</small>
+        </div>
       </div>
-      <p style="margin:0 0 9px;color:#324d45;font:700 15px/1.4 system-ui,sans-serif;text-align:left">В клубную подписку входит</p>
-      <ul style="margin:0;padding:0;list-style:none;text-align:left">
-        <li style="padding:11px 0;border-bottom:1px solid #e8e1d5;color:#475c54;font-size:14px;line-height:1.5"><strong style="color:#25483f">Важные числа месяца</strong> — личный календарь благоприятных дней, новых возможностей и дат, когда лучше быть внимательнее.</li>
-        <li style="padding:11px 0;border-bottom:1px solid #e8e1d5;color:#475c54;font-size:14px;line-height:1.5"><strong style="color:#25483f">Личный разбор месяца</strong> — персональные нумерологические подсказки на каждый месяц.</li>
-        <li style="padding:11px 0;border-bottom:1px solid #e8e1d5;color:#475c54;font-size:14px;line-height:1.5"><strong style="color:#25483f">Разбор года</strong> — доступ к главе текущего месяца.</li>
-        <li style="padding:11px 0;border-bottom:1px solid #e8e1d5;color:#475c54;font-size:14px;line-height:1.5"><strong style="color:#25483f">«Да или нет» без ограничений</strong> — задавайте вопросы, когда нужен ответ.</li>
-        <li style="padding:11px 0;border-bottom:1px solid #e8e1d5;color:#475c54;font-size:14px;line-height:1.5"><strong style="color:#25483f">Скидка 50%</strong> — на большие разборы, совместимость и вопросы «Мужчина / Red Flag».</li>
-        <li style="padding:11px 0;color:#475c54;font-size:14px;line-height:1.5"><strong style="color:#25483f">Денежные ритуалы</strong> — новые материалы каждый месяц.</li>
-      </ul>
+      <p class="numi-tariff-caption"><strong>Что вы получаете в клубе каждый месяц</strong><span>Ваш календарь, клубные материалы и особые цены</span></p>
+      <div class="numi-tariff-table" role="table" aria-label="Преимущества клуба и цены без подписки">
+        <div class="numi-tariff-head" role="row">
+          <span role="columnheader">Раздел</span><span role="columnheader">Без подписки</span><span role="columnheader">По подписке</span>
+        </div>
+        <div class="numi-tariff-row" role="row"><strong role="cell">Полный разбор года + PDF</strong><span role="cell">990 ₽</span><span role="cell" class="numi-club-discount">−50%</span></div>
+        <div class="numi-tariff-row" role="row"><strong role="cell">Полный разбор жизни</strong><span role="cell">990 ₽</span><span role="cell" class="numi-club-discount">−50%</span></div>
+        <div class="numi-tariff-row" role="row"><strong role="cell">Совместимость</strong><span role="cell">990 ₽</span><span role="cell" class="numi-club-discount">−50%</span></div>
+        <div class="numi-tariff-row" role="row"><strong role="cell">Детский разбор + PDF</strong><span role="cell">990 ₽</span><span role="cell" class="numi-club-discount">490 ₽</span></div>
+        <div class="numi-tariff-row" role="row"><strong role="cell">Вопросы «Да или нет?»</strong><span role="cell">19 ₽</span><span role="cell" class="numi-club-free">БЕСПЛАТНО!</span></div>
+        <div class="numi-tariff-row numi-tariff-row--feature" role="row">
+          <span role="cell"><strong>Мужчина или Red Flag</strong><small>Стоимость одного вопроса</small></span>
+          <span role="cell">20 / 39 / 79 ₽</span>
+          <span role="cell" class="numi-club-special">10 / 19 / 39 ₽</span>
+        </div>
+        <div class="numi-tariff-row" role="row"><strong role="cell">Нумерология момента</strong><span role="cell">50 ₽</span><span role="cell" class="numi-club-special">25 ₽</span></div>
+        <div class="numi-tariff-row" role="row"><strong role="cell">Календарь важных чисел</strong><span role="cell" class="numi-tariff-unavailable">—</span><span role="cell" class="numi-club-included">✓<small>Включено</small></span></div>
+        <div class="numi-tariff-row" role="row"><strong role="cell">Личный разбор месяца</strong><span role="cell" class="numi-tariff-unavailable">—</span><span role="cell" class="numi-club-included">✓<small>Включено</small></span></div>
+        <div class="numi-tariff-row" role="row"><strong role="cell">Глава текущего месяца в разборе года</strong><span role="cell" class="numi-tariff-unavailable">—</span><span role="cell" class="numi-club-included">✓<small>Включено</small></span></div>
+        <div class="numi-tariff-row" role="row"><strong role="cell">Денежные ритуалы</strong><span role="cell" class="numi-tariff-unavailable">—</span><span role="cell" class="numi-club-included">✓<small>Включено</small></span></div>
+      </div>
+      <p class="numi-tariff-footer">490 ₽ в месяц — стоимость клубной подписки. Большие разборы и PDF, где предусмотрены, приобретаются отдельно по клубной цене.</p>
     </div>
   </section>`;
 };
+/* Personal day club uses the same tariff cards, gold accents and bright green column as My Tariffs. */
+const dayClubTariffCss = \`
+.personal-day-result .numi-day-club-offer{margin-top:13px;padding:13px 12px 15px;border:1px solid #d4bc75;border-radius:20px;background:#fffdfa;color:#143629;box-shadow:0 8px 24px rgba(100,75,28,.09);text-align:left}
+.numi-day-club-offer,.numi-day-club-offer *{box-sizing:border-box}
+.numi-day-club-offer .numi-tariff-lead{display:grid;grid-template-columns:1fr 1fr;gap:9px;align-items:stretch;margin:3px 0 14px}
+.numi-day-club-offer .numi-tariff-lead>div{display:flex;flex-direction:column;min-width:0;position:relative;padding:15px 11px;border-radius:17px;border:1px solid #e7d8bf;background:linear-gradient(150deg,#fffefa,#f6f0e6);box-shadow:0 6px 18px rgba(66,50,24,.07)}
+.numi-day-club-offer .numi-tariff-card-icon{color:#a07837;font:normal 29px/1 Georgia,serif;margin:0 0 5px}
+.numi-day-club-offer .numi-tariff-once>strong{color:#143629;font:normal clamp(16px,4.4vw,22px)/1.13 Georgia,serif}
+.numi-day-club-offer .numi-tariff-once>small{color:#67746b;font:12px/1.4 system-ui,sans-serif;margin:10px 0}
+.numi-day-club-offer .numi-tariff-card-foot{display:block;margin-top:auto;padding:8px 5px;border-radius:10px;background:#ebe5da;color:#60513b;text-align:center;font:700 11px/1.3 system-ui,sans-serif}
+.numi-day-club-offer .numi-tariff-lead>div.numi-tariff-club{border:1.5px solid #d7a23e;background:linear-gradient(138deg,#fffcf5 0%,#f5e5c5 55%,#fff8eb 100%);box-shadow:0 7px 22px rgba(185,132,37,.18),inset 0 1px 0 #fff}
+.numi-day-club-offer .numi-tariff-club-badge{align-self:flex-start;margin:-4px 0 8px;padding:5px 8px;border-radius:30px;background:linear-gradient(100deg,#9e6b1d,#dbaa4a,#956319);color:#fff;font:800 10px/1.2 system-ui,sans-serif;letter-spacing:.07em}
+.numi-day-club-offer .numi-tariff-club-title{font:normal clamp(24px,6.4vw,31px)/1 Georgia,serif;color:#14583f}
+.numi-day-club-offer .numi-tariff-club-price{margin:9px 0 4px;color:#086e48;font:800 clamp(25px,7.1vw,36px)/1.08 system-ui,sans-serif}
+.numi-day-club-offer .numi-tariff-club-price em{font:600 12px/1.2 system-ui,sans-serif;color:#5b513c;white-space:nowrap}
+.numi-day-club-offer .numi-tariff-club>small{color:#4c624e;font:12px/1.45 system-ui,sans-serif}
+.numi-day-club-offer .numi-tariff-caption{display:block;margin:14px 2px 12px;color:#536356;text-align:left;font:12px/1.45 system-ui,sans-serif}
+.numi-day-club-offer .numi-tariff-caption strong{display:block;color:#173c2e;font:normal 22px/1.2 Georgia,serif;margin:0 0 5px;text-align:left}
+.numi-day-club-offer .numi-tariff-caption span{display:block}
+.numi-day-club-offer .numi-tariff-table{overflow:hidden;border:1px solid #d4bc75;border-radius:15px;box-shadow:0 5px 22px rgba(110,79,24,.14)}
+.numi-day-club-offer .numi-tariff-head,.numi-day-club-offer .numi-tariff-row{display:grid;grid-template-columns:minmax(0,1.52fr) minmax(0,.74fr) minmax(0,.79fr);gap:0;align-items:stretch}
+.numi-day-club-offer .numi-tariff-head{background:#f1eee7;color:#364a3f;font:800 10px/1.3 system-ui,sans-serif}
+.numi-day-club-offer .numi-tariff-head [role=columnheader]{display:grid;place-items:center;min-width:0;padding:12px 5px;text-align:center}
+.numi-day-club-offer .numi-tariff-head [role=columnheader]:first-child{justify-items:start;text-align:left;padding-left:9px}
+.numi-day-club-offer .numi-tariff-head [role=columnheader]:last-child{background:linear-gradient(125deg,#157750,#094d39);color:#fff;font-weight:900;letter-spacing:.025em}
+.numi-day-club-offer .numi-tariff-row{background:linear-gradient(90deg,#fffefa,#fbfaf6);border-bottom:1px solid #e9e5dd;color:#224c3c;font:12px/1.35 system-ui,sans-serif}
+.numi-day-club-offer .numi-tariff-row:last-child{border-bottom:0}
+.numi-day-club-offer .numi-tariff-row>[role=cell]{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-width:0;min-height:63px;padding:10px 6px;overflow-wrap:anywhere}
+.numi-day-club-offer .numi-tariff-row>[role=cell]:first-child{padding-left:9px}
+.numi-day-club-offer .numi-tariff-row>[role=cell]:not(:first-child){align-items:center;text-align:center}
+.numi-day-club-offer .numi-tariff-row>[role=cell]:last-child{background:linear-gradient(135deg,#d4efcd 0%,#e6f4dd 55%,#d1ecca 100%);border-left:1px solid #bddcb4;color:#096e43;font-weight:900}
+.numi-day-club-offer .numi-tariff-row strong{color:#173e30;font:750 12.5px/1.3 system-ui,sans-serif}
+.numi-day-club-offer .numi-tariff-row small{display:block;margin-top:3px;color:#587362;font:500 10.5px/1.3 system-ui,sans-serif}
+.numi-day-club-offer .numi-tariff-row .numi-club-discount{color:#087447!important;font:900 clamp(21px,6vw,29px)/1.1 Georgia,serif;text-shadow:0 1px 0 rgba(255,255,255,.75)}
+.numi-day-club-offer .numi-tariff-row .numi-club-free{color:#047645!important;font:900 clamp(10px,3vw,13px)/1.12 system-ui,sans-serif}
+.numi-day-club-offer .numi-tariff-row .numi-club-special{color:#087447;font:850 12px/1.35 system-ui,sans-serif}
+.numi-day-club-offer .numi-tariff-row .numi-club-included{color:#0a7548;font:900 20px/1.15 system-ui,sans-serif}
+.numi-day-club-offer .numi-tariff-row .numi-club-included small{font-size:10px;color:#246246}
+.numi-day-club-offer .numi-tariff-unavailable{color:#8c9a93}
+.numi-day-club-offer .numi-tariff-footer{margin:14px 0 0;padding:12px;border:1px solid #e7d8b8;border-radius:12px;background:#f7f1e5;color:#5d513c;font:12px/1.5 system-ui,sans-serif;text-align:left}
+@media(max-width:390px){.numi-day-club-offer .numi-tariff-lead>div{padding:13px 9px}.numi-day-club-offer .numi-tariff-head,.numi-day-club-offer .numi-tariff-row{grid-template-columns:minmax(0,1.42fr) minmax(0,.72fr) minmax(0,.82fr)}.numi-day-club-offer .numi-tariff-row>[role=cell]{padding:10px 4px}.numi-day-club-offer .numi-tariff-row>[role=cell]:first-child{padding-left:7px}.numi-day-club-offer .numi-tariff-row strong{font-size:12px}}
+\`;
+const ensureDayClubTariffStyles = () => {
+  if (document.getElementById("numi-day-club-tariffs-20261103")) return;
+  const el = document.createElement("style");
+  el.id = "numi-day-club-tariffs-20261103";
+  el.textContent = dayClubTariffCss;
+  document.head.append(el);
+};
+
 export const openPersonalDay = () => {
+  ensureDayClubTariffStyles();
   // iOS: прокручиваем страницу, а не внутреннее фиксированное окно.
   // Это сохраняет позицию при системном скриншоте и смене размеров viewport.
   const nativePageScroll = window.CSS?.supports?.("-webkit-touch-callout", "none") === true;
