@@ -163,6 +163,25 @@ test("Fifth lesson second step describes where every number goes for the selecte
   assert.match(top,/Записываем 15 между 12 и центром/);
 });
 
+test("Fifth Matrix lesson uses friendly line names without changing five formulas", async () => {
+  const script=await read("pro/school/lesson/lesson.js");
+  assert.match(script,/title:"Строим линии денег и любви"/);
+  const labels=[
+    "1. Начало денежной линии",
+    "2. Начало линии любви",
+    "3. Общая точка двух линий",
+    "4. Денежная точка $",
+    "5. Любовная точка ♥"
+  ];
+  labels.forEach(label=>assert.ok(script.includes('label:"'+label+'"'),label));
+  for(const label of ["Начало денежной линии:","Начало линии любви:","Общая точка двух линий:","Денежная точка $:","Любовная точка ♥:"]){
+    assert.ok(script.includes('["'+label+'",compactSumFormula('),"The calculated value stays linked to "+label);
+  }
+  assert.match(script,/\["Денежная точка \$:",compactSumFormula\(\[m\.channels\.moneyEntry,m\.channels\.balance\],m\.channels\.moneyPoint\)\]/);
+  assert.match(script,/\["Любовная точка ♥:",compactSumFormula\(\[m\.channels\.loveEntry,m\.channels\.balance\],m\.channels\.lovePoint\)\]/);
+  assert.doesNotMatch(script,/label:"[1-5]\. (?:Вход в деньги|Вход в отношения|Баланс|Под долларом|Под сердцем)/);
+});
+
 test("Protected lesson delivery and owner-only white-label PDF survive", async () => {
   const js = await read("pro/school/lesson/lesson.js");
   const gate = await read("server/school-access/private/gate.php");
