@@ -126,7 +126,7 @@ function drawBasic(matrix) {
 }
 
 function drawAllPositions(matrix) {
-  const svg=makeSvg("svg",{viewBox:"0 0 620 806",role:"img","aria-label":"Все 31 позиции рассчитанной матрицы"});
+  const svg=makeSvg("svg",{viewBox:"0 0 620 620",role:"img","aria-label":"Все 31 позиции рассчитанной матрицы"});
   svg.append(makeSvg("polygon",{points:"310,34 506,114 586,310 506,506 310,586 114,506 34,310 114,114","class":"school-diagram-outline"}));
   svg.append(makeSvg("rect",{x:114,y:114,width:392,height:392,"class":"school-diagram-outline"}));
   svg.append(makeSvg("polygon",{points:"310,34 586,310 310,586 34,310","class":"school-diagram-outline"}));
