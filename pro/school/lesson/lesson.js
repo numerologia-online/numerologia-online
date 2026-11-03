@@ -22,6 +22,7 @@ function readCompleted(){
   }catch{return new Set()}
 }
 let lesson, manifest, index = -1, currentBirth = null, step = 0;
+let internalDetail = 0; // Selected axis, diagonal or channel within one of the five existing lesson steps.
 const params = new URLSearchParams(location.search);
 const id = params.get("id") || "start";
 const diagram = $("lesson-diagram");
@@ -131,8 +132,8 @@ function drawAllPositions(matrix) {
   svg.append(makeSvg("polygon",{points:"310,34 586,310 310,586 34,310","class":"school-diagram-outline"}));
   [[310,68,310,552],[68,310,552,310],[114,114,506,506],[506,114,114,506]].forEach(([x1,y1,x2,y2]) =>
     svg.append(makeSvg("line",{x1,y1,x2,y2,"class":"school-diagram-line"})));
+  const focus=id==="internal"?getInternalFocus():[];
   for(const point of nodesFor(currentBirth,matrix)){
-    const focus=internalFocus[step]||[];
     const muted=id==="internal"&&!focus.includes(point.key);
     const group=makeSvg("g",{"class":"school-graph-node is-revealed"+(point.kind==="center"?" is-center":"")+(muted?" is-muted":"")});
     const radius=point.kind==="center"?28:point.kind==="major"?25:15;
@@ -142,6 +143,20 @@ function drawAllPositions(matrix) {
     group.append(text);
     const title=makeSvg("title");title.textContent=point.label+": "+point.value;group.append(title);
     svg.append(group);
+    if(id==="internal"&&step===4&&(point.key==="moneyPoint"||point.key==="loveHeart")){
+      const isMoney=point.key==="moneyPoint";
+      const marker=makeSvg("text",{
+        x:point.x+(isMoney?25:-24),y:point.y+(isMoney?-17:29),
+        "text-anchor":"middle","font-size":24,"font-weight":900,
+        fill:isMoney?"#947041":"#9a5971",stroke:"#fcfaf6",
+        "stroke-width":4,"paint-order":"stroke fill",
+        opacity:muted?.48:1
+      });
+      marker.textContent=isMoney?"$":"♥";
+      const title=makeSvg("title");title.textContent=isMoney?"Под долларом — точка денег":"Под сердцем — точка отношений";
+      marker.append(title);
+      svg.append(marker);
+    }
   }
   diagram.replaceChildren(svg);
 }
@@ -251,10 +266,10 @@ const cornerStages=[
 ];
 const internalStages=[
   {title:"Проверьте девять основных точек",text:"На схеме много маленьких кружков. Сначала убедитесь, что известны девять основных чисел. От них строятся другие позиции."},
-  {title:"Рассчитайте три оси",text:"Найдите средние числа на верхней, левой и правой осях из соответствующей внешней точки и личного центра."},
-  {title:"Разберите родовые диагонали",text:"Для родовых диагоналей используйте основной центр матрицы. Сумма четырёх углов - отдельный показатель."},
+  {title:"Рассчитайте три оси",text:"Выберите верхнюю, левую или правую ось над схемой. На каждой оси посчитайте по порядку три числа: среднее (вершина + центр), внешнее (вершина + среднее), ближайшее к центру (среднее + центр). Формулы показаны для вашей даты."},
+  {title:"Разберите родовые диагонали",text:"Выбирайте диагонали над схемой по очереди: верхнюю левую, верхнюю правую, нижнюю правую и нижнюю левую. Для каждой сначала найдите внутреннюю точку (угол + центр), затем внешнюю (угол + внутренняя)."},
   {title:"Постройте нижнюю линию",text:"Два дополнительных нижних числа рассчитываются последовательно из центра и нижней точки."},
-  {title:"Считайте денежную и любовную линии",text:"Найдите вход в деньги, вход в отношения, общий баланс и точки под знаками доллара и сердца."}
+  {title:"Считайте денежную и любовную линии",text:"Выбирайте пять позиций над схемой по порядку. На рисунке подсвечиваются числа, участвующие в расчёте. Значки $ и ♥ отмечают денежную и любовную точки."}
 ];
 const internalFocus=[
  ["top","right","bottom","left","center","topLeft","topRight","bottomRight","bottomLeft"],
@@ -263,6 +278,74 @@ const internalFocus=[
  ["center","bottom","tailFirst","tailSecond"],
  ["right","bottom","center","rightNear","tailFirst","wellbeing","moneyPoint","loveHeart"]
 ];
+const internalSelections={
+  1:[
+    {label:"Верхняя ось",keys:["top","center","topNear","topOuter","topCore"],base:"top",spoke:"topSpoke"},
+    {label:"Левая ось",keys:["left","center","leftNear","leftOuter","leftCore"],base:"left",spoke:"leftSpoke"},
+    {label:"Правая ось",keys:["right","center","rightNear","rightOuter","rightCore"],base:"right",spoke:"rightSpoke"}
+  ],
+  2:[
+    {label:"Сверху слева",keys:["topLeft","center","topLeftNear","topLeftOuter"],corner:"topLeft"},
+    {label:"Сверху справа",keys:["topRight","center","topRightNear","topRightOuter"],corner:"topRight"},
+    {label:"Снизу справа",keys:["bottomRight","center","bottomRightNear","bottomRightOuter"],corner:"bottomRight"},
+    {label:"Снизу слева",keys:["bottomLeft","center","bottomLeftNear","bottomLeftOuter"],corner:"bottomLeft"}
+  ],
+  4:[
+    {label:"1. Вход в деньги",keys:["right","center","rightNear"]},
+    {label:"2. Вход в отношения",keys:["bottom","center","tailFirst"]},
+    {label:"3. Баланс",keys:["rightNear","tailFirst","wellbeing"]},
+    {label:"4. Под долларом $",keys:["rightNear","wellbeing","moneyPoint"]},
+    {label:"5. Под сердцем ♥",keys:["tailFirst","wellbeing","loveHeart"]}
+  ]
+};
+function getInternalSelection(){
+  const choices=internalSelections[step]||[];
+  return choices[internalDetail]||choices[0]||null;
+}
+function getInternalFocus(){
+  return getInternalSelection()?.keys||internalFocus[step]||[];
+}
+// A small choice inside the existing step, not another lesson or screen.
+function updateInternalPicker(){
+  let root=$("school-internal-picker");
+  const options=internalSelections[step];
+  if(!options){
+    if(root)root.style.display="none";
+    return;
+  }
+  if(!root){
+    root=make("div","school-internal-picker");
+    root.id="school-internal-picker";
+    root.style.cssText="padding:12px 14px;margin:8px 0 14px;border:1px solid #e1d8ca;border-radius:14px;background:#f8f5ef";
+    $("lesson-drawing").querySelector(".school-visual-grid").before(root);
+  }
+  root.style.display="block";
+  root.replaceChildren();
+  const title=make("p","","На схеме сейчас показана:");
+  title.style.cssText="margin:0 0 8px;font-size:13px;color:#536a76;font-weight:750";
+  if(step===4)title.textContent="Выберите расчёт: ";
+  if(step===2)title.textContent="Выберите родовую диагональ:";
+  root.append(title);
+  const controls=make("div","");
+  controls.setAttribute("role","group");
+  controls.setAttribute("aria-label",step===1?"Выберите ось":step===2?"Выберите диагональ":"Выберите денежную или любовную точку");
+  controls.style.cssText="display:flex;flex-wrap:wrap;gap:8px";
+  options.forEach((option,i)=>{
+    const active=i===internalDetail;
+    const button=make("button","",option.label);
+    button.type="button";
+    button.setAttribute("aria-pressed",String(active));
+    button.style.cssText="flex:1 1 120px;min-height:44px;min-width:0;padding:9px 10px;border-radius:11px;border:1px solid "+
+      (active?"#29495b":"#c7d8d6")+";background:"+(active?"#29495b":"#fffefa")+
+      ";color:"+(active?"#fff":"#29495b")+";font-size:13px;font-weight:800;cursor:pointer";
+    button.addEventListener("click",()=>{
+      internalDetail=i;
+      drawCurrent();
+    });
+    controls.append(button);
+  });
+  root.append(controls);
+}
 function showCornerStep(root,matrix){
   const pairs=[
     ["Сверху слева:",[matrix.left,matrix.top],matrix.corners.topLeft],
@@ -274,6 +357,35 @@ function showCornerStep(root,matrix){
   showCompactCalculations(root,[[label,compactSumFormula(values,result)]]);
 }
 function showInternalStep(root,m){
+  const selected=getInternalSelection();
+  if(step===1&&selected){
+    const base=m[selected.base],part=m[selected.spoke];
+    showCompactCalculations(root,[
+      ["1. Средняя:",compactSumFormula([base,m.center],part.near)],
+      ["2. Внешняя:",compactSumFormula([base,part.near],part.outer)],
+      ["3. Ближе к центру:",compactSumFormula([part.near,m.center],part.core)]
+    ]);
+    return;
+  }
+  if(step===2&&selected){
+    const base=m.corners[selected.corner],part=m.diagonals[selected.corner];
+    showCompactCalculations(root,[
+      ["1. Внутренняя:",compactSumFormula([base,m.center],part.near)],
+      ["2. Внешняя:",compactSumFormula([base,part.near],part.outer)]
+    ]);
+    return;
+  }
+  if(step===4&&selected){
+    const channels=[
+      ["Вход в деньги:",compactSumFormula([m.right,m.center],m.channels.moneyEntry)],
+      ["Вход в отношения:",compactSumFormula([m.bottom,m.center],m.channels.loveEntry)],
+      ["Баланс:",compactSumFormula([m.channels.moneyEntry,m.channels.loveEntry],m.channels.balance)],
+      ["Под долларом $:",compactSumFormula([m.channels.moneyEntry,m.channels.balance],m.channels.moneyPoint)],
+      ["Под сердцем ♥:",compactSumFormula([m.channels.loveEntry,m.channels.balance],m.channels.lovePoint)]
+    ];
+    showCompactCalculations(root,[channels[internalDetail]||channels[0]]);
+    return;
+  }
   const examples=[
     [["Центр:",compactSumFormula([m.left,m.top,m.right,m.bottom],m.center)],
       ["Верхний левый угол:",compactSumFormula([m.left,m.top],m.corners.topLeft)]],
@@ -370,6 +482,10 @@ function drawCurrent() {
     return;
   }
   if(!currentBirth){
+    if(id==="internal"){
+      const picker=$("school-internal-picker");
+      if(picker)picker.style.display="none";
+    }
     // Пока ученик не выбрал свою дату, показываем только пустую схему без чужого расчёта.
     drawBasic(null);
     $("lesson-step-count").textContent=guidedCount();
@@ -386,6 +502,7 @@ function drawCurrent() {
   $("lesson-step-formula").hidden=false;
   const m=calculateMatrix(currentBirth);
   const full=id==="internal";
+  if(full)updateInternalPicker();
   if(full) drawAllPositions(m);
   else drawBasic(m);
   $("lesson-step-count").textContent=guidedCount();
@@ -453,6 +570,7 @@ function setupDiagram(){
   step=id==="start"?0:([0,1,1,0,0][index]??0);
   $("lesson-step-back").addEventListener("click",()=>{
     step=Math.max(guidedStart(),step-1);
+    if(id==="internal")internalDetail=0;
     drawCurrent();
   });
   $("lesson-step-next").addEventListener("click",()=>{
@@ -463,6 +581,7 @@ function setupDiagram(){
       return;
     }
     step=Math.min(max,step+1);
+    if(id==="internal")internalDetail=0;
     drawCurrent();
   });
   const input=$("lesson-date");
@@ -496,6 +615,7 @@ function setupDiagram(){
     }
     error.hidden=true;
     currentBirth=birth;
+    if(id==="internal")internalDetail=0;
     drawCurrent();
     button.textContent="✓";
     button.classList.add("is-confirmed");
