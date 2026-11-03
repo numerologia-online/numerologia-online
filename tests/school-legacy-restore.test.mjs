@@ -110,6 +110,23 @@ test("Fifth Matrix lesson highlights exactly the chosen axis, diagonal or money/
     ["rightNear","tailFirst","wellbeing","moneyPoint","loveHeart"]);
 });
 
+test("Fifth lesson diagram has no empty 186-unit tail and keeps all 31 points in view", async () => {
+  const source=await read("pro/school/lesson/lesson.js");
+  const {calculateMatrix}=await import("../numerology-core.js");
+  const {nodesFor}=await import("../pro/pro-points.js");
+  assert.match(source,/viewBox:"0 0 620 620",role:"img","aria-label":"Все 31 позиции рассчитанной матрицы"/);
+  assert.doesNotMatch(source,/viewBox:"0 0 620 806"/);
+  assert.match(source,/viewBox:"0 0 400 400"/); // other lessons unchanged
+  for(const date of [{day:9,month:9,year:1986},{day:31,month:10,year:1988},{day:14,month:7,year:1990}]){
+    const points=nodesFor(date,calculateMatrix(date));
+    assert.equal(points.length,31);
+    for(const point of points){
+      assert.ok(point.x>=34&&point.x<=586,"x remains within diagram: "+point.key);
+      assert.ok(point.y>=34&&point.y<=586,"y remains within diagram: "+point.key);
+    }
+  }
+});
+
 test("Protected lesson delivery and owner-only white-label PDF survive", async () => {
   const js = await read("pro/school/lesson/lesson.js");
   const gate = await read("server/school-access/private/gate.php");
