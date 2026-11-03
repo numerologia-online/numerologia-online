@@ -8,6 +8,7 @@ import { buildProPdfChapters } from "./pro-pdf-content.js?v=25";
 import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
 
 const schoolClientMode = new URLSearchParams(window.location.search).get("from") === "school";
+let verifiedSchoolClientOwner = false;
 const defaultSubmitHtml = schoolClientMode
   ? 'Рассчитать для клиента <span aria-hidden="true">→</span>'
   : 'Открыть мой разбор <span aria-hidden="true">→</span>';
@@ -47,6 +48,45 @@ if (schoolClientMode) {
     "Введите дату рождения клиента, получите полную матрицу с подробными расшифровками и сохраните персональный PDF. Все расчёты и тексты используются из основного раздела.";
   document.querySelector('label[for="pro-birth-date"]').textContent = "Дата рождения клиента";
   form.querySelector('button[type="submit"]').innerHTML = defaultSubmitHtml;
+  document.body.classList.add("pro-school-client-mode");
+  document.querySelector(".pro-hero h1").textContent = "Клиентский PDF";
+  document.querySelector(".pro-hero-lead").textContent =
+    "Создайте персональный разбор на дату клиента. Перед скачиванием укажите его имя, ваше имя и ваши контакты. В PDF не будет бренда и контактов нашего сайта.";
+  document.querySelector("#pro-matrix-title").textContent = "Матрица клиента";
+  document.querySelector("#pro-pdf-controls .pro-pdf-intro h2").textContent = "Создать персональный PDF";
+  document.querySelector("#pro-pdf-controls .pro-pdf-note").textContent =
+    "Сначала заполните дату рождения, затем в анкете укажите имя клиента и подпись нумеролога.";
+  // The general full-report interface stays untouched outside school mode.
+  const schoolStyle = document.createElement("style");
+  schoolStyle.textContent = `
+    .pro-school-client-mode .pro-brand,
+    .pro-school-client-mode .pro-school-shortcut,
+    .pro-school-client-mode #pro-paywall-banner,
+    .pro-school-client-mode .pro-zone-picker,
+    .pro-school-client-mode #pro-point-details,
+    .pro-school-client-mode #pro-zone-reading,
+    .pro-school-client-mode #pro-question-legacy,
+    .pro-school-client-mode #pro-purpose,
+    .pro-school-client-mode .pro-karmic-paper,
+    .pro-school-client-mode .site-support-link,
+    .pro-school-client-mode .pro-footer {display:none!important}
+    .pro-school-client-mode .pro-hero {padding:22px 5px 18px}
+    .pro-school-client-mode .pro-hero h1 {font-size:clamp(30px,6vw,44px)}
+    .pro-school-client-mode .pro-school-owner-status {
+      margin:0 0 15px;padding:14px 17px;border:1px solid #d8ddcf;
+      border-radius:16px;background:#f5f8f0;color:#345443;
+      font:600 14px/1.55 system-ui,sans-serif
+    }
+    .pro-school-client-mode .pro-school-owner-status a {color:#275c45;text-decoration:underline}
+    .pro-school-client-mode #pro-pdf-controls {scroll-margin-top:18px}
+  `;
+  document.head.append(schoolStyle);
+  const status = document.createElement("p");
+  status.className = "pro-school-owner-status";
+  status.setAttribute("role", "status");
+  status.textContent = "Проверяю доступ владельца к клиентскому генератору…";
+  form.before(status);
+  form.hidden = true;
 }
 const error = document.querySelector("#pro-error");
 const results = document.querySelector("#pro-results");
@@ -68,7 +108,10 @@ const OWNER_TICKET_KEY = "numerologia-owner-oidc-ticket-v1";
 let verifiedOwner = false;
 let ownerSeeFree = false;
 let ownerToolbar = null;
-const hasPaidAccess = () => verifiedOwner && !ownerSeeFree;
+// School PDF never trusts a URL parameter: only the separate REG.RU owner gate unlocks it.
+const hasPaidAccess = () => schoolClientMode
+  ? verifiedSchoolClientOwner
+  : verifiedOwner && !ownerSeeFree;
 
 // The one free chapter is the left major point (birth day / outer image).
 // Never fetch the complete 14-chapter paid bank in this public preview.
@@ -120,7 +163,7 @@ if (startBrowserLogin) {
   location.assign(AUTH_SERVER + "/api/start?return_to=pro");
 }
 function showPaymentInfo() {
-  if (!paywallDialog) return;
+  if (schoolClientMode || !paywallDialog) return;
   const note = paywallDialog.querySelector("#pro-paywall-checkout-note");
   if (note) {
     note.textContent = "";
@@ -214,6 +257,7 @@ function readSignedMiniAppData() {
   catch (_) { return ""; }
 }
 async function verifyOwnerAccess() {
+  if (schoolClientMode) return;
   try {
     const initData = readSignedMiniAppData();
     let response;
@@ -257,9 +301,43 @@ async function verifyOwnerAccess() {
     console.warn("Проверка владельца пока недоступна", err);
   }
 }
+async function verifySchoolClientOwner() {
+  if (!schoolClientMode) return;
+  const status = document.querySelector(".pro-school-owner-status");
+  try {
+    const response = await fetch("/api/numi-school.php", {
+      method: "POST",
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        action: "session",
+        init_data: readSignedMiniAppData()
+      })
+    });
+    if (!response.ok) throw new Error("Проверка доступа не прошла");
+    const result = await response.json();
+    if (result?.ok !== true || result?.owner !== true) throw new Error("Не подтверждён владелец");
+    verifiedSchoolClientOwner = true;
+    status.textContent = "✓ Доступ владельца подтверждён. Клиентский PDF оформляется от имени нумеролога без контактов сайта.";
+    form.hidden = false;
+    syncPaywallUi();
+    restoreCalculatedBirth();
+  } catch (_) {
+    verifiedSchoolClientOwner = false;
+    form.hidden = true;
+    status.textContent = "Клиентский генератор доступен владельцу через подтверждённый аккаунт. Войдите в самоучитель тем же способом и откройте инструмент ещё раз. ";
+    const back = document.createElement("a");
+    back.href = "pro/school/";
+    back.textContent = "Вернуться в самоучитель";
+    status.append(back);
+    syncPaywallUi();
+  }
+}
 document.querySelector("#pro-paywall-buy")?.addEventListener("click", showPaymentInfo);
 syncPaywallUi();
-void verifyOwnerAccess();
+if (schoolClientMode) void verifySchoolClientOwner();
+else void verifyOwnerAccess();
 const zoneReadingHome = zoneReading.nextElementSibling; // caption after the unchanged matrix
 let selectedZoneFrom = "diagram";
 diagram.addEventListener("click", () => { selectedZoneFrom = "diagram"; }, true);
@@ -1402,5 +1480,5 @@ form.addEventListener("submit", async(event)=>{
     submit.innerHTML=defaultSubmitHtml;
   }
 });
-// Reopen a successful calculation after a reload without requiring another tap.
-restoreCalculatedBirth();
+// A school client calculation is restored only after a fresh server-side owner check.
+if (!schoolClientMode) restoreCalculatedBirth();
