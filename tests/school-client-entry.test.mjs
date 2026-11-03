@@ -32,7 +32,7 @@ test("Персональный PDF доступен только в режиме
   assert.match(pro, /beforeDownload: schoolClientMode \?/);
   assert.match(pro, /customizeDocument: schoolClientMode \?/);
   assert.match(pro, /import\("\.\/school\/client-pdf\.js\?v=2"\)/);
-  assert.match(sitePdf, /src="pro\/pro\.js\?v=20261103schoolpdf1"/);
+  assert.match(sitePdf, /src="pro\/pro\.js\?v=20261103dots1"/);
   assert.match(publicPdf, /beforeDownload = null, customizeDocument = null/);
   assert.match(publicPdf, /if \(typeof beforeDownload === "function"\) return;/);
   assert.match(schoolForm, /Имя клиента/);
