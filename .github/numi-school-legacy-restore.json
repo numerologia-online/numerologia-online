@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "note": "Deploy only the changed text of step two in the protected Matrix school lesson. Existing original lesson layout, owner access and client PDF remain untouched; exact four-file preflight and backup abort on mismatch.",
+  "note": "Only update protected Matrix lesson/lesson.js: rule first, example 31.10.1988 second. Safeguard all other school files, all existing site changes, owner protection and client PDF.",
   "base_git_blob_sha": {
     "pro/school/index.html": "fbd6c7da7cc1c8cf4d4fabaaaf40980fd06624f6",
     "pro/school/school.js": "ce89ccefad588ae73d9c9f46c623287e682b4aee",
     "pro/school/lesson/index.html": "dbf7734b5dc5bd11e21a23c6f63f95fe60e03143",
-    "pro/school/lesson/lesson.js": "347aae49e172c97937505b31dc9097ab7a6ee5e0"
+    "pro/school/lesson/lesson.js": "ad2028fbddf880707d9245edd327f8de034db82d"
   },
-  "release_request": "matrix-rule22-clarity-20261103-v3"
+  "release_request": "matrix-rule22-date-example-20261103-v4"
 }
