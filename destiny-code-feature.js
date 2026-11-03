@@ -76,20 +76,14 @@ const createMoneyDisclosure = ({ label, lead, text, advice = "", ritual = "", ri
   return details;
 };
 
-// Protected interpretations are served only after server-side authorization.
+// This one interpretation is free for everyone, independent of Telegram and subscriptions.
+// The separate club ritual library and complete Matrix readings remain protected.
 const loadMoneyBlocks = async () => {
-  const initData = window.Telegram?.WebApp?.initData || new URLSearchParams(window.location.hash.slice(1)).get("tgWebAppData") || "";
-  if (!initData) return null;
-  const response = await fetch("/api/numi-paid-content.php", {
-    method: "POST", credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ init_data: initData, path: "data/money-blocks.json" })
-  });
-  if (response.status === 401 || response.status === 403) return null;
+  const response = await fetch("./money-blocks-free.json?v=20261103open1", { cache: "no-cache" });
   if (!response.ok) throw new Error("MONEY_CONTENT_UNAVAILABLE");
-  const payload = await response.json();
-  if (!payload.ok || !payload.content) throw new Error("MONEY_CONTENT_UNAVAILABLE");
-  return payload.content;
+  const blocks = await response.json();
+  if (!blocks || typeof blocks !== "object") throw new Error("MONEY_CONTENT_UNAVAILABLE");
+  return blocks;
 };
 
 const MONEY_CARDS = [
@@ -101,7 +95,7 @@ const moneyCard = async ({ label }, energy) => {
     const blocks = await loadMoneyBlocks();
     const custom = blocks?.[String(energy)];
     if (custom?.paragraphs?.length) return { label, lead: label, text: custom.paragraphs };
-    return { label, lead: label + " 🔒", text: "Для чтения расшифровки войдите в аккаунт с доступом к этому материалу. Ваш код денег и его активация доступны ниже." };
+    return { label, lead: label, text: "Расшифровка для этого числа временно недоступна. Пожалуйста, попробуйте рассчитать ещё раз." };
   } catch {
     return { label, lead: label, text: "Расшифровка временно не загрузилась. Попробуйте рассчитать ещё раз. Ваш код денег и его активация уже доступны." };
   }
