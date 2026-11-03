@@ -1,0 +1,42 @@
+name: Inspect live personal day subscription block (read-only)
+on:
+  push:
+    paths:
+      - .github/workflows/numi-day-subscription-inspect.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Inspect live personal day subscription block'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read only the live personal-day UI markup over FTPS
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib, io, os, hashlib, ssl, re
+          host='server172.hosting.reg.ru'
+          site='www/xn--c1adkkdfjbp1a4l.online'
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          f.connect(host,21)
+          f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          f.prot_p()
+          f.set_pasv(True)
+          f.cwd(site)
+          data=io.BytesIO()
+          f.retrbinary('RETR personal-day-feature.js', data.write)
+          f.quit()
+          code=data.getvalue().decode('utf-8')
+          print('LIVE_SHA256',hashlib.sha256(data.getvalue()).hexdigest())
+          print('LIVE_BYTES',len(data.getvalue()))
+          for word in ['personal-month-subscription','Месячная подписка','Скрыть условия','подписка','Важные числа - только по подписке']:
+            positions=[m.start() for m in re.finditer(re.escape(word),code,re.I)]
+            print('SEARCH',word,'COUNT',len(positions))
+            for pos in positions[:5]:
+              print('SNIPPET_BEGIN',word,pos)
+              print(code[max(0,pos-900):min(len(code),pos+2100)])
+              print('SNIPPET_END')
+          PY
