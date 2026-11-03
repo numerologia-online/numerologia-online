@@ -62,4 +62,10 @@ def main():
  finally:
   try:ftp.quit()
   except BaseException:ftp.close()
-if __name__=='__main__':main()
+if __name__ == '__main__':
+ import runpy
+ release = json.loads((ROOT/'seo/articles-release.json').read_text())
+ if '_seo_publication' in release:
+  runpy.run_path(str(ROOT/'.github/scripts/publish-seo-articles-live.py'), run_name='__main__')
+ else:
+  main()
