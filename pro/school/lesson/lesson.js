@@ -428,6 +428,22 @@ function guidedText(isFull){
       :"Посмотрим на дату 31.10.1988. Слева записываем день рождения, сверху — месяц, справа — сумму цифр года. Если полученное число больше 22, сокращаем его сложением цифр. На схеме показан результат каждого расчёта.";
   }
   if(id==="corners")return cornerStages[step].text;
+  if(id==="internal"&&step===1&&currentBirth){
+    const selected=getInternalSelection();
+    if(selected){
+      const m=calculateMatrix(currentBirth);
+      const edge=m[selected.base];
+      const middle=m[selected.spoke].near;
+      const outer=m[selected.spoke].outer;
+      const inner=m[selected.spoke].core;
+      return "Выбрана "+selected.label.toLowerCase()+". На её краю стоит "+edge+", а в центре матрицы — "+m.center+". "+
+        "1. Складываем "+compactSumFormula([edge,m.center],middle)+". Записываем "+middle+" между крайним числом "+edge+" и центром. "+
+        "2. Складываем "+compactSumFormula([edge,middle],outer)+". Записываем "+outer+" между "+edge+" и "+middle+". "+
+        "3. Складываем "+compactSumFormula([middle,m.center],inner)+". Записываем "+inner+" между "+middle+" и центром. "+
+        "Теперь от края линии к центру числа идут так: "+[edge,outer,middle,inner,m.center].join(" → ")+". "+
+        "Выберите другую ось кнопками над схемой, чтобы разобрать её точно так же.";
+    }
+  }
   if(id==="internal")return internalStages[step].text;
   return stepDescriptions[step];
 }
