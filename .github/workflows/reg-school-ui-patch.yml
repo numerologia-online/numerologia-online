@@ -1,0 +1,61 @@
+name: Publish the reviewed two-file school interface patch
+on:
+  push:
+    paths:
+      - .github/numi-school-ui-patch.json
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-school-owner-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - run: node --check pro/school/school.js
+      - name: Apply only the reviewed interface removals to existing private snapshots
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,hashlib,io,json,os,pathlib,ssl,time,urllib.request,urllib.error
+          release=json.loads(pathlib.Path('.github/numi-school-ui-patch.json').read_text())
+          patches=release['patches']
+          if set(patches)!={'pro/school/index.html','pro/school/school.js'}:raise RuntimeError('Only the two reviewed UI sources are allowed')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect('server172.hosting.reg.ru',21);ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/');root=home+'/private/numi-school-owner-20261103/sources';stamp=str(int(time.time()))
+          def read(path):
+              out=io.BytesIO();ftp.retrbinary('RETR '+path,out.write);return out.getvalue()
+          def write(path,data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              if read(path)!=data:raise RuntimeError('File integrity mismatch')
+          originals={};prepared={};targets={}
+          for name,patch in patches.items():
+              target=root+'/'+hashlib.sha256(name.encode()).hexdigest();old=read(target)
+              if hashlib.sha256(old).hexdigest()!=patch['expected_sha256']:raise RuntimeError('Reviewed school source changed')
+              before=patch['before'].encode();after=patch['after'].encode()
+              if not before or old.count(before)!=1:raise RuntimeError('Exact duplicate component not found')
+              originals[name]=old;prepared[name]=old.replace(before,after,1);targets[name]=target
+          backup=home+'/site-safeguard-backups/school-ui-'+stamp
+          ftp.mkd(backup)
+          for name,data in originals.items():write(backup+'/'+hashlib.sha256(name.encode()).hexdigest(),data)
+          touched=[]
+          def install(name,data):
+              target=targets[name];stage=target+'.new-'+stamp;write(stage,data);ftp.rename(stage,target);ftp.sendcmd('SITE CHMOD 600 '+target)
+              if read(target)!=data:raise RuntimeError('Installed source mismatch')
+          try:
+              for name,data in prepared.items():touched.append(name);install(name,data)
+              req=urllib.request.Request('https://xn--c1adkkdfjbp1a4l.online/pro/school/',headers={'Cache-Control':'no-cache'})
+              with urllib.request.urlopen(req,timeout=25)as response:
+                  if response.status!=200 or b'school-subscription-offer' not in response.read():raise RuntimeError('Existing access lock changed')
+              print('SCHOOL_UI_PATCH_SUCCESS: duplicate introduction removed; lesson tabs, lesson program and existing access preserved.')
+          except Exception:
+              for name in reversed(touched):install(name,originals[name])
+              raise
+          finally:ftp.quit()
+          PY
