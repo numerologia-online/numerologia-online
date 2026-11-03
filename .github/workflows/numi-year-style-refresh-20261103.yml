@@ -1,0 +1,89 @@
+name: Publish approved personal-year typography update to REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-year-style-refresh-20261103.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update only personal-year article styles, with backup and live verification
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,io,ssl,os,pathlib,time,urllib.request
+          site="xn--c1adkkdfjbp1a4l.online"
+          path="guide/lichnyi-god-po-date-rozhdeniya/index.html"
+          source=pathlib.Path(path).read_bytes()
+          tag=b'<style id="numi-year-readable-layout-20261103">'
+          if source.count(tag)!=1 or source.count(b'class="year-panel"')!=9 or source.count(b'class="year-cta')!=3:
+              raise RuntimeError("Unexpected published article source")
+          start=source.index(tag)
+          end=source.index(b'</style>',start)+len(b'</style>')
+          before=source[:start]+source[end:]
+          if before[start:start+1]==b'\n':
+              before=before[:start]+before[start+1:]
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
+          ftp.connect("server172.hosting.reg.ru",21)
+          ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          ftp.prot_p()
+          home=ftp.pwd().rstrip('/')
+          target=home+"/www/"+site+"/"+path
+          def read(p):
+              b=io.BytesIO()
+              def add(chunk):
+                  if b.tell()+len(chunk)>3000000:raise RuntimeError("File too large")
+                  b.write(chunk)
+              ftp.retrbinary("RETR "+p,add)
+              return b.getvalue()
+          def write(p,data):
+              ftp.storbinary("STOR "+p,io.BytesIO(data))
+              if read(p)!=data:raise RuntimeError("FTPS integrity check failed")
+          written=False
+          original=None
+          try:
+              original=read(target)
+              if original==source:
+                  print("ARTICLE ALREADY UP TO DATE",flush=True)
+              elif original!=before:
+                  raise RuntimeError("Live article has other edits. Refusing overwrite; no files changed")
+              else:
+                  folder=home+"/site-safeguard-backups"
+                  try:ftp.mkd(folder)
+                  except ftplib.error_perm:ftp.cwd(folder)
+                  backup=folder+"/year-readability-"+str(int(time.time()))
+                  ftp.mkd(backup)
+                  write(backup+"/index.html.bak",original)
+                  print("BACKUP OUTSIDE WEBSITE SAVED",flush=True)
+                  if read(target)!=original:raise RuntimeError("Article changed during preflight")
+                  written=True
+                  write(target,source)
+                  print("UPLOADED ONLY YEAR ARTICLE",flush=True)
+              url="https://"+site+"/guide/lichnyi-god-po-date-rozhdeniya/?css_check="+str(time.time_ns())
+              request=urllib.request.Request(url,headers={"Cache-Control":"no-cache","User-Agent":"Mozilla/5.0"})
+              with urllib.request.urlopen(request,timeout=40) as response:
+                  public=response.read(3000001)
+                  if response.status!=200:raise RuntimeError("HTTP status failed")
+              if public!=source:raise RuntimeError("HTTP page differs from approved source")
+              print("LIVE VERIFIED: NEW TYPE, WIDTH, COMPACT YEAR PANELS; ARTICLE CONTENT UNCHANGED",flush=True)
+          except BaseException:
+              if written and original is not None:
+                  try:
+                      write(target,original)
+                      print("ROLLBACK VERIFIED",flush=True)
+                  except Exception as e:print("CRITICAL: ROLLBACK FAILED "+str(e),flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
