@@ -1,0 +1,27 @@
+name: Read-only mobile site speed test (2026-11-04)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/numi-mobile-speed-readonly-20261104.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile-speed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Measure homepage over simulated mobile connection (read only)
+        run: |
+          set -e
+          npx --yes lighthouse@12.8.2 'https://xn--c1adkkdfjbp1a4l.online/' --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --form-factor=mobile --throttling-method=simulate --only-categories=performance --output=json --output-path=/tmp/numi-mobile-speed.json --quiet
+          python3 - <<'PY'
+          import json
+          r=json.load(open('/tmp/numi-mobile-speed.json'))
+          print('NUMI_MOBILE_SIMULATED_RESULTS',flush=True)
+          print('Performance score:',r.get('categories',{}).get('performance',{}).get('score'),flush=True)
+          for key in ('first-contentful-paint','largest-contentful-paint','speed-index','interactive','total-blocking-time','cumulative-layout-shift','server-response-time'):
+              a=r.get('audits',{}).get(key,{})
+              print(key+':',a.get('displayValue','(unavailable)'),'numeric_ms:',a.get('numericValue'),flush=True)
+          PY
