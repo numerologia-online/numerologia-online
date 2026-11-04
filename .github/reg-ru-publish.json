@@ -1,22 +1,14 @@
 {
   "mode": "publish",
   "files": [
-    "pro/school/learning.js",
-    "pro/school/learning.css",
-    "pro/school/lesson/lesson.js",
-    "pro/school/lesson/index.html",
-    "pro/school/school.js",
-    "pro/school/index.html",
-    "pro/schools/index.html"
+    "index.html"
   ],
-  "expected_sha256": {
-    "pro/school/learning.js": "c3acf88c34fecb6f7c2f0dbf7e0885aff5658e5348dbd527ea674cbb2d17be1e",
-    "pro/school/learning.css": "a0bdc88bd49eca5be9ff38c04c534e4986fecb80bbc8fddc9c3fb6c2b4324269",
-    "pro/school/lesson/lesson.js": "cb05d4b842a448411bd2824971bd6d5de0d67fc3b6ad90410965f6404cbdec3c",
-    "pro/school/lesson/index.html": "c6580b74721fe7c16d105f49b4f9c7a6b07cdec457aff92a58033d2d7abdfdea",
-    "pro/school/school.js": "1a0fd2c83efba51f062aad41e0c5f216db74a398b764040f431ab883e3107af3",
-    "pro/school/index.html": "0108817f3d75d4082772b7555ab6171cc14353b98de77c1a95c9ee925a82e370",
-    "pro/schools/index.html": "4d2bdee3fc8bc16d2c86712f4bd1d46405a3d4c362d95d33c776f5101e50b5d8"
+  "patches": {
+    "index.html": {
+      "before": "    <meta charset=\"UTF-8\" />",
+      "after": "    <meta charset=\"UTF-8\" />\n    <script id=\"numi-enforce-https\">\n      if (location.protocol === \"http:\" &&\n          /^(www\\.)?xn--c1adkkdfjbp1a4l\\.online$/.test(location.hostname)) {\n        const secureUrl = new URL(location.href);\n        secureUrl.protocol = \"https:\";\n        location.replace(secureUrl.href);\n      }\n    </script>",
+      "expected_sha256": "f572ecd9f86d8e54c82a3f4c6f29c54d879cf74df43cb70f8464dd6aeb718142"
+    }
   },
-  "note": "Owner requested compact phone-first Matrix self-study: interactive diagram first, horizontal step cards with numbered tabs and swipe, one question at a time. Preserve all lesson texts, energies, calculations, access checks and existing learning progress."
+  "note": "Fix guest/incognito year preview on insecure entry: redirect production homepage to HTTPS preserving path query and fragment. Apply only exact reviewed patch to live index, back up first."
 }
