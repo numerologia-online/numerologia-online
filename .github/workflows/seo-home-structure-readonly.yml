@@ -1,0 +1,36 @@
+name: Inspect live homepage SEO markup (read only)
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/seo-home-structure-readonly.yml']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Read only remote index HTML structure, no writes
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,re,hashlib
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          f.connect("server172.hosting.reg.ru",21)
+          f.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"]);f.prot_p()
+          path=f.pwd().rstrip("/")+"/www/xn--c1adkkdfjbp1a4l.online/index.html"
+          out=io.BytesIO();f.retrbinary("RETR "+path,out.write)
+          s=out.getvalue().decode("utf-8");f.quit()
+          dialogs=list(re.finditer(r'<dialog\\b[^>]*>[\\s\\S]*?</dialog>',s))
+          tags=re.findall(r'<dialog\\b[^>]*>',s)
+          print("LIVE_LEN",len(s),"SHA",hashlib.sha256(out.getvalue()).hexdigest(),flush=True)
+          print("DIALOG_MATCHES",len(dialogs),"DIALOG_STARTS",len(tags),flush=True)
+          print("DIALOG_TAGS",[t[:120] for t in tags],flush=True)
+          print("NOINDEX_OPEN",s.count("<!--noindex-->"),"NOINDEX_CLOSE",s.count("<!--/noindex-->"),flush=True)
+          print("OLD_TITLE",'<title>Нумерология по дате рождения онлайн | Нумерология.online</title>' in s,flush=True)
+          print("OLD_HERO",'<p class="hero-copy">Без эзотерической чуши и сладкой лжи.</p>' in s,flush=True)
+          print("CLUB_MODAL",'<dialog id="money-club-dialog"' in s,flush=True)
+          print("MODAL_NOINDEX_NEAR",[s[max(0,m.start()-40):m.start()] for m in dialogs],flush=True)
+          PY
