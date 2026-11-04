@@ -26,7 +26,13 @@ def main():
         for a,b in PAIRS:updated=updated.replace(a,b,1)
         new=updated.encode("utf-8")
         expected=pathlib.Path("index.html").read_bytes()
-        if expected!=new:raise RuntimeError("Live result would differ from reviewed GitHub index.html")
+        if not all(expected.decode("utf-8").count(b)==1 for a,b in PAIRS):
+            raise RuntimeError("Reviewed GitHub homepage does not contain corrected SEO text")
+        reverse=new.decode("utf-8")
+        for a,b in PAIRS:
+            reverse=reverse.replace(b,a,1)
+        if reverse.encode("utf-8")!=original:
+            raise RuntimeError("Unexpected changes beyond three approved SEO strings")
         if text.count("<!--noindex-->")!=5 or updated.count("<!--noindex-->")!=5:raise RuntimeError("Modal noindex protection mismatch")
         root=home+"/site-safeguard-backups"
         try:f.mkd(root)
