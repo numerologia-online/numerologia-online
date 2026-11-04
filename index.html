@@ -2,6 +2,14 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
+    <script id="numi-enforce-https">
+      if (location.protocol === "http:" &&
+          /^(www\.)?xn--c1adkkdfjbp1a4l\.online$/.test(location.hostname)) {
+        const secureUrl = new URL(location.href);
+        secureUrl.protocol = "https:";
+        location.replace(secureUrl.href);
+      }
+    </script>
     <script src="/assets/telegram-web-app-20261102.js" defer onload="try{window.Telegram.WebApp.ready()}catch(e){}"></script>
     <script src="telegram-scroll-guard.js?v=1" defer></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
