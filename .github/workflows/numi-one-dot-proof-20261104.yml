@@ -1,0 +1,71 @@
+name: Publish one dot to REG.RU (proof 2026-11-04)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/numi-one-dot-proof-20261104.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: numi-reg-one-dot-proof-20261104
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Upload and verify exactly one dot (isolated new file only)
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib, io, os, ssl, urllib.request, urllib.error
+          host = 'server172.hosting.reg.ru'
+          domain = 'xn--c1adkkdfjbp1a4l.online'
+          filename = 'numi-publish-proof-20261104.txt'
+          payload = b'.'
+          user = os.environ.get('REG_FTP_USER')
+          password = os.environ.get('REG_FTP_PASSWORD')
+          if not user or not password:
+              raise RuntimeError('Main GitHub repository FTP credentials are missing')
+          ftp = ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=25)
+          ftp.connect(host, 21)
+          try:
+              ftp.login(user, password)
+              ftp.prot_p()
+              ftp.set_pasv(True)
+              remote = ftp.pwd().rstrip('/') + '/www/' + domain + '/' + filename
+              result = io.BytesIO()
+              try:
+                  ftp.retrbinary('RETR ' + remote, result.write)
+                  existing = result.getvalue()
+              except ftplib.error_perm as exc:
+                  if not str(exc).startswith('550'):
+                      raise
+                  existing = None
+              if existing is None:
+                  ftp.storbinary('STOR ' + remote, io.BytesIO(payload))
+              elif existing != payload:
+                  raise RuntimeError('Existing marker differs; refuse overwrite')
+              result = io.BytesIO()
+              ftp.retrbinary('RETR ' + remote, result.write)
+              if result.getvalue() != payload:
+                  raise RuntimeError('REG.RU FTP readback does not match one dot')
+              print('REG_RU_FTP_DOT_VERIFIED', flush=True)
+          finally:
+              try: ftp.quit()
+              except Exception: ftp.close()
+          url = 'https://' + domain + '/' + filename
+          request = urllib.request.Request(url, headers={
+              'User-Agent': 'NUMI-REG-DOT-PROOF/1.0', 'Cache-Control': 'no-cache'})
+          with urllib.request.urlopen(request, timeout=25) as response:
+              if response.status != 200 or response.read(1024) != payload:
+                  raise RuntimeError('REG.RU live HTTP dot proof did not match')
+          print('REG_RU_LIVE_HTTP_DOT_VERIFIED: ' + url, flush=True)
+          PY
