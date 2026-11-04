@@ -1,0 +1,50 @@
+name: Read-only check of live SEO access (2026-11-04)
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/seo-live-readonly-check-20261104.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Test only public HTML, robots and sitemap (no writes)
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,re,time
+          host='https://xn--c1adkkdfjbp1a4l.online'
+          paths=['/','/robots.txt','/sitemap.xml','/guide/','/guide/22-energii/']
+          agents=[
+            ('browser','Mozilla/5.0'),
+            ('yandex','Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)')
+          ]
+          for agent,user_agent in agents:
+            for path in paths:
+              t=time.monotonic()
+              req=urllib.request.Request(host+path,headers={'User-Agent':user_agent,'Cache-Control':'no-cache'})
+              try:
+                with urllib.request.urlopen(req,timeout=18) as r:
+                  body=r.read(200000)
+                  status=r.status
+                  final=r.url
+                  ct=r.headers.get('Content-Type','')
+                  xr=r.headers.get('X-Robots-Tag','')
+              except urllib.error.HTTPError as e:
+                status=e.code;final=e.url;ct=e.headers.get('Content-Type','');xr=e.headers.get('X-Robots-Tag','');body=e.read(3000)
+              except Exception as e:
+                print('CHECK',agent,path,'ERROR',type(e).__name__,str(e)[:120],flush=True)
+                continue
+              if path=='/robots.txt':
+                detail='robots='+repr(body.decode('utf-8','replace')[:450])
+              elif path=='/sitemap.xml':
+                detail='urls='+str(body.count(b'<loc>'))+' valid_urlset='+str(b'<urlset' in body)
+              else:
+                text=body.decode('utf-8','replace')
+                m=re.search(r'<meta\s+name=[\\\"\\\']robots[\\\"\\\']\s+content=[\\\"\\\']([^\\\"\\\']+)',text,re.I)
+                c=re.search(r'<link[^>]*rel=[\\\"\\\']canonical[\\\"\\\'][^>]*>',text,re.I)
+                detail='html_title='+repr((re.search(r'<title[^>]*>(.*?)</title>',text,re.I|re.S).group(1) if re.search(r'<title[^>]*>(.*?)</title>',text,re.I|re.S) else '')[:100])+' meta_robots='+repr(m.group(1) if m else None)+' canonical='+repr(c.group(0) if c else None)
+              print('CHECK',agent,path,'status='+str(status),'seconds='+str(round(time.monotonic()-t,2)),'final='+final,'xrobots='+repr(xr),'type='+repr(ct),detail,flush=True)
+          PY
