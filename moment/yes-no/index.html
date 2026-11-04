@@ -8,7 +8,7 @@
   <title>100 вопросов «Да или нет» — Нумерология момента</title>
   <link rel="stylesheet" href="../moment.css?v=1">
   <link rel="stylesheet" href="./yes-no.css?v=24">
-  <script defer src="./yes-no.js?v=13"></script>
+  <script defer src="./yes-no.js?v=14"></script>
 </head>
 <body>
   <header class="site-header"><div class="header-inner">
@@ -21,12 +21,14 @@
       <p class="overline">100 ВОПРОСОВ · 7 НАПРАВЛЕНИЙ</p>
       <h1>Выберите тему</h1>
       <p class="yn-directory-sub">Вопросы по темам, быстро и понятно.</p>
+      <p id="yn-access-status" class="yn-directory-sub" role="status" aria-live="polite">Проверяем доступ к вопросам...</p>
       <div id="yn-categories" class="yn-category-list" aria-label="Темы вопросов"></div>
       <div id="yn-panel" class="yn-results" hidden>
         <div class="yn-results-head">
           <p class="overline">ДА ИЛИ НЕТ</p>
           <h2 id="yn-title">Вопросы</h2>
           <p id="yn-count" class="results-message" role="status" aria-live="polite"></p>
+          <p id="yn-access-list-status" class="results-message" role="status" aria-live="polite"></p>
         </div>
         <div id="yn-questions" class="yn-questions-list"></div>
       </div>

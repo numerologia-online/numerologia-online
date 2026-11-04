@@ -4,6 +4,36 @@
   const grid = $("yn-categories"), panel = $("yn-panel"), list = $("yn-questions"),
     title = $("yn-title"), count = $("yn-count"), back = $("yn-all"), dialog = $("yn-dialog");
   let catalog = null, active = null, selectedQuestion = null, answerRequest = 0, answerController = null;
+  let access = null;
+  function accessText() {
+    if (!access) return "Проверяем доступ к вопросам...";
+    if (!access.ok) return "Проверить доступ не удалось. Обновите страницу.";
+    if (!access.authenticated) return "Войдите в аккаунт, чтобы получить 1 бесплатный ответ в сутки.";
+    if (access.subscribed) return "Подписка активна · Все вопросы без ограничений.";
+    return access.remaining > 0
+      ? "Сегодня доступен 1 бесплатный вопрос. Остальные ответы по подписке."
+      : "Бесплатный вопрос на сегодня использован. Другие ответы по подписке.";
+  }
+  function updateAccess() {
+    const text = accessText();
+    for (const id of ["yn-access-status", "yn-access-list-status"]) {
+      const el = $(id); if (el) el.textContent = text;
+    }
+    if (catalog && active) render();
+  }
+  async function loadAccess() {
+    try {
+      const response = await fetch("/api/numi-yesno-answer.php?status=1", {
+        credentials: "same-origin", cache: "no-store"
+      });
+      const result = await response.json();
+      if (!response.ok || result.ok !== true) throw Error("access unavailable");
+      access = result;
+    } catch (_) {
+      access = { ok: false, authenticated: false, subscribed: false, remaining: 0 };
+    }
+    updateAccess();
+  }
   const timeInput = $("yn-time-input"), timeForm = $("yn-time-form"),
     timeError = $("yn-time-error"), timeResult = $("yn-time-result");
   const currentTime = () => {
@@ -43,15 +73,36 @@
       timeResult.textContent = "Ответ на этот вопрос ещё готовится.";
       return;
     }
+    if (!access?.authenticated || (!access.subscribed && access.remaining < 1)) {
+      timeResult.textContent = accessText();
+      return;
+    }
     timeResult.textContent = "Подготавливаем ответ.";
     answerController = new AbortController();
     const timer = setTimeout(() => answerController?.abort(), 12000);
     try {
-      const response = await fetch("/api/numi-yesno-answer.php?question=" + encodeURIComponent(selectedQuestion.id) + "&time=" + encodeURIComponent(value), {cache:"no-store", signal:answerController.signal});
+      const response = await fetch("/api/numi-yesno-answer.php", {
+        method: "POST", credentials: "same-origin", cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: selectedQuestion.id, time: value }),
+        signal: answerController.signal
+      });
       const data = await response.json();
       if (id !== answerRequest) return;
       if (data.error === "ANSWER_NOT_READY") {timeResult.textContent = "Ответ на этот вопрос ещё готовится.";return;}
+      if (data.error === "DAILY_LIMIT_REACHED") {
+        if (access) access.remaining = 0;
+        updateAccess();
+        timeResult.textContent = "Бесплатный вопрос сегодня уже использован. Остальные ответы доступны по подписке.";
+        return;
+      }
+      if (data.error === "LOGIN_REQUIRED") {
+        access = {ok: true, authenticated: false, subscribed: false, remaining: 0};
+        updateAccess();
+        timeResult.textContent = accessText(); return;
+      }
       if (!response.ok || data.ok !== true || typeof data.answer !== "string") throw Error("answer unavailable");
+      if (access && !access.subscribed) { access.remaining = 0; updateAccess(); }
       const separator = data.answer.indexOf(".");
       if (separator < 0) {timeResult.textContent = data.answer;return;}
       const verdict = document.createElement("strong");
@@ -117,9 +168,12 @@
     list.replaceChildren(...found.map((q, i) => {
       const button = node("button", "yn-question");
       button.type = "button";
+      const locked = !access?.ok || !access.authenticated || (!access.subscribed && access.remaining < 1);
+      button.disabled = locked;
+      if (locked) button.title = "Для дополнительных ответов нужна подписка";
       button.append(node("span", "yn-question-number", String(i + 1).padStart(2, "0")),
         node("span", "yn-question-text", q.title),
-        node("span", "yn-question-arrow", "→"));
+        node("span", "yn-question-arrow", locked ? "🔒" : "→"));
       button.addEventListener("click", () => {
         answerRequest++; answerController?.abort(); selectedQuestion = q;
         $("yn-dialog-title").textContent = q.title;
@@ -166,6 +220,7 @@
     else window.location.assign("../");
   });
   (async () => {
+    loadAccess();
     try {
       const response = await fetch("./questions.json?v=3", {cache:"default"});
       if (!response.ok) throw Error("catalog request");

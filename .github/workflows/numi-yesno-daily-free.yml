@@ -1,0 +1,46 @@
+name: Publish yes-no daily free question to REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-yesno-daily-free.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: numi-yesno-daily-free-production
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish yes-no daily free limit to REG.RU'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate new server and client sources
+        run: |
+          php -l yesno-service/public/numi-yesno-answer.php
+          node --check moment/yes-no/yes-no.js
+          python3 -m py_compile yesno-service/daily-free/deploy.py
+          python3 - <<'PY'
+          from pathlib import Path
+          js=Path('moment/yes-no/yes-no.js').read_text()
+          php=Path('yesno-service/public/numi-yesno-answer.php').read_text()
+          html=Path('moment/yes-no/index.html').read_text()
+          assert 'CREATE TABLE IF NOT EXISTS numi_yesno_daily_uses' in php
+          assert 'INSERT IGNORE INTO numi_yesno_daily_uses' in php
+          assert "'POST'" in php and "POST" in js
+          assert 'button.disabled = locked' in js
+          assert 'yes-no.js?v=14' in html
+          assert 'yn-access-status' in html
+          assert 'numi_entitlements e' in php
+          assert 'OWNER_MAILING_HANDLER' not in js
+          print('YESNO_DAILY_FREE_PRECHECK_OK')
+          PY
+      - name: Back up live targets, enforce server quota, and verify anonymous lockout
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u yesno-service/daily-free/deploy.py
