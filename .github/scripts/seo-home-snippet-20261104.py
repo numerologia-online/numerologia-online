@@ -12,7 +12,7 @@ def transform(text):
         if text.count(old)!=1:
             raise RuntimeError("Live homepage drift: expected exactly one old SEO marker")
         text=text.replace(old,new,1)
-    dlg=re.compile(r"<dialog\\b[^>]*>[\\s\\S]*?</dialog>")
+    dlg=re.compile(r"<dialog\b[^>]*>[\s\S]*?</dialog>")
     parts=dlg.findall(text)
     if len(parts)!=5 or "<!--noindex-->" in text:
         raise RuntimeError("Live dialog structure changed; refusing patch")
