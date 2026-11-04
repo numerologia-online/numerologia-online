@@ -35,15 +35,10 @@ const SOON_SECTIONS = new Set(SECTION_BUTTONS.filter(x => x.soon).map(x => 'soon
 const LEGACY_QUESTION_CALLBACKS = new Set(['topic_love', 'topic_money', 'topic_self', 'topic_answers']);
 const BOTTOM_MENU_LABEL = '🫶 Открой все разделы';
 
-// A Telegram message may install a reply keyboard OR carry an inline
-// keyboard, not both. Install this reply keyboard in a short, silent message
-// immediately before the "account ready" reply with its inline site buttons.
-function bottomMenuKeyboard() {
-  return {
-    keyboard: [[{ text: BOTTOM_MENU_LABEL }]],
-    resize_keyboard: true,
-    is_persistent: true,
-  };
+// Remove the obsolete persistent sections keyboard. Do not change
+// temporary date confirmation buttons or Telegram's "Open site" menu.
+function clearBottomMenuKeyboard() {
+  return { remove_keyboard: true };
 }
 
 function sectionsKeyboard() {
@@ -83,14 +78,14 @@ function updateBotNavigation(reply, update) {
 
   // The full website catalogue is shown ONLY when the permanent button is pressed.
   // Its inline buttons do not replace the already-installed reply keyboard.
-  if (input === BOTTOM_MENU_LABEL || input === CATALOG_LABEL
+  if (input === CATALOG_LABEL
       || command === '/catalog' || command === '/catalogue') {
     return { ...reply, text: 'Разделы сайта:', reply_markup: sectionsKeyboard() };
   }
 
-  // A manual fallback also refreshes the one-button reply keyboard.
-  if (command === '/menu' || command === '/keyboard') {
-    return { ...reply, text: '🫶 Открой все разделы', reply_markup: bottomMenuKeyboard() };
+  // An old button press or /menu removes the obsolete reply keyboard.
+  if (input === BOTTOM_MENU_LABEL || command === '/menu' || command === '/keyboard') {
+    return { ...reply, text: 'Чтобы посмотреть разделы, нажмите «Открыть сайт» в меню бота.', reply_markup: clearBottomMenuKeyboard() };
   }
 
   // A wrong date is corrected by entering it again. The original Telegram
@@ -152,7 +147,7 @@ function updateBotNavigation(reply, update) {
     return {
       ...reply,
       text: 'Добро пожаловать в Нумерологию Онлайн! ❤️\n\nНапишите вашу дату рождения в формате ДД.ММ.ГГГГ, например 09.09.1986.',
-      reply_markup: bottomMenuKeyboard(),
+      reply_markup: clearBottomMenuKeyboard(),
     };
   }
 
@@ -163,22 +158,21 @@ function updateBotNavigation(reply, update) {
       && reply.text.includes('Вы подписались на личный прогноз')) {
     return {
       ...reply,
-      // The owner's approved compact welcome. The existing bottom menu remains.
-      // Full 11-section inline catalogue is available on button press.
-      text: "<b>Готово! 🫶 Каждое утро я буду присылать тебе личный расчёт дня ☀️</b>\n\nЭтот бот создан, чтобы каждая женщина могла получать подсказки от жизни, не упускать важные шансы и избегать ошибок.\n\nМне очень хочется, чтобы ваша жизнь стала хоть чуточку легче, спокойнее и понятнее.\n\n<b>Я рядом 🤍</b>\n\n<b>Где тебе удобно продолжить?</b>\n\nНажми <b>«Открыть сайт»</b>, если хочешь получить ответы на свои вопросы через наше мини-приложение, или <b>«Открой все разделы»</b>, чтобы продолжить прямо здесь, в Telegram 👇",
+      // Compact welcome without the removed persistent sections keyboard.
+      text: "<b>Готово! 🫶 Каждое утро я буду присылать тебе личный расчёт дня ☀️</b>\n\nЭтот бот создан, чтобы каждая женщина могла получать подсказки от жизни, не упускать важные шансы и избегать ошибок.\n\nМне очень хочется, чтобы ваша жизнь стала хоть чуточку легче, спокойнее и понятнее.\n\n<b>Я рядом 🤍</b>\n\n<b>Где тебе удобно продолжить?</b>\n\nНажми <b>«Открыть сайт»</b> в меню бота, чтобы получить ответы на свои вопросы через наше мини-приложение 👇",
       parse_mode: 'HTML',
-      reply_markup: bottomMenuKeyboard(),
+      reply_markup: clearBottomMenuKeyboard(),
     };
   }
 
-  // After accepting or refusing, and on first or repeat /start, replace the
-  // temporary keyboard with ONE permanent button in the same bot message.
+  // After accepting or refusing, and on first or repeat /start, clear the
+  // obsolete reply keyboard without changing the mailing or date logic.
   // REG.RU still owns birth-date storage and subscription decisions.
   const compact = reply.text
     .replace(/(?:\s*Для отключения рассылки напишите \/stop\.|\s*Отключить сообщения можно командой \/stop\.)/gu, '')
     .replace(/\n[ \t]*\n+/g, '\n')
     .trim();
-  return { ...reply, text: compact, reply_markup: bottomMenuKeyboard() };
+  return { ...reply, text: compact, reply_markup: clearBottomMenuKeyboard() };
 }
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -320,7 +314,7 @@ export default {
       return json({
         ok: true,
         service: 'numerologia-online-telegram-worker',
-        version: '2026-10-23-owner-mailing-bridge',
+        version: '2026-11-04-remove-persistent-menu',
         configured: true,
         reg_ru: await backendHealth(),
         webhook_changed: false,
@@ -332,8 +326,8 @@ export default {
         day_save_token_whitespace_detected: typeof env.BOT_TOKEN === 'string' && /[\s\u200B-\u200D\uFEFF]/.test(env.BOT_TOKEN),
         day_save_bot_identity_matches: await botIdentityMatches(env.BOT_TOKEN),
         telegram_inbound_webhook: await inboundWebhookStatus(env.BOT_TOKEN),
-        bottom_menu: BOTTOM_MENU_LABEL,
-        bottom_menu_delivery: 'webhook-reply',
+        bottom_menu: null,
+        bottom_menu_delivery: 'disabled',
       });
     }
     if (request.method !== 'POST' || path !== '/telegram') {
@@ -409,7 +403,7 @@ export default {
       return json(await deliverRedFlagTicket(update, redFlagTicketStart[1], env));
     }
 
-    if (privateText === BOTTOM_MENU_LABEL || privateText === CATALOG_LABEL
+    if (privateText === CATALOG_LABEL
         || menuCommand === '/catalog' || menuCommand === '/catalogue') {
       if (!await incomingMessage()) return json({ ok: false, error: 'FORBIDDEN' }, 403);
       return json({
@@ -419,13 +413,14 @@ export default {
         reply_markup: sectionsKeyboard(),
       });
     }
-    if (menuCommand === '/menu' || menuCommand === '/keyboard') {
+    if (privateText === BOTTOM_MENU_LABEL
+        || menuCommand === '/menu' || menuCommand === '/keyboard') {
       if (!await incomingMessage()) return json({ ok: false, error: 'FORBIDDEN' }, 403);
       return json({
         method: 'sendMessage',
         chat_id: update.message.chat.id,
-        text: BOTTOM_MENU_LABEL,
-        reply_markup: bottomMenuKeyboard(),
+        text: 'Чтобы посмотреть разделы, нажмите «Открыть сайт» в меню бота.',
+        reply_markup: clearBottomMenuKeyboard(),
       });
     }
     if (update.callback_query && typeof update.callback_query === 'object') {
