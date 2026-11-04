@@ -3,6 +3,15 @@ name: Owner access safety checks
 on:
   push:
     branches: [main]
+    paths:
+      - '.github/workflows/owner-access.yml'
+      - 'tests/owner-access.test.mjs'
+      - 'tests/telegram-scroll-guard.test.mjs'
+      - 'pro/pro.js'
+      - 'auth-server/**'
+      - 'auth-profile.js'
+      - 'account-service/**'
+      - 'telegram-scroll-guard.js'
   workflow_dispatch:
 
 permissions:

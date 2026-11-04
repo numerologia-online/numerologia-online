@@ -3,6 +3,13 @@ name: Monthly calendar subscription preview checks
 on:
   push:
     branches: [main]
+    paths:
+      - '.github/workflows/month-calendar-lock.yml'
+      - 'tests/monthly-calendar-paywall.test.mjs'
+      - 'personal-day-feature.js'
+      - 'personal-month-*.js'
+      - 'app.js'
+      - 'monthly-calendar/**'
   workflow_dispatch:
 
 permissions:

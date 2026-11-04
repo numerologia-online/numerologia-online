@@ -3,8 +3,23 @@ name: Site loading smoke checks
 on:
   push:
     branches: [main]
+    paths: &smoke_paths
+      - '.github/workflows/site-smoke.yml'
+      - 'tests/site-loading-smoke.test.mjs'
+      - 'tests/redflag-*.test.mjs'
+      - 'tests/child-matrix-routing.test.mjs'
+      - 'redflag-*'
+      - 'child/**'
+      - 'api/telegram.mjs'
+      - 'telegram-*'
+      - 'account-browser.js'
+      - 'app.js'
+      - 'index.html'
+      - 'moment/yes-no/**'
   pull_request:
     branches: [main]
+    paths: *smoke_paths
+  workflow_dispatch:
 
 permissions:
   contents: read
