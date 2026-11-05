@@ -1,16 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "redflag-feature.js",
-    "redflag-polish.css",
-    "app.js",
-    "index.html"
-  ],
-  "expected_sha256": {
-    "redflag-feature.js": "06c6b7d6e5d129566a065e523ad073e7169e50870ea1d2fddc43a5ebee8e0ac3",
-    "redflag-polish.css": "71b97352736f8fecbe20ae5b850b4d02f6d82c5f849dbd5b7fb047f6cb5ada48",
-    "app.js": "addb99727e5b23af630360835041addeb0f103e124f9a9b9c7fadd2a0bc2c44e",
-    "index.html": "9ca43d0ca2a246a900604a0d3a030d8a9f75139b94ade090e652262ea91f8f89"
-  },
-  "note": "Publish reviewed fixes across all Red Flag categories and question rows: stop forced auto-scrolling, preserve heading viewport position, contain mobile horizontal overflow, cache-bust only redflag JS/CSS. Guarded exact live checks, external backups and readback. Telegram save, payments, PHP and daily mailing untouched."
+  "mode": "check",
+  "files": [],
+  "note": "Red Flag full accordion scroll/mobile width fixes deployed and FTP readback verified 2026-11-05. All future uploads require freshly reviewed manifest."
 }
