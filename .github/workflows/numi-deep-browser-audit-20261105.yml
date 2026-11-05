@@ -17,6 +17,17 @@ jobs:
         run: |
           npm install --no-save --no-package-lock playwright@1.56.1
           command -v google-chrome || command -v chromium
+      - name: Check staging badges in mobile browser
+        run: |
+          node --check redflag-feature.js
+          node - <<'JS'
+          const fs = require('fs');
+          const s = fs.readFileSync('redflag-feature.js','utf8');
+          for (const x of ['isComingSoon','REDFLAG_SOON_BLOCKS','badge.textContent = "Скоро"','preview.disabled = Boolean(question.isComingSoon)','button.disabled = Boolean(question.isComingSoon)']) {
+            if (!s.includes(x)) throw new Error('Missing: '+x);
+          }
+          console.log('SOON_BADGE_SOURCE_CHECK_OK');
+          JS
       - name: Open live mobile sections without saving, purchasing or authenticating
         run: |
           cat > /tmp/numi-deep-browser-audit.cjs <<'JS'
