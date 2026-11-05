@@ -68,7 +68,8 @@ jobs:
                   hasOrigin=bool(re.search(r'HTTP_ORIGIN|\bOrigin\b|\borigin\b',s))
                   hasTelegram=('api.telegram.org' in s or 'sendMessage' in s)
                   hasInitData=('init_data' in s or 'initData' in s)
-                  status('code-'+label,'success',f'oldDomain={oldCount} newDomain={newCount} originCheck={int(hasOrigin)} tgSend={int(hasTelegram)} initData={int(hasInitData)}')
+                  status(f'code-{label}-o{oldCount}-n{newCount}-c{int(hasOrigin)}-t{int(hasTelegram)}-i{int(hasInitData)}','success','Source patterns checked; no secrets disclosed')
+                  status(f'checks-{label}-host{int("HTTP_HOST" in s)}-origin{int("HTTP_ORIGIN" in s)}-hmac{int("hash_hmac" in s)}-token{int("BOT_TOKEN" in s)}','success','Only code characteristics; no live change')
               for label,origin in (('old',old),('new',new)):
                   url='https://'+origin+'/api/numi-save-answer.php'
                   req=urllib.request.Request(url,method='OPTIONS',headers={
@@ -83,7 +84,7 @@ jobs:
                       code=e.code;acao=e.headers.get('Access-Control-Allow-Origin','')
                   except Exception:
                       code=0;acao=''
-                  status('preflight-'+label,'success',f'OPTIONS HTTP={code} allowOriginMatch={int(acao==("https://"+origin))} no change')
+                  status(f'preflight-{label}-http{code}-cors{int(acao==("https://"+origin))}','success','OPTIONS checked read-only')
           except Exception as exc:
               msg=type(exc).__name__
               status('runtime','failure','Read-only FTP diagnosis failed: '+msg+'; no live changes')
