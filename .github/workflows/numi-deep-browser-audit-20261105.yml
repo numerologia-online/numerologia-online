@@ -152,3 +152,78 @@ jobs:
           JS
           cp /tmp/numi-scroll-diagnostic.cjs ./numi-scroll-diagnostic.cjs
           node numi-scroll-diagnostic.cjs
+
+      - name: Check homepage navigation buttons and safe return actions
+        run: |
+          cat > /tmp/numi-buttons-audit.cjs <<'JS'
+          (async()=>{
+            const {chromium}=require('playwright');
+            const {execFileSync}=require('node:child_process');
+            const browser=await chromium.launch({headless:true,executablePath:execFileSync('which',['google-chrome'],{encoding:'utf8'}).trim(),args:['--no-sandbox']});
+            const root='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/';
+            const cases=[
+              ['Личный день','[data-open-personal-day]',null,'.personal-day-back'],
+              ['Разбор года','[data-open-year]','#year','#back-home'],
+              ['Полный разбор жизни','a.product-card.calculation',null,null],
+              ['Мужчина или Red Flag','[data-open-redflag]','#redflag','#back-redflag-home'],
+              ['Совместимость','[data-open-compatibility]','#compatibility','#back-compatibility-home'],
+              ['Для мам','a.product-card.child',null,null],
+              ['Код богатства','[data-open-destiny-code]','#destiny-code','#back-destiny-code-home'],
+              ['300 вопросов','a.product-card.horary',null,null],
+              ['8 школ','a.school-home-button',null,null],
+              ['Личная запись','[data-coming-soon]','#coming-soon','.dialog-close'],
+              ['Личный кабинет','[data-account-open="profile"]','#account-dialog','#account-close']
+            ];
+            const output=[];
+            for(const [name,selector,target,back] of cases){
+              const p=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'ru-RU',serviceWorkers:'block'});
+              const errors=[];
+              p.on('pageerror',e=>errors.push(String(e.message).slice(0,180)));
+              p.on('dialog',async d=>{errors.push('alert:'+d.message().slice(0,100));await d.dismiss()});
+              let x={name};
+              try{
+                const res=await p.goto(root+'?audit=buttons',{waitUntil:'domcontentloaded',timeout:30000});
+                x.http=res?.status();
+                await p.waitForTimeout(1350);
+                const node=p.locator(selector).first();
+                x.count=await p.locator(selector).count();
+                x.href=x.count?await node.getAttribute('href'):null;
+                if(x.count){
+                  await node.evaluate(el=>el.click());
+                  await p.waitForTimeout(2700);
+                }
+                x.url=new URL(p.url()).pathname;
+                x.active=await p.evaluate(()=>[...document.querySelectorAll('.screen.is-active')].map(e=>e.id));
+                if(target){
+                  x.target=await p.evaluate(sel=>{
+                    const e=document.querySelector(sel);
+                    if(!e)return 'missing';
+                    if(e instanceof HTMLDialogElement)return e.open?'open':'closed';
+                    return e.classList.contains('is-active')?'active':(e.getClientRects().length?'visible':'hidden');
+                  },target);
+                }
+                if(back && x.count){
+                  const b=p.locator(back).first();
+                  x.backCount=await p.locator(back).count();
+                  if(x.backCount){
+                    await b.evaluate(el=>el.click());
+                    await p.waitForTimeout(450);
+                    x.afterBack=await p.evaluate(()=>({
+                      active:[...document.querySelectorAll('.screen.is-active')].map(e=>e.id),
+                      cabinetOpen:document.querySelector('#account-dialog')?.open||false,
+                      soonOpen:document.querySelector('#coming-soon')?.open||false
+                    }));
+                  }
+                }
+                x.links=await p.locator('a[href]').count();
+              }catch(e){x.error=String(e.message||e).slice(0,240)}
+              x.jsErrors=[...new Set(errors)].slice(0,4);
+              output.push(x);console.log('BUTTON_AUDIT',JSON.stringify(x));
+              await p.close();
+            }
+            await browser.close();
+            console.log('BUTTON_AUDIT_SUMMARY',JSON.stringify({tested:output.length,errors:output.filter(x=>x.error||x.jsErrors.length).map(x=>x.name),non200:output.filter(x=>x.http&&x.http!==200).map(x=>x.name)}));
+          })().catch(e=>{console.error('BUTTON_AUDIT_FATAL',String(e));process.exit(1)});
+          JS
+          cp /tmp/numi-buttons-audit.cjs ./numi-buttons-audit.cjs
+          node numi-buttons-audit.cjs
