@@ -1,0 +1,24 @@
+name: Temporary verify Telegram webhook destination without modifications
+on:
+  push:
+    paths: ['.github/workflows/numi-webhook-target-probe-20261105.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Read public Worker health webhook status only
+        run: |
+          python3 - <<'PY'
+          import urllib.request,json
+          u="https://numerologia-online-bot.tankraft431.workers.dev/health"
+          with urllib.request.urlopen(urllib.request.Request(u,headers={"User-Agent":"NUMI-check"}),timeout=12) as r:
+            d=json.load(r)
+          s=d.get('telegram_inbound_webhook',{})
+          print('WORKER_HEALTH',d.get('ok'),d.get('reg_ru'),d.get('day_save_bot_identity_matches'))
+          print('WEBHOOK_STATE',s.get('state'),'TARGET',s.get('target'),'ALLOWS_MESSAGES',s.get('allowed_message_updates'),'PENDING',s.get('pending_updates'),'LAST_ERROR_HTTP',s.get('last_error_http'),flush=True)
+          if not (d.get('ok') and s.get('target')=='OUR_CLOUDFLARE' and s.get('allowed_message_updates') is True):
+            raise SystemExit('Webhook is not confirmed to target bot Worker for /start ticket')
+          PY
