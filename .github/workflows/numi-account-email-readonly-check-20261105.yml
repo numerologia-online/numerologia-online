@@ -10,6 +10,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Inspect exactly domain and email-link routines in live core, read only
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
