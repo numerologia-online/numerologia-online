@@ -1,28 +1,28 @@
 {
   "mode": "publish",
   "files": [
-    "guide/22-energii/index.html",
-    "guide/angelskaya-numerologiya/index.html",
-    "guide/chislo-zhiznennogo-puti/index.html",
-    "guide/denezhnye-ritualy/index.html",
-    "guide/denezhnyi-kod-po-date/index.html",
-    "guide/finansovyi-potencial/index.html",
-    "guide/harakter-muzhchiny/index.html",
-    "guide/horarnaya-numerologiya/index.html",
-    "guide/karmicheskie-programmy/index.html",
-    "guide/karmicheskii-hvost/index.html"
+    "guide/klassicheskaya-numerologiya/index.html",
+    "guide/kod-deneg/index.html",
+    "guide/kvadrat-pifagora/index.html",
+    "guide/lichnyi-den/index.html",
+    "guide/lichnyi-god-po-date-rozhdeniya/index.html",
+    "guide/lichnyi-mesyac/index.html",
+    "guide/matrica-sovmestimosti/index.html",
+    "guide/matrica-sudby/index.html",
+    "guide/muzhchina-red-flag/index.html",
+    "guide/numerologiya-po-date-rozhdeniya/index.html"
   ],
   "expected_sha256": {
-    "guide/22-energii/index.html": "9d8881a1bf315f308d6e7117aca8476f10ce8b880c792cb594b538df9ff1523e",
-    "guide/angelskaya-numerologiya/index.html": "a69572fe3f86a244f39b68e0e500c96361914b193a0c0b7a39420c548cd3a54d",
-    "guide/chislo-zhiznennogo-puti/index.html": "f9452b7d13adaac0c97867d74e215b545af5c37e5907b37725f2cecb88c6dceb",
-    "guide/denezhnye-ritualy/index.html": "e41e79e9e112e5b9d56cb6f4246a7cca912f8e0c3853c7f3b1d53eecfea9c95b",
-    "guide/denezhnyi-kod-po-date/index.html": "92be6a6365d666c1f372fa554e69430cd9a29c12570762f87faa300180d46285",
-    "guide/finansovyi-potencial/index.html": "38b845960b5cf1c6933c011552134aa834ad0e53e23312e92568240b373da254",
-    "guide/harakter-muzhchiny/index.html": "52c4a12fd095722f93f241ac42d39f8eb16d5440ad8ba4e5097eace6d11924ad",
-    "guide/horarnaya-numerologiya/index.html": "898e3a712200fb28c6f706550f259fbf90b50dd82e8911506a6c04fdc80b8721",
-    "guide/karmicheskie-programmy/index.html": "7f9dbdeda8be840f69ed2f637f5d7909350c2fe47459bff15760ef8ba5a08715",
-    "guide/karmicheskii-hvost/index.html": "9e0b7f4e5c2a428544d6316c3a5921ab69fe0fce4865af78ec11d33844dfd160"
+    "guide/klassicheskaya-numerologiya/index.html": "7d72d08d6631ad3c649db8b18fe0ebe6267031ccc409e091b2db3b932cee0121",
+    "guide/kod-deneg/index.html": "e09b9868f90e500b70496e4065d6841bdfc62ed6085b6062f175a7c9dc874aa5",
+    "guide/kvadrat-pifagora/index.html": "bcee10176d52b4e09f0b0f97f0234b8a001dabd42ae3b7bcf6537a6826b51bfd",
+    "guide/lichnyi-den/index.html": "af0c7fa1c91dc7d99858b8d8487ad26e4d97b22b12fd1f24f99feb596f76e2c7",
+    "guide/lichnyi-god-po-date-rozhdeniya/index.html": "e212bf1109b7a562ddb00a1bd74d513515d2fa3f61d8e59ba848f418ba1f34e8",
+    "guide/lichnyi-mesyac/index.html": "8f91506882723cae33636b7bb59ccd00f308e4dcad1fa85762c0afaecce98a0f",
+    "guide/matrica-sovmestimosti/index.html": "6bac373f32c235de85dfeadc035a72043eead49c7b628575d1a222268f47e061",
+    "guide/matrica-sudby/index.html": "5779e56e26db3e45616009516d24da769d835b604deb7aab705c3d8c6424ffdb",
+    "guide/muzhchina-red-flag/index.html": "35df5683f99fc7748672ba0ae1b5c8d02c4b3713e18de45c7652ca75c8c5631a",
+    "guide/numerologiya-po-date-rozhdeniya/index.html": "5ad226a530f72aacbc8d6fd67b3d68ab5e22d1515581846f42ee2205bf6007a5"
   },
-  "note": "Owner-approved new-domain canonical SEO URLs for guide articles batch 1 of 3. Preserve backups and fail closed on live file hash drift."
+  "note": "Owner-approved guide SEO URLs batch 2 of 3. Publish only matching live files, backed up."
 }
