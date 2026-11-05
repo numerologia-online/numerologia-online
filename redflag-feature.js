@@ -57,6 +57,9 @@ const REDFLAG_SITE_URL = "https://xn--c1adkkdfjbp1a4l.online/?view=redflag";
 const REDFLAG_BOT_URL = "https://t.me/Numerologiaonline_bot";
 const REDFLAG_SAVE_URL = "https://numerologia-online-bot.tankraft431.workers.dev/api/save-redflag";
 const REDFLAG_TICKET_URL = "https://xn--c1adkkdfjbp1a4l.online/api/redflag-save.php";
+// Route Red Flag saves through the existing REG.RU one-time ticket until
+// direct cross-origin Telegram initData delivery is confirmed end-to-end.
+const REDFLAG_SAVE_VIA_TICKET = true;
 const formatRedFlagMessage = (question, response, dateOfBirth) => {
   const paragraphs = response.paragraphs ?? [response.answer];
   const parts = [
@@ -74,6 +77,14 @@ const formatRedFlagMessage = (question, response, dateOfBirth) => {
   if (response.observation) parts.push("", "На что смотреть: " + response.observation);
   parts.push("", "✨ Нумерология Онлайн", "🌐 Сайт: " + REDFLAG_SITE_URL, "🤖 Бот: " + REDFLAG_BOT_URL);
   return parts.join("\n");
+};
+
+const openRedFlagTicket = (url) => {
+  if (typeof window.Telegram?.WebApp?.openTelegramLink === "function") {
+    window.Telegram.WebApp.openTelegramLink(url);
+  } else {
+    window.location.assign(url);
+  }
 };
 
 const addRedFlagShare = (answer, report) => {
@@ -119,7 +130,7 @@ const addRedFlagShare = (answer, report) => {
   let preparedBotLink = null;
   save.addEventListener("click", async () => {
     if (preparedBotLink) {
-      window.location.assign(preparedBotLink);
+      openRedFlagTicket(preparedBotLink);
       return;
     }
     const signedData = window.Telegram?.WebApp?.initData;
@@ -130,7 +141,7 @@ const addRedFlagShare = (answer, report) => {
       return;
     }
 
-    if (typeof signedData !== "string" || !signedData) {
+    if (REDFLAG_SAVE_VIA_TICKET || typeof signedData !== "string" || !signedData) {
       save.disabled = true;
       showFeedback("is-pending", "Готовим ссылку для сохранения…", "Ответ остаётся на этой странице. Подожди немного.");
       try {
@@ -158,7 +169,7 @@ const addRedFlagShare = (answer, report) => {
         save.disabled = false;
         showFeedback("is-success", "❤️ Ссылка на ответ готова",
           "Если Telegram не открылся, нажми кнопку ещё раз. В новом боте нажми «Начать», и тебе придёт именно этот ответ.");
-        window.location.assign(preparedBotLink);
+        openRedFlagTicket(preparedBotLink);
       } catch {
         save.disabled = false;
         showFeedback("is-error", "Не удалось подготовить сохранение",
