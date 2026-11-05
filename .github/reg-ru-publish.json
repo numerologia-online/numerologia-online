@@ -1,14 +1,10 @@
 {
   "mode": "publish",
   "files": [
-    "index.html"
+    "account-browser.js"
   ],
-  "patches": {
-    "index.html": {
-      "before": "    <meta charset=\"UTF-8\" />",
-      "after": "    <meta charset=\"UTF-8\" />\n    <script id=\"numi-enforce-https\">\n      if (location.protocol === \"http:\" &&\n          /^(www\\.)?xn--c1adkkdfjbp1a4l\\.online$/.test(location.hostname)) {\n        const secureUrl = new URL(location.href);\n        secureUrl.protocol = \"https:\";\n        location.replace(secureUrl.href);\n      }\n    </script>",
-      "expected_sha256": "f572ecd9f86d8e54c82a3f4c6f29c54d879cf74df43cb70f8464dd6aeb718142"
-    }
+  "expected_sha256": {
+    "account-browser.js": "aef1173d8e93861676040a712531107448585d31e9f103df3e120078ab4a4bef"
   },
-  "note": "Fix guest/incognito year preview on insecure entry: redirect production homepage to HTTPS preserving path query and fragment. Apply only exact reviewed patch to live index, back up first."
+  "note": "Owner-approved: publish only password-visibility eyes in account-browser.js; abort if live hash differs. Do not modify other website files."
 }
