@@ -1,26 +1,28 @@
 {
   "mode": "publish",
   "files": [
-    "index.html",
-    "sitemap.xml",
-    "robots.txt",
-    "child/index.html",
-    "day.html",
-    "moment/index.html",
-    "pro/index.html",
-    "year/index.html",
-    "guide/index.html"
+    "guide/22-energii/index.html",
+    "guide/angelskaya-numerologiya/index.html",
+    "guide/chislo-zhiznennogo-puti/index.html",
+    "guide/denezhnye-ritualy/index.html",
+    "guide/denezhnyi-kod-po-date/index.html",
+    "guide/finansovyi-potencial/index.html",
+    "guide/harakter-muzhchiny/index.html",
+    "guide/horarnaya-numerologiya/index.html",
+    "guide/karmicheskie-programmy/index.html",
+    "guide/karmicheskii-hvost/index.html"
   ],
   "expected_sha256": {
-    "index.html": "479226019a1b1e963d640f3304a6063151cb22acbc221f2533cd69784f32087a",
-    "sitemap.xml": "d1a2adf6966406b82792cf0f79d1b446a39e75b42cfe84e6d116d874859e57e8",
-    "robots.txt": "aab3857dc7166a032bd6ee5f3d552212dd96837bfe26a846c33bea42f66f00db",
-    "child/index.html": "3096f9c61408d47da5c708cc19db9506c21642221892656d3aa81ce8910329f7",
-    "day.html": "d7f40774bc3e1e7f30c78df86caa17bdfcd33bd0c50937bc4d0486dc79a0603b",
-    "moment/index.html": "f3d4f06417e336810bfe4526ef4178e2a07e8cf53b46d51c82fef313563b39b4",
-    "pro/index.html": "0c246aae271c80e5541b3d4bea12e935ac4b90b5f12f25d515682e4c6fdb61f4",
-    "year/index.html": "bde18f7f8a4418a5f1ff56f87f8b4d047618e77e3f0c7e84982a0b16c5273297",
-    "guide/index.html": "5868ae7b272c0b64e4ede62ad089d97cda97baedb66618a179f66275a66b0403"
+    "guide/22-energii/index.html": "9d8881a1bf315f308d6e7117aca8476f10ce8b880c792cb594b538df9ff1523e",
+    "guide/angelskaya-numerologiya/index.html": "a69572fe3f86a244f39b68e0e500c96361914b193a0c0b7a39420c548cd3a54d",
+    "guide/chislo-zhiznennogo-puti/index.html": "f9452b7d13adaac0c97867d74e215b545af5c37e5907b37725f2cecb88c6dceb",
+    "guide/denezhnye-ritualy/index.html": "e41e79e9e112e5b9d56cb6f4246a7cca912f8e0c3853c7f3b1d53eecfea9c95b",
+    "guide/denezhnyi-kod-po-date/index.html": "92be6a6365d666c1f372fa554e69430cd9a29c12570762f87faa300180d46285",
+    "guide/finansovyi-potencial/index.html": "38b845960b5cf1c6933c011552134aa834ad0e53e23312e92568240b373da254",
+    "guide/harakter-muzhchiny/index.html": "52c4a12fd095722f93f241ac42d39f8eb16d5440ad8ba4e5097eace6d11924ad",
+    "guide/horarnaya-numerologiya/index.html": "898e3a712200fb28c6f706550f259fbf90b50dd82e8911506a6c04fdc80b8721",
+    "guide/karmicheskie-programmy/index.html": "7f9dbdeda8be840f69ed2f637f5d7909350c2fe47459bff15760ef8ba5a08715",
+    "guide/karmicheskii-hvost/index.html": "9e0b7f4e5c2a428544d6316c3a5921ab69fe0fce4865af78ec11d33844dfd160"
   },
-  "note": "Owner-approved domain migration SEO metadata, homepage, sitemap, robots and public section entry pages. 9 verified files; keep backup and abort on live drift."
+  "note": "Owner-approved new-domain canonical SEO URLs for guide articles batch 1 of 3. Preserve backups and fail closed on live file hash drift."
 }
