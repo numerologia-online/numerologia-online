@@ -117,12 +117,6 @@ jobs:
             const p=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'ru-RU',serviceWorkers:'block'});
             p.on('pageerror',e=>console.log('SCROLL_JS_ERROR',String(e).slice(0,180)));
             const root='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?view=redflag';
-            // Browser-only preview of GitHub code; the real server is unchanged.
-            await p.route('**/redflag-feature.js*', async route=>{
-              const original=await route.fetch();
-              const source=require('node:fs').readFileSync('redflag-feature.js','utf8');
-              await route.fulfill({response:original,body:source,contentType:'text/javascript'});
-            });
             await p.goto(root,{waitUntil:'domcontentloaded',timeout:35000});
             await p.waitForTimeout(1800);
             console.log('SCROLL_UI_INIT',JSON.stringify(await p.evaluate(()=>({active:document.querySelector('#redflag')?.className,form:!!document.querySelector('#redflag-form'),categories:document.querySelectorAll('.redflag-category-toggle').length}))));
