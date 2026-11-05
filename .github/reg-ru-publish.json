@@ -1,31 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "redflag-feature.js",
-    "app.js",
-    "index.html"
-  ],
-  "expected_sha256": {
-    "redflag-feature.js": "46597125c9e132b8b0f502e89d9d608253b1841c9fe41702be4db9d71c0046ee",
-    "app.js": "7d84afb3b1ee6ec8d5d463e30c6cc68e2f57a62633b0b44ea8d9c799e45003e0",
-    "index.html": "6931eab486a528ecc00ef55f219610a95405bcbce8e7f3eb601defab29cc27c0"
-  },
-  "patches": {
-    "redflag-feature.js": {
-      "before": "    const target = linkedQuestion\n      ? [...categoriesRoot.querySelectorAll(\"[data-question-id]\")].find((item) => item.dataset.questionId === linkedQuestion.id)\n      : null;\n    (target || categoriesRoot).scrollIntoView({ behavior: \"smooth\", block: \"center\" });\n",
-      "after": "",
-      "expected_sha256": "46597125c9e132b8b0f502e89d9d608253b1841c9fe41702be4db9d71c0046ee"
-    },
-    "app.js": {
-      "before": "redflag-feature.js?v=20261105anchor2",
-      "after": "redflag-feature.js?v=20261105calcstay3",
-      "expected_sha256": "7d84afb3b1ee6ec8d5d463e30c6cc68e2f57a62633b0b44ea8d9c799e45003e0"
-    },
-    "index.html": {
-      "before": "app.js?v=20261105anchor2",
-      "after": "app.js?v=20261105calcstay3",
-      "expected_sha256": "6931eab486a528ecc00ef55f219610a95405bcbce8e7f3eb601defab29cc27c0"
-    }
-  },
-  "note": "Owner specifically requests NO automatic scroll on clicking 'Проверить мужчину'. Remove only the submit handler's (target||categoriesRoot).scrollIntoView; browser-only mobile Chrome confirmed scroll delta 0 and 11 questions. Preserve all unrelated files; SHA256 guards and backups."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-05: Red Flag calculate-button forced scroll removed. Browser-only mobile test: scroll delta 0; REG.RU three files safely published, backed up, and checksum verified. No future automatic writes."
 }
