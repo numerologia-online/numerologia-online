@@ -16,7 +16,7 @@ jobs:
       - name: Temporary browser tooling (audit only)
         run: |
           npm install --no-save --no-package-lock playwright@1.56.1
-          npx playwright install --with-deps chromium
+          command -v google-chrome || command -v chromium
       - name: Open live mobile sections without saving, purchasing or authenticating
         run: |
           cat > /tmp/numi-deep-browser-audit.cjs <<'JS'
@@ -32,7 +32,7 @@ jobs:
            ['day','[data-open-personal-day]','#personal-day'],
            ['account',"[data-account-open='profile']",'#account-dialog']
           ];
-          const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+          const browser=await chromium.launch({headless:true,executablePath:require('node:child_process').execFileSync('which',['google-chrome'],{encoding:'utf8'}).trim(),args:['--no-sandbox']});
           async function inspect(name,route,button,target,opts={}){
            const p=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'ru-RU',serviceWorkers:'block'});
            const errors=[],failures=[],dialog=[];
@@ -113,7 +113,7 @@ jobs:
           cat > /tmp/numi-scroll-diagnostic.cjs <<'JS'
           (async()=>{
             const {chromium}=require('playwright');
-            const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+            const browser=await chromium.launch({headless:true,executablePath:require('node:child_process').execFileSync('which',['google-chrome'],{encoding:'utf8'}).trim(),args:['--no-sandbox']});
             const p=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'ru-RU',serviceWorkers:'block'});
             p.on('pageerror',e=>console.log('SCROLL_JS_ERROR',String(e).slice(0,180)));
             const root='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?view=redflag';
