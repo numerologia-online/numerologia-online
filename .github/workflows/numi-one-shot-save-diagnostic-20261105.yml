@@ -1,54 +1,34 @@
-name: Read-only Red Flag signed-save root cause audit
+name: Inspect exact origin whitelist for signed Telegram save
 on:
   push:
     paths: ['.github/workflows/numi-one-shot-save-diagnostic-20261105.yml']
 permissions:
   contents: read
 jobs:
-  diagnose:
+  inspect:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 3
     steps:
-      - name: Inspect PHP behavior and send only deliberately invalid no-op probes
+      - name: Show only origin guard lines 49-57 no private configuration
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 - <<'PY'
-          import os,ftplib,ssl,io,re,hashlib,json,urllib.request,urllib.error
-          old='xn--c1adkkdfjbp1a4l.online';new='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
-          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
-          f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
-          base=f.pwd().rstrip('/')+'/www/'+old
-          try:
-           for fn in ['api/numi-save-answer.php','api/redflag-save.php']:
-            b=io.BytesIO();f.retrbinary('RETR '+base+'/'+fn,b.write);s=b.getvalue().decode('utf-8','replace')
-            print('PHP',fn,'size',len(s),'sha256',hashlib.sha256(s.encode()).hexdigest())
-            for i,line in enumerate(s.splitlines(),1):
-             low=line.lower()
-             if re.search(r'origin|referer|http_host|allow-|request_method|init_data|bot_token|sendmessage|curl_|file_get_contents|api.telegram|json_encode|response_json|http_response_code|signature|webhook|function |error',low):
-              # No PHP source, just boolean categories and non-sensitive uppercase error identifiers.
-              flags=[v for v,needle in [('origin','origin'),('referer','referer'),('host','http_host'),('cors','access-control'),('method','request_method'),('init','init_data'),('token','bot_token'),('send','sendmessage'),('curl','curl_'),('telegram','api.telegram'),('response','http_response_code'),('signature','signature'),('error','error'),('func','function ')] if needle in low]
-              codes=re.findall(r"['\"]([A-Z][A-Z0-9_]{3,45})['\"]",line)
-              print('PHP_LINE',fn,i,','.join(flags),','.join(codes[:4]),flush=True)
-          finally:
-           try:f.quit()
-           except Exception:f.close()
-          for host in [old,new]:
-           for endpoint in ['/api/numi-save-answer.php','/api/redflag-save.php']:
-            for method in ['OPTIONS','POST']:
-             headers={'Content-Type':'application/json','Origin':'https://'+new,'User-Agent':'NUMI-READONLY-INVALID-SAVE-PROBE','Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'content-type'}
-             body=b'{}' if method=='POST' else None
-             req=urllib.request.Request('https://'+host+endpoint,headers=headers,data=body,method=method)
-             try:
-              with urllib.request.urlopen(req,timeout=14) as rr:status=rr.status;response=rr.read(1000);h=rr.headers
-             except urllib.error.HTTPError as e:status=e.code;response=e.read(1000);h=e.headers
-             except Exception as e:
-              print('HTTP',host,endpoint,method,'EXCEPTION',type(e).__name__);continue
-             try:
-              d=json.loads(response)
-              public={k:d[k] for k in ['ok','error','code','message'] if k in d and isinstance(d[k],(str,bool,int))}
-             except Exception:public={'body_type':'non_json','sample_bytes':len(response)}
-             print('HTTP',host,endpoint,method,'status',status,'cors',h.get('Access-Control-Allow-Origin',''),'location',h.get('Location',''),'json',json.dumps(public,ensure_ascii=False),flush=True)
-          
+          import os,ftplib,ssl,io,hashlib
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p()
+          home=ftp.pwd().rstrip('/')
+          p=home+'/www/xn--c1adkkdfjbp1a4l.online/api/numi-save-answer.php'
+          buf=io.BytesIO();ftp.retrbinary('RETR '+p,buf.write)
+          src=buf.getvalue()
+          print('SHA',hashlib.sha256(src).hexdigest())
+          for j,line in enumerate(src.decode('utf-8','replace').splitlines(),1):
+            if 48<=j<=57:
+              if any(s in line.lower() for s in ['secret','token','password','credential','apikey']):
+                print('CODE',j,'[sensitive line withheld]')
+              else:print('CODE',j,line[:500])
+          ftp.quit()
           PY
