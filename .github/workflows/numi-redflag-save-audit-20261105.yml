@@ -1,0 +1,65 @@
+name: Inspect Red Flag save routes and legacy redirect read only
+on:
+  push:
+    paths:
+      - .github/workflows/numi-redflag-save-audit-20261105.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect public save URLs without POST or writes
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,hashlib,urllib.request,urllib.error
+          OLD="xn--c1adkkdfjbp1a4l.online"
+          NEW="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+          ROOTS=["/api/redflag-save.php","/api/numi-save-answer.php","/api/telegram-reg-stage-15-10-2026.php","/api/owner-mailing.php"]
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=22)
+          ftp.connect("server172.hosting.reg.ru",21)
+          ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          ftp.prot_p()
+          home=ftp.pwd().rstrip("/")
+          root=home+"/www/"+OLD
+          try:
+           for path in ["/.htaccess"]+ROOTS:
+            try:
+             buf=io.BytesIO()
+             ftp.retrbinary("RETR "+root+path,buf.write)
+             raw=buf.getvalue()
+             print("FTP",path,"EXISTS","bytes",len(raw),"sha256",hashlib.sha256(raw).hexdigest(),flush=True)
+             if path=="/.htaccess":
+              for l in raw.decode("utf-8","replace").splitlines()[:48]:
+               if l.startswith("#") or "Rewrite" in l or "IfModule" in l:print("RULE",l[:220],flush=True)
+            except ftplib.all_errors as exc:
+             print("FTP",path,"READ_ERROR",type(exc).__name__,flush=True)
+          finally:
+           try:ftp.quit()
+           except Exception:ftp.close()
+          class NoFollow(urllib.request.HTTPRedirectHandler):
+           def redirect_request(self,req,fp,code,msg,headers,newurl):return None
+          op=urllib.request.build_opener(NoFollow)
+          for host in [OLD,NEW]:
+           for endpoint in ROOTS[:2]:
+            for method in ["GET","OPTIONS"]:
+             req=urllib.request.Request("https://"+host+endpoint,method=method,headers={"Origin":"https://"+NEW,"Access-Control-Request-Method":"POST","Access-Control-Request-Headers":"content-type","User-Agent":"Numerologia-ReadOnly-Audit/1.0"})
+             try:
+              with op.open(req,timeout=14) as res:
+               print("HTTP",host,endpoint,method,res.status,"location",res.headers.get("Location","")[:145],"cors",res.headers.get("Access-Control-Allow-Origin","")[:145],"allow",res.headers.get("Access-Control-Allow-Methods","")[:100],flush=True)
+             except urllib.error.HTTPError as exc:
+              print("HTTP",host,endpoint,method,exc.code,"location",exc.headers.get("Location","")[:145],"cors",exc.headers.get("Access-Control-Allow-Origin","")[:145],"allow",exc.headers.get("Access-Control-Allow-Methods","")[:100],flush=True)
+             except Exception as exc:print("HTTP",host,endpoint,method,"ERROR",type(exc).__name__,flush=True)
+          try:
+           req=urllib.request.Request("https://numerologia-online-bot.tankraft431.workers.dev/health")
+           with urllib.request.urlopen(req,timeout=12) as res:
+            import json
+            d=json.loads(res.read(3000))
+            print("WORKER",res.status,{k:v for k,v in d.items() if isinstance(v,(bool,int)) or k in ("service","reg_ru_backend")},flush=True)
+          except Exception as exc:
+           print("WORKER","ERROR",type(exc).__name__,flush=True)
+          PY
