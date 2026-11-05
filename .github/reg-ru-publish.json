@@ -1,12 +1,10 @@
 {
   "mode": "publish",
   "files": [
-    "day.html",
-    "moment/index.html"
+    "guide/index.html"
   ],
   "expected_sha256": {
-    "day.html": "d7f40774bc3e1e7f30c78df86caa17bdfcd33bd0c50937bc4d0486dc79a0603b",
-    "moment/index.html": "f3d4f06417e336810bfe4526ef4178e2a07e8cf53b46d51c82fef313563b39b4"
+    "guide/index.html": "5868ae7b272c0b64e4ede62ad089d97cda97baedb66618a179f66275a66b0403"
   },
-  "note": "Publish day/moment section primary domain; drift-guarded, backups; leave other entry pages untouched."
+  "note": "Update only public guide landing SEO references if exact old live file matches. Backup before write."
 }
