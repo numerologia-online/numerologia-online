@@ -1,10 +1,28 @@
 {
   "mode": "publish",
   "files": [
-    "account-browser.js"
+    "privacy.html",
+    "offer.html",
+    "refunds.html",
+    "terms.html",
+    "disclaimer.html",
+    "contacts.html",
+    "prices.html",
+    "analytics-settings.html",
+    "author.html",
+    "methods.html"
   ],
   "expected_sha256": {
-    "account-browser.js": "3bbcc1145accd1822790f457f4b2ea85302551600b6c0b7fc720e21fb92b948b"
+    "privacy.html": "84522534adca8516487f3ea39e08c300bddda1eebdc8ee8520a6f95795ab8943",
+    "offer.html": "c7d4ef77cc78ae5757d25781ca8d941628654c8fb517031c7a3dca1284fc178c",
+    "refunds.html": "f9162db73eb99d9b11ca4aaf18843771c4480585ffc941a503fd6e2d92227b20",
+    "terms.html": "ab75c5cb36d8c84c988444e2a3c2b57fc20e87f73773523901be69f00051972e",
+    "disclaimer.html": "5efdfae44b99dc9eaa81724429e46e2f8f65f1dd46a42b213fec1f9b3eb6b525",
+    "contacts.html": "03e8db69ea0c6501168fd6d8319dcaa80579cb11a3d6fffc8ac6ba6a002e9647",
+    "prices.html": "c5b794ea4c19e8691f5406308128d51368eda3a157566fb1fce6008564d790d8",
+    "analytics-settings.html": "6aedba65807fad3d2f2367a65a11cf005c3e2a4177b6e39329504699065b7d42",
+    "author.html": "8618b578c46d4f30f6bdd2c5cb78ed572a442df17a838bf748025bc90978fd43",
+    "methods.html": "8ceaec8130556f9413003161f89bb322f1ff9dfa34c0c9d50d38b8575b6b455a"
   },
-  "note": "Owner-approved cabinet polish only: remove redundant tariff button, add eight existing legal and analytics links under account dashboard. One JS file; back up and abort if live file differs."
+  "note": "New primary domain in 10 reviewed legal, prices, author and methods documents only. Preserve server backups, abort on any live mismatch, no payments or account code."
 }
