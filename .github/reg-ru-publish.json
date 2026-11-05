@@ -1,5 +1,24 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-05: Red Flag regular-price enlarged and subscription-price reduced. REG.RU release verified, 3 live files backed up. No future auto-publish."
+  "mode": "publish",
+  "files": [
+    "account-browser.js",
+    "index.html"
+  ],
+  "expected_sha256": {
+    "account-browser.js": "29bfb1375bcb0d44eed063048fa075c10cb5e02395d9755ef7c2788c3c17828a",
+    "index.html": "fb404e3872ecba9aac033edd49d0ec8d9266ae66dc08f34e666a6079b9f80c0e"
+  },
+  "patches": {
+    "account-browser.js": {
+      "before": "    const legalHeading = document.createElement(\"div\");\n    legalHeading.className = \"numi-cabinet-documents-title\";\n    legalHeading.textContent = \"Документы и настройки\";\n    const legalGrid = document.createElement(\"div\");\n    legalGrid.className = \"numi-cabinet-documents-grid\";\n    for (const [label, url] of legalLinks) {\n      const link = document.createElement(\"a\");\n      link.href = url;\n      link.textContent = label;\n      legalGrid.append(link);\n    }\n    legalNav.append(legalHeading, legalGrid);\n    overview.append(legalNav);\n    const legalStyle = document.createElement(\"style\");\n    legalStyle.textContent = `\n      #account-overview #numi-cabinet-documents {\n        margin: 21px 0 3px; padding: 16px 1px 0;\n        border-top: 1px solid #dce3d7;\n        color: #53695b;\n      }\n      #account-overview .numi-cabinet-documents-title {\n        margin: 0 0 10px; color: #2c5846;\n        font: 750 12px/1.35 system-ui, -apple-system, sans-serif;\n        letter-spacing: .02em;\n      }\n      #account-overview .numi-cabinet-documents-grid {\n        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));\n        gap: 4px 12px; align-items: start;\n      }\n      #account-overview .numi-cabinet-documents-grid a {\n        display: flex; align-items: center;\n        min-height: 39px; padding: 5px 0;\n        color: #426e56; font: 600 12px/1.35 system-ui, -apple-system, sans-serif;\n        text-decoration: underline; text-underline-offset: 3px;\n        overflow-wrap: anywhere;\n      }\n      #account-overview .numi-cabinet-documents-grid a:focus-visible {\n        outline: 2px solid #2d8864; outline-offset: 2px;\n      }\n    `;\n    dialog.append(legalStyle);",
+      "after": "    const legalDetails = document.createElement(\"details\");\n    const legalHeading = document.createElement(\"summary\");\n    legalHeading.className = \"numi-cabinet-documents-title\";\n    legalHeading.textContent = \"Документы и настройки\";\n    const legalGrid = document.createElement(\"div\");\n    legalGrid.className = \"numi-cabinet-documents-grid\";\n    for (const [label, url] of legalLinks) {\n      const link = document.createElement(\"a\");\n      link.href = url;\n      link.textContent = label;\n      legalGrid.append(link);\n    }\n    legalDetails.append(legalHeading, legalGrid);\n    legalNav.append(legalDetails);\n    overview.append(legalNav);\n    const legalStyle = document.createElement(\"style\");\n    legalStyle.textContent = `\n      #account-overview #numi-cabinet-documents {\n        margin: 3px 0 0; padding: 0; border: 0;\n        color: #78857b;\n      }\n      #account-overview .numi-cabinet-documents-title {\n        display: flex; justify-content: center; align-items: center;\n        gap: 7px; min-height: 35px; margin: 0; padding: 5px 4px;\n        color: #718174; cursor: pointer; list-style: none;\n        font: 600 12px/1.2 system-ui, -apple-system, sans-serif;\n      }\n      #account-overview .numi-cabinet-documents-title::-webkit-details-marker { display: none; }\n      #account-overview .numi-cabinet-documents-title::after {\n        content: \"⌄\"; font-size: 14px; line-height: 1;\n      }\n      #account-overview details[open] > .numi-cabinet-documents-title::after {\n        transform: rotate(180deg);\n      }\n      #account-overview .numi-cabinet-documents-grid {\n        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));\n        gap: 2px 10px; padding: 5px 0 0; align-items: start;\n      }\n      #account-overview .numi-cabinet-documents-grid a {\n        display: flex; align-items: center;\n        min-height: 31px; padding: 4px 2px;\n        color: #536e5c; font: 600 12px/1.25 system-ui, -apple-system, sans-serif;\n        text-decoration: underline; text-underline-offset: 2px;\n        overflow-wrap: anywhere;\n      }\n      #account-overview .numi-cabinet-documents-title:focus-visible,\n      #account-overview .numi-cabinet-documents-grid a:focus-visible {\n        outline: 2px solid #2d8864; outline-offset: 2px;\n      }\n    `;\n    dialog.append(legalStyle);",
+      "expected_sha256": "29bfb1375bcb0d44eed063048fa075c10cb5e02395d9755ef7c2788c3c17828a"
+    },
+    "index.html": {
+      "before": "account-browser.js?v=20261105logoutbirth1",
+      "after": "account-browser.js?v=20261105docscompact1",
+      "expected_sha256": "fb404e3872ecba9aac033edd49d0ec8d9266ae66dc08f34e666a6079b9f80c0e"
+    }
+  },
+  "note": "Owner requested compact one-row cabinet legal links. Use one details disclosure, preserve all 8 existing links, backups and exact live hashes. Only account browser legal UI and index cache marker."
 }
