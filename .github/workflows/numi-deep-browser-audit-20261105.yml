@@ -33,10 +33,6 @@ jobs:
             const {chromium}=require('playwright'),fs=require('fs'),cp=require('child_process');
             const browser=await chromium.launch({headless:true,executablePath:cp.execFileSync('which',['google-chrome'],{encoding:'utf8'}).trim(),args:['--no-sandbox']});
             const p=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,serviceWorkers:'block'});
-            await p.route('**/redflag-feature.js*',async route=>{
-              const resp=await route.fetch();
-              await route.fulfill({response:resp,body:fs.readFileSync('redflag-feature.js','utf8'),contentType:'text/javascript'});
-            });
             await p.goto('https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?view=redflag',{waitUntil:'domcontentloaded',timeout:30000});
             await p.waitForTimeout(1100);
             for(let i=0;i<8;i++){
