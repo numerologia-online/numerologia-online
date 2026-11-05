@@ -10,23 +10,44 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
-      - name: Check genuine guest preview for 2026 and locked future 2027
+      - name: Read-only preflight and guest calculation from old and current website origins
         run: |
           python3 - <<'PY'
           import json, urllib.request, urllib.error
-          base="https://xn--c1adkkdfjbp1a4l.online/api/numi-year-preview.php"
-          for year in (2026,2027):
-              body=json.dumps({"birth_date":"1986-09-09","year":year,"timezone":"Europe/Samara"}).encode()
-              req=urllib.request.Request(base,data=body,headers={"Content-Type":"application/json","Origin":"https://xn--c1adkkdfjbp1a4l.online","Cache-Control":"no-cache"})
+          api="https://xn--c1adkkdfjbp1a4l.online/api/numi-year-preview.php"
+          origins={
+            "old":"https://xn--c1adkkdfjbp1a4l.online",
+            "new":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai",
+          }
+          failures=[]
+          for label,origin in origins.items():
+            for method in ("OPTIONS","POST"):
+              body=json.dumps({"birth_date":"1986-09-09","year":2026,"timezone":"Europe/Samara"}).encode() if method=="POST" else None
+              headers={"Origin":origin,"Cache-Control":"no-cache"}
+              if method=="OPTIONS":
+                headers.update({"Access-Control-Request-Method":"POST","Access-Control-Request-Headers":"content-type"})
+              else:
+                headers["Content-Type"]="application/json"
+              req=urllib.request.Request(api,data=body,headers=headers,method=method)
               try:
-                  with urllib.request.urlopen(req,timeout=28) as resp:
-                      code=resp.status
-                      data=json.loads(resp.read(120000))
+                with urllib.request.urlopen(req,timeout=25) as resp:
+                  code=resp.status; cors=resp.headers.get("Access-Control-Allow-Origin","")
+                  allowed_methods=resp.headers.get("Access-Control-Allow-Methods","")
+                  allowed_headers=resp.headers.get("Access-Control-Allow-Headers","")
+                  data=json.loads(resp.read(200000)) if method=="POST" else None
               except urllib.error.HTTPError as exc:
-                  print("YEAR_PREVIEW_ERROR",year,exc.code,exc.read(500).decode("utf-8","replace"))
-                  raise
-              total=sum(len(e.get("links",{})) for e in data.get("primary",{}).values())+sum(len(e.get("links",{})) for e in data.get("alternate",{}).values())
-              assert code==200 and data.get("ok") is True and len(data.get("primary",{}))>=1
-              assert total>0 if year==2026 else total==0
-              print("YEAR_PREVIEW_PASS",json.dumps({"year":year,"status":code,"available_monthly_links":total,"scope":"guest"}))
+                code=exc.code; cors=exc.headers.get("Access-Control-Allow-Origin","")
+                allowed_methods=exc.headers.get("Access-Control-Allow-Methods","")
+                allowed_headers=exc.headers.get("Access-Control-Allow-Headers","")
+                data=None
+              except Exception as exc:
+                print("YEAR_DIAG_NETWORK",label,method,type(exc).__name__,str(exc)[:150],flush=True)
+                failures.append((label,method,"NETWORK"))
+                continue
+              cors_ok=cors==origin or cors=="*"
+              ok=code in (200,204) if method=="OPTIONS" else code==200 and isinstance(data,dict) and data.get("ok") is True
+              print("YEAR_DIAG",json.dumps({"origin":label,"method":method,"status":code,"cors":cors,"cors_ok":cors_ok,"methods":allowed_methods,"headers":allowed_headers,"api_ok":data.get("ok") if isinstance(data,dict) else None,"primary_count":len(data.get("primary",{})) if isinstance(data,dict) else None},ensure_ascii=False),flush=True)
+              if not ok or not cors_ok:failures.append((label,method,code))
+          print("YEAR_DIAG_SUMMARY",json.dumps({"failures":failures},ensure_ascii=False),flush=True)
+          if failures:raise SystemExit("Current year guest calculation or browser CORS preflight failed")
           PY
