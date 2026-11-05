@@ -1,5 +1,14 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "Red Flag Telegram save API routing and frontend fixes published and verified 2026-11-05. No automatic public uploads; future deployments require a new exact-file manifest."
+  "mode": "publish",
+  "files": [
+    "redflag-feature.js",
+    "app.js",
+    "index.html"
+  ],
+  "expected_sha256": {
+    "redflag-feature.js": "468c4af99d5ecea14a2ac7ea691e9bca46e28b69ad0ac04fc64bd8c5bd44cff7",
+    "app.js": "ee2b7416849ce95070d96f5b9ad3856371fa92badf915fb283ddbefa79f6ac0f",
+    "index.html": "0e66aee37565635f8b8f4ebbda07b6abd863ea345678fbe42e2fcf5d90fd5406"
+  },
+  "note": "Guarded Red Flag ticket saving route for both Telegram mini-app and browser; shows safe error code; cache busters in app/index. No Telegram, payment or mailing changes."
 }
