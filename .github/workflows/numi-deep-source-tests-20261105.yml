@@ -1,0 +1,59 @@
+name: Audit key JavaScript and regression checks after domain migration
+on:
+  push:
+    paths: ['.github/workflows/numi-deep-source-tests-20261105.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Report key live-facing JS parse tests without changing code
+        run: |
+          python3 - <<'PY'
+          import subprocess
+          paths=['app.js','auth-profile.js','account-browser.js','redflag-feature.js','redflag-engine.js','redflag-categories.js','redflag-public-catalog.js','compatibility-feature.js','compatibility-engine.js','personal-day-feature.js','year-feature.js','year-access.js','matrix-feature.js','destiny-code-feature.js','numerology-core.js','guide/articles.js','guide/journal.js','child/child.js','moment/moment.js','moment/yes-no/yes-no.js','pro/pro.js','pro/pro-diagram.js','pro/school/school.js','pro/schools/classic/classic.js','assets/numi-insights-v2.js','assets/numi-partner-referral.js','cloudflare/telegram-bot/src/index.js','cloudflare/telegram-bot/src/redflag-delivery.js','insights/insights.js','insights/public/tracker.js']
+          for path in paths:
+            import os
+            if not os.path.isfile(path):print('JS_NO_SUCH_FILE',path,flush=True);continue
+            p=subprocess.run(['node','--check',path],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=18)
+            print('JS_SYNTAX',path,'PASS' if p.returncode==0 else 'FAIL',p.stderr.strip().splitlines()[-1:] if p.returncode else '',flush=True)
+          PY
+      - name: Run carefully selected offline regression tests with individual results
+        run: |
+          python3 - <<'PY'
+          import subprocess
+          files=['tests/architecture.test.mjs','tests/site-loading-smoke.test.mjs','tests/redflag-calendar-coverage.test.mjs','tests/redflag-lazy-runtime.test.mjs','tests/telegram-scroll-guard.test.mjs','tests/owner-mailing-routing.test.mjs','tests/child-report-pdf.test.mjs','tests/child-matrix-routing.test.mjs','tests/year-access.test.mjs','tests/year-mobile-input.mjs','tests/year-repeat-texts.test.mjs','tests/child-paywall-guard.mjs','tests/owner-access.test.mjs','tests/matrix-reading-flow.test.mjs','tests/classic-school.test.mjs','tests/schools-hub.test.mjs','tests/telegram-bot.test.mjs']
+          for path in files:
+            import os
+            if not os.path.isfile(path):continue
+            try:
+              p=subprocess.run(['node','--test',path],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=32)
+              output=p.stdout+p.stderr
+              failures=[line.strip()[:180] for line in output.splitlines() if line.strip().startswith(('not ok','error:','Error:','# error:'))]
+              print('REGRESSION',path,'PASS' if p.returncode==0 else 'FAIL','failures',failures[:5],flush=True)
+            except subprocess.TimeoutExpired:print('REGRESSION',path,'TIMEOUT',flush=True)
+          PY
+      - name: Audit old-domain references in active public source and inconsistent payment labels
+        run: |
+          python3 - <<'PY'
+          import pathlib,re,collections
+          old=['xn--c1adkkdfjbp1a4l.online','numerologia-online.github.io','нумерология.online']
+          public=['index.html','app.js','auth-profile.js','account-browser.js','redflag-feature.js','personal-day-feature.js','year-feature.js','child/index.html','year/index.html','pro/index.html','guide/index.html','moment/index.html','moment/yes-no/index.html','prices.html','offer.html','cloudflare/telegram-bot/src/index.js','cloudflare/telegram-bot/src/redflag-delivery.js','cloudflare/telegram-bot/src/day-save-endpoint.js','README.md']
+          for f in public:
+            if not pathlib.Path(f).is_file():continue
+            data=pathlib.Path(f).read_text('utf8')
+            for term in old:
+              if term in data:
+                lines=[i for i,line in enumerate(data.splitlines(),1) if term in line]
+                print('LEGACY_REFERENCE',f,term,'lines',lines[:15],flush=True)
+          idx=pathlib.Path('index.html').read_text('utf8')
+          for title,regex in [('redflag_80',r'80 вопросов'),('redflag_366',r'366 вопросов'),('school_weekly_149',r'149 ₽'),('club_monthly_490',r'490 ₽'),('numi_paid_provider',r'ЮKassa|yookassa|yoo.?kassa')]:
+            print('CONTENT_LABEL',title,'hits',len(re.findall(regex,idx,re.I)),flush=True)
+          print('GITHUB_WORKFLOWS',len(list(pathlib.Path('.github/workflows').glob('*.yml'))),flush=True)
+          PY
