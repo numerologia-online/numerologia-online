@@ -36,7 +36,8 @@
     const legalNav = document.createElement("nav");
     legalNav.id = "numi-cabinet-documents";
     legalNav.setAttribute("aria-label", "Документы и настройки сайта");
-    const legalHeading = document.createElement("div");
+    const legalDetails = document.createElement("details");
+    const legalHeading = document.createElement("summary");
     legalHeading.className = "numi-cabinet-documents-title";
     legalHeading.textContent = "Документы и настройки";
     const legalGrid = document.createElement("div");
@@ -47,31 +48,40 @@
       link.textContent = label;
       legalGrid.append(link);
     }
-    legalNav.append(legalHeading, legalGrid);
+    legalDetails.append(legalHeading, legalGrid);
+    legalNav.append(legalDetails);
     overview.append(legalNav);
     const legalStyle = document.createElement("style");
     legalStyle.textContent = `
       #account-overview #numi-cabinet-documents {
-        margin: 21px 0 3px; padding: 16px 1px 0;
-        border-top: 1px solid #dce3d7;
-        color: #53695b;
+        margin: 3px 0 0; padding: 0; border: 0;
+        color: #78857b;
       }
       #account-overview .numi-cabinet-documents-title {
-        margin: 0 0 10px; color: #2c5846;
-        font: 750 12px/1.35 system-ui, -apple-system, sans-serif;
-        letter-spacing: .02em;
+        display: flex; justify-content: center; align-items: center;
+        gap: 7px; min-height: 35px; margin: 0; padding: 5px 4px;
+        color: #718174; cursor: pointer; list-style: none;
+        font: 600 12px/1.2 system-ui, -apple-system, sans-serif;
+      }
+      #account-overview .numi-cabinet-documents-title::-webkit-details-marker { display: none; }
+      #account-overview .numi-cabinet-documents-title::after {
+        content: "⌄"; font-size: 14px; line-height: 1;
+      }
+      #account-overview details[open] > .numi-cabinet-documents-title::after {
+        transform: rotate(180deg);
       }
       #account-overview .numi-cabinet-documents-grid {
         display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 4px 12px; align-items: start;
+        gap: 2px 10px; padding: 5px 0 0; align-items: start;
       }
       #account-overview .numi-cabinet-documents-grid a {
         display: flex; align-items: center;
-        min-height: 39px; padding: 5px 0;
-        color: #426e56; font: 600 12px/1.35 system-ui, -apple-system, sans-serif;
-        text-decoration: underline; text-underline-offset: 3px;
+        min-height: 31px; padding: 4px 2px;
+        color: #536e5c; font: 600 12px/1.25 system-ui, -apple-system, sans-serif;
+        text-decoration: underline; text-underline-offset: 2px;
         overflow-wrap: anywhere;
       }
+      #account-overview .numi-cabinet-documents-title:focus-visible,
       #account-overview .numi-cabinet-documents-grid a:focus-visible {
         outline: 2px solid #2d8864; outline-offset: 2px;
       }
