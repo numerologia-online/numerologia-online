@@ -10,6 +10,33 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - name: Inspect exactly domain and email-link routines in live core, read only
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,ssl,ftplib,io,re,difflib,hashlib,subprocess
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=18)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p()
+          path=ftp.pwd().rstrip('/')+'/private/numi-account-20261031/core.php'
+          buf=io.BytesIO();ftp.retrbinary('RETR '+path,buf.write);ftp.quit()
+          current=buf.getvalue().decode('utf8')
+          repo=open('account-service/private/core.php',encoding='utf8').read()
+          previous=subprocess.check_output(['git','show','7b27f43e0ee6127482bd46a118a1e4e93ddd813a^:account-service/private/core.php']).decode('utf8')
+          print('PROD_MATCHES_PRE_DOMAIN_FIX',current==previous,flush=True)
+          print('PROD_MATCHES_NEW_DOMAIN_FIX',current==repo,flush=True)
+          for n,s in enumerate(current.splitlines(),1):
+            if ('NUMI_ACCOUNT_ORIGIN' in s or 'NUMI_ACCOUNT_NEW_ORIGIN' in s or
+                'naAllowedOrigins' in s or 'naPublicOrigin' in s or
+                ("$url=" in s and ("NUMI_ACCOUNT_ORIGIN" in s or "naPublicOrigin" in s)) or
+                ("$origin" in s and "in_array" in s) or
+                'ORIGIN_DENIED' in s or 'https://www.xn--' in s):
+              if any(word in s.lower() for word in ('password','secret','token','mail(', 'smtp','database')):
+                print('ACCOUNT_ROUTING',n,'[omitted]',flush=True)
+              else:print('ACCOUNT_ROUTING',n,s.strip()[:220],flush=True)
+          PY
       - name: Verify deployed private core and safe email API responses
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
