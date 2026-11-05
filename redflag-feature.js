@@ -313,19 +313,19 @@ priceStyles.textContent = `
     align-items: flex-end; gap: 5px; max-width: 110px;
   }
   #redflag .redflag-price-pair .redflag-question-price {
-    display: block; padding: 5px 9px; font-size: 12px;
+    display: block; padding: 6px 10px; font-size: 14px;
     line-height: 1.1; font-weight: 750;
   }
   #redflag .redflag-price-pair .redflag-subscription-price {
     display: flex; flex-direction: column; align-items: center;
-    gap: 3px; padding: 7px 9px; border: 1px solid #943c65;
+    gap: 2px; padding: 5px 8px; border: 1px solid #943c65;
     border-radius: 14px; background: #943c65; color: #fff;
     box-shadow: 0 3px 8px rgba(148,60,101,.2);
     font-size: 10px; font-weight: 750; line-height: 1.15;
     white-space: nowrap;
   }
   #redflag .redflag-subscription-price strong {
-    color: inherit; font-size: 18px; font-weight: 900; line-height: 1;
+    color: inherit; font-size: 16px; font-weight: 900; line-height: 1;
   }
   @media (max-width: 360px) {
     #redflag .redflag-price-pair { max-width: 88px; }
