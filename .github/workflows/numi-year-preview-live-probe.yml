@@ -56,6 +56,23 @@ jobs:
               print("REDFLAG_APP_VERSION",body.count(b'redflag-feature.js?v=20261105scrollfit1'),flush=True)
             if name=="index.html":
               print("REDFLAG_INDEX_VERSION",body.count(b'app.js?v=20261105scrollfit1'),flush=True)
+          name="account-browser.js"
+          public=io.BytesIO()
+          f.retrbinary("RETR "+home+"/www/xn--c1adkkdfjbp1a4l.online/"+name, public.write)
+          body=public.getvalue()
+          print("CABINET_LIVE_SHA256",name,hashlib.sha256(body).hexdigest(),"bytes",len(body),flush=True)
+          checks=[
+            b'if (!overview.querySelector("#numi-cabinet-documents")) {',
+            b'const legalHeading = document.createElement("div");',
+            b'legalNav.append(legalHeading, legalGrid);',
+            b'margin: 21px 0 3px; padding: 16px 1px 0;',
+            b'margin: 0 0 10px; color: #2c5846;',
+            b'min-height: 39px; padding: 5px 0;',
+            b'dialog.append(legalStyle);',
+          ]
+          for test in checks:
+            print("CABINET_LEGAL_ANCHOR",test.decode(),body.count(test),flush=True)
+          body=read_data if False else body
           f.quit()
           PY
       - name: Read-only preflight and guest calculation from old and current website origins
