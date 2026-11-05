@@ -1,4 +1,4 @@
-name: Audit new and old domain mapping safely
+name: Align live REG.RU homepage canonical and old domain redirect (one time)
 on:
   push:
     paths:
@@ -6,64 +6,117 @@ on:
 permissions:
   contents: read
 jobs:
-  inspect:
+  migrate:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 7
     steps:
-      - uses: actions/checkout@v4
-      - name: Read-only FTP webroot and HTTPS audit
+      - name: Back up and update exactly two approved live files, then check HTTP
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 - <<'PY'
-          import os,ftplib,ssl,io,hashlib,re,urllib.request,urllib.error
-          old='xn--c1adkkdfjbp1a4l.online'
-          new='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
-          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=15)
+          import os, ftplib, ssl, io, hashlib, time, urllib.request, urllib.error
+          OLD = 'xn--c1adkkdfjbp1a4l.online'
+          NEW = 'xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
+          EXPECTED = {
+              'index.html': '50f149aeafcd2765f3f967bb6650f685d91c16aea0468bb074d3909fd88869b8',
+              '.htaccess': '8b32efb5a659dda2beb73a2bb7d89ee66ad58243882657b24e13a8bc31adb1c2',
+          }
+          BEGIN = '# BEGIN NUMI NEW MAIN DOMAIN 20261105'
+          END = '# END NUMI NEW MAIN DOMAIN 20261105'
+          def sha(data): return hashlib.sha256(data).hexdigest()
+          def get(ftp, path):
+              b=io.BytesIO();ftp.retrbinary('RETR '+path,b.write);data=b.getvalue()
+              if len(data)>250000:raise RuntimeError('File exceeds reviewed max size '+path)
+              return data
+          def put(ftp, path, data):
+              ftp.storbinary('STOR '+path, io.BytesIO(data))
+              if get(ftp,path)!=data:raise RuntimeError('FTP readback differs '+path)
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
           ftp.prot_p()
           home=ftp.pwd().rstrip('/')
-          def read(path):
-            out=io.BytesIO()
-            ftp.retrbinary('RETR '+path,out.write)
-            return out.getvalue()
+          root=home+'/www/'+OLD
+          names=list(EXPECTED)
+          original={}
+          applied=[]
           try:
-            for host in [old,new]:
-              root=home+'/www/'+host
+              ftp.cwd(root)
+              for name in names:
+                  original[name]=get(ftp,root+'/'+name)
+                  if sha(original[name])!=EXPECTED[name]:
+                      raise RuntimeError('LIVE VERSION CHANGED: '+name+'. No files modified.')
+              src=original['index.html'].decode('utf-8')
+              oldcanon='https://'+OLD+'/'
+              newcanon='https://'+NEW+'/'
+              if src.count('<link rel="canonical" href="'+oldcanon+'">')!=1 or src.count(oldcanon)<4:
+                  raise RuntimeError('Unreviewed canonical format. No files modified.')
+              # Only URL references are changed. The legacy host routing guards stay unchanged.
+              updated_index=src.replace(oldcanon,newcanon).encode('utf-8')
+              if updated_index==original['index.html']:
+                  raise RuntimeError('Homepage transformation empty')
+              if b'<link rel="canonical" href="https://'+NEW.encode()+b'/">' not in updated_index:
+                  raise RuntimeError('New homepage canonical invalid')
+              rules=original['.htaccess'].decode('utf-8')
+              if BEGIN in rules or END in rules:
+                  raise RuntimeError('Migration redirect block already present. No files modified.')
+              block=(
+                BEGIN+'\n'
+                '<IfModule mod_rewrite.c>\n'
+                'RewriteEngine On\n'
+                'RewriteCond %{HTTP_HOST} ^(www\\.)?'+OLD.replace('.','\\.')+'$ [NC]\n'
+                'RewriteRule ^ https://'+NEW+'%{REQUEST_URI} [R=301,L,NE]\n'
+                '</IfModule>\n'
+                END+'\n'
+              )
+              updated_rules=(block+rules).encode('utf-8')
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              backup=home+'/site-safeguard-backups'
+              ftp.cwd(backup)
+              for name in names:
+                  dst=backup+'/'+stamp+'-domain-migrate-'+name.replace('.','_')
+                  put(ftp,dst,original[name])
+                  print('BACKUP_SAVED',name,flush=True)
+              ftp.cwd(root)
               try:
-                ftp.cwd(root)
-                print('WEBROOT',host,'EXISTS')
-              except ftplib.all_errors as exc:
-                print('WEBROOT',host,'NOT_PRESENT',type(exc).__name__)
-                continue
-              for name in ['index.html','offer.html','privacy.html','sitemap.xml','account-browser.js','.htaccess']:
-                try:
-                  data=read(root+'/'+name)
-                except ftplib.all_errors as exc:
-                  print('FILE',host,name,'MISSING',type(exc).__name__)
-                  continue
-                text=data.decode('utf-8','replace')
-                if len(data)>250000:raise ValueError('unexpected big file')
-                match=re.search(r'<link[^>]*rel="canonical"[^>]*>',text,re.I)
-                print('FILE',host,name,'bytes',len(data),'sha256',hashlib.sha256(data).hexdigest(),'old',text.count(old)+text.count('нумерология.online'),'new',text.count(new)+text.count('нумерология-онлайн.рф'),'canonical',match.group(0)[:170] if match else '')
-                if name=='.htaccess':
-                  for line in text.splitlines():
-                    if ('RewriteCond' in line or 'RewriteRule' in line or 'Redirect' in line) and any(term in line for term in ('HTTP_HOST',old,new,'REQUEST_URI','HTTPS','www.','^https?')):
-                      print('RULE',host,line[:240])
-            for host in [old,new]:
-              for path in ['/','/offer.html']:
-                url='https://'+host+path
-                try:
-                  request=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'})
-                  with urllib.request.urlopen(request,timeout=10) as response:
-                    body=response.read(200000)
-                    match=re.search(rb'<link[^>]*rel="canonical"[^>]*>',body,re.I)
-                    print('HTTP',host,path,response.status,response.url,'bytes_sample',len(body),'canonical',match.group(0).decode('utf-8','replace')[:160] if match else '')
-                except Exception as exc:
-                  print('HTTP',host,path,'ERROR',str(exc)[:180])
+                  for name,body in [('index.html',updated_index),('.htaccess',updated_rules)]:
+                      applied.append(name)
+                      put(ftp,root+'/'+name,body)
+                      print('UPDATED_VERIFIED',name,sha(body),flush=True)
+                  class NoRedirect(urllib.request.HTTPRedirectHandler):
+                      def redirect_request(self,req,fp,code,msg,headers,newurl):return None
+                  opener=urllib.request.build_opener(NoRedirect)
+                  # Both domain names must still resolve to the same site root.
+                  check_url='https://'+NEW+'/?domainverify='+stamp
+                  with urllib.request.urlopen(check_url,timeout=12) as response:
+                      body=response.read(250000)
+                      if response.status!=200 or body!=updated_index:
+                          raise RuntimeError('New domain live homepage verification failed')
+                  for path in ['/?domainverify='+stamp,'/offer.html?domainverify='+stamp]:
+                      oldurl='https://'+OLD+path
+                      try:
+                          result=opener.open(oldurl,timeout=12)
+                          status=result.status
+                          location=result.headers.get('Location','')
+                          result.close()
+                      except urllib.error.HTTPError as exc:
+                          status=exc.code
+                          location=exc.headers.get('Location','')
+                      if status!=301 or location!='https://'+NEW+path:
+                          raise RuntimeError('Old domain redirect failed for '+path+': '+str(status))
+                  print('MIGRATION_VERIFIED New domain 200, old domain 301, homepage canonical updated, backup saved',flush=True)
+              except Exception:
+                  for name in reversed(applied):
+                      try:
+                          put(ftp,root+'/'+name,original[name])
+                          print('ROLLBACK_VERIFIED',name,flush=True)
+                      except Exception:
+                          print('ROLLBACK_FAILED',name,flush=True)
+                  raise
           finally:
-            try:ftp.quit()
-            except Exception:ftp.close()
+              try:ftp.quit()
+              except Exception:ftp.close()
           PY
