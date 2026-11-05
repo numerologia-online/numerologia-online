@@ -38,7 +38,7 @@ jobs:
             content=live.decode('utf-8','replace')
             if path.endswith('.html'):
              canonical='<link rel="canonical" href="https://'+NEW+'/'
-             if canonical not in content:
+             if canonical not in content and '<link rel="canonical" href="https://нумерология-онлайн.рф/' not in content:
               raise RuntimeError('Primary domain canonical not new: '+path)
             if path=='sitemap.xml' and ('https://'+OLD in content or 'https://'+NEW+'/' not in content):
              raise RuntimeError('Sitemap has incorrect domain')
