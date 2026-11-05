@@ -1,4 +1,4 @@
-name: One-time guarded Red Flag Telegram save switch (2026-11-05)
+name: One-time guarded Red Flag Telegram save switch on new .рф domain (2026-11-05)
 # Retry approved, guarded Red Flag-only production release; deployment script unchanged.
 on:
   push:
@@ -24,7 +24,8 @@ jobs:
           python3 - <<'PY'
           import ftplib, io, os, ssl, subprocess, tempfile, urllib.request, time
           HOST='server172.hosting.reg.ru'
-          DOMAIN='xn--c1adkkdfjbp1a4l.online'
+          DOMAIN='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
+          TICKET_DOMAIN='xn--c1adkkdfjbp1a4l.online'
           FILES=('redflag-feature.js','app.js','index.html')
           def replace_one(s, old, new, label):
               if s.count(old)!=1: raise RuntimeError(label+' preflight does not match; no files modified')
@@ -61,7 +62,8 @@ jobs:
                   b=io.BytesIO();ftp.retrbinary('RETR '+p,b.write);return b.getvalue()
               def put(p,v): ftp.storbinary('STOR '+p,io.BytesIO(v))
               # No switch if the already-existing REG.RU ticket endpoint is unavailable.
-              php=read(live+'/api/redflag-save.php')
+              # The existing ticket API is on the original .online domain, not the newly published .рф storefront.
+              php=read(root+'/www/'+TICKET_DOMAIN+'/api/redflag-save.php')
               if not php.lstrip().startswith(b'<?php') or b'ticket' not in php or b'create' not in php:
                   raise RuntimeError('Existing REG.RU ticket handler failed preflight')
               with tempfile.NamedTemporaryFile(suffix='.php') as tmp:
@@ -75,7 +77,7 @@ jobs:
               for name in ('redflag-feature.js','app.js'):
                   subprocess.run(['node','--input-type=module','--check'],input=after[name],check=True,stdout=subprocess.DEVNULL)
               # Durable backups are outside the publicly served website directory.
-              backupdir=root+'/numi-redflag-rollback-20261105'
+              backupdir=root+'/numi-redflag-rollback-20261105-rf'
               try: ftp.mkd(backupdir)
               except ftplib.error_perm as e:
                   if not str(e).startswith('550'): raise
