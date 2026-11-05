@@ -3,15 +3,18 @@
  * No registration, database writes, birth-date changes or opt-in side effects.
  * Called only on an explicit "Сохранить в Telegram" button click.
  */
-// Accept only the two explicitly configured site origins; never use a wildcard.
+// Accept only the explicitly configured site origins; never use a wildcard.
 const WEBSITE_ORIGINS = new Set([
   'https://numerologia-online.github.io',
   'https://xn--c1adkkdfjbp1a4l.online',
+  'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai',
 ]);
 const TRUSTED_SITE_LINKS = [
   'https://numerologia-online.github.io/numerologia-online/',
   'https://xn--c1adkkdfjbp1a4l.online/?view=redflag',
   'https://xn--c1adkkdfjbp1a4l.online/?view=day',
+  'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?view=redflag',
+  'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?view=day',
 ];
 const encoder = new TextEncoder();
 const SAME_ORIGIN_HEADERS = {
