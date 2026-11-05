@@ -107,3 +107,45 @@ jobs:
           JS
           cp /tmp/numi-deep-browser-audit.cjs ./numi-deep-browser-audit.cjs
           node numi-deep-browser-audit.cjs
+
+      - name: Diagnose actual Red Flag scroll motion after taps without altering the site
+        run: |
+          cat > /tmp/numi-scroll-diagnostic.cjs <<'JS'
+          (async()=>{
+            const {chromium}=require('playwright');
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+            const p=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'ru-RU',serviceWorkers:'block'});
+            p.on('pageerror',e=>console.log('SCROLL_JS_ERROR',String(e).slice(0,180)));
+            const root='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?view=redflag';
+            await p.goto(root,{waitUntil:'domcontentloaded',timeout:35000});
+            await p.waitForTimeout(1800);
+            console.log('SCROLL_UI_INIT',JSON.stringify(await p.evaluate(()=>({active:document.querySelector('#redflag')?.className,form:!!document.querySelector('#redflag-form'),categories:document.querySelectorAll('.redflag-category-toggle').length}))));
+            await p.locator('#redflag-birth-date').fill('09.09.1986');
+            await p.locator('#redflag-form').evaluate(el=>el.requestSubmit());
+            await p.waitForTimeout(1400);
+            console.log('SCROLL_UI_FORM',JSON.stringify(await p.evaluate(()=>({scrollY,active:document.querySelector('#redflag')?.className,questionCount:document.querySelectorAll('[data-question-id]').length,error:document.querySelector('#redflag-error')?.textContent?.trim()}))));
+            const categories=p.locator('.redflag-category-toggle');
+            async function motion(label,locator,mode='click'){
+              if(await locator.count()===0){console.log('SCROLL_MISSING',label);return}
+              await locator.first().scrollIntoViewIfNeeded();
+              await p.waitForTimeout(280);
+              const before=await locator.first().evaluate(el=>({top:el.getBoundingClientRect().top,y:scrollY,bottom:el.getBoundingClientRect().bottom,category:el.closest('.redflag-category')?.className,question:el.closest('[data-question-id]')?.dataset.questionId}));
+              if(mode==='js') await locator.first().evaluate(el=>el.click()); else await locator.first().click({timeout:6000});
+              await p.waitForTimeout(850);
+              const after=await p.evaluate(({id,categoryIndex})=>{
+                const el=id?document.querySelector('[data-question-id="'+id+'"] .redflag-question-toggle'):document.querySelectorAll('.redflag-category-toggle')[categoryIndex];
+                return {top:el?.getBoundingClientRect().top,y:scrollY,bottom:el?.getBoundingClientRect().bottom,category:el?.closest('.redflag-category')?.className}
+              },{id:before.question,categoryIndex:Number(label.split('_').pop())});
+              console.log('SCROLL_MOTION',label,JSON.stringify({before,after,viewport:p.viewportSize()}));
+            }
+            await motion('question_0',p.locator('.redflag-question-toggle').nth(0));
+            await motion('question_5',p.locator('.redflag-question-toggle').nth(5));
+            await motion('category_1',categories.nth(1));
+            await p.waitForTimeout(400);
+            await motion('category_0',categories.nth(0));
+            await motion('category_2',categories.nth(2));
+            await browser.close();
+          })().catch(e=>{console.error('SCROLL_FATAL',String(e));process.exit(1)});
+          JS
+          cp /tmp/numi-scroll-diagnostic.cjs ./numi-scroll-diagnostic.cjs
+          node numi-scroll-diagnostic.cjs
