@@ -1,0 +1,74 @@
+name: One-time public resource protection and legacy URL audit — read only
+on:
+  push:
+    paths: ['.github/workflows/numi-security-links-audit-20261105.yml']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify direct paid files, all hosting domains, stale links and analytics diff
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,urllib.parse,json,hashlib,ssl,ftplib,io,os,collections,subprocess,pathlib,difflib,re
+          NEW='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai';OLD='xn--c1adkkdfjbp1a4l.online'
+          paths=[
+           '/data/year/energy-1.txt','/data/year/odd/energy-4.txt',
+           '/knowledge/full-report/sections/energy-1.json',
+           '/child/data/matrix/sections/energy-1.json',
+           '/pro/school/lessons/base.json','/pro/schools/classic/lessons/year.json',
+           '/data/redflag/love/romance.json','/data/redflag/money/generosity.json',
+           '/data/money-rituals.json','/moment/questions.json',
+           '/.env','/.git/config','/site-safeguard-backups/',
+           '/assets/numi-insights-v2.js','/assets/telegram-web-app-20261102.js',
+           '/robots.txt','/sitemap.xml'
+          ]
+          def code(host,path):
+           url='https://'+host+path
+           r=urllib.request.Request(url,headers={'User-Agent':'NUMI-owner-security-readonly/20261105'})
+           try:
+            with urllib.request.urlopen(r,timeout=15) as x:return x.status,x.headers.get('Content-Type','')
+           except urllib.error.HTTPError as e:return e.code,e.headers.get('Content-Type','')
+           except Exception as e:return 0,type(e).__name__
+          for path in paths:
+           for host in [NEW,OLD] if path.startswith(('/data/year/','/knowledge/','/child/data/','/pro/school/lessons')) else [NEW]:
+            s,t=code(host,path)
+            print('GUEST_RESOURCE',host,path,'STATUS',s,'TYPE',t,flush=True)
+          # Inspect routing references without reading live private content or personal data.
+          for scope in ['cloudflare/telegram-bot/src','index.html','app.js','auth-profile.js','account-browser.js','personal-day-feature.js','year-feature.js','pro','moment','child','guide']:
+           path=pathlib.Path(scope)
+           srcs=[path] if path.is_file() else list(path.rglob('*.js'))+list(path.rglob('*.html'))
+           old_hits=github_hits=0
+           examples=[]
+           for p in srcs:
+            if any(x in str(p) for x in ('/node_modules/','/archive/','/tests/')):continue
+            try:code_text=p.read_text(encoding='utf8')
+            except:continue
+            a=code_text.count('xn--c1adkkdfjbp1a4l.online')
+            b=code_text.count('numerologia-online.github.io/numerologia-online')
+            old_hits+=a;github_hits+=b
+            if a or b:examples.append((str(p),a,b))
+           print('DOMAIN_REFERENCES',scope,'old',old_hits,'githubpages',github_hits,'files',json.dumps(examples[:13]),flush=True)
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=18)
+          f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
+          root=f.pwd().rstrip('/')+'/www/'+OLD
+          buf=io.BytesIO();f.retrbinary('RETR '+root+'/insights/index.html',buf.write);f.quit()
+          live=buf.getvalue().decode('utf8','replace')
+          repo=pathlib.Path('insights/index.html').read_text(encoding='utf8')
+          print('INSIGHTS_LIVE_VS_GITHUB_HASH',hashlib.sha256(live.encode()).hexdigest(),hashlib.sha256(repo.encode()).hexdigest(),flush=True)
+          sm=difflib.SequenceMatcher(None,repo.splitlines(),live.splitlines(),autojunk=False)
+          for op,i1,i2,j1,j2 in sm.get_opcodes():
+           if op!='equal':
+            print('INSIGHTS_DIFF_SUMMARY',op,'GITHUB_LINES',i1+1,i2,'LIVE_LINES',j1+1,j2,flush=True)
+            for line in live.splitlines()[j1:j2][:3]:
+             if len(line)>300 or re.search(r'token|secret|password|api.?key|credential|authorization|cookie',line,re.I):
+              print('INSIGHTS_LIVE_EXTRA','[withheld wide or security-adjacent line]',flush=True)
+             else:print('INSIGHTS_LIVE_EXTRA',line[:230],flush=True)
+          print('SECURITY_LINKS_AUDIT_DONE',flush=True)
+          PY
