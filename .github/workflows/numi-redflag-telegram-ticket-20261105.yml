@@ -1,4 +1,5 @@
 name: One-time guarded Red Flag Telegram save switch (2026-11-05)
+# Retry approved, guarded Red Flag-only production release; deployment script unchanged.
 on:
   push:
     branches: [main]
