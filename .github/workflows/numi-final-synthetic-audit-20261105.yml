@@ -1,0 +1,128 @@
+name: Last read-only calculator checks and year guest origin identification
+on:
+  push:
+    paths: ['.github/workflows/numi-final-synthetic-audit-20261105.yml']
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Test free UI with sample dates; no purchases or real account changes
+        run: |
+          cat > numi-final-synthetic-audit.cjs <<'JS'
+          (async()=>{
+          const {chromium}=require('playwright');
+          const root='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/';
+          const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+          const run=async(name,pathname,test)=>{
+           const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'ru-RU',serviceWorkers:'block'});
+           const out={name},errors=[],requests=[];
+           page.on('pageerror',e=>errors.push(String(e.message||e).slice(0,200)));
+           page.on('response',r=>{if(r.status()>=400&&r.url().startsWith(root))requests.push([r.status(),new URL(r.url()).pathname])});
+           page.on('dialog',async d=>d.dismiss());
+           try{
+            const response=await page.goto(root+pathname,{waitUntil:'domcontentloaded',timeout:30000});
+            out.http=response?.status();
+            await page.waitForTimeout(750);
+            await test(page,out);
+            await page.waitForTimeout(900);
+            out.width=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));
+           }catch(e){out.failure=String(e.message||e).slice(0,230)}
+           out.jsErrors=errors.slice(0,3);out.httpErrors=[...new Set(requests.map(JSON.stringify))].slice(0,8).map(JSON.parse);
+           console.log('FINAL_SYNTHETIC_CASE',JSON.stringify(out));await page.close();
+          };
+          try{
+           await run('redflag_submitted_and_open_question','',async(p,o)=>{
+            await p.locator('[data-open-redflag]').first().evaluate(x=>x.click());
+            await p.locator('#redflag-birth-date').fill('12.05.1997');
+            await p.locator('#redflag-form').evaluate(x=>x.requestSubmit());
+            await p.waitForTimeout(1300);
+            o.categories=await p.locator('.redflag-category-toggle').count();
+            o.firstExpanded=await p.locator('.redflag-category-toggle').first().getAttribute('aria-expanded');
+            o.questions=await p.locator('[data-question-id]').count();
+            const first=p.locator('.redflag-question-toggle').first();
+            o.clickableQuestions=await first.count();
+            if(o.clickableQuestions){
+             await first.evaluate(x=>x.click());
+             await p.waitForTimeout(1250);
+             o.answerVisible=await p.locator('.redflag-question.is-open').count();
+             o.answerTextLength=await p.locator('.redflag-question.is-open').first().evaluate(x=>x.innerText.length).catch(()=>0);
+            }
+            o.error=await p.locator('#redflag-error').innerText().catch(()=>null);
+           });
+           await run('personal_day_synthetic','',async(p,o)=>{
+            await p.locator('[data-open-personal-day]').first().evaluate(x=>x.click());
+            await p.waitForTimeout(450);
+            const input=p.locator('.personal-day-overlay input').first();
+            o.input=await input.getAttribute('placeholder');
+            await input.fill('09.09.1986');
+            const btn=p.locator('.personal-day-overlay button').filter({hasText:'Рассчитать личный день'}).first();
+            o.calculateButton=await btn.count();
+            if(o.calculateButton)await btn.evaluate(x=>x.click());
+            await p.waitForTimeout(2100);
+            o.overlayText=await p.locator('.personal-day-overlay').first().evaluate(x=>x.innerText.slice(0,450)).catch(()=>null);
+            o.bodyPersonalDay=await p.evaluate(()=>document.body.classList.contains('personal-day-reading'));
+           });
+           await run('yesno_categories','moment/yes-no/',async(p,o)=>{
+            o.totalCategories=await p.locator('[data-category],.yn-category,.yn-topic,.topic-card').count();
+            o.questionButtons=await p.locator('button').count();
+            o.headings=await p.locator('h1,h2').allTextContents();
+           });
+           await run('moment_catalog','moment/',async(p,o)=>{
+            o.heading=await p.locator('h1').first().innerText().catch(()=>null);
+            o.topicButtons=await p.locator('button[data-topic],button[data-category],.moment-topic').count();
+            o.questionRows=await p.locator('.question-entry').count();
+           });
+          }finally{await browser.close()}
+          console.log('FINAL_SYNTHETIC_COMPLETE');
+          })().catch(e=>{console.error('AUDIT_ERROR',String(e));process.exit(1)});
+          JS
+          node numi-final-synthetic-audit.cjs
+  backends:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Identify exact year preview origin validation without changing server
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,ftplib,ssl,io,hashlib,re,urllib.request,urllib.error,json
+          new='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
+          old='xn--c1adkkdfjbp1a4l.online'
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=18)
+          f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
+          home=f.pwd().rstrip('/')
+          for filename in ['api/numi-year-preview.php','api/numi-school.php']:
+           data=io.BytesIO()
+           try:f.retrbinary('RETR '+home+'/www/'+old+'/'+filename,data.write)
+           except ftplib.error_perm as e:
+            print('BACKEND_NOT_READABLE',filename,type(e).__name__,flush=True);continue
+           raw=data.getvalue().decode('utf8','replace')
+           print('BACKEND_FILE',filename,'SHA256',hashlib.sha256(data.getvalue()).hexdigest(),'lines',len(raw.splitlines()),flush=True)
+           for n,line in enumerate(raw.splitlines(),1):
+            if 'ORIGIN_NOT_ALLOWED' in line or 'ORIGIN_DENIED' in line or 'ALLOWED_ORIGIN' in line or ('http' in line and ('xn--' in line or 'github.io' in line)):
+             if any(x in line.lower() for x in ['token','secret','password','database','api_key']):continue
+             print('BACKEND_ROUTING',filename,n,line.strip()[:300],flush=True)
+          f.quit()
+          url='https://'+new+'/api/numi-year-preview.php'
+          for origin in ['https://'+new,'https://'+old]:
+           req=urllib.request.Request(url,method='POST',headers={'Origin':origin,'Content-Type':'application/json','User-Agent':'Numi-safe-audit'},data=json.dumps({'birth_date':'1986-09-09','year':2027,'timezone':'Europe/Samara'}).encode())
+           try:
+            with urllib.request.urlopen(req,timeout=18) as r:code=r.status;body=r.read(1000)
+           except urllib.error.HTTPError as e:code=e.code;body=e.read(1000)
+           try:d=json.loads(body);k=d.get('error') or ('OK' if d.get('ok') else 'RESPONSE')
+           except:k='NONJSON'
+           print('YEAR_VALID_SAMPLE',origin,'STATUS',code,'RESULT',k,flush=True)
+          
+          PY
