@@ -8,6 +8,22 @@ declare(strict_types=1);
  */
 const NUMI_ACCOUNT_COOKIE = '__Host-numi_session';
 const NUMI_ACCOUNT_ORIGIN = 'https://xn--c1adkkdfjbp1a4l.online';
+const NUMI_ACCOUNT_NEW_ORIGIN = 'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai';
+
+/** Only the two verified storefront domains may submit account requests. */
+function naAllowedOrigins(): array {
+    return [
+        NUMI_ACCOUNT_ORIGIN,
+        'https://www.xn--c1adkkdfjbp1a4l.online',
+        NUMI_ACCOUNT_NEW_ORIGIN,
+        'https://www.xn----8sbhhqijddjgdebdz2c2o.xn--p1ai',
+    ];
+}
+/** Email links must return to the domain on which signup/reset began. */
+function naPublicOrigin(): string {
+    $origin = strtolower((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
+    return in_array($origin, naAllowedOrigins(), true) ? $origin : NUMI_ACCOUNT_ORIGIN;
+}
 
 function naReply(int $status, array $body): never {
     http_response_code($status);
@@ -151,7 +167,7 @@ function naMail(string $email,string $title,string $message): bool {
 }
 function naSendVerify(PDO $db, string $id,string $email): bool {
     $token=naNewToken($db,$id,'verify_email',60*24);
-    $url=NUMI_ACCOUNT_ORIGIN.'/api/numi-account.php?verify='.rawurlencode($token);
+    $url=naPublicOrigin().'/api/numi-account.php?verify='.rawurlencode($token);
     $message="Подтвердите адрес для личного кабинета Нумерология онлайн:\n\n".$url.
         "\n\nСсылка действует 24 часа. Если вы не регистрировались, проигнорируйте письмо.";
     $sent=naMail($email,'Подтверждение почты - Нумерология онлайн',$message);
@@ -182,7 +198,7 @@ function naVerifyLink(PDO $db, string $raw): never {
 function naReadPost(): array {
     if (($_SERVER['REQUEST_METHOD']??'')!=='POST') naReply(405,['ok'=>false,'error'=>'METHOD_NOT_ALLOWED']);
     $origin=(string)($_SERVER['HTTP_ORIGIN']??'');
-    if (!in_array($origin,[NUMI_ACCOUNT_ORIGIN,'https://www.xn--c1adkkdfjbp1a4l.online'],true) && !defined('NUMI_ACCOUNT_LOCAL_TEST')) {
+    if (!in_array($origin, naAllowedOrigins(), true) && !defined('NUMI_ACCOUNT_LOCAL_TEST')) {
         naReply(403,['ok'=>false,'error'=>'ORIGIN_DENIED']);
     }
     if ((int)($_SERVER['CONTENT_LENGTH']??0)>8192) naReply(413,['ok'=>false,'error'=>'TOO_LARGE']);
@@ -293,7 +309,7 @@ function naResetRequest(PDO $db,array $body): never {
     $id=$stmt->fetchColumn();
     if ($id) {
         $raw=naNewToken($db,(string)$id,'reset_password',30);
-        $url=NUMI_ACCOUNT_ORIGIN.'/?reset_token='.rawurlencode($raw);
+        $url=naPublicOrigin().'/?reset_token='.rawurlencode($raw);
         $body="Восстановление доступа к Нумерологии онлайн:\n\n".$url.
             "\n\nСсылка действует 30 минут и используется один раз.\nЕсли вы не запрашивали восстановление, проигнорируйте письмо.";
         if (!naMail($email,'Восстановление пароля - Нумерология онлайн',$body)) {
