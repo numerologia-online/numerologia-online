@@ -28,6 +28,29 @@ jobs:
           }
           console.log('SOON_BADGE_SOURCE_CHECK_OK');
           JS
+          node - <<'JS'
+          (async()=>{
+            const {chromium}=require('playwright'),fs=require('fs'),cp=require('child_process');
+            const browser=await chromium.launch({headless:true,executablePath:cp.execFileSync('which',['google-chrome'],{encoding:'utf8'}).trim(),args:['--no-sandbox']});
+            const p=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,serviceWorkers:'block'});
+            await p.route('**/redflag-feature.js*',async route=>{
+              const resp=await route.fetch();
+              await route.fulfill({response:resp,body:fs.readFileSync('redflag-feature.js','utf8'),contentType:'text/javascript'});
+            });
+            await p.goto('https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?view=redflag',{waitUntil:'domcontentloaded',timeout:30000});
+            await p.waitForTimeout(1100);
+            for(let i=0;i<8;i++){
+              await p.locator('.redflag-category-toggle').nth(i).evaluate(el=>el.click());
+              await p.waitForTimeout(250);
+              const state=await p.locator('#redflag-categories > .redflag-category').nth(i).locator('.redflag-question-toggle').evaluateAll(bs=>bs.map(b=>({disabled:b.disabled,soon:b.textContent.includes('Скоро'),price:/\\d+\\s*₽/.test(b.textContent)})));
+              const valid=state.length>=10&&!state[0].disabled&&state.slice(1).every(x=>i>=2?x.disabled&&x.soon&&!x.price:!x.disabled&&!x.soon);
+              console.log('SOON_BADGE_BLOCK',i+1,state.length,valid);
+              if(!valid)throw Error('Question preview mismatch in block '+(i+1));
+            }
+            await browser.close();
+            console.log('SOON_BADGE_BROWSER_PASS');
+          })().catch(e=>{console.error('SOON_BADGE_BROWSER_FAIL',String(e));process.exit(1)});
+          JS
       - name: Open live mobile sections without saving, purchasing or authenticating
         run: |
           cat > /tmp/numi-deep-browser-audit.cjs <<'JS'
