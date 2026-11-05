@@ -1,52 +1,65 @@
-name: One-time sync eleven SHA-verified live files into GitHub
+name: Final read-only audit old redirect and live-to-GitHub public sync
 on:
   push:
     paths: ['.github/workflows/numi-one-time-domain-audit-20261105.yml']
 permissions:
-  contents: write
+  contents: read
 jobs:
-  sync:
+  verify:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-      - name: Copy only eleven verified existing publicly served files to GitHub
+      - name: Verify new domain and public files match byte for byte
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 - <<'PY'
-          import os,ssl,io,ftplib,hashlib,pathlib,subprocess
-          EXPECTED = {"app.js":"29f979167da6b5fe9d3116d97c4dd8e24432c7ba441b347ba3fa6197ee84bb91","child/index.html":"d0c0fefc44dd5f1ecd7f13006e0733d6f9408d1bad3bdb8c2aa186c1f4c20f0e","guide/index.html":"91b3ba622ffd1b5ce701062443caefa9875888a52976be155010b2a7368199a1","index.html":"fe174757f11c06c8df45819618a2810eeaa921fc18cde7dc18e033b0cea4ed24","moment/yes-no/index.html":"88219dce24f986261261172b8774eef92078f19d3e2dda705cb6609e834a55d6","moment/yes-no/yes-no.css":"8a1d8defd340dae8e51636333cf44395bac4f3a9bb2423e24a675a21720b2e3d","moment/yes-no/yes-no.js":"9912f7cdbcfbd5c16aa9716a61e1d91a4c79585c40e28acd7516b3f901e2d484","personal-day-feature.js":"f8abc49f9e7bd1ae1cd15a32b3b4ca62936e9bf902ad43e11b8f26c9d0263123","pro/index.html":"13699aaf2d36e8c175ea1d3f2f96852ee36ef37884892ebaacf4f1a4f6d43fa1","redflag-feature.js":"8ba6c4c0c5d0fef3bbcb2c35983bca6dea8b57a3f31a757f3013444b13cba44f","year/index.html":"123ce66aaa8b5dbb1d30311bb5c31f96151522624ff7c44d84c07af21765dd33"}
-          subprocess.run(['git','ls-remote','--exit-code','--heads','origin','backup/github-before-live-sync-20261105'],check=True,stdout=subprocess.DEVNULL)
-          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=22)
-          f.connect('server172.hosting.reg.ru',21)
-          f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
-          f.prot_p(); f.set_pasv(True)
-          root=f.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online'
-          changed=[]
+          import os,ftplib,ssl,io,pathlib,hashlib,urllib.request,urllib.error
+          FILES=["index.html","child/index.html","pro/index.html","year/index.html","guide/index.html","offer.html","privacy.html","refunds.html","terms.html","disclaimer.html","contacts.html","prices.html","analytics-settings.html","robots.txt","sitemap.xml","account-browser.js","app.js","redflag-feature.js"]
+          OLD='xn--c1adkkdfjbp1a4l.online'
+          NEW='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p()
+          root=ftp.pwd().rstrip('/')+'/www/'+OLD
+          n=0
           try:
-           f.cwd(root)
-           for name,digest in EXPECTED.items():
+           ftp.cwd(root)
+           for path in FILES:
             buf=io.BytesIO()
-            f.retrbinary('RETR '+root+'/'+name,buf.write)
-            raw=buf.getvalue()
-            if hashlib.sha256(raw).hexdigest()!=digest:raise RuntimeError('Live source changed, stop: '+name)
-            local=pathlib.Path(name)
-            if not local.is_file() or local.is_symlink():raise RuntimeError('Unexpected GitHub path '+name)
-            if name=='index.html' and b'<link rel="canonical" href="https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/">' not in raw:raise RuntimeError('New domain canonical absent')
-            if local.read_bytes()!=raw:
-             local.write_bytes(raw)
-             changed.append(name)
-             print('SYNCED_FROM_LIVE',name,flush=True)
+            ftp.retrbinary('RETR '+root+'/'+path,buf.write)
+            live=buf.getvalue()
+            local=pathlib.Path(path).read_bytes()
+            if hashlib.sha256(live).digest()!=hashlib.sha256(local).digest():
+             raise RuntimeError('Public GitHub and REG.RU mismatch: '+path)
+            content=live.decode('utf-8','replace')
+            if path.endswith('.html'):
+             canonical='<link rel="canonical" href="https://'+NEW+'/'
+             if canonical not in content:
+              raise RuntimeError('Primary domain canonical not new: '+path)
+            if path=='sitemap.xml' and ('https://'+OLD in content or 'https://'+NEW+'/' not in content):
+             raise RuntimeError('Sitemap has incorrect domain')
+            if path=='robots.txt' and ('https://'+NEW+'/sitemap.xml' not in content):
+             raise RuntimeError('Robots has incorrect sitemap')
+            print('MATCHED',path,flush=True)
+            n+=1
           finally:
-           try:f.quit()
-           except Exception:f.close()
-          if not changed:raise SystemExit('All 11 already match')
-          subprocess.run(['git','add','--',*changed],check=True)
-          subprocess.run(['git','-c','user.name=numi-site-safeguard','-c','user.email=actions@users.noreply.github.com','commit','-m','Sync 11 verified public files from live REG.RU'],check=True)
-          subprocess.run(['git','push','origin','HEAD:main'],check=True)
-          print('GITHUB_LIVE_SYNC_SUCCESS',len(changed),flush=True)
+           try:ftp.quit()
+           except Exception:ftp.close()
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+           def redirect_request(self,req,fp,code,msg,headers,newurl):return None
+          opener=urllib.request.build_opener(NoRedirect)
+          try:
+           opener.open('https://'+OLD+'/?final_domain_check=1',timeout=12)
+           raise RuntimeError('Legacy host did not redirect')
+          except urllib.error.HTTPError as exc:
+           if exc.code!=301 or exc.headers.get('Location')!='https://'+NEW+'/?final_domain_check=1':
+            raise RuntimeError('Legacy redirection failed')
+          with urllib.request.urlopen('https://'+NEW+'/?final_domain_check=1',timeout=12) as response:
+           if response.status!=200:raise RuntimeError('New host not 200')
+           print('NEW_DOMAIN_HTTP_200',flush=True)
+          print('FINAL_VERIFICATION_OK',n,'matched public assets; old host HTTP 301; new host HTTP 200',flush=True)
           PY
