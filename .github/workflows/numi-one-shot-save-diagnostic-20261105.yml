@@ -1,34 +1,73 @@
-name: Inspect exact origin whitelist for signed Telegram save
+name: Fix verified Telegram Red Flag signed-save origin whitelist on REG.RU
 on:
   push:
-    paths: ['.github/workflows/numi-one-shot-save-diagnostic-20261105.yml']
+    paths:
+      - .github/workflows/numi-one-shot-save-diagnostic-20261105.yml
 permissions:
   contents: read
 jobs:
-  inspect:
+  fix:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
     steps:
-      - name: Show only origin guard lines 49-57 no private configuration
+      - name: Patch only live save handler origin guard with verified backup
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 - <<'PY'
-          import os,ftplib,ssl,io,hashlib
+          import os,ssl,ftplib,io,hashlib,time,subprocess,tempfile,urllib.request,urllib.error,json
+          EXPECTED='2414a44f0a2971a65bf9ebc0e66cb2a408e7e19a658b3c1952f5b77461788fc2'
+          OLD="if($origin!==''&&!in_array($origin,['https://xn--c1adkkdfjbp1a4l.online','https://www.xn--c1adkkdfjbp1a4l.online'],true))answerSaveReply(['ok'=>false,'error'=>'ORIGIN_NOT_ALLOWED'],403);"
+          NEW="if($origin!==''&&!in_array($origin,['https://xn--c1adkkdfjbp1a4l.online','https://www.xn--c1adkkdfjbp1a4l.online','https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai','https://www.xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'],true))answerSaveReply(['ok'=>false,'error'=>'ORIGIN_NOT_ALLOWED'],403);"
+          host='xn--c1adkkdfjbp1a4l.online'
+          new='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
           ftp.prot_p()
           home=ftp.pwd().rstrip('/')
-          p=home+'/www/xn--c1adkkdfjbp1a4l.online/api/numi-save-answer.php'
-          buf=io.BytesIO();ftp.retrbinary('RETR '+p,buf.write)
-          src=buf.getvalue()
-          print('SHA',hashlib.sha256(src).hexdigest())
-          for j,line in enumerate(src.decode('utf-8','replace').splitlines(),1):
-            if 48<=j<=57:
-              if any(s in line.lower() for s in ['secret','token','password','credential','apikey']):
-                print('CODE',j,'[sensitive line withheld]')
-              else:print('CODE',j,line[:500])
-          ftp.quit()
+          target=home+'/www/'+host+'/api/numi-save-answer.php'
+          def read(p):
+           b=io.BytesIO();ftp.retrbinary('RETR '+p,b.write);return b.getvalue()
+          def write(p,v):
+           ftp.storbinary('STOR '+p,io.BytesIO(v))
+           if read(p)!=v:raise RuntimeError('Verified readback failed')
+          try:
+           original=read(target)
+           if hashlib.sha256(original).hexdigest()!=EXPECTED:raise RuntimeError('Live PHP modified by someone else; no changes')
+           if original.count(OLD.encode())!=1:raise RuntimeError('Expected origin guard did not match exactly once')
+           changed=original.replace(OLD.encode(),NEW.encode(),1)
+           if changed.count(b'ORIGIN_NOT_ALLOWED')!=original.count(b'ORIGIN_NOT_ALLOWED'):raise RuntimeError('Changed error branch unexpectedly')
+           with tempfile.NamedTemporaryFile(suffix='.php') as tmp:
+            tmp.write(changed);tmp.flush()
+            subprocess.run(['php','-l',tmp.name],check=True,stdout=subprocess.DEVNULL)
+           backup=home+'/site-safeguard-backups/'+time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-numi-save-answer-origin-before.php'
+           write(backup,original)
+           print('BACKUP_SAVED_VERIFIED',flush=True)
+           try:
+            write(target,changed)
+            print('PHP_PATCHED_VERIFIED',hashlib.sha256(changed).hexdigest(),flush=True)
+            for origin,allowed in [('https://'+new,True),('https://'+host,True),('https://evil.invalid',False)]:
+             req=urllib.request.Request('https://'+new+'/api/numi-save-answer.php',method='POST',data=b'{}',headers={'Origin':origin,'Content-Type':'application/json','User-Agent':'NUMI-INVALID-INPUT-REGRESSION-CHECK'})
+             try:
+              with urllib.request.urlopen(req,timeout=12) as r:
+               status=r.status;data=r.read(1000)
+             except urllib.error.HTTPError as e:
+              status=e.code;data=e.read(1000)
+             try:body=json.loads(data)
+             except:raise RuntimeError('Invalid JSON from save endpoint')
+             if body.get('error')=='ORIGIN_NOT_ALLOWED':
+              if allowed:raise RuntimeError('Approved origin rejected')
+             elif not allowed:raise RuntimeError('Cross-site origin guard weakened')
+             if body.get('ok') is True:raise RuntimeError('Invalid empty request was accepted')
+             print('ORIGIN_PROBE',origin.split('//',1)[1],status,body.get('error',''),flush=True)
+            print('REDFLAG_SIGNED_SAVE_ORIGIN_FIXED_VERIFIED',flush=True)
+           except Exception:
+            try:write(target,original);print('ROLLBACK_SUCCESS',flush=True)
+            except Exception:print('ROLLBACK_FAILED',flush=True)
+            raise
+          finally:
+           try:ftp.quit()
+           except:ftp.close()
           PY
