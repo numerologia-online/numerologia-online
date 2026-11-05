@@ -502,17 +502,23 @@ const createCategory = (category, index) => {
   toggle.setAttribute("aria-expanded", String(state.expanded));
   toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · 11 вопросов</small><strong>${category.title}</strong>${category.id === "intimacy" ? '<span class="redflag-age-label" aria-label="Для взрослых, 18 плюс">18+</span>' : ""}<small class="redflag-category-count">11 вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
   toggle.addEventListener("click", () => {
+    const headingTop = toggle.getBoundingClientRect().top;
     const opening = !state.expanded;
-    // Preserve the tapped heading while closing a previously opened category.
     if (opening) collapseOtherCategories(category.id);
     state.expanded = opening;
     if (!opening) state.activeQuestionId = null;
     toggle.blur();
     renderCategories({ type: "category", id: category.id });
-    if (opening) {
-      // Keep the user's current position; do not jump when questions open.
-      ensureQuestions(category);
+    // Closing a preceding category shortens the page. Keep this heading
+    // at the same visible position rather than leaving the user at its end.
+    const heading = categoriesRoot.children[index]?.querySelector(".redflag-category-toggle");
+    if (heading) {
+      const movement = heading.getBoundingClientRect().top - headingTop;
+      if (Math.abs(movement) > 1) {
+        window.scrollTo({ top: Math.max(0, window.scrollY + movement), behavior: "instant" });
+      }
     }
+    if (opening) ensureQuestions(category);
   });
   section.append(toggle);
 
