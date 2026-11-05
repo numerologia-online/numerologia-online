@@ -21,6 +21,7 @@ jobs:
           }
           failures=[]
           for label,origin in origins.items():
+            api=origin+"/api/numi-year-preview.php"
             for method in ("OPTIONS","POST"):
               body=json.dumps({"birth_date":"1986-09-09","year":2026,"timezone":"Europe/Samara"}).encode() if method=="POST" else None
               headers={"Origin":origin,"Cache-Control":"no-cache"}
