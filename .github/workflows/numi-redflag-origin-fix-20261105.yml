@@ -1,37 +1,78 @@
-name: Diagnose Red Flag ticket origin guard (one-time)
+name: Fix exact live Red Flag ticket origin on REG.RU, one-time
 on:
   push:
     paths: ['.github/workflows/numi-redflag-origin-fix-20261105.yml']
 permissions:
   contents: read
 jobs:
-  inspect:
+  fix:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 5
     steps:
-      - name: Read exact origin/host checks without changing server
+      - name: Back up one PHP file, patch only origin whitelist, verify and rollback on failure
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 - <<'PY'
-          import ftplib,ssl,os,io,hashlib,re
-          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=18)
-          f.connect('server172.hosting.reg.ru',21)
-          f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
-          root=f.pwd().rstrip('/')
-          b=io.BytesIO()
-          f.retrbinary('RETR '+root+'/www/xn--c1adkkdfjbp1a4l.online/api/redflag-save.php',b.write)
-          data=b.getvalue()
-          print('SOURCE_SHA256',hashlib.sha256(data).hexdigest(),'bytes',len(data))
-          lines=data.decode('utf8').splitlines()
-          for i,line in enumerate(lines,1):
-            if i<10 or i>73:continue
-            if re.search('origin|http_host|cors|worker|parse_url|in_array|allowed|request_method|post',line,re.I):
-              # Only expose non-secret routing logic; never read configuration or credentials.
-              if re.search('token|secret|password|api_key|credential|authorization',line,re.I):
-                print('RULE',i,'[secret-adjacent line withheld]')
-              else:
-                print('RULE',i,line[:450])
-          f.quit()
+          import os,ftplib,ssl,io,hashlib,time,urllib.request,urllib.error,json,subprocess,tempfile
+          DOMAIN="xn--c1adkkdfjbp1a4l.online"
+          NEW="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+          EXPECTED="6df25ec8a53d8f6bfc0dd3da657f889d25642491fb6302c3718365a393b0e812"
+          BEFORE="$fromWebsite = in_array($origin, [REDFLAG_ORIGIN, 'https://xn--c1adkkdfjbp1a4l.online', 'https://www.xn--c1adkkdfjbp1a4l.online'], true);"
+          AFTER="$fromWebsite = in_array($origin, [REDFLAG_ORIGIN, 'https://xn--c1adkkdfjbp1a4l.online', 'https://www.xn--c1adkkdfjbp1a4l.online', 'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai', 'https://www.xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'], true);"
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p()
+          home=ftp.pwd().rstrip('/')
+          p=home+'/www/'+DOMAIN+'/api/redflag-save.php'
+          def read(q):
+           b=io.BytesIO();ftp.retrbinary('RETR '+q,b.write);return b.getvalue()
+          def put(q,b):
+           ftp.storbinary('STOR '+q,io.BytesIO(b))
+           if read(q)!=b:raise RuntimeError('Readback differs '+q)
+          try:
+           before=read(p)
+           if hashlib.sha256(before).hexdigest()!=EXPECTED:raise RuntimeError('Live source changed, STOP.')
+           if before.count(BEFORE.encode())!=1:raise RuntimeError('Original allowlist does not match, STOP.')
+           after=before.replace(BEFORE.encode(),AFTER.encode(),1)
+           with tempfile.NamedTemporaryFile(suffix='.php') as tmp:
+            tmp.write(after);tmp.flush()
+            subprocess.run(['php','-l',tmp.name],check=True,stdout=subprocess.DEVNULL)
+           backup=home+'/site-safeguard-backups/'+time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-redflag-ticket-origin-guard-before.php'
+           put(backup,before)
+           print('BACKUP_VERIFIED',hashlib.sha256(before).hexdigest(),flush=True)
+           try:
+            put(p,after)
+            print('PATCHED_VERIFIED',hashlib.sha256(after).hexdigest(),flush=True)
+            for hostname,approved in [(NEW,True),(DOMAIN,True),('attacker.invalid',False)]:
+             o='https://'+hostname
+             req=urllib.request.Request('https://'+NEW+'/api/redflag-save.php',method='POST',headers={'Content-Type':'application/json','Origin':o,'User-Agent':'Numi-safe-invalid-ticket-probe'},data=b'{"action":"create","text":"short invalid answer"}')
+             try:
+              with urllib.request.urlopen(req,timeout=12) as resp:
+               status=resp.status;body=resp.read(500)
+             except urllib.error.HTTPError as e:
+              status=e.code;body=e.read(500)
+             parsed=json.loads(body)
+             if parsed.get('ok') is True:raise RuntimeError('Invalid small ticket was created unexpectedly')
+             err=parsed.get('error')
+             if approved and err=='ORIGIN_NOT_ALLOWED':raise RuntimeError('Approved origin still blocked '+hostname)
+             if not approved and (status!=403 or err!='ORIGIN_NOT_ALLOWED'):raise RuntimeError('Unapproved origin was not blocked')
+             print('CHECK_ORIGIN',hostname,'HTTP',status,'error',err,flush=True)
+            opt=urllib.request.Request('https://'+NEW+'/api/redflag-save.php',method='OPTIONS',headers={'Origin':'https://'+NEW,'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'Content-Type'})
+            try:
+             with urllib.request.urlopen(opt,timeout=12) as resp:
+              status=resp.status;cors=resp.headers.get('Access-Control-Allow-Origin','')
+            except urllib.error.HTTPError as e:
+             status=e.code;cors=e.headers.get('Access-Control-Allow-Origin','')
+            if status>=400 or cors!='https://'+NEW:raise RuntimeError('CORS preflight failed '+str(status))
+            print('CORS_VERIFIED',status,cors,flush=True)
+            print('REDFLAG_TICKET_ORIGIN_ALLOWLIST_FIX_SUCCESS',flush=True)
+           except Exception:
+            try:put(p,before);print('ROLLBACK_VERIFIED',flush=True)
+            except Exception:print('ROLLBACK_FAILED',flush=True)
+            raise
+          finally:
+           try:ftp.quit()
+           except:ftp.close()
           PY
