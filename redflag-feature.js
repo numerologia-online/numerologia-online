@@ -10,8 +10,6 @@ const error = document.querySelector("#redflag-error");
 const categoriesRoot = document.querySelector("#redflag-categories");
 const backButton = document.querySelector("#back-redflag-home");
 
-// One removable switch: only unfinished paid questions in these six blocks.
-const REDFLAG_SOON_BLOCKS = new Set(["flags", "infidelity", "intimacy", "family", "language", "verdict"]);
 const categoryStates = new Map(REDFLAG_CATEGORIES.map((category) => [category.id, {
   expanded: false,
   loading: false,
@@ -266,6 +264,8 @@ const showQuestionOffer = async (question) => {
     oncePrice: rates.regular, memberPrice: rates.subscription, clubMonthly: 490
   });
 };
+// Remove this single set when all six blocks are finished.
+const REDFLAG_SOON_BLOCKS = new Set(["flags", "infidelity", "intimacy", "family", "language", "verdict"]);
 const ensureAnswer = (question, state) => {
   if (question.isComingSoon) return; // No paid loading or purchase for drafts.
   const id = question.id;
@@ -330,15 +330,6 @@ priceStyles.textContent = `
   #redflag .redflag-subscription-price strong {
     color: inherit; font-size: 16px; font-weight: 900; line-height: 1;
   }
-  #redflag .redflag-question.is-coming-soon .redflag-question-toggle {
-    cursor: default; opacity: 1; color: #606070;
-  }
-  #redflag .redflag-coming-soon-badge {
-    align-self: flex-start; margin-top: -4px;
-    background: #f4eef1; border-color: #ddc8d1;
-    color: #896474; font-size: 11px; letter-spacing: .02em;
-    padding: 5px 9px;
-  }
   @media (max-width: 360px) {
     #redflag .redflag-price-pair { max-width: 88px; }
     #redflag .redflag-price-pair .redflag-subscription-price { padding: 6px 7px; }
@@ -354,7 +345,8 @@ const fillQuestionButton = (button, question, showExpand = false) => {
   button.append(label);
   if (question.isComingSoon) {
     const badge = document.createElement("span");
-    badge.className = "redflag-question-price redflag-coming-soon-badge";
+    badge.className = "redflag-question-price";
+    badge.style.alignSelf = "flex-start";
     badge.textContent = "Скоро";
     button.append(badge);
     return;
@@ -393,11 +385,10 @@ const fillQuestionButton = (button, question, showExpand = false) => {
 };
 
 const createQuestion = (question, state) => {
-  const opened = state.activeQuestionId === question.id;
+  const opened = !question.isComingSoon && state.activeQuestionId === question.id;
   const article = document.createElement("article");
   article.className = `redflag-question${opened ? " is-open" : ""}${activeProfile ? " is-calculated" : " is-preview"}`;
   article.dataset.questionId = question.id;
-  if (question.isComingSoon) article.classList.add("is-coming-soon");
 
   if (!activeProfile) {
     const preview = document.createElement("button");
@@ -648,7 +639,7 @@ form.addEventListener("submit", async (event) => {
     const linkedQuestion = linkedCategory
       ? firstState.questions?.find((question) => question.id === requestedQuestion[2])
       : null;
-    if (linkedQuestion && !linkedQuestion.isComingSoon) {
+    if (linkedQuestion) {
       firstState.activeQuestionId = linkedQuestion.id;
       ensureAnswer(linkedQuestion, firstState);
     }
@@ -683,7 +674,7 @@ export const openRedFlag = () => {
     renderCategories();
     void ensureQuestions(category).then(() => {
       const question = state.questions?.find((item) => item.id === requestedQuestion[2]);
-      if (!question || question.isComingSoon) return;
+      if (!question) return;
       state.activeQuestionId = question.id;
       renderCategories();
       const article = [...categoriesRoot.querySelectorAll("[data-question-id]")]
