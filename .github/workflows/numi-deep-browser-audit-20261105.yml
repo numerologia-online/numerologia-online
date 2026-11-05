@@ -1,0 +1,107 @@
+name: Read-only mobile browser audit of main sections and Telegram deep links
+on:
+  push:
+    paths: ['.github/workflows/numi-deep-browser-audit-20261105.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Temporary browser tooling (audit only)
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Open live mobile sections without saving, purchasing or authenticating
+        run: |
+          cat > /tmp/numi-deep-browser-audit.cjs <<'JS'
+          const {chromium}=require('playwright');
+          const ROOT='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/';
+          const cases=[
+           ['redflag','[data-open-redflag]','#redflag'],
+           ['compatibility','[data-open-compatibility]','#compatibility'],
+           ['wealth','[data-open-destiny-code]','#destiny-code'],
+           ['year','[data-open-year]','#year'],
+           ['matrix','[data-open-matrix]','#matrix'],
+           ['day','[data-open-personal-day]','#personal-day'],
+           ['account',"[data-account-open='profile']",'#account-dialog']
+          ];
+          const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+          async function inspect(name,route,button,target,opts={}){
+           const p=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'ru-RU',serviceWorkers:'block'});
+           const errors=[],failures=[],dialog=[];
+           p.on('pageerror',e=>errors.push(String(e.message||e).slice(0,150)));
+           p.on('response',r=>{if(r.status()>=400&&r.url().startsWith(ROOT.slice(0,-1)))failures.push([r.status(),new URL(r.url()).pathname]);});
+           p.on('dialog',async d=>{dialog.push(d.message().slice(0,120));await d.dismiss()});
+           const start=Date.now(),result={name};
+           try{
+            const res=await p.goto(ROOT+route,{waitUntil:'domcontentloaded',timeout:30000});
+            result.http=res?.status();
+            await p.waitForTimeout(1050);
+            if(button){
+             result.buttonCount=await p.locator(button).count();
+             if(result.buttonCount){
+              await p.locator(button).first().evaluate(el=>el.click());
+              await p.waitForTimeout(1400);
+             }
+            }else{await p.waitForTimeout(900)}
+            if(target){
+             result.targetCount=await p.locator(target).count();
+             result.visible=await p.evaluate(sel=>{
+              const e=document.querySelector(sel);if(!e)return false;
+              const cs=getComputedStyle(e);
+              return !e.hidden&&cs.display!=='none'&&cs.visibility!=='hidden'&&(e.tagName!=='DIALOG'||e.open);
+             },target)
+            }
+            result.viewport=await p.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth,bodyWidth:document.body.scrollWidth}));
+            result.horizontalOverflow=result.viewport.scrollWidth>result.viewport.clientWidth+3;
+            if(name==='account'){
+             result.botSignIn=await p.locator('#numi-bot-signin').count();
+             result.botSignInLink=await p.locator('#numi-bot-signin').getAttribute('href').catch(()=>null);
+             result.loginEmail=await p.locator('input[name="email"]').count();
+             result.exitButton=await p.locator('#account-logout-overview').count();
+             result.deleteBirthButton=await p.locator('#account-birth-delete').count();
+            }
+            if(name==='redflag'){
+             const toggles=p.locator('.redflag-category-toggle');
+             result.categoryCount=await toggles.count();
+             if(result.categoryCount>0){
+              await toggles.first().evaluate(el=>el.click());
+              await p.waitForTimeout(800);
+              result.firstExpanded=await toggles.first().getAttribute('aria-expanded');
+              result.firstQuestions=await p.locator('[data-question-id]').count();
+              result.afterAccordion=await p.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth}));
+             }
+            }
+           }catch(e){result.fatal=String(e.message||e).slice(0,280)}
+           result.durationMs=Date.now()-start;result.jsErrors=[...new Set(errors)].slice(0,7);result.badRequests=[...new Set(failures.map(JSON.stringify))].slice(0,8).map(JSON.parse);result.dialogs=dialog;
+           console.log('BROWSER_CASE',JSON.stringify(result));
+           await p.close();
+          }
+          try{
+           for(const [name,button,target] of cases)await inspect(name,'?audit='+name,button,target);
+           for(const [name,route,target] of [
+            ['deep-redflag','?view=redflag','#redflag'],
+            ['deep-year','?view=year','#year'],
+            ['deep-day','?view=day','#personal-day'],
+            ['deep-money','?view=wealth','#destiny-code'],
+            ['deep-child','?view=children',null],
+            ['deep-school','?view=school',null],
+            ['moment','moment/',null],
+            ['yesno','moment/yes-no/',null],
+            ['child','child/',null],
+            ['schools','pro/schools/',null],
+            ['professional','pro/',null],
+            ['insights','insights/',null],
+            ['guide','guide/',null]
+           ])await inspect(name,route,null,target)
+          }finally{await browser.close()}
+          console.log('BROWSER_AUDIT_FINISHED');
+          JS
+          cp /tmp/numi-deep-browser-audit.cjs ./numi-deep-browser-audit.cjs
+          node numi-deep-browser-audit.cjs
