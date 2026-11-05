@@ -455,8 +455,14 @@ const createQuestion = (question, state) => {
     button.disabled = true;
     window.setTimeout(() => {
       state.activeQuestionId = opened ? null : question.id;
+      button.blur();
       renderCategories({ type: "question", id: question.id });
-      if (!opened) ensureAnswer(question, state);
+      if (!opened) {
+        // Do not jump to later questions: place the chosen one at the top.
+        findScrollAnchor({ type: "question", id: question.id })
+          ?.scrollIntoView({ behavior: "instant", block: "start" });
+        ensureAnswer(question, state);
+      }
     }, 145);
   });
 
@@ -503,8 +509,14 @@ const createCategory = (category, index) => {
     if (opening) collapseOtherCategories(category.id);
     state.expanded = opening;
     if (!opening) state.activeQuestionId = null;
+    toggle.blur();
     renderCategories({ type: "category", id: category.id });
-    if (opening) ensureQuestions(category);
+    if (opening) {
+      // Keep the opened questions immediately below their heading on mobile.
+      const heading = findScrollAnchor({ type: "category", id: category.id });
+      heading?.scrollIntoView({ behavior: "instant", block: "start" });
+      ensureQuestions(category);
+    }
   });
   section.append(toggle);
 
