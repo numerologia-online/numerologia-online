@@ -1,16 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "child/index.html",
-    "pro/index.html",
-    "year/index.html",
-    "guide/index.html"
-  ],
-  "expected_sha256": {
-    "child/index.html": "d0c0fefc44dd5f1ecd7f13006e0733d6f9408d1bad3bdb8c2aa186c1f4c20f0e",
-    "pro/index.html": "13699aaf2d36e8c175ea1d3f2f96852ee36ef37884892ebaacf4f1a4f6d43fa1",
-    "year/index.html": "123ce66aaa8b5dbb1d30311bb5c31f96151522624ff7c44d84c07af21765dd33",
-    "guide/index.html": "91b3ba622ffd1b5ce701062443caefa9875888a52976be155010b2a7368199a1"
-  },
-  "note": "Owner-approved after verified live-to-GitHub sync: publish ONLY canonical/structured-data host changes on 4 live landing pages. Exact file hash guard; private backup first; no business logic changes."
+  "mode": "check",
+  "files": [],
+  "note": "Idle, read-only connection check. Migration verified 2026-11-05: new domain HTTP 200; legacy HTTP 301; GitHub/live public files aligned. Any future publish requires a newly reviewed manifest."
 }
