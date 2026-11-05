@@ -1,0 +1,34 @@
+name: Read-only check standard Telegram start flow and webhook health
+on:
+  push:
+    paths: ['.github/workflows/numi-start-readonly-audit-20261105.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Inspect relevant REG.RU start routing; no messages or server changes
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,ftplib,ssl,io,re,urllib.request,json
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=18)
+          f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
+          base=f.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
+          for p in ['api/telegram-reg-stage-15-10-2026.php']:
+           buf=io.BytesIO();f.retrbinary('RETR '+base+p,buf.write)
+           lines=buf.getvalue().decode('utf8','replace').splitlines()
+           for n,line in enumerate(lines,1):
+            if 180<=n<=218 or 83<=n<=104 or 122<=n<=145:
+             if re.search('token|secret|password|private|db_|pdo|mysqli|key|credential',line,re.I):print('LINE',n,'[secret-adjacent withheld]')
+             else:print('LINE',n,line[:360],flush=True)
+          f.quit()
+          with urllib.request.urlopen('https://numerologia-online-bot.tankraft431.workers.dev/health',timeout=12) as response:d=json.load(response)
+          s=d.get('telegram_inbound_webhook') or {}
+          print('WEBHOOK',json.dumps({k:s.get(k) for k in ['state','target','pending_updates','last_error_http','allowed_message_updates','error_reported']}))
+          print('BACKEND',d.get('reg_ru'),'TOKEN_MATCH',d.get('day_save_bot_identity_matches'))
+          PY
