@@ -3,16 +3,14 @@
   "files": [
     "day.html",
     "moment/index.html",
-    "pro/index.html",
     "year/index.html",
     "guide/index.html"
   ],
   "expected_sha256": {
     "day.html": "d7f40774bc3e1e7f30c78df86caa17bdfcd33bd0c50937bc4d0486dc79a0603b",
     "moment/index.html": "f3d4f06417e336810bfe4526ef4178e2a07e8cf53b46d51c82fef313563b39b4",
-    "pro/index.html": "0c246aae271c80e5541b3d4bea12e935ac4b90b5f12f25d515682e4c6fdb61f4",
     "year/index.html": "bde18f7f8a4418a5f1ff56f87f8b4d047618e77e3f0c7e84982a0b16c5273297",
     "guide/index.html": "5868ae7b272c0b64e4ede62ad089d97cda97baedb66618a179f66275a66b0403"
   },
-  "note": "New primary domain for 5 indexable section entry pages, verify all live baselines and back up; stop without any upload on mismatch."
+  "note": "Publish reviewed SEO domain-only changes in four public entry pages; pro/index.html excluded due live drift. Strict no-write-on-mismatch, backups."
 }
