@@ -1,12 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "account-browser.js",
-    "index.html"
-  ],
-  "expected_sha256": {
-    "account-browser.js": "542e22b8b86820dca13b79ea7c806642f5e09f04ebd5e5793ce457a6bbbea730",
-    "index.html": "de6f6fdc98f309dbf1989b31622a7ffadba487baf68c6c04d9b124f18f079092"
-  },
-  "note": "Add a public-browser personal-cabinet button 'Войти через наш бот' to open existing @Numerologiaonline_bot mini-app with existing signed Telegram auth, alongside unchanged email/password. No backend, payments, or Telegram worker changes. Two-file hash-guarded backup and verified readback."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-05: Own-bot sign-in button for personal cabinet safely published on REG.RU, both files backed up and verified. No automatic publication."
 }
