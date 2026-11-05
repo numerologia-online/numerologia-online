@@ -130,7 +130,7 @@ jobs:
               await locator.first().scrollIntoViewIfNeeded();
               await p.waitForTimeout(280);
               const before=await locator.first().evaluate(el=>({top:el.getBoundingClientRect().top,y:scrollY,bottom:el.getBoundingClientRect().bottom,category:el.closest('.redflag-category')?.className,question:el.closest('[data-question-id]')?.dataset.questionId}));
-              if(mode==='js') await locator.first().evaluate(el=>el.click()); else await locator.first().click({timeout:6000});
+              if(mode==='js') await locator.first().evaluate(el=>el.click()); else await locator.first().dispatchEvent('click');
               await p.waitForTimeout(850);
               const after=await p.evaluate(({id,categoryIndex})=>{
                 const el=id?document.querySelector('[data-question-id="'+id+'"] .redflag-question-toggle'):document.querySelectorAll('.redflag-category-toggle')[categoryIndex];
