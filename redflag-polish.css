@@ -454,3 +454,33 @@
   background: #bda7b4;
   opacity: .5;
 }
+
+/* REDFLAG_MOBILE_VIEWPORT_FIX_20261105: keep every accordion and save panel inside phone width. */
+#redflag, #redflag .redflag-paper, #redflag .redflag-categories,
+#redflag .redflag-category, #redflag .redflag-category-content,
+#redflag .redflag-questions, #redflag .redflag-question,
+#redflag .redflag-answer, #redflag .redflag-share {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+#redflag .redflag-paper { width: 100%; }
+#redflag .redflag-category-toggle > span,
+#redflag .redflag-question-label,
+#redflag .redflag-answer .redflag-share > *,
+#redflag .redflag-answer .redflag-save-feedback,
+#redflag .redflag-answer .redflag-save-feedback > * {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+#redflag .redflag-answer .redflag-share {
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+}
+#redflag .redflag-answer .redflag-share button {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

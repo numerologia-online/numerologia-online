@@ -293,9 +293,8 @@ const ensureAnswer = (question, state) => {
   }).finally(() => {
     if (state.answerRequests.get(id) === request) state.answerRequests.delete(id);
     if (profile === activeProfile && state.expanded && state.activeQuestionId === id) {
-      renderCategories();
-      const target = [...categoriesRoot.querySelectorAll("[data-question-id]")].find((item) => item.dataset.questionId === id);
-      if (target) window.requestAnimationFrame(() => target.scrollIntoView({ behavior: "smooth", block: "start" }));
+      // Repaint the answer without jumping to the start of the question.
+      renderCategories({ type: "question", id });
     }
   });
 };
@@ -396,7 +395,7 @@ const createQuestion = (question, state) => {
       formattedDate = birthDateInput.value;
       state.activeQuestionId = question.id;
       clearError();
-      renderCategories();
+      renderCategories({ type: "question", id: question.id });
       ensureAnswer(question, state);
     });
     article.append(preview);
@@ -456,7 +455,7 @@ const createQuestion = (question, state) => {
     button.disabled = true;
     window.setTimeout(() => {
       state.activeQuestionId = opened ? null : question.id;
-      renderCategories();
+      renderCategories({ type: "question", id: question.id });
       if (!opened) ensureAnswer(question, state);
     }, 145);
   });
@@ -470,7 +469,7 @@ const ensureQuestions = async (category) => {
   if (state.questions || state.loading) return;
 
   state.loading = true;
-  renderCategories();
+  renderCategories({ type: "category", id: category.id });
   try {
     const content = await category.load();
     state.questions = [
@@ -484,7 +483,7 @@ const ensureQuestions = async (category) => {
     ];
   } finally {
     state.loading = false;
-    renderCategories();
+    renderCategories({ type: "category", id: category.id });
   }
 };
 
@@ -500,21 +499,12 @@ const createCategory = (category, index) => {
   toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · 11 вопросов</small><strong>${category.title}</strong>${category.id === "intimacy" ? '<span class="redflag-age-label" aria-label="Для взрослых, 18 плюс">18+</span>' : ""}<small class="redflag-category-count">11 вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
   toggle.addEventListener("click", () => {
     const opening = !state.expanded;
-    const topBefore = toggle.getBoundingClientRect().top;
-    // A new category replaces the previous one, including its expanded answer.
-    if (opening) {
-      collapseOtherCategories(category.id);
-    }
+    // Preserve the tapped heading while closing a previously opened category.
+    if (opening) collapseOtherCategories(category.id);
     state.expanded = opening;
     if (!opening) state.activeQuestionId = null;
-    renderCategories();
+    renderCategories({ type: "category", id: category.id });
     if (opening) ensureQuestions(category);
-    // Preserve the category heading's screen position when expanding/collapsing.
-    const current = categoriesRoot.querySelectorAll(".redflag-category-toggle")[index];
-    if (current) {
-      const shift = current.getBoundingClientRect().top - topBefore;
-      if (Math.abs(shift) > 1) window.scrollBy({ top: shift, behavior: "instant" });
-    }
   });
   section.append(toggle);
 
@@ -549,8 +539,27 @@ const createCategory = (category, index) => {
   return section;
 };
 
-const renderCategories = () => {
+// Preserve the on-screen position of the specific category/question being tapped.
+const findScrollAnchor = (anchor) => {
+  if (!anchor) return null;
+  if (anchor.type === "category") {
+    const index = REDFLAG_CATEGORIES.findIndex((item) => item.id === anchor.id);
+    return index < 0 ? null : categoriesRoot.querySelectorAll(".redflag-category-toggle")[index];
+  }
+  if (anchor.type === "question") {
+    return [...categoriesRoot.querySelectorAll("[data-question-id]")]
+      .find((item) => item.dataset.questionId === anchor.id) || null;
+  }
+  return null;
+};
+const renderCategories = (anchor = null) => {
+  const previousTop = findScrollAnchor(anchor)?.getBoundingClientRect().top;
   categoriesRoot.replaceChildren(...REDFLAG_CATEGORIES.map(createCategory));
+  if (previousTop === undefined) return;
+  const current = findScrollAnchor(anchor);
+  if (!current) return;
+  const delta = current.getBoundingClientRect().top - previousTop;
+  if (Math.abs(delta) > 1) window.scrollBy({ top: delta, behavior: "instant" });
 };
 
 birthDateInput.addEventListener("input", () => {
