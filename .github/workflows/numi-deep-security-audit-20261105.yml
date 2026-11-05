@@ -87,5 +87,10 @@ jobs:
           print('SCHOOL_PRIVATE_API_GUEST',st,b[:150].decode('utf8','replace'),flush=True)
           st,h,b=request(NEW,'/analytics/')
           print('ANALYTICS_LEGACY_REDIRECT_PAGE',st,b.decode('utf8','replace')[:400].replace('\n',' '),flush=True)
+          for origin in ['https://'+NEW,'https://'+OLD]:
+           st,h,b=request(NEW,'/api/numi-school.php','POST',origin,b'{"action":"no-such-action"}')
+           try:code=json.loads(b).get('error')
+           except:code='NONJSON'
+           print('SCHOOL_POST_NEW_HOST_WITH_ORIGIN',origin,'STATUS',st,'CODE',code,flush=True)
           print('DEEP_SECURITY_AUDIT_FINISHED',flush=True)
           PY
