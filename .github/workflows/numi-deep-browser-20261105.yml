@@ -1,0 +1,93 @@
+name: One-time read-only mobile browser audit across live sections
+on:
+  push:
+    paths: ['.github/workflows/numi-deep-browser-20261105.yml']
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install temporary browser engines
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium webkit
+      - name: Read-only test of page loads and visible section navigation
+        run: |
+          node <<'JS'
+          const { chromium, webkit } = require('playwright');
+          const root='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai';
+          const cases=[
+           ['main','/'],['year','/year/'],['pro','/pro/'],['child','/child/'],
+           ['moment','/moment/'],['yesno','/moment/yes-no/'],['guide','/guide/'],
+           ['school','/pro/schools/'],['account','/']
+          ];
+          const sectionButtons=[
+           ['redflag','[data-open-redflag]','#redflag'],
+           ['compatibility','[data-open-compatibility]','#compatibility'],
+           ['money','[data-open-destiny-code]','#destiny-code'],
+           ['year','[data-open-year]','#year'],
+           ['matrix','[data-open-matrix]','#matrix'],
+           ['day','[data-open-personal-day]','#personal-day']
+          ];
+          async function run(browserName,browser){
+           for(const [label,path] of cases){
+            const context=await browser.newContext({viewport:{width:390,height:844},locale:'ru-RU',isMobile:browserName==='webkit',hasTouch:browserName==='webkit'});
+            const page=await context.newPage();
+            const errors=[],failed=[];
+            page.on('pageerror',e=>errors.push(('JS:'+e.message).slice(0,210)));
+            page.on('response',r=>{if(r.status()>=400){const u=new URL(r.url());if(u.hostname.endsWith('xn--p1ai'))failed.push([r.status(),u.pathname])}});
+            page.on('requestfailed',r=>{const u=new URL(r.url());if(u.hostname.endsWith('xn--p1ai'))failed.push(['network',u.pathname])});
+            page.on('dialog',async d=>d.dismiss());
+            try {
+             const response=await page.goto(root+path,{waitUntil:'domcontentloaded',timeout:27000});
+             await page.waitForTimeout(850);
+             const nav=await page.evaluate(()=>({title:document.title,width:document.documentElement.scrollWidth,screen:innerWidth,body:document.body.scrollWidth}));
+             let account='';
+             if(label==='account'){
+              const btn=page.locator('[data-account-open="profile"]').first();
+              if(await btn.count()) {
+               await btn.click({timeout:3500});
+               await page.waitForTimeout(250);
+               account=JSON.stringify(await page.evaluate(()=>({
+                 dialogOpen:document.querySelector('#account-dialog')?.open,
+                 botLink:document.querySelector('#numi-bot-signin')?.getAttribute('href') || '',
+                 loginVisible:!!document.querySelector('#numi-email-form'),
+                 logoutVisible:document.querySelector('#account-logout-overview')?.hidden===false,
+                 deleteLabel:document.querySelector('#account-birth-delete')?.textContent?.trim()
+               })));
+              }
+             }
+             console.log('PAGE',browserName,label,'HTTP',response.status(),'TITLE',nav.title.slice(0,70),'WIDTH',nav.width,'VIEW',nav.screen,'FAILED',JSON.stringify([...new Map(failed.map(x=>[JSON.stringify(x),x])).values()].slice(0,15)),'ERRORS',JSON.stringify(errors.slice(0,4)),'CABINET',account,flush=true);
+            }catch(e){console.log('PAGE_ERROR',browserName,label,String(e.message).slice(0,200))}
+            await context.close();
+           }
+           const context=await browser.newContext({viewport:{width:390,height:844},locale:'ru-RU',isMobile:browserName==='webkit',hasTouch:browserName==='webkit'});
+           const page=await context.newPage();
+           await page.goto(root+'/',{waitUntil:'domcontentloaded',timeout:25000});
+           for(const [label,button,target] of sectionButtons){
+            try{
+             await page.goto(root+'/',{waitUntil:'domcontentloaded',timeout:25000});
+             const b=page.locator(button).first();
+             if(!await b.count()){console.log('SECTION',browserName,label,'NO_BUTTON');continue}
+             await b.evaluate(el=>el.click());
+             await page.waitForTimeout(800);
+             const state=await page.evaluate(sel=>{const el=document.querySelector(sel);return {found:!!el,visible:!!el&&!el.hidden&&getComputedStyle(el).display!=='none',width:document.documentElement.scrollWidth,screen:innerWidth}},target);
+             console.log('SECTION',browserName,label,JSON.stringify(state));
+            }catch(e){console.log('SECTION_ERROR',browserName,label,String(e.message).slice(0,150))}
+           }
+           await context.close();
+          }
+          (async()=>{
+           for(const [name,api] of [['chromium',chromium],['webkit',webkit]]){
+            const browser=await api.launch({headless:true});
+            try{await run(name,browser)}finally{await browser.close()}
+           }
+           console.log('BROWSER_AUDIT_DONE');
+          })().catch(e=>{console.error('BROWSER_AUDIT_FATAL',String(e));process.exit(1)});
+          JS
