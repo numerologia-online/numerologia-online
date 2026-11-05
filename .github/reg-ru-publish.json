@@ -1,31 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "redflag-feature.js",
-    "app.js",
-    "index.html"
-  ],
-  "expected_sha256": {
-    "redflag-feature.js": "d98eef1ab7f44b266f6e4396ae9d67a7ac8c60f30a006384f1a7740f8251b8e5",
-    "app.js": "95f6d1626281f32068d6e9cebfb9726d81a788ad5ebad6fa112a1ec5c525b1d2",
-    "index.html": "4ad6779d6d83dee95f0203910d16e0ac64230605f952c32c9b478e553b36fe82"
-  },
-  "patches": {
-    "redflag-feature.js": {
-      "before": "  toggle.addEventListener(\"click\", () => {\n    const opening = !state.expanded;\n    // Preserve the tapped heading while closing a previously opened category.\n    if (opening) collapseOtherCategories(category.id);\n    state.expanded = opening;\n    if (!opening) state.activeQuestionId = null;\n    toggle.blur();\n    renderCategories({ type: \"category\", id: category.id });\n    if (opening) {\n      // Keep the user's current position; do not jump when questions open.\n      ensureQuestions(category);\n    }\n  });\n  section.append(toggle);",
-      "after": "  toggle.addEventListener(\"click\", () => {\n    const headingTop = toggle.getBoundingClientRect().top;\n    const opening = !state.expanded;\n    if (opening) collapseOtherCategories(category.id);\n    state.expanded = opening;\n    if (!opening) state.activeQuestionId = null;\n    toggle.blur();\n    renderCategories({ type: \"category\", id: category.id });\n    // Closing a preceding category shortens the page. Keep this heading\n    // at the same visible position rather than leaving the user at its end.\n    const heading = categoriesRoot.children[index]?.querySelector(\".redflag-category-toggle\");\n    if (heading) {\n      const movement = heading.getBoundingClientRect().top - headingTop;\n      if (Math.abs(movement) > 1) {\n        window.scrollTo({ top: Math.max(0, window.scrollY + movement), behavior: \"instant\" });\n      }\n    }\n    if (opening) ensureQuestions(category);\n  });\n  section.append(toggle);",
-      "expected_sha256": "d98eef1ab7f44b266f6e4396ae9d67a7ac8c60f30a006384f1a7740f8251b8e5"
-    },
-    "app.js": {
-      "before": "redflag-feature.js?v=20261105reconcile1",
-      "after": "redflag-feature.js?v=20261105anchor2",
-      "expected_sha256": "95f6d1626281f32068d6e9cebfb9726d81a788ad5ebad6fa112a1ec5c525b1d2"
-    },
-    "index.html": {
-      "before": "app.js?v=20261105reconcile1",
-      "after": "app.js?v=20261105anchor2",
-      "expected_sha256": "4ad6779d6d83dee95f0203910d16e0ac64230605f952c32c9b478e553b36fe82"
-    }
-  },
-  "note": "Fix Red Flag category jump measured in mobile Chromium: preserve tapped heading when previous block collapses. Tested browser-only via JS route substitution. Only guarded exact allowlisted edit and version bumps; backup each original."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-05: Red Flag accordion tap-position fix passed browser-only regression, published to REG.RU. Three files checksum-verified and backed up. No future auto-publish."
 }
