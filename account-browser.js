@@ -278,12 +278,15 @@
   const guest = document.getElementById("numi-account-guest");
   const signed = document.getElementById("numi-account-signed");
   const logoutButton=document.getElementById("numi-account-logout");
+  const logoutOverview=document.getElementById("account-logout-overview");
+  const logoutControls=[logoutButton,logoutOverview].filter(Boolean);
   const accountSettings=document.querySelector('#account-dialog [data-account-content="settings"]');
   if(accountSettings && logoutButton){
     const logoutRow=document.createElement("div");
     logoutRow.className="account-actions";
     logoutRow.style.marginTop="16px";
     logoutButton.textContent="Выйти из аккаунта";
+    logoutButton.className="numi-cabinet-logout";
     logoutRow.append(logoutButton);
     accountSettings.append(logoutRow);
   }
@@ -359,7 +362,7 @@
     // Once the user is signed in by email, the identity card above is enough.
     // Do not repeat the email/Telegram onboarding box on every visit.
     root.style.display=(!tg && !!current)?"none":"";
-    if(logoutButton) logoutButton.hidden=tg||!current;
+    for(const exit of logoutControls) exit.hidden=!(tg||current);
     tgBox.hidden=!tg||!current;
     if (!tg) {
       if (current) {
@@ -431,10 +434,36 @@
     const email=String(new FormData(emailForm).get("email")||"");
     await perform("resend",{email},"Если адрес зарегистрирован, мы отправили письмо повторно.");
   });
-  document.getElementById("numi-account-logout").addEventListener("click",async ()=>{
-    try {await request("logout");current=null;render();choose("login");}
-    catch(err){alertMessage(err.message);}
-  });
+  // Real email logout revokes the server session. In Telegram it also closes
+  // the signed Mini App; the next launch can authenticate afresh with initData.
+  let signingOut=false;
+  const logoutAccount=async ()=>{
+    if(signingOut||busy) return;
+    signingOut=true;
+    for(const control of logoutControls) control.disabled=true;
+    try {
+      await request("logout");
+      current=null;
+      emailForm.reset();
+      choose("login");
+      render();
+      window.dispatchEvent(new Event("numi:account-logged-out"));
+      if(isTelegram() && typeof window.Telegram?.WebApp?.close==="function") {
+        window.Telegram.WebApp.close();
+      } else if(!isTelegram() && dialog.open) {
+        dialog.close();
+      }
+    } catch(err) {
+      if(isTelegram()) {
+        const notice=document.getElementById("account-status");
+        if(notice){notice.textContent="Не удалось выйти из аккаунта. Попробуйте ещё раз.";notice.hidden=false;}
+      } else alertMessage(err.message);
+    } finally {
+      signingOut=false;
+      for(const control of logoutControls) control.disabled=false;
+    }
+  };
+  for(const control of logoutControls) control.addEventListener("click",logoutAccount);
 
   document.getElementById("numi-set-email-open").addEventListener("click",()=>{
     mergeForm.hidden=true;
@@ -502,14 +531,27 @@
       if(birthNote)birthNote.textContent="✓ Дата сохранена в аккаунте. Она будет доступна с другого устройства.";
     }catch(err){if(birthNote)birthNote.textContent=err.message;}
   });
-  document.getElementById("account-birth-delete")?.addEventListener("click",async ()=>{
+  // Capture first: the legacy browser-only date handler must not report success
+  // before this authenticated email account has actually deleted it on REG.RU.
+  document.getElementById("account-birth-delete")?.addEventListener("click",async event=>{
     if(isTelegram()||!current)return;
+    event.stopImmediatePropagation();
+    if(busy)return;
+    const control=event.currentTarget;
+    control.disabled=true;
     try {
       const result=await request("birth",{birth_date:null});
       current=result.account;
-      if(birthNote)birthNote.textContent="Дата удалена из аккаунта.";
-    }catch(err){if(birthNote)birthNote.textContent=err.message;}
-  });
+      if(birthInput)birthInput.value="";
+      birthInput?.removeAttribute("aria-invalid");
+      try{localStorage.removeItem("num-online-birth-v1:browser");}catch(_){}
+      if(birthNote)birthNote.textContent="✓ Дата рождения удалена из личного кабинета.";
+    }catch(err){
+      if(birthNote)birthNote.textContent="Дата не удалена: "+err.message;
+    }finally{
+      control.disabled=false;
+    }
+  },true);
 
   ownerButton.addEventListener("click",()=>{
     if(isTelegram())return;

@@ -33,6 +33,7 @@
   let loading = false;
   let mini = false;
   let profileBusy = false;
+  let signedOutForThisLaunch = false;
   let birthRevision = 0;
   let birthNoteText = "Дата пока хранится только на этом устройстве.";
 
@@ -272,7 +273,7 @@
   }
 
   async function identify() {
-    if (loading) return;
+    if (loading || signedOutForThisLaunch) return;
     loading = true;
     setAccountButton("Подключаем...");
     accountButton.disabled = true;
@@ -326,6 +327,18 @@
   });
   document.querySelector("#account-close").addEventListener("click", () => dialog.close());
   dialog.addEventListener("close", () => showAccountPanel(null));
+  window.addEventListener("numi:account-logged-out", () => {
+    signedOutForThisLaunch = true;
+    user = null;
+    loginView.hidden = false;
+    profileView.hidden = true;
+    status.textContent = "Вы вышли из кабинета. Чтобы войти снова через Telegram, откройте мини-приложение заново.";
+    status.hidden = false;
+    retry.hidden = true;
+    setAccountButton("Личный кабинет", false);
+    accountButton.disabled = false;
+    if (verifiedIcon) verifiedIcon.hidden = true;
+  });
   // The dimmed area belongs to the dialog: taps and scrolling must never close the cabinet.
   // Only the explicit close button can close it. (Telegram/iOS bottom touch safety.)
   retry.addEventListener("click", () => {
