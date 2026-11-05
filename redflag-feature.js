@@ -53,10 +53,10 @@ const parseRedFlagDate = (value) => {
 
 // Share the exact currently calculated answer, not a second calculation.
 // The server route reuses the verified sender used by "Личный расчёт дня".
-const REDFLAG_SITE_URL = "https://xn--c1adkkdfjbp1a4l.online/?view=redflag";
+const REDFLAG_SITE_URL = "https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?view=redflag";
 const REDFLAG_BOT_URL = "https://t.me/Numerologiaonline_bot";
 const REDFLAG_SAVE_URL = "/api/numi-save-answer.php";
-const REDFLAG_TICKET_URL = "https://xn--c1adkkdfjbp1a4l.online/api/redflag-save.php";
+const REDFLAG_TICKET_URL = "/api/redflag-save.php";
 const formatRedFlagMessage = (question, response, dateOfBirth) => {
   const paragraphs = response.paragraphs ?? [response.answer];
   const parts = [
@@ -74,6 +74,15 @@ const formatRedFlagMessage = (question, response, dateOfBirth) => {
   if (response.observation) parts.push("", "На что смотреть: " + response.observation);
   parts.push("", "✨ Нумерология Онлайн", "🌐 Сайт: " + REDFLAG_SITE_URL, "🤖 Бот: " + REDFLAG_BOT_URL);
   return parts.join("\n");
+};
+
+// Open verified Telegram ticket via Telegram API when available, else a normal link.
+const openRedFlagTicket = (url) => {
+  if (typeof window.Telegram?.WebApp?.openTelegramLink === "function") {
+    window.Telegram.WebApp.openTelegramLink(url);
+  } else {
+    window.location.assign(url);
+  }
 };
 
 const addRedFlagShare = (answer, report) => {
@@ -119,7 +128,7 @@ const addRedFlagShare = (answer, report) => {
   let preparedBotLink = null;
   save.addEventListener("click", async () => {
     if (preparedBotLink) {
-      window.location.assign(preparedBotLink);
+      openRedFlagTicket(preparedBotLink);
       return;
     }
     const signedData = window.Telegram?.WebApp?.initData;
@@ -158,7 +167,7 @@ const addRedFlagShare = (answer, report) => {
         save.disabled = false;
         showFeedback("is-success", "❤️ Ссылка на ответ готова",
           "Если Telegram не открылся, нажми кнопку ещё раз. В новом боте нажми «Начать», и тебе придёт именно этот ответ.");
-        window.location.assign(preparedBotLink);
+        openRedFlagTicket(preparedBotLink);
       } catch {
         save.disabled = false;
         showFeedback("is-error", "Не удалось подготовить сохранение",
