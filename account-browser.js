@@ -134,6 +134,48 @@
   if (!identity) return;
   identity.insertAdjacentHTML("afterend",html);
   const root = document.getElementById("numi-account-entry");
+  // Let visitors verify both typed passwords before submitting any account form.
+  // Scoped to this cabinet only. Does not change credentials or submission logic.
+  const passwordVisibilityStyle = document.createElement("style");
+  passwordVisibilityStyle.textContent = `
+    #numi-account-entry .numi-password-field { position: relative; display: block; }
+    #numi-account-entry .numi-password-field input { padding-right: 52px; }
+    #numi-account-entry .numi-password-eye {
+      position: absolute; top: calc(50% + 3px); right: 5px;
+      transform: translateY(-50%); display: flex; align-items: center;
+      justify-content: center; width: 42px; height: 42px;
+      padding: 0; border: 0; border-radius: 9px;
+      background: transparent; color: #315f4a; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #numi-account-entry .numi-password-eye:focus-visible {
+      outline: 2px solid #247753; outline-offset: -2px;
+    }
+    #numi-account-entry .numi-password-eye svg { width: 21px; height: 21px; }
+  `;
+  root.append(passwordVisibilityStyle);
+  const visibleEye = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const hiddenEye = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 18 18"/><path d="M10.6 5.1C11.1 5 11.5 5 12 5c6.4 0 10 7 10 7a18 18 0 0 1-3.2 4.1"/><path d="M6.1 6.1C3.4 8.1 2 12 2 12s3.6 7 10 7c1.6 0 3-.4 4.2-1.1"/><path d="M10 10a3 3 0 0 0 4 4"/></svg>';
+  root.querySelectorAll('input[type="password"]').forEach(input => {
+    const field = document.createElement("span");
+    field.className = "numi-password-field";
+    input.parentNode.insertBefore(field, input);
+    field.append(input);
+    const eye = document.createElement("button");
+    eye.type = "button";
+    eye.className = "numi-password-eye";
+    eye.setAttribute("aria-label", "Показать пароль");
+    eye.setAttribute("aria-pressed", "false");
+    eye.innerHTML = visibleEye;
+    eye.addEventListener("click", () => {
+      const shown = input.type === "password";
+      input.type = shown ? "text" : "password";
+      eye.setAttribute("aria-label", shown ? "Скрыть пароль" : "Показать пароль");
+      eye.setAttribute("aria-pressed", String(shown));
+      eye.innerHTML = shown ? hiddenEye : visibleEye;
+    });
+    field.append(eye);
+  });
   const guest = document.getElementById("numi-account-guest");
   const signed = document.getElementById("numi-account-signed");
   const logoutButton=document.getElementById("numi-account-logout");
