@@ -492,7 +492,7 @@ const ensureQuestions = async (category) => {
       ...content.QUESTIONS.map((question, index) => ({
         ...question, isFree: index === 0,
         priceRub: index === 0 ? 0 : question.priceRub,
-        isComingSoon: index > 0 && REDFLAG_SOON_BLOCKS.has(category.id)
+        isComingSoon: REDFLAG_SOON_BLOCKS.has(category.id)
       })),
       ...(category.id === "money" ? [] : [{
         id: "comic-verdict-" + category.id,
