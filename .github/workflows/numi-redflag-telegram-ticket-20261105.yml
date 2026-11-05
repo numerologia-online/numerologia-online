@@ -1,4 +1,4 @@
-name: One-time guarded Red Flag Telegram save switch on new .рф domain (2026-11-05)
+name: One-time guarded Red Flag Telegram save switch with shared webroot verification
 # Retry approved, guarded Red Flag-only production release; deployment script unchanged.
 on:
   push:
@@ -57,7 +57,8 @@ jobs:
           try:
               ftp.login(user,pwd);ftp.prot_p();ftp.set_pasv(True)
               root=ftp.pwd().rstrip('/')
-              live=root+'/www/'+DOMAIN
+              # Both public domains share the established REG.RU webroot; verify this before writing.
+              live=root+'/www/'+TICKET_DOMAIN
               def read(p):
                   b=io.BytesIO();ftp.retrbinary('RETR '+p,b.write);return b.getvalue()
               def put(p,v): ftp.storbinary('STOR '+p,io.BytesIO(v))
@@ -70,6 +71,13 @@ jobs:
                   tmp.write(php);tmp.flush()
                   subprocess.run(['php','-l',tmp.name],check=True,stdout=subprocess.DEVNULL)
               for name in FILES: before[name]=read(live+'/'+name)
+              # Verify the new storefront serves this SAME static file, not a separate webroot.
+              # If it does not, stop without changing either domain.
+              guard_url='https://'+DOMAIN+'/redflag-feature.js?numi_root_guard=20261105'
+              guard_request=urllib.request.Request(guard_url, headers={'Cache-Control':'no-cache','User-Agent':'NUMI-RELEASE/1.0'})
+              with urllib.request.urlopen(guard_request, timeout=25) as guard_response:
+                  if guard_response.status != 200 or guard_response.read(200000) != before['redflag-feature.js']:
+                      raise RuntimeError('New .rf storefront is not served by the verified REG.RU webroot; no files modified')
               patch={'redflag-feature.js':patch_redflag,'app.js':patch_app,'index.html':patch_index}
               after={n:patch[n](before[n].decode('utf-8')).encode('utf-8') for n in FILES}
               if after['redflag-feature.js'].count(b'openRedFlagTicket(preparedBotLink);')!=2:
