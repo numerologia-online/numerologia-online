@@ -1,0 +1,120 @@
+name: One-time guarded Red Flag Telegram save switch (2026-11-05)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/numi-redflag-telegram-ticket-20261105.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: numi-redflag-ticket-reg-20261105
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Validate REG.RU ticket API, preserve backups, patch only save flow, and verify live HTTPS
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib, io, os, ssl, subprocess, tempfile, urllib.request, time
+          HOST='server172.hosting.reg.ru'
+          DOMAIN='xn--c1adkkdfjbp1a4l.online'
+          FILES=('redflag-feature.js','app.js','index.html')
+          def replace_one(s, old, new, label):
+              if s.count(old)!=1: raise RuntimeError(label+' preflight does not match; no files modified')
+              return s.replace(old,new,1)
+          def patch_redflag(s):
+              if 'const REDFLAG_SAVE_VIA_TICKET = true;' in s:
+                  if s.count('openRedFlagTicket(preparedBotLink);')!=2: raise RuntimeError('Partly switched Red Flag')
+                  return s
+              marker='const REDFLAG_TICKET_URL = "https://xn--c1adkkdfjbp1a4l.online/api/redflag-save.php";'
+              s=replace_one(s,marker,marker+'\n// Route Red Flag saves via existing REG.RU one-time ticket.\nconst REDFLAG_SAVE_VIA_TICKET = true;','redflag')
+              s=replace_one(s,'const addRedFlagShare = (answer, report) => {',
+                'const openRedFlagTicket = (url) => {\n  if (typeof window.Telegram?.WebApp?.openTelegramLink === "function") {\n    window.Telegram.WebApp.openTelegramLink(url);\n  } else {\n    window.location.assign(url);\n  }\n};\n\nconst addRedFlagShare = (answer, report) => {','redflag')
+              s=replace_one(s,'if (typeof signedData !== "string" || !signedData) {',
+                'if (REDFLAG_SAVE_VIA_TICKET || typeof signedData !== "string" || !signedData) {','redflag')
+              if s.count('window.location.assign(preparedBotLink);')!=2: raise RuntimeError('Red Flag navigation changed')
+              return s.replace('window.location.assign(preparedBotLink);','openRedFlagTicket(preparedBotLink);')
+          def patch_app(s):
+              if './redflag-feature.js?v=20261105ticket1' in s: return s
+              return replace_one(s,'./redflag-feature.js?v=20261103romance3661','./redflag-feature.js?v=20261105ticket1','app.js')
+          def patch_index(s):
+              if 'app.js?v=20261105ticket1' in s: return s
+              return replace_one(s,'app.js?v=20261103romance3661','app.js?v=20261105ticket1','index.html')
+          user,pwd=os.getenv('REG_FTP_USER'),os.getenv('REG_FTP_PASSWORD')
+          if not user or not pwd: raise RuntimeError('REG.RU credentials missing; no change')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          ftp.connect(HOST,21)
+          changed=[]
+          before={}
+          try:
+              ftp.login(user,pwd);ftp.prot_p();ftp.set_pasv(True)
+              root=ftp.pwd().rstrip('/')
+              live=root+'/www/'+DOMAIN
+              def read(p):
+                  b=io.BytesIO();ftp.retrbinary('RETR '+p,b.write);return b.getvalue()
+              def put(p,v): ftp.storbinary('STOR '+p,io.BytesIO(v))
+              # No switch if the already-existing REG.RU ticket endpoint is unavailable.
+              php=read(live+'/api/redflag-save.php')
+              if not php.lstrip().startswith(b'<?php') or b'ticket' not in php or b'create' not in php:
+                  raise RuntimeError('Existing REG.RU ticket handler failed preflight')
+              with tempfile.NamedTemporaryFile(suffix='.php') as tmp:
+                  tmp.write(php);tmp.flush()
+                  subprocess.run(['php','-l',tmp.name],check=True,stdout=subprocess.DEVNULL)
+              for name in FILES: before[name]=read(live+'/'+name)
+              patch={'redflag-feature.js':patch_redflag,'app.js':patch_app,'index.html':patch_index}
+              after={n:patch[n](before[n].decode('utf-8')).encode('utf-8') for n in FILES}
+              if after['redflag-feature.js'].count(b'openRedFlagTicket(preparedBotLink);')!=2:
+                  raise RuntimeError('Red Flag output verification failed')
+              for name in ('redflag-feature.js','app.js'):
+                  subprocess.run(['node','--input-type=module','--check'],input=after[name],check=True,stdout=subprocess.DEVNULL)
+              # Durable backups are outside the publicly served website directory.
+              backupdir=root+'/numi-redflag-rollback-20261105'
+              try: ftp.mkd(backupdir)
+              except ftplib.error_perm as e:
+                  if not str(e).startswith('550'): raise
+              for name in FILES:
+                  p=backupdir+'/'+name+'.before-ticket'
+                  try: stored=read(p)
+                  except ftplib.error_perm as e:
+                      if not str(e).startswith('550'): raise
+                      put(p,before[name]);stored=read(p)
+                  if stored!=before[name] and before[name]!=after[name]:
+                      raise RuntimeError('Existing backup differs, refuse overwrite: '+name)
+              try:
+                  for name in FILES:
+                      if before[name]==after[name]: continue
+                      changed.append(name)
+                      put(live+'/'+name,after[name])
+                      if read(live+'/'+name)!=after[name]: raise RuntimeError('FTP readback failed: '+name)
+                  for name,needle in (('redflag-feature.js',b'REDFLAG_SAVE_VIA_TICKET = true'),
+                                      ('app.js',b'20261105ticket1'),('index.html',b'20261105ticket1')):
+                      url='https://'+DOMAIN+'/'+name+'?numi_ticket_release=20261105'
+                      request=urllib.request.Request(url,headers={'Cache-Control':'no-cache','User-Agent':'NUMI-RELEASE/1.0'})
+                      passed=False
+                      for attempt in range(3):
+                          try:
+                              with urllib.request.urlopen(request,timeout=25) as resp:
+                                  if resp.status==200 and needle in resp.read(2000000):
+                                      passed=True;break
+                          except Exception: pass
+                          time.sleep(2)
+                      if not passed: raise RuntimeError('HTTPS live verification failed: '+name)
+              except Exception:
+                  for name in reversed(changed):
+                      try:
+                          put(live+'/'+name,before[name])
+                          if read(live+'/'+name)!=before[name]: print('ROLLBACK_FAILED: '+name,flush=True)
+                      except Exception: print('ROLLBACK_FAILED: '+name,flush=True)
+                  raise
+              print('REG_RU_REDFLAG_TICKET_SWITCH_HTTPS_VERIFIED',flush=True)
+              print('Only Red Flag sharing module and two cache-version links changed.',flush=True)
+          finally:
+              try: ftp.quit()
+              except Exception: ftp.close()
+          PY
