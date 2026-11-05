@@ -43,7 +43,7 @@ jobs:
               await p.locator('.redflag-category-toggle').nth(i).evaluate(el=>el.click());
               await p.waitForTimeout(250);
               const state=await p.locator('#redflag-categories > .redflag-category').nth(i).locator('.redflag-question-toggle').evaluateAll(bs=>bs.map(b=>({disabled:b.disabled,soon:b.textContent.includes('Скоро'),price:/\\d+\\s*₽/.test(b.textContent)})));
-              const valid=state.length>=10&&!state[0].disabled&&state.slice(1).every(x=>i>=2?x.disabled&&x.soon&&!x.price:!x.disabled&&!x.soon);
+              const valid=state.length>=10&&state.every(x=>i>=2?x.disabled&&x.soon&&!x.price:!x.disabled&&!x.soon);
               console.log('SOON_BADGE_BLOCK',i+1,state.length,valid);
               if(!valid)throw Error('Question preview mismatch in block '+(i+1));
             }
