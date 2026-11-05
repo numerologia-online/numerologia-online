@@ -1,109 +1,52 @@
-name: One-time synchronize existing public site files FROM live REG.RU to GitHub
+name: One-time sync eleven SHA-verified live files into GitHub
 on:
   push:
-    paths:
-      - .github/workflows/numi-one-time-domain-audit-20261105.yml
+    paths: ['.github/workflows/numi-one-time-domain-audit-20261105.yml']
 permissions:
   contents: write
-concurrency:
-  group: numi-live-source-sync
-  cancel-in-progress: false
 jobs:
   sync:
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 9
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Preserve published site as GitHub public frontend source; no FTP writes
+      - name: Copy only eleven verified existing publicly served files to GitHub
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 - <<'PY'
-          import ftplib,ssl,os,io,pathlib,subprocess,hashlib,re,sys
-          HOST='server172.hosting.reg.ru'
-          OLD='xn--c1adkkdfjbp1a4l.online'
-          NEW='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
-          BACKUP='backup/github-before-live-sync-20261105'
-          # Pull ONLY existing tracked publicly-served HTML, JS and CSS files.
-          # Never copy live private, API, account backend, data, archives or novel paths.
-          EXCLUDED=('server/','private/','api/','auth-server/','auth-free/','cloudflare/',
-           'vercel-backend/','data/','knowledge/','insights/','tests/','scripts/','diagnostics/',
-           '.github/','yesno-service/','node_modules/','pro/school/lessons/','pro/schools/angel/',
-           'pro/schools/classic/','child/data/')
-          def is_safe(path):
-              p=pathlib.PurePosixPath(path)
-              if p.is_absolute() or '..' in p.parts or any(x.startswith('.') for x in p.parts):return False
-              if path.startswith(EXCLUDED):return False
-              if path in ('robots.txt','sitemap.xml','manifest.webmanifest'):return True
-              if p.suffix.lower() not in ('.html','.css','.js'):return False
-              if '/' not in path:return True
-              if path.startswith('guide/'):return True
-              if path in ('child/index.html','year/index.html','moment/index.html','moment/yes-no/index.html','pro/index.html','day/index.html','pro/schools/index.html','pro/school/index.html'):return True
-              if path.startswith('assets/') and p.suffix.lower() in ('.js','.css'):return True
-              if path.startswith('child/') and p.suffix.lower() in ('.js','.css'):return True
-              if path.startswith('pro/') and p.suffix.lower() in ('.js','.css'):return True
-              if path.startswith('moment/') and p.suffix.lower() in ('.js','.css'):return True
-              return False
-          def sha(b):return hashlib.sha256(b).hexdigest()
-          subprocess.run(['git','ls-remote','--exit-code','--heads','origin',BACKUP],check=True,stdout=subprocess.DEVNULL)
-          tracked=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
-          paths=[p for p in tracked if p and is_safe(p)]
-          if not 50<=len(paths)<=400:raise RuntimeError('Unreviewed public allowlist size '+str(len(paths)))
-          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
-          ftp.connect(HOST,21)
-          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
-          ftp.prot_p();ftp.set_pasv(True)
-          home=ftp.pwd().rstrip('/')
-          site=home+'/www/'+OLD
+          import os,ssl,io,ftplib,hashlib,pathlib,subprocess
+          EXPECTED = {"app.js":"29f979167da6b5fe9d3116d97c4dd8e24432c7ba441b347ba3fa6197ee84bb91","child/index.html":"d0c0fefc44dd5f1ecd7f13006e0733d6f9408d1bad3bdb8c2aa186c1f4c20f0e","guide/index.html":"91b3ba622ffd1b5ce701062443caefa9875888a52976be155010b2a7368199a1","index.html":"fe174757f11c06c8df45819618a2810eeaa921fc18cde7dc18e033b0cea4ed24","moment/yes-no/index.html":"88219dce24f986261261172b8774eef92078f19d3e2dda705cb6609e834a55d6","moment/yes-no/yes-no.css":"8a1d8defd340dae8e51636333cf44395bac4f3a9bb2423e24a675a21720b2e3d","moment/yes-no/yes-no.js":"9912f7cdbcfbd5c16aa9716a61e1d91a4c79585c40e28acd7516b3f901e2d484","personal-day-feature.js":"f8abc49f9e7bd1ae1cd15a32b3b4ca62936e9bf902ad43e11b8f26c9d0263123","pro/index.html":"13699aaf2d36e8c175ea1d3f2f96852ee36ef37884892ebaacf4f1a4f6d43fa1","redflag-feature.js":"8ba6c4c0c5d0fef3bbcb2c35983bca6dea8b57a3f31a757f3013444b13cba44f","year/index.html":"123ce66aaa8b5dbb1d30311bb5c31f96151522624ff7c44d84c07af21765dd33"}
+          subprocess.run(['git','ls-remote','--exit-code','--heads','origin','backup/github-before-live-sync-20261105'],check=True,stdout=subprocess.DEVNULL)
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=22)
+          f.connect('server172.hosting.reg.ru',21)
+          f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          f.prot_p(); f.set_pasv(True)
+          root=f.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online'
           changed=[]
-          matched=missing=0
           try:
-              ftp.cwd(site)
-              for p in paths:
-                  target=pathlib.Path(p)
-                  if not target.is_file() or target.is_symlink():raise RuntimeError('Unsafe repo file '+p)
-                  try:
-                      b=io.BytesIO();ftp.retrbinary('RETR '+site+'/'+p,b.write)
-                  except ftplib.error_perm as e:
-                      if str(e).startswith('550'):
-                          missing+=1
-                          continue
-                      raise
-                  live=b.getvalue()
-                  if len(live)>2_000_000:raise RuntimeError('Unexpected large public file '+p)
-                  if p=='index.html':
-                      if b'<link rel="canonical" href="https://'+NEW.encode()+b'/">' not in live:
-                          raise RuntimeError('Live homepage is not on the new domain. Aborting.')
-                  if p.endswith('.html'):
-                      lower=live[:3500].lower()
-                      if b'<!doctype' not in lower and b'<html' not in lower:
-                          raise RuntimeError('Unexpected live document '+p)
-                  source=target.read_bytes()
-                  if source==live:
-                      matched+=1
-                      continue
-                  # Re-read each changed source before touching GitHub to detect concurrent writes.
-                  b2=io.BytesIO();ftp.retrbinary('RETR '+site+'/'+p,b2.write)
-                  if sha(live)!=sha(b2.getvalue()):
-                      raise RuntimeError('Production changed during sync '+p)
-                  target.write_bytes(live)
-                  changed.append(p)
-                  print('LIVE_SOURCE_IMPORTED',p,'sha256',sha(live),flush=True)
-                  if len(changed)>175:raise RuntimeError('Too many changed public assets, abort')
+           f.cwd(root)
+           for name,digest in EXPECTED.items():
+            buf=io.BytesIO()
+            f.retrbinary('RETR '+root+'/'+name,buf.write)
+            raw=buf.getvalue()
+            if hashlib.sha256(raw).hexdigest()!=digest:raise RuntimeError('Live source changed, stop: '+name)
+            local=pathlib.Path(name)
+            if not local.is_file() or local.is_symlink():raise RuntimeError('Unexpected GitHub path '+name)
+            if name=='index.html' and b'<link rel="canonical" href="https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/">' not in raw:raise RuntimeError('New domain canonical absent')
+            if local.read_bytes()!=raw:
+             local.write_bytes(raw)
+             changed.append(name)
+             print('SYNCED_FROM_LIVE',name,flush=True)
           finally:
-              try:ftp.quit()
-              except Exception:ftp.close()
-          print('SYNC_SUMMARY',len(paths),'checked',matched,'already-matched',missing,'live-missing',len(changed),'changed',flush=True)
-          if not changed:
-              print('SYNC_COMPLETE_ALREADY_MATCHED',flush=True)
-              sys.exit(0)
-          subprocess.run(['git','diff','--check'],check=True)
+           try:f.quit()
+           except Exception:f.close()
+          if not changed:raise SystemExit('All 11 already match')
           subprocess.run(['git','add','--',*changed],check=True)
-          subprocess.run(['git','-c','user.name=numi-site-safeguard','-c','user.email=actions@users.noreply.github.com','commit','-m','Align tracked public site files with verified live REG.RU'],check=True)
+          subprocess.run(['git','-c','user.name=numi-site-safeguard','-c','user.email=actions@users.noreply.github.com','commit','-m','Sync 11 verified public files from live REG.RU'],check=True)
           subprocess.run(['git','push','origin','HEAD:main'],check=True)
-          print('LIVE_PUBLIC_ASSETS_SYNCED_TO_GITHUB',len(changed),flush=True)
+          print('GITHUB_LIVE_SYNC_SUCCESS',len(changed),flush=True)
           PY
