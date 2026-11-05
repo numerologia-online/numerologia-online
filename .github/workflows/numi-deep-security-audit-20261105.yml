@@ -1,0 +1,79 @@
+name: Read-only security and domain certificate checks after domain migration
+on:
+  push:
+    paths: ['.github/workflows/numi-deep-security-audit-20261105.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check TLS, private file access, negative auth and analytics endpoints
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,ssl,json,socket,datetime,re
+          NEW='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
+          OLD='xn--c1adkkdfjbp1a4l.online'
+          hosts=[NEW,OLD,'www.'+NEW]
+          for hostname in hosts:
+           try:
+            addresses=sorted({rec[4][0] for rec in socket.getaddrinfo(hostname,443,type=socket.SOCK_STREAM)})
+            print('DNS',hostname,'IPS',addresses[:4],flush=True)
+            with socket.create_connection((hostname,443),timeout=12) as sock:
+             with ssl.create_default_context().wrap_socket(sock,server_hostname=hostname) as s:
+              info=s.getpeercert()
+              print('CERTIFICATE',hostname,'notAfter',info.get('notAfter'),'issuer',str(info.get('issuer'))[:220],flush=True)
+           except Exception as e:print('DNS_CERT_PROBLEM',hostname,type(e).__name__,str(e)[:160],flush=True)
+          def request(host,path,method='GET',origin=None,data=None):
+           hdr={'User-Agent':'Numi-ReadOnly-Security-Audit/20261105'}
+           if origin:hdr['Origin']=origin
+           if data is not None:hdr['Content-Type']='application/json'
+           req=urllib.request.Request('https://'+host+path,method=method,headers=hdr,data=data)
+           try:
+            with urllib.request.urlopen(req,timeout=14) as resp:st=resp.status;h=resp.headers;b=resp.read(1100)
+           except urllib.error.HTTPError as e:st=e.code;h=e.headers;b=e.read(1100)
+           return st,h,b
+          private=[
+           '/data/year/energy-6.txt',
+           '/data/redflag/money/provider.json',
+           '/data/redflag/love/romance.json',
+           '/knowledge/full-report/sections/energy-1.json',
+           '/child/data/matrix/sections/energy-1.json',
+           '/pro/school/lessons/base.json',
+           '/pro/schools/classic/lessons/birthday.json',
+           '/pro/purpose/social.json',
+           '/data/day/general/general-day-01.json',
+           '/knowledge/archive/energy-6-former-root.txt',
+           '/.htaccess',
+           '/private/numi-content-reg-20261031/manifest.json'
+          ]
+          for path in private:
+           st,h,b=request(NEW,path)
+           print('PRIVATE_FILE_ACCESS',path,'HTTP',st,'TYPE',h.get('Content-Type','')[:50],flush=True)
+          st,h,b=request(NEW,'/api/numi-insights.php','POST','https://'+NEW,b'{"events":[]}')
+          try:code=json.loads(b).get('error')
+          except:code='NONJSON'
+          print('INSIGHTS_ORIGIN_NEW',st,code,flush=True)
+          st,h,b=request(NEW,'/api/redflag-save.php','POST','https://'+NEW,b'{"action":"create","text":"invalid"}')
+          try:code=json.loads(b).get('error')
+          except:code='NONJSON'
+          print('REDFLAG_INVALID_PAYLOAD',st,code,flush=True)
+          st,h,b=request(NEW,'/api/profile.php','POST','https://'+NEW,b'{"action":"get","init_data":"not-signed"}')
+          try:code=json.loads(b).get('error')
+          except:code='NONJSON'
+          print('TELEGRAM_INVALID_SIGNATURE',st,code,flush=True)
+          st,h,b=request(NEW,'/api/numi-account.php','POST','https://'+NEW,b'{"action":"birth","birth_date":null}')
+          try:code=json.loads(b).get('error')
+          except:code='NONJSON'
+          print('ACCOUNT_GUEST_DATE_DELETION_DENIAL',st,code,flush=True)
+          st,h,b=request(NEW,'/api/numi-account.php','POST','https://'+NEW,b'{"action":"logout"}')
+          try:obj=json.loads(b);code=obj.get('error') or str(obj.get('authenticated'))
+          except:code='NONJSON'
+          print('ACCOUNT_GUEST_LOGOUT',st,code,flush=True)
+          st,h,b=request(NEW,'/api/numi-school.php?resource=base')
+          print('SCHOOL_PRIVATE_API_GUEST',st,b[:150].decode('utf8','replace'),flush=True)
+          st,h,b=request(NEW,'/analytics/')
+          print('ANALYTICS_LEGACY_REDIRECT_PAGE',st,b.decode('utf8','replace')[:400].replace('\n',' '),flush=True)
+          print('DEEP_SECURITY_AUDIT_FINISHED',flush=True)
+          PY
