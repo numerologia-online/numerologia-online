@@ -34,6 +34,17 @@ jobs:
           for n,line in enumerate(lines[:180],1):
             if rx.search(line) and not sensitive.search(line):
               print("YEAR_CORS_LINE",n,line[:230],flush=True)
+          core_path=home+"/private/numi-content-reg-20261031/core.php"
+          full=io.BytesIO()
+          f.retrbinary("RETR "+core_path,full.write)
+          core=full.getvalue()
+          print("YEAR_PRIVATE_CORE",len(core),"sha256",hashlib.sha256(core).hexdigest(),flush=True)
+          source=core.decode("utf-8","replace").splitlines()
+          hits=[i for i,s in enumerate(source) if re.search(r"origin|cors|allow.*domain|allowed.*host",s,re.I)]
+          forbidden=re.compile("secret|password|token|credential|private.key|db_|smtp|ftp_",re.I)
+          for i in sorted(set(j for n in hits for j in range(max(0,n-2),min(len(source),n+3)))):
+            if not forbidden.search(source[i]):
+              print("YEAR_CORE_CORS",i+1,source[i][:270],flush=True)
           f.quit()
           PY
       - name: Read-only preflight and guest calculation from old and current website origins
