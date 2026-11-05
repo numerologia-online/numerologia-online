@@ -135,6 +135,9 @@
       '<div id="numi-account-guest">',
         '<h3>Сохраните свои покупки</h3>',
         '<p>Войдите или зарегистрируйтесь, чтобы возвращаться к разборам с любого устройства.</p>',
+        '<a id="numi-bot-signin" class="numi-bot-signin" href="https://t.me/Numerologiaonline_bot?startapp" rel="noopener">🤖 Войти через наш бот</a>',
+        '<p class="numi-bot-signin-note">Откроется наш бот с мини-приложением. Вход в кабинет через него происходит автоматически.</p>',
+        '<p class="numi-bot-signin-divider"><span>или войдите по почте</span></p>',
         '<div class="numi-auth-tabs" role="group" aria-label="Выберите действие">',
           '<button type="button" data-numi-tab="login" class="is-active">Войти</button>',
           '<button type="button" data-numi-tab="register">Регистрация</button>',
@@ -217,6 +220,39 @@
     #numi-account-entry .numi-password-eye svg { width: 21px; height: 21px; }
   `;
   root.append(passwordVisibilityStyle);
+  // Public browser visitors can enter the existing mini-app through our own bot.
+  // This is navigation to the current signed Telegram login, not a new identity provider.
+  const botSignInStyle = document.createElement("style");
+  botSignInStyle.textContent = `
+    #numi-account-entry #numi-bot-signin {
+      display: flex; align-items: center; justify-content: center;
+      box-sizing: border-box; width: 100%; min-height: 56px;
+      margin: 17px 0 5px; padding: 13px 14px;
+      border-radius: 15px; background: #19513f; color: #fff;
+      font: 800 17px/1.3 Inter, system-ui, sans-serif;
+      text-align: center; text-decoration: none;
+      overflow-wrap: anywhere; -webkit-tap-highlight-color: transparent;
+    }
+    #numi-account-entry #numi-bot-signin:focus-visible {
+      outline: 3px solid #c49e56; outline-offset: 3px;
+    }
+    #numi-account-entry .numi-bot-signin-note {
+      margin: 5px 0 13px; color: #596c61;
+      font: 500 12px/1.45 Inter, system-ui, sans-serif;
+      text-align: center;
+    }
+    #numi-account-entry .numi-bot-signin-divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 12px 0 14px; color: #728176;
+      font: 600 12px/1.3 Inter, system-ui, sans-serif;
+      text-align: center;
+    }
+    #numi-account-entry .numi-bot-signin-divider::before,
+    #numi-account-entry .numi-bot-signin-divider::after {
+      content: ""; flex: 1; height: 1px; background: #dce2da;
+    }
+  `;
+  root.append(botSignInStyle);
   const visibleEye = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
   const hiddenEye = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 18 18"/><path d="M10.6 5.1C11.1 5 11.5 5 12 5c6.4 0 10 7 10 7a18 18 0 0 1-3.2 4.1"/><path d="M6.1 6.1C3.4 8.1 2 12 2 12s3.6 7 10 7c1.6 0 3-.4 4.2-1.1"/><path d="M10 10a3 3 0 0 0 4 4"/></svg>';
   root.querySelectorAll('input[type="password"]').forEach(input => {
