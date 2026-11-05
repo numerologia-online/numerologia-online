@@ -330,6 +330,15 @@ priceStyles.textContent = `
   #redflag .redflag-subscription-price strong {
     color: inherit; font-size: 16px; font-weight: 900; line-height: 1;
   }
+  #redflag .redflag-question.is-coming-soon .redflag-question-toggle {
+    cursor: default; opacity: 1; color: #606070;
+  }
+  #redflag .redflag-coming-soon-badge {
+    align-self: flex-start; margin-top: -4px;
+    background: #f4eef1; border-color: #ddc8d1;
+    color: #896474; font-size: 11px; letter-spacing: .02em;
+    padding: 5px 9px;
+  }
   @media (max-width: 360px) {
     #redflag .redflag-price-pair { max-width: 88px; }
     #redflag .redflag-price-pair .redflag-subscription-price { padding: 6px 7px; }
@@ -345,7 +354,7 @@ const fillQuestionButton = (button, question, showExpand = false) => {
   button.append(label);
   if (question.isComingSoon) {
     const badge = document.createElement("span");
-    badge.className = "redflag-question-price";
+    badge.className = "redflag-question-price redflag-coming-soon-badge";
     badge.textContent = "Скоро";
     button.append(badge);
     return;
@@ -388,6 +397,7 @@ const createQuestion = (question, state) => {
   const article = document.createElement("article");
   article.className = `redflag-question${opened ? " is-open" : ""}${activeProfile ? " is-calculated" : " is-preview"}`;
   article.dataset.questionId = question.id;
+  if (question.isComingSoon) article.classList.add("is-coming-soon");
 
   if (!activeProfile) {
     const preview = document.createElement("button");
