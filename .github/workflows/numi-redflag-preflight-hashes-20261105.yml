@@ -10,6 +10,8 @@ jobs:
     timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Compare live four assets against original git parent
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
