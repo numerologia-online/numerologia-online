@@ -7,7 +7,7 @@
   ],
   "expected_sha256": {
     "redflag-feature.js": "6745046efce8108187af2e86ca7dd5a4f3933d3fe54db2868cd6076f035293cd",
-    "app.js": "477a40ce5d92521ebd1193ea977e18e73f5dc94ae13d66a459b2448582f67ee",
+    "app.js": "477a40ce5d92521ebd1193ea977e18e73f5dc94ae13d66a459b2448582f67ee1",
     "index.html": "40b73c065d2156dbf891abe3f7ab53d0abf61ccbb4d099c82f87fd8ca48dc75a"
   },
   "patches": {
@@ -19,7 +19,7 @@
     "app.js": {
       "before": "redflag-feature.js?v=20261105calcstay3",
       "after": "redflag-feature.js?v=20261105soonall1",
-      "expected_sha256": "477a40ce5d92521ebd1193ea977e18e73f5dc94ae13d66a459b2448582f67ee"
+      "expected_sha256": "477a40ce5d92521ebd1193ea977e18e73f5dc94ae13d66a459b2448582f67ee1"
     },
     "index.html": {
       "before": "app.js?v=20261105calcstay3",
