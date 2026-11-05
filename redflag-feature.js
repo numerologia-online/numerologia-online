@@ -547,27 +547,22 @@ const createCategory = (category, index) => {
   return section;
 };
 
-// Preserve the on-screen position of the specific category/question being tapped.
-const findScrollAnchor = (anchor) => {
-  if (!anchor) return null;
-  if (anchor.type === "category") {
-    const index = REDFLAG_CATEGORIES.findIndex((item) => item.id === anchor.id);
-    return index < 0 ? null : categoriesRoot.querySelectorAll(".redflag-category-toggle")[index];
-  }
-  if (anchor.type === "question") {
-    return [...categoriesRoot.querySelectorAll("[data-question-id]")]
-      .find((item) => item.dataset.questionId === anchor.id) || null;
-  }
-  return null;
-};
+// Update only the changed category. Rebuilding the entire long list and
+// compensating with scrollBy caused large jumps in mobile Safari/WebKit.
 const renderCategories = (anchor = null) => {
-  const previousTop = findScrollAnchor(anchor)?.getBoundingClientRect().top;
-  categoriesRoot.replaceChildren(...REDFLAG_CATEGORIES.map(createCategory));
-  if (previousTop === undefined) return;
-  const current = findScrollAnchor(anchor);
-  if (!current) return;
-  const delta = current.getBoundingClientRect().top - previousTop;
-  if (Math.abs(delta) > 1) window.scrollBy({ top: delta, behavior: "instant" });
+  if (categoriesRoot.children.length !== REDFLAG_CATEGORIES.length) {
+    categoriesRoot.replaceChildren(...REDFLAG_CATEGORIES.map(createCategory));
+    return;
+  }
+  REDFLAG_CATEGORIES.forEach((category, index) => {
+    const element = categoriesRoot.children[index];
+    const state = categoryStates.get(category.id);
+    const needsUpdate = element.classList.contains("is-open") !== state.expanded
+      || (anchor?.type === "category" && anchor.id === category.id)
+      || (anchor?.type === "question" && state.questions?.some((q) => q.id === anchor.id))
+      || (anchor === null && state.expanded);
+    if (needsUpdate) element.replaceWith(createCategory(category, index));
+  });
 };
 
 birthDateInput.addEventListener("input", () => {
