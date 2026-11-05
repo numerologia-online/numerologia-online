@@ -10,6 +10,8 @@ const error = document.querySelector("#redflag-error");
 const categoriesRoot = document.querySelector("#redflag-categories");
 const backButton = document.querySelector("#back-redflag-home");
 
+// One removable switch: only unfinished paid questions in these six blocks.
+const REDFLAG_SOON_BLOCKS = new Set(["flags", "infidelity", "intimacy", "family", "language", "verdict"]);
 const categoryStates = new Map(REDFLAG_CATEGORIES.map((category) => [category.id, {
   expanded: false,
   loading: false,
@@ -265,6 +267,7 @@ const showQuestionOffer = async (question) => {
   });
 };
 const ensureAnswer = (question, state) => {
+  if (question.isComingSoon) return; // No paid loading or purchase for drafts.
   const id = question.id;
   if (state.answers.has(id) || state.answerRequests.has(id)) return;
   const profile = activeProfile;
@@ -340,6 +343,13 @@ const fillQuestionButton = (button, question, showExpand = false) => {
   label.className = "redflag-question-label";
   label.textContent = question.title;
   button.append(label);
+  if (question.isComingSoon) {
+    const badge = document.createElement("span");
+    badge.className = "redflag-question-price";
+    badge.textContent = "Скоро";
+    button.append(badge);
+    return;
+  }
   if (question.isFree) {
     const free = document.createElement("span");
     free.className = "redflag-question-price is-free";
@@ -383,6 +393,7 @@ const createQuestion = (question, state) => {
     const preview = document.createElement("button");
     preview.type = "button";
     preview.className = "redflag-question-toggle redflag-question-preview";
+    preview.disabled = Boolean(question.isComingSoon);
     fillQuestionButton(preview, question);
     preview.addEventListener("click", () => {
       const date = parseRedFlagDate(birthDateInput.value);
@@ -406,6 +417,7 @@ const createQuestion = (question, state) => {
   const button = document.createElement("button");
   button.className = "redflag-question-toggle";
   button.type = "button";
+  button.disabled = Boolean(question.isComingSoon);
   button.setAttribute("aria-expanded", String(opened));
   fillQuestionButton(button, question, true);
 
@@ -477,11 +489,16 @@ const ensureQuestions = async (category) => {
   try {
     const content = await category.load();
     state.questions = [
-      ...content.QUESTIONS.map((question, index) => ({ ...question, isFree: index === 0, priceRub: index === 0 ? 0 : question.priceRub })),
+      ...content.QUESTIONS.map((question, index) => ({
+        ...question, isFree: index === 0,
+        priceRub: index === 0 ? 0 : question.priceRub,
+        isComingSoon: index > 0 && REDFLAG_SOON_BLOCKS.has(category.id)
+      })),
       ...(category.id === "money" ? [] : [{
         id: "comic-verdict-" + category.id,
         title: "😂 Шуточный вердикт",
         priceRub: 49,
+        isComingSoon: REDFLAG_SOON_BLOCKS.has(category.id),
         answer: async () => ({ answer: "Шуточный вердикт для этого раздела пока готовится. Мы напишем его отдельно." })
       }])
     ];
@@ -621,7 +638,7 @@ form.addEventListener("submit", async (event) => {
     const linkedQuestion = linkedCategory
       ? firstState.questions?.find((question) => question.id === requestedQuestion[2])
       : null;
-    if (linkedQuestion) {
+    if (linkedQuestion && !linkedQuestion.isComingSoon) {
       firstState.activeQuestionId = linkedQuestion.id;
       ensureAnswer(linkedQuestion, firstState);
     }
@@ -656,7 +673,7 @@ export const openRedFlag = () => {
     renderCategories();
     void ensureQuestions(category).then(() => {
       const question = state.questions?.find((item) => item.id === requestedQuestion[2]);
-      if (!question) return;
+      if (!question || question.isComingSoon) return;
       state.activeQuestionId = question.id;
       renderCategories();
       const article = [...categoriesRoot.querySelectorAll("[data-question-id]")]
