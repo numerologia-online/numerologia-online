@@ -1,5 +1,14 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "Idle, read-only connection check. Migration verified 2026-11-05: new domain HTTP 200; legacy HTTP 301; GitHub/live public files aligned. Any future publish requires a newly reviewed manifest."
+  "mode": "publish",
+  "files": [
+    "redflag-feature.js",
+    "app.js",
+    "index.html"
+  ],
+  "expected_sha256": {
+    "redflag-feature.js": "8ba6c4c0c5d0fef3bbcb2c35983bca6dea8b57a3f31a757f3013444b13cba44f",
+    "app.js": "29f979167da6b5fe9d3116d97c4dd8e24432c7ba441b347ba3fa6197ee84bb91",
+    "index.html": "fe174757f11c06c8df45819618a2810eeaa921fc18cde7dc18e033b0cea4ed24"
+  },
+  "note": "Red Flag save fix only: use active same-origin ticket API instead of old host; new share URL; open Telegram ticket reliably; two cache version references. Compare exact live hashes, back up, verify readback. No auth, payment, webhook or mailing modifications."
 }
