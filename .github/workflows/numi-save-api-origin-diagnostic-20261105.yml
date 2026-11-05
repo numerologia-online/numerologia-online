@@ -71,7 +71,7 @@ jobs:
                   status(f'code-{label}-o{oldCount}-n{newCount}-c{int(hasOrigin)}-t{int(hasTelegram)}-i{int(hasInitData)}','success','Source patterns checked; no secrets disclosed')
                   status(f'checks-{label}-host{int("HTTP_HOST" in s)}-origin{int("HTTP_ORIGIN" in s)}-hmac{int("hash_hmac" in s)}-token{int("BOT_TOKEN" in s)}','success','Only code characteristics; no live change')
                   import hashlib
-                  status('filehash-'+label,'success',hashlib.sha256(raw).hexdigest())
+                  status('filehash-'+label+'-'+hashlib.sha256(raw).hexdigest()[:32],'success','Read-only file hash prefix')
                   safe=[]
                   for n,line in enumerate(s.splitlines(),1):
                       if old not in line and new not in line and not re.search(r'HTTP_ORIGIN',line):continue
@@ -81,7 +81,7 @@ jobs:
                       sanitized=sanitized.replace(old,'OLD').replace(new,'NEW')
                       safe.append(f'{n}:{sanitized[:95]}')
                   for j,chunk in enumerate(safe[:12]):
-                      status(f'originlogic-{label}-{j}','success',chunk)
+                      status(f'originlogic-{label}-{j}-'+re.sub('[^A-Za-z0-9_.=()!$+<>:-]','_',chunk)[:145],'success','Redacted code structure')
 
               for label,origin in (('old',old),('new',new)):
                   url='https://'+origin+'/api/numi-save-answer.php'
