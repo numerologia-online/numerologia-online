@@ -26,6 +26,8 @@ jobs:
           f.retrbinary("RETR "+path,buf.write)
           data=buf.getvalue()
           print("YEAR_LIVE_PHP",len(data),"sha256",hashlib.sha256(data).hexdigest(),flush=True)
+          if len(data)<500 and b"password" not in data.lower() and b"secret" not in data.lower() and b"token" not in data.lower():
+            print("YEAR_LOADER_STUB",repr(data.decode("utf-8","replace")),flush=True)
           lines=data.decode("utf-8","replace").splitlines()
           rx=re.compile("origin|cors|access.control|http_origin|options|forbid|denied|method",re.I)
           sensitive=re.compile("secret|token|password|db_|credential|key|private|smtp|ftp_",re.I)
