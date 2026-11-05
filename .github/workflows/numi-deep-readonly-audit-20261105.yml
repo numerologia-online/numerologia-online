@@ -1,0 +1,144 @@
+name: Deep production domain, sections, SEO, security and drift audit — read only
+on:
+  push:
+    paths: ['.github/workflows/numi-deep-readonly-audit-20261105.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read only public HTTP crawl and FTPS verify; no user changes
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,re,ssl,ftplib,io,hashlib,subprocess,concurrent.futures,urllib.request,urllib.error,urllib.parse,xml.etree.ElementTree as ET,json,socket,time,pathlib,collections
+          OLD='xn--c1adkkdfjbp1a4l.online'
+          NEW='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
+          BASE='https://'+NEW
+          print('AUDIT_MODE READ_ONLY NO_PURCHASES_NO_USER_ACCOUNTS',flush=True)
+          headers={'User-Agent':'Numi-owner-readonly-quality-audit/2026-11-05','Accept':'text/html,application/json,application/xml,*/*'}
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+           def redirect_request(self,req,fp,code,msg,hdrs,url):return None
+          opener=urllib.request.build_opener(NoRedirect())
+          def get(url,method='GET',data=None,extra=None,limit=1200000):
+           try:
+            req=urllib.request.Request(url,data=data,headers={**headers,**(extra or {})},method=method)
+            with opener.open(req,timeout=16) as response: return (response.status,response.headers, response.read(limit))
+           except urllib.error.HTTPError as e:return (e.code,e.headers,e.read(min(limit,120000)))
+           except Exception as e:return (0,{},('NETWORK_'+type(e).__name__).encode())
+          def redirect(label,url,expect=None):
+           st,h,b=get(url,limit=300)
+           loc=h.get('Location','')
+           print('REDIRECT',label,'STATUS',st,'TO',loc[:180],flush=True)
+           return st,loc
+          for label,url in [
+           ('old-root','https://'+OLD+'/'),('old-guide','https://'+OLD+'/guide/kod-deneg/'),
+           ('old-redflag-query','https://'+OLD+'/?view=redflag'),('old-api-no-redirect','https://'+OLD+'/api/profile.php'),
+           ('new-http','http://'+NEW+'/'),('new-www','https://www.'+NEW+'/'),
+           ('old-http','http://'+OLD+'/'),('old-www','https://www.'+OLD+'/')]:
+           redirect(label,url)
+          paths=['/','/guide/','/year/','/child/','/pro/','/pro/schools/','/pro/school/','/moment/','/moment/yes-no/','/insights/','/analytics/','/day.html','/author.html','/contacts.html','/privacy.html','/offer.html','/terms.html','/prices.html','/refunds.html','/disclaimer.html','/analytics-settings.html','/robots.txt','/sitemap.xml','/manifest.webmanifest']
+          def probe_path(p):
+           st,h,b=get(BASE+p)
+           title=re.search(r'<title[^>]*>(.*?)</title',b.decode('utf8','replace'),re.I|re.S)
+           canonical=re.search(r'<link[^>]+rel=["\x27]canonical["\x27][^>]*href=["\x27]([^"\x27]+)',b.decode('utf8','replace'),re.I)
+           return p,st,h.get('Location',''),len(b),title.group(1).strip()[:65] if title else '',canonical.group(1)[:130] if canonical else ''
+          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
+           for p,st,location,size,title,canonical in sorted(ex.map(probe_path,paths)):
+            print('PUBLIC_ROUTE',p,'STATUS',st,'SIZE',size,'LOCATION',location[:120],'TITLE',title,'CANONICAL',canonical,flush=True)
+          status,h,xmlbody=get(BASE+'/sitemap.xml')
+          urls=[]
+          try:
+           tree=ET.fromstring(xmlbody)
+           urls=[e.text for e in tree.iter() if e.tag.endswith('loc') and e.text and e.text.startswith('http')]
+          except Exception as e:print('SITEMAP_PARSE_ERROR',str(e)[:100],flush=True)
+          print('SITEMAP_URL_COUNT',len(urls),'DUPLICATES',len(urls)-len(set(urls)),flush=True)
+          def crawl(url):
+           st,h,data=get(url)
+           html=data.decode('utf8','replace')
+           title=re.search(r'<title[^>]*>(.*?)</title',html,re.I|re.S)
+           desc=re.search(r'<meta\s+name=["\x27]description["\x27]\s+content=["\x27]([^"\x27]*)',html,re.I)
+           canonical=re.search(r'<link[^>]*rel=["\x27]canonical["\x27][^>]*href=["\x27]([^"\x27]*)',html,re.I)
+           robots=re.search(r'<meta[^>]+name=["\x27]robots["\x27][^>]*content=["\x27]([^"\x27]*)',html,re.I)
+           jsonld=len(re.findall(r'type=["\x27]application/ld\+json',html,re.I))
+           wronghost='xn--c1adkkdfjbp1a4l.online' in ((canonical.group(1) if canonical else ''))
+           return {'url':url,'code':st,'title':bool(title),'description':bool(desc),'canonical':canonical.group(1) if canonical else '', 'noindex':bool(robots and 'noindex' in robots.group(1).lower()),'jsonld':jsonld,'wronghost':wronghost,'html':html}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex: pages=list(ex.map(crawl,urls))
+          counts=collections.Counter(p['code'] for p in pages)
+          print('SITEMAP_HTTP_STATUS',dict(counts),flush=True)
+          print('SITEMAP_MISSING_TITLE',sum(not p['title'] for p in pages),'DESCRIPTION',sum(not p['description'] for p in pages),'CANONICAL',sum(not p['canonical'] for p in pages),'NOINDEX',sum(p['noindex'] for p in pages),'JSONLD_PAGES',sum(bool(p['jsonld']) for p in pages),flush=True)
+          for p in pages:
+           if p['code']!=200 or not p['title'] or not p['description'] or p['noindex'] or not p['canonical'] or p['wronghost']:
+            print('SEO_ISSUE',urllib.parse.urlsplit(p['url']).path,'HTTP',p['code'],'title',p['title'],'description',p['description'],'canonical',p['canonical'][:105],'noindex',p['noindex'],flush=True)
+          print('ROBOTS_PREVIEW',get(BASE+'/robots.txt')[2][:300].decode('utf8','replace').replace('\n',' | '),flush=True)
+          assets=set()
+          for p in pages:
+           root=p['url']
+           for a in re.findall(r'<(?:script|img|link)[^>]+(?:src|href)=["\x27]([^"\x27]+)',p['html'],re.I):
+            if a.startswith(('data:','//','https://','http://','#')):continue
+            full=urllib.parse.urljoin(root,a).split('?')[0].split('#')[0]
+            if urllib.parse.urlsplit(full).netloc==NEW and re.search(r'\.(?:js|css|webp|png|jpe?g|svg|ico|woff2?|json)$',full,re.I):assets.add(full)
+          assets=sorted(assets)
+          print('ASSETS_DISCOVERED',len(assets),flush=True)
+          def probe_asset(url):
+           st,h,b=get(url,method='HEAD',limit=0)
+           return url,st
+          with concurrent.futures.ThreadPoolExecutor(max_workers=7) as ex: result=list(ex.map(probe_asset,assets[:170]))
+          bad=[(urllib.parse.urlsplit(url).path,st) for url,st in result if st>=400 or st==0]
+          print('ASSETS_CHECKED',len(result),'ASSET_FAILED',len(bad),flush=True)
+          for asset,st in bad[:45]:print('ASSET_FAIL',asset,st,flush=True)
+          for p in ['/api/profile.php','/api/redflag-save.php','/api/numi-save-answer.php','/api/numi-account.php','/.env','/.git/config','/private/numi-account-20261031/core.php','/account-service/private/core.php','/api/db.php','/insights/numi-insights.php','/insights/public/numi-insights.php']:
+           st,h,b=get(BASE+p,limit=250)
+           print('SENSITIVE_PATH_GET',p,'HTTP',st,'LOCATION',h.get('Location','')[:120],'TYPE',h.get('Content-Type','')[:70],flush=True)
+          for endpoint in ['/api/numi-account.php','/api/profile.php','/api/redflag-save.php']:
+           st,h,b=get(BASE+endpoint,method='OPTIONS',extra={'Origin':BASE,'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'Content-Type'},limit=300)
+           print('OPTIONS_ORIGIN',endpoint,'STATUS',st,'ALLOW',h.get('Access-Control-Allow-Origin','')[:120],flush=True)
+          st,h,b=get(BASE+'/')
+          for name in ['Strict-Transport-Security','Content-Security-Policy','X-Content-Type-Options','Referrer-Policy','X-Frame-Options','Cache-Control','Server','Content-Encoding']:
+           print('SECURITY_HEADER',name,repr(h.get(name)),flush=True)
+          for host in [BASE,'https://'+OLD]:
+           for p in ['/api/numi-account.php','/api/redflag-save.php']:
+            body=json.dumps({'action':'health' if p.endswith('numi-account.php') else 'read','ticket':'fake-'+('x'*32)}).encode()
+            st,h,reply=get(host+p,method='POST',data=body,extra={'Content-Type':'application/json','Origin':BASE},limit=350)
+            code=''
+            try: code=json.loads(reply).get('error') or 'OK'
+            except:code='NONJSON'
+            print('API_SAFE_POST',host,p,'HTTP',st,'CODE',code,flush=True)
+          try:
+           st,h,b=get('https://numerologia-online-bot.tankraft431.workers.dev/health',limit=2500)
+           print('WORKER_HEALTH_HTTP',st,flush=True)
+           if st==200:
+            d=json.loads(b)
+            for k in ['ok','reg_ru','day_save_route','day_save_bot_token_configured','day_save_bot_identity_matches','version','telegram_inbound_webhook']:
+             if k in d:print('WORKER_HEALTH_FIELD',k,str(d[k])[:350],flush=True)
+          except Exception as e:print('WORKER_HEALTH_FAILED',type(e).__name__,flush=True)
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          f.connect('server172.hosting.reg.ru',21)
+          f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
+          home=f.pwd().rstrip('/')
+          root=home+'/www/'+OLD
+          def ftpread(path):
+           b=io.BytesIO();f.retrbinary('RETR '+path,b.write);return b.getvalue()
+          try:
+           ht=fp=ftpread(root+'/.htaccess').decode('utf8','replace')
+           print('HTACCESS_BYTES',len(ht.encode()),flush=True)
+           for n,line in enumerate(ht.splitlines(),1):
+            if re.search(r'rewrite(rule|cond)|headers|require|deny|<files|redirect|options|php_value',line,re.I):
+             if len(line)>350:line=line[:350]
+             print('HTACCESS_RULE',n,line.strip(),flush=True)
+          except Exception as e:print('HTACCESS_UNAVAILABLE',type(e).__name__,flush=True)
+          verify=['index.html','app.js','redflag-feature.js','redflag-polish.css','auth-profile.js','account-browser.js','robots.txt','sitemap.xml','guide/index.html','guide/articles.js','year/index.html','child/index.html','pro/index.html','moment/index.html','moment/yes-no/index.html','privacy.html','offer.html','prices.html','refunds.html','analytics-settings.html','insights/index.html','day.html','personal-day-feature.js','year-feature.js','matrix-feature.js','service-worker.js']
+          for name in verify:
+           if not pathlib.Path(name).is_file():continue
+           try:live=ftpread(root+'/'+name)
+           except Exception as e:print('LIVE_GIT_DIFFER',name,'MISSING_OR_UNAVAILABLE',type(e).__name__,flush=True);continue
+           local=pathlib.Path(name).read_bytes()
+           print('LIVE_GIT_COMPARE',name,'MATCH',hashlib.sha256(live).digest()==hashlib.sha256(local).digest(),'live_bytes',len(live),'github_bytes',len(local),flush=True)
+          f.quit()
+          print('AUDIT_COMPLETE_READONLY',flush=True)
+          PY
