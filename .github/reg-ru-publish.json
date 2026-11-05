@@ -1,28 +1,26 @@
 {
   "mode": "publish",
   "files": [
-    "privacy.html",
-    "offer.html",
-    "refunds.html",
-    "terms.html",
-    "disclaimer.html",
-    "contacts.html",
-    "prices.html",
-    "analytics-settings.html",
-    "author.html",
-    "methods.html"
+    "index.html",
+    "sitemap.xml",
+    "robots.txt",
+    "child/index.html",
+    "day.html",
+    "moment/index.html",
+    "pro/index.html",
+    "year/index.html",
+    "guide/index.html"
   ],
   "expected_sha256": {
-    "privacy.html": "84522534adca8516487f3ea39e08c300bddda1eebdc8ee8520a6f95795ab8943",
-    "offer.html": "c7d4ef77cc78ae5757d25781ca8d941628654c8fb517031c7a3dca1284fc178c",
-    "refunds.html": "f9162db73eb99d9b11ca4aaf18843771c4480585ffc941a503fd6e2d92227b20",
-    "terms.html": "ab75c5cb36d8c84c988444e2a3c2b57fc20e87f73773523901be69f00051972e",
-    "disclaimer.html": "5efdfae44b99dc9eaa81724429e46e2f8f65f1dd46a42b213fec1f9b3eb6b525",
-    "contacts.html": "03e8db69ea0c6501168fd6d8319dcaa80579cb11a3d6fffc8ac6ba6a002e9647",
-    "prices.html": "c5b794ea4c19e8691f5406308128d51368eda3a157566fb1fce6008564d790d8",
-    "analytics-settings.html": "6aedba65807fad3d2f2367a65a11cf005c3e2a4177b6e39329504699065b7d42",
-    "author.html": "8618b578c46d4f30f6bdd2c5cb78ed572a442df17a838bf748025bc90978fd43",
-    "methods.html": "8ceaec8130556f9413003161f89bb322f1ff9dfa34c0c9d50d38b8575b6b455a"
+    "index.html": "479226019a1b1e963d640f3304a6063151cb22acbc221f2533cd69784f32087a",
+    "sitemap.xml": "d1a2adf6966406b82792cf0f79d1b446a39e75b42cfe84e6d116d874859e57e8",
+    "robots.txt": "aab3857dc7166a032bd6ee5f3d552212dd96837bfe26a846c33bea42f66f00db",
+    "child/index.html": "3096f9c61408d47da5c708cc19db9506c21642221892656d3aa81ce8910329f7",
+    "day.html": "d7f40774bc3e1e7f30c78df86caa17bdfcd33bd0c50937bc4d0486dc79a0603b",
+    "moment/index.html": "f3d4f06417e336810bfe4526ef4178e2a07e8cf53b46d51c82fef313563b39b4",
+    "pro/index.html": "0c246aae271c80e5541b3d4bea12e935ac4b90b5f12f25d515682e4c6fdb61f4",
+    "year/index.html": "bde18f7f8a4418a5f1ff56f87f8b4d047618e77e3f0c7e84982a0b16c5273297",
+    "guide/index.html": "5868ae7b272c0b64e4ede62ad089d97cda97baedb66618a179f66275a66b0403"
   },
-  "note": "New primary domain in 10 reviewed legal, prices, author and methods documents only. Preserve server backups, abort on any live mismatch, no payments or account code."
+  "note": "Owner-approved domain migration SEO metadata, homepage, sitemap, robots and public section entry pages. 9 verified files; keep backup and abort on live drift."
 }
