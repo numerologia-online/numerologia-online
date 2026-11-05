@@ -75,6 +75,36 @@ jobs:
           body=read_data if False else body
           f.quit()
           PY
+      - name: Read-only compare current website and bot section links
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,hashlib,re
+          roots={
+            "old_regru":"https://xn--c1adkkdfjbp1a4l.online/",
+            "new_regru":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/",
+            "bot_code_github_pages":"https://numerologia-online.github.io/numerologia-online/"
+          }
+          for label,root in roots.items():
+            for asset in ("","account-browser.js","redflag-feature.js"):
+              url=root+asset
+              try:
+                req=urllib.request.Request(url,headers={"Cache-Control":"no-cache","User-Agent":"Numi-ReadOnly-Domain-Verification/1"})
+                with urllib.request.urlopen(req,timeout=18) as resp:
+                  content=resp.read(200000)
+                  code=resp.status
+                  final=resp.geturl()
+                text=content.decode("utf-8","replace")
+                print("SITE_ADDRESS_CHECK",label,asset or "index.html","status",code,"bytes",len(content),"sha256",hashlib.sha256(content).hexdigest()[:20],"final",final,flush=True)
+                if not asset:
+                  refs=re.findall(r'account-browser\\.js\\?v=[^"\\s<>]+',text)
+                  print("SITE_ACCOUNT_SCRIPT_VERSION",label,refs[:2],flush=True)
+                if asset=="account-browser.js":
+                  print("SITE_COMPACT_DOCS",label,"details_markup",int('legalDetails = document.createElement("details")' in text),"old_grid",int('legalNav.append(legalHeading, legalGrid)' in text),flush=True)
+                if asset=="redflag-feature.js":
+                  print("SITE_REDFLAG_SCROLL",label,"new_scroll",int('findScrollAnchor({ type: "category", id: category.id })' in text),flush=True)
+              except Exception as e:
+                print("SITE_ADDRESS_CHECK",label,asset or "index.html","ERROR",type(e).__name__,str(e)[:120],flush=True)
+          PY
       - name: Read-only preflight and guest calculation from old and current website origins
         run: |
           python3 - <<'PY'
