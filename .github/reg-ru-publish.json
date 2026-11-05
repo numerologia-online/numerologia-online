@@ -1,30 +1,24 @@
 {
   "mode": "publish",
   "files": [
-    "guide/numerologiya-s-nulya/index.html",
-    "guide/otnosheniya-po-date/index.html",
-    "guide/prednaznachenie/index.html",
-    "guide/prognoz-2027/index.html",
-    "guide/prognoz-na-segodnya/index.html",
-    "guide/psihomatrica/index.html",
-    "guide/razbor-goda/index.html",
-    "guide/rebenok-po-date-rozhdeniya/index.html",
-    "guide/red-flagi-v-otnosheniyah/index.html",
-    "guide/sovmestimost-po-date/index.html",
-    "guide/srochnyi-vopros/index.html"
+    "sitemap.xml",
+    "robots.txt",
+    "child/index.html",
+    "day.html",
+    "moment/index.html",
+    "pro/index.html",
+    "year/index.html",
+    "guide/index.html"
   ],
   "expected_sha256": {
-    "guide/numerologiya-s-nulya/index.html": "afede41f87ade8c0a156100c5037a6bc1f3743cfaf53f5bd434a8b6021627932",
-    "guide/otnosheniya-po-date/index.html": "8e254bb26b619bf91400feddc343d15d2fe0a2fecff9f5f4c0811620c7e9b0be",
-    "guide/prednaznachenie/index.html": "024baaaa49c003785e978aade5b76a6a8ee3a4000254ec4f732f9769efb2387e",
-    "guide/prognoz-2027/index.html": "ca331633055504c0fe522097b9f493b2424ed92f1db3d5f79c336929aac5092a",
-    "guide/prognoz-na-segodnya/index.html": "7923d9467371f40d59d32944d02e28738a88547070bf1fd0321044739d80e55e",
-    "guide/psihomatrica/index.html": "747781549b777e879efdc3f720410d2cb86c2db26f4aa011ba2bbb2163e9c906",
-    "guide/razbor-goda/index.html": "c042d70f9188743f2add05bdcde3dae2ea445adeee68715765147fc9dafb5173",
-    "guide/rebenok-po-date-rozhdeniya/index.html": "3e43e5b7b616cf41995b23f90081368e9b190cfc219c909e6a07845f5344781e",
-    "guide/red-flagi-v-otnosheniyah/index.html": "a765095cff6055c4321109389f5d42a2f486bdfc9dd8ee01be6eee64d610a769",
-    "guide/sovmestimost-po-date/index.html": "ee839eb417a658d73917fdaa4a7b8339bf25ed10c7a6882e9b0d7201f17075d5",
-    "guide/srochnyi-vopros/index.html": "1152eb0fb34539dfde8de8a1616747987f6f63a078d2ab0bc1724c5908b0c396"
+    "sitemap.xml": "d1a2adf6966406b82792cf0f79d1b446a39e75b42cfe84e6d116d874859e57e8",
+    "robots.txt": "aab3857dc7166a032bd6ee5f3d552212dd96837bfe26a846c33bea42f66f00db",
+    "child/index.html": "3096f9c61408d47da5c708cc19db9506c21642221892656d3aa81ce8910329f7",
+    "day.html": "d7f40774bc3e1e7f30c78df86caa17bdfcd33bd0c50937bc4d0486dc79a0603b",
+    "moment/index.html": "f3d4f06417e336810bfe4526ef4178e2a07e8cf53b46d51c82fef313563b39b4",
+    "pro/index.html": "0c246aae271c80e5541b3d4bea12e935ac4b90b5f12f25d515682e4c6fdb61f4",
+    "year/index.html": "bde18f7f8a4418a5f1ff56f87f8b4d047618e77e3f0c7e84982a0b16c5273297",
+    "guide/index.html": "5868ae7b272c0b64e4ede62ad089d97cda97baedb66618a179f66275a66b0403"
   },
-  "note": "Owner-approved new domain URLs guide final batch 3. Exact live version checks, backup, no account/payment files."
+  "note": "Publish 8 reviewed non-homepage primary-domain SEO assets and sections only; refuse drift; create server backups."
 }
