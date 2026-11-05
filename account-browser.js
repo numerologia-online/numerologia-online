@@ -16,6 +16,69 @@
   const savedPanel = document.querySelector("[data-account-content='saved']");
   if (!dialog || !profile || !overview || !ownerButton) return;
 
+  // Cabinet-only polish: the tariff comparison already contains the club benefits.
+  // Keep pricing, offer flows and all purchase logic intact.
+  dialog.querySelector("#account-show-offer")?.remove();
+
+  // Reuse the exact public legal destinations from the website footer.
+  // Show them below the dashboard tiles (not in the paid-content panels).
+  if (!overview.querySelector("#numi-cabinet-documents")) {
+    const legalLinks = [
+      ["Политика конфиденциальности", "/privacy.html"],
+      ["Публичная оферта", "/offer.html"],
+      ["Стоимость и тарифы", "/prices.html"],
+      ["Возврат денежных средств", "/refunds.html"],
+      ["Условия пользования", "/terms.html"],
+      ["Дисклеймер", "/disclaimer.html"],
+      ["Контакты и реквизиты", "/contacts.html"],
+      ["Настройки аналитики", "/analytics-settings.html"]
+    ];
+    const legalNav = document.createElement("nav");
+    legalNav.id = "numi-cabinet-documents";
+    legalNav.setAttribute("aria-label", "Документы и настройки сайта");
+    const legalHeading = document.createElement("div");
+    legalHeading.className = "numi-cabinet-documents-title";
+    legalHeading.textContent = "Документы и настройки";
+    const legalGrid = document.createElement("div");
+    legalGrid.className = "numi-cabinet-documents-grid";
+    for (const [label, url] of legalLinks) {
+      const link = document.createElement("a");
+      link.href = url;
+      link.textContent = label;
+      legalGrid.append(link);
+    }
+    legalNav.append(legalHeading, legalGrid);
+    overview.append(legalNav);
+    const legalStyle = document.createElement("style");
+    legalStyle.textContent = `
+      #account-overview #numi-cabinet-documents {
+        margin: 21px 0 3px; padding: 16px 1px 0;
+        border-top: 1px solid #dce3d7;
+        color: #53695b;
+      }
+      #account-overview .numi-cabinet-documents-title {
+        margin: 0 0 10px; color: #2c5846;
+        font: 750 12px/1.35 system-ui, -apple-system, sans-serif;
+        letter-spacing: .02em;
+      }
+      #account-overview .numi-cabinet-documents-grid {
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 12px; align-items: start;
+      }
+      #account-overview .numi-cabinet-documents-grid a {
+        display: flex; align-items: center;
+        min-height: 39px; padding: 5px 0;
+        color: #426e56; font: 600 12px/1.35 system-ui, -apple-system, sans-serif;
+        text-decoration: underline; text-underline-offset: 3px;
+        overflow-wrap: anywhere;
+      }
+      #account-overview .numi-cabinet-documents-grid a:focus-visible {
+        outline: 2px solid #2d8864; outline-offset: 2px;
+      }
+    `;
+    dialog.append(legalStyle);
+  }
+
   const signedTelegram = () => {
     const init = window.Telegram?.WebApp?.initData;
     if (typeof init === "string" && init) return init;
