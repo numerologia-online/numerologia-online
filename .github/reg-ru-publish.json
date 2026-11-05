@@ -1,14 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "index.html",
-    "account-browser.js",
-    "auth-profile.js"
-  ],
-  "expected_sha256": {
-    "index.html": "41bee7a5b48324a1c38244f467c3ff24d34963326a79f93d8dccbac77540a926",
-    "account-browser.js": "74793a15e7bcbfb29bc352482304da6b301b43feee00348ffb254b640a58b200",
-    "auth-profile.js": "3eb216138a2cc7505e417cd3786e2131a74d6e9a91087a64e8bdbc503e911bba"
-  },
-  "note": "Owner-approved logout and personal birth-date removal UI. Only three verified frontend files; PHP, DB, purchases, subscriptions, bot, messaging and mailing untouched. Guarded backup, live expected hashes, FTP readback required."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-05: Logout and birth-date delete safely published on REG.RU; three files verified, backups retained, no future auto-publish."
 }
