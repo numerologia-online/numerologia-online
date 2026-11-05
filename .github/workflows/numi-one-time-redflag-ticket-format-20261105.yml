@@ -1,0 +1,90 @@
+name: Fix Red Flag ticket new-domain link validation with guarded rollback
+on:
+  push:
+    paths: ['.github/workflows/numi-one-time-redflag-ticket-format-20261105.yml']
+permissions:
+  contents: read
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Patch only link validator and test synthetic ticket without messaging
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,ftplib,ssl,io,hashlib,time,subprocess,tempfile,urllib.request,urllib.error,json
+          HOST='xn--c1adkkdfjbp1a4l.online'
+          NEW='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
+          EXPECTED='2df908832f85bf6ce6f67004855282b45450405377321aa6c3b52904fb645070'
+          OLD="|| !(str_contains($text, 'https://numerologia-online.github.io/numerologia-online/') || str_contains($text, 'https://xn--c1adkkdfjbp1a4l.online/'))"
+          NEW_LINE="|| !(str_contains($text, 'https://numerologia-online.github.io/numerologia-online/') || str_contains($text, 'https://xn--c1adkkdfjbp1a4l.online/') || str_contains($text, 'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'))"
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          ftp.connect('server172.hosting.reg.ru',21);ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p()
+          root=ftp.pwd().rstrip('/')
+          target=root+'/www/'+HOST+'/api/redflag-save.php'
+          def get(path):
+           b=io.BytesIO();ftp.retrbinary('RETR '+path,b.write);return b.getvalue()
+          def put(path,data):
+           ftp.storbinary('STOR '+path,io.BytesIO(data))
+           if get(path)!=data:raise RuntimeError('FTP readback mismatch')
+          try:
+           original=get(target)
+           if hashlib.sha256(original).hexdigest()!=EXPECTED:raise RuntimeError('Live ticket API drifted; no changes allowed')
+           if original.count(OLD.encode())!=1:raise RuntimeError('Expected ticket text validation not found exactly once')
+           updated=original.replace(OLD.encode(),NEW_LINE.encode())
+           with tempfile.NamedTemporaryFile(suffix='.php') as temp:
+            temp.write(updated);temp.flush()
+            subprocess.run(['php','-l',temp.name],check=True,stdout=subprocess.DEVNULL)
+           backup=root+'/site-safeguard-backups/'+time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-redflag-allowed-ticket-link-before.php'
+           put(backup,original)
+           print('BACKUP_SAVED_VERIFIED',flush=True)
+           try:
+            put(target,updated)
+            print('PHP_PATCHED_VERIFIED',hashlib.sha256(updated).hexdigest(),flush=True)
+            url='https://'+NEW+'/api/redflag-save.php'
+            message=("🚩 Мужчина или Red Flag\n"
+              "Вопрос: Проверка переноса адреса\n"
+              "Дата рождения мужчины: 01.01.1990\n\n"
+              "Это технический безопасный тест. Текст не относится к реальному человеку. "
+              "Нужно проверить создание временного сообщения без отправки его кому-либо.\n\n"
+              "✨ Нумерология Онлайн\n"
+              "🌐 Сайт: https://"+NEW+"/?view=redflag\n"
+              "🤖 Бот: https://t.me/Numerologiaonline_bot")
+            def call(body,origin=None):
+             hdr={'Content-Type':'application/json','User-Agent':'NUMI-Ticket-Synthetic-Test/1.0'}
+             if origin:hdr['Origin']=origin
+             req=urllib.request.Request(url,data=json.dumps(body,ensure_ascii=False).encode(),headers=hdr,method='POST')
+             try:
+              with urllib.request.urlopen(req,timeout=15) as resp:
+               code=resp.status;data=resp.read(1500)
+             except urllib.error.HTTPError as e:
+              code=e.code;data=e.read(1500)
+             return code,json.loads(data)
+            status,result=call({'action':'create','text':message},'https://'+NEW)
+            if status!=200 or result.get('ok') is not True or not isinstance(result.get('ticket'),str):
+             raise RuntimeError('New domain valid ticket creation failed: '+str(status)+' '+str(result.get('error','UNKNOWN')))
+            token=result['ticket']
+            print('SYNTHETIC_TICKET_CREATED_VERIFIED',flush=True)
+            code,read=call({'action':'read','ticket':token})
+            if code!=200 or read.get('ok') is not True or read.get('text')!=message:
+             raise RuntimeError('Worker-style ticket read failed '+str(code))
+            print('SYNTHETIC_TICKET_READ_VERIFIED',flush=True)
+            code,consumed=call({'action':'consume','ticket':token})
+            if code!=200 or consumed.get('ok') is not True:
+             raise RuntimeError('Cleanup synthetic ticket failed '+str(code))
+            print('SYNTHETIC_TICKET_CONSUMED_VERIFIED',flush=True)
+            code,reject=call({'action':'create','text':message},'https://evil.invalid')
+            if code!=403 or reject.get('error')!='ORIGIN_NOT_ALLOWED':
+             raise RuntimeError('Unauthorized origin not rejected')
+            print('REDFLAG_NEW_DOMAIN_TICKET_END_TO_END_OK',flush=True)
+           except Exception:
+            try:put(target,original);print('ROLLBACK_VERIFIED',flush=True)
+            except Exception:print('ROLLBACK_FAILED',flush=True)
+            raise
+          finally:
+           try:ftp.quit()
+           except:ftp.close()
+          PY
