@@ -63,16 +63,16 @@ jobs:
               rules=original['.htaccess'].decode('utf-8')
               if BEGIN in rules or END in rules:
                   raise RuntimeError('Migration redirect block already present. No files modified.')
-          block='\n'.join([
-            BEGIN,
-            '<IfModule mod_rewrite.c>',
-            'RewriteEngine On',
-            'RewriteCond %{HTTP_HOST} ^(www\\.)?'+OLD.replace('.','\\.')+'$ [NC]',
-            'RewriteRule ^ https://'+NEW+'%{REQUEST_URI} [R=301,L,NE]',
-            '</IfModule>',
-            END,
-            ''
-          ])
+              block='\n'.join([
+                  BEGIN,
+                  '<IfModule mod_rewrite.c>',
+                  'RewriteEngine On',
+                  'RewriteCond %{HTTP_HOST} ^(www\\.)?'+OLD.replace('.','\\.')+'$ [NC]',
+                  'RewriteRule ^ https://'+NEW+'%{REQUEST_URI} [R=301,L,NE]',
+                  '</IfModule>',
+                  END,
+                  ''
+              ])
               updated_rules=(block+rules).encode('utf-8')
               stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
               backup=home+'/site-safeguard-backups'
