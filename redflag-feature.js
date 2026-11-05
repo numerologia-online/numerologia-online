@@ -627,10 +627,6 @@ form.addEventListener("submit", async (event) => {
     }
     clearError();
     renderCategories();
-    const target = linkedQuestion
-      ? [...categoriesRoot.querySelectorAll("[data-question-id]")].find((item) => item.dataset.questionId === linkedQuestion.id)
-      : null;
-    (target || categoriesRoot).scrollIntoView({ behavior: "smooth", block: "center" });
   } catch {
     showError("Не удалось подготовить вопросы. Обновите страницу и попробуйте ещё раз.");
   }
