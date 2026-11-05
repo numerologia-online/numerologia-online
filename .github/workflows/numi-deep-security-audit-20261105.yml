@@ -92,5 +92,13 @@ jobs:
            try:code=json.loads(b).get('error')
            except:code='NONJSON'
            print('SCHOOL_POST_NEW_HOST_WITH_ORIGIN',origin,'STATUS',st,'CODE',code,flush=True)
+          body=json.dumps({'birth_date':'1986-09-09','year':2027,'timezone':'Europe/Samara'}).encode()
+          for host in [NEW,OLD]:
+           st,h,b=request(host,'/api/numi-year-preview.php','POST','https://'+NEW,body)
+           try:
+            info=json.loads(b)
+            code=info.get('error') or ('OK' if info.get('ok') is True else 'OTHER')
+           except:code='NONJSON'
+           print('YEAR_PREVIEW_WITH_NEW_ORIGIN','host',host,'status',st,'result',code,'allowOrigin',h.get('Access-Control-Allow-Origin',''),flush=True)
           print('DEEP_SECURITY_AUDIT_FINISHED',flush=True)
           PY
