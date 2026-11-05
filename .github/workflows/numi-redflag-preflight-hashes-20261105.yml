@@ -1,0 +1,37 @@
+name: Read-only Red Flag production preflight exact hashes
+on:
+  push:
+    paths: ['.github/workflows/numi-redflag-preflight-hashes-20261105.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare live four assets against original git parent
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,ftplib,ssl,io,hashlib,subprocess
+          files=['redflag-feature.js','redflag-polish.css','app.js','index.html']
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p()
+          root=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online'
+          try:
+            for name in files:
+              raw=io.BytesIO()
+              ftp.retrbinary('RETR '+root+'/'+name,raw.write)
+              live=raw.getvalue()
+              previous=subprocess.check_output(['git','show','48bbc13abd2f4da8769138aeeda0d19bb4f41fe4^:'+name])
+              old_hash=hashlib.sha256(previous).hexdigest()
+              live_hash=hashlib.sha256(live).hexdigest()
+              print('PREFLIGHT',name,'live',live_hash,'expected_old',old_hash,'match',live_hash==old_hash,flush=True)
+              if live_hash!=old_hash:raise SystemExit('Live differs from previously verified version; refuse publication')
+          finally:
+            ftp.quit()
+          PY
