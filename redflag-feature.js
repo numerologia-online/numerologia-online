@@ -57,6 +57,8 @@ const REDFLAG_SITE_URL = "https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?view=red
 const REDFLAG_BOT_URL = "https://t.me/Numerologiaonline_bot";
 const REDFLAG_SAVE_URL = "/api/numi-save-answer.php";
 const REDFLAG_TICKET_URL = "/api/redflag-save.php";
+// The same ticket flow works both inside Telegram and in an ordinary browser.
+const REDFLAG_SAVE_VIA_TICKET = true;
 const formatRedFlagMessage = (question, response, dateOfBirth) => {
   const paragraphs = response.paragraphs ?? [response.answer];
   const parts = [
@@ -139,7 +141,7 @@ const addRedFlagShare = (answer, report) => {
       return;
     }
 
-    if (typeof signedData !== "string" || !signedData) {
+    if (REDFLAG_SAVE_VIA_TICKET || typeof signedData !== "string" || !signedData) {
       save.disabled = true;
       showFeedback("is-pending", "Готовим ссылку для сохранения…", "Ответ остаётся на этой странице. Подожди немного.");
       try {
@@ -160,7 +162,7 @@ const addRedFlagShare = (answer, report) => {
         }
         const data = await response.json();
         if (!response.ok || data?.ok !== true || !/^r_[A-Za-z0-9_-]{32}$/.test(data?.ticket || "")) {
-          throw new Error("TICKET_CREATE_FAILED");
+          throw new Error("TICKET_CREATE_FAILED_" + String(data?.error || response.status).replace(/[^A-Z0-9_]/g, "").slice(0,50));
         }
         preparedBotLink = REDFLAG_BOT_URL + "?start=" + encodeURIComponent(data.ticket);
         save.textContent = "🤖 Открыть бота с ответом";
@@ -168,10 +170,11 @@ const addRedFlagShare = (answer, report) => {
         showFeedback("is-success", "❤️ Ссылка на ответ готова",
           "Если Telegram не открылся, нажми кнопку ещё раз. В новом боте нажми «Начать», и тебе придёт именно этот ответ.");
         openRedFlagTicket(preparedBotLink);
-      } catch {
+      } catch (error) {
         save.disabled = false;
+        const code = String(error?.message || "NETWORK_ERROR").replace(/[^A-Za-z0-9_]/g, "").slice(0,65) || "NETWORK_ERROR";
         showFeedback("is-error", "Не удалось подготовить сохранение",
-          "Ответ остаётся на странице. Проверь интернет и нажми «Сохранить» ещё раз.");
+          "Ответ остаётся на странице. Код: " + code + ".");
       }
       return;
     }
