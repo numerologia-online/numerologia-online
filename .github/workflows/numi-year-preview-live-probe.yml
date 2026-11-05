@@ -45,6 +45,17 @@ jobs:
           for i in sorted(set(j for n in hits for j in range(max(0,n-2),min(len(source),n+3)))):
             if not forbidden.search(source[i]):
               print("YEAR_CORE_CORS",i+1,source[i][:270],flush=True)
+          for name in ("redflag-feature.js", "app.js", "index.html"):
+            public=io.BytesIO()
+            f.retrbinary("RETR "+home+"/www/xn--c1adkkdfjbp1a4l.online/"+name, public.write)
+            body=public.getvalue()
+            print("REDFLAG_LIVE_SHA256",name,hashlib.sha256(body).hexdigest(),"bytes",len(body),flush=True)
+            if name=="redflag-feature.js":
+              print("REDFLAG_SCROLL_ANCHOR",body.count(b'      state.activeQuestionId = opened ? null : question.id;'),body.count(b'    state.expanded = opening;'),flush=True)
+            if name=="app.js":
+              print("REDFLAG_APP_VERSION",body.count(b'redflag-feature.js?v=20261105scrollfit1'),flush=True)
+            if name=="index.html":
+              print("REDFLAG_INDEX_VERSION",body.count(b'app.js?v=20261105scrollfit1'),flush=True)
           f.quit()
           PY
       - name: Read-only preflight and guest calculation from old and current website origins
