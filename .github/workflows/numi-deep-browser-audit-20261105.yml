@@ -20,6 +20,7 @@ jobs:
       - name: Open live mobile sections without saving, purchasing or authenticating
         run: |
           cat > /tmp/numi-deep-browser-audit.cjs <<'JS'
+          (async()=>{
           const {chromium}=require('playwright');
           const ROOT='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/';
           const cases=[
@@ -102,6 +103,7 @@ jobs:
            ])await inspect(name,route,null,target)
           }finally{await browser.close()}
           console.log('BROWSER_AUDIT_FINISHED');
+          })().catch(e=>{console.error('BROWSER_AUDIT_FATAL',String(e));process.exit(1)});
           JS
           cp /tmp/numi-deep-browser-audit.cjs ./numi-deep-browser-audit.cjs
           node numi-deep-browser-audit.cjs
