@@ -39,6 +39,36 @@ jobs:
                 print('ACCOUNT_ROUTING',n,'[omitted]',flush=True)
               else:print('ACCOUNT_ROUTING',n,s.strip()[:220],flush=True)
           PY
+      - name: Audit production-only differences and both email link targets without changing accounts
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,io,os,re,difflib
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=18)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p()
+          raw=io.BytesIO()
+          ftp.retrbinary('RETR '+ftp.pwd().rstrip('/')+'/private/numi-account-20261031/core.php',raw.write)
+          ftp.quit()
+          live=raw.getvalue().decode('utf8')
+          expected=open('account-service/private/core.php',encoding='utf8').read()
+          def segment(text,start,end):
+            s=text.index(start);e=text.index(end,s+len(start))
+            return text[s:e]
+          def target(text,start,end):
+            scope=segment(text,start,end)
+            return 'naPublicOrigin()' in scope and "NUMI_ACCOUNT_ORIGIN.'/" not in scope
+          print('LIVE_CONFIRMATION_LINK_USES_CURRENT_ORIGIN',target(live,'function naSendVerify','function naVerifyLink'),flush=True)
+          print('LIVE_RESET_LINK_USES_CURRENT_ORIGIN',target(live,'function naResetRequest','function naResetPassword'),flush=True)
+          a=expected.splitlines();b=live.splitlines()
+          sm=difflib.SequenceMatcher(None,a,b,autojunk=False)
+          changes=[(tag,i1+1,i2,j1+1,j2) for tag,i1,i2,j1,j2 in sm.get_opcodes() if tag!='equal']
+          print('SOURCE_DIFFERENT_HUNKS_COUNT',len(changes),flush=True)
+          for tag,i1,i2,j1,j2 in changes[:15]:
+            print('HUNK',tag,'github_lines',i1,i2,'live_lines',j1,j2,flush=True)
+          PY
       - name: Verify deployed private core and safe email API responses
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
