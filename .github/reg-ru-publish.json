@@ -1,31 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "redflag-feature.js",
-    "app.js",
-    "index.html"
-  ],
-  "expected_sha256": {
-    "redflag-feature.js": "93d30abd7fea6016abf2d8615f62f15a9141152a3564e82f1aef6804023b55d8",
-    "app.js": "6354361c30a12c9384be2ff21b88f5b23f51bab64bec211ffa9eca634881c335",
-    "index.html": "fa33ad60e96343c9a79654d6e342f79b20ba1a96db019e240c8063a0aef773d9"
-  },
-  "patches": {
-    "redflag-feature.js": {
-      "before": "// Preserve the on-screen position of the specific category/question being tapped.\nconst findScrollAnchor = (anchor) => {\n  if (!anchor) return null;\n  if (anchor.type === \"category\") {\n    const index = REDFLAG_CATEGORIES.findIndex((item) => item.id === anchor.id);\n    return index < 0 ? null : categoriesRoot.querySelectorAll(\".redflag-category-toggle\")[index];\n  }\n  if (anchor.type === \"question\") {\n    return [...categoriesRoot.querySelectorAll(\"[data-question-id]\")]\n      .find((item) => item.dataset.questionId === anchor.id) || null;\n  }\n  return null;\n};\nconst renderCategories = (anchor = null) => {\n  const previousTop = findScrollAnchor(anchor)?.getBoundingClientRect().top;\n  categoriesRoot.replaceChildren(...REDFLAG_CATEGORIES.map(createCategory));\n  if (previousTop === undefined) return;\n  const current = findScrollAnchor(anchor);\n  if (!current) return;\n  const delta = current.getBoundingClientRect().top - previousTop;\n  if (Math.abs(delta) > 1) window.scrollBy({ top: delta, behavior: \"instant\" });\n};\n\nbirthDateInput.addEventListener",
-      "after": "// Update only the changed category. Rebuilding the entire long list and\n// compensating with scrollBy caused large jumps in mobile Safari/WebKit.\nconst renderCategories = (anchor = null) => {\n  if (categoriesRoot.children.length !== REDFLAG_CATEGORIES.length) {\n    categoriesRoot.replaceChildren(...REDFLAG_CATEGORIES.map(createCategory));\n    return;\n  }\n  REDFLAG_CATEGORIES.forEach((category, index) => {\n    const element = categoriesRoot.children[index];\n    const state = categoryStates.get(category.id);\n    const needsUpdate = element.classList.contains(\"is-open\") !== state.expanded\n      || (anchor?.type === \"category\" && anchor.id === category.id)\n      || (anchor?.type === \"question\" && state.questions?.some((q) => q.id === anchor.id))\n      || (anchor === null && state.expanded);\n    if (needsUpdate) element.replaceWith(createCategory(category, index));\n  });\n};\n\nbirthDateInput.addEventListener",
-      "expected_sha256": "93d30abd7fea6016abf2d8615f62f15a9141152a3564e82f1aef6804023b55d8"
-    },
-    "app.js": {
-      "before": "redflag-feature.js?v=20261105redflagnojump1",
-      "after": "redflag-feature.js?v=20261105reconcile1",
-      "expected_sha256": "6354361c30a12c9384be2ff21b88f5b23f51bab64bec211ffa9eca634881c335"
-    },
-    "index.html": {
-      "before": "app.js?v=20261105redflagnojump1",
-      "after": "app.js?v=20261105reconcile1",
-      "expected_sha256": "fa33ad60e96343c9a79654d6e342f79b20ba1a96db019e240c8063a0aef773d9"
-    }
-  },
-  "note": "Replace Red Flag full list rerender and scrollBy with targeted category updates only. Original production JS hashes verified read-only. Backup three originals; preserve all other site behavior; change version markers to refresh client cache."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-05: Red Flag renderer now updates only affected category, removing whole-list re-render and window.scrollBy. REG.RU production release verified, three files backed up. No automatic future publishing."
 }
