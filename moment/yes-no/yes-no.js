@@ -4,36 +4,6 @@
   const grid = $("yn-categories"), panel = $("yn-panel"), list = $("yn-questions"),
     title = $("yn-title"), count = $("yn-count"), back = $("yn-all"), dialog = $("yn-dialog");
   let catalog = null, active = null, selectedQuestion = null, answerRequest = 0, answerController = null;
-  let access = null;
-  function accessText() {
-    if (!access) return "Проверяем доступ к вопросам...";
-    if (!access.ok) return "Проверить доступ не удалось. Обновите страницу.";
-    if (!access.authenticated) return "Войдите в аккаунт, чтобы получить 1 бесплатный ответ в сутки.";
-    if (access.subscribed) return "Подписка активна · Все вопросы без ограничений.";
-    return access.remaining > 0
-      ? "Сегодня доступен 1 бесплатный вопрос. Остальные ответы по подписке."
-      : "Бесплатный вопрос на сегодня использован. Другие ответы по подписке.";
-  }
-  function updateAccess() {
-    const text = accessText();
-    for (const id of ["yn-access-status", "yn-access-list-status"]) {
-      const el = $(id); if (el) el.textContent = text;
-    }
-    if (catalog && active) render();
-  }
-  async function loadAccess() {
-    try {
-      const response = await fetch("/api/numi-yesno-answer.php?status=1", {
-        credentials: "same-origin", cache: "no-store"
-      });
-      const result = await response.json();
-      if (!response.ok || result.ok !== true) throw Error("access unavailable");
-      access = result;
-    } catch (_) {
-      access = { ok: false, authenticated: false, subscribed: false, remaining: 0 };
-    }
-    updateAccess();
-  }
   const timeInput = $("yn-time-input"), timeForm = $("yn-time-form"),
     timeError = $("yn-time-error"), timeResult = $("yn-time-result");
   const currentTime = () => {
@@ -73,38 +43,21 @@
       timeResult.textContent = "Ответ на этот вопрос ещё готовится.";
       return;
     }
-    if (!access?.authenticated || (!access.subscribed && access.remaining < 1)) {
-      timeResult.textContent = accessText();
-      return;
-    }
     timeResult.textContent = "Подготавливаем ответ.";
     answerController = new AbortController();
     const timer = setTimeout(() => answerController?.abort(), 12000);
     try {
-      const response = await fetch("/api/numi-yesno-answer.php", {
-        method: "POST", credentials: "same-origin", cache: "no-store",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: selectedQuestion.id, time: value }),
-        signal: answerController.signal
-      });
+      const response = await fetch("/api/numi-yesno-answer.php?question=" + encodeURIComponent(selectedQuestion.id) + "&time=" + encodeURIComponent(value), {cache:"no-store", signal:answerController.signal});
       const data = await response.json();
       if (id !== answerRequest) return;
       if (data.error === "ANSWER_NOT_READY") {timeResult.textContent = "Ответ на этот вопрос ещё готовится.";return;}
-      if (data.error === "DAILY_LIMIT_REACHED") {
-        if (access) access.remaining = 0;
-        updateAccess();
-        timeResult.textContent = "Бесплатный вопрос сегодня уже использован. Остальные ответы доступны по подписке.";
+      if (!response.ok || data.ok !== true || typeof data.answer !== "string") throw Error("answer unavailable");
+      const separator = data.answer.indexOf(".");
+      if (separator < 0) {
+        timeResult.textContent = data.answer;
+        attachAnswerActions(data.answer, value, id);
         return;
       }
-      if (data.error === "LOGIN_REQUIRED") {
-        access = {ok: true, authenticated: false, subscribed: false, remaining: 0};
-        updateAccess();
-        timeResult.textContent = accessText(); return;
-      }
-      if (!response.ok || data.ok !== true || typeof data.answer !== "string") throw Error("answer unavailable");
-      if (access && !access.subscribed) { access.remaining = 0; updateAccess(); }
-      const separator = data.answer.indexOf(".");
-      if (separator < 0) {timeResult.textContent = data.answer;return;}
       const verdict = document.createElement("strong");
       verdict.className = "yn-answer-verdict";
       verdict.textContent = data.answer.slice(0, separator + 1);
@@ -112,9 +65,60 @@
       explanation.className = "yn-answer-explanation";
       explanation.textContent = data.answer.slice(separator + 1).trim();
       timeResult.replaceChildren(verdict, explanation);
+      attachAnswerActions(data.answer, value, id);
     } catch (error) {
       if (id === answerRequest) timeResult.textContent = "Не удалось получить ответ. Попробуйте ещё раз.";
     } finally {clearTimeout(timer);}
+  }
+  function attachAnswerActions(answerText, questionTime, requestId) {
+    if (requestId !== answerRequest || !selectedQuestion || !answerText.trim()) return;
+    const questionTitle = selectedQuestion.title;
+    // Only the actual approved answer returned from PHP is saveable.
+    const report = [
+      '❓ Вопрос «Да или нет»',
+      'Вопрос: ' + questionTitle,
+      'Время вопроса: ' + questionTime,
+      'Ответ: ' + answerText,
+      '', '✨ Нумерология Онлайн',
+      '🌐 Сайт: https://xn--c1adkkdfjbp1a4l.online/moment/yes-no/',
+      '🤖 Бот: https://t.me/Numerologiaonline_bot'
+    ].join('\n');
+    const actions = document.createElement('div');
+    actions.className = 'yn-telegram-actions';
+    const save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'yn-telegram-save';
+    save.textContent = '❤️ Сохранить в Telegram';
+    const share = document.createElement('button');
+    share.type = 'button';
+    share.className = 'yn-telegram-share';
+    share.textContent = '💌 Поделиться';
+    const status = document.createElement('p');
+    status.className = 'yn-telegram-status';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    status.hidden = true;
+    actions.append(save, share, status);
+    save.addEventListener('click', async () => {
+      save.disabled = true;
+      try {
+        const { saveAnswerToTelegram } = await import('../../telegram-answer-save.js?v=20261104');
+        await saveAnswerToTelegram(report, save, status);
+      } catch {
+        status.textContent = 'Не удалось открыть сохранение. Попробуйте ещё раз.';
+        status.hidden = false;
+      } finally { save.disabled = false; }
+    });
+    share.addEventListener('click', async () => {
+      try {
+        const { shareAnswerInTelegram } = await import('../../telegram-answer-save.js?v=20261104');
+        await shareAnswerInTelegram(report, 'Ответ «Да или нет»');
+      } catch {
+        status.textContent = 'Не удалось открыть отправку. Попробуйте ещё раз.';
+        status.hidden = false;
+      }
+    });
+    timeResult.append(actions);
   }
   const node = (tag, cls, text) => {
     const el = document.createElement(tag);
@@ -168,12 +172,9 @@
     list.replaceChildren(...found.map((q, i) => {
       const button = node("button", "yn-question");
       button.type = "button";
-      const locked = !access?.ok || !access.authenticated || (!access.subscribed && access.remaining < 1);
-      button.disabled = locked;
-      if (locked) button.title = "Для дополнительных ответов нужна подписка";
       button.append(node("span", "yn-question-number", String(i + 1).padStart(2, "0")),
         node("span", "yn-question-text", q.title),
-        node("span", "yn-question-arrow", locked ? "🔒" : "→"));
+        node("span", "yn-question-arrow", "→"));
       button.addEventListener("click", () => {
         answerRequest++; answerController?.abort(); selectedQuestion = q;
         $("yn-dialog-title").textContent = q.title;
@@ -220,7 +221,6 @@
     else window.location.assign("../");
   });
   (async () => {
-    loadAccess();
     try {
       const response = await fetch("./questions.json?v=3", {cache:"default"});
       if (!response.ok) throw Error("catalog request");

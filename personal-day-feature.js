@@ -83,7 +83,7 @@ const todayLabel = () => new Intl.DateTimeFormat("ru-RU", { day: "numeric", mont
 const monthTitle = (date) => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(date);
 
 // The assembled daily reading is used for user-initiated sharing.
-const DAY_SITE_URL = "https://numerologia-online.github.io/numerologia-online/?view=day";
+const DAY_SITE_URL = "https://xn--c1adkkdfjbp1a4l.online/?view=day";
 const DAY_BOT_URL = "https://t.me/Numerologiaonline_bot";
 const formatDayMessage = (dateOfBirth, item) => {
   const parts = [
@@ -107,8 +107,22 @@ const addDayShareButtons = (result, report) => {
     + '" target="_blank" rel="noopener noreferrer" aria-label="Подписаться на ежедневный бесплатный прогноз в Telegram-боте">'
     + '<span class="personal-day-subscribe-icon" aria-hidden="true">✈</span>'
     + '<span>Подпишись на ежедневный бесплатный прогноз в телеграм-боте</span></a>'
+    + '<button type="button" class="personal-day-share-save">❤️ Сохранить в Telegram</button>'
+    + '<p class="numi-telegram-save-status" role="status" aria-live="polite" hidden></p>'
     + '<button type="button" class="personal-day-share-send">💌 Поделиться с подругой</button>';
   result.append(controls);
+  const save = controls.querySelector(".personal-day-share-save");
+  const status = controls.querySelector(".numi-telegram-save-status");
+  save.addEventListener("click", async () => {
+    save.disabled = true;
+    try {
+      const { saveAnswerToTelegram } = await import("./telegram-answer-save.js?v=20261104");
+      await saveAnswerToTelegram(report, save, status);
+    } catch {
+      status.textContent = "Не удалось открыть сохранение. Попробуйте ещё раз.";
+      status.hidden = false;
+    } finally { save.disabled = false; }
+  });
   const share = controls.querySelector(".personal-day-share-send");
   share.addEventListener("click", async () => {
     if (navigator.share) {
@@ -347,7 +361,7 @@ export const openPersonalDay = () => {
       importantButton.setAttribute("aria-expanded", String(!expanded));
       subscriptionInfo.hidden = expanded;
       importantButton.innerHTML = expanded
-        ? 'Подписка 490 ₽/мес <span aria-hidden="true">↓</span>'
+        ? '🔒 Подписка 490 ₽/мес <span aria-hidden="true">↓</span>'
         : 'Скрыть преимущества подписки <span aria-hidden="true">↑</span>';
       if (!expanded) {
         requestAnimationFrame(() => {
