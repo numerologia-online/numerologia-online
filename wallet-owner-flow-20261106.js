@@ -209,7 +209,16 @@ function panel(){
  $("numi-ow-widget-close").addEventListener("click",()=>{
   destroyPaymentWidget();msg("Форма закрыта. Статус уже созданного тестового платежа можно проверить кнопкой «Обновить».");
  });
- $("numi-ow-topup").addEventListener("click",()=>work(async()=>beginEmbeddedTopup()));
+ // Navigate within the SAME website. The dedicated page embeds the widget outside any <dialog>.
+ // It checks the SDK before creating a test payment, preventing unused pending attempts.
+ $("numi-ow-topup").addEventListener("click",()=>{
+   try{
+     const rub=validateAmount();
+     const url=new URL("/wallet-test-checkout-20261106.html",location.origin);
+     url.searchParams.set("amount",String(rub));
+     location.assign(url.href);
+   }catch(e){msg(e.message||"Неверная тестовая сумма.",true);}
+ });
  $("numi-ow-yoomoney").addEventListener("click",()=>work(async()=>beginTopup("yoo_money")));
  $("numi-ow-buy").addEventListener("click",()=>work(async()=>{
   await request("buy");await load();msg("Покупка записана. Списание 20 тестовых рублей выполнено один раз.");
