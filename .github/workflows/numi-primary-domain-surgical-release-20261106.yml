@@ -45,3 +45,4 @@ jobs:
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: python3 -u .github/scripts/numi_primary_domain_surgical_release_20261106.py
 # Retry after verifying exact current REG.RU app.js script version; no new backup files.
+# Verified alternate REG.RU root handling; no new backups or unrelated writes.
