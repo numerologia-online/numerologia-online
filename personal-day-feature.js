@@ -83,7 +83,7 @@ const todayLabel = () => new Intl.DateTimeFormat("ru-RU", { day: "numeric", mont
 const monthTitle = (date) => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(date);
 
 // The assembled daily reading is used for user-initiated sharing.
-const DAY_SITE_URL = "https://xn--c1adkkdfjbp1a4l.online/?view=day";
+const DAY_SITE_URL = "https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?view=day";
 const DAY_BOT_URL = "https://t.me/Numerologiaonline_bot";
 const formatDayMessage = (dateOfBirth, item) => {
   const parts = [
