@@ -7,15 +7,12 @@ declare(strict_types=1);
  * Payments are never accepted or marked paid from this endpoint.
  */
 const NUMI_ACCOUNT_COOKIE = '__Host-numi_session';
-const NUMI_ACCOUNT_ORIGIN = 'https://xn--c1adkkdfjbp1a4l.online';
-const NUMI_ACCOUNT_NEW_ORIGIN = 'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai';
+const NUMI_ACCOUNT_ORIGIN = 'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai';
 
 /** Only the two verified storefront domains may submit account requests. */
 function naAllowedOrigins(): array {
     return [
         NUMI_ACCOUNT_ORIGIN,
-        'https://www.xn--c1adkkdfjbp1a4l.online',
-        NUMI_ACCOUNT_NEW_ORIGIN,
         'https://www.xn----8sbhhqijddjgdebdz2c2o.xn--p1ai',
     ];
 }
