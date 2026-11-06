@@ -58,3 +58,5 @@ jobs:
         run: python3 -u .github/scripts/numi_wallet_test_secure_deploy.py
 
 # Recheck safely after non-secret diagnostic instrumentation.
+
+# Read-only check of installed account-core function capability.
