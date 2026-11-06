@@ -138,18 +138,21 @@ def main():
                 break
         if site is None:
             raise RuntimeError("Exact new-domain document root not verified. No files modified.")
+        print("SAFE_CHECKPOINT: verified document root",flush=True)
         private = home+"/"+PRIVATE
         if read(home+"/private/numi-account-20261031/core.php") is None:
             raise RuntimeError("Existing account backend not found; stopping")
         account_core=read(home+"/private/numi-account-20261031/core.php")
         if not all(x in account_core for x in [b"function naDB()",b"function naCurrent(",b"function naTestOwner("]):
             raise RuntimeError("Existing account backend lacks required owner-only safeguards")
+        print("SAFE_CHECKPOINT: account core verified",flush=True)
         # Confirm the user-created private directory is present and separate from webroot.
         ftp.cwd(private)
         if site.startswith(private+"/") or private.startswith(site+"/"):
             raise RuntimeError("Unsafe directory layout")
         ftp.cwd(site)
         ftp.cwd(site+"/api")
+        print("SAFE_CHECKPOINT: private folder and public api exist",flush=True)
         # No existing real-site files can be replaced by this pilot.
         new_paths = {
             private+"/core.php":core,
@@ -296,6 +299,17 @@ try {
 if __name__=="__main__":
     try:main()
     except BaseException as exc:
-        # Do not include server paths, keys, credentials, exception strings or tokens.
-        print("WALLET_TEST_RELEASE_STOPPED: "+type(exc).__name__,flush=True)
+        # Only allowlisted preflight messages are safe to expose; never log credentials or server paths.
+        known = {
+          'Exact new-domain document root not verified. No files modified.':'DOCUMENT_ROOT_MISMATCH',
+          'Existing account backend not found; stopping':'ACCOUNT_CORE_NOT_FOUND',
+          'Existing account backend lacks required owner-only safeguards':'ACCOUNT_CORE_GUARD_MISMATCH',
+          'Unsafe directory layout':'UNSAFE_DIRECTORY_LAYOUT',
+          'Private config is not the expected empty owner-created file. No files uploaded.':'CONFIG_NOT_EMPTY',
+          'Could not verify baseline file: index.html':'INDEX_MISSING',
+          'Could not verify baseline file: .htaccess':'HTACCESS_MISSING',
+          'Could not verify baseline file: api/numi-account.php':'ACCOUNT_ROUTE_MISSING',
+        }
+        message = known.get(str(exc),'OTHER') if isinstance(exc,RuntimeError) else type(exc).__name__
+        print('WALLET_TEST_RELEASE_STOPPED: '+message,flush=True)
         sys.exit(1)
