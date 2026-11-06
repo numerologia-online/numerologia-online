@@ -6,7 +6,7 @@
 (() => {
   "use strict";
   const CHECK_URL = "/api/profile.php";
-  const PROFILE_URL = "https://xn--c1adkkdfjbp1a4l.online/api/profile.php";
+  const PROFILE_URL = CHECK_URL;
   // Opens the Main Mini App directly when it is enabled in BotFather.
   const BIRTH_PREFIX = "num-online-birth-v1:";
   const BROWSER_BIRTH_KEY = BIRTH_PREFIX + "browser";
