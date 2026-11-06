@@ -168,7 +168,7 @@ function updatePlans(plans){
    if(!state||!btn||!cancel)continue;
    const date=d.current_period_end?String(d.current_period_end):null;
    state.textContent=active
-     ?"Активна до "+date+" UTC. "+(d.auto_renew?"Автопродление включено.":"Автопродление выключено.")
+     ?"Активна до "+date+" UTC. "+(d.auto_renew?"Согласие на автопродление сохранено; тестовый планировщик ещё не запущен.":"Автопродление выключено.")
      :d.status==="pending"?"Ожидает подтверждения платежа.":"Не подключена";
    btn.dataset.active=String(active||d.status==="pending");
    cancel.dataset.renew=String(d.auto_renew===true);
