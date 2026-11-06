@@ -56,3 +56,5 @@ jobs:
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
           NUMI_YOOKASSA_TEST_SECRET_KEY_1521071: ${{ secrets.NUMI_YOOKASSA_TEST_SECRET_KEY_1521071 }}
         run: python3 -u .github/scripts/numi_wallet_test_secure_deploy.py
+
+# Recheck safely after non-secret diagnostic instrumentation.
