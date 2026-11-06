@@ -1,4 +1,4 @@
-name: Read-only REG.RU Telegram save API origin diagnostic (2026-11-05)
+name: Inspect failed Telegram save on live REG.RU (read-only)
 on:
   push:
     branches: [main]
@@ -6,100 +6,73 @@ on:
       - .github/workflows/numi-save-api-origin-diagnostic-20261105.yml
 permissions:
   contents: read
-  statuses: write
 jobs:
   inspect:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Read exact live save handler and report only safe diagnostics to commit statuses
+      - name: Check public frontend and PHP save endpoint without user data or sends
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python3 - <<'PY'
-          import os, ftplib, io, ssl, json, urllib.request, urllib.error, re
-          repo=os.environ['GITHUB_REPOSITORY']
-          sha=os.environ['GITHUB_SHA']
-          api='https://api.github.com/repos/'+repo+'/statuses/'+sha
-          def status(context, state, description):
-              payload=json.dumps(dict(state=state,context='numi-save-api/'+context,description=description[:140])).encode()
-              req=urllib.request.Request(api,data=payload,method='POST',headers={
-                'Authorization':'Bearer '+os.environ['GH_TOKEN'],
-                'Accept':'application/vnd.github+json',
-                'Content-Type':'application/json',
-                'X-GitHub-Api-Version':'2022-11-28'
-              })
-              with urllib.request.urlopen(req,timeout=12) as response:
-                  if response.status!=201: raise RuntimeError('Cannot record status')
-          old='xn--c1adkkdfjbp1a4l.online'
-          new='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
-          try:
-              f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=22)
-              f.connect('server172.hosting.reg.ru',21)
-              f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
-              f.prot_p();f.set_pasv(True)
-              base=f.pwd().rstrip('/')
-              found=[]
-              try:
-                  for domain in (old,new):
-                      b=io.BytesIO()
-                      try:f.retrbinary('RETR '+base+'/www/'+domain+'/api/numi-save-answer.php',b.write)
-                      except ftplib.error_perm as e:
-                          if str(e).startswith('550'):continue
-                          raise
-                      raw=b.getvalue()
-                      if not raw.lstrip().startswith(b'<?php') or not (100<len(raw)<150000):
-                          raise RuntimeError('Unexpected API file format')
-                      found.append((domain,raw))
-              finally:
-                  try:f.quit()
-                  except Exception:f.close()
-              if not found:
-                  status('location','failure','No numi-save-answer.php found in the two expected REG.RU roots')
-                  raise SystemExit(1)
-              status('location','success','API file: '+','.join('old' if d==old else 'new' for d,_ in found)+'; no files changed')
-              for domain,raw in found:
-                  s=raw.decode('utf-8',errors='replace')
-                  label='old' if domain==old else 'new'
-                  oldCount=s.count(old)
-                  newCount=s.count(new)
-                  hasOrigin=bool(re.search(r'HTTP_ORIGIN|\bOrigin\b|\borigin\b',s))
-                  hasTelegram=('api.telegram.org' in s or 'sendMessage' in s)
-                  hasInitData=('init_data' in s or 'initData' in s)
-                  status(f'code-{label}-o{oldCount}-n{newCount}-c{int(hasOrigin)}-t{int(hasTelegram)}-i{int(hasInitData)}','success','Source patterns checked; no secrets disclosed')
-                  status(f'checks-{label}-host{int("HTTP_HOST" in s)}-origin{int("HTTP_ORIGIN" in s)}-hmac{int("hash_hmac" in s)}-token{int("BOT_TOKEN" in s)}','success','Only code characteristics; no live change')
-                  import hashlib
-                  status('filehash-'+label+'-'+hashlib.sha256(raw).hexdigest()[:32],'success','Read-only file hash prefix')
-                  safe=[]
-                  for n,line in enumerate(s.splitlines(),1):
-                      if old not in line and new not in line and not re.search(r'HTTP_ORIGIN',line):continue
-                      # Never expose live code or token values: emit only structure with string literals removed.
-                      sanitized=re.sub(r'''["'][^"'\n]{0,500}["']''','STR',line.strip())
-                      sanitized=re.sub(r'[A-Za-z0-9_]{60,}', 'REDACTED',sanitized)
-                      sanitized=sanitized.replace(old,'OLD').replace(new,'NEW')
-                      safe.append(f'{n}:{sanitized[:95]}')
-                  for j,chunk in enumerate(safe[:12]):
-                      status(f'originlogic-{label}-{j}-'+re.sub('[^A-Za-z0-9_.=()!$+<>:-]','_',chunk)[:145],'success','Redacted code structure')
-
-              for label,origin in (('old',old),('new',new)):
-                  url='https://'+origin+'/api/numi-save-answer.php'
-                  req=urllib.request.Request(url,method='OPTIONS',headers={
-                    'Origin':'https://'+origin,
-                    'Access-Control-Request-Method':'POST',
-                    'Access-Control-Request-Headers':'content-type',
-                  })
-                  try:
-                      with urllib.request.urlopen(req,timeout=12) as res:
-                          code=res.status;acao=res.headers.get('Access-Control-Allow-Origin','')
-                  except urllib.error.HTTPError as e:
-                      code=e.code;acao=e.headers.get('Access-Control-Allow-Origin','')
-                  except Exception:
-                      code=0;acao=''
-                  status(f'preflight-{label}-http{code}-cors{int(acao==("https://"+origin))}','success','OPTIONS checked read-only')
-          except Exception as exc:
-              msg=type(exc).__name__
-              status('runtime','failure','Read-only FTP diagnosis failed: '+msg+'; no live changes')
+          import os,ftplib,ssl,io,re,json,hashlib,urllib.request,urllib.error,urllib.parse
+          OLD="xn--c1adkkdfjbp1a4l.online"
+          NEW="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+          def fetch(url,method="GET",data=None,origin=None):
+            h={"User-Agent":"numi-readonly-save-diagnostic/1","Cache-Control":"no-cache"}
+            if origin:h["Origin"]="https://"+origin
+            if data is not None:h["Content-Type"]="application/json"
+            try:
+              with urllib.request.urlopen(urllib.request.Request(url,data=data,headers=h,method=method),timeout=18) as r:
+                return r.status,r.headers, r.read(100000),r.geturl()
+            except urllib.error.HTTPError as e:
+              return e.code,e.headers,e.read(100000),e.geturl()
+          for file in ("telegram-answer-save.js","personal-day-feature.js"):
+            st,h,blob,url=fetch("https://"+NEW+"/"+file+"?nocache=20261106")
+            print("PUBLIC_JS",json.dumps({"file":file,"status":st,"length":len(blob),"sha256":hashlib.sha256(blob).hexdigest()},ensure_ascii=False),flush=True)
+            if file=="telegram-answer-save.js" and st==200:
+              src=blob.decode("utf8",errors="replace")
+              terms=("saveAnswerToTelegram","fetch(","origin","initData","init_data","URL","api/","Не удалось","open","Telegram","response")
+              for i,line in enumerate(src.splitlines(),1):
+                if any(w in line for w in terms):
+                  safe=line.strip()[:230]
+                  if any(s in safe.lower() for s in ("token","authorization","secret")):continue
+                  print("PUBLIC_SAVE_JS_LINE",i,safe,flush=True)
+          for domain in (OLD,NEW):
+            for origin in (OLD,NEW):
+              for method in ("OPTIONS","POST"):
+                headers={"Origin":"https://"+origin}
+                if method=="OPTIONS":headers.update({"Access-Control-Request-Method":"POST","Access-Control-Request-Headers":"content-type"})
+                else:headers["Content-Type"]="application/json"
+                data=b'{}' if method=="POST" else None
+                req=urllib.request.Request("https://"+domain+"/api/numi-save-answer.php",method=method,data=data,headers=headers)
+                try:
+                  with urllib.request.urlopen(req,timeout=18) as r:
+                    status=r.status; body=r.read(3000); host=urllib.parse.urlsplit(r.url).hostname;acao=r.headers.get("Access-Control-Allow-Origin")
+                except urllib.error.HTTPError as e:
+                  status=e.code;body=e.read(3000);host=urllib.parse.urlsplit(e.url).hostname;acao=e.headers.get("Access-Control-Allow-Origin")
+                try: category=json.loads(body).get("error") or json.loads(body).get("message") or ""
+                except:category="NON_JSON"
+                print("SAVE_API_PROBE",json.dumps({"domain":"old" if domain==OLD else "new","origin":"old" if origin==OLD else "new","method":method,"status":status,"final_host":host,"cors":acao==("https://"+origin),"error_category":str(category)[:90]},ensure_ascii=False),flush=True)
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=24)
+          f.connect("server172.hosting.reg.ru",21);f.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          f.prot_p();f.set_pasv(True);home=f.pwd().rstrip("/")
+          for domain in (OLD,NEW):
+            p=home+"/www/"+domain+"/api/numi-save-answer.php"
+            b=io.BytesIO()
+            try:f.retrbinary("RETR "+p,b.write)
+            except ftplib.error_perm as e:
+              if str(e).startswith("550"):
+                print("SAVE_PHP_FTP",domain==NEW,"MISSING",flush=True);continue
               raise
+            src=b.getvalue().decode("utf8",errors="replace")
+            print("SAVE_PHP_FTP",json.dumps({"domain":"new" if domain==NEW else "old","bytes":len(src),"sha256":hashlib.sha256(b.getvalue()).hexdigest(),"has_old":OLD in src,"has_new":NEW in src},ensure_ascii=False),flush=True)
+            for i,line in enumerate(src.splitlines(),1):
+              if re.search("HTTP_ORIGIN|ORIGIN_NOT_ALLOWED|ALLOWED_ORIGINS|allowedOrigins|Origin|HTTP_HOST|REQUEST_METHOD",line):
+                safe=re.sub(r"([A-Za-z0-9_]{50,})","REDACTED",line.strip().replace(OLD,"OLD_DOMAIN").replace(NEW,"NEW_DOMAIN"))
+                if "token" in safe.lower() or "secret" in safe.lower():continue
+                print("SAVE_PHP_ORIGIN_LINE", "new" if domain==NEW else "old",i,safe[:230],flush=True)
+          f.quit()
           PY
