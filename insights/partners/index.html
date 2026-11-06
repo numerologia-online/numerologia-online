@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#173f32">
+<title>Партнёры — Нумерология онлайн</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;background:#f7f5f1;color:#213b30}
+*{box-sizing:border-box}body{margin:0}main{width:min(1100px,calc(100% - 28px));margin:auto;padding:24px 0 60px}
+a{color:#205c45;text-underline-offset:3px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+h1{font-size:clamp(26px,5vw,39px);margin:24px 0 8px}h2{font-size:19px;margin:0 0 12px}
+p{line-height:1.55;color:#526459}.muted,.hint{font-size:13px;color:#5c6d63}
+.panel{padding:20px;border:1px solid #e4e0d7;border-radius:18px;background:white;margin-top:18px;box-shadow:0 2px 12px #183d2808}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+label{display:flex;flex-direction:column;font-weight:600;font-size:13px;gap:6px;flex:1 1 145px}
+input{width:100%;min-height:42px;border:1px solid #c8d1c9;border-radius:9px;padding:10px;background:white;color:#213b30;font:inherit}
+button{min-height:42px;border:0;border-radius:9px;padding:10px 16px;background:#184936;color:white;font-weight:700;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}button.secondary{color:#184936;background:#e6f1e9}
+.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:760px}th,td{padding:12px 10px;border-bottom:1px solid #ebeee9;text-align:right;white-space:nowrap;font-size:13px}
+th{font-weight:600;color:#587165}td:first-child,th:first-child{text-align:left}tbody tr:hover{background:#f7faf7}
+.name{font-weight:700}.status{min-height:22px;color:#18563e}.error{color:#9c2f2f}
+.link{display:block;margin-top:5px;white-space:normal;overflow-wrap:anywhere;max-width:220px;font-size:12px}
+.small-button{min-height:28px;padding:5px 8px;font-size:12px}
+</style></head><body><main>
+<div class="top"><a href="/insights/">← В общую аналитику</a><span class="muted">Кабинет владельца</span></div>
+<h1>Партнёры и реклама</h1><p>Отдельные ссылки для авторов, учёт переходов и оплаченных заказов. Только подтверждённые платежи, без тестовых и возвращённых.</p>
+<section class="panel"><h2>Новая партнёрская ссылка</h2>
+<form id="create" class="row">
+<label>Имя партнёра<input id="partner-name" maxlength="80" placeholder="Вася — видео о совместимости" required></label>
+<label>Код латиницей<input id="partner-code" maxlength="40" pattern="[a-z][a-z0-9_-]{2,39}" placeholder="vasya" required></label>
+<label>Комиссия, %<input id="partner-rate" type="number" min="0" max="50" step="0.5" value="25" required></label>
+<button type="submit">Создать ссылку</button>
+</form><p class="hint">Один код закрепляется за одним партнёром. Ссылка ведёт на основной сайт. Комиссии пока только расчётные — автоматических выплат нет.</p>
+<p id="new-link" class="status" aria-live="polite"></p></section>
+<section class="panel"><div class="row" style="justify-content:space-between;align-items:center"><h2>Результаты партнёров</h2>
+<form id="filter" class="row"><label>С<input id="from" type="date" required></label><label>По<input id="to" type="date" required></label><button type="submit" class="secondary">Показать</button></form></div>
+<p id="status" class="status" role="status">Проверяем доступ…</p>
+<div class="table-wrap"><table><thead><tr><th>Партнёр и ссылка</th><th>Переходы</th><th>Браузеры*</th><th>Регистрации</th><th>Привязано аккаунтов</th><th>Покупатели</th><th>Оплаты</th><th>Выручка</th><th>Комиссия**</th></tr></thead><tbody id="rows"></tbody></table></div>
+<p class="hint">* «Браузеры» — приблизительное число отдельных ссылочных токенов за период, не людей. Регистрации учитываются только если аккаунт создан после перехода. ** Комиссия рассчитана по оплаченным заказам в первые 30 дней после перехода. При возврате сумма пересчитывается; фактические выплаты подтверждаются отдельно.</p>
+</section>
+<section class="panel"><h2>Как считается</h2><p>Первый подходящий партнёр закрепляется за покупателем на 30 дней, если использован тот же браузер и сохранено согласие на партнёрский учёт. После авторизации источник связывается с аккаунтом. Оплата появляется только после подтверждения платёжной системой. Другая ссылка не перезаписывает предыдущего партнёра.</p><p class="muted">Исторические покупки, сделанные до привязки, не приписываются партнёру. Telegram с другим браузером и отключённые cookie могут нарушить связку. Перед запуском требуется проверка реального сквозного сценария.</p></section>
+</main><script src="./partners.js" defer></script></body></html>
