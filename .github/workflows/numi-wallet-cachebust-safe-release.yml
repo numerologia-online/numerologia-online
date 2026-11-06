@@ -23,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Preflight: validate change scope and script
+      - name: "Preflight: validate change scope and script"
         shell: bash
         run: |
           set -euo pipefail
