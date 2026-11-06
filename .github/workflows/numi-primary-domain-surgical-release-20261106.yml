@@ -1,17 +1,16 @@
-name: Publish primary domain API and sharing links (no new backups)
+name: Migrate isolated server API origins to new domain without touching daily bot
 on:
   push:
     paths:
       - .github/workflows/numi-primary-domain-surgical-release-20261106.yml
-  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: reg-ru-manual-publication
   cancel-in-progress: false
 jobs:
-  release:
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish verified primary-domain API and share links on REG.RU')
+  account-origin-only:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish isolated server origins on new domain, preserving morning mailing'
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
@@ -19,30 +18,25 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify only URL migration and JS syntax
+      - name: Verify PHP syntax, origin patch and protected daily source
         run: |
           set -euo pipefail
+          php -l account-service/private/core.php
+          php -l server/school-access/private/gate.php
           python3 -m py_compile .github/scripts/numi_primary_domain_surgical_release_20261106.py
-          node --check auth-profile.js
-          node --check year-feature.js
-          node --check personal-day-feature.js
-          node --check app.js
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('auth-profile.js').read_text()
-          y=Path('year-feature.js').read_text()
-          d=Path('personal-day-feature.js').read_text()
-          i=Path('index.html').read_text()
-          assert 'const PROFILE_URL = CHECK_URL;' in p
-          assert 'const YEAR_CONTENT_API = "/api/";' in y
-          assert 'xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?view=day' in d
-          assert 'wallet-owner-flow-20261106.js' not in i
-          print('PRIMARY_DOMAIN_RELEASE_LOCAL_VALIDATION_PASSED')
+          a=Path('account-service/private/core.php').read_text()
+          s=Path('server/school-access/private/gate.php').read_text()
+          b=Path('cloudflare/telegram-bot/src/index.js').read_text()
+          assert "const NUMI_ACCOUNT_ORIGIN = 'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai';" in a
+          assert "const NS_ORIGIN = 'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai';" in s
+          assert "const REG_HANDLER = 'https://xn--c1adkkdfjbp1a4l.online/api/telegram-reg-stage-15-10-2026.php';" in b
+          assert 'personalDayCallback' in b and "OWNER_MAILING_HANDLER" in b
+          print('SERVER_PRIMARY_DOMAIN_PATCH_AND_DAILY_PROTECTION_OK')
           PY
-      - name: Check live API routes then publish five surgical URL changes
+      - name: Publish only exact private PHP origin changes, rollback in memory if needed
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: python3 -u .github/scripts/numi_primary_domain_surgical_release_20261106.py
-# Retry after verifying exact current REG.RU app.js script version; no new backup files.
-# Verified alternate REG.RU root handling; no new backups or unrelated writes.
