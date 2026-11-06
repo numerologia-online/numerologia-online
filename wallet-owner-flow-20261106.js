@@ -216,6 +216,11 @@ function panel(){
  }));
  return dialog;
 }
+// Only surface provider's known non-sensitive initialization codes to the test owner.
+function safeWidgetErrorCode(error){
+ const candidate=typeof error==="string"?error:error&&typeof error==="object"?(error.code||error.type||"unknown"):"unknown";
+ return typeof candidate==="string"&&/^[a-z0-9_\-]{1,60}$/i.test(candidate)?candidate:"unknown";
+}
 function destroyPaymentWidget(){
  if(paymentWidget){
   try{paymentWidget.destroy();}catch(_){}
@@ -262,7 +267,7 @@ async function beginEmbeddedTopup(){
  try {
   paymentWidget=new window.YooMoneyCheckoutWidget({
    confirmation_token:r.confirmation_token,
-   error_callback:()=>msg("Встроенная форма ЮKassa сообщила об ошибке. Платёж не повторяй; проверь его статус.",true)
+   error_callback:(error)=>msg("Ошибка инициализации виджета ЮKassa: "+safeWidgetErrorCode(error)+". Новый платёж не создавай; проверь статус текущего.",true)
   });
   paymentWidget.on("complete",()=>{
     destroyPaymentWidget();
@@ -273,11 +278,21 @@ async function beginEmbeddedTopup(){
     });
   });
   // No return_url: YooKassa widget completes inside the site and fires 'complete'.
-  await paymentWidget.render("numi-ow-widget-frame");
-  msg("Встроенная форма ЮKassa открыта прямо на сайте.");
+  // YooKassa's render() promise resolves only after the widget is fully loaded.
+  // Avoid a never-ending spinner if its third-party resources stop responding.
+  let watchdog;
+  try {
+   await Promise.race([
+    paymentWidget.render("numi-ow-widget-frame"),
+    new Promise((_,reject)=>{watchdog=setTimeout(()=>reject(new Error("WIDGET_RENDER_TIMEOUT")),20000);})
+   ]);
+  } finally {clearTimeout(watchdog);}
+  msg("Защищённая форма ЮKassa загрузилась. Результат оплаты проверяем на сервере.");
  } catch(e) {
   destroyPaymentWidget();
-  msg("Форма ЮKassa не загрузилась. Новый тестовый платёж уже создан: проверь статус, не начинай второй.",true);
+  const detail=e?.message==="WIDGET_RENDER_TIMEOUT"
+    ?"Виджет ЮKassa не завершил загрузку за 20 секунд.": "Форма ЮKassa не загрузилась.";
+  msg(detail+" Платёж уже создан, не начинай второй. Нажми «Проверить незавершённые платежи».",true);
  }
 }
 function stageExternalCheckout(url,kind,ref){
