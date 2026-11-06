@@ -13,15 +13,60 @@ button{font:600 13px/1.3 inherit;cursor:pointer;padding:12px 16px;border-radius:
 .status{border-radius:10px;background:#f1f0ec;padding:10px;margin:13px 0;font-size:12px;line-height:1.5;min-height:58px}.active{background:#e9f2ea;color:#28543b}.grid button{width:100%}
 h3{font:400 21px/1.25 Georgia,serif;margin:0 0 12px}.split{display:flex;gap:9px;align-items:center;justify-content:space-between}.split h3{margin:0}.history{list-style:none;margin:14px 0 0;padding:0}.history li{border-top:1px solid #eeece9;display:flex;justify-content:space-between;gap:10px;padding:12px 0;font-size:12px;line-height:1.4}.history .time{color:#898780;font-size:11px}.empty{color:#999;font-size:12px;margin-top:10px}footer{font-size:11px;color:#706d69;margin:16px 8px;line-height:1.5;text-align:center}
 @media(max-width:450px){.grid{grid-template-columns:1fr}.hero{padding:22px 20px}.card{padding:19px 18px}.amount{font-size:44px}}
+/* Compact mobile-first cabinet v2: this is a display-only adjustment. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{padding:0 10px 18px}
+.wrap{max-width:560px}
+.top{padding:11px 2px 8px}
+.brand{font-size:10px;letter-spacing:.1em}
+.back{font-size:11px}
+.hero{padding:15px 16px;border-radius:15px;margin-bottom:7px}
+.hero h1{font-size:clamp(21px,4.5vw,27px);line-height:1.14;margin-bottom:5px}
+.hero p{font-size:11px;line-height:1.4}
+.flag{font-size:9px;margin-bottom:7px}
+.notice{font-size:10px;line-height:1.4;padding:9px 11px;margin:8px 0 9px;border-radius:11px}
+.card{padding:13px 14px;border-radius:14px;margin-bottom:8px}
+.label{font-size:9px;letter-spacing:.1em}
+.amount{font-size:32px;margin:5px 0 1px}
+.muted{font-size:11px;line-height:1.38}
+.chips{gap:6px;margin-top:8px}
+button{font:600 11px/1.25 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;padding:8px 11px;min-height:34px;border-radius:9px;white-space:normal;overflow-wrap:anywhere}
+.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.grid h2{font-size:17px;line-height:1.13;margin:7px 0 6px}
+.price{font-size:20px;line-height:1.15}
+.period{font-size:10px}
+.status{padding:7px 8px;margin:8px 0;font-size:10px;line-height:1.36;min-height:0;border-radius:8px;overflow-wrap:anywhere}
+.grid button{min-height:34px}
+h3{font-size:17px;line-height:1.2;margin-bottom:7px}
+.history{margin-top:8px}
+.history li{padding:8px 0;font-size:11px}
+.history .time{font-size:10px}
+footer{font-size:10px;margin:9px 5px}
+@media(max-width:450px){
+ body{padding:0 9px 15px}
+ .hero{padding:13px 14px}
+ .card{padding:11px 12px}
+ .amount{font-size:30px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .grid .card{padding:11px 10px}
+ .grid h2{font-size:16px}
+ .grid .price{font-size:19px}
+ .grid .period{display:block;margin-top:1px}
+ .grid .muted{font-size:10px;line-height:1.32;margin:7px 0}
+ .grid .status{font-size:10px;padding:7px;margin:7px 0;min-height:38px}
+ .grid button{font-size:10px;padding:7px 5px;min-height:33px}
+ .grid .chips{margin-top:6px}
+}
+@media(max-width:340px){.grid{grid-template-columns:1fr}.grid .card{padding:12px}}
 </style></head>
 <body><div class="wrap">
 <div class="top"><div class="brand">Numerologia online <span aria-hidden="true">✦</span> 9966</div><a class="back" href="/">На сайт</a></div>
 <header class="hero"><div class="flag">Тестовый макет · без платежей</div><h1>Мой личный кабинет</h1><p>Кошелёк, покупки и две независимые подписки — посмотри, как это будет работать до подключения ЮKassa.</p></header>
-<div class="notice"><strong>Это демонстрация.</strong> Все суммы условные. Кнопки имитируют операции только в этом браузере. ЮKassa, настоящий баланс, учётная запись и платные разделы не затрагиваются.</div>
+<div class="notice"><strong>Демонстрация.</strong> Деньги условные. Реальных списаний и изменений аккаунта нет.</div>
 <section class="card" aria-labelledby="balance-title"><div id="balance-title" class="label">Мой кошелёк · демонстрация</div><div class="amount" id="balance" aria-live="polite">0 ₽</div><div class="muted">Доступный баланс для отдельных покупок</div><div class="chips"><button id="add100" type="button">+100 тестовых ₽</button><button id="add500" type="button" class="secondary">+500 тестовых ₽</button></div></section>
 <section class="card"><div class="split"><h3>Покупка вопроса</h3><strong style="font-size:19px">20 ₽</strong></div><div class="muted">Пример: один вопрос Red Flag, без подписки. Повторную покупку не списываем.</div><div class="chips"><button id="buy" type="button">Купить тестовый вопрос</button></div><div id="answer-status" class="status">Вопрос ещё не куплен.</div></section>
-<div class="grid" aria-label="Подписки"><section class="card"><div class="label">Подписка № 1</div><h2>Клуб сайта</h2><div class="price">490 ₽ <span class="period">/ месяц</span></div><p class="muted">Клубные скидки и специальные разделы. Оплачивается отдельно от школы.</p><div id="club-status" class="status" aria-live="polite">Не подключён</div><button id="club-buy" type="button">Тест: подключить клуб</button><div class="chips"><button id="club-toggle" type="button" class="secondary">Автопродление: выкл.</button></div></section>
-<section class="card"><div class="label">Подписка № 2</div><h2>Школа нумерологии</h2><div class="price">149 ₽ <span class="period">/ неделю</span></div><p class="muted">Отдельный доступ к урокам. Не включает клуб сайта.</p><div id="school-status" class="status" aria-live="polite">Не подключена</div><button id="school-buy" type="button">Тест: подключить школу</button><div class="chips"><button id="school-toggle" type="button" class="secondary">Автопродление: выкл.</button></div></section></div>
+<div class="grid" aria-label="Подписки"><section class="card"><div class="label">Подписка № 1</div><h2>Клуб сайта</h2><div class="price">490 ₽ <span class="period">/ месяц</span></div><p class="muted">Скидки и клубные материалы. Отдельно от школы.</p><div id="club-status" class="status" aria-live="polite">Не подключён</div><button id="club-buy" type="button">Подключить клуб · тест</button><div class="chips"><button id="club-toggle" type="button" class="secondary">Автопродление: выкл.</button></div></section>
+<section class="card"><div class="label">Подписка № 2</div><h2>Школа нумерологии</h2><div class="price">149 ₽ <span class="period">/ неделю</span></div><p class="muted">Доступ к урокам. Не включает клуб.</p><div id="school-status" class="status" aria-live="polite">Не подключена</div><button id="school-buy" type="button">Подключить школу · тест</button><div class="chips"><button id="school-toggle" type="button" class="secondary">Автопродление: выкл.</button></div></section></div>
 <section class="card" style="margin-top:12px"><div class="split"><h3>История операций</h3><button class="secondary" id="reset" type="button">Сбросить демо</button></div><ul id="history" class="history" aria-live="polite"></ul></section>
 <footer>Прототип интерфейса, ноябрь 2026. Пока нет списаний с банковских карт, серверного учёта или платного доступа. Для запуска потребуется отдельное безопасное подключение тестового магазина ЮKassa 1521071.</footer></div>
 <script>
@@ -39,7 +84,7 @@ $("buy").disabled=s.question||s.balance<20;
 for(const kind of ["club","school"]){
 const a=s[kind],active=a.until>Date.now();
 $(kind+"-status").textContent=subText(kind);$(kind+"-status").className="status"+(active?" active":"");
-$(kind+"-buy").textContent=active?"Тест: продлить подписку":"Тест: подключить "+(kind==="club"?"клуб":"школу");
+$(kind+"-buy").textContent=active?"Продлить · тест":"Подключить "+(kind==="club"?"клуб":"школу")+" · тест";
 $(kind+"-toggle").textContent="Автопродление: "+(a.auto?"вкл.":"выкл.");
 }
 const history=$("history");history.replaceChildren();
