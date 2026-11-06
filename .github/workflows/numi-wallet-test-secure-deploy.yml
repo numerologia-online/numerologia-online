@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          PINNED=c2bb979895ac3018da26742131d58659194fc0e9
+          PINNED=e0475eb3840fea6a6e7663b1e48612cbf7b5fa8e
           git fetch --no-tags --depth=1 origin feature/wallet-yookassa-test-20261106
           test "$(git rev-parse FETCH_HEAD)" = "$PINNED"
           git show "$PINNED:wallet-service/private/test-core.php" > /tmp/numi-wallet-test-core.php
