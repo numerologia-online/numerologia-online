@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#e7e4e1">
+<title>Тестовый кабинет · Нумерология онлайн</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#2c3230;background:#e9e7e4;font-synthesis:none}*{box-sizing:border-box}
+body{margin:0;padding:0 12px 40px}.wrap{width:min(680px,100%);margin:auto}.top{display:flex;justify-content:space-between;align-items:center;padding:20px 0 12px;gap:12px}.brand{font:700 12px/1.3 Arial,sans-serif;letter-spacing:.17em;text-transform:uppercase;color:#75685f}.back{font-size:12px;color:#615b56}
+.hero{padding:23px 22px 22px;background:#373a38;color:#fff;border-radius:22px;margin-bottom:12px}.hero h1{margin:0 0 9px;font:400 clamp(27px,6vw,39px)/1.05 Georgia,serif;letter-spacing:-.03em}.hero p{margin:0;font-size:13px;line-height:1.55;color:#e3dfd8}
+.flag{font-weight:800;text-transform:uppercase;letter-spacing:.09em;font-size:10px;color:#edd3a8;display:inline-block;margin-bottom:15px}
+.notice{margin:12px 0 16px;border:1px solid #dacdbd;border-radius:14px;padding:12px 14px;color:#5c5449;background:#f4f0ea;font-size:12px;line-height:1.45}
+.card{padding:21px 20px;background:#fff;border:1px solid #dedbd7;border-radius:20px;margin-bottom:12px;box-shadow:0 4px 20px #433e3605}.label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:#877d71}.amount{font-size:49px;font-weight:700;letter-spacing:-.06em;margin:10px 0 4px;font-variant-numeric:tabular-nums}.muted{color:#777671;font-size:12px;line-height:1.5}.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+button{font:600 13px/1.3 inherit;cursor:pointer;padding:12px 16px;border-radius:12px;border:1px solid #464641;background:#464641;color:white;min-height:43px}button.secondary{background:#fff;color:#47453f;border:1px solid #cecac4}button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,a:focus-visible{outline:3px solid #c69c56;outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid .card{margin:0}.grid h2{font:400 22px/1.1 Georgia,serif;margin:10px 0 9px}.price{font-size:26px;font-weight:800;letter-spacing:-.05em}.period{font-size:12px;font-weight:400;letter-spacing:0;color:#777}
+.status{border-radius:10px;background:#f1f0ec;padding:10px;margin:13px 0;font-size:12px;line-height:1.5;min-height:58px}.active{background:#e9f2ea;color:#28543b}.grid button{width:100%}
+h3{font:400 21px/1.25 Georgia,serif;margin:0 0 12px}.split{display:flex;gap:9px;align-items:center;justify-content:space-between}.split h3{margin:0}.history{list-style:none;margin:14px 0 0;padding:0}.history li{border-top:1px solid #eeece9;display:flex;justify-content:space-between;gap:10px;padding:12px 0;font-size:12px;line-height:1.4}.history .time{color:#898780;font-size:11px}.empty{color:#999;font-size:12px;margin-top:10px}footer{font-size:11px;color:#706d69;margin:16px 8px;line-height:1.5;text-align:center}
+@media(max-width:450px){.grid{grid-template-columns:1fr}.hero{padding:22px 20px}.card{padding:19px 18px}.amount{font-size:44px}}
+</style></head>
+<body><div class="wrap">
+<div class="top"><div class="brand">Numerologia online <span aria-hidden="true">✦</span> 9966</div><a class="back" href="/">На сайт</a></div>
+<header class="hero"><div class="flag">Тестовый макет · без платежей</div><h1>Мой личный кабинет</h1><p>Кошелёк, покупки и две независимые подписки — посмотри, как это будет работать до подключения ЮKassa.</p></header>
+<div class="notice"><strong>Это демонстрация.</strong> Все суммы условные. Кнопки имитируют операции только в этом браузере. ЮKassa, настоящий баланс, учётная запись и платные разделы не затрагиваются.</div>
+<section class="card" aria-labelledby="balance-title"><div id="balance-title" class="label">Мой кошелёк · демонстрация</div><div class="amount" id="balance" aria-live="polite">0 ₽</div><div class="muted">Доступный баланс для отдельных покупок</div><div class="chips"><button id="add100" type="button">+100 тестовых ₽</button><button id="add500" type="button" class="secondary">+500 тестовых ₽</button></div></section>
+<section class="card"><div class="split"><h3>Покупка вопроса</h3><strong style="font-size:19px">20 ₽</strong></div><div class="muted">Пример: один вопрос Red Flag, без подписки. Повторную покупку не списываем.</div><div class="chips"><button id="buy" type="button">Купить тестовый вопрос</button></div><div id="answer-status" class="status">Вопрос ещё не куплен.</div></section>
+<div class="grid" aria-label="Подписки"><section class="card"><div class="label">Подписка № 1</div><h2>Клуб сайта</h2><div class="price">490 ₽ <span class="period">/ месяц</span></div><p class="muted">Клубные скидки и специальные разделы. Оплачивается отдельно от школы.</p><div id="club-status" class="status" aria-live="polite">Не подключён</div><button id="club-buy" type="button">Тест: подключить клуб</button><div class="chips"><button id="club-toggle" type="button" class="secondary">Автопродление: выкл.</button></div></section>
+<section class="card"><div class="label">Подписка № 2</div><h2>Школа нумерологии</h2><div class="price">149 ₽ <span class="period">/ неделю</span></div><p class="muted">Отдельный доступ к урокам. Не включает клуб сайта.</p><div id="school-status" class="status" aria-live="polite">Не подключена</div><button id="school-buy" type="button">Тест: подключить школу</button><div class="chips"><button id="school-toggle" type="button" class="secondary">Автопродление: выкл.</button></div></section></div>
+<section class="card" style="margin-top:12px"><div class="split"><h3>История операций</h3><button class="secondary" id="reset" type="button">Сбросить демо</button></div><ul id="history" class="history" aria-live="polite"></ul></section>
+<footer>Прототип интерфейса, ноябрь 2026. Пока нет списаний с банковских карт, серверного учёта или платного доступа. Для запуска потребуется отдельное безопасное подключение тестового магазина ЮKassa 1521071.</footer></div>
+<script>
+(()=>{"use strict";
+const KEY="numi-wallet-sandbox-demo-20261106",initial=()=>({balance:0,question:false,club:{until:0,auto:false},school:{until:0,auto:false},history:[]});
+let s;try{s=Object.assign(initial(),JSON.parse(localStorage.getItem(KEY)||"{}"))}catch{s=initial()}if(!s.club||!s.school||!Array.isArray(s.history))s=initial();
+const $=id=>document.getElementById(id),fmt=t=>new Intl.DateTimeFormat("ru-RU",{day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date(t));
+const save=()=>{localStorage.setItem(KEY,JSON.stringify(s));draw()},log=(name,amount)=>{s.history.unshift({name,amount,date:Date.now()});s.history=s.history.slice(0,20)};
+function subText(kind){const a=s[kind];if(a.until<=Date.now())return "Не активна"+(a.until?". Срок истёк.":"");const d=Math.max(0,Math.ceil((a.until-Date.now())/86400000));return "Активна до "+fmt(a.until)+". Осталось примерно "+d+" дн. · Автопродление "+(a.auto?"вкл.":"выкл.");}
+function draw(){
+$("balance").textContent=s.balance.toLocaleString("ru-RU")+" ₽";
+$("answer-status").textContent=s.question?"Вопрос куплен в демонстрации. Настоящий ответ не выдавался.":"Вопрос ещё не куплен.";
+$("answer-status").className="status"+(s.question?" active":"");
+$("buy").disabled=s.question||s.balance<20;
+for(const kind of ["club","school"]){
+const a=s[kind],active=a.until>Date.now();
+$(kind+"-status").textContent=subText(kind);$(kind+"-status").className="status"+(active?" active":"");
+$(kind+"-buy").textContent=active?"Тест: продлить подписку":"Тест: подключить "+(kind==="club"?"клуб":"школу");
+$(kind+"-toggle").textContent="Автопродление: "+(a.auto?"вкл.":"выкл.");
+}
+const history=$("history");history.replaceChildren();
+if(!s.history.length){const li=document.createElement("li");li.textContent="Операций пока нет";history.append(li)}
+for(const h of s.history){const li=document.createElement("li"),left=document.createElement("span"),right=document.createElement("strong"),when=document.createElement("span");
+left.textContent=h.name;when.className="time";when.textContent=" · "+fmt(h.date);left.append(document.createElement("br"),when);right.textContent=(h.amount>0?"+":"")+h.amount+" ₽";li.append(left,right);history.append(li)}
+}
+for(const n of [100,500])$("add"+n).addEventListener("click",()=>{s.balance+=n;log("Имитация пополнения",n);save()});
+$("buy").addEventListener("click",()=>{if(s.question||s.balance<20)return;s.balance-=20;s.question=true;log("Тестовый вопрос Red Flag",-20);save()});
+for(const kind of ["club","school"]){
+const cost=kind==="club"?490:149;
+$(kind+"-buy").addEventListener("click",()=>{
+if(s.balance<cost){alert("В демо недостаточно баланса. Сымитируй пополнение.");return}
+s.balance-=cost;const start=Math.max(Date.now(),s[kind].until);const date=new Date(start);
+if(kind==="club")date.setMonth(date.getMonth()+1);else date.setDate(date.getDate()+7);
+s[kind].until=date.getTime();log(kind==="club"?"Тест: клуб сайта":"Тест: школа нумерологии",-cost);save()});
+$(kind+"-toggle").addEventListener("click",()=>{s[kind].auto=!s[kind].auto;save()});
+}
+$("reset").addEventListener("click",()=>{if(!confirm("Удалить только демонстрационные операции на этом устройстве?"))return;s=initial();save()});
+draw();setInterval(draw,60000);
+})();
+</script></body></html>
