@@ -77,42 +77,23 @@ jobs:
           f.quit()
           PY
 
-      - name: Read relevant live PHP validation logic safely and test synthetic payload schema
+      - name: Inspect current allowed links and validation guards read-only
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 - <<'PY'
-          import os,ftplib,ssl,io,json,re,urllib.request,urllib.error
-          old="xn--c1adkkdfjbp1a4l.online"
-          new="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
-          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=22)
-          f.connect("server172.hosting.reg.ru",21)
-          f.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
-          f.prot_p();f.set_pasv(True)
-          p=f.pwd().rstrip("/")+"/www/"+old+"/api/numi-save-answer.php"
-          b=io.BytesIO();f.retrbinary("RETR "+p,b.write);f.quit()
-          s=b.getvalue().decode("utf8")
-          for i,line in enumerate(s.splitlines(),1):
-            if 1<=i<=120 and any(term in line for term in
-               ("INVALID_FORECAST","INVALID_REQUEST","INVALID_TEXT","ORIGIN_NOT_ALLOWED","init_data","text","https://","str_contains","strpos","preg_match","answerSaveReply","parse_url","HTTP_ORIGIN","REQUEST_METHOD")):
-                if any(term in line.lower() for term in ("secret","password","bot_token","bot_token","config.local","mysql","authorization")):
-                    continue
-                snippet=line.strip()[:290].replace(old,"OLD_DOMAIN").replace(new,"NEW_DOMAIN")
-                snippet=re.sub(r"([A-Za-z0-9_]{50,})","REDACTED",snippet)
-                print("VALIDATION_PHP",i,snippet,flush=True)
-          for domain in (old,new):
-            report="🔮 Личный расчёт дня\\nДата рождения: 09.09.1986\\n\\n"+
-              "Прогноз на сегодня: сегодня стоит сосредоточиться на одной важной задаче. "*3+
-              "\\n\\n✨ Нумерология Онлайн\\n🌐 Сайт: https://"+new+"/?view=day\\n🤖 Бот: https://t.me/Numerologiaonline_bot"
-            payload=json.dumps({"init_data":"synthetic-invalid-signed-data","text":report},ensure_ascii=False).encode()
-            req=urllib.request.Request("https://"+domain+"/api/numi-save-answer.php",data=payload,headers={"Content-Type":"application/json","Origin":"https://"+new},method="POST")
-            try:
-                with urllib.request.urlopen(req,timeout=20) as r:
-                    st=r.status;raw=r.read(3000)
-            except urllib.error.HTTPError as e:
-                st=e.code;raw=e.read(3000)
-            try:obj=json.loads(raw)
-            except:obj={}
-            print("SYNTHETIC_SAVE_PROBE",json.dumps({"endpoint":"old" if domain==old else "new","status":st,"error_category":obj.get("error"),"ok":obj.get("ok")}),flush=True)
+          import os,ftplib,ssl,io,re,hashlib
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=23)
+          f.connect('server172.hosting.reg.ru',21)
+          f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          f.prot_p()
+          p=f.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/api/numi-save-answer.php'
+          b=io.BytesIO();f.retrbinary('RETR '+p,b.write);f.quit()
+          lines=b.getvalue().decode('utf8').splitlines()
+          for i,s in enumerate(lines,1):
+              if 25<=i<=115 and any(x in s for x in ('INVALID_FORECAST','INVALID_REQUEST','init_data','HTTP_ORIGIN','str_contains','strpos','preg_match','SITE_URL','https://')):
+                  if any(x in s.lower() for x in ('secret','password','token','private/','db_')):continue
+                  s=s.replace('xn--c1adkkdfjbp1a4l.online','OLD_DOMAIN').replace('xn----8sbhhqijddjgdebdz2c2o.xn--p1ai','NEW_DOMAIN')
+                  print('SAVE_VALIDATOR_LINE',i,s[:260],flush=True)
           PY
