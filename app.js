@@ -24,7 +24,7 @@ const loadStylesheet = (href) => new Promise((resolve, reject) => {
 });
 
 const getYearFeature = () => {
-    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=20261102sharedoffer2");
+    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=20261106domain1");
   return yearFeatureLoading;
 };
 
@@ -76,7 +76,7 @@ const openCompatibilityFeature = async () => {
 };
 
 const getPersonalDayFeature = () => {
-  if (!personalDayFeatureLoading) personalDayFeatureLoading = import("./personal-day-feature.js?v=20261104save1");
+  if (!personalDayFeatureLoading) personalDayFeatureLoading = import("./personal-day-feature.js?v=20261106domain1");
   return personalDayFeatureLoading;
 };
 
