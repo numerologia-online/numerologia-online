@@ -4,7 +4,7 @@ declare(strict_types=1);
 // A separate owner-only gate for the self-study. Existing login and paid APIs stay separate.
 const NS_COOKIE = '__Host-numi_school_owner';
 const NS_TTL = 900;
-const NS_ORIGIN = 'https://xn--c1adkkdfjbp1a4l.online';
+const NS_ORIGIN = 'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai';
 
 function nsBinding(): string {
     $raw = $_COOKIE['__Host-numi_session'] ?? '';
@@ -133,7 +133,7 @@ function nsServe(string $root): never {
         $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off') || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')==='https';
         if (!$secure) nsJson(426, ['ok'=>false,'error'=>'HTTPS_REQUIRED']);
         $origin = (string)($_SERVER['HTTP_ORIGIN'] ?? '');
-        if ($origin !== '' && !in_array($origin, [NS_ORIGIN,'https://www.xn--c1adkkdfjbp1a4l.online'], true)) nsJson(403, ['ok'=>false,'error'=>'ORIGIN_DENIED']);
+        if ($origin !== '' && !in_array($origin, [NS_ORIGIN,'https://www.xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'], true)) nsJson(403, ['ok'=>false,'error'=>'ORIGIN_DENIED']);
         $config = numiConfig();
         $key = hash_hmac('sha256', 'numi-school-owner-v1', numiBotToken($config), true);
         $allowed = json_decode(file_get_contents(__DIR__.'/allowlist.json'), true, 64, JSON_THROW_ON_ERROR);
