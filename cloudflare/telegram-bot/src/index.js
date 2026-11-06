@@ -12,7 +12,7 @@ const OWNER_MAILING_HANDLER = 'https://xn--c1adkkdfjbp1a4l.online/api/owner-mail
 const MAX_UPDATE_BYTES = 32768;
 const PREFIX = 'numerologia-online:webhook:v1:';
 
-const SITE_URL = 'https://numerologia-online.github.io/numerologia-online/';
+const SITE_URL = 'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/';
 const CATALOG_LABEL = '✨ Что ещё знают числа?';
 
 // Exact names from the site's home screen, in the owner's approved order.
