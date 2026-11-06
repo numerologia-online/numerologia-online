@@ -4,10 +4,19 @@
 const API="/api/numi-wallet-test.php", ID="numi-wallet-owner-overlay-20261106";
 const $=id=>document.getElementById(id);
 let owner=false, busy=false, balance=0, purchased=false, ready=false, selected=false, choiceAccepted=false;
-let paymentRef=new URL(location.href).searchParams.get("payment");
-let subscriptionRef=new URL(location.href).searchParams.get("subscription_payment");
-if(paymentRef && !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(paymentRef))paymentRef=null;
-if(subscriptionRef && !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(subscriptionRef))subscriptionRef=null;
+const TOPUP_KEY="numi-owner-wallet-topup-test-20261106";
+const SUB_KEY="numi-owner-wallet-sub-test-20261106";
+const uuidPattern=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
+function storedRef(key){
+ try{const ref=localStorage.getItem(key);return ref&&uuidPattern.test(ref)?ref:null;}catch(_){return null;}
+}
+function saveRef(key,ref){try{localStorage.setItem(key,ref);}catch(_){}}
+function clearRef(key){try{localStorage.removeItem(key);}catch(_){}}
+let paymentRef=new URL(location.href).searchParams.get("payment")||storedRef(TOPUP_KEY);
+let subscriptionRef=new URL(location.href).searchParams.get("subscription_payment")||storedRef(SUB_KEY);
+let checkoutUrl=null;
+if(paymentRef && !uuidPattern.test(paymentRef)){paymentRef=null;clearRef(TOPUP_KEY);}
+if(subscriptionRef && !uuidPattern.test(subscriptionRef)){subscriptionRef=null;clearRef(SUB_KEY);}
 const money=k=>(Number(k)/100).toLocaleString("ru-RU",{maximumFractionDigits:2})+" ₽";
 async function request(action,extra={}){
  const response=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",cache:"no-store",body:JSON.stringify({action,...extra})});
@@ -82,6 +91,11 @@ function panel(){
  '<div class="ow-actions"><button id="numi-ow-once" type="button">Купить разово · 20 ₽</button>',
  '<button id="numi-ow-with-club" type="button" class="ow-secondary">Клуб · 490 ₽/месяц</button></div></section>',
  '<div id="numi-ow-payment-panel">',
+ '<section class="ow-card" id="numi-ow-external" hidden>',
+ '<div class="ow-label">Тест ЮKassa</div><h3>Открыть оплату во внешнем браузере</h3>',
+ '<p class="ow-note">В Telegram платёжная форма может загружаться неправильно. Открой её отдельной кнопкой, затем вернись сюда и нажми «Обновить» для проверки результата.</p>',
+ '<div class="ow-actions"><button id="numi-ow-open-external" type="button">Перейти к тестовой оплате</button>',
+ '<button id="numi-ow-hide-external" class="ow-secondary" type="button">Скрыть</button></div></section>',
  '<section class="ow-card"><div class="ow-label">Мой кошелёк</div>',
  '<div id="numi-ow-balance" class="ow-balance">—</div>',
  '<div class="ow-note">Баланс хранится на сервере, отдельно от настоящих покупок.</div>',
@@ -89,7 +103,8 @@ function panel(){
  '<input id="numi-ow-amount" class="ow-input" inputmode="numeric" type="number" min="100" max="10000" step="1" value="100" aria-label="Сумма пополнения в рублях">',
  '<div class="ow-actions"><button id="numi-ow-topup" disabled>Оплатить картой · тест</button>',
  '<button id="numi-ow-yoomoney" class="ow-secondary" disabled>Через ЮMoney · тест</button>',
- '<button class="ow-secondary" id="numi-ow-refresh" disabled>Обновить</button></div></section>',
+ '<button class="ow-secondary" id="numi-ow-refresh" disabled>Обновить</button>',
+ '<button class="ow-secondary" id="numi-ow-recover" type="button">Проверить незавершённые платежи</button></div></section>',
  '<section class="ow-card"><div class="ow-label">Выбранный вопрос · Red Flag</div>',
  '<h3>Щедрый мужчина или считает каждую копейку?</h3>',
  '<div class="ow-note">Без подписки: 20 ₽. Повторная покупка не списывает деньги.</div>',
@@ -131,7 +146,7 @@ function panel(){
      if(r.test!==true||url.protocol!=="https:"||
         !/(^|\.)yookassa\.ru$|(^|\.)yoomoney\.ru$/.test(url.hostname))
        throw Error("INVALID_TEST_URL");
-     location.assign(url.href);
+     stageExternalCheckout(url.href,"subscription",r.charge_ref);
    }));
    $("numi-ow-cancel-"+plan).addEventListener("click",()=>work(async()=>{
      const r=await request("subscription_cancel",{plan});
@@ -151,15 +166,55 @@ function panel(){
    const r=await request("topup",{amount_rub:amount,payment_method:method});
    const url=new URL(r.confirmation_url);
    if(r.test!==true || url.protocol!=="https:" || !/(^|\.)yookassa\.ru$|(^|\.)yoomoney\.ru$/.test(url.hostname))throw Error("INVALID_TEST_URL");
-   location.assign(url.href);
+   stageExternalCheckout(url.href,"topup",r.payment_ref);
  }
- $("numi-ow-refresh").addEventListener("click",()=>work(async()=>{await load();msg("Баланс обновлён.")}));
+ $("numi-ow-open-external").addEventListener("click",()=>{
+  // Telegram requires openLink() to run synchronously inside a user gesture.
+  if(!checkoutUrl)return;
+  const url=checkoutUrl;
+  const miniApp=window.Telegram?.WebApp;
+  if(miniApp && typeof miniApp.openLink==="function"){
+   try{miniApp.openLink(url);}catch(_){location.assign(url);}
+  }else{
+   location.assign(url);
+  }
+  msg("После тестовой оплаты вернись сюда и нажми «Обновить».");
+ });
+ $("numi-ow-hide-external").addEventListener("click",()=>{
+  checkoutUrl=null;$("numi-ow-external").hidden=true;
+ });
+ $("numi-ow-refresh").addEventListener("click",()=>work(async()=>{
+  await load();
+  if(!paymentRef&&!subscriptionRef)msg("Статус платежей и баланс обновлены.");
+ }));
+ $("numi-ow-recover").addEventListener("click",()=>work(async()=>{
+  msg("Проверяем последние тестовые платежи по статусу ЮKassa…");
+  const topup=await request("sync_latest");
+  const sub=await request("subscription_sync_latest");
+  await load();
+  if(!paymentRef&&!subscriptionRef){
+   if(topup.payment_status==="pending"||sub.payment_status==="pending")
+    msg("Последний платёж ещё ожидает подтверждения в ЮKassa.");
+   else msg("Проверка завершена. Баланс и подписки обновлены.");
+  }
+ }));
  $("numi-ow-topup").addEventListener("click",()=>work(async()=>beginTopup("bank_card")));
  $("numi-ow-yoomoney").addEventListener("click",()=>work(async()=>beginTopup("yoo_money")));
  $("numi-ow-buy").addEventListener("click",()=>work(async()=>{
   await request("buy");await load();msg("Покупка записана. Списание 20 тестовых рублей выполнено один раз.");
  }));
  return dialog;
+}
+function stageExternalCheckout(url,kind,ref){
+ if(!uuidPattern.test(ref)||!["topup","subscription"].includes(kind))throw Error("INVALID_TEST_PAYMENT_REFERENCE");
+ const parsed=new URL(url);
+ if(parsed.protocol!=="https:"||!/(^|\.)(yookassa\.ru|yoomoney\.ru)$/.test(parsed.hostname))throw Error("INVALID_TEST_URL");
+ if(kind==="topup"){paymentRef=ref;saveRef(TOPUP_KEY,ref);}
+ else{subscriptionRef=ref;saveRef(SUB_KEY,ref);}
+ checkoutUrl=parsed.href;
+ $("numi-ow-external").hidden=false;
+ $("numi-ow-external").scrollIntoView({behavior:"smooth",block:"nearest"});
+ msg("Платёж создан. Нажми «Перейти к тестовой оплате», чтобы открыть страницу ЮKassa вне Telegram.");
 }
 function updatePlans(plans){
  for(const plan of ["club","school"]){
@@ -197,16 +252,20 @@ function render(data){
 }
 async function load(){
  if(subscriptionRef){
-  const result=await request("subscription_sync",{charge_ref:subscriptionRef});
+  let result;
+  try{result=await request("subscription_sync",{charge_ref:subscriptionRef});}
+  catch(e){if(e.message!=="SUBSCRIPTION_CHARGE_NOT_FOUND")throw e;result={payment_status:"not_found"};}
   if(result.payment_status==="pending")msg("Оплата подписки ещё ожидает подтверждения.");else{
-   subscriptionRef=null;const url=new URL(location.href);url.searchParams.delete("subscription_payment");
+   subscriptionRef=null;clearRef(SUB_KEY);checkoutUrl=null;if($("numi-ow-external"))$("numi-ow-external").hidden=true;const url=new URL(location.href);url.searchParams.delete("subscription_payment");
    history.replaceState(history.state,"",url.pathname+url.search+url.hash);
   }
  }
  if(paymentRef){
-  const result=await request("sync",{payment_ref:paymentRef});
-  if(result.payment_status==="pending")msg("Тестовый платёж ещё обрабатывается, нажми «Обновить».");else{
-   paymentRef=null;const url=new URL(location.href);url.searchParams.delete("payment");
+  let result;
+  try{result=await request("sync",{payment_ref:paymentRef});}
+  catch(e){if(e.message!=="PAYMENT_NOT_FOUND")throw e;result={payment_status:"not_found"};}
+  if(result.payment_status==="pending")msg("Тестовый платёж ожидает подтверждения. После оплаты нажми «Обновить».");else{
+   paymentRef=null;clearRef(TOPUP_KEY);checkoutUrl=null;if($("numi-ow-external"))$("numi-ow-external").hidden=true;const url=new URL(location.href);url.searchParams.delete("payment");
    history.replaceState(history.state,"",url.pathname+url.search+url.hash);
   }
  }
@@ -229,7 +288,7 @@ function showStep(){
  }
 async function open(){
  const d=panel();if(!d.open)d.showModal();showStep();
- await work(async()=>{await load();msg("Тестовый кошелёк готов.");});
+ await work(async()=>{await load();if(!paymentRef&&!subscriptionRef)msg("Тестовый кошелёк готов.");});
 }
 async function identify(){
  try{const data=await request("status");owner=data.test===true;if(owner)render(data)}catch(_){owner=false;}
