@@ -1,0 +1,47 @@
+name: Safe release TEST wallet script cache-bust on REG.RU
+
+on:
+  push:
+    paths:
+      - .github/workflows/numi-wallet-cachebust-safe-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish exact TEST wallet HTML script URL cache-bust')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Preflight: validate change scope and script
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/numi_wallet_cache_bust_safe_release.py
+          node --check wallet-owner-flow-20261106.js
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("wallet-owner-flow-20261106.js").read_text()
+          p=Path(".github/scripts/numi_wallet_cache_bust_safe_release.py").read_text()
+          assert "miniApp.openLink(url)" in s
+          assert "sync_latest" in s and "subscription_sync_latest" in s
+          assert "NEW=b'wallet-owner-flow-20261106.js?v=b35c41117e20'" in p
+          assert "changed=current.replace(OLD,NEW)" in p
+          assert "http(\"index.html\")!=changed" in p
+          print("ONE_TAG_TEST_CACHEBUST_STATIC_CHECKS_PASSED")
+          PY
+      - name: Back up original REG.RU index, change only test script cache version, verify or rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi_wallet_cache_bust_safe_release.py
