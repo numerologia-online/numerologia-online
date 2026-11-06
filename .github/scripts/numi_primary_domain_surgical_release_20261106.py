@@ -86,7 +86,7 @@ def main():
         if current is None:raise RuntimeError("ACCOUNT_PRIVATE_CORE_MISSING")
         source=subprocess.check_output(["git","show","HEAD:account-service/private/core.php"],timeout=20)
         # Compare against the exact GitHub output to prevent arbitrary rewrites.
-        originalGit=subprocess.check_output(["git","show","HEAD^:account-service/private/core.php"],timeout=20)
+        originalGit=subprocess.check_output(["git","cat-file","blob","d7e9aecc205e28e6d4876d0646c75a48ec0a67c7"],timeout=20)
         if patch(originalGit,ACCOUNT_EDITS)!=source:
             raise RuntimeError("ACCOUNT_GITHUB_PATCH_CHANGED")
         # Read and modify only the two known origin declaration/allowlist spans.
