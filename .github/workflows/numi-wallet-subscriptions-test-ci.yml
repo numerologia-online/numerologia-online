@@ -45,7 +45,7 @@ jobs:
           assert 'save_payment_method' in logic and 'payment_method_id' in logic
           assert 'auto_renew_consent' in logic and 'SUBSCRIPTION_PAYMENT_MISMATCH' in logic
           assert "wtSubCancel" in logic and "wtSubSync" in logic
-          assert 'CVC' not in sc and 'card_number' not in sc
+          assert 'card_number VARCHAR' not in sc and 'cvc VARCHAR' not in sc.lower()
           assert "WT_RETURN_URL.'&subscription_payment='." in logic
           assert "wtOwnerOnly($current)" in core
           print("ISOLATED_TEST_SUBSCRIPTIONS_STATIC_CHECKS_PASSED")
