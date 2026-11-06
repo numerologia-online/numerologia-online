@@ -34,7 +34,7 @@ yearPaywallDialog.addEventListener("click", event => {
   if (event.target === yearPaywallDialog) yearPaywallDialog.close();
 });
 // Paid originals stay server-side. Only a signed Telegram owner may request them.
-const YEAR_CONTENT_API = "https://xn--c1adkkdfjbp1a4l.online/api/";
+const YEAR_CONTENT_API = "/api/";
 let verifiedYearOwner = false;
 const hasVerifiedYearAccess = () => verifiedYearOwner;
 
