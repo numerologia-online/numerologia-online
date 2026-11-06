@@ -82,7 +82,12 @@ def main():
             def append(x):
                 output.extend(x)
                 if len(output)>MAX:raise RuntimeError("FTP_SIZE_EXCEEDED")
-            ftp.retrbinary("RETR "+p,append)
+            try:
+                ftp.retrbinary("RETR "+p,append)
+            except ftplib.error_perm as exc:
+                if str(exc).startswith("550"):
+                    return None
+                raise
             return bytes(output)
         def write(p,value):
             ftp.storbinary("STOR "+p,io.BytesIO(value))
