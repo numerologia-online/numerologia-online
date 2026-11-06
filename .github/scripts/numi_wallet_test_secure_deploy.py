@@ -26,7 +26,7 @@ OLD_DOMAIN = "xn--c1adkkdfjbp1a4l.online"
 PRIVATE = "private/numi-wallet-test-20261106"
 FILE_API = "api/numi-wallet-test.php"
 FILE_UI = "wallet-test.html"
-PINNED_SOURCE = "c2bb979895ac3018da26742131d58659194fc0e9"
+PINNED_SOURCE = "e0475eb3840fea6a6e7663b1e48612cbf7b5fa8e"
 TEST_SHOP_ID = "1521071"
 SECRET_ENV = "NUMI_YOOKASSA_TEST_SECRET_KEY_1521071"
 FTP_HOST_ENV = "REG_FTP_HOST"
@@ -76,7 +76,7 @@ def validate_preconditions():
     if not all([
         b"wtServe()" in route,
         b"WT_TEST_SHOP_ID = '1521071'" in core,
-        b"naTestOwner($current)" in core,
+        b"wtOwnerOnly($current)" in core,
         b"($p['test']??null)!==true" in core,
         b"TEST ONLY" in schema,
         b"numi_wallet_test_ledger" in schema,
@@ -144,7 +144,7 @@ def main():
             raise RuntimeError("Existing account backend not found; stopping")
         account_core=read(home+"/private/numi-account-20261031/core.php")
         print("SAFE_ACCOUNT_CAPABILITIES: db=%s session=%s owner=%s" % (b"function naDB()" in account_core,b"function naCurrent(" in account_core,b"function naTestOwner(" in account_core),flush=True)
-        if not all(x in account_core for x in [b"function naDB()",b"function naCurrent(",b"function naTestOwner("]):
+        if not all(x in account_core for x in [b"function naDB()",b"function naCurrent("]):
             raise RuntimeError("Existing account backend lacks required owner-only safeguards")
         print("SAFE_CHECKPOINT: account core verified",flush=True)
         # Confirm the user-created private directory is present and separate from webroot.
