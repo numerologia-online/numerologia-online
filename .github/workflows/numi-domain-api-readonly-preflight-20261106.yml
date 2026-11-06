@@ -41,3 +41,20 @@ jobs:
             except Exception as e:
               print('LIVE_JS_READ',json.dumps({'path':p,'error':type(e).__name__}),flush=True)
           PY
+
+      - name: Inspect exact existing JS references before surgical release
+        run: |
+          python3 - <<'PY'
+          import urllib.request,re,hashlib,json
+          base='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          for path in ('index.html','app.js','auth-profile.js','year-feature.js','personal-day-feature.js'):
+            with urllib.request.urlopen(urllib.request.Request(base+path,headers={'Cache-Control':'no-cache'}),timeout=25) as r:
+              s=r.read(200000).decode('utf-8')
+            if path=='index.html':
+              matches=[x.group(0)[:200] for x in re.finditer(r'<script[^>]+src="[^"]*(?:auth-profile|app\\.js)[^"]*"[^>]*>',s)]
+            elif path=='app.js':
+              matches=[x.group(0)[:160] for x in re.finditer(r'import\\(["\\'][^"\\']*(?:year-feature|personal-day-feature)[^"\\']*["\\']\\)',s)]
+            else:
+              matches=[line.strip()[:190] for line in s.splitlines() if ('PROFILE_URL =' in line or 'YEAR_CONTENT_API =' in line or 'DAY_SITE_URL =' in line)]
+            print('LIVE_REFERENCE',json.dumps({'path':path,'sha256':hashlib.sha256(s.encode('utf-8')).hexdigest(),'matches':matches},ensure_ascii=False),flush=True)
+          PY
