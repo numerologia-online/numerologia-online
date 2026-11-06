@@ -1,27 +1,122 @@
-name: Read exact live Red Flag success label and cache versions
+name: Publish corrected Telegram save confirmation text only
 on:
   push:
     paths:
       - .github/workflows/numi-save-api-origin-diagnostic-20261105.yml
 permissions:
   contents: read
+concurrency:
+  group: reg-ru-surgical-save-label
+  cancel-in-progress: false
 jobs:
-  inspect:
+  label-only:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish corrected Red Flag save confirmation wording on REG.RU'
     runs-on: ubuntu-24.04
-    timeout-minutes: 4
+    timeout-minutes: 8
     steps:
-      - name: Print only public UI markers
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check edited frontend syntax
+        run: |
+          node --check redflag-feature.js
+          node --check app.js
+      - name: Replace live success notice and update cache; in-memory rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 - <<'PY'
-          import urllib.request,hashlib,json
-          url="https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/"
-          for name in ("redflag-feature.js","app.js","index.html"):
-              request=urllib.request.Request(url+name+"?cache_bust=20261106",headers={"Cache-Control":"no-cache"})
-              with urllib.request.urlopen(request,timeout=24) as response:
-                  blob=response.read(200000)
-                  if response.status!=200:raise RuntimeError("Missing "+name)
-              lines=blob.decode("utf8").splitlines()
-              terms=("Ссылка на ответ готова","Если Telegram не открылся","redflag-feature.js?v=","app.js?v=")
-              marked=[{"line":i+1,"value":v.strip()[:220]} for i,v in enumerate(lines) if any(t in v for t in terms)]
-              print("LIVE_RED_FLAG_MARKERS",json.dumps({"file":name,"bytes":len(blob),"sha256":hashlib.sha256(blob).hexdigest(),"lines":marked},ensure_ascii=False),flush=True)
+          import os,io,ftplib,ssl,hashlib,urllib.request,urllib.parse,time
+          host="server172.hosting.reg.ru"
+          site="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+          previous="xn--c1adkkdfjbp1a4l.online"
+          paths=("redflag-feature.js","app.js","index.html")
+          pinned={
+            "redflag-feature.js":"cc7794dadd34023a5dd1b8058824c410562b3e490e1268ee75d6197900039b19",
+            "app.js":"4cb04693097ce430d74f9ec19c4f720e98ae9673188c24e992da52025d17dd36",
+            "index.html":"a053f8d0b4acf8003d36eee55444f91cb0c2373b7c01d0209c3e9e6c3641a17a"
+          }
+          modifications={
+            "redflag-feature.js":[
+              ('showFeedback("is-success", "❤️ Ссылка на ответ готова",',
+               'showFeedback("is-success", "❤️ Твой ответ отправлен!",'),
+              ('"Если Telegram не открылся, нажми кнопку ещё раз. В новом боте нажми «Начать», и тебе придёт именно этот ответ.");',
+               '"Если сообщение не пришло, открой нашего Telegram-бота по кнопке выше и нажми «Начать».");')
+            ],
+            "app.js":[
+              ('"./redflag-feature.js?v=20261105soonall1"',
+               '"./redflag-feature.js?v=20261106savedcopy1"')
+            ],
+            "index.html":[
+              ('src="app.js?v=20261106domain1"',
+               'src="app.js?v=20261106savedcopy1"')
+            ]
+          }
+          def digest(b):return hashlib.sha256(b).hexdigest()
+          def public_read(name):
+            req=urllib.request.Request("https://"+site+"/"+name+"?label_verify="+str(time.time_ns()),headers={"Cache-Control":"no-cache"})
+            with urllib.request.urlopen(req,timeout=23) as r:
+              data=r.read(220000)
+              if r.status!=200 or urllib.parse.urlsplit(r.url).hostname!=site or len(data)>220000:raise RuntimeError("PUBLIC_READ_INVALID_"+name)
+              return data
+          def patch(data,name):
+            updated=data
+            for before,after in modifications[name]:
+              a=before.encode("utf-8");b=after.encode("utf-8")
+              if updated.count(a)!=1 or b in updated:raise RuntimeError("ANCHOR_CHANGED_"+name)
+              updated=updated.replace(a,b,1)
+            return updated
+          originals={name:public_read(name) for name in paths}
+          for name,source in originals.items():
+            if digest(source)!=pinned[name]:raise RuntimeError("UNEXPECTED_LIVE_HASH_"+name)
+          new={name:patch(originals[name],name) for name in paths}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect(host,21)
+          ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          ftp.prot_p()
+          ftp.set_pasv(True)
+          try:
+            home=ftp.pwd().rstrip("/")
+            def ftp_read(path):
+              out=io.BytesIO()
+              try:ftp.retrbinary("RETR "+path,out.write)
+              except ftplib.error_perm as e:
+                if str(e).startswith("550"):return None
+                raise
+              return out.getvalue()
+            def ftp_put(path,content):
+              ftp.storbinary("STOR "+path,io.BytesIO(content))
+              if ftp_read(path)!=content:raise RuntimeError("FTP_READBACK_MISMATCH")
+            target=None
+            for name in (site,previous):
+              candidate=home+"/www/"+name
+              if ftp_read(candidate+"/index.html")==originals["index.html"]:
+                target=candidate
+                break
+            if not target:raise RuntimeError("WEBROOT_NOT_LOCATED")
+            for name in paths:
+              if ftp_read(target+"/"+name)!=originals[name]:raise RuntimeError("FTP_HTTP_BASELINE_MISMATCH_"+name)
+            print("SAVE_LABEL_PREFLIGHT_PASSED",flush=True)
+            applied=[]
+            try:
+              for name in paths:
+                p=target+"/"+name
+                if ftp_read(p)!=originals[name]:raise RuntimeError("CONCURRENT_CHANGE_"+name)
+                applied.append(name)
+                ftp_put(p,new[name])
+              for name in paths:
+                if public_read(name)!=new[name]:raise RuntimeError("PUBLIC_VERIFY_FAILED_"+name)
+              print("RED_FLAG_CONFIRMATION_TEXT_LIVE_VERIFIED",flush=True)
+              print("CHANGED_FILES redflag-feature.js app.js index.html",flush=True)
+              print("NO_CHANGES_BOT_DAILY_MAILING_PHP_PAYMENT_DATABASE",flush=True)
+              print("NO_NEW_BACKUPS_CREATED",flush=True)
+            except BaseException:
+              for name in reversed(applied):
+                try:ftp_put(target+"/"+name,originals[name]);print("ROLLBACK_OK_"+name,flush=True)
+                except BaseException:print("ROLLBACK_FAILED_"+name,flush=True)
+              raise
+          finally:
+            try:ftp.quit()
+            except BaseException:ftp.close()
           PY
