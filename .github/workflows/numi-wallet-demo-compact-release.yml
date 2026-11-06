@@ -1,0 +1,120 @@
+name: REG.RU compact only one fake-money wallet preview page
+on:
+  push:
+    paths: [.github/workflows/numi-wallet-demo-compact-release.yml]
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  compact:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish compact fake-money wallet layout only'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate demo CSS and unchanged payment-safe JS
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,subprocess
+          file="wallet-sandbox-preview-20261106.html"
+          base=subprocess.check_output(["git","show","6415076a2b65a3059db4c0ef79a332878ca57dfb:"+file])
+          fresh=Path(file).read_bytes()
+          assert b"Compact mobile-first cabinet v2" in fresh
+          assert b"490" in fresh and b"149" in fresh
+          assert b'<meta name="robots" content="noindex,nofollow,noarchive">' in fresh
+          assert b"wallet-sandbox-demo-20261106" in fresh
+          assert len(fresh)<100000
+          assert not re.search(rb"(?i)<script[^>]+src=|\bfetch\s*\(|XMLHttpRequest|sendBeacon|secret_key|test-core.php",fresh)
+          for body in (base,fresh):
+            scripts=re.findall(rb"<script>([\s\S]*?)</script>",body)
+            assert len(scripts)==1
+          Path("/tmp/numi-wallet-compact.js").write_bytes(re.findall(rb"<script>([\s\S]*?)</script>",fresh)[0])
+          print("Compact mockup verified; demo-only frontend.")
+          PY
+          node --check /tmp/numi-wallet-compact.js
+      - name: Backup and replace only exact existing demo after source checksum validation
+        env:
+          REG_FTP_HOST: \${{ secrets.REG_FTP_HOST }}
+          REG_FTP_USER: \${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: \${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,hashlib,io,os,pathlib,re,socket,ssl,subprocess,time,urllib.parse,urllib.request
+          FILE="wallet-sandbox-preview-20261106.html"
+          NEW="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+          OLD="xn--c1adkkdfjbp1a4l.online"
+          expected=subprocess.check_output(["git","show","6415076a2b65a3059db4c0ef79a332878ca57dfb:"+FILE])
+          target=pathlib.Path(FILE).read_bytes()
+          def h(data):return hashlib.sha256(data).digest()
+          if h(expected)==h(target):raise RuntimeError("No approved changes in preview file")
+          host=os.environ.get("REG_FTP_HOST","").strip()
+          user=os.environ.get("REG_FTP_USER","").strip()
+          pw=os.environ.get("REG_FTP_PASSWORD","")
+          if not(host and user and pw):raise SystemExit("Missing REG credentials; no changes")
+          socket.inet_aton(host)
+          ptr=socket.gethostbyaddr(host)[0].lower().rstrip(".")
+          if not re.fullmatch(r"[a-z0-9.-]+\.hosting\.reg\.ru",ptr):raise SystemExit("Unverified hosting DNS")
+          if host not in {x[4][0] for x in socket.getaddrinfo(ptr,21,type=socket.SOCK_STREAM)}:raise SystemExit("Hosting IP/PTR mismatch")
+          def read(ftp,name,limit=3_000_000):
+            buf=bytearray()
+            def add(chunk):
+              buf.extend(chunk)
+              if len(buf)>limit:raise RuntimeError("Remote too large")
+            ftp.retrbinary("RETR "+name,add)
+            return bytes(buf)
+          req=urllib.request.Request("https://"+NEW+"/index.html",headers={"Cache-Control":"no-cache","User-Agent":"numi-compact-preview-check/1.0"})
+          with urllib.request.urlopen(req,timeout=20) as res:
+            if urllib.parse.urlparse(res.geturl()).hostname!=NEW:raise RuntimeError("Unexpected domain redirect")
+            public_index=res.read(3_000_001)
+          if len(public_index)>3_000_000:raise RuntimeError("Homepage too large")
+          ftps=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          replaced=False;original=None;directory=None
+          try:
+            ftps.connect(ptr,21);ftps.auth();ftps.login(user,pw);ftps.prot_p();ftps.set_pasv(True)
+            home=ftps.pwd()
+            for candidate in ("www/"+NEW,"www/"+OLD):
+              try:
+                ftps.cwd(home);ftps.cwd(candidate)
+                served=read(ftps,"index.html")
+              except ftplib.error_perm:continue
+              if h(served)==h(public_index):
+                directory=ftps.pwd()
+                break
+            if directory is None:raise RuntimeError("Live domain root not verified; nothing written")
+            ftps.cwd(directory)
+            original=read(ftps,FILE)
+            if h(original)!=h(expected):raise RuntimeError("Demo page changed on REG.RU; refusing overwrite")
+            ftps.cwd(home)
+            try:ftps.cwd("site-safeguard-backups")
+            except ftplib.error_perm:
+              ftps.mkd("site-safeguard-backups");ftps.cwd("site-safeguard-backups")
+            backup=time.strftime("%Y%m%dT%H%M%SZ",time.gmtime())+"-wallet-demo-compact-before-"+hashlib.sha256(original).hexdigest()[:12]+".html"
+            ftps.storbinary("STOR "+backup,io.BytesIO(original))
+            if h(read(ftps,backup))!=h(original):raise RuntimeError("Backup checksum failed; no live file touched")
+            print("Private backup saved and verified.")
+            ftps.cwd(directory)
+            ftps.storbinary("STOR "+FILE,io.BytesIO(target));replaced=True
+            if h(read(ftps,FILE))!=h(target):raise RuntimeError("New file checksum mismatch")
+            req=urllib.request.Request("https://"+NEW+"/"+FILE+"?v=20261106-compact2",headers={"Cache-Control":"no-cache"})
+            with urllib.request.urlopen(req,timeout=20) as res:
+              if res.status!=200 or h(res.read(100000))!=h(target):raise RuntimeError("Live page not updated with exact expected bytes")
+            print("COMPACT WALLET DEMO LIVE VERIFIED: https://"+NEW+"/"+FILE)
+            print("Other existing site files changed: 0")
+          except BaseException:
+            if replaced and original is not None:
+              try:
+                ftps.cwd(directory)
+                ftps.storbinary("STOR "+FILE,io.BytesIO(original))
+                if h(read(ftps,FILE))==h(original):print("ROLLBACK VERIFIED: restored demo only")
+                else:print("ROLLBACK FAILED CHECKSUM")
+              except Exception as e:print("ROLLBACK FAILED:",type(e).__name__)
+            raise
+          finally:
+            try:ftps.quit()
+            except Exception:ftps.close()
+          PY
