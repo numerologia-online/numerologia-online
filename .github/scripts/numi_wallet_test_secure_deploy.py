@@ -143,6 +143,7 @@ def main():
         if read(home+"/private/numi-account-20261031/core.php") is None:
             raise RuntimeError("Existing account backend not found; stopping")
         account_core=read(home+"/private/numi-account-20261031/core.php")
+        print("SAFE_ACCOUNT_CAPABILITIES: db=%s session=%s owner=%s" % (b"function naDB()" in account_core,b"function naCurrent(" in account_core,b"function naTestOwner(" in account_core),flush=True)
         if not all(x in account_core for x in [b"function naDB()",b"function naCurrent(",b"function naTestOwner("]):
             raise RuntimeError("Existing account backend lacks required owner-only safeguards")
         print("SAFE_CHECKPOINT: account core verified",flush=True)
