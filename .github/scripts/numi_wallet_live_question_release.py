@@ -8,6 +8,7 @@ import io
 import json
 import os
 import pathlib
+import re
 import socket
 import ssl
 import subprocess
@@ -24,7 +25,6 @@ NEW_CORE_COMMIT="8e75cd84791725dcc693929e017a1500e204e8c9"
 CORE_PATH="wallet-service/private/test-core.php"
 ASSET="wallet-owner-flow-20261106.js"
 SCRIPT=b'  <script src="wallet-owner-flow-20261106.js?v=1" defer></script>\n'
-ANCHOR=b'  <script type="module" src="app.js?v=20261105scrollfit1"></script>\n'
 MAX=4_000_000
 
 def sha(data):return hashlib.sha256(data).digest()
@@ -77,7 +77,9 @@ def main():
     if forbidden!=403:raise RuntimeError("FOREIGN_ORIGIN_NOT_DENIED")
     http_index=get_http("index.html")
     if SCRIPT.strip() in http_index:raise RuntimeError("ALREADY_INSTALLED_STOP")
-    if http_index.count(ANCHOR)!=1:raise RuntimeError("HOMEPAGE_INSERTION_ANCHOR_CHANGED")
+    matches=re.findall(rb'<script\s+type="module"\s+src="app\.js\?v=[A-Za-z0-9_-]+"\s*></script>',http_index)
+    if len(matches)!=1:raise RuntimeError("HOMEPAGE_MODULE_TAG_NOT_UNIQUE")
+    anchor=matches[0]
     ip=socket.gethostbyname(HOST)
     f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=28)
     changed=[];backup_done=False
@@ -125,7 +127,8 @@ def main():
         if b"redflag-feature.js" not in app:
             raise RuntimeError("REDFLAG_ROUTER_MISSING")
         hashes={".htaccess":sha(guard),"account-browser.js":sha(account),"app.js":sha(app)}
-        modified_index=original_index.replace(ANCHOR,SCRIPT+ANCHOR,1)
+        if original_index.count(anchor)!=1:raise RuntimeError("HOMEPAGE_ANCHOR_CHANGED_DURING_INSTALL")
+        modified_index=original_index.replace(anchor,SCRIPT+anchor,1)
         if modified_index.count(SCRIPT)!=1 or modified_index.replace(SCRIPT,b"",1)!=original_index:
             raise RuntimeError("HOMEPAGE_PATCH_SCOPE_ERROR")
         # Durable, private backups BEFORE touching anything.
