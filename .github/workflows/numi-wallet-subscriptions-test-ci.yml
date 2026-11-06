@@ -47,6 +47,8 @@ jobs:
           assert "wtSubCancel" in logic and "wtSubSync" in logic
           assert 'card_number VARCHAR' not in sc and 'cvc VARCHAR' not in sc.lower()
           assert "WT_RETURN_URL.'&subscription_payment='." in logic
+          ui=Path('wallet-owner-flow-20261106.js').read_text()
+          assert all(k in ui for k in ('numi-ow-plan-club','numi-ow-method-school','subscription_cancel','auto_renew_consent'))
           assert "wtOwnerOnly($current)" in core
           print("ISOLATED_TEST_SUBSCRIPTIONS_STATIC_CHECKS_PASSED")
           PY
