@@ -417,10 +417,7 @@ document.addEventListener("click",event=>{
 const profile=$("account-profile");
 if(profile)new MutationObserver(()=>{if(!profile.hidden)void identify()})
  .observe(profile,{attributes:true,attributeFilter:["hidden"]});
-void identify().then(ok=>{
- if(ok && (paymentRef||subscriptionRef)){
-  selected=new URL(location.href).searchParams.get("question")==="money:generosity";
-  choiceAccepted=true;void open();
- }
-});
+// Never open the owner-only TEST wallet on page load or refresh.
+// Keep saved pending payment references for manual status checks after the owner opens it.
+void identify();
 })();
