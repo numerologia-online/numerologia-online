@@ -23,7 +23,7 @@ EDITS={
  ],
  "index.html":[
    (b'src="auth-profile.js?v=20261105logoutbirth1"',b'src="auth-profile.js?v=20261106domain1"'),
-   (b'src="app.js?v=20261105scrollfit1"',b'src="app.js?v=20261106domain1"')
+   (b'src="app.js?v=20261105soonall1"',b'src="app.js?v=20261106domain1"')
  ]
 }
 def sha(data):return hashlib.sha256(data).hexdigest()
@@ -59,7 +59,10 @@ def main():
        "index.html":"b6bab736cb7eacf538fb33273d2faef3c7c88fcb"}
     for name,blob in pinned.items():
         baseline=subprocess.check_output(["git","cat-file","blob",blob],timeout=20)
-        expected=patch(baseline,EDITS[name],name)
+        repo_edits=EDITS[name]
+        if name=="index.html":
+            repo_edits=[EDITS[name][0],(b'src="app.js?v=20261105scrollfit1"',b'src="app.js?v=20261106domain1"')]
+        expected=patch(baseline,repo_edits,name)
         current=subprocess.check_output(["git","show","HEAD:"+name],timeout=20)
         if current!=expected:raise RuntimeError("MAIN_PATCH_BASELINE_DRIFT_"+name)
     originals={p:request(p) for p in EDITS}
