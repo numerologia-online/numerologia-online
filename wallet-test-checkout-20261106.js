@@ -39,7 +39,11 @@ async function reconcile(){
  try {
   const d=await req("sync",{payment_ref:paymentRef});
   await showBalance();
-  if(d.payment_status==="succeeded"){
+  // The owner-only TEST API returns the full wallet status (without payment_status)
+  // when the payment was already settled or has just been credited successfully.
+  const credited=d.payment_status==="succeeded"||
+    (d.ok===true&&d.test===true&&d.payment_status===undefined&&Number.isFinite(Number(d.balance_kopeks)));
+  if(credited){
    finishWidget();forget();paymentRef=null;
    $("check").hidden=true;$("start").hidden=true;
    status("Оплата подтверждена ЮKassa! Тестовый баланс обновлён.");
@@ -85,8 +89,6 @@ async function create(){
    error_callback:e=>status("Ошибка виджета ЮKassa: "+safeCode(e)+". Повторную оплату не создавай.",true)
   });
   widget.on("complete",()=>{void complete();});
-  widget.on("success",()=>{void complete();});
-  widget.on("fail",()=>{void reconcile();});
   // The widget is placed in an ordinary, top-level page (not a nested <dialog>).
   let timer;
   try{
