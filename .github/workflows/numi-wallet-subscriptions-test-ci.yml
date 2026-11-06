@@ -1,0 +1,52 @@
+name: Validate isolated wallet subscription business logic only
+
+on:
+  push:
+    paths:
+      - .github/workflows/numi-wallet-subscriptions-test-ci.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Compile server code and verify sandbox-only constraints
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin feature/wallet-yookassa-test-20261106
+          test "$(git rev-parse FETCH_HEAD)" = "bb6b3d85ca9466f57092711ebfbed0ff76e8adc3"
+          git show FETCH_HEAD:wallet-service/private/test-core.php > /tmp/numi-sub-core.php
+          git show FETCH_HEAD:wallet-service/private/subscriptions-test.php > /tmp/numi-sub-test.php
+          git show FETCH_HEAD:wallet-service/schema-subscriptions-test.sql > /tmp/numi-sub-schema.sql
+          php -l /tmp/numi-sub-core.php
+          php -l /tmp/numi-sub-test.php
+          node --check wallet-owner-flow-20261106.js
+          python3 - <<'PY'
+          from pathlib import Path
+          sc=Path('/tmp/numi-sub-schema.sql').read_text()
+          core=Path('/tmp/numi-sub-core.php').read_text()
+          logic=Path('/tmp/numi-sub-test.php').read_text()
+          assert sc.count('CREATE TABLE IF NOT EXISTS numi_wallet_test_')==2
+          assert 'numi_wallet_test_subscriptions' in sc
+          assert 'numi_wallet_test_subscription_charges' in sc
+          assert all(x not in sc.lower() for x in ('drop table','alter table','delete from','update numi_accounts','insert into numi_orders'))
+          assert "WT_SITE_CLUB_PRICE_KOPEKS = 49000" in core
+          assert "WT_SCHOOL_PRICE_KOPEKS = 14900" in core
+          assert "WT_TEST_SHOP_ID = '1521071'" in core
+          assert 'save_payment_method' in logic and 'payment_method_id' in logic
+          assert 'auto_renew_consent' in logic and 'SUBSCRIPTION_PAYMENT_MISMATCH' in logic
+          assert "wtSubCancel" in logic and "wtSubSync" in logic
+          assert 'CVC' not in sc and 'card_number' not in sc
+          assert "WT_RETURN_URL.'&subscription_payment='." in logic
+          assert "wtOwnerOnly($current)" in core
+          print("ISOLATED_TEST_SUBSCRIPTIONS_STATIC_CHECKS_PASSED")
+          PY
