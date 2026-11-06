@@ -1,4 +1,4 @@
-name: Inspect old and new domain API routes read-only
+name: Inspect exact live domain script references (read-only)
 on:
   push:
     paths:
@@ -9,52 +9,23 @@ jobs:
   inspect:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Inspect API route response codes and public JS without sessions, purchases or writes
+      - name: Print only live reference lines and hashes (no secrets, no changes)
         run: |
           python3 - <<'PY'
-          import urllib.request,urllib.error,urllib.parse,hashlib,json,ssl
-          domains={'new':'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai','old':'https://xn--c1adkkdfjbp1a4l.online'}
-          paths=['/','/api/profile.php','/api/numi-miniapp.php','/api/numi-paid-content.php','/api/numi-year-preview.php','/api/numi-school.php','/api/numi-account.php','/api/telegram-reg-stage-15-10-2026.php','/api/owner-mailing.php','/api/redflag-save.php']
-          for label,base in domains.items():
-            for path in paths:
-              url=base+path
-              try:
-                with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'NumerologiaDomainMigrationPreflight/1'}),timeout=12) as r:
-                  print('DOMAIN_ROUTE',json.dumps({'domain':label,'path':path,'status':r.status,'final_host':urllib.parse.urlsplit(r.url).hostname},ensure_ascii=False),flush=True)
-              except urllib.error.HTTPError as e:
-                print('DOMAIN_ROUTE',json.dumps({'domain':label,'path':path,'status':e.code,'final_host':urllib.parse.urlsplit(e.url).hostname},ensure_ascii=False),flush=True)
-              except Exception as e:
-                print('DOMAIN_ROUTE',json.dumps({'domain':label,'path':path,'network_error':type(e).__name__},ensure_ascii=False),flush=True)
-          for p in ['/year-feature.js','/personal-day-feature.js','/auth-profile.js','/cloudflare/telegram-bot/src/index.js']:
-            u=domains['new']+p
-            try:
-              with urllib.request.urlopen(urllib.request.Request(u,headers={'Cache-Control':'no-cache'}),timeout=12) as r:
-                data=r.read(200000)
-                print('LIVE_JS_READ',json.dumps({'path':p,'status':r.status,'length':len(data),'sha256':hashlib.sha256(data).hexdigest()}),flush=True)
-            except urllib.error.HTTPError as e:
-              print('LIVE_JS_READ',json.dumps({'path':p,'status':e.code}),flush=True)
-            except Exception as e:
-              print('LIVE_JS_READ',json.dumps({'path':p,'error':type(e).__name__}),flush=True)
-          PY
-
-      - name: Inspect exact existing JS references before surgical release
-        run: |
-          python3 - <<'PY'
-          import urllib.request,re,hashlib,json
+          import urllib.request,hashlib,json
           base='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
           for path in ('index.html','app.js','auth-profile.js','year-feature.js','personal-day-feature.js'):
-            with urllib.request.urlopen(urllib.request.Request(base+path,headers={'Cache-Control':'no-cache'}),timeout=25) as r:
-              s=r.read(200000).decode('utf-8')
-            if path=='index.html':
-              matches=[x.group(0)[:200] for x in re.finditer(r'<script[^>]+src="[^"]*(?:auth-profile|app\\.js)[^"]*"[^>]*>',s)]
-            elif path=='app.js':
-              matches=[x.group(0)[:160] for x in re.finditer(r'import\\(["\\'][^"\\']*(?:year-feature|personal-day-feature)[^"\\']*["\\']\\)',s)]
-            else:
-              matches=[line.strip()[:190] for line in s.splitlines() if ('PROFILE_URL =' in line or 'YEAR_CONTENT_API =' in line or 'DAY_SITE_URL =' in line)]
-            print('LIVE_REFERENCE',json.dumps({'path':path,'sha256':hashlib.sha256(s.encode('utf-8')).hexdigest(),'matches':matches},ensure_ascii=False),flush=True)
+              with urllib.request.urlopen(urllib.request.Request(base+path,headers={'Cache-Control':'no-cache'}),timeout=22) as r:
+                  blob=r.read(200000)
+              source=blob.decode('utf-8')
+              if path=='index.html':
+                  terms=('auth-profile.js','src="app.js')
+              elif path=='app.js':
+                  terms=('year-feature.js','personal-day-feature.js')
+              else:
+                  terms=('PROFILE_URL =','YEAR_CONTENT_API =','DAY_SITE_URL =')
+              lines=[line.strip()[:190] for line in source.splitlines() if any(t in line for t in terms)]
+              print('LIVE_REFERENCE',json.dumps({'path':path,'sha256':hashlib.sha256(blob).hexdigest(),'matches':lines[:10]},ensure_ascii=False),flush=True)
           PY
