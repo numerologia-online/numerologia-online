@@ -15,6 +15,8 @@ function clearRef(key){try{localStorage.removeItem(key);}catch(_){}}
 let paymentRef=new URL(location.href).searchParams.get("payment")||storedRef(TOPUP_KEY);
 let subscriptionRef=new URL(location.href).searchParams.get("subscription_payment")||storedRef(SUB_KEY);
 let checkoutUrl=null;
+let paymentWidget=null;
+let paymentWidgetLoader=null;
 if(paymentRef && !uuidPattern.test(paymentRef)){paymentRef=null;clearRef(TOPUP_KEY);}
 if(subscriptionRef && !uuidPattern.test(subscriptionRef)){subscriptionRef=null;clearRef(SUB_KEY);}
 const money=k=>(Number(k)/100).toLocaleString("ru-RU",{maximumFractionDigits:2})+" ₽";
@@ -68,6 +70,7 @@ function panel(){
  '#'+ID+' button:disabled{opacity:.45;cursor:default}',
  '#'+ID+' .ow-secondary{background:white;color:#47453f;border-color:#cecac4}',
  '#'+ID+' .ow-actions{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}',
+ '#'+ID+' #numi-ow-widget-frame{min-width:288px;min-height:260px;margin-top:8px;overflow:visible}',
  '#'+ID+' .ow-status{padding:8px;margin-top:8px;border-radius:9px;background:#f1f0ec;font-size:11px;color:#625c56}',
  '#'+ID+' .ow-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}',
  '#'+ID+' .ow-grid strong{display:block;font-size:19px;margin:4px 0}',
@@ -91,6 +94,11 @@ function panel(){
  '<div class="ow-actions"><button id="numi-ow-once" type="button">Купить разово · 20 ₽</button>',
  '<button id="numi-ow-with-club" type="button" class="ow-secondary">Клуб · 490 ₽/месяц</button></div></section>',
  '<div id="numi-ow-payment-panel">',
+ '<section class="ow-card" id="numi-ow-widget" hidden><div class="ow-label">Тестовый платёж на сайте</div>',
+ '<h3>Оплата через встроенную форму ЮKassa</h3>',
+ '<p class="ow-note">Проверяй статус по кнопке «Обновить». Карту и CVC вводи только в защищённой форме ЮKassa.</p>',
+ '<div id="numi-ow-widget-frame"></div><div class="ow-actions">',
+ '<button type="button" id="numi-ow-widget-close" class="ow-secondary">Закрыть форму оплаты</button></div></section>',
  '<section class="ow-card" id="numi-ow-external" hidden>',
  '<div class="ow-label">Тест ЮKassa</div><h3>Открыть оплату во внешнем браузере</h3>',
  '<p class="ow-note">В Telegram платёжная форма может загружаться неправильно. Открой её отдельной кнопкой, затем вернись сюда и нажми «Обновить» для проверки результата.</p>',
@@ -131,7 +139,7 @@ function panel(){
  '<p class="ow-status" id="numi-ow-message" role="status">Проверка подключения…</p></div>'
  ].join("");
  document.body.append(dialog);
- $("numi-ow-close").addEventListener("click",()=>dialog.close());
+ $("numi-ow-close").addEventListener("click",()=>{destroyPaymentWidget();dialog.close();});
  $("numi-ow-once").addEventListener("click",()=>{choiceAccepted=true;showStep();});
  $("numi-ow-with-club").addEventListener("click",()=>{
    choiceAccepted=true;showStep();
@@ -198,12 +206,79 @@ function panel(){
    else msg("Проверка завершена. Баланс и подписки обновлены.");
   }
  }));
- $("numi-ow-topup").addEventListener("click",()=>work(async()=>beginTopup("bank_card")));
+ $("numi-ow-widget-close").addEventListener("click",()=>{
+  destroyPaymentWidget();msg("Форма закрыта. Статус уже созданного тестового платежа можно проверить кнопкой «Обновить».");
+ });
+ $("numi-ow-topup").addEventListener("click",()=>work(async()=>beginEmbeddedTopup()));
  $("numi-ow-yoomoney").addEventListener("click",()=>work(async()=>beginTopup("yoo_money")));
  $("numi-ow-buy").addEventListener("click",()=>work(async()=>{
   await request("buy");await load();msg("Покупка записана. Списание 20 тестовых рублей выполнено один раз.");
  }));
  return dialog;
+}
+function destroyPaymentWidget(){
+ if(paymentWidget){
+  try{paymentWidget.destroy();}catch(_){}
+  paymentWidget=null;
+ }
+ const slot=$("numi-ow-widget-frame");
+ if(slot)slot.replaceChildren();
+ const section=$("numi-ow-widget");
+ if(section)section.hidden=true;
+}
+async function ensureYooWidget(){
+ if(typeof window.YooMoneyCheckoutWidget==="function")return;
+ if(!paymentWidgetLoader){
+  paymentWidgetLoader=new Promise((resolve,reject)=>{
+   const script=document.createElement("script");
+   script.src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js";
+   script.async=true;
+   const timer=setTimeout(()=>reject(new Error("WIDGET_LOAD_TIMEOUT")),15000);
+   script.onload=()=>{clearTimeout(timer);
+     typeof window.YooMoneyCheckoutWidget==="function"?resolve():reject(new Error("WIDGET_NOT_AVAILABLE"));};
+   script.onerror=()=>{clearTimeout(timer);reject(new Error("WIDGET_SCRIPT_BLOCKED"));};
+   document.head.append(script);
+  }).catch(e=>{paymentWidgetLoader=null;throw e});
+ }
+ await paymentWidgetLoader;
+}
+async function beginEmbeddedTopup(){
+ // Fail before creating a payment if browser cannot load the hosted widget.
+ msg("Проверяем доступность защищённой формы ЮKassa…");
+ await ensureYooWidget();
+ const raw=$("numi-ow-amount").value.trim();
+ if(!/^[0-9]+$/.test(raw)||!Number.isSafeInteger(Number(raw))||Number(raw)<100||Number(raw)>10000)
+  throw new Error("Укажи сумму от 100 до 10 000 ₽.");
+ msg("Создаём тестовый платёж для оплаты на сайте…");
+ const r=await request("topup_widget",{amount_rub:Number(raw)});
+ if(r.test!==true||r.checkout!=="embedded"||!uuidPattern.test(r.payment_ref)
+    ||typeof r.confirmation_token!=="string"||!/^ct-[A-Za-z0-9-]{10,500}$/.test(r.confirmation_token))
+  throw new Error("INVALID_TEST_WIDGET_RESPONSE");
+ paymentRef=r.payment_ref;saveRef(TOPUP_KEY,paymentRef);
+ destroyPaymentWidget();
+ const section=$("numi-ow-widget");
+ section.hidden=false;
+ section.scrollIntoView({behavior:"smooth",block:"nearest"});
+ try {
+  paymentWidget=new window.YooMoneyCheckoutWidget({
+   confirmation_token:r.confirmation_token,
+   error_callback:()=>msg("Встроенная форма ЮKassa сообщила об ошибке. Платёж не повторяй; проверь его статус.",true)
+  });
+  paymentWidget.on("complete",()=>{
+    destroyPaymentWidget();
+    void work(async()=>{
+      await load();
+      if(paymentRef)msg("Проверяем подтверждение от ЮKassa. Если статус ещё не изменился, нажми «Обновить».");
+      else msg("Проверка платежа завершена. Посмотри тестовый баланс.");
+    });
+  });
+  // No return_url: YooKassa widget completes inside the site and fires 'complete'.
+  await paymentWidget.render("numi-ow-widget-frame");
+  msg("Встроенная форма ЮKassa открыта прямо на сайте.");
+ } catch(e) {
+  destroyPaymentWidget();
+  msg("Форма ЮKassa не загрузилась. Новый тестовый платёж уже создан: проверь статус, не начинай второй.",true);
+ }
 }
 function stageExternalCheckout(url,kind,ref){
  if(!uuidPattern.test(ref)||!["topup","subscription"].includes(kind))throw Error("INVALID_TEST_PAYMENT_REFERENCE");
