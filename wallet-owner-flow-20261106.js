@@ -3,7 +3,7 @@
 "use strict";
 const API="/api/numi-wallet-test.php", ID="numi-wallet-owner-overlay-20261106";
 const $=id=>document.getElementById(id);
-let owner=false, busy=false, balance=0, purchased=false, ready=false, selected=false;
+let owner=false, busy=false, balance=0, purchased=false, ready=false, selected=false, choiceAccepted=false;
 let paymentRef=new URL(location.href).searchParams.get("payment");
 if(paymentRef && !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(paymentRef))paymentRef=null;
 const money=k=>(Number(k)/100).toLocaleString("ru-RU",{maximumFractionDigits:2})+" ₽";
@@ -21,6 +21,7 @@ function controls(){
  if(!$("numi-ow-buy"))return;
  $("numi-ow-buy").disabled=!ready||busy||purchased||balance<2000||!selected;
  $("numi-ow-topup").disabled=!ready||busy;
+ $("numi-ow-yoomoney").disabled=!ready||busy;
  $("numi-ow-refresh").disabled=!ready||busy;
 }
 function panel(){
@@ -41,6 +42,8 @@ function panel(){
  '#'+ID+' .ow-label{font-size:9px;font-weight:800;color:#877d71;text-transform:uppercase;letter-spacing:.1em}',
  '#'+ID+' .ow-balance{font-size:30px;font-weight:800;letter-spacing:-.05em;padding:5px 0}',
  '#'+ID+' .ow-note{font-size:11px;color:#777671;line-height:1.4}',
+ '#'+ID+' .ow-input{width:100%;height:40px;background:#fff;color:#303330;border:1px solid #bbb6ad;border-radius:9px;padding:8px 12px;font-size:16px;margin-top:7px}',
+ '#'+ID+' [hidden]{display:none!important}',
  '#'+ID+' button{font:650 11px/1.2 -apple-system,BlinkMacSystemFont,Arial,sans-serif;border:1px solid #464641;border-radius:9px;',
  'background:#464641;color:white;min-height:35px;padding:8px 11px;cursor:pointer}',
  '#'+ID+' button:disabled{opacity:.45;cursor:default}',
@@ -64,11 +67,19 @@ function panel(){
  '<small>НУМЕРОЛОГИЯ ОНЛАЙН · ТЕСТ</small><h2>Мой личный кабинет</h2>',
  '<p>Тестовый кошелёк и покупка вопроса прямо на сайте.</p></div>',
  '<p class="ow-status">Только тест ЮKassa: реальные деньги не списываются, платные ответы не открываются.</p>',
+ '<section class="ow-card" id="numi-ow-choice" hidden><div class="ow-label">Способ покупки</div>',
+ '<h3>Как хочешь получить ответ?</h3><p class="ow-note">Один вопрос за 20 ₽ или клуб за 490 ₽/месяц со скидкой на вопросы. Это независимые варианты.</p>',
+ '<div class="ow-actions"><button id="numi-ow-once" type="button">Купить разово · 20 ₽</button>',
+ '<button disabled type="button" class="ow-secondary">С клубом · скоро</button></div></section>',
+ '<div id="numi-ow-payment-panel">',
  '<section class="ow-card"><div class="ow-label">Мой кошелёк</div>',
  '<div id="numi-ow-balance" class="ow-balance">—</div>',
  '<div class="ow-note">Баланс хранится на сервере, отдельно от настоящих покупок.</div>',
- '<div class="ow-actions"><button id="numi-ow-topup" disabled>Пополнить 100 ₽ · тест</button>',
- '<button class="ow-secondary" id="numi-ow-refresh" disabled>Обновить баланс</button></div></section>',
+ '<label class="ow-note" for="numi-ow-amount" style="display:block;margin-top:7px">Сумма пополнения от 100 ₽</label>',
+ '<input id="numi-ow-amount" class="ow-input" inputmode="numeric" type="number" min="100" max="10000" step="1" value="100" aria-label="Сумма пополнения в рублях">',
+ '<div class="ow-actions"><button id="numi-ow-topup" disabled>Оплатить картой · тест</button>',
+ '<button id="numi-ow-yoomoney" class="ow-secondary" disabled>Через ЮMoney · тест</button>',
+ '<button class="ow-secondary" id="numi-ow-refresh" disabled>Обновить</button></div></section>',
  '<section class="ow-card"><div class="ow-label">Выбранный вопрос · Red Flag</div>',
  '<h3>Щедрый мужчина или считает каждую копейку?</h3>',
  '<div class="ow-note">Без подписки: 20 ₽. Повторная покупка не списывает деньги.</div>',
@@ -80,18 +91,29 @@ function panel(){
  '<section class="ow-card"><div class="ow-label">Подписка № 2</div><h3>Школа нумерологии</h3>',
  '<strong>149 ₽ <span>/ неделю</span></strong><button disabled>Подключить · скоро</button></section></div>',
  '<section class="ow-card"><div class="ow-label">История операций</div><ul id="numi-ow-history"><li>Пока пусто</li></ul></section>',
- '<p class="ow-status" id="numi-ow-message" role="status">Проверка подключения…</p>'
+ '<p class="ow-status" id="numi-ow-message" role="status">Проверка подключения…</p></div>'
  ].join("");
  document.body.append(dialog);
  $("numi-ow-close").addEventListener("click",()=>dialog.close());
+ $("numi-ow-once").addEventListener("click",()=>{choiceAccepted=true;showStep();});
+ function validateAmount(){
+   const raw=$("numi-ow-amount").value.trim();
+   if(!/^[0-9]+$/.test(raw))throw Error("Укажи сумму целыми рублями.");
+   const rub=Number(raw);
+   if(!Number.isSafeInteger(rub)||rub<100||rub>10000)throw Error("Тестовая сумма: от 100 до 10 000 ₽.");
+   return rub;
+ }
+ async function beginTopup(method){
+   msg("Создаём тестовый платёж ЮKassa…");
+   const amount=validateAmount();
+   const r=await request("topup",{amount_rub:amount,payment_method:method});
+   const url=new URL(r.confirmation_url);
+   if(r.test!==true || url.protocol!=="https:" || !/(^|\.)yookassa\.ru$|(^|\.)yoomoney\.ru$/.test(url.hostname))throw Error("INVALID_TEST_URL");
+   location.assign(url.href);
+ }
  $("numi-ow-refresh").addEventListener("click",()=>work(async()=>{await load();msg("Баланс обновлён.")}));
- $("numi-ow-topup").addEventListener("click",()=>work(async()=>{
-  msg("Создаём тестовый платёж ЮKassa…");
-  const r=await request("topup");
-  const url=new URL(r.confirmation_url);
-  if(r.test!==true || url.protocol!=="https:" || !/(^|\.)yookassa\.ru$|(^|\.)yoomoney\.ru$/.test(url.hostname))throw Error("INVALID_TEST_URL");
-  location.assign(url.href);
- }));
+ $("numi-ow-topup").addEventListener("click",()=>work(async()=>beginTopup("bank_card")));
+ $("numi-ow-yoomoney").addEventListener("click",()=>work(async()=>beginTopup("yoo_money")));
  $("numi-ow-buy").addEventListener("click",()=>work(async()=>{
   await request("buy");await load();msg("Покупка записана. Списание 20 тестовых рублей выполнено один раз.");
  }));
@@ -135,9 +157,14 @@ async function work(fn){
  msg(m[e?.message]||"Не удалось выполнить тестовую операцию.",true)}
  finally{busy=false;controls()}
 }
+function showStep(){
+  if(!$("numi-ow-choice"))return;
+  $("numi-ow-choice").hidden=!(selected&&!choiceAccepted);
+  $("numi-ow-payment-panel").hidden=selected&&!choiceAccepted;
+ }
 async function open(){
- const d=panel();if(!d.open)d.showModal();
- await work(async()=>{await load();msg("Тестовый кошелёк готов.")});
+ const d=panel();if(!d.open)d.showModal();showStep();
+ await work(async()=>{await load();msg("Тестовый кошелёк готов.");});
 }
 async function identify(){
  try{const data=await request("status");owner=data.test===true;if(owner)render(data)}catch(_){owner=false;}
@@ -150,7 +177,7 @@ async function identify(){
    const b=document.createElement("strong");b.textContent="Тестовый кошелёк";
    const s=document.createElement("small");s.textContent="Баланс и покупки";
    tile.append(i,b,s);nav.append(tile);
-   tile.addEventListener("click",()=>{selected=false;void open()});
+   tile.addEventListener("click",()=>{selected=false;choiceAccepted=true;void open()});
   }
  }
  if(tile)tile.hidden=!owner;
@@ -159,7 +186,7 @@ async function identify(){
 document.addEventListener("click",event=>{
  const target=event.target.closest?.('#redflag article.redflag-question.is-calculated[data-question-id="generosity"] > button.redflag-question-toggle');
  if(!owner || !target)return;
- event.preventDefault();event.stopImmediatePropagation();selected=true;void open();
+ event.preventDefault();event.stopImmediatePropagation();selected=true;choiceAccepted=false;void open();
 },true);
 document.addEventListener("click",event=>{
  if(event.target.closest?.("[data-open-redflag]"))void identify();
@@ -170,7 +197,7 @@ if(profile)new MutationObserver(()=>{if(!profile.hidden)void identify()})
 void identify().then(ok=>{
  if(ok && paymentRef){
   selected=new URL(location.href).searchParams.get("question")==="money:generosity";
-  void open();
+  choiceAccepted=true;void open();
  }
 });
 })();
