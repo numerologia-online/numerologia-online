@@ -1,0 +1,58 @@
+name: REG.RU isolated YooKassa TEST wallet deployment
+
+on:
+  push:
+    paths:
+      - .github/workflows/numi-wallet-test-secure-deploy.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+
+jobs:
+  test-wallet:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Deploy isolated test wallet when sandbox key exists')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check pinned pilot branch and PHP syntax, never execute payment code
+        shell: bash
+        run: |
+          set -euo pipefail
+          PINNED=c2bb979895ac3018da26742131d58659194fc0e9
+          git fetch --no-tags --depth=1 origin feature/wallet-yookassa-test-20261106
+          test "$(git rev-parse FETCH_HEAD)" = "$PINNED"
+          git show "$PINNED:wallet-service/private/test-core.php" > /tmp/numi-wallet-test-core.php
+          git show "$PINNED:wallet-service/public/numi-wallet-test.php" > /tmp/numi-wallet-test-route.php
+          git show "$PINNED:wallet-service/schema-test.sql" > /tmp/numi-wallet-test-schema.sql
+          git show "$PINNED:wallet-test.html" > /tmp/numi-wallet-test-ui.html
+          php -l /tmp/numi-wallet-test-core.php
+          php -l /tmp/numi-wallet-test-route.php
+          python3 -m py_compile .github/scripts/numi_wallet_test_secure_deploy.py
+          python3 - <<'PY'
+          import pathlib,re
+          sql=pathlib.Path("/tmp/numi-wallet-test-schema.sql").read_text()
+          assert sql.count("CREATE TABLE IF NOT EXISTS numi_wallet_test_")==4
+          assert all(token not in sql.lower() for token in ("drop table","alter table","delete from","update numi_accounts","insert into numi_orders"))
+          src=pathlib.Path("/tmp/numi-wallet-test-ui.html").read_text()
+          scripts=re.findall(r"<script>([\s\S]*?)</script>",src)
+          assert len(scripts)==1
+          pathlib.Path("/tmp/numi-wallet-test-ui.js").write_text(scripts[0])
+          print("PINNED_TEST_WALLET_STATIC_CHECKS_OK")
+          PY
+          node --check /tmp/numi-wallet-test-ui.js
+      - name: Deploy isolated owner-only sandbox only if secret exists
+        env:
+          REG_FTP_HOST: ${{ secrets.REG_FTP_HOST }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+          NUMI_YOOKASSA_TEST_SECRET_KEY_1521071: ${{ secrets.NUMI_YOOKASSA_TEST_SECRET_KEY_1521071 }}
+        run: python3 -u .github/scripts/numi_wallet_test_secure_deploy.py
