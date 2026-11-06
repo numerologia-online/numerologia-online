@@ -1,0 +1,2759 @@
+{
+  "products": [
+    {
+      "code": "year_full",
+      "title": "Полный разбор года"
+    },
+    {
+      "code": "life_full",
+      "title": "Полный разбор жизни"
+    },
+    {
+      "code": "compatibility_full",
+      "title": "Совместимость"
+    },
+    {
+      "code": "child_full_v1",
+      "title": "Детский разбор"
+    },
+    {
+      "code": "redflag_question",
+      "title": "Мужчина или Red Flag"
+    },
+    {
+      "code": "yesno_question",
+      "title": "Да или нет?"
+    },
+    {
+      "code": "moment_question",
+      "title": "Нумерология момента"
+    },
+    {
+      "code": "club_month",
+      "title": "Клуб"
+    },
+    {
+      "code": "school_week",
+      "title": "Школа нумерологии"
+    },
+    {
+      "code": "money_rituals",
+      "title": "Денежные ритуалы"
+    },
+    {
+      "code": "wallet_topup",
+      "title": "Пополнение кошелька"
+    }
+  ],
+  "redflag": [
+    {
+      "id": "gift",
+      "category": "money",
+      "title": "Деньги и щедрость · Будет дарить подарки или даже цветы придётся выпрашивать?"
+    },
+    {
+      "id": "generosity",
+      "category": "money",
+      "title": "Деньги и щедрость · Щедрый мужчина или считает каждую копейку?"
+    },
+    {
+      "id": "courtship",
+      "category": "money",
+      "title": "Деньги и щедрость · Будет красиво ухаживать или максимум кофе и прогулка?"
+    },
+    {
+      "id": "provider",
+      "category": "money",
+      "title": "Деньги и щедрость · Умеет зарабатывать или всю жизнь будет искать себя?"
+    },
+    {
+      "id": "words-or-deeds",
+      "category": "money",
+      "title": "Деньги и щедрость · Держит слово или опять одни красивые разговоры?"
+    },
+    {
+      "id": "family-load",
+      "category": "money",
+      "title": "Деньги и щедрость · Будет опорой для семьи или всё снова окажется на твоих плечах?"
+    },
+    {
+      "id": "resource",
+      "category": "money",
+      "title": "Деньги и щедрость · Рядом с ним ты будешь жить лучше или начнёшь экономить на себе?"
+    },
+    {
+      "id": "solve-or-create",
+      "category": "money",
+      "title": "Деньги и щедрость · Есть ли у него потенциал стать богатым мужчиной?"
+    },
+    {
+      "id": "responsibility",
+      "category": "money",
+      "title": "Деньги и щедрость · Будет ли мужчина жить за твой счёт?"
+    },
+    {
+      "id": "celebration",
+      "category": "money",
+      "title": "Деньги и щедрость · Он приумножит ваши деньги или может оставить тебя с долгами?"
+    },
+    {
+      "id": "comic-verdict-money",
+      "category": "money",
+      "title": "Деньги и щедрость · 😂 Шуточный вердикт"
+    },
+    {
+      "id": "first-step",
+      "category": "love",
+      "title": "Любовь и отношения · Пишет первым или ждёт инициативы от женщины?"
+    },
+    {
+      "id": "romance",
+      "category": "love",
+      "title": "Любовь и отношения · Романтик в жизни или только в переписке?"
+    },
+    {
+      "id": "relationship-or-comfort",
+      "category": "love",
+      "title": "Любовь и отношения · Ищет любовь или просто удобную женщину?"
+    },
+    {
+      "id": "adult-partner",
+      "category": "love",
+      "title": "Любовь и отношения · Мужчина для семьи или вечный мальчик?"
+    },
+    {
+      "id": "near-him",
+      "category": "love",
+      "title": "Любовь и отношения · Рядом с ним женщина расцветает или гаснет?"
+    },
+    {
+      "id": "hard-moment",
+      "category": "love",
+      "title": "Любовь и отношения · Поддержит в беде или исчезнет первым?"
+    },
+    {
+      "id": "relationship-format",
+      "category": "love",
+      "title": "Любовь и отношения · Готов к серьёзным отношениям или вечно «я не готов»?"
+    },
+    {
+      "id": "family-or-triangle",
+      "category": "love",
+      "title": "Любовь и отношения · Способен быть с одной женщиной или его тянет в любовные треугольники?"
+    },
+    {
+      "id": "honest-or-disappear",
+      "category": "love",
+      "title": "Любовь и отношения · Почему он исчезает без объяснений?"
+    },
+    {
+      "id": "love-or-attention",
+      "category": "love",
+      "title": "Любовь и отношения · Умеет любить или только позволяет себя любить?"
+    },
+    {
+      "id": "say-no",
+      "category": "flags",
+      "title": "Красные флаги · Уважает женское «нет» или начинает давить?"
+    },
+    {
+      "id": "care-or-control",
+      "category": "flags",
+      "title": "Красные флаги · Заботится или будет контролировать каждый твой шаг?"
+    },
+    {
+      "id": "hero",
+      "category": "flags",
+      "title": "Красные флаги · Скромный мужчина или считает себя подарком судьбы?"
+    },
+    {
+      "id": "jealousy",
+      "category": "flags",
+      "title": "Красные флаги · Ревнует от любви или устроит допрос за каждый лайк?"
+    },
+    {
+      "id": "argument",
+      "category": "flags",
+      "title": "Красные флаги · Умеет говорить о проблемах или наказывает молчанием?"
+    },
+    {
+      "id": "abuse-signal",
+      "category": "flags",
+      "title": "Красные флаги · Какой тревожный сигнал нельзя пропустить в начале знакомства?"
+    },
+    {
+      "id": "support-or-cause",
+      "category": "flags",
+      "title": "Красные флаги · Будет твоей опорой или сам доведёт до слёз?"
+    },
+    {
+      "id": "apology",
+      "category": "flags",
+      "title": "Красные флаги · После ссоры извинится или виноватой сделает тебя?"
+    },
+    {
+      "id": "weak-place",
+      "category": "flags",
+      "title": "Красные флаги · Какая его слабость может разрушить ваши отношения?"
+    },
+    {
+      "id": "calm-or-swings",
+      "category": "flags",
+      "title": "Красные флаги · С ним спокойно или тебя ждут эмоциональные качели?"
+    },
+    {
+      "id": "faithful",
+      "category": "infidelity",
+      "title": "Измены и флирт · Верный или у него каждая вторая «просто подруга»?"
+    },
+    {
+      "id": "options",
+      "category": "infidelity",
+      "title": "Измены и флирт · Верный или постоянно ищет запасные варианты?"
+    },
+    {
+      "id": "flirt",
+      "category": "infidelity",
+      "title": "Измены и флирт · Флиртует по привычке или ему правда важна одна женщина?"
+    },
+    {
+      "id": "trust",
+      "category": "infidelity",
+      "title": "Измены и флирт · Ему можно доверять или лучше снять розовые очки?"
+    },
+    {
+      "id": "ex",
+      "category": "infidelity",
+      "title": "Измены и флирт · Если напишет бывшая — поставит точку или приоткроет дверь?"
+    },
+    {
+      "id": "temptation",
+      "category": "infidelity",
+      "title": "Измены и флирт · Как он ведёт себя, когда появляется соблазн?"
+    },
+    {
+      "id": "physical-or-emotional",
+      "category": "infidelity",
+      "title": "Измены и флирт · Любитель крутить тайные романы в своей голове?"
+    },
+    {
+      "id": "secrecy",
+      "category": "infidelity",
+      "title": "Измены и флирт · Говорит о себе правду или скрывает половину своей жизни?"
+    },
+    {
+      "id": "return",
+      "category": "infidelity",
+      "title": "Измены и флирт · Уходит навсегда или возвращается ко всем бывшим?"
+    },
+    {
+      "id": "after-mistake",
+      "category": "infidelity",
+      "title": "Измены и флирт · Если поймаешь на измене, признается или сделает виноватой тебя?"
+    },
+    {
+      "id": "fire",
+      "category": "intimacy",
+      "title": "Секс и близость · Сексуальный огонь или пять минут — и спасибо?"
+    },
+    {
+      "id": "her-pleasure",
+      "category": "intimacy",
+      "title": "Секс и близость · В близости думает о женщине или только любуется собой?"
+    },
+    {
+      "id": "pace",
+      "category": "intimacy",
+      "title": "Секс и близость · Страстный партнёр или быстро начинает скучать?"
+    },
+    {
+      "id": "desire-talk",
+      "category": "intimacy",
+      "title": "Секс и близость · Энергия желания есть или разговор про темперамент обречён?"
+    },
+    {
+      "id": "tenderness",
+      "category": "intimacy",
+      "title": "Секс и близость · Способен к нежности или для него важна только искра?"
+    },
+    {
+      "id": "boundaries",
+      "category": "intimacy",
+      "title": "Секс и близость · Умеет слышать границы или считает отказ личным оскорблением?"
+    },
+    {
+      "id": "closeness",
+      "category": "intimacy",
+      "title": "Секс и близость · Близость для любви или для самоутверждения?"
+    },
+    {
+      "id": "initiative",
+      "category": "intimacy",
+      "title": "Секс и близость · Он внимательный инициатор или ждёт, что женщина всё организует сама?"
+    },
+    {
+      "id": "compatibility",
+      "category": "intimacy",
+      "title": "Секс и близость · Горячий любовник или секс по праздникам?"
+    },
+    {
+      "id": "after",
+      "category": "intimacy",
+      "title": "Секс и близость · После секса привязывается или теряет интерес?"
+    },
+    {
+      "id": "independent",
+      "category": "family",
+      "title": "Семья и быт · Самостоятельный мужчина или мамина корзиночка?"
+    },
+    {
+      "id": "household",
+      "category": "family",
+      "title": "Семья и быт · Хозяйственный или из серии «мама всё делала»?"
+    },
+    {
+      "id": "vacation",
+      "category": "family",
+      "title": "Семья и быт · С ним в отпуск кайф или нервный квест на выживание?"
+    },
+    {
+      "id": "plans",
+      "category": "family",
+      "title": "Семья и быт · Обещает и делает или просто король планов?"
+    },
+    {
+      "id": "children",
+      "category": "family",
+      "title": "Семья и быт · Готов ли он к ребёнку или пока сам ещё растёт?"
+    },
+    {
+      "id": "roles",
+      "category": "family",
+      "title": "Семья и быт · Будет партнёром или начальником в семье?"
+    },
+    {
+      "id": "home",
+      "category": "family",
+      "title": "Семья и быт · Семья для него главное или дома его не дождёшься?"
+    },
+    {
+      "id": "conflict",
+      "category": "family",
+      "title": "Семья и быт · При первых семейных проблемах будет бороться или соберёт чемодан?"
+    },
+    {
+      "id": "money-at-home",
+      "category": "family",
+      "title": "Семья и быт · Умеет ли он создавать опору для дома, а не только говорить о будущем?"
+    },
+    {
+      "id": "care",
+      "category": "family",
+      "title": "Семья и быт · Он заботится в быту или ждёт, что любовь всё сама устроит?"
+    },
+    {
+      "id": "love-language",
+      "category": "language",
+      "title": "Язык любви мужчины · На каком языке любви он вообще понимает чувства?"
+    },
+    {
+      "id": "how-to-talk",
+      "category": "language",
+      "title": "Язык любви мужчины · Как с ним говорить, чтобы не биться в стену?"
+    },
+    {
+      "id": "accept-love",
+      "category": "language",
+      "title": "Язык любви мужчины · Как он принимает любовь и заботу, чтобы не было мимо?"
+    },
+    {
+      "id": "show-love",
+      "category": "language",
+      "title": "Язык любви мужчины · Язык любви - как понять по поступкам, что у него есть чувства?"
+    },
+    {
+      "id": "criticism",
+      "category": "language",
+      "title": "Язык любви мужчины · Как он реагирует на критику и неудобную правду?"
+    },
+    {
+      "id": "ask",
+      "category": "language",
+      "title": "Язык любви мужчины · Как у него лучше просить, а не ждать телепатии?"
+    },
+    {
+      "id": "distance",
+      "category": "language",
+      "title": "Язык любви мужчины · Что делать, когда он отдаляется?"
+    },
+    {
+      "id": "hurt",
+      "category": "language",
+      "title": "Язык любви мужчины · Что его ранит сильнее всего в отношениях?"
+    },
+    {
+      "id": "conflict-style",
+      "category": "language",
+      "title": "Язык любви мужчины · Как не промахнуться с ним в конфликте?"
+    },
+    {
+      "id": "compliment",
+      "category": "language",
+      "title": "Язык любви мужчины · Какая поддержка для него правда работает?"
+    },
+    {
+      "id": "final",
+      "category": "verdict",
+      "title": "Итоговый вердикт · Какой финальный вердикт по этому мужчине без розовых очков?"
+    },
+    {
+      "id": "worth-it",
+      "category": "verdict",
+      "title": "Итоговый вердикт · С ним вообще стоит связываться или лучше не тратить время?"
+    },
+    {
+      "id": "beauty-and-flag",
+      "category": "verdict",
+      "title": "Итоговый вердикт · Красивый мужчина или Red Flag с красивыми глазами?"
+    },
+    {
+      "id": "check",
+      "category": "verdict",
+      "title": "Итоговый вердикт · Его ещё проверять поступками или уже всё понятно?"
+    },
+    {
+      "id": "main-advice",
+      "category": "verdict",
+      "title": "Итоговый вердикт · Какой главный совет женщине рядом с ним?"
+    },
+    {
+      "id": "his-need",
+      "category": "verdict",
+      "title": "Итоговый вердикт · Что ему нужно от женщины, чтобы правда раскрыться?"
+    },
+    {
+      "id": "weak-point",
+      "category": "verdict",
+      "title": "Итоговый вердикт · Где его главный риск в отношениях?"
+    },
+    {
+      "id": "best-side",
+      "category": "verdict",
+      "title": "Итоговый вердикт · Чем он способен порадовать в любви?"
+    },
+    {
+      "id": "format",
+      "category": "verdict",
+      "title": "Итоговый вердикт · Какой формат отношений с ним будет самым здоровым?"
+    },
+    {
+      "id": "bottom-line",
+      "category": "verdict",
+      "title": "Итоговый вердикт · Как понять, что пора выбрать себя, а не ждать его?"
+    }
+  ],
+  "yesno": [
+    {
+      "id": "yn-man-001",
+      "category": "man",
+      "title": "Напишет ли он мне первым?"
+    },
+    {
+      "id": "yn-man-002",
+      "category": "man",
+      "title": "Позвонит ли он в ближайшее время?"
+    },
+    {
+      "id": "yn-man-003",
+      "category": "man",
+      "title": "Скучает ли он по мне?"
+    },
+    {
+      "id": "yn-man-004",
+      "category": "man",
+      "title": "Думает ли он обо мне сегодня?"
+    },
+    {
+      "id": "yn-man-005",
+      "category": "man",
+      "title": "Хочет ли он увидеться со мной?"
+    },
+    {
+      "id": "yn-man-006",
+      "category": "man",
+      "title": "Сделает ли он первый шаг навстречу?"
+    },
+    {
+      "id": "yn-man-007",
+      "category": "man",
+      "title": "Есть ли у него ко мне чувства?"
+    },
+    {
+      "id": "yn-man-008",
+      "category": "man",
+      "title": "Хочет ли он серьёзных отношений со мной?"
+    },
+    {
+      "id": "yn-man-009",
+      "category": "man",
+      "title": "Ревнует ли он меня?"
+    },
+    {
+      "id": "yn-man-010",
+      "category": "man",
+      "title": "Готов ли он открыто говорить о своих чувствах?"
+    },
+    {
+      "id": "yn-man-011",
+      "category": "man",
+      "title": "Вернётся ли он после паузы в общении?"
+    },
+    {
+      "id": "yn-man-012",
+      "category": "man",
+      "title": "Проявит ли он инициативу после нашей встречи?"
+    },
+    {
+      "id": "yn-man-013",
+      "category": "man",
+      "title": "Есть ли у него намерение продолжать знакомство?"
+    },
+    {
+      "id": "yn-man-014",
+      "category": "man",
+      "title": "Стоит ли мне написать ему первой?"
+    },
+    {
+      "id": "yn-man-015",
+      "category": "man",
+      "title": "Состоится ли наша встреча?"
+    },
+    {
+      "id": "yn-man-016",
+      "category": "man",
+      "title": "Станет ли он внимательнее ко мне?"
+    },
+    {
+      "id": "yn-man-017",
+      "category": "man",
+      "title": "Хочет ли он восстановить наше общение?"
+    },
+    {
+      "id": "yn-man-018",
+      "category": "man",
+      "title": "Сделает ли он то, что обещал?"
+    },
+    {
+      "id": "yn-man-019",
+      "category": "man",
+      "title": "Ответит ли он, если я напишу первой?"
+    },
+    {
+      "id": "yn-man-020",
+      "category": "man",
+      "title": "Будет ли он проявлять интерес дальше?"
+    },
+    {
+      "id": "yn-love-001",
+      "category": "love",
+      "title": "Есть ли у этих отношений будущее?"
+    },
+    {
+      "id": "yn-love-002",
+      "category": "love",
+      "title": "Стоит ли начинать отношения с бывшим?"
+    },
+    {
+      "id": "yn-love-003",
+      "category": "love",
+      "title": "Получится ли у нас помириться?"
+    },
+    {
+      "id": "yn-love-004",
+      "category": "love",
+      "title": "Перерастёт ли наше знакомство в отношения?"
+    },
+    {
+      "id": "yn-love-005",
+      "category": "love",
+      "title": "Стоит ли признаться в любви?"
+    },
+    {
+      "id": "yn-love-006",
+      "category": "love",
+      "title": "Взаимны ли мои чувства?"
+    },
+    {
+      "id": "yn-love-007",
+      "category": "love",
+      "title": "Найдём ли мы общий язык?"
+    },
+    {
+      "id": "yn-love-008",
+      "category": "love",
+      "title": "Стоит ли назначить серьёзный разговор сегодня?"
+    },
+    {
+      "id": "yn-love-009",
+      "category": "love",
+      "title": "Стоит ли продолжать эти отношения?"
+    },
+    {
+      "id": "yn-love-010",
+      "category": "love",
+      "title": "Начнётся ли в моей жизни новая любовная история?"
+    },
+    {
+      "id": "yn-love-011",
+      "category": "love",
+      "title": "Поможет ли откровенный разговор нашей паре?"
+    },
+    {
+      "id": "yn-love-012",
+      "category": "love",
+      "title": "Стоит ли согласиться на свидание?"
+    },
+    {
+      "id": "yn-love-013",
+      "category": "love",
+      "title": "Станем ли мы ближе друг к другу?"
+    },
+    {
+      "id": "yn-love-014",
+      "category": "love",
+      "title": "Есть ли шанс начать всё заново?"
+    },
+    {
+      "id": "yn-love-015",
+      "category": "love",
+      "title": "Стоит ли мне отпустить эти отношения?"
+    },
+    {
+      "id": "yn-work-001",
+      "category": "work",
+      "title": "Стоит ли мне менять работу?"
+    },
+    {
+      "id": "yn-work-002",
+      "category": "work",
+      "title": "Получу ли я предложение о новой работе?"
+    },
+    {
+      "id": "yn-work-003",
+      "category": "work",
+      "title": "Оценят ли мои усилия на работе?"
+    },
+    {
+      "id": "yn-work-004",
+      "category": "work",
+      "title": "Стоит ли просить повышения зарплаты?"
+    },
+    {
+      "id": "yn-work-005",
+      "category": "work",
+      "title": "Удастся ли мне пройти собеседование?"
+    },
+    {
+      "id": "yn-work-006",
+      "category": "work",
+      "title": "Подходящий ли сейчас момент для смены профессии?"
+    },
+    {
+      "id": "yn-work-007",
+      "category": "work",
+      "title": "Получится ли договориться с руководством?"
+    },
+    {
+      "id": "yn-work-008",
+      "category": "work",
+      "title": "Будет ли удачной новая должность?"
+    },
+    {
+      "id": "yn-work-009",
+      "category": "work",
+      "title": "Стоит ли принимать это рабочее предложение?"
+    },
+    {
+      "id": "yn-work-010",
+      "category": "work",
+      "title": "Смогу ли я завершить сложную рабочую задачу?"
+    },
+    {
+      "id": "yn-work-011",
+      "category": "work",
+      "title": "Стоит ли отправить заявку на новую работу?"
+    },
+    {
+      "id": "yn-work-012",
+      "category": "work",
+      "title": "Принесёт ли обучение пользу моей карьере?"
+    },
+    {
+      "id": "yn-work-013",
+      "category": "work",
+      "title": "Получится ли наладить отношения с коллегой?"
+    },
+    {
+      "id": "yn-work-014",
+      "category": "work",
+      "title": "Стоит ли принимать новую задачу?"
+    },
+    {
+      "id": "yn-work-015",
+      "category": "work",
+      "title": "Появится ли у меня новая профессиональная возможность?"
+    },
+    {
+      "id": "yn-money-001",
+      "category": "money",
+      "title": "Принесёт ли мой проект прибыль?"
+    },
+    {
+      "id": "yn-money-002",
+      "category": "money",
+      "title": "Стоит ли сейчас запускать свой проект?"
+    },
+    {
+      "id": "yn-money-003",
+      "category": "money",
+      "title": "Получится ли выйти на новый уровень дохода?"
+    },
+    {
+      "id": "yn-money-004",
+      "category": "money",
+      "title": "Стоит ли вкладывать деньги в эту идею?"
+    },
+    {
+      "id": "yn-money-005",
+      "category": "money",
+      "title": "Найдутся ли клиенты на моё предложение?"
+    },
+    {
+      "id": "yn-money-006",
+      "category": "money",
+      "title": "Стоит ли повышать цену своих услуг?"
+    },
+    {
+      "id": "yn-money-007",
+      "category": "money",
+      "title": "Окупятся ли мои вложения в проект?"
+    },
+    {
+      "id": "yn-money-008",
+      "category": "money",
+      "title": "Удастся ли договориться о выгодном сотрудничестве?"
+    },
+    {
+      "id": "yn-money-009",
+      "category": "money",
+      "title": "Принесёт ли мне доход новое направление?"
+    },
+    {
+      "id": "yn-money-010",
+      "category": "money",
+      "title": "Стоит ли сейчас делать крупную покупку?"
+    },
+    {
+      "id": "yn-money-011",
+      "category": "money",
+      "title": "Смогу ли я увеличить количество заказов?"
+    },
+    {
+      "id": "yn-money-012",
+      "category": "money",
+      "title": "Стоит ли делиться планом своего проекта?"
+    },
+    {
+      "id": "yn-money-013",
+      "category": "money",
+      "title": "Стоит ли возобновлять старый проект?"
+    },
+    {
+      "id": "yn-money-014",
+      "category": "money",
+      "title": "Будет ли удачным сотрудничество с этим человеком?"
+    },
+    {
+      "id": "yn-money-015",
+      "category": "money",
+      "title": "Поможет ли новая стратегия увеличить продажи?"
+    },
+    {
+      "id": "yn-choice-001",
+      "category": "choice",
+      "title": "Стоит ли мне соглашаться на это предложение?"
+    },
+    {
+      "id": "yn-choice-002",
+      "category": "choice",
+      "title": "Стоит ли отложить решение на неделю?"
+    },
+    {
+      "id": "yn-choice-003",
+      "category": "choice",
+      "title": "Стоит ли сделать первый шаг?"
+    },
+    {
+      "id": "yn-choice-004",
+      "category": "choice",
+      "title": "Подходящий ли момент, чтобы начать всё сначала?"
+    },
+    {
+      "id": "yn-choice-005",
+      "category": "choice",
+      "title": "Стоит ли перенести встречу?"
+    },
+    {
+      "id": "yn-choice-006",
+      "category": "choice",
+      "title": "Стоит ли отказаться от прежнего плана?"
+    },
+    {
+      "id": "yn-choice-007",
+      "category": "choice",
+      "title": "Принесёт ли пользу решение, которое я обдумываю?"
+    },
+    {
+      "id": "yn-choice-008",
+      "category": "choice",
+      "title": "Стоит ли прямо сейчас поговорить об этом?"
+    },
+    {
+      "id": "yn-choice-009",
+      "category": "choice",
+      "title": "Стоит ли мне изменить привычку?"
+    },
+    {
+      "id": "yn-choice-010",
+      "category": "choice",
+      "title": "Стоит ли попробовать ещё раз?"
+    },
+    {
+      "id": "yn-choice-011",
+      "category": "choice",
+      "title": "Будет ли удачным мой следующий шаг?"
+    },
+    {
+      "id": "yn-choice-012",
+      "category": "choice",
+      "title": "Стоит ли возвращаться к отложенной задумке?"
+    },
+    {
+      "id": "yn-choice-013",
+      "category": "choice",
+      "title": "Подходящий ли момент для решительного разговора?"
+    },
+    {
+      "id": "yn-choice-014",
+      "category": "choice",
+      "title": "Стоит ли соглашаться на компромисс?"
+    },
+    {
+      "id": "yn-choice-015",
+      "category": "choice",
+      "title": "Получится ли у меня довести задуманное до конца?"
+    },
+    {
+      "id": "yn-future-001",
+      "category": "future",
+      "title": "Сбудется ли задуманное?"
+    },
+    {
+      "id": "yn-future-002",
+      "category": "future",
+      "title": "Произойдёт ли ожидаемая встреча?"
+    },
+    {
+      "id": "yn-future-003",
+      "category": "future",
+      "title": "Изменится ли ситуация в мою пользу?"
+    },
+    {
+      "id": "yn-future-004",
+      "category": "future",
+      "title": "Получу ли я долгожданную новость?"
+    },
+    {
+      "id": "yn-future-005",
+      "category": "future",
+      "title": "Разрешится ли волнующий меня вопрос?"
+    },
+    {
+      "id": "yn-future-006",
+      "category": "future",
+      "title": "Состоится ли запланированное событие?"
+    },
+    {
+      "id": "yn-future-007",
+      "category": "future",
+      "title": "Откроется ли передо мной новая возможность?"
+    },
+    {
+      "id": "yn-future-008",
+      "category": "future",
+      "title": "Подходит ли сегодняшний день для отдыха?"
+    },
+    {
+      "id": "yn-future-009",
+      "category": "future",
+      "title": "Получится ли реализовать ближайший план?"
+    },
+    {
+      "id": "yn-future-010",
+      "category": "future",
+      "title": "Оправдаются ли мои ожидания?"
+    },
+    {
+      "id": "yn-home-001",
+      "category": "home",
+      "title": "Стоит ли мне переезжать?"
+    },
+    {
+      "id": "yn-home-002",
+      "category": "home",
+      "title": "Подойдёт ли мне выбранное жильё?"
+    },
+    {
+      "id": "yn-home-003",
+      "category": "home",
+      "title": "Стоит ли начинать ремонт сейчас?"
+    },
+    {
+      "id": "yn-home-004",
+      "category": "home",
+      "title": "Получится ли помириться с близким человеком?"
+    },
+    {
+      "id": "yn-home-005",
+      "category": "home",
+      "title": "Стоит ли сменить маршрут поездки?"
+    },
+    {
+      "id": "yn-home-006",
+      "category": "home",
+      "title": "Поможет ли разговор восстановить доверие?"
+    },
+    {
+      "id": "yn-home-007",
+      "category": "home",
+      "title": "Стоит ли сейчас отправляться в поездку?"
+    },
+    {
+      "id": "yn-home-008",
+      "category": "home",
+      "title": "Стоит ли планировать поездку сейчас?"
+    },
+    {
+      "id": "yn-home-009",
+      "category": "home",
+      "title": "Стоит ли возобновлять общение со старым другом?"
+    },
+    {
+      "id": "yn-home-010",
+      "category": "home",
+      "title": "Смогу ли я наладить отношения с родственником?"
+    }
+  ],
+  "moment": [
+    {
+      "id": "love-001",
+      "category": "love",
+      "title": "Что он чувствует ко мне?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-002",
+      "category": "love",
+      "title": "Вспоминает ли он обо мне?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-003",
+      "category": "love",
+      "title": "Хочет ли он со мной встретиться?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-004",
+      "category": "love",
+      "title": "Почему он отдалился?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-005",
+      "category": "love",
+      "title": "Стоит ли мне первой написать?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-006",
+      "category": "love",
+      "title": "Будет ли он проявлять инициативу?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-007",
+      "category": "love",
+      "title": "Есть ли между нами взаимность?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-008",
+      "category": "love",
+      "title": "Что мешает нашим отношениям?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-009",
+      "category": "love",
+      "title": "Как изменятся его чувства?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-010",
+      "category": "love",
+      "title": "Можно ли ему доверять?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-011",
+      "category": "love",
+      "title": "Есть ли шанс на примирение?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-012",
+      "category": "love",
+      "title": "Что между нами происходит сейчас?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-013",
+      "category": "love",
+      "title": "Стоит ли открыто рассказать о чувствах?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-014",
+      "category": "love",
+      "title": "Каким будет наше следующее общение?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-015",
+      "category": "love",
+      "title": "Станем ли мы ближе?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-016",
+      "category": "love",
+      "title": "Что важно понять о его отношении?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-017",
+      "category": "love",
+      "title": "Подходит ли сейчас время для разговора?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-018",
+      "category": "love",
+      "title": "Что поможет восстановить доверие?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-019",
+      "category": "love",
+      "title": "Есть ли перспективы у нашего знакомства?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-020",
+      "category": "love",
+      "title": "Стоит ли продолжать общение?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-021",
+      "category": "love",
+      "title": "К чему ведёт наше притяжение?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-022",
+      "category": "love",
+      "title": "Будет ли он готов к серьёзному разговору?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-023",
+      "category": "love",
+      "title": "Что изменится, если я сделаю первый шаг?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-024",
+      "category": "love",
+      "title": "Какую роль он играет в моей жизни сейчас?",
+      "mode": "partner"
+    },
+    {
+      "id": "love-025",
+      "category": "love",
+      "title": "Каковы перспективы наших чувств?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-001",
+      "category": "men",
+      "title": "Серьёзны ли его намерения?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-002",
+      "category": "men",
+      "title": "Стоит ли соглашаться на свидание?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-003",
+      "category": "men",
+      "title": "Почему мужчина не выходит на связь?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-004",
+      "category": "men",
+      "title": "Чего он ждёт от нашего общения?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-005",
+      "category": "men",
+      "title": "Готов ли он к отношениям?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-006",
+      "category": "men",
+      "title": "Будет ли наша встреча удачной?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-007",
+      "category": "men",
+      "title": "Стоит ли возобновлять контакт?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-008",
+      "category": "men",
+      "title": "Как пройдёт наше знакомство?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-009",
+      "category": "men",
+      "title": "Готов ли он обсуждать будущее?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-010",
+      "category": "men",
+      "title": "Подходим ли мы по жизненному ритму?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-011",
+      "category": "men",
+      "title": "Может ли общение перерасти в отношения?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-012",
+      "category": "men",
+      "title": "Что мешает договориться?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-013",
+      "category": "men",
+      "title": "Сможем ли мы решить конфликт?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-014",
+      "category": "men",
+      "title": "Стоит ли дать ему второй шанс?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-015",
+      "category": "men",
+      "title": "Насколько благоприятен период для сближения?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-016",
+      "category": "men",
+      "title": "Будет ли он последовательным в поступках?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-017",
+      "category": "men",
+      "title": "Как нам наладить общение?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-018",
+      "category": "men",
+      "title": "Что поможет избежать недопонимания?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-019",
+      "category": "men",
+      "title": "Стоит ли обсуждать совместное проживание?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-020",
+      "category": "men",
+      "title": "Подходящий ли момент для знакомства с семьёй?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-021",
+      "category": "men",
+      "title": "Как изменится наше общение после встречи?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-022",
+      "category": "men",
+      "title": "Стоит ли планировать совместную поездку?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-023",
+      "category": "men",
+      "title": "Есть ли смысл ждать его решения?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-024",
+      "category": "men",
+      "title": "Куда движутся наши отношения?",
+      "mode": "partner"
+    },
+    {
+      "id": "men-025",
+      "category": "men",
+      "title": "Как лучше обозначить свои границы?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-001",
+      "category": "family",
+      "title": "Подходим ли мы для семейной жизни?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-002",
+      "category": "family",
+      "title": "Благоприятен ли момент для предложения?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-003",
+      "category": "family",
+      "title": "Стоит ли нам съезжаться?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-004",
+      "category": "family",
+      "title": "Готовы ли мы к общему бюджету?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-005",
+      "category": "family",
+      "title": "Какие сильные стороны у нашего союза?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-006",
+      "category": "family",
+      "title": "Где мы чаще всего не совпадаем?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-007",
+      "category": "family",
+      "title": "Как нам распределить обязанности?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-008",
+      "category": "family",
+      "title": "Подходит ли время для свадьбы?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-009",
+      "category": "family",
+      "title": "Удачна ли выбранная дата свадьбы?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-010",
+      "category": "family",
+      "title": "Как изменится семейная жизнь в этом году?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-011",
+      "category": "family",
+      "title": "Стоит ли обсуждать расширение семьи?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-012",
+      "category": "family",
+      "title": "Как преодолеть бытовые разногласия?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-013",
+      "category": "family",
+      "title": "Стоит ли нам покупать жильё вместе?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-014",
+      "category": "family",
+      "title": "Какой подход к деньгам лучше для пары?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-015",
+      "category": "family",
+      "title": "Что поможет сохранить близость?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-016",
+      "category": "family",
+      "title": "Подходящий ли сейчас период для примирения?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-017",
+      "category": "family",
+      "title": "Как поддержать друг друга в переменах?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-018",
+      "category": "family",
+      "title": "Каковы перспективы совместного проекта?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-019",
+      "category": "family",
+      "title": "Что важно учесть перед браком?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-020",
+      "category": "family",
+      "title": "Сможем ли мы договориться о переезде?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-021",
+      "category": "family",
+      "title": "Подходит ли время для общего отпуска?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-022",
+      "category": "family",
+      "title": "Что укрепит наши отношения сейчас?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-023",
+      "category": "family",
+      "title": "Стоит ли нам обращаться к общим планам?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-024",
+      "category": "family",
+      "title": "Какая тема требует внимания в паре?",
+      "mode": "partner"
+    },
+    {
+      "id": "family-025",
+      "category": "family",
+      "title": "Как складывается совместимость в этот момент?",
+      "mode": "partner"
+    },
+    {
+      "id": "money-001",
+      "category": "money",
+      "title": "Стоит ли сейчас делать крупную покупку?",
+      "mode": "self"
+    },
+    {
+      "id": "money-002",
+      "category": "money",
+      "title": "Благоприятен ли день для финансовых переговоров?",
+      "mode": "self"
+    },
+    {
+      "id": "money-003",
+      "category": "money",
+      "title": "Какой период подходит для накоплений?",
+      "mode": "self"
+    },
+    {
+      "id": "money-004",
+      "category": "money",
+      "title": "Стоит ли менять финансовую стратегию?",
+      "mode": "self"
+    },
+    {
+      "id": "money-005",
+      "category": "money",
+      "title": "Подходящий ли момент для поиска подработки?",
+      "mode": "self"
+    },
+    {
+      "id": "money-006",
+      "category": "money",
+      "title": "Как лучше расставить денежные приоритеты?",
+      "mode": "self"
+    },
+    {
+      "id": "money-007",
+      "category": "money",
+      "title": "Стоит ли обсуждать повышение дохода?",
+      "mode": "self"
+    },
+    {
+      "id": "money-008",
+      "category": "money",
+      "title": "Удачен ли момент для продажи вещи?",
+      "mode": "self"
+    },
+    {
+      "id": "money-009",
+      "category": "money",
+      "title": "Благоприятна ли дата для сделки?",
+      "mode": "self"
+    },
+    {
+      "id": "money-010",
+      "category": "money",
+      "title": "Стоит ли открывать накопительный счёт?",
+      "mode": "self"
+    },
+    {
+      "id": "money-011",
+      "category": "money",
+      "title": "Какие финансовые привычки стоит пересмотреть?",
+      "mode": "self"
+    },
+    {
+      "id": "money-012",
+      "category": "money",
+      "title": "Подходящий ли период для экономии?",
+      "mode": "self"
+    },
+    {
+      "id": "money-013",
+      "category": "money",
+      "title": "Стоит ли покупать дорогую технику?",
+      "mode": "self"
+    },
+    {
+      "id": "money-014",
+      "category": "money",
+      "title": "Что учесть перед крупным платежом?",
+      "mode": "self"
+    },
+    {
+      "id": "money-015",
+      "category": "money",
+      "title": "Благоприятен ли момент для нового источника дохода?",
+      "mode": "self"
+    },
+    {
+      "id": "money-016",
+      "category": "money",
+      "title": "Стоит ли просить о повышении зарплаты?",
+      "mode": "self"
+    },
+    {
+      "id": "money-017",
+      "category": "money",
+      "title": "Подходящий ли день для составления бюджета?",
+      "mode": "self"
+    },
+    {
+      "id": "money-018",
+      "category": "money",
+      "title": "Какие расходы лучше отложить?",
+      "mode": "self"
+    },
+    {
+      "id": "money-019",
+      "category": "money",
+      "title": "Благоприятен ли период для продажи автомобиля?",
+      "mode": "self"
+    },
+    {
+      "id": "money-020",
+      "category": "money",
+      "title": "Стоит ли вкладываться в обучение?",
+      "mode": "self"
+    },
+    {
+      "id": "money-021",
+      "category": "money",
+      "title": "Какой шаг поможет упорядочить финансы?",
+      "mode": "self"
+    },
+    {
+      "id": "money-022",
+      "category": "money",
+      "title": "Когда удобнее начинать копить на цель?",
+      "mode": "self"
+    },
+    {
+      "id": "money-023",
+      "category": "money",
+      "title": "Что важно проверить перед покупкой?",
+      "mode": "self"
+    },
+    {
+      "id": "money-024",
+      "category": "money",
+      "title": "Какой денежный вопрос требует внимания?",
+      "mode": "self"
+    },
+    {
+      "id": "money-025",
+      "category": "money",
+      "title": "Стоит ли сейчас подписывать финансовые документы?",
+      "mode": "self"
+    },
+    {
+      "id": "work-001",
+      "category": "work",
+      "title": "Стоит ли мне менять работу?",
+      "mode": "self"
+    },
+    {
+      "id": "work-002",
+      "category": "work",
+      "title": "Благоприятен ли момент для собеседования?",
+      "mode": "self"
+    },
+    {
+      "id": "work-003",
+      "category": "work",
+      "title": "Когда лучше отправить резюме?",
+      "mode": "self"
+    },
+    {
+      "id": "work-004",
+      "category": "work",
+      "title": "Стоит ли принимать предложение о работе?",
+      "mode": "self"
+    },
+    {
+      "id": "work-005",
+      "category": "work",
+      "title": "Как пройдёт рабочая встреча?",
+      "mode": "self"
+    },
+    {
+      "id": "work-006",
+      "category": "work",
+      "title": "Стоит ли начинать новый проект?",
+      "mode": "self"
+    },
+    {
+      "id": "work-007",
+      "category": "work",
+      "title": "Какой шаг поможет продвинуть дело?",
+      "mode": "self"
+    },
+    {
+      "id": "work-008",
+      "category": "work",
+      "title": "Подходящий ли момент для смены профессии?",
+      "mode": "self"
+    },
+    {
+      "id": "work-009",
+      "category": "work",
+      "title": "Стоит ли открывать своё дело?",
+      "mode": "self"
+    },
+    {
+      "id": "work-010",
+      "category": "work",
+      "title": "Когда лучше запускать продукт?",
+      "mode": "self"
+    },
+    {
+      "id": "work-011",
+      "category": "work",
+      "title": "Благоприятен ли день для переговоров?",
+      "mode": "self"
+    },
+    {
+      "id": "work-012",
+      "category": "work",
+      "title": "Стоит ли возвращаться к старому проекту?",
+      "mode": "self"
+    },
+    {
+      "id": "work-013",
+      "category": "work",
+      "title": "Какой период подходит для обучения?",
+      "mode": "self"
+    },
+    {
+      "id": "work-014",
+      "category": "work",
+      "title": "Стоит ли менять команду?",
+      "mode": "self"
+    },
+    {
+      "id": "work-015",
+      "category": "work",
+      "title": "Благоприятен ли момент для партнёрства?",
+      "mode": "self"
+    },
+    {
+      "id": "work-016",
+      "category": "work",
+      "title": "Как пройдёт презентация идеи?",
+      "mode": "self"
+    },
+    {
+      "id": "work-017",
+      "category": "work",
+      "title": "Стоит ли обсуждать новые обязанности?",
+      "mode": "self"
+    },
+    {
+      "id": "work-018",
+      "category": "work",
+      "title": "Что учитывать перед увольнением?",
+      "mode": "self"
+    },
+    {
+      "id": "work-019",
+      "category": "work",
+      "title": "Когда лучше заявить о своих целях?",
+      "mode": "self"
+    },
+    {
+      "id": "work-020",
+      "category": "work",
+      "title": "Благоприятен ли день для заключения контракта?",
+      "mode": "self"
+    },
+    {
+      "id": "work-021",
+      "category": "work",
+      "title": "Стоит ли пробовать новую нишу?",
+      "mode": "self"
+    },
+    {
+      "id": "work-022",
+      "category": "work",
+      "title": "Какой следующий шаг в карьере?",
+      "mode": "self"
+    },
+    {
+      "id": "work-023",
+      "category": "work",
+      "title": "Подходит ли время для расширения бизнеса?",
+      "mode": "self"
+    },
+    {
+      "id": "work-024",
+      "category": "work",
+      "title": "Стоит ли принимать сложный заказ?",
+      "mode": "self"
+    },
+    {
+      "id": "work-025",
+      "category": "work",
+      "title": "Что поможет выбрать из двух рабочих направлений?",
+      "mode": "self"
+    },
+    {
+      "id": "future-001",
+      "category": "future",
+      "title": "Какая тема станет главной на этой неделе?",
+      "mode": "self"
+    },
+    {
+      "id": "future-002",
+      "category": "future",
+      "title": "Что принесёт ближайший месяц?",
+      "mode": "self"
+    },
+    {
+      "id": "future-003",
+      "category": "future",
+      "title": "На что обратить внимание завтра?",
+      "mode": "self"
+    },
+    {
+      "id": "future-004",
+      "category": "future",
+      "title": "Какой день будет удобен для важного дела?",
+      "mode": "self"
+    },
+    {
+      "id": "future-005",
+      "category": "future",
+      "title": "Что полезно завершить сейчас?",
+      "mode": "self"
+    },
+    {
+      "id": "future-006",
+      "category": "future",
+      "title": "С чего лучше начать новую неделю?",
+      "mode": "self"
+    },
+    {
+      "id": "future-007",
+      "category": "future",
+      "title": "Какое решение требует времени?",
+      "mode": "self"
+    },
+    {
+      "id": "future-008",
+      "category": "future",
+      "title": "Что может изменить мои планы?",
+      "mode": "self"
+    },
+    {
+      "id": "future-009",
+      "category": "future",
+      "title": "Что поможет подготовиться к переменам?",
+      "mode": "self"
+    },
+    {
+      "id": "future-010",
+      "category": "future",
+      "title": "Благоприятен ли момент для нового начала?",
+      "mode": "self"
+    },
+    {
+      "id": "future-011",
+      "category": "future",
+      "title": "Какие задачи лучше отложить?",
+      "mode": "self"
+    },
+    {
+      "id": "future-012",
+      "category": "future",
+      "title": "Что будет главным в ближайшие семь дней?",
+      "mode": "self"
+    },
+    {
+      "id": "future-013",
+      "category": "future",
+      "title": "На что направить силы сегодня?",
+      "mode": "self"
+    },
+    {
+      "id": "future-014",
+      "category": "future",
+      "title": "Подходит ли время для новых знакомств?",
+      "mode": "self"
+    },
+    {
+      "id": "future-015",
+      "category": "future",
+      "title": "Как лучше встретить новый месяц?",
+      "mode": "self"
+    },
+    {
+      "id": "future-016",
+      "category": "future",
+      "title": "Какая сфера жизни требует внимания?",
+      "mode": "self"
+    },
+    {
+      "id": "future-017",
+      "category": "future",
+      "title": "Стоит ли менять планы на выходные?",
+      "mode": "self"
+    },
+    {
+      "id": "future-018",
+      "category": "future",
+      "title": "Благоприятен ли предстоящий период для отдыха?",
+      "mode": "self"
+    },
+    {
+      "id": "future-019",
+      "category": "future",
+      "title": "Какая привычка поможет в новом цикле?",
+      "mode": "self"
+    },
+    {
+      "id": "future-020",
+      "category": "future",
+      "title": "Что важно успеть до конца месяца?",
+      "mode": "self"
+    },
+    {
+      "id": "future-021",
+      "category": "future",
+      "title": "Как провести день с большей пользой?",
+      "mode": "self"
+    },
+    {
+      "id": "future-022",
+      "category": "future",
+      "title": "Подходящий ли момент для важного разговора?",
+      "mode": "self"
+    },
+    {
+      "id": "future-023",
+      "category": "future",
+      "title": "Стоит ли планировать большое событие?",
+      "mode": "self"
+    },
+    {
+      "id": "future-024",
+      "category": "future",
+      "title": "Что учесть при выборе следующего шага?",
+      "mode": "self"
+    },
+    {
+      "id": "future-025",
+      "category": "future",
+      "title": "Какой настрой поддержит меня сейчас?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-001",
+      "category": "choice",
+      "title": "Стоит ли соглашаться на предложение?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-002",
+      "category": "choice",
+      "title": "Делать первый шаг или подождать?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-003",
+      "category": "choice",
+      "title": "Продолжать начатое или менять направление?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-004",
+      "category": "choice",
+      "title": "Сказать правду сейчас или позже?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-005",
+      "category": "choice",
+      "title": "Стоит ли давать ещё один шанс?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-006",
+      "category": "choice",
+      "title": "Начинать дело сегодня или завтра?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-007",
+      "category": "choice",
+      "title": "Принять приглашение или отказаться?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-008",
+      "category": "choice",
+      "title": "Стоит ли менять привычный распорядок?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-009",
+      "category": "choice",
+      "title": "Важный разговор — сейчас или позже?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-010",
+      "category": "choice",
+      "title": "Участвовать в конкурсе или пропустить?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-011",
+      "category": "choice",
+      "title": "Стоит ли подавать заявку?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-012",
+      "category": "choice",
+      "title": "Возвращаться к прошлому решению?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-013",
+      "category": "choice",
+      "title": "Принимать помощь или справляться самой?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-014",
+      "category": "choice",
+      "title": "Стоит ли брать дополнительную нагрузку?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-015",
+      "category": "choice",
+      "title": "Довериться идее или проверить детали?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-016",
+      "category": "choice",
+      "title": "Сделать покупку или подождать?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-017",
+      "category": "choice",
+      "title": "Начинать обучение или отложить?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-018",
+      "category": "choice",
+      "title": "Стоит ли идти на встречу?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-019",
+      "category": "choice",
+      "title": "Менять маршрут или оставить прежний?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-020",
+      "category": "choice",
+      "title": "Соглашаться на сотрудничество?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-021",
+      "category": "choice",
+      "title": "Отказаться от предложения или попробовать?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-022",
+      "category": "choice",
+      "title": "Стоит ли делиться планами?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-023",
+      "category": "choice",
+      "title": "Какой из двух вариантов выбрать?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-024",
+      "category": "choice",
+      "title": "Лучше действовать быстро или постепенно?",
+      "mode": "self"
+    },
+    {
+      "id": "choice-025",
+      "category": "choice",
+      "title": "Что учесть, прежде чем сказать «да»?",
+      "mode": "self"
+    },
+    {
+      "id": "home-001",
+      "category": "home",
+      "title": "Подходит ли момент для переезда?",
+      "mode": "self"
+    },
+    {
+      "id": "home-002",
+      "category": "home",
+      "title": "Стоит ли рассматривать эту квартиру?",
+      "mode": "self"
+    },
+    {
+      "id": "home-003",
+      "category": "home",
+      "title": "Благоприятна ли дата подписания договора?",
+      "mode": "self"
+    },
+    {
+      "id": "home-004",
+      "category": "home",
+      "title": "Когда лучше начинать ремонт?",
+      "mode": "self"
+    },
+    {
+      "id": "home-005",
+      "category": "home",
+      "title": "Стоит ли покупать автомобиль сейчас?",
+      "mode": "self"
+    },
+    {
+      "id": "home-006",
+      "category": "home",
+      "title": "Подходит ли период для продажи жилья?",
+      "mode": "self"
+    },
+    {
+      "id": "home-007",
+      "category": "home",
+      "title": "Благоприятен ли день для поездки?",
+      "mode": "self"
+    },
+    {
+      "id": "home-008",
+      "category": "home",
+      "title": "Стоит ли переносить путешествие?",
+      "mode": "self"
+    },
+    {
+      "id": "home-009",
+      "category": "home",
+      "title": "Как выбрать время для новоселья?",
+      "mode": "self"
+    },
+    {
+      "id": "home-010",
+      "category": "home",
+      "title": "Стоит ли менять район проживания?",
+      "mode": "self"
+    },
+    {
+      "id": "home-011",
+      "category": "home",
+      "title": "Благоприятна ли дата переезда?",
+      "mode": "self"
+    },
+    {
+      "id": "home-012",
+      "category": "home",
+      "title": "Когда лучше покупать мебель?",
+      "mode": "self"
+    },
+    {
+      "id": "home-013",
+      "category": "home",
+      "title": "Стоит ли начинать строительство?",
+      "mode": "self"
+    },
+    {
+      "id": "home-014",
+      "category": "home",
+      "title": "Подходящий ли период для смены города?",
+      "mode": "self"
+    },
+    {
+      "id": "home-015",
+      "category": "home",
+      "title": "Какой день выбрать для просмотра квартиры?",
+      "mode": "self"
+    },
+    {
+      "id": "home-016",
+      "category": "home",
+      "title": "Стоит ли соглашаться на аренду?",
+      "mode": "self"
+    },
+    {
+      "id": "home-017",
+      "category": "home",
+      "title": "Благоприятен ли момент для покупки билетов?",
+      "mode": "self"
+    },
+    {
+      "id": "home-018",
+      "category": "home",
+      "title": "Подходит ли время для ремонта кухни?",
+      "mode": "self"
+    },
+    {
+      "id": "home-019",
+      "category": "home",
+      "title": "Стоит ли менять автомобиль?",
+      "mode": "self"
+    },
+    {
+      "id": "home-020",
+      "category": "home",
+      "title": "Какой период лучше для семейной поездки?",
+      "mode": "self"
+    },
+    {
+      "id": "home-021",
+      "category": "home",
+      "title": "Подходит ли сейчас время для дальнего пути?",
+      "mode": "self"
+    },
+    {
+      "id": "home-022",
+      "category": "home",
+      "title": "Стоит ли вкладываться в благоустройство дома?",
+      "mode": "self"
+    },
+    {
+      "id": "home-023",
+      "category": "home",
+      "title": "Когда лучше оформлять документы на жильё?",
+      "mode": "self"
+    },
+    {
+      "id": "home-024",
+      "category": "home",
+      "title": "Благоприятен ли день для покупки техники?",
+      "mode": "self"
+    },
+    {
+      "id": "home-025",
+      "category": "home",
+      "title": "Какой шаг поможет подготовить переезд?",
+      "mode": "self"
+    },
+    {
+      "id": "self-001",
+      "category": "self",
+      "title": "С чего мне начать изменения?",
+      "mode": "self"
+    },
+    {
+      "id": "self-002",
+      "category": "self",
+      "title": "Что стоит поставить на первое место?",
+      "mode": "self"
+    },
+    {
+      "id": "self-003",
+      "category": "self",
+      "title": "Подходящий ли момент для новой привычки?",
+      "mode": "self"
+    },
+    {
+      "id": "self-004",
+      "category": "self",
+      "title": "Стоит ли записаться на курс?",
+      "mode": "self"
+    },
+    {
+      "id": "self-005",
+      "category": "self",
+      "title": "Какой период лучше для отдыха?",
+      "mode": "self"
+    },
+    {
+      "id": "self-006",
+      "category": "self",
+      "title": "Что поможет организовать время?",
+      "mode": "self"
+    },
+    {
+      "id": "self-007",
+      "category": "self",
+      "title": "Благоприятен ли день для разговора с близкими?",
+      "mode": "self"
+    },
+    {
+      "id": "self-008",
+      "category": "self",
+      "title": "Как лучше распределить силы?",
+      "mode": "self"
+    },
+    {
+      "id": "self-009",
+      "category": "self",
+      "title": "Стоит ли возобновить старое увлечение?",
+      "mode": "self"
+    },
+    {
+      "id": "self-010",
+      "category": "self",
+      "title": "Подходит ли время для творчества?",
+      "mode": "self"
+    },
+    {
+      "id": "self-011",
+      "category": "self",
+      "title": "Какой шаг поможет стать увереннее?",
+      "mode": "self"
+    },
+    {
+      "id": "self-012",
+      "category": "self",
+      "title": "Стоит ли изменить режим дня?",
+      "mode": "self"
+    },
+    {
+      "id": "self-013",
+      "category": "self",
+      "title": "Какой навык развивать сейчас?",
+      "mode": "self"
+    },
+    {
+      "id": "self-014",
+      "category": "self",
+      "title": "Благоприятен ли период для путешествия одной?",
+      "mode": "self"
+    },
+    {
+      "id": "self-015",
+      "category": "self",
+      "title": "Стоит ли планировать большой личный проект?",
+      "mode": "self"
+    },
+    {
+      "id": "self-016",
+      "category": "self",
+      "title": "Что помогает мне двигаться вперёд?",
+      "mode": "self"
+    },
+    {
+      "id": "self-017",
+      "category": "self",
+      "title": "Подходит ли время для смены имиджа?",
+      "mode": "self"
+    },
+    {
+      "id": "self-018",
+      "category": "self",
+      "title": "Как лучше провести выходные?",
+      "mode": "self"
+    },
+    {
+      "id": "self-019",
+      "category": "self",
+      "title": "Стоит ли знакомиться с новым коллективом?",
+      "mode": "self"
+    },
+    {
+      "id": "self-020",
+      "category": "self",
+      "title": "Когда начинать новое хобби?",
+      "mode": "self"
+    },
+    {
+      "id": "self-021",
+      "category": "self",
+      "title": "Какая цель требует моего внимания?",
+      "mode": "self"
+    },
+    {
+      "id": "self-022",
+      "category": "self",
+      "title": "Какой выбор поддержит мои ценности?",
+      "mode": "self"
+    },
+    {
+      "id": "self-023",
+      "category": "self",
+      "title": "Стоит ли пересмотреть планы на год?",
+      "mode": "self"
+    },
+    {
+      "id": "self-024",
+      "category": "self",
+      "title": "Какой день подходит для важного решения?",
+      "mode": "self"
+    },
+    {
+      "id": "self-025",
+      "category": "self",
+      "title": "Как лучше использовать возможности месяца?",
+      "mode": "self"
+    },
+    {
+      "id": "friends-001",
+      "category": "friends",
+      "title": "Стоит ли восстанавливать дружбу?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-002",
+      "category": "friends",
+      "title": "Как наладить общение с подругой?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-003",
+      "category": "friends",
+      "title": "Благоприятен ли момент для примирения?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-004",
+      "category": "friends",
+      "title": "Как пройдёт разговор с родственником?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-005",
+      "category": "friends",
+      "title": "Стоит ли доверять новому знакомому?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-006",
+      "category": "friends",
+      "title": "Подходит ли время для совместной поездки?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-007",
+      "category": "friends",
+      "title": "Как избежать недопонимания с коллегой?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-008",
+      "category": "friends",
+      "title": "Стоит ли обсуждать личную тему?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-009",
+      "category": "friends",
+      "title": "Есть ли перспективы у нового знакомства?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-010",
+      "category": "friends",
+      "title": "Что укрепит нашу дружбу?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-011",
+      "category": "friends",
+      "title": "Стоит ли приглашать человека на встречу?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-012",
+      "category": "friends",
+      "title": "Как лучше поговорить о границах?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-013",
+      "category": "friends",
+      "title": "Благоприятен ли день для семейного сбора?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-014",
+      "category": "friends",
+      "title": "Как изменится наше общение?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-015",
+      "category": "friends",
+      "title": "Стоит ли делать первый шаг к примирению?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-016",
+      "category": "friends",
+      "title": "Подходит ли период для новых контактов?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-017",
+      "category": "friends",
+      "title": "Что важно учитывать в общении с человеком?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-018",
+      "category": "friends",
+      "title": "Как найти общий язык с близким?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-019",
+      "category": "friends",
+      "title": "Стоит ли соглашаться на совместный проект?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-020",
+      "category": "friends",
+      "title": "Какая тема нас объединяет?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-021",
+      "category": "friends",
+      "title": "Что мешает нам договориться?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-022",
+      "category": "friends",
+      "title": "Как сохранить дружбу на расстоянии?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-023",
+      "category": "friends",
+      "title": "Стоит ли обсуждать давнюю обиду?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-024",
+      "category": "friends",
+      "title": "Благоприятен ли момент для откровенного разговора?",
+      "mode": "partner"
+    },
+    {
+      "id": "friends-025",
+      "category": "friends",
+      "title": "Как лучше восстановить связь?",
+      "mode": "partner"
+    },
+    {
+      "id": "dates-001",
+      "category": "dates",
+      "title": "Подходит ли выбранная дата для свадьбы?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-002",
+      "category": "dates",
+      "title": "Благоприятен ли день для переезда?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-003",
+      "category": "dates",
+      "title": "Подходит ли дата запуска проекта?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-004",
+      "category": "dates",
+      "title": "Удачен ли день для подписания договора?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-005",
+      "category": "dates",
+      "title": "Стоит ли назначать встречу на эту дату?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-006",
+      "category": "dates",
+      "title": "Подходит ли день для поездки?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-007",
+      "category": "dates",
+      "title": "Благоприятна ли дата собеседования?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-008",
+      "category": "dates",
+      "title": "Удачна ли дата покупки автомобиля?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-009",
+      "category": "dates",
+      "title": "Подходит ли день для открытия магазина?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-010",
+      "category": "dates",
+      "title": "Как выбрать дату важного разговора?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-011",
+      "category": "dates",
+      "title": "Благоприятен ли день для презентации?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-012",
+      "category": "dates",
+      "title": "Стоит ли проводить праздник в этот день?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-013",
+      "category": "dates",
+      "title": "Подходит ли дата начала обучения?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-014",
+      "category": "dates",
+      "title": "Удачен ли день для подачи документов?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-015",
+      "category": "dates",
+      "title": "Благоприятна ли дата новоселья?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-016",
+      "category": "dates",
+      "title": "Стоит ли назначать переговоры на эту дату?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-017",
+      "category": "dates",
+      "title": "Подходит ли день для начала ремонта?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-018",
+      "category": "dates",
+      "title": "Удачна ли дата семейной встречи?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-019",
+      "category": "dates",
+      "title": "Благоприятен ли день для смены работы?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-020",
+      "category": "dates",
+      "title": "Стоит ли начинать сотрудничество в этот день?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-021",
+      "category": "dates",
+      "title": "Подходит ли дата для съёмки?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-022",
+      "category": "dates",
+      "title": "Удачен ли день для публичного выступления?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-023",
+      "category": "dates",
+      "title": "Благоприятна ли дата регистрации бизнеса?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-024",
+      "category": "dates",
+      "title": "Подходит ли день для большого приобретения?",
+      "mode": "event"
+    },
+    {
+      "id": "dates-025",
+      "category": "dates",
+      "title": "Какой день выбрать для нового начала?",
+      "mode": "event"
+    },
+    {
+      "id": "yesno-001",
+      "category": "yesno",
+      "title": "Стоит ли мне писать первой?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-002",
+      "category": "yesno",
+      "title": "Соглашаться ли на встречу?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-003",
+      "category": "yesno",
+      "title": "Подходит ли сегодня для начала?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-004",
+      "category": "yesno",
+      "title": "Стоит ли покупать это сейчас?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-005",
+      "category": "yesno",
+      "title": "Отложить ли решение на неделю?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-006",
+      "category": "yesno",
+      "title": "Пробовать ли ещё раз?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-007",
+      "category": "yesno",
+      "title": "Соглашаться ли на поездку?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-008",
+      "category": "yesno",
+      "title": "Стоит ли отправить заявку?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-009",
+      "category": "yesno",
+      "title": "Назначить ли разговор сегодня?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-010",
+      "category": "yesno",
+      "title": "Принимать ли приглашение?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-011",
+      "category": "yesno",
+      "title": "Лучше ли перенести встречу?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-012",
+      "category": "yesno",
+      "title": "Пора ли завершить проект?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-013",
+      "category": "yesno",
+      "title": "Стоит ли менять привычку?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-014",
+      "category": "yesno",
+      "title": "Благоприятен ли день для покупки?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-015",
+      "category": "yesno",
+      "title": "Начать ли новое обучение?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-016",
+      "category": "yesno",
+      "title": "Стоит ли возвращаться к идее?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-017",
+      "category": "yesno",
+      "title": "Подходит ли время для обновления?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-018",
+      "category": "yesno",
+      "title": "Принимать ли новую задачу?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-019",
+      "category": "yesno",
+      "title": "Стоит ли делиться планом?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-020",
+      "category": "yesno",
+      "title": "Делать ли первый шаг?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-021",
+      "category": "yesno",
+      "title": "Подходит ли день для отдыха?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-022",
+      "category": "yesno",
+      "title": "Стоит ли сменить маршрут?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-023",
+      "category": "yesno",
+      "title": "Согласиться ли на сотрудничество?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-024",
+      "category": "yesno",
+      "title": "Стоит ли планировать поездку?",
+      "mode": "self"
+    },
+    {
+      "id": "yesno-025",
+      "category": "yesno",
+      "title": "Начинать ли сегодня?",
+      "mode": "self"
+    }
+  ]
+}

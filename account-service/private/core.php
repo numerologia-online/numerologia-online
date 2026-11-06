@@ -582,11 +582,9 @@ function naCatalogHasAccess(PDO $db, ?array $account, string $code, string $reso
     $stmt->execute([$account['id'],$code,$resource]);
     return (bool)$stmt->fetchColumn();
 }
-function naCatalogQuote(PDO $db,array $input): never {
+function naCatalogResolve(array $input,bool $club): array {
     $code=$input['product_code']??null;
-    if (!is_string($code) || strlen($code)>64) naReply(400,['ok'=>false,'error'=>'INVALID_PRODUCT']);
-    $account=naCurrent($db);
-    $club=naCatalogHasAccess($db,$account,'club_month','club');
+    if (!is_string($code) || strlen($code)>64) throw new InvalidArgumentException('INVALID_PRODUCT');
     $price=null;
     $resource=null;
     $availability='FULFILLMENT_NOT_CONNECTED';
@@ -596,30 +594,30 @@ function naCatalogQuote(PDO $db,array $input): never {
     if ($code==='year_full') {
         $year=$input['year']??null;
         if (!is_int($year) || $year<1900 || $year>2050 || $date===null)
-            naReply(400,['ok'=>false,'error'=>'INVALID_YEAR_SUBJECT']);
+            throw new InvalidArgumentException('INVALID_YEAR_SUBJECT');
         $resource='year:'.$year.':'.$date;
         $price=$club?49000:99000;
         $kind='report';
     } elseif ($code==='life_full') {
-        if ($date===null) naReply(400,['ok'=>false,'error'=>'INVALID_BIRTH_DATE']);
+        if ($date===null) throw new InvalidArgumentException('INVALID_BIRTH_DATE');
         $resource='life:'.$date; $price=$club?49000:99000; $kind='report';
     } elseif ($code==='compatibility_full') {
         $second=naCatalogDate($input['partner_birth_date']??null);
-        if ($date===null || $second===null) naReply(400,['ok'=>false,'error'=>'INVALID_PAIR']);
+        if ($date===null || $second===null) throw new InvalidArgumentException('INVALID_PAIR');
         $resource='pair:'.$date.':'.$second;
         $price=$club?49000:99000; $kind='report';
     } elseif ($code==='child_full_v1') {
-        if ($date===null) naReply(400,['ok'=>false,'error'=>'INVALID_CHILD_DATE']);
+        if ($date===null) throw new InvalidArgumentException('INVALID_CHILD_DATE');
         // Ownership of the specific child must be established before sale.
         $resource='child:'.$date; $price=$club?49000:99000; $kind='report';
     } elseif ($code==='redflag_question') {
         $category=$input['category']??null; $question=$input['question_id']??null;
         if (!is_string($category) || !is_string($question) || $date===null)
-            naReply(400,['ok'=>false,'error'=>'INVALID_QUESTION_SUBJECT']);
+            throw new InvalidArgumentException('INVALID_QUESTION_SUBJECT');
         $catalog=json_decode('{"money":{"gift":[10,1,1],"generosity":[10,0,1],"courtship":[10,0,1],"provider":[29,0,0],"words-or-deeds":[29,0,1],"family-load":[29,0,0],"resource":[29,0,1],"solve-or-create":[49,0,1],"responsibility":[49,0,1],"celebration":[49,0,1],"comic-verdict-money":[49,0,0]},"love":{"first-step":[10,1,0],"romance":[10,0,0],"relationship-or-comfort":[10,0,0],"adult-partner":[29,0,0],"near-him":[29,0,0],"hard-moment":[29,0,0],"relationship-format":[29,0,0],"family-or-triangle":[49,0,0],"honest-or-disappear":[49,0,0],"love-or-attention":[49,0,0]},"flags":{"say-no":[10,1,0],"care-or-control":[29,0,0],"hero":[29,0,0],"jealousy":[29,0,0],"argument":[29,0,0],"abuse-signal":[49,0,0],"support-or-cause":[49,0,0],"apology":[49,0,0],"weak-place":[49,0,0],"calm-or-swings":[49,0,0]},"infidelity":{"faithful":[10,1,0],"options":[10,0,0],"flirt":[10,0,0],"trust":[29,0,0],"ex":[29,0,0],"temptation":[29,0,0],"physical-or-emotional":[29,0,0],"secrecy":[49,0,0],"return":[49,0,0],"after-mistake":[49,0,0]},"intimacy":{"fire":[10,1,0],"her-pleasure":[10,0,0],"pace":[10,0,0],"desire-talk":[29,0,0],"tenderness":[29,0,0],"boundaries":[29,0,0],"closeness":[29,0,0],"initiative":[49,0,0],"compatibility":[49,0,0],"after":[49,0,0]},"family":{"independent":[10,1,0],"household":[10,0,0],"vacation":[10,0,0],"plans":[29,0,0],"children":[29,0,0],"roles":[29,0,0],"home":[29,0,0],"conflict":[49,0,0],"money-at-home":[49,0,0],"care":[49,0,0]},"language":{"love-language":[10,1,0],"how-to-talk":[10,0,0],"accept-love":[10,0,0],"show-love":[49,0,0],"criticism":[29,0,0],"ask":[29,0,0],"distance":[29,0,0],"hurt":[49,0,0],"conflict-style":[49,0,0],"compliment":[49,0,0]},"verdict":{"final":[10,1,0],"worth-it":[10,0,0],"beauty-and-flag":[10,0,0],"check":[29,0,0],"main-advice":[29,0,0],"his-need":[29,0,0],"weak-point":[29,0,0],"best-side":[49,0,0],"format":[49,0,0],"bottom-line":[49,0,0]}}',true,16,JSON_THROW_ON_ERROR);
         $meta=$catalog[$category][$question]??null;
         if (!is_array($meta) || count($meta)!==3)
-            naReply(400,['ok'=>false,'error'=>'UNKNOWN_QUESTION']);
+            throw new InvalidArgumentException('UNKNOWN_QUESTION');
         $tier=(int)$meta[0]; $isPreview=(bool)$meta[1]; $isReady=(bool)$meta[2];
         $prices=[10=>[2000,1000],29=>[3900,1900],49=>[7900,3900]];
         $price=$isPreview?0:($club?$prices[$tier][1]:$prices[$tier][0]);
@@ -633,7 +631,7 @@ function naCatalogQuote(PDO $db,array $input): never {
         $clock=$input['question_time']??null;
         if (!is_string($question)||!in_array($question,explode(',','yn-man-001,yn-man-002,yn-man-003,yn-man-004,yn-man-005,yn-man-006,yn-man-007,yn-man-008,yn-man-009,yn-man-010,yn-man-011,yn-man-012,yn-man-013,yn-man-014,yn-man-015,yn-man-016,yn-man-017,yn-man-018,yn-man-019,yn-man-020,yn-love-001,yn-love-002,yn-love-003,yn-love-004,yn-love-005,yn-love-006,yn-love-007,yn-love-008,yn-love-009,yn-love-010,yn-love-011,yn-love-012,yn-love-013,yn-love-014,yn-love-015,yn-work-001,yn-work-002,yn-work-003,yn-work-004,yn-work-005,yn-work-006,yn-work-007,yn-work-008,yn-work-009,yn-work-010,yn-work-011,yn-work-012,yn-work-013,yn-work-014,yn-work-015,yn-money-001,yn-money-002,yn-money-003,yn-money-004,yn-money-005,yn-money-006,yn-money-007,yn-money-008,yn-money-009,yn-money-010,yn-money-011,yn-money-012,yn-money-013,yn-money-014,yn-money-015,yn-choice-001,yn-choice-002,yn-choice-003,yn-choice-004,yn-choice-005,yn-choice-006,yn-choice-007,yn-choice-008,yn-choice-009,yn-choice-010,yn-choice-011,yn-choice-012,yn-choice-013,yn-choice-014,yn-choice-015,yn-future-001,yn-future-002,yn-future-003,yn-future-004,yn-future-005,yn-future-006,yn-future-007,yn-future-008,yn-future-009,yn-future-010,yn-home-001,yn-home-002,yn-home-003,yn-home-004,yn-home-005,yn-home-006,yn-home-007,yn-home-008,yn-home-009,yn-home-010'),true)
           || !is_string($clock)||!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/D',$clock))
-          naReply(400,['ok'=>false,'error'=>'INVALID_QUESTION_SUBJECT']);
+          throw new InvalidArgumentException('INVALID_QUESTION_SUBJECT');
         $resource='yesno:'.$question.':'.$clock;
         $price=$club?0:1900;
         $memberIncluded=$club;
@@ -644,7 +642,7 @@ function naCatalogQuote(PDO $db,array $input): never {
         $clock=$input['question_time']??null;
         if (!is_string($question)||!in_array($question,explode(',','love-001,love-002,love-003,love-004,love-005,love-006,love-007,love-008,love-009,love-010,love-011,love-012,love-013,love-014,love-015,love-016,love-017,love-018,love-019,love-020,love-021,love-022,love-023,love-024,love-025,men-001,men-002,men-003,men-004,men-005,men-006,men-007,men-008,men-009,men-010,men-011,men-012,men-013,men-014,men-015,men-016,men-017,men-018,men-019,men-020,men-021,men-022,men-023,men-024,men-025,family-001,family-002,family-003,family-004,family-005,family-006,family-007,family-008,family-009,family-010,family-011,family-012,family-013,family-014,family-015,family-016,family-017,family-018,family-019,family-020,family-021,family-022,family-023,family-024,family-025,money-001,money-002,money-003,money-004,money-005,money-006,money-007,money-008,money-009,money-010,money-011,money-012,money-013,money-014,money-015,money-016,money-017,money-018,money-019,money-020,money-021,money-022,money-023,money-024,money-025,work-001,work-002,work-003,work-004,work-005,work-006,work-007,work-008,work-009,work-010,work-011,work-012,work-013,work-014,work-015,work-016,work-017,work-018,work-019,work-020,work-021,work-022,work-023,work-024,work-025,future-001,future-002,future-003,future-004,future-005,future-006,future-007,future-008,future-009,future-010,future-011,future-012,future-013,future-014,future-015,future-016,future-017,future-018,future-019,future-020,future-021,future-022,future-023,future-024,future-025,choice-001,choice-002,choice-003,choice-004,choice-005,choice-006,choice-007,choice-008,choice-009,choice-010,choice-011,choice-012,choice-013,choice-014,choice-015,choice-016,choice-017,choice-018,choice-019,choice-020,choice-021,choice-022,choice-023,choice-024,choice-025,home-001,home-002,home-003,home-004,home-005,home-006,home-007,home-008,home-009,home-010,home-011,home-012,home-013,home-014,home-015,home-016,home-017,home-018,home-019,home-020,home-021,home-022,home-023,home-024,home-025,self-001,self-002,self-003,self-004,self-005,self-006,self-007,self-008,self-009,self-010,self-011,self-012,self-013,self-014,self-015,self-016,self-017,self-018,self-019,self-020,self-021,self-022,self-023,self-024,self-025,friends-001,friends-002,friends-003,friends-004,friends-005,friends-006,friends-007,friends-008,friends-009,friends-010,friends-011,friends-012,friends-013,friends-014,friends-015,friends-016,friends-017,friends-018,friends-019,friends-020,friends-021,friends-022,friends-023,friends-024,friends-025,dates-001,dates-002,dates-003,dates-004,dates-005,dates-006,dates-007,dates-008,dates-009,dates-010,dates-011,dates-012,dates-013,dates-014,dates-015,dates-016,dates-017,dates-018,dates-019,dates-020,dates-021,dates-022,dates-023,dates-024,dates-025,yesno-001,yesno-002,yesno-003,yesno-004,yesno-005,yesno-006,yesno-007,yesno-008,yesno-009,yesno-010,yesno-011,yesno-012,yesno-013,yesno-014,yesno-015,yesno-016,yesno-017,yesno-018,yesno-019,yesno-020,yesno-021,yesno-022,yesno-023,yesno-024,yesno-025'),true)
           || !is_string($clock)||!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/D',$clock))
-          naReply(400,['ok'=>false,'error'=>'INVALID_QUESTION_SUBJECT']);
+          throw new InvalidArgumentException('INVALID_QUESTION_SUBJECT');
         $resource='moment:'.$question.':'.$clock;
         $price=$club?2500:5000;
         $kind='question';$availability='NOT_LAUNCHED';
@@ -659,23 +657,23 @@ function naCatalogQuote(PDO $db,array $input): never {
         $resource='wallet';$kind='wallet';
         $availability='WALLET_NOT_CONNECTED';
     } else {
-        naReply(400,['ok'=>false,'error'=>'UNKNOWN_PRODUCT']);
+        throw new InvalidArgumentException('UNKNOWN_PRODUCT');
     }
-    // A quote does not imply an operable checkout. No payment is initiated.
-    $owns=naCatalogHasAccess($db,$account,$code,$resource);
-    naReply(200,[
-        'ok'=>true,
-        'product_code'=>$code,
-        'resource_id'=>$resource,
-        'kind'=>$kind,
-        'price_kopeks'=>$price,
-        'currency'=>'RUB',
-        'club_active'=>$club,
-        'access_active'=>$owns || $memberIncluded,
-        'availability'=>$availability,
-        'checkout_enabled'=>false,
-        'authenticated'=>$account!==null,
-    ]);
+    return [
+        'product_code'=>$code,'resource_id'=>$resource,'kind'=>$kind,
+        'price_kopeks'=>$price,'currency'=>'RUB','club_active'=>$club,
+        'member_included'=>$memberIncluded,'availability'=>$availability,
+    ];
+}
+function naCatalogQuote(PDO $db,array $input): never {
+    $account=naCurrent($db);
+    $club=naCatalogHasAccess($db,$account,'club_month','club');
+    try { $quote=naCatalogResolve($input,$club); }
+    catch (InvalidArgumentException $e) { naReply(400,['ok'=>false,'error'=>$e->getMessage()]); }
+    naReply(200,array_merge($quote,[
+        'ok'=>true,'access_active'=>naCatalogHasAccess($db,$account,$quote['product_code'],$quote['resource_id']) || $quote['member_included'],
+        'checkout_enabled'=>false,'authenticated'=>$account!==null,
+    ]));
 }
 
 function naPurchases(PDO $db): never {
@@ -717,6 +715,10 @@ function naServe(): never {
         if (($_SERVER['REQUEST_METHOD']??'')==='GET') {
             naReply(405,['ok'=>false,'error'=>'METHOD_NOT_ALLOWED']);
         }
+        if (($_GET['notification']??'')==='yookassa') {
+            require_once __DIR__.'/store.php';
+            naStoreNotification($db);
+        }
         $body=naReadPost();
         $action=$body['action']??'';
         if (!is_string($action)) naReply(400,['ok'=>false,'error'=>'INVALID_ACTION']);
@@ -735,6 +737,10 @@ function naServe(): never {
         if ($action==='merge_telegram_email') naMergeTelegramEmail($db,$body);
         if ($action==='set_email') naEmailForTelegram($db,$body);
         if ($action==='birth') naSaveBirth($db,$body);
+        if (in_array($action,['cart_quote','checkout','order_history','order_status'],true)) {
+            require_once __DIR__.'/store.php';
+            naStoreServe($db,$action,$body);
+        }
         if ($action==='product_quote') naCatalogQuote($db,$body);
         if ($action==='purchases') naPurchases($db);
         if ($action==='test_purchase') naTestPurchase($db,$body);

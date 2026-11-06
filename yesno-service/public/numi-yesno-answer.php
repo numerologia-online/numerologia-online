@@ -27,7 +27,7 @@ function ynClubMember(PDO $db, string $accountId): bool {
     $sql = "SELECT 1 FROM numi_entitlements e
       JOIN numi_orders o ON o.id=e.order_id
       WHERE e.account_id=? AND e.status='active'
-      AND e.product_code IN ('club','club_monthly','club-monthly','club_subscription','numi_club')
+      AND e.product_code IN ('club_month','club','club_monthly','club-monthly','club_subscription','numi_club')
       AND e.expires_at IS NOT NULL AND e.expires_at > UTC_TIMESTAMP()
       AND o.status='paid' AND o.verified_at IS NOT NULL
       LIMIT 1";
@@ -68,7 +68,7 @@ try {
     }
     $origin=(string)($_SERVER['HTTP_ORIGIN']??'');
     $fetchSite=(string)($_SERVER['HTTP_SEC_FETCH_SITE']??'');
-    if (($origin!=='' && $origin!=='https://xn--c1adkkdfjbp1a4l.online')
+    if (($origin!=='' && !in_array($origin,naAllowedOrigins(),true))
         || $fetchSite==='cross-site') ynReply(403,['ok'=>false,'error'=>'FORBIDDEN_ORIGIN']);
     $raw=file_get_contents('php://input',false,null,0,2049);
     if (!is_string($raw)||strlen($raw)>2048) ynReply(400,['ok'=>false,'error'=>'INVALID_REQUEST']);
@@ -91,7 +91,8 @@ try {
         ||!is_string($data['answers'][(string)$sum]??null))
         ynReply(503,['ok'=>false,'error'=>'ANSWER_UNAVAILABLE']);
     // Atomic database claim: concurrent tabs cannot obtain two distinct free answers.
-    if (!$member) {
+    $paidAnswer=naCatalogHasAccess($db,$account,'yesno_question','yesno:'.$q.':'.$clock);
+    if (!$member && !$paidAnswer) {
         $stmt=$db->prepare('INSERT IGNORE INTO numi_yesno_daily_uses(account_id,use_day,question_id,question_time) VALUES(?,?,?,?)');
         $stmt->execute([$id,$day,$q,$clock]);
         if ($stmt->rowCount()!==1) {
