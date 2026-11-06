@@ -1,6 +1,7 @@
 /* One basket for the existing account/order API. No local flag grants access. */
 (() => {
   'use strict';
+  if(window.NumiStore)return;
   const KEY='numi-cart-v1', API='/api/numi-account.php';
   const money=n=>(n/100).toLocaleString('ru-RU')+' ₽';
   const node=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
@@ -18,12 +19,16 @@
   const time=node('input');time.type='time';time.setAttribute('aria-label','Время вопроса');
   const add=node('button','Добавить в корзину');add.type='submit';
   const list=node('ul'),total=node('p'),notice=node('p'),confirm=node('button','Подтвердить заказ');confirm.type='button';confirm.disabled=true;
+  const consent=node('label');consent.hidden=true;const autoRenew=node('input');autoRenew.type='checkbox';autoRenew.checked=false;
+  consent.append(autoRenew,node('span',' Разрешаю автопродление выбранных подписок: клуб 490 ₽ в месяц, школа 149 ₽ в неделю, до отмены в кабинете. Способ оплаты хранится в ЮKassa.'));
+  autoRenew.onchange=()=>{try{sessionStorage.removeItem(KEY+'-request');}catch(_){}};
   const signIn=node('button','Войти в личный кабинет');signIn.type='button';
-  signIn.onclick=()=>{dialog.close();document.querySelector('[data-account-open="profile"]')?.click();};
+  signIn.onclick=()=>{dialog.close();const login=document.querySelector('[data-account-open="profile"]');if(login)login.click();else location.assign('/?store=1');};
   const refresh=node('button','Обновить цены и покупки');refresh.type='button';
+  const materialPanel=node('section');materialPanel.setAttribute('aria-label','Приобретённый материал');
   const history=node('section');history.setAttribute('aria-label','История заказов и подписки');
   form.append(select,date,second,year,question,time,add);
-  dialog.append(close,title,status,form,list,total,notice,signIn,confirm,refresh,history);document.body.append(dialog);
+  dialog.append(close,title,status,form,list,total,notice,consent,signIn,confirm,refresh,history,materialPanel);document.body.append(dialog);
   const css=node('style');css.textContent=`#numi-store{width:min(560px,calc(100vw - 32px));max-height:90dvh;overflow:auto;box-sizing:border-box;border:1px solid #c7bfb6;border-radius:18px;padding:22px;background:#f6f3ef;color:#343a35;font:15px/1.5 system-ui}#numi-store::backdrop{background:#17211bcc}#numi-store h2{font:28px Georgia,serif}#numi-store form{display:grid;gap:10px}#numi-store select,#numi-store input{width:100%;box-sizing:border-box;padding:10px;font:16px system-ui;background:white;color:#343a35;border:1px solid #a9aaa2;border-radius:8px}#numi-store button{padding:10px 14px;margin:5px 4px 5px 0;border:1px solid #6a7469;border-radius:8px;background:#343e35;color:white;font:inherit;cursor:pointer}#numi-store button:disabled{opacity:.5;cursor:default}#numi-store ul{list-style:none;padding:0}#numi-store li{padding:12px 0;border-bottom:1px solid #d8d4cc}#numi-store [hidden]{display:none!important}`;document.head.append(css);
   const label=code=>catalog?.products.find(p=>p.code===code)?.title||code;
   async function api(action,extra={}) {
@@ -51,16 +56,22 @@
     list.replaceChildren();cart.forEach((item,i)=>{
       const row=node('li',label(item.product_code)+' · '+(item.birth_date||item.question_time||''));
       const priced=quote?.items[i];if(priced){row.append(node('p',money(priced.price_kopeks)+(priced.access_active?' · Уже доступно':!priced.sale_ready?' · Выдача ещё подключается':'')));}
+      if(priced?.member_included&&item.product_code==='yesno_question'){
+        const read=node('button','Открыть ответ, включённый в клуб');read.type='button';read.onclick=async()=>{
+          try{const response=await fetch('/api/numi-yesno-answer.php',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:item.question_id,time:item.question_time})});const data=await response.json();if(!response.ok||!data.ok||typeof data.answer!=='string')throw new Error(data.error||'ANSWER_UNAVAILABLE');materialPanel.replaceChildren(node('h3','Да или нет?'),node('p',data.answer));}catch(e){error(e);}
+        };row.append(read);
+      }
       const remove=node('button','Удалить');remove.type='button';remove.onclick=()=>{cart.splice(i,1);save();update();};row.append(remove);list.append(row);
     });
     total.textContent=quote?'Итого: '+money(quote.total_kopeks):cart.length?'Уточняем цену на сервере…':'Корзина пуста';
     notice.textContent=quote?.discount_note||'Клубные цены применяются после подтверждённой активации клуба. Автоматическое продление не подключено.';
+    consent.hidden=quote?.recurring_enabled!==true||!cart.some(i=>['club_month','school_week'].includes(i.product_code));if(consent.hidden)autoRenew.checked=false;
     signIn.hidden=quote?.authenticated===true;confirm.disabled=busy||quote?.checkout_enabled!==true;
   }
   async function update(){
     const revision=++sequence;quote=null;render();
     if(!cart.length)return;
-    try{const result=await api('cart_quote',{items:cart});if(revision!==sequence)return;quote=result;render();if(!result.checkout_enabled)status.textContent='Корзина сохранена. Приём оплаты пока не включён.';}catch(e){if(revision===sequence)error(e);}
+    try{const result=await api('cart_quote',{items:cart});if(revision!==sequence)return;quote=result;render();if(!result.checkout_enabled)status.textContent=!result.authenticated?'Войдите в кабинет. Корзина сохранена.':!result.fulfillment_ready?'Некоторые позиции уже доступны или ещё не готовы к продаже. Откройте доступные материалы и удалите недоступные позиции перед оплатой.':'Тестовая оплата пока не включена для этого аккаунта.';}catch(e){if(revision===sequence)error(e);}
   }
   form.onsubmit=e=>{
     e.preventDefault();if(cart.length>=20){status.textContent='В корзине может быть до 20 товаров.';return;}
@@ -72,11 +83,25 @@
   };
   async function orders(){
     history.replaceChildren();try{
-      const result=await api('order_history');history.append(node('h3','Заказы и подписки'));
-      for(const s of result.subscriptions)history.append(node('p',label(s.product_code)+' · доступ до '+s.expires_at+' UTC · продление вручную'));
+      let result=await api('order_history');
+      const pending=[...new Set(result.orders.filter(o=>o.status==='pending'&&o.checkout_id).map(o=>o.checkout_id))].slice(0,5);
+      if(pending.length){await Promise.allSettled(pending.map(id=>api('order_status',{checkout_id:id})));result=await api('order_history');}
+      history.append(node('h3','Заказы и подписки'));
+      for(const s of result.subscriptions){
+        const row=node('div');row.append(node('p',label(s.product_code)+' · '+(s.status==='active'?'Действует':'Срок истёк')+' · до '+s.expires_at+' UTC · '+(s.auto_renew?(s.processing_enabled?'автопродление включено':'автопродление приостановлено'):'продление вручную')));
+        const renew=node('button','Продлить');renew.type='button';renew.onclick=()=>open({item:{product_code:s.product_code},addItems:[{product_code:s.product_code}]});row.append(renew);
+        if(s.auto_renew){const cancel=node('button','Отключить автопродление');cancel.type='button';cancel.onclick=async()=>{try{await api('cancel_renewal',{product_code:s.product_code});await orders();}catch(e){error(e);}};row.append(cancel);}history.append(row);
+      }
       const states={pending:'Ожидает оплаты',paid:'Оплачен',refunded:'Возвращён',cancelled:'Отменён'};
       if(!result.orders.length)history.append(node('p','Заказов пока нет.'));
-      for(const order of result.orders)history.append(node('p',label(order.product_code)+' · '+money(order.amount_kopeks)+' · '+(states[order.status]||order.status)+' · '+order.created_at+' UTC'));
+      for(const order of result.orders){
+        const row=node('div');row.append(node('p',label(order.product_code)+' · '+money(order.amount_kopeks)+' · '+(states[order.status]||order.status)+' · '+order.created_at+' UTC'));
+        if(order.entitlement_id&&order.status==='paid'){
+          const read=node('button','Открыть материал и PDF');read.type='button';read.onclick=()=>showMaterial(order.entitlement_id);row.append(read);
+        }
+        if(order.status==='pending'&&order.checkout_id){const resume=node('button','Проверить / продолжить оплату');resume.type='button';resume.onclick=async()=>{try{const data=await api('order_status',{checkout_id:order.checkout_id});if(data.items.some(o=>o.status==='pending')&&data.confirmation_url){const url=new URL(data.confirmation_url);if(url.protocol==='https:'&&['yoomoney.ru','yookassa.ru'].includes(url.hostname))location.assign(url.href);}else await orders();}catch(e){error(e);}};row.append(resume);}
+        history.append(row);
+      }
     }catch(e){if(e.message!=='LOGIN_REQUIRED')error(e);}
   }
   refresh.onclick=()=>{update();orders();};
@@ -84,24 +109,38 @@
     if(busy||!quote?.checkout_enabled)return;busy=true;render();
     try{
       let key=sessionStorage.getItem(KEY+'-request');if(!key){key=crypto.randomUUID();sessionStorage.setItem(KEY+'-request',key);}
-      const result=await api('checkout',{items:cart,request_key:key});
+      const result=await api('checkout',{items:cart,request_key:key,auto_renew_consent:autoRenew.checked===true});
       if(result.test!==true)throw new Error('UNEXPECTED_PAYMENT_MODE');
       if(result.completed){await orders();await update();status.textContent='Статус платежа проверен. Посмотрите историю заказов.';return;}
       const url=new URL(result.confirmation_url);if(url.protocol!=='https:'||!['yoomoney.ru','yookassa.ru'].includes(url.hostname))throw new Error('INVALID_CONFIRMATION_URL');
       location.assign(url.href);
     }catch(e){error(e);}finally{busy=false;render();}
   };
-  async function open(){
+  async function showMaterial(id){const {openMaterial}=await import('/store-material.js?v=2');await openMaterial(materialPanel,id);}
+  async function open(options={}){
     if(!dialog.open)dialog.showModal();
-    try{if(!catalog){const response=await fetch('/store-catalog.json');if(!response.ok)throw new Error('CATALOG_UNAVAILABLE');catalog=await response.json();for(const p of catalog.products){const o=node('option',p.title);o.value=p.code;select.append(o);}fields();}await update();await orders();}catch(e){error(e);}
+    try{if(!catalog){const response=await fetch('/store-catalog.json');if(!response.ok)throw new Error('CATALOG_UNAVAILABLE');catalog=await response.json();for(const p of catalog.products){const o=node('option',p.title);o.value=p.code;select.append(o);}fields();}
+      if(options.item){select.value=options.item.product_code;fields();const item=options.item;
+        if(item.birth_date)date.value=item.birth_date;if(item.partner_birth_date)second.value=item.partner_birth_date;
+        if(item.year)year.value=item.year;if(item.question_id)question.value=item.question_id;if(item.question_time)time.value=item.question_time;
+      }
+      for(const item of options.addItems||[]){
+        const valid=(!['year_full','life_full','compatibility_full','child_full_v1','redflag_question'].includes(item.product_code)||item.birth_date)
+          &&(item.product_code!=='compatibility_full'||item.partner_birth_date)
+          &&(!['redflag_question','yesno_question','moment_question'].includes(item.product_code)||item.question_id)
+          &&(!['yesno_question','moment_question'].includes(item.product_code)||item.question_time);
+        if(valid&&!cart.some(x=>JSON.stringify(x)===JSON.stringify(item))&&cart.length<20){cart.push(item);save();}
+      }
+      await update();await orders();if(options.entitlement_id)await showMaterial(options.entitlement_id);}catch(e){error(e);}
   }
   for(const parent of [document.getElementById('account-overview'),document.querySelector('main')]){
     if(!parent)continue;const button=node('button','Покупки и корзина');button.type='button';button.className='account-secondary';button.onclick=open;parent.append(button);
   }
   window.NumiStore=Object.freeze({open});
-  window.addEventListener('numi:account-logged-out',()=>{quote=null;history.replaceChildren();render();});
+  window.addEventListener('numi:account-logged-out',()=>{quote=null;history.replaceChildren();materialPanel.replaceChildren();render();});
+  if(new URL(location.href).searchParams.get('store')==='1')open();
   const checkout=new URL(location.href).searchParams.get('checkout');
   if(checkout&&/^[a-f0-9-]{36}$/.test(checkout)){
-    open().then(async()=>{try{await api('order_status',{checkout_id:checkout});await orders();await update();status.textContent='Статус платежа проверен на сервере. Результат указан в истории заказов.';}catch(e){error(e);}});
+    open().then(async()=>{try{const result=await api('order_status',{checkout_id:checkout});if(cart.length){const priced=await api('cart_quote',{items:cart});cart=cart.filter((_,i)=>!result.items.some(o=>o.status==='paid'&&o.product_code===priced.items[i].product_code&&o.resource_id===priced.items[i].resource_id));save();}await orders();await update();status.textContent='Статус платежа проверен на сервере. Результат указан в истории заказов.';}catch(e){error(e);}});
   }
 })();

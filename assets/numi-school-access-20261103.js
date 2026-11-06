@@ -4,7 +4,7 @@ export function schoolAccess() {
   if (!access) access = fetch('/api/numi-school.php', {
     method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({action:'session',init_data:window.Telegram?.WebApp?.initData||''})
-  }).then(async response => {if(!response.ok) throw Error('ACCESS_CHECK_FAILED');const value=await response.json();return value.ok===true&&value.owner===true;}).catch(()=>false);
+  }).then(async response => {if(!response.ok) throw Error('ACCESS_CHECK_FAILED');const value=await response.json();return value.ok===true&&(value.owner===true||value.access===true);}).catch(()=>false);
   return access;
 }
 async function showOffer() {
@@ -19,6 +19,7 @@ async function showOffer() {
     dialog.append(close,document.importNode(source,true));document.body.append(dialog);
     const back=dialog.querySelector('.school-access-back');back.addEventListener('click',event=>{event.preventDefault();dialog.close();});
   }
+  if(!dialog.querySelector('[data-school-purchase]')){const buy=document.createElement('button');buy.type='button';buy.dataset.schoolPurchase='1';buy.textContent='Подписка 149 ₽ в неделю';buy.onclick=async()=>{const {openStore}=await import('/store-entry.js?v=2');await openStore({product_code:'school_week'});};dialog.append(buy);}
   if (!dialog.open) dialog.showModal();
 }
 const owner=schoolAccess();

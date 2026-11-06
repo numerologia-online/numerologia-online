@@ -63,6 +63,7 @@ $refunded=$payment;$refunded['refunded_amount']=['value'=>'990.00','currency'=>'
 check($db->query('SELECT status FROM numi_orders')->fetchColumn()==='refunded','refund order');
 check($db->query('SELECT status FROM numi_entitlements')->fetchColumn()==='revoked','refund revokes');
 naStoreApply($db,$checkout,$payment);check($db->query('SELECT status FROM numi_entitlements')->fetchColumn()==='revoked','old success cannot resurrect refunded access');
+$db->exec('CREATE TABLE numi_subscription_settings(account_id TEXT,product_code TEXT,auto_renew INT)');
 $db->exec("INSERT INTO numi_orders VALUES('order-2','alice','school_week','school','pending',NULL); INSERT INTO numi_checkout_items VALUES('checkout-test','order-2')");
 $cancel=$payment;$cancel['status']='canceled';$cancel['paid']=false;naStoreApply($db,$checkout,$cancel);
 check($db->query("SELECT status FROM numi_orders WHERE id='order-2'")->fetchColumn()==='cancelled','cancellation');

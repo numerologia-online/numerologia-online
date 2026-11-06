@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__.'/subscriptions.php';
 /** Extension of the existing account/order service. Live charging is deliberately unsupported. */
 function naStoreConfig(): array {
     // Same private configuration used by the retired test checkout; never copy credentials to source.
@@ -12,7 +13,7 @@ function naStoreEnabled(array $config): bool {
         && is_string($config['secret_key']??null) && str_starts_with($config['secret_key'],'test_')
         && preg_match('/^[0-9]+$/D',(string)($config['shop_id']??''))===1;
 }
-function naCartResolve(array $inputs,bool $club,callable $owns,array $ready=[]): array {
+function naCartResolve(array $inputs,bool $club,callable $owns,array $ready=[],?callable $readyCheck=null): array {
     if (!array_is_list($inputs) || count($inputs)<1 || count($inputs)>20)
         throw new InvalidArgumentException('INVALID_CART');
     $items=[];$seen=[];$total=0;$hasClub=false;$blocked=false;
@@ -24,11 +25,10 @@ function naCartResolve(array $inputs,bool $club,callable $owns,array $ready=[]):
         $seen[$key]=true;
         $quote['access_active']=$owns($quote['product_code'],$quote['resource_id']) || $quote['member_included'];
         // Readiness requires a reviewed fulfillment adapter; a client flag never makes an item sellable.
-        $quote['sale_ready']=in_array($quote['product_code'],$ready,true)
-            && $quote['product_code']!=='moment_question'
-            && in_array($quote['availability'],['FULFILLMENT_NOT_CONNECTED'],true)
-            && is_int($quote['price_kopeks']) && $quote['price_kopeks']>0;
-        if ($quote['access_active'] || !$quote['sale_ready']) $blocked=true;
+        $quote['sale_ready']=$quote['product_code']!=='moment_question'
+            && is_int($quote['price_kopeks']) && $quote['price_kopeks']>0
+            && ($readyCheck ? $readyCheck($quote) : (in_array($quote['product_code'],$ready,true) && $quote['availability']==='FULFILLMENT_NOT_CONNECTED'));
+        if (($quote['access_active'] && $quote['kind']!=='subscription') || !$quote['sale_ready']) $blocked=true;
         $total+=(int)$quote['price_kopeks'];
         $hasClub=$hasClub || $quote['product_code']==='club_month';
         $items[]=$quote;
@@ -39,6 +39,7 @@ function naCartResolve(array $inputs,bool $club,callable $owns,array $ready=[]):
         'fulfillment_ready'=>!$blocked];
 }
 function naStoreSchema(PDO $db): void {
+    naSubscriptionSchema($db);
     // Only additive tables. The existing numi_orders and numi_entitlements stay canonical.
     $db->exec("CREATE TABLE IF NOT EXISTS numi_checkouts (
       id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
@@ -85,6 +86,10 @@ function naStoreSync(PDO $db,array $config,array $checkout): void {
     if (!$checkout['provider_payment_id']) return;
     // Never trust a browser/webhook status. Fetch the payment from the provider every time.
     $payment=naStoreProvider($config,'GET','/payments/'.$checkout['provider_payment_id']);
+    naStoreVerifyPayment($payment,$checkout);
+    $url=$payment['confirmation']['confirmation_url']??null;
+    if(is_string($url)&&parse_url($url,PHP_URL_SCHEME)==='https'&&in_array(parse_url($url,PHP_URL_HOST),['yoomoney.ru','yookassa.ru'],true))
+        $db->prepare('UPDATE numi_checkouts SET confirmation_url=? WHERE id=?')->execute([$url,$checkout['id']]);
     naStoreApply($db,$checkout,$payment);
 }
 function naStoreExpiry(string $code,DateTimeImmutable $now): ?string {
@@ -113,17 +118,27 @@ function naStoreApply(PDO $db,array $checkout,array $payment): void {
             if ($refunded>0 && $state==='succeeded') {
                 $db->prepare("UPDATE numi_orders SET status='refunded' WHERE id=?")->execute([$order['id']]);
                 $db->prepare("UPDATE numi_entitlements SET status='revoked' WHERE order_id=?")->execute([$order['id']]);
+                if(naSubscriptionCode($order['product_code']))$db->prepare('UPDATE numi_subscription_settings SET auto_renew=0,cancelled_at=UTC_TIMESTAMP() WHERE account_id=? AND product_code=?')->execute([$order['account_id'],$order['product_code']]);
                 continue;
             }
             if ($order['status']!=='pending') continue;
             if ($state==='canceled') {
-                $db->prepare("UPDATE numi_orders SET status='cancelled' WHERE id=?")->execute([$order['id']]);continue;
+                $db->prepare("UPDATE numi_orders SET status='cancelled' WHERE id=?")->execute([$order['id']]);
+                if(naSubscriptionCode($order['product_code']))$db->prepare('UPDATE numi_subscription_settings SET auto_renew=0 WHERE account_id=? AND product_code=?')->execute([$order['account_id'],$order['product_code']]);
+                continue;
             }
             if (($payment['paid']??false)!==true) throw new RuntimeException('PAYMENT_NOT_PAID');
             $db->prepare("UPDATE numi_orders SET status='paid',verified_at=UTC_TIMESTAMP() WHERE id=?")->execute([$order['id']]);
-            $expires=naStoreExpiry($order['product_code'],new DateTimeImmutable('now',new DateTimeZone('UTC')));
+            $start=new DateTimeImmutable('now',new DateTimeZone('UTC'));
+            if(in_array($order['product_code'],['club_month','school_week'],true)){
+                $latest=$db->prepare("SELECT MAX(e.expires_at) FROM numi_entitlements e JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id WHERE e.account_id=? AND e.product_code=? AND e.status='active' AND o.status='paid' AND o.verified_at IS NOT NULL");
+                $latest->execute([$order['account_id'],$order['product_code']]);$until=$latest->fetchColumn();
+                if($until&&new DateTimeImmutable($until,new DateTimeZone('UTC'))>$start)$start=new DateTimeImmutable($until,new DateTimeZone('UTC'));
+            }
+            $expires=naStoreExpiry($order['product_code'],$start);
             $db->prepare("INSERT IGNORE INTO numi_entitlements(id,account_id,order_id,product_code,resource_id,status,expires_at) VALUES(?,?,?,?,?,'active',?)")
                 ->execute([naUuid(),$order['account_id'],$order['id'],$order['product_code'],$order['resource_id'],$expires]);
+            naSubscriptionSettled($db,$checkout,$order,$payment);
         }
         $db->commit();
     } catch (Throwable $e) { if ($db->inTransaction()) $db->rollBack();throw $e; }
@@ -134,36 +149,42 @@ function naStoreServe(PDO $db,string $action,array $body): never {
         if ($action==='cart_quote' || $action==='checkout') {
             if (!is_array($body['items']??null)) throw new InvalidArgumentException('INVALID_CART');
             $club=naCatalogHasAccess($db,$account,'club_month','club');
-            $quote=naCartResolve($body['items']??[],$club,fn($c,$r)=>naCatalogHasAccess($db,$account,$c,$r),$config['store_ready_products']??[]);
-            $enabled=naStoreEnabled($config) && $account && naTestOwner($account);
+            require_once __DIR__.'/fulfillment.php';
+            $quote=naCartResolve($body['items']??[],$club,fn($c,$r)=>naCatalogHasAccess($db,$account,$c,$r),[],function($item){try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}catch(Throwable $e){return false;}});
+            $enabled=naStoreEnabled($config) && $account && (naTestOwner($account)||in_array($account['id'],$config['store_test_account_ids']??[],true));
             $quote['checkout_enabled']=(bool)$enabled && $quote['fulfillment_ready'];
             $quote['authenticated']=$account!==null;
+            $quote['recurring_enabled']=($config['store_recurring_test_enabled']??false)===true;
             if ($action==='cart_quote') naReply(200,['ok'=>true]+$quote);
             if (!$account) naReply(401,['ok'=>false,'error'=>'LOGIN_REQUIRED']);
             if (!$quote['checkout_enabled']) naReply(409,['ok'=>false,'error'=>'CHECKOUT_NOT_READY','quote'=>$quote]);
             naStoreCheckout($db,$account,$config,$body,$quote);
         }
         if (!$account) naReply(401,['ok'=>false,'error'=>'LOGIN_REQUIRED']);
+        if ($action==='cancel_renewal') {naSubscriptionCancel($db,$account,$body['product_code']??null);naReply(200,['ok'=>true,'auto_renew'=>false]);}
         if ($action==='order_history') {
-            $q=$db->prepare('SELECT id,product_code,resource_id,amount_kopeks,currency,status,verified_at,created_at FROM numi_orders WHERE account_id=? ORDER BY created_at DESC LIMIT 200');$q->execute([$account['id']]);
-            $subscriptions=$db->prepare("SELECT e.product_code,e.expires_at FROM numi_entitlements e JOIN numi_orders o ON o.id=e.order_id WHERE e.account_id=? AND e.product_code IN ('club_month','school_week') AND e.status='active' AND e.expires_at>UTC_TIMESTAMP() AND o.status='paid' AND o.verified_at IS NOT NULL");$subscriptions->execute([$account['id']]);
-            naReply(200,['ok'=>true,'orders'=>$q->fetchAll(),'subscriptions'=>array_map(fn($s)=>$s+['auto_renew'=>false,'renewal'=>'manual'],$subscriptions->fetchAll())]);
+            naStoreSchema($db);
+            $q=$db->prepare('SELECT o.id,o.product_code,o.resource_id,o.amount_kopeks,o.currency,o.status,o.verified_at,o.created_at,e.id AS entitlement_id,e.expires_at,e.status AS entitlement_status,i.checkout_id FROM numi_orders o LEFT JOIN numi_entitlements e ON e.order_id=o.id AND e.account_id=o.account_id LEFT JOIN numi_checkout_items i ON i.order_id=o.id WHERE o.account_id=? ORDER BY o.created_at DESC LIMIT 200');$q->execute([$account['id']]);
+            naReply(200,['ok'=>true,'orders'=>$q->fetchAll(),'subscriptions'=>naSubscriptionList($db,$account,$config)]);
         }
         if ($action==='order_status') {
             naStoreSchema($db);
             $q=$db->prepare('SELECT * FROM numi_checkouts WHERE id=? AND account_id=?');$q->execute([$body['checkout_id']??'',$account['id']]);$checkout=$q->fetch();
             if (!$checkout) naReply(404,['ok'=>false,'error'=>'ORDER_NOT_FOUND']);
             naStoreSync($db,$config,$checkout);
-            naReply(200,['ok'=>true,'checkout_id'=>$checkout['id']]);
+            $q->execute([$body['checkout_id']??'',$account['id']]);$checkout=$q->fetch();
+            $items=$db->prepare('SELECT o.product_code,o.resource_id,o.status FROM numi_orders o JOIN numi_checkout_items i ON i.order_id=o.id WHERE i.checkout_id=? AND o.account_id=?');$items->execute([$checkout['id'],$account['id']]);
+            naReply(200,['ok'=>true,'checkout_id'=>$checkout['id'],'items'=>$items->fetchAll(),'confirmation_url'=>$checkout['confirmation_url']]);
         }
         naReply(400,['ok'=>false,'error'=>'UNKNOWN_ACTION']);
     } catch (InvalidArgumentException $e) { naReply(400,['ok'=>false,'error'=>$e->getMessage()]); }
 }
-function naStoreCheckout(PDO $db,array $account,array $config,array $body,array $quote): never {
+function naStorePrepareCheckout(PDO $db,array $account,array $body,array $quote): array {
     $key=$body['request_key']??'';
     if (!is_string($key)||!preg_match('/^[a-zA-Z0-9-]{16,64}$/D',$key)) throw new InvalidArgumentException('INVALID_REQUEST_KEY');
     naStoreSchema($db);
-    $hash=hash('sha256',json_encode($quote['items'],JSON_THROW_ON_ERROR));
+    $consent=($body['auto_renew_consent']??false)===true;
+    $hash=hash('sha256',json_encode([$quote['items'],$consent],JSON_THROW_ON_ERROR));
     $db->beginTransaction();
     try {
         $lock=$db->prepare('SELECT id FROM numi_accounts WHERE id=? FOR UPDATE');$lock->execute([$account['id']]);
@@ -174,11 +195,15 @@ function naStoreCheckout(PDO $db,array $account,array $config,array $body,array 
                 // An existing paid access or unresolved payment must not be sold twice.
                 $pending=$db->prepare("SELECT id FROM numi_orders WHERE account_id=? AND product_code=? AND resource_id=? AND status='pending' LIMIT 1");
                 $pending->execute([$account['id'],$item['product_code'],$item['resource_id']]);
-                if ($pending->fetchColumn() || naCatalogHasAccess($db,$account,$item['product_code'],$item['resource_id'])) throw new InvalidArgumentException('ITEM_ALREADY_ORDERED');
+                if ($pending->fetchColumn() || ($item['kind']!=='subscription' && naCatalogHasAccess($db,$account,$item['product_code'],$item['resource_id']))) throw new InvalidArgumentException('ITEM_ALREADY_ORDERED');
             }
             $id=naUuid();
             $db->prepare('INSERT INTO numi_checkouts(id,account_id,request_key,cart_hash,amount_kopeks) VALUES(?,?,?,?,?)')->execute([$id,$account['id'],$key,$hash,$quote['total_kopeks']]);
             foreach ($quote['items'] as $item) {
+                if($consent&&naSubscriptionCode($item['product_code'])){
+                    $db->prepare("INSERT INTO numi_checkout_consents(checkout_id,product_code,consent_at,version) VALUES(?,?,UTC_TIMESTAMP(),'recurring-20261106')")->execute([$id,$item['product_code']]);
+                    $db->prepare('INSERT IGNORE INTO numi_subscription_settings(account_id,product_code) VALUES(?,?)')->execute([$account['id'],$item['product_code']]);
+                }
                 $order=naUuid();
                 $db->prepare("INSERT INTO numi_orders(id,account_id,product_code,resource_id,amount_kopeks,provider) VALUES(?,?,?,?,?,'sandbox')")->execute([$order,$account['id'],$item['product_code'],$item['resource_id'],$item['price_kopeks']]);
                 $db->prepare('INSERT INTO numi_checkout_items(checkout_id,order_id) VALUES(?,?)')->execute([$id,$order]);
@@ -187,13 +212,19 @@ function naStoreCheckout(PDO $db,array $account,array $config,array $body,array 
         }
         $db->commit();
     } catch (Throwable $e) { if ($db->inTransaction()) $db->rollBack();throw $e; }
+    return $checkout;
+}
+function naStoreCheckout(PDO $db,array $account,array $config,array $body,array $quote): never {
+    if(($body['auto_renew_consent']??false)===true&&($config['store_recurring_test_enabled']??false)!==true)throw new InvalidArgumentException('RECURRING_DISABLED');
+    $checkout=naStorePrepareCheckout($db,$account,$body,$quote);
     // Do not retry creation after the provider's 24-hour idempotency window.
     if (!$checkout['provider_payment_id'] && strtotime($checkout['created_at'].' UTC')<time()-23*3600)
         naReply(409,['ok'=>false,'error'=>'PAYMENT_RECONCILIATION_REQUIRED']);
     if (!$checkout['provider_payment_id']) {
         $payment=naStoreProvider($config,'POST','/payments',[
             'amount'=>['value'=>naStoreAmount((int)$checkout['amount_kopeks']),'currency'=>'RUB'],
-            'capture'=>true,'confirmation'=>['type'=>'redirect','return_url'=>NUMI_ACCOUNT_ORIGIN.'/?checkout='.$checkout['id']],
+            'save_payment_method'=>($body['auto_renew_consent']??false)===true,
+            'capture'=>true,'confirmation'=>['type'=>'redirect','return_url'=>naPublicOrigin().'/?checkout='.$checkout['id']],
             'description'=>'Тестовый заказ Нумерология онлайн','metadata'=>['numi_checkout'=>$checkout['id']],
         ],$checkout['id']);
         $checkout['provider_payment_id']=$payment['id']??'';naStoreVerifyPayment($payment,$checkout);

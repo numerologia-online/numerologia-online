@@ -59,7 +59,7 @@ $asset=$dir.'/'.hash('sha256','pro/school/learning.js');file_put_contents($asset
 check(nsFile('unused-public-root','pro/school/learning.js',$allowed,$config,$dir)==='export const protectedSchool=true;','owner source read from private snapshot only');unlink($asset);
 unlink($dir.'/pro/school/lessons/base.json');rmdir($dir.'/pro/school/lessons');rmdir($dir.'/pro/school');rmdir($dir.'/pro');rmdir($dir);
 $offer=file_get_contents(dirname(__DIR__).'/server/school-access/private/offer.html');
-check(str_contains($offer,'150 ₽')&&str_contains($offer,'/ месяц')&&str_contains($offer,'ТОЛЬКО ПО ПОДПИСКЕ'),'scoped monthly school price');
+check(str_contains($offer,'149 ₽')&&str_contains($offer,'/ неделю')&&str_contains($offer,'ТОЛЬКО ПО ПОДПИСКЕ'),'school weekly price matches current tariff');
 $hub=file_get_contents(dirname(__DIR__).'/pro/schools/index.html');
 check(substr_count($hub,'data-school-entry')===3,'all three prepared directions use owner gate');
 check(substr_count($hub,'В разработке — пока недоступно')===6,'every unfinished direction labelled');

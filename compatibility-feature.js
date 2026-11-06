@@ -1,7 +1,7 @@
 /** Список вопросов о паре; пользователь сам решает, какой ответ раскрыть. */
 import { parseBirthDate } from "./numerology-core.js?v=1";
 import { calculateCompatibility } from "./compatibility-engine.js?v=1";
-import { openSharedOffer } from "./shared-offer.js?v=1";
+import { openSharedOffer } from "./shared-offer.js?v=store2";
 
 const home = document.querySelector("#home");
 const page = document.querySelector("#compatibility");
@@ -41,7 +41,7 @@ const offer = Object.freeze({
   clubMonthly: 490
 });
 const showOffer = () => {
-  openSharedOffer(offer).catch(error => {
+  openSharedOffer({...offer,subject:{product_code:"compatibility_full",birth_date:aField.value.split(".").reverse().join("-"),partner_birth_date:bField.value.split(".").reverse().join("-")}}).catch(error => {
     console.error("Окно покупки:", error);
     alert("Не удалось открыть варианты доступа. Проверьте интернет и попробуйте снова.");
   });

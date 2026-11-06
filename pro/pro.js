@@ -175,15 +175,16 @@ function showPaymentInfo() {
     paywallDialog.scrollTop = 0;
   }
 }
-function previewCheckout(choice) {
-  const note = paywallDialog?.querySelector("#pro-paywall-checkout-note");
-  if (!note) return;
-  note.textContent = choice === "club"
-    ? "Вы выбрали разбор по клубной цене 490 ₽ и клуб за 490 ₽/мес. Итого в первый месяц 980 ₽; далее клуб 490 ₽/мес. до отмены. Оплата и клубные возможности ещё не подключены."
-    : "Вы выбрали разовый полный разбор за 990 ₽ без подписки. Оплата пока не подключена.";
-  note.hidden = false;
-  // Keep prices and the confirmation in place; don't jump past the club perks.
+async function previewCheckout(choice) {
+  try {
+    const {openStore,storeDate}=await import("../store-entry.js?v=2");
+    await openStore({product_code:"life_full",birth_date:storeDate(input.value)},choice==="club"?"club":"once");
+  } catch (_) {
+    const note=paywallDialog?.querySelector("#pro-paywall-checkout-note");
+    if(note){note.hidden=false;note.textContent="Не удалось открыть корзину. Попробуйте ещё раз.";}
+  }
 }
+
 paywallDialog?.querySelector("#pro-paywall-one-time")?.addEventListener("click", () => previewCheckout("once"));
 paywallDialog?.querySelector("#pro-paywall-club")?.addEventListener("click", () => previewCheckout("club"));
 // Preview link opens only the offer dialog. Never grants paid access or triggers a payment.

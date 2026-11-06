@@ -15,8 +15,9 @@ const submitButton = form.querySelector(".primary-button");
 const yearPaywallDialog = document.querySelector("#year-paywall-dialog");
 const showYearPaywall = async () => {
   try {
-    const { openSharedOffer } = await import("./shared-offer.js?v=1");
+    const { openSharedOffer } = await import("./shared-offer.js?v=store2");
     await openSharedOffer({
+      subject: {product_code:"year_full",birth_date:birthInput.value.split(".").reverse().join("-"),year:Number(yearInput.value)},
       product: "полный разбор года",
       title: "Откройте полный разбор года",
       oncePrice: 990,

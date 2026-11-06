@@ -204,8 +204,9 @@
 
   document.querySelector("#account-show-offer")?.addEventListener("click", async () => {
     try {
-      const { openSharedOffer } = await import("./shared-offer.js?v=1");
+      const { openSharedOffer } = await import("./shared-offer.js?v=store2");
       await openSharedOffer({
+        subject:{product_code:"life_full"},
         product: "полный разбор", title: "Откройте полный разбор",
         oncePrice: 990, memberPrice: 490, clubMonthly: 490
       });

@@ -162,8 +162,9 @@ const RITUAL_TITLES = Object.freeze([
 
 const showClubOffer = async () => {
   try {
-    const { openSharedOffer } = await import("./shared-offer.js?v=20261102alllocks");
+    const { openSharedOffer } = await import("./shared-offer.js?v=store2");
     await openSharedOffer({
+      subject:{product_code:"club_month"},
       product: "денежные ритуалы", title: "Денежные ритуалы по подписке",
       subscriptionOnly: true, clubMonthly: 490, memberPrice: 0
     });

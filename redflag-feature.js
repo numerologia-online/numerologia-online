@@ -257,8 +257,11 @@ const clearError = () => {
 const showQuestionOffer = async (question) => {
   const rates = REDFLAG_PRICE_PAIRS[question.priceRub];
   if (!rates) return;
-  const { openSharedOffer } = await import("./shared-offer.js?v=20261102alllocks");
+  const { openSharedOffer } = await import("./shared-offer.js?v=store2");
   await openSharedOffer({
+    subject:{product_code:"redflag_question",question_id:question.id,
+      category:[...categoryStates].find(([,state])=>state.questions?.includes(question))?.[0],
+      birth_date:birthDateInput.value.split(".").reverse().join("-")},
     product: "ответ на вопрос «" + question.title + "»",
     title: question.title, itemKind: "question",
     oncePrice: rates.regular, memberPrice: rates.subscription, clubMonthly: 490

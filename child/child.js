@@ -752,8 +752,8 @@ const showChildPdfOffer = async () => {
   if (!birth) return;
   if (!hasChildPaidAccess()) {
     try {
-      const { openSharedOffer } = await import("../shared-offer.js?v=20261102alllocks");
-      await openSharedOffer({ product: "полный разбор ребёнка", title: "Откройте полный разбор ребёнка", oncePrice: 990, memberPrice: 490 });
+      const { openSharedOffer } = await import("../shared-offer.js?v=store2");
+      await openSharedOffer({ subject:{product_code:"child_full_v1",birth_date:[birth.year,String(birth.month).padStart(2,"0"),String(birth.day).padStart(2,"0")].join("-")}, product: "полный разбор ребёнка", title: "Откройте полный разбор ребёнка", oncePrice: 990, memberPrice: 490 });
     } catch (error) { alert("Не удалось открыть варианты покупки. Попробуйте ещё раз."); }
     return;
   }

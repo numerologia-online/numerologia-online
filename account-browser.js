@@ -507,7 +507,9 @@
         const item=document.createElement("div"); item.className="numi-purchase-entry";
         const title=document.createElement("strong");title.textContent=purchase.product_code;
         const detail=document.createElement("small");detail.textContent="Код материала: "+purchase.resource_id;
-        item.append(title,detail);container.append(item);
+        item.append(title,detail);
+        if(!purchase.is_test){const read=document.createElement("button");read.type="button";read.textContent="Открыть материал и PDF";read.onclick=async()=>{const {openStore}=await import("/store-entry.js?v=2");await openStore();await window.NumiStore.open({entitlement_id:purchase.entitlement_id});};item.append(read);}
+        container.append(item);
       }
       savedPanel.querySelector(".account-empty-state")?.toggleAttribute("hidden",(result.purchases||[]).length>0);
     }catch(_){ /* Never claim payments without a verified server result */ }

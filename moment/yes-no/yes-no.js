@@ -47,9 +47,13 @@
     answerController = new AbortController();
     const timer = setTimeout(() => answerController?.abort(), 12000);
     try {
-      const response = await fetch("/api/numi-yesno-answer.php?question=" + encodeURIComponent(selectedQuestion.id) + "&time=" + encodeURIComponent(value), {cache:"no-store", signal:answerController.signal});
+      const response = await fetch("/api/numi-yesno-answer.php", {method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:selectedQuestion.id,time:value}),cache:"no-store", signal:answerController.signal});
       const data = await response.json();
       if (id !== answerRequest) return;
+      if(data.error==="DAILY_LIMIT_REACHED"||data.error==="LOGIN_REQUIRED"){
+        timeResult.textContent=data.error==="LOGIN_REQUIRED"?"Войдите в кабинет, чтобы получить ответ.":"Бесплатный вопрос на сегодня использован.";
+        const buy=document.createElement("button");buy.type="button";buy.textContent="Открыть варианты покупки";buy.onclick=async()=>{const {openStore}=await import("/store-entry.js?v=2");await openStore({product_code:"yesno_question",question_id:selectedQuestion.id,question_time:value});};timeResult.append(buy);return;
+      }
       if (data.error === "ANSWER_NOT_READY") {timeResult.textContent = "Ответ на этот вопрос ещё готовится.";return;}
       if (!response.ok || data.ok !== true || typeof data.answer !== "string") throw Error("answer unavailable");
       const separator = data.answer.indexOf(".");

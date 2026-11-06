@@ -36,6 +36,13 @@ function nsAccountOwner(string $ownerId): bool {
         return (bool)$query->fetchColumn();
     } catch (Throwable $error) { return false; }
 }
+function nsSchoolMember(): bool {
+    try {
+        require_once dirname(__DIR__).'/numi-account-20261031/core.php';
+        $db=naDB();$account=naCurrent($db);
+        return naCatalogHasAccess($db,$account,'school_week','school');
+    }catch(Throwable $e){return false;}
+}
 function nsOwner(array $config, string $key, string $signed = '', ?callable $accountCheck = null): bool {
     $owner = (string)$config['owner_id'];
     if ($signed !== '') {
@@ -83,12 +90,16 @@ function nsHeaders(): void {
 }
 function nsFile(string $root, string $path, array $allowed, array $config, ?string $sourceRoot = null): string {
     if (!nsAllowed($path, $allowed)) throw new RuntimeException('NOT_FOUND');
-    if (str_ends_with($path, '.json') && isset(numiManifest()['files'][$path])) return numiPrivateRead($path, $config);
+    if (str_ends_with($path, '.json') && isset(numiManifest()['files'][$path])) { try { return numiPrivateRead($path, $config); } catch (Throwable $e) { /* try the reviewed private release copy below */ } }
     $sourceRoot ??= __DIR__.'/sources';
     $base = realpath($sourceRoot);
     $candidate = $sourceRoot.'/'.hash('sha256',$path);
     $file = realpath($candidate);
-    if ($base === false || $file === false || !str_starts_with($file, $base.'/') || !is_file($file) || is_link($candidate) || filesize($file)>2_000_000) throw new RuntimeException('NOT_FOUND');
+    if ($base === false || $file === false || !str_starts_with($file, $base.'/') || !is_file($file) || is_link($candidate) || filesize($file)>2_000_000) {
+        $adapter=dirname(__DIR__).'/numi-account-20261031/fulfillment.php';
+        if(is_file($adapter)){require_once $adapter;return naMaterialRead($path);}
+        throw new RuntimeException('NOT_FOUND');
+    }
     $body = file_get_contents($file);
     if (!is_string($body)) throw new RuntimeException('READ_FAILED');
     return $body;
@@ -145,8 +156,8 @@ function nsServe(string $root): never {
             $signed = $body['init_data'] ?? '';
             $owner = nsOwner($config, $key, is_string($signed) ? $signed : '');
             if ($owner) nsIssueCookie($config, $key);
-            if ($action==='session') nsJson(200, ['ok'=>true,'owner'=>$owner]);
-            if (!$owner) nsJson(403, ['ok'=>false,'error'=>'SCHOOL_SUBSCRIPTION_REQUIRED']);
+            if ($action==='session') nsJson(200, ['ok'=>true,'owner'=>$owner,'access'=>$owner||nsSchoolMember()]);
+            if (!$owner && !nsSchoolMember()) nsJson(403, ['ok'=>false,'error'=>'SCHOOL_SUBSCRIPTION_REQUIRED']);
             $path = $body['path'] ?? '';
             if (!is_string($path) || !preg_match('~^pro/school/lessons/[a-z0-9-]+\.json$~D', $path) || !nsAllowed($path, $allowed)) nsJson(404, ['ok'=>false,'error'=>'NOT_FOUND']);
             nsJson(200, ['ok'=>true,'content'=>json_decode(nsFile($root,$path,$allowed,$config),true,64,JSON_THROW_ON_ERROR)]);
@@ -158,7 +169,7 @@ function nsServe(string $root): never {
         }
         $path = isset($_GET['file']) && is_string($_GET['file']) ? $_GET['file'] : nsPath((string)($_SERVER['REQUEST_URI'] ?? ''));
         if ($path===null || nsPublic($path) || !nsAllowed($path,$allowed)) nsJson(404, ['ok'=>false,'error'=>'NOT_FOUND']);
-        if (!nsOwner($config,$key)) {
+        if (!nsOwner($config,$key) && !nsSchoolMember()) {
             if (!str_ends_with($path,'.html')) nsJson(403, ['ok'=>false,'error'=>'SCHOOL_SUBSCRIPTION_REQUIRED']);
             header('Content-Type: text/html; charset=UTF-8');
             if ($method!=='HEAD') readfile(__DIR__.'/offer.html');

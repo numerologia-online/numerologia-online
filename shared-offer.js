@@ -1,3 +1,4 @@
+import { openStore } from "./store-entry.js?v=2";
 /* Один общий шаблон предложения из полного разбора.
    HTML берём из pro/index.html только по запросу; стили тоже загружаются только
    при открытии. Никакой платёж или предоставление доступа этим кодом не выполняется. */
@@ -39,21 +40,12 @@ async function prepareDialog() {
   catch (error) { dialog.remove(); throw error; }
 
   const note = findNode(dialog, "#pro-paywall-checkout-note");
-  findNode(dialog, "#pro-paywall-one-time").addEventListener("click", () => {
-    const cfg = dialog._offerConfig;
-    note.textContent = "Вы выбрали " + cfg.product + " за " + cfg.oncePrice
-      + " ₽ без подписки. Оплата пока не подключена.";
-    note.hidden = false;
-  });
-  findNode(dialog, "#pro-paywall-club").addEventListener("click", () => {
-    const cfg = dialog._offerConfig;
-    const firstMonth = cfg.memberPrice + cfg.clubMonthly;
-    note.textContent = cfg.subscriptionOnly ? "Клуб " + cfg.clubMonthly + " ₽/мес. Оплата пока не подключена." : "Вы выбрали " + cfg.product + " за " + cfg.memberPrice
-      + " ₽ и клуб за " + cfg.clubMonthly + " ₽/мес. Первый месяц: "
-      + firstMonth + " ₽; далее клуб " + cfg.clubMonthly
-      + " ₽/мес. Оплата пока не подключена.";
-    note.hidden = false;
-  });
+  const checkout=async plan=>{
+    try { await openStore(dialog._offerConfig.subject,plan); }
+    catch (_) { note.textContent="Не удалось открыть корзину. Попробуйте ещё раз.";note.hidden=false; }
+  };
+  findNode(dialog,"#pro-paywall-one-time").addEventListener("click",()=>checkout("once"));
+  findNode(dialog,"#pro-paywall-club").addEventListener("click",()=>checkout("club"));
   return dialog;
 }
 
@@ -64,7 +56,8 @@ export async function openSharedOffer({
   memberPrice = 490,
   clubMonthly = 490,
   itemKind = "report",
-  subscriptionOnly = false
+  subscriptionOnly = false,
+  subject = null
 } = {}) {
   if (!dialogPromise) dialogPromise = prepareDialog().catch(error => {
     dialogPromise = null;
@@ -72,7 +65,7 @@ export async function openSharedOffer({
   });
   const dialog = await dialogPromise;
   if (dialog.open) return;
-  dialog._offerConfig = { product, title, oncePrice, memberPrice, clubMonthly, subscriptionOnly };
+  dialog._offerConfig = { product, title, oncePrice, memberPrice, clubMonthly, subscriptionOnly, subject };
   const isQuestion = itemKind === "question";
   const item = isQuestion ? "ответ" : "разбор";
   const oncePlan = findNode(dialog, ".pro-paywall-plan-once");
@@ -91,8 +84,7 @@ export async function openSharedOffer({
   findNode(dialog, ".pro-paywall-book-art-club span").textContent = isQuestion ? "ВАШ ОТВЕТ" : "ЛИЧНЫЙ РАЗБОР";
   findNode(dialog, ".pro-paywall-compare").setAttribute("aria-label", "Варианты покупки: " + product);
   findNode(dialog, ".pro-paywall-billing-summary").textContent =
-    subscriptionOnly ? "Клуб " + clubMonthly + " ₽/мес. Материалы доступны во время подписки." : "В первый месяц: " + item + " " + memberPrice + " ₽ + клуб " + clubMonthly
-    + " ₽ = " + (memberPrice + clubMonthly) + " ₽. Затем клуб " + clubMonthly + " ₽/мес.";
+    subscriptionOnly ? "Клуб " + clubMonthly + " ₽/мес. Материалы доступны во время подписки." : "Скидка на " + item + " действует после подтверждённой активации клуба. Окончательная сумма указана в корзине.";
   const bigReportRow = [...dialog.querySelectorAll(".pro-paywall-matrix-table tbody tr")]
     .find(row => row.querySelector('th[scope="row"]')?.textContent?.includes("Большие разборы"));
   if (bigReportRow) {

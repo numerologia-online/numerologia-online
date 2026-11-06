@@ -737,10 +737,11 @@ function naServe(): never {
         if ($action==='merge_telegram_email') naMergeTelegramEmail($db,$body);
         if ($action==='set_email') naEmailForTelegram($db,$body);
         if ($action==='birth') naSaveBirth($db,$body);
-        if (in_array($action,['cart_quote','checkout','order_history','order_status'],true)) {
+        if (in_array($action,['cart_quote','checkout','order_history','order_status','cancel_renewal'],true)) {
             require_once __DIR__.'/store.php';
             naStoreServe($db,$action,$body);
         }
+        if ($action==='material') { require_once __DIR__.'/fulfillment.php';naMaterialServe($db,$body); }
         if ($action==='product_quote') naCatalogQuote($db,$body);
         if ($action==='purchases') naPurchases($db);
         if ($action==='test_purchase') naTestPurchase($db,$body);
