@@ -5,7 +5,9 @@ const API="/api/numi-wallet-test.php", ID="numi-wallet-owner-overlay-20261106";
 const $=id=>document.getElementById(id);
 let owner=false, busy=false, balance=0, purchased=false, ready=false, selected=false, choiceAccepted=false;
 let paymentRef=new URL(location.href).searchParams.get("payment");
+let subscriptionRef=new URL(location.href).searchParams.get("subscription_payment");
 if(paymentRef && !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(paymentRef))paymentRef=null;
+if(subscriptionRef && !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(subscriptionRef))subscriptionRef=null;
 const money=k=>(Number(k)/100).toLocaleString("ru-RU",{maximumFractionDigits:2})+" ₽";
 async function request(action,extra={}){
  const response=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",cache:"no-store",body:JSON.stringify({action,...extra})});
@@ -22,6 +24,11 @@ function controls(){
  $("numi-ow-buy").disabled=!ready||busy||purchased||balance<2000||!selected;
  $("numi-ow-topup").disabled=!ready||busy;
  $("numi-ow-yoomoney").disabled=!ready||busy;
+ for(const plan of ["club","school"]){
+   const btn=$("numi-ow-sub-"+plan),cancel=$("numi-ow-cancel-"+plan);
+   if(btn)btn.disabled=!ready||busy||btn.dataset.active==="true";
+   if(cancel)cancel.disabled=!ready||busy||cancel.dataset.renew!=="true";
+ }
  $("numi-ow-refresh").disabled=!ready||busy;
 }
 function panel(){
@@ -43,6 +50,9 @@ function panel(){
  '#'+ID+' .ow-balance{font-size:30px;font-weight:800;letter-spacing:-.05em;padding:5px 0}',
  '#'+ID+' .ow-note{font-size:11px;color:#777671;line-height:1.4}',
  '#'+ID+' .ow-input{width:100%;height:40px;background:#fff;color:#303330;border:1px solid #bbb6ad;border-radius:9px;padding:8px 12px;font-size:16px;margin-top:7px}',
+ '#'+ID+' .ow-select{width:100%;height:34px;margin:7px 0;background:#fff;color:#303330;border:1px solid #bbb6ad;border-radius:8px;font:inherit;padding:6px}',
+ '#'+ID+' .ow-check{display:flex;gap:7px;align-items:start;font-size:10px;line-height:1.35;color:#625c56;margin:8px 0}',
+ '#'+ID+' .ow-check input{accent-color:#454640;width:17px;height:17px;flex-shrink:0;margin:0}',
  '#'+ID+' [hidden]{display:none!important}',
  '#'+ID+' button{font:650 11px/1.2 -apple-system,BlinkMacSystemFont,Arial,sans-serif;border:1px solid #464641;border-radius:9px;',
  'background:#464641;color:white;min-height:35px;padding:8px 11px;cursor:pointer}',
@@ -70,7 +80,7 @@ function panel(){
  '<section class="ow-card" id="numi-ow-choice" hidden><div class="ow-label">Способ покупки</div>',
  '<h3>Как хочешь получить ответ?</h3><p class="ow-note">Один вопрос за 20 ₽ или клуб за 490 ₽/месяц со скидкой на вопросы. Это независимые варианты.</p>',
  '<div class="ow-actions"><button id="numi-ow-once" type="button">Купить разово · 20 ₽</button>',
- '<button disabled type="button" class="ow-secondary">С клубом · скоро</button></div></section>',
+ '<button id="numi-ow-with-club" type="button" class="ow-secondary">Клуб · 490 ₽/месяц</button></div></section>',
  '<div id="numi-ow-payment-panel">',
  '<section class="ow-card"><div class="ow-label">Мой кошелёк</div>',
  '<div id="numi-ow-balance" class="ow-balance">—</div>',
@@ -86,16 +96,48 @@ function panel(){
  '<div class="ow-actions"><button id="numi-ow-buy" disabled>Купить тестовый вопрос за 20 ₽</button></div>',
  '<p id="numi-ow-result" class="ow-status">Открой этот вопрос в разделе Red Flag.</p></section>',
  '<div class="ow-grid">',
- '<section class="ow-card"><div class="ow-label">Подписка № 1</div><h3>Клуб сайта</h3>',
- '<strong>490 ₽ <span>/ месяц</span></strong><button disabled>Подключить · скоро</button></section>',
+ '<section class="ow-card" id="numi-ow-plan-club"><div class="ow-label">Подписка № 1</div><h3>Клуб сайта</h3>',
+ '<strong>490 ₽ <span>/ месяц</span></strong><p id="numi-ow-state-club" class="ow-note">Не подключён</p>',
+ '<select id="numi-ow-method-club" class="ow-select" aria-label="Способ оплаты клуба">',
+ '<option value="bank_card">Банковская карта</option><option value="yoo_money">ЮMoney</option></select>',
+ '<label class="ow-check"><input id="numi-ow-auto-club" type="checkbox">',
+ '<span>Разрешаю автосписание 490 ₽ каждый месяц. Могу отменить в кабинете.</span></label>',
+ '<button id="numi-ow-sub-club" disabled>Подключить · тест</button>',
+ '<button id="numi-ow-cancel-club" class="ow-secondary" disabled>Отключить продление</button></section>',
  '<section class="ow-card"><div class="ow-label">Подписка № 2</div><h3>Школа нумерологии</h3>',
- '<strong>149 ₽ <span>/ неделю</span></strong><button disabled>Подключить · скоро</button></section></div>',
+ '<strong>149 ₽ <span>/ неделю</span></strong><p id="numi-ow-state-school" class="ow-note">Не подключена</p>',
+ '<select id="numi-ow-method-school" class="ow-select" aria-label="Способ оплаты школы">',
+ '<option value="bank_card">Банковская карта</option><option value="yoo_money">ЮMoney</option></select>',
+ '<label class="ow-check"><input id="numi-ow-auto-school" type="checkbox">',
+ '<span>Разрешаю автосписание 149 ₽ каждые 7 дней. Могу отменить в кабинете.</span></label>',
+ '<button id="numi-ow-sub-school" disabled>Подключить · тест</button>',
+ '<button id="numi-ow-cancel-school" class="ow-secondary" disabled>Отключить продление</button></section></div>',
  '<section class="ow-card"><div class="ow-label">История операций</div><ul id="numi-ow-history"><li>Пока пусто</li></ul></section>',
  '<p class="ow-status" id="numi-ow-message" role="status">Проверка подключения…</p></div>'
  ].join("");
  document.body.append(dialog);
  $("numi-ow-close").addEventListener("click",()=>dialog.close());
  $("numi-ow-once").addEventListener("click",()=>{choiceAccepted=true;showStep();});
+ $("numi-ow-with-club").addEventListener("click",()=>{
+   choiceAccepted=true;showStep();
+   $("numi-ow-plan-club").scrollIntoView({behavior:"smooth",block:"nearest"});
+ });
+ for(const plan of ["club","school"]){
+   $("numi-ow-sub-"+plan).addEventListener("click",()=>work(async()=>{
+     const r=await request("subscription_checkout",{plan,
+        auto_renew_consent:$("numi-ow-auto-"+plan).checked,
+        payment_method:$("numi-ow-method-"+plan).value});
+     const url=new URL(r.confirmation_url);
+     if(r.test!==true||url.protocol!=="https:"||
+        !/(^|\.)yookassa\.ru$|(^|\.)yoomoney\.ru$/.test(url.hostname))
+       throw Error("INVALID_TEST_URL");
+     location.assign(url.href);
+   }));
+   $("numi-ow-cancel-"+plan).addEventListener("click",()=>work(async()=>{
+     const r=await request("subscription_cancel",{plan});
+     updatePlans(r.plans);msg("Автопродление отключено. Оплаченный срок сохранится.");
+   }));
+ }
  function validateAmount(){
    const raw=$("numi-ow-amount").value.trim();
    if(!/^[0-9]+$/.test(raw))throw Error("Укажи сумму целыми рублями.");
@@ -119,9 +161,25 @@ function panel(){
  }));
  return dialog;
 }
+function updatePlans(plans){
+ for(const plan of ["club","school"]){
+   const d=plans?.[plan]||{},active=d.active===true;
+   const state=$("numi-ow-state-"+plan),btn=$("numi-ow-sub-"+plan),cancel=$("numi-ow-cancel-"+plan);
+   if(!state||!btn||!cancel)continue;
+   const date=d.current_period_end?String(d.current_period_end):null;
+   state.textContent=active
+     ?"Активна до "+date+" UTC. "+(d.auto_renew?"Автопродление включено.":"Автопродление выключено.")
+     :d.status==="pending"?"Ожидает подтверждения платежа.":"Не подключена";
+   btn.dataset.active=String(active||d.status==="pending");
+   cancel.dataset.renew=String(d.auto_renew===true);
+   btn.textContent=active?"Подписка активна":"Подключить · тест";
+ }
+ controls();
+}
 function render(data){
  ready=true;balance=Number(data.balance_kopeks)||0;purchased=Boolean(data.question_unlocked);
  panel();$("numi-ow-balance").textContent=money(balance);
+ updatePlans(data.plans);
  $("numi-ow-buy").textContent=purchased?"Уже куплен · тест":"Купить тестовый вопрос за 20 ₽";
  $("numi-ow-result").textContent=purchased
   ?"Покупка подтверждена. Настоящий текст не выдаётся в тестовом режиме."
@@ -138,6 +196,13 @@ function render(data){
  controls();
 }
 async function load(){
+ if(subscriptionRef){
+  const result=await request("subscription_sync",{charge_ref:subscriptionRef});
+  if(result.payment_status==="pending")msg("Оплата подписки ещё ожидает подтверждения.");else{
+   subscriptionRef=null;const url=new URL(location.href);url.searchParams.delete("subscription_payment");
+   history.replaceState(history.state,"",url.pathname+url.search+url.hash);
+  }
+ }
  if(paymentRef){
   const result=await request("sync",{payment_ref:paymentRef});
   if(result.payment_status==="pending")msg("Тестовый платёж ещё обрабатывается, нажми «Обновить».");else{
@@ -195,7 +260,7 @@ const profile=$("account-profile");
 if(profile)new MutationObserver(()=>{if(!profile.hidden)void identify()})
  .observe(profile,{attributes:true,attributeFilter:["hidden"]});
 void identify().then(ok=>{
- if(ok && paymentRef){
+ if(ok && (paymentRef||subscriptionRef)){
   selected=new URL(location.href).searchParams.get("question")==="money:generosity";
   choiceAccepted=true;void open();
  }
