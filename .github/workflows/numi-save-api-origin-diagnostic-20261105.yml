@@ -1,105 +1,27 @@
-name: Read-only REG.RU Telegram save API origin diagnostic (2026-11-05)
+name: Read exact live Red Flag success label and cache versions
 on:
   push:
-    branches: [main]
     paths:
       - .github/workflows/numi-save-api-origin-diagnostic-20261105.yml
 permissions:
   contents: read
-  statuses: write
 jobs:
   inspect:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
     steps:
-      - name: Read exact live save handler and report only safe diagnostics to commit statuses
-        env:
-          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
-          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Print only public UI markers
         run: |
           python3 - <<'PY'
-          import os, ftplib, io, ssl, json, urllib.request, urllib.error, re
-          repo=os.environ['GITHUB_REPOSITORY']
-          sha=os.environ['GITHUB_SHA']
-          api='https://api.github.com/repos/'+repo+'/statuses/'+sha
-          def status(context, state, description):
-              payload=json.dumps(dict(state=state,context='numi-save-api/'+context,description=description[:140])).encode()
-              req=urllib.request.Request(api,data=payload,method='POST',headers={
-                'Authorization':'Bearer '+os.environ['GH_TOKEN'],
-                'Accept':'application/vnd.github+json',
-                'Content-Type':'application/json',
-                'X-GitHub-Api-Version':'2022-11-28'
-              })
-              with urllib.request.urlopen(req,timeout=12) as response:
-                  if response.status!=201: raise RuntimeError('Cannot record status')
-          old='xn--c1adkkdfjbp1a4l.online'
-          new='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
-          try:
-              f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=22)
-              f.connect('server172.hosting.reg.ru',21)
-              f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
-              f.prot_p();f.set_pasv(True)
-              base=f.pwd().rstrip('/')
-              found=[]
-              try:
-                  for domain in (old,new):
-                      b=io.BytesIO()
-                      try:f.retrbinary('RETR '+base+'/www/'+domain+'/api/numi-save-answer.php',b.write)
-                      except ftplib.error_perm as e:
-                          if str(e).startswith('550'):continue
-                          raise
-                      raw=b.getvalue()
-                      if not raw.lstrip().startswith(b'<?php') or not (100<len(raw)<150000):
-                          raise RuntimeError('Unexpected API file format')
-                      found.append((domain,raw))
-              finally:
-                  try:f.quit()
-                  except Exception:f.close()
-              if not found:
-                  status('location','failure','No numi-save-answer.php found in the two expected REG.RU roots')
-                  raise SystemExit(1)
-              status('location','success','API file: '+','.join('old' if d==old else 'new' for d,_ in found)+'; no files changed')
-              for domain,raw in found:
-                  s=raw.decode('utf-8',errors='replace')
-                  label='old' if domain==old else 'new'
-                  oldCount=s.count(old)
-                  newCount=s.count(new)
-                  hasOrigin=bool(re.search(r'HTTP_ORIGIN|\bOrigin\b|\borigin\b',s))
-                  hasTelegram=('api.telegram.org' in s or 'sendMessage' in s)
-                  hasInitData=('init_data' in s or 'initData' in s)
-                  status(f'code-{label}-o{oldCount}-n{newCount}-c{int(hasOrigin)}-t{int(hasTelegram)}-i{int(hasInitData)}','success','Source patterns checked; no secrets disclosed')
-                  status(f'checks-{label}-host{int("HTTP_HOST" in s)}-origin{int("HTTP_ORIGIN" in s)}-hmac{int("hash_hmac" in s)}-token{int("BOT_TOKEN" in s)}','success','Only code characteristics; no live change')
-                  import hashlib
-                  status('filehash-'+label+'-'+hashlib.sha256(raw).hexdigest()[:32],'success','Read-only file hash prefix')
-                  safe=[]
-                  for n,line in enumerate(s.splitlines(),1):
-                      if old not in line and new not in line and not re.search(r'HTTP_ORIGIN',line):continue
-                      # Never expose live code or token values: emit only structure with string literals removed.
-                      sanitized=re.sub(r'''["'][^"'\n]{0,500}["']''','STR',line.strip())
-                      sanitized=re.sub(r'[A-Za-z0-9_]{60,}', 'REDACTED',sanitized)
-                      sanitized=sanitized.replace(old,'OLD').replace(new,'NEW')
-                      safe.append(f'{n}:{sanitized[:95]}')
-                  for j,chunk in enumerate(safe[:12]):
-                      status(f'originlogic-{label}-{j}-'+re.sub('[^A-Za-z0-9_.=()!$+<>:-]','_',chunk)[:145],'success','Redacted code structure')
-
-              for label,origin in (('old',old),('new',new)):
-                  url='https://'+origin+'/api/numi-save-answer.php'
-                  req=urllib.request.Request(url,method='OPTIONS',headers={
-                    'Origin':'https://'+origin,
-                    'Access-Control-Request-Method':'POST',
-                    'Access-Control-Request-Headers':'content-type',
-                  })
-                  try:
-                      with urllib.request.urlopen(req,timeout=12) as res:
-                          code=res.status;acao=res.headers.get('Access-Control-Allow-Origin','')
-                  except urllib.error.HTTPError as e:
-                      code=e.code;acao=e.headers.get('Access-Control-Allow-Origin','')
-                  except Exception:
-                      code=0;acao=''
-                  status(f'preflight-{label}-http{code}-cors{int(acao==("https://"+origin))}','success','OPTIONS checked read-only')
-          except Exception as exc:
-              msg=type(exc).__name__
-              status('runtime','failure','Read-only FTP diagnosis failed: '+msg+'; no live changes')
-              raise
+          import urllib.request,hashlib,json
+          url="https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/"
+          for name in ("redflag-feature.js","app.js","index.html"):
+              request=urllib.request.Request(url+name+"?cache_bust=20261106",headers={"Cache-Control":"no-cache"})
+              with urllib.request.urlopen(request,timeout=24) as response:
+                  blob=response.read(200000)
+                  if response.status!=200:raise RuntimeError("Missing "+name)
+              lines=blob.decode("utf8").splitlines()
+              terms=("Ссылка на ответ готова","Если Telegram не открылся","redflag-feature.js?v=","app.js?v=")
+              marked=[{"line":i+1,"value":v.strip()[:220]} for i,v in enumerate(lines) if any(t in v for t in terms)]
+              print("LIVE_RED_FLAG_MARKERS",json.dumps({"file":name,"bytes":len(blob),"sha256":hashlib.sha256(blob).hexdigest(),"lines":marked},ensure_ascii=False),flush=True)
           PY
