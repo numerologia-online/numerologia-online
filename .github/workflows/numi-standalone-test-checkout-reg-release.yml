@@ -1,0 +1,52 @@
+name: Publish standalone owner-only TEST checkout on REG.RU
+
+on:
+  push:
+    paths:
+      - .github/workflows/numi-standalone-test-checkout-reg-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish dedicated owner-only TEST checkout on REG.RU')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate pinned isolated checkout assets before deployment
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/numi_test_checkout_standalone_safe_release.py
+          node --check wallet-test-checkout-20261106.js
+          node --check wallet-owner-flow-20261106.js
+          python3 - <<'PY'
+          from pathlib import Path
+          h=Path("wallet-test-checkout-20261106.html").read_text()
+          j=Path("wallet-test-checkout-20261106.js").read_text()
+          owner=Path("wallet-owner-flow-20261106.js").read_text()
+          assert "<div id=\"widget-frame\"></div>" in h
+          assert "req(\"topup_widget\"" in j
+          assert "preloadWidget()" in j
+          assert "new window.YooMoneyCheckoutWidget" in j
+          assert 'widget.on("complete"' in j
+          assert "OWNER_TEST_ONLY" in j
+          assert "secret_key" not in j
+          assert "wallet-test-checkout-20261106.html" in owner
+          assert "OWNER_TEST_ONLY" in owner
+          print("STANDALONE_TEST_CHECKOUT_SAFETY_CHECKS_PASSED")
+          PY
+      - name: Deploy TEST checkout on REG.RU with exact baseline backups and rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi_test_checkout_standalone_safe_release.py
