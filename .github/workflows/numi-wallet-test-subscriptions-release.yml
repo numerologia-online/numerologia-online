@@ -1,0 +1,55 @@
+name: Install isolated owner-only TEST subscriptions on REG.RU
+
+on:
+  push:
+    paths:
+      - .github/workflows/numi-wallet-test-subscriptions-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish owner-only two-plan test subscriptions')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Compile only pinned test wallet files and check subscription schema scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/numi_wallet_test_subscriptions_release.py
+          node --check wallet-owner-flow-20261106.js
+          git fetch --no-tags origin feature/wallet-yookassa-test-20261106
+          git show bb6b3d85ca9466f57092711ebfbed0ff76e8adc3:wallet-service/private/test-core.php > /tmp/numi-test-sub-core.php
+          git show 312d9d9bf9b8efe35b749093f9629d873f05da83:wallet-service/private/subscriptions-test.php > /tmp/numi-test-sub-functions.php
+          git show 5b9038a92b6ec7c7d9379483ccf4cb81d59c9c43:wallet-service/schema-subscriptions-test.sql > /tmp/numi-test-sub-schema.sql
+          php -l /tmp/numi-test-sub-core.php
+          php -l /tmp/numi-test-sub-functions.php
+          python3 - <<'PY'
+          from pathlib import Path
+          schema=Path("/tmp/numi-test-sub-schema.sql").read_text()
+          assert schema.count("CREATE TABLE IF NOT EXISTS numi_wallet_test_")==2
+          assert all(x not in schema.lower() for x in ["drop table","alter table","delete from","update numi_accounts"])
+          core=Path("/tmp/numi-test-sub-core.php").read_text()
+          assert "wtOwnerOnly($current)" in core
+          assert "WT_TEST_SHOP_ID = '1521071'" in core
+          js=Path("wallet-owner-flow-20261106.js").read_text()
+          assert "subscription_checkout" in js and "subscription_cancel" in js
+          assert "numi-ow-auto-school" in js and "numi-ow-auto-club" in js
+          print("OWNER_ONLY_TEST_SUBSCRIPTIONS_SYNTAX_AND_SCOPE_CHECKS_PASSED")
+          PY
+      - name: Back up live test PHP and JS, add only two test tables, deploy and verify
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi_wallet_test_subscriptions_release.py
