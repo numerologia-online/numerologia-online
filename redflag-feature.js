@@ -167,8 +167,8 @@ const addRedFlagShare = (answer, report) => {
         preparedBotLink = REDFLAG_BOT_URL + "?start=" + encodeURIComponent(data.ticket);
         save.textContent = "🤖 Открыть бота с ответом";
         save.disabled = false;
-        showFeedback("is-success", "❤️ Ссылка на ответ готова",
-          "Если Telegram не открылся, нажми кнопку ещё раз. В новом боте нажми «Начать», и тебе придёт именно этот ответ.");
+        showFeedback("is-success", "❤️ Твой ответ отправлен!",
+          "Если сообщение не пришло, открой нашего Telegram-бота по кнопке выше и нажми «Начать».");
         openRedFlagTicket(preparedBotLink);
       } catch (error) {
         save.disabled = false;
