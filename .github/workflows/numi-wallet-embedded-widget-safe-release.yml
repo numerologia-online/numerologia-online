@@ -1,0 +1,48 @@
+name: Publish embedded owner-only TEST YooKassa widget to REG.RU
+
+on:
+  push:
+    paths:
+      - .github/workflows/numi-wallet-embedded-widget-safe-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish owner-only TEST embedded payment widget')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate pinned TEST sources and isolated release scope
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin fix/test-wallet-embedded-yookassa-20261106
+          python3 -m py_compile .github/scripts/numi_wallet_embedded_widget_safe_release.py
+          node --check wallet-owner-flow-20261106.js
+          git show 439f959233b9ecdc28d92c96a88ddde85a0664ae:wallet-service/private/test-core.php > /tmp/numi-test-core-embedded.php
+          git show 439f959233b9ecdc28d92c96a88ddde85a0664ae:wallet-service/private/subscriptions-test.php > /tmp/numi-test-subscriptions.php
+          php -l /tmp/numi-test-core-embedded.php
+          php -l /tmp/numi-test-subscriptions.php
+          python3 - <<'PY'
+          from pathlib import Path
+          ui=Path('wallet-owner-flow-20261106.js').read_text()
+          assert 'request("topup_widget"' in ui and 'YooMoneyCheckoutWidget' in ui
+          assert 'paymentWidget.on("complete"' in ui
+          assert 'secret_key' not in ui
+          print("EMBEDDED_TEST_RELEASE_STATIC_CHECKS_PASSED")
+          PY
+      - name: Back up exact live baselines, publish isolated TEST widget and verify
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi_wallet_embedded_widget_safe_release.py
