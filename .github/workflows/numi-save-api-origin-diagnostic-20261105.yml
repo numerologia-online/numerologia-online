@@ -97,3 +97,49 @@ jobs:
                   s=s.replace('xn--c1adkkdfjbp1a4l.online','OLD_DOMAIN').replace('xn----8sbhhqijddjgdebdz2c2o.xn--p1ai','NEW_DOMAIN')
                   print('SAVE_VALIDATOR_LINE',i,s[:260],flush=True)
           PY
+
+      - name: Publish exact one-line PHP fix for save answer, never touch daily mailing
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,ftplib,io,ssl,hashlib,subprocess,tempfile
+          OLD="xn--c1adkkdfjbp1a4l.online"
+          NEW="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+          PIN="6f4832b629f618d0e5611813ebdc25b725e1028ee54f2b1ed6a14195812f2150"
+          old=("if($length<90||$length>3800||!str_contains($text,'https://"+OLD+"/'))return false;").encode()
+          new=("if($length<90||$length>3800||(!str_contains($text,'https://"+OLD+"/')&&!str_contains($text,'https://"+NEW+"/')))return false;").encode()
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          f.connect("server172.hosting.reg.ru",21)
+          f.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          f.prot_p();f.set_pasv(True)
+          p=f.pwd().rstrip("/")+"/www/"+OLD+"/api/numi-save-answer.php"
+          def read():
+              b=io.BytesIO();f.retrbinary("RETR "+p,b.write);return b.getvalue()
+          def write(data):
+              f.storbinary("STOR "+p,io.BytesIO(data))
+              if read()!=data:raise RuntimeError("FTP_READBACK_MISMATCH")
+          before=read()
+          if hashlib.sha256(before).hexdigest()!=PIN:raise RuntimeError("LIVE_SOURCE_CHANGED")
+          if before.count(old)!=1:raise RuntimeError("VALIDATOR_NOT_FOUND_EXACTLY_ONCE")
+          after=before.replace(old,new,1)
+          if after.replace(new,old,1)!=before:raise RuntimeError("MORE_THAN_ONE_LINE_CHANGED")
+          with tempfile.NamedTemporaryFile(suffix=".php") as tmp:
+              tmp.write(after);tmp.flush()
+              if subprocess.run(["php","-l",tmp.name],capture_output=True,timeout=12).returncode:
+                  raise RuntimeError("PHP_SYNTAX_INVALID")
+          print("ONE_LINE_SAVE_VALIDATOR_PREFLIGHT_PASSED",flush=True)
+          if read()!=before:raise RuntimeError("LIVE_CHANGED_BEFORE_WRITE")
+          try:
+              write(after)
+              print("SAVE_VALIDATOR_ONE_LINE_LIVE_PUBLISHED_VERIFIED",flush=True)
+              print("NO_BOT_MORNING_MAILING_DATABASE_OR_CRON_CHANGES",flush=True)
+              print("NO_NEW_BACKUP_FILES",flush=True)
+          except BaseException:
+              write(before)
+              print("SAVE_VALIDATOR_IN_MEMORY_ROLLBACK_VERIFIED",flush=True)
+              raise
+          finally:
+              f.quit()
+          PY
