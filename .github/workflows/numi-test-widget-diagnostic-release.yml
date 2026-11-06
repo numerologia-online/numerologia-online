@@ -1,0 +1,41 @@
+name: Publish TEST widget diagnostics only to REG.RU
+on:
+  push:
+    paths:
+      - .github/workflows/numi-test-widget-diagnostic-release.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish owner-only TEST widget failure diagnostics')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate pinned TEST widget script and release syntax
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/numi_test_widget_diagnostic_release.py
+          node --check wallet-owner-flow-20261106.js
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("wallet-owner-flow-20261106.js").read_text()
+          assert 'WIDGET_RENDER_TIMEOUT' in s
+          assert 'safeWidgetErrorCode(error)' in s
+          assert 'request("topup_widget"' in s
+          assert 'OWNER_TEST_ONLY' in s
+          assert 'secret_key' not in s
+          print('TEST_WIDGET_DIAGNOSTIC_STATIC_CHECKS_PASSED')
+          PY
+      - name: Safely back up and publish only TEST widget script and its URL
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi_test_widget_diagnostic_release.py
