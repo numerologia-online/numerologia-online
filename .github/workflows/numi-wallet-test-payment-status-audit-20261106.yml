@@ -1,0 +1,53 @@
+name: Read only YooKassa TEST payment status audit (no site changes)
+
+on:
+  push:
+    paths:
+      - .github/workflows/numi-wallet-test-payment-status-audit-20261106.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Diagnose YooKassa TEST payments read only')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Fetch list of test payments, log only safe status/reason counts
+        env:
+          NUMI_YOOKASSA_TEST_SECRET_KEY_1521071: ${{ secrets.NUMI_YOOKASSA_TEST_SECRET_KEY_1521071 }}
+        run: |
+          python3 - <<'PY'
+          import base64,collections,json,os,sys,urllib.request,urllib.error
+          key=os.environ.get("NUMI_YOOKASSA_TEST_SECRET_KEY_1521071","")
+          if not key.startswith("test_") or len(key)<15:
+              print("TEST_CREDENTIAL_NOT_AVAILABLE");sys.exit(1)
+          auth=base64.b64encode(("1521071:"+key).encode()).decode()
+          req=urllib.request.Request("https://api.yookassa.ru/v3/payments?limit=100",
+              headers={"Authorization":"Basic "+auth,"Accept":"application/json","User-Agent":"numi-test-payments-audit/1"})
+          try:
+              with urllib.request.urlopen(req,timeout=22) as resp:
+                  data=json.load(resp)
+          except urllib.error.HTTPError as exc:
+              print("YOOKASSA_READONLY_HTTP_ERROR",exc.code);sys.exit(1)
+          except Exception as exc:
+              print("YOOKASSA_READONLY_CONNECTION_ERROR",type(exc).__name__);sys.exit(1)
+          if data.get("type")!="list" or not isinstance(data.get("items"),list):
+              print("YOOKASSA_UNEXPECTED_RESPONSE");sys.exit(1)
+          entries=[p for p in data["items"] if p.get("metadata",{}).get("app")=="numi_wallet_test" and p.get("test") is True
+              and p.get("amount",{}).get("value")=="100.00"]
+          print("YOOKASSA_TEST_ONLY_ENTRIES",len(entries),"PAGINATION",bool(data.get("next_cursor")))
+          statuses=collections.Counter(str(p.get("status","unknown")) for p in entries)
+          print("STATUS_COUNTS",json.dumps(dict(statuses),sort_keys=True))
+          reasons=collections.Counter(
+              str(p.get("cancellation_details",{}).get("party","unknown"))+"/"+str(p.get("cancellation_details",{}).get("reason","unknown"))
+              for p in entries if p.get("status")=="canceled")
+          print("CANCELLATION_REASONS",json.dumps(dict(reasons),sort_keys=True))
+          for i,p in enumerate(entries[:12]):
+              print("RECENT_TEST_PAYMENT",i+1,
+                "status",p.get("status"),"paid",p.get("paid"),
+                "cancellation_party",p.get("cancellation_details",{}).get("party","none"),
+                "cancellation_reason",p.get("cancellation_details",{}).get("reason","none"))
+          PY
