@@ -17,6 +17,7 @@ function naRealWalletGate(array $config): bool {
         && ($config['fiscalization_verified']??null)===true
         && ($config['refunds_verified']??null)===true
         && ($config['advance_offset_receipts_verified']??null)===true
+        && ($config['offset_receipt_worker_verified']??null)===true
         && ($config['launch_approved']??null)===true
         && ($config['provider_test_mode']??null)===false
         && preg_match('/^[0-9]+$/D',(string)($config['shop_id']??''))===1
@@ -86,6 +87,21 @@ function naRealWalletSchema(PDO $db): void {
       UNIQUE KEY uq_real_merge_source(source_account_id),
       CONSTRAINT fk_real_merge_source FOREIGN KEY(source_account_id) REFERENCES numi_accounts(id),
       CONSTRAINT fk_real_merge_destination FOREIGN KEY(destination_account_id) REFERENCES numi_accounts(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    // Durable fiscal outbox: no wallet use without an auditable receipt event.
+    // The offset receipt worker is intentionally NOT enabled before the cash-register review.
+    $db->exec("CREATE TABLE IF NOT EXISTS numi_real_wallet_fiscal_events (
+      id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+      kind ENUM('advance_in','advance_offset','refund') NOT NULL,
+      reference_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+      kopeks BIGINT UNSIGNED NOT NULL,
+      status ENUM('pending','verified','failed') NOT NULL DEFAULT 'pending',
+      provider_receipt_id VARCHAR(191) NULL,
+      attempts INT UNSIGNED NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_real_fiscal_event(kind,reference_id),
+      UNIQUE KEY uq_real_provider_receipt(provider_receipt_id),
+      KEY ix_real_fiscal_pending(status,created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     $db->exec("CREATE TABLE IF NOT EXISTS numi_real_wallet_refund_cases (
       id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
@@ -223,6 +239,9 @@ function naRealWalletApplyVerifiedPayment(PDO $db,array $topup,array $payment,ar
             ->execute([naUuid(),$accountId,$saved['id'],(int)$saved['kopeks'],$new]);
         $db->prepare("UPDATE numi_real_wallet_topups SET status='credited',credited_at=UTC_TIMESTAMP() WHERE id=?")
             ->execute([$saved['id']]);
+        $db->prepare("INSERT INTO numi_real_wallet_fiscal_events(id,kind,reference_id,kopeks,status)
+            VALUES(?,'advance_in',?,?,'verified')")
+            ->execute([naUuid(),$saved['id'],(int)$saved['kopeks']]);
         $db->commit();return 'credited';
     }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
 }
@@ -315,11 +334,11 @@ function naRealWalletBuy(PDO $db,array $account,array $config,array $input,strin
             $materialReady);
         $item=$quote['items'][0];
         $price=(int)$item['price_kopeks'];
+        if($item['kind']!=='subscription' && naRealWalletHasAccess($db,$account,$item['product_code'],$item['resource_id']))
+            throw new RuntimeException('REAL_ALREADY_PURCHASED');
         if(!$quote['fulfillment_ready'] || $price<1
            || !in_array($item['kind'],['question','report','subscription'],true))
             throw new RuntimeException('REAL_MATERIAL_NOT_READY');
-        if($item['kind']!=='subscription' && naRealWalletHasAccess($db,$account,$item['product_code'],$item['resource_id']))
-            throw new RuntimeException('REAL_ALREADY_PURCHASED');
         $balance=naRealWalletBalance($db,$account['id'],true);
         naRealWalletAssertOpen($db,$account['id']);
         if($balance<$price)throw new RuntimeException('REAL_INSUFFICIENT_BALANCE');
@@ -355,6 +374,10 @@ function naRealWalletBuy(PDO $db,array $account,array $config,array $input,strin
         $db->prepare("INSERT INTO numi_real_wallet_ledger(id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks)
             VALUES(?,?,'purchase',?,?,?)")
             ->execute([naUuid(),$account['id'],$spendId,-$price,$new]);
+        // Exactly one fiscal offset outbox event per spend, atomically.
+        $db->prepare("INSERT INTO numi_real_wallet_fiscal_events(id,kind,reference_id,kopeks,status)
+            VALUES(?,'advance_offset',?,?,'pending')")
+            ->execute([naUuid(),$spendId,$price]);
         $db->commit();
         return ['already_purchased'=>false,'entitlement_id'=>$entitlementId,
             'balance_kopeks'=>$new,'price_kopeks'=>$price,'expires_at'=>$expiry,
