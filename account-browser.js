@@ -212,6 +212,7 @@
     "#numi-wallet-account-badge .numi-wallet-operations{margin:8px 0 0;padding:0;list-style:none;max-height:130px;overflow:auto;font-size:12px;color:#5c6561}",
     "#numi-wallet-account-badge .numi-wallet-operations li{padding:4px 0;border-bottom:1px solid #e3dfdd}",
     "#numi-wallet-account-badge .numi-wallet-feedback{font-size:12px;margin:8px 0 0;color:#5d6561}",
+    "#numi-wallet-account-badge .numi-club-status{margin:8px 0 0;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;color:#5b6961;font:12px/1.4 system-ui}",
     "#numi-wallet-account-badge [hidden]{display:none!important}"
   ].join("");
   dialog.append(walletStyle);
@@ -236,9 +237,22 @@
   const testNote=document.createElement("small");testNote.className="numi-wallet-caption";
   testNote.textContent="Тестовый режим · без настоящих списаний";
   walletLinks.append(ledgerToggle,testNote);
+  const clubLine=document.createElement("div");clubLine.className="numi-club-status";
+  const clubText=document.createElement("span");clubText.textContent="Проверяем подписку…";
+  const clubJoin=document.createElement("button");clubJoin.type="button";
+  clubJoin.className="numi-wallet-small";clubJoin.textContent="Вступить в клуб";clubJoin.hidden=true;
+  clubJoin.addEventListener("click",async()=>{
+    clubJoin.disabled=true;
+    try{
+      const {openStore}=await import("/store-entry.js?v=wallet-direct1");
+      await openStore({product_code:"club_month"});
+    }catch(_){walletFeedback.hidden=false;walletFeedback.textContent="Не удалось открыть оформление подписки.";}
+    finally{clubJoin.disabled=false;}
+  });
+  clubLine.append(clubText,clubJoin);
   const ledger=document.createElement("ul");ledger.className="numi-wallet-operations";ledger.hidden=true;
   const walletFeedback=document.createElement("p");walletFeedback.className="numi-wallet-feedback";walletFeedback.hidden=true;
-  walletBadge.append(walletMain,walletForm,walletLinks,ledger,walletFeedback);
+  walletBadge.append(walletMain,walletForm,walletLinks,clubLine,ledger,walletFeedback);
   topupToggle.addEventListener("click",()=>{walletForm.hidden=!walletForm.hidden;if(!walletForm.hidden)amountInput.focus();});
   ledgerToggle.addEventListener("click",()=>{ledger.hidden=!ledger.hidden;});
   let walletReturnHandled=false;
@@ -289,6 +303,18 @@
       const response=await request("wallet_status");
       if(response.test!==true)throw new Error("TEST_MODE_REQUIRED");
       walletAmount.textContent=(Number(response.balance_kopeks)/100).toLocaleString("ru-RU")+" ₽";
+      if(response.club_active===true){
+        const expiry=typeof response.club_expires_at==="string"
+          ? new Date(response.club_expires_at.replace(" ","T")+"Z") : null;
+        const until=expiry&&!Number.isNaN(expiry.getTime())
+          ? " до "+expiry.toLocaleDateString("ru-RU",{timeZone:"UTC",day:"numeric",month:"long",year:"numeric"}) : "";
+        clubText.textContent="Клуб активен"+until+" · скидка 50% на ответы";
+        clubJoin.hidden=true;
+      }else{
+        clubText.textContent="Клуб не подключён · участникам ответы вдвое дешевле";
+        clubJoin.hidden=false;
+      }
+      window.dispatchEvent(new Event("numi:club-status-updated"));
       ledger.replaceChildren();
       const labels={topup:"Пополнение",purchase:"Покупка",refund:"Возврат"};
       for(const item of response.operations||[]){
@@ -452,10 +478,11 @@
       const session=await request("session");
       current=session.authenticated?session.account:null;
       render();
+      window.dispatchEvent(new Event("numi:account-session-changed"));
       if (current) {await updatePurchases();await refreshWalletBadge();} else walletBadge.hidden=true;
       return current;
     } catch (err) {
-      current=null;walletBadge.hidden=true;render();return null;
+      current=null;walletBadge.hidden=true;render();window.dispatchEvent(new Event("numi:account-session-changed"));return null;
     }
   }
   function render() {
@@ -551,6 +578,7 @@
       choose("login");
       render();
       window.dispatchEvent(new Event("numi:account-logged-out"));
+      window.dispatchEvent(new Event("numi:account-session-changed"));
       if(isTelegram() && typeof window.Telegram?.WebApp?.close==="function") {
         window.Telegram.WebApp.close();
       } else if(!isTelegram() && dialog.open) {
@@ -674,6 +702,7 @@
       document.getElementById("numi-telegram-email-linked").hidden=!linked;
       if(linked){setEmailForm.hidden=true;mergeForm.hidden=true;}
       render();
+      window.dispatchEvent(new Event("numi:account-session-changed"));
       void updatePurchases();
       void refreshWalletBadge();
     }).catch(()=>{
