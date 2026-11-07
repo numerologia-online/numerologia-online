@@ -154,10 +154,24 @@ function naRealWalletStatus(PDO $db,array $account): array {
         'club_active'=>naRealWalletHasAccess($db,$account,'club_month','club'),
         'operations'=>$q->fetchAll()];
 }
+/**
+ * At the current stage only a verified account email is accepted as fiscal
+ * contact. Telegram-only users require a verified contact collection flow
+ * before live payment activation; do not silently invent an email.
+ */
+function naRealWalletRequireReceiptContact(PDO $db,array $account): string {
+    $q=$db->prepare('SELECT email,email_verified_at FROM numi_accounts WHERE id=? LIMIT 1');
+    $q->execute([$account['id']]);$row=$q->fetch();
+    if(!$row || !$row['email_verified_at'] || !is_string($row['email'])
+        || filter_var($row['email'],FILTER_VALIDATE_EMAIL)===false)
+        throw new RuntimeException('REAL_FISCAL_CONTACT_REQUIRED');
+    return $row['email'];
+}
 function naRealWalletTopupIntent(PDO $db,array $account,array $config,int $rub,string $key): array {
     naRealWalletRequireLive($config);
     if($rub<1 || $rub>100000)throw new InvalidArgumentException('INVALID_TOPUP_AMOUNT');
     $key=naWalletKey($key);
+    naRealWalletRequireReceiptContact($db,$account);
     // Expects schema already installed by CLI. No implicit DDL.
     naRealWalletBalance($db,$account['id']);
     $q=$db->prepare('SELECT id,kopeks,status FROM numi_real_wallet_topups WHERE account_id=? AND request_key=?');
@@ -310,6 +324,7 @@ function naRealWalletQuote(PDO $db,array $account,array $input,callable $materia
 function naRealWalletBuy(PDO $db,array $account,array $config,array $input,string $requestKey,callable $materialReady): array {
     naRealWalletRequireLive($config);
     $requestKey=naWalletKey($requestKey);
+    naRealWalletRequireReceiptContact($db,$account);
     // All schema migrations must have run before any money transaction.
     // Check material presence before the account lock, then again after.
     $pre=naRealWalletQuote($db,$account,$input,$materialReady);
