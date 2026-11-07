@@ -58,11 +58,12 @@ $good=[
     'wallet_mode'=>'live','real_wallet_enabled'=>true,
     'fiscalization_verified'=>true,'refunds_verified'=>true,
     'advance_offset_receipts_verified'=>true,
+    'offset_receipt_worker_verified'=>true,
     'launch_approved'=>true,'provider_test_mode'=>false,
     'shop_id'=>'1234567','secret_key'=>'live_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
 ];
 assertReal(!naRealWalletGate([]),'default fail-closed');
-foreach(['real_wallet_enabled','fiscalization_verified','refunds_verified','advance_offset_receipts_verified','launch_approved'] as $flag){
+foreach(['real_wallet_enabled','fiscalization_verified','refunds_verified','advance_offset_receipts_verified','offset_receipt_worker_verified','launch_approved'] as $flag){
     $bad=$good;$bad[$flag]=false;
     assertReal(!naRealWalletGate($bad),'gate rejects missing '.$flag);
 }
@@ -122,18 +123,32 @@ $pay['receipt_registration']='succeeded';
 assertReal(naRealWalletApplyVerifiedPayment($db,$row,$pay,$good)==='credited','verified receipt credits real money');
 assertReal(naRealWalletApplyVerifiedPayment($db,$row,$pay,$good)==='credited','duplicate provider notification is idempotent');
 assertReal(naRealWalletBalance($db,$accountA)===10000,'only one real credit');
+$qFiscal=$db->prepare("SELECT kind,kopeks,status FROM numi_real_wallet_fiscal_events WHERE reference_id=?");
+$qFiscal->execute([$top['topup_id']]);$receipt=$qFiscal->fetch();
+assertReal($receipt!==false && $receipt['kind']==='advance_in'
+    && (int)$receipt['kopeks']===10000 && $receipt['status']==='verified',
+    'verified payment creates one fiscal advance audit event');
 naRealWalletInvariant($db,$accountA);
 $paid=naRealWalletBuy($db,$accA,$good,$question,'buy-unique-1234567890001',$ready);
 assertReal($paid['price_kopeks']===2000 && $paid['balance_kopeks']===8000,'regular price charged');
-assertReal(naRealWalletHasAccess($db,$accA,'redflag_question','redflag:money:generosity:1986-09-09')===false
-    || $paid['entitlement_id']!==null,'real purchase creates entitlement');
+$canonical=naCatalogResolve($question,false);
+assertReal(naRealWalletHasAccess($db,$accA,'redflag_question',$canonical['resource_id']),
+    'real purchase grants exact selected answer');
+$qFiscal=$db->prepare("SELECT COUNT(*) FROM numi_real_wallet_fiscal_events f
+    JOIN numi_real_wallet_spends s ON s.id=f.reference_id
+    WHERE s.account_id=? AND s.request_key=? AND f.kind='advance_offset'
+      AND f.status='pending' AND f.kopeks=?");
+$qFiscal->execute([$accountA,'buy-unique-1234567890001',2000]);
+assertReal((int)$qFiscal->fetchColumn()===1,'purchase records one pending fiscal offset');
 $again=naRealWalletBuy($db,$accA,$good,$question,'buy-unique-1234567890001',$ready);
 assertReal($again['already_purchased']===true && $again['balance_kopeks']===8000,
     'same request cannot double charge');
+$qFiscal->execute([$accountA,'buy-unique-1234567890001',2000]);
+assertReal((int)$qFiscal->fetchColumn()===1,'duplicate purchase cannot duplicate fiscal offset');
 expectReal(fn()=>naRealWalletBuy($db,$accA,$good,['product_code'=>'club_month'],
     'buy-unique-1234567890001',$ready),'REAL_REQUEST_KEY_REUSED');
 expectReal(fn()=>naRealWalletBuy($db,$accA,$good,$question,
-    'buy-unique-another-123456',$ready),'REAL_MATERIAL_NOT_READY'); // already owned quote fails before spending
+    'buy-unique-another-123456',$ready),'REAL_ALREADY_PURCHASED');
 naRealWalletInvariant($db,$accountA);
 // Second payment funds one actual club subscription.
 $top2=naRealWalletTopupIntent($db,$accA,$good,500,'topup-unique-123456789002');
