@@ -1,25 +1,13 @@
 {
   "version": 1,
-  "commit": "6ad7f1198e25f73d2dbcc51bc9f7e410f3e6d142",
-  "description": "Approved yes-no one free answer daily; no Telegram or mailing changes",
+  "commit": "5415a887c5bc79fa3697f7158993e1e71551901d",
+  "description": "Read-only rebaseline: exact live REG.RU Yes/No API equals current GitHub; no other files approved",
   "files": [
     {
       "target": "api/numi-yesno-answer.php",
       "source": "yesno-service/public/numi-yesno-answer.php",
-      "sha1": "0c8dfe2380e1e4fccff2a4c4143a61a4f62da269",
-      "previous_sha1": "b37c381eafe094f7a5d10eff9b936adaa29bf097"
-    },
-    {
-      "target": "moment/yes-no/yes-no.js",
-      "source": "moment/yes-no/yes-no.js",
-      "sha1": "9b86cef3b11f2e6335ed7a3bbd2ee7abf5d6769b",
-      "previous_sha1": "ce6a657d733829045942a77105099869c4bef59e"
-    },
-    {
-      "target": "moment/yes-no/index.html",
-      "source": "moment/yes-no/index.html",
-      "sha1": "9f91757c369de7e9d1d0405f04b8158bce656ae1",
-      "previous_sha1": "517bd5ea24f7e8fd8a4b99c5fd51ea5a0dcb868e"
+      "sha1": "adefaa32abad9e413d6dc0eab3912b87b1ed2688",
+      "previous_sha1": "adefaa32abad9e413d6dc0eab3912b87b1ed2688"
     }
   ]
 }
