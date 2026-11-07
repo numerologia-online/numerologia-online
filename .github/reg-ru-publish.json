@@ -1,45 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "redflag-text-bank.js",
-    "redflag-categories.js",
-    "redflag-feature.js",
-    "app.js",
-    "index.html"
-  ],
-  "expected_sha256": {
-    "redflag-text-bank.js": "a1393839b2837dd420dcd0c309c3366ea0cad9c41f0071cfcf0910712cc8b68a",
-    "redflag-categories.js": "802d6d2d77693b4560bbb747f2fb24500210713035db50c18a6ee414193b847f",
-    "redflag-feature.js": "671dadedff63bfaf0798d08b1afcc3e8571ad59e7ae46ba205736a96fde8277d",
-    "app.js": "9a7eefa610bfd6aa374c584d55be536a435331e9b686436dd98ab4d960b320d4",
-    "index.html": "bf89591ecc85814cfc93cef08cde104739dde6ee822f6f1608238cd63a6ef16c"
-  },
-  "patches": {
-    "redflag-text-bank.js": {
-      "expected_sha256": "a1393839b2837dd420dcd0c309c3366ea0cad9c41f0071cfcf0910712cc8b68a",
-      "before": "./redflag-public-catalog.js?v=20261101fix1",
-      "after": "./redflag-public-catalog.js?v=20261107rftext1"
-    },
-    "redflag-categories.js": {
-      "expected_sha256": "802d6d2d77693b4560bbb747f2fb24500210713035db50c18a6ee414193b847f",
-      "before": "./redflag-text-bank.js?v=20261103romance3661",
-      "after": "./redflag-text-bank.js?v=20261107rftext1"
-    },
-    "redflag-feature.js": {
-      "expected_sha256": "671dadedff63bfaf0798d08b1afcc3e8571ad59e7ae46ba205736a96fde8277d",
-      "before": "./redflag-categories.js?v=20261103romance3661",
-      "after": "./redflag-categories.js?v=20261107rftext1"
-    },
-    "app.js": {
-      "expected_sha256": "9a7eefa610bfd6aa374c584d55be536a435331e9b686436dd98ab4d960b320d4",
-      "before": "./redflag-feature.js?v=store2",
-      "after": "./redflag-feature.js?v=20261107rftext1"
-    },
-    "index.html": {
-      "expected_sha256": "bf89591ecc85814cfc93cef08cde104739dde6ee822f6f1608238cd63a6ef16c",
-      "before": "app.js?v=store2",
-      "after": "app.js?v=20261107rftext1"
-    }
-  },
-  "note": "2026-11-07 owner-approved Red Flag-only cache-bust after successful category text release. Preserve all live files and backups. Exactly one import version replacement per file, no code, prices, DB, payment, or content changes."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-07 Red Flag public category subtitle and five-module cache-bust published successfully with verified REG.RU FTPS backups. Owner-only manual publishing returned to safe read-only mode. No further automatic writes."
 }
