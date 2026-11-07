@@ -141,7 +141,7 @@ jobs:
           try:
             for n in names:
               data=read(n);s=data.decode('utf-8','replace')
-              refs=re.findall(r'(?:redflag-public-catalog|redflag-text-bank|redflag-categories|redflag-feature|app)\\.js\\?v=[A-Za-z0-9-]+',s)
+              refs=[line.strip()[:220] for line in s.splitlines() if any((dep+'.js?v=') in line for dep in ('redflag-public-catalog','redflag-text-bank','redflag-categories','redflag-feature','app'))][:12]
               print('RF_LIVE_MODULE',json.dumps({'file':n,'sha256':hashlib.sha256(data).hexdigest(),'old': 'Качели, контроль, давление и границы' in s,'new':'Где забота, а где контроль и манипуляции?' in s,'dependencies':refs[:12]},ensure_ascii=False),flush=True)
           finally:
             ftp.quit()
