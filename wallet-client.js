@@ -48,7 +48,7 @@ export async function showInlinePurchase(item,container,onMaterial){
   try{quote=await walletRequest("wallet_quote",{item});}catch(e){explain(container,e);return;}
   if(quote.test!==true){note(container,"Покупка пока недоступна.");return;}
   if(quote.owned===true&&quote.entitlement_id){
-    try{const material=await walletMaterial(quote.entitlement_id);onMaterial(material);}catch(e){explain(container,e);}
+    try{const material=await walletMaterial(quote.entitlement_id);onMaterial(material,quote.entitlement_id);}catch(e){explain(container,e);}
     return;
   }
   if(quote.member_included===true){
@@ -63,7 +63,7 @@ export async function showInlinePurchase(item,container,onMaterial){
     action(container,"Пополнить баланс",openAccount);return;
   }
   container.replaceChildren(el("p","Стоимость ответа: "+rub(amount)+"."));
-  action(container,"Открыть за "+rub(amount),async function(){
+  action(container,(quote.kind==="subscription"?"Подключить подписку за ":"Открыть за ")+rub(amount),async function(){
     this.disabled=true;
     const id=keyFor(item);
     let key=pending.get(id);
@@ -75,7 +75,7 @@ export async function showInlinePurchase(item,container,onMaterial){
       window.dispatchEvent(new Event("numi:wallet-updated"));
       const material=await walletMaterial(result.entitlement_id);
       pending.delete(id);
-      onMaterial(material);
+      onMaterial(material,result.entitlement_id);
     }catch(e){
       explain(container,e);
       // On ambiguous failure, preserve idempotency key to prevent duplicate charges.
