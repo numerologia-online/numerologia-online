@@ -12,7 +12,7 @@ function naWalletAllowed(?array $account, array $config): bool {
     return $account !== null
         && naStoreEnabled($config)
         && ($config['store_wallet_test_enabled'] ?? false) === true
-        && (naTestOwner($account) || in_array($account['id'], $config['store_test_account_ids'] ?? [], true));
+        && naTestOwner($account); // Sandbox pilot: verified owner ONLY, never store buyer allowlist.
 }
 
 function naWalletSchema(PDO $db): void {
