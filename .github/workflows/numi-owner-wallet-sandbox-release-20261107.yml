@@ -1,9 +1,12 @@
 name: Release guarded owner-only TEST wallet to REG.RU (2026-11-07)
 on:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/numi-owner-wallet-sandbox-release-20261107.yml
+  workflow_dispatch:
+    inputs:
+      confirm_test_only:
+        description: 'Подтверждаю запуск ТОЛЬКО тестового кошелька владельца на REG.RU'
+        type: boolean
+        required: true
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -11,7 +14,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   release:
-    if: github.event.head_commit.message == 'Release owner-only sandbox wallet 2026-11-07'
+    if: github.event_name == 'workflow_dispatch' && inputs.confirm_test_only == true
     runs-on: ubuntu-24.04
     timeout-minutes: 9
     steps:
