@@ -1,5 +1,17 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-05: All 11 questions (free and paid) in six unfinished Red Flag groups are visibly marked 'Скоро' and disabled. Money and Love untouched. Mobile browser preview passed across all 8 groups; REG.RU three-file patch backed up and checksum-verified. No further auto-publication."
+  "mode": "publish",
+  "files": [
+    "redflag-public-catalog.js"
+  ],
+  "expected_sha256": {
+    "redflag-public-catalog.js": "a2776eb8d7defbb1e733364fd8e508025eddee293e1088ec3e20b3e24ddc2549"
+  },
+  "patches": {
+    "redflag-public-catalog.js": {
+      "before": "Качели, контроль, давление и границы",
+      "after": "Где забота, а где контроль и манипуляции?",
+      "expected_sha256": "a2776eb8d7defbb1e733364fd8e508025eddee293e1088ec3e20b3e24ddc2549"
+    }
+  },
+  "note": "Owner-approved single public description text change in Red Flag categories. Must stop on live version mismatch, back up original and verify upload. No private content, payments or account files."
 }
