@@ -38,6 +38,22 @@ function naSubscriptionList(PDO $db,array $account,array $config): array {
     naSubscriptionSchema($db);$prefs=$db->prepare('SELECT product_code,auto_renew,cancelled_at FROM numi_subscription_settings WHERE account_id=?');$prefs->execute([$account['id']]);$by=[];foreach($prefs->fetchAll()as$p)$by[$p['product_code']]=$p;
     return array_map(function($p)use($by,$config){$setting=$by[$p['product_code']]??[];$enabled=(bool)($setting['auto_renew']??false);return $p+['status'=>naSubscriptionState($p['expires_at']),'auto_renew'=>$enabled,'renewal'=>$enabled?'provider':'manual','processing_enabled'=>($config['store_recurring_test_enabled']??false)===true,'cancelled_at'=>$setting['cancelled_at']??null];},$periods);
 }
+/** Merge active subscription records by entitlements; never inherit recurring consent silently. */
+function naSubscriptionMergeAccounts(PDO $db,string $from,string $to): void {
+    if($from===$to)return;
+    $q=$db->prepare('SELECT product_code,source_order_id FROM numi_subscription_settings WHERE account_id=? FOR UPDATE');
+    $q->execute([$from]);
+    foreach($q->fetchAll() as $setting){
+        if(!naSubscriptionCode($setting['product_code']))continue;
+        $db->prepare('INSERT IGNORE INTO numi_subscription_settings(account_id,product_code,auto_renew,source_order_id) VALUES(?,?,0,?)')
+            ->execute([$to,$setting['product_code'],$setting['source_order_id']]);
+        // After joining identities, explicit new consent is required for any future auto-payment.
+        $db->prepare('UPDATE numi_subscription_settings SET auto_renew=0,payment_method_id=NULL,
+                consent_at=NULL,cancelled_at=UTC_TIMESTAMP() WHERE account_id=? AND product_code=?')
+            ->execute([$to,$setting['product_code']]);
+    }
+    $db->prepare('DELETE FROM numi_subscription_settings WHERE account_id=?')->execute([$from]);
+}
 function naSubscriptionCancel(PDO $db,array $account,mixed $code): void {
     if(!naSubscriptionCode($code))throw new InvalidArgumentException('INVALID_SUBSCRIPTION');
     naSubscriptionSchema($db);
