@@ -23,10 +23,12 @@ $accountB='00000000-0000-4000-8000-000000000102';
 $accountC='00000000-0000-4000-8000-000000000103';
 $db->exec("CREATE TABLE IF NOT EXISTS numi_accounts(
     id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
-    email VARCHAR(191) NULL
+    email VARCHAR(191) NULL,
+    email_verified_at DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-foreach([$accountA,$accountB,$accountC] as $id)
-    $db->prepare('INSERT INTO numi_accounts(id) VALUES(?)')->execute([$id]);
+foreach([$accountA,$accountB,$accountC] as $i=>$id)
+    $db->prepare('INSERT INTO numi_accounts(id,email,email_verified_at) VALUES(?,?,UTC_TIMESTAMP())')
+       ->execute([$id,'verified'.($i+1).'@example.test']);
 $db->exec("CREATE TABLE numi_orders(
     id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
     account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
@@ -72,6 +74,10 @@ assertReal(!naRealWalletGate($bad),'test key cannot enable real funds');
 $bad=$good;$bad['provider_test_mode']=true;
 assertReal(!naRealWalletGate($bad),'sandbox provider cannot enable real funds');
 expectReal(fn()=>naRealWalletTopupIntent($db,$accA,[],100,'request-key-123456789'), 'REAL_PAYMENTS_DISABLED');
+$db->prepare('UPDATE numi_accounts SET email_verified_at=NULL WHERE id=?')->execute([$accountA]);
+expectReal(fn()=>naRealWalletTopupIntent($db,$accA,$good,100,'contact-required-123456789'),
+    'REAL_FISCAL_CONTACT_REQUIRED');
+$db->prepare('UPDATE numi_accounts SET email_verified_at=UTC_TIMESTAMP() WHERE id=?')->execute([$accountA]);
 // Test payment and entitlement intentionally belong to TEST tables; must not leak into real status.
 $db->prepare("INSERT INTO numi_wallet_balances(account_id,kopeks) VALUES(?,?)")->execute([$accountA,20000]);
 $db->prepare("INSERT INTO numi_wallet_ledger(id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks)
