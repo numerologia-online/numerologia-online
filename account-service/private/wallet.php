@@ -131,12 +131,25 @@ function naWalletBalance(PDO $db, string $accountId, bool $lock=false): int {
     return (int)$q->fetchColumn();
 }
 
+/** Current CLUB access is derived only from paid active entitlements, never from UI state. */
+function naWalletClubStatus(PDO $db,array $account): array {
+    $active=naCatalogHasAccess($db,$account,'club_month','club');
+    if(!$active)return ['club_active'=>false,'club_expires_at'=>null];
+    $q=$db->prepare("SELECT MAX(e.expires_at) FROM numi_entitlements e
+        JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
+        WHERE e.account_id=? AND e.product_code='club_month' AND e.resource_id='club'
+        AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
+        AND o.status='paid' AND o.verified_at IS NOT NULL");
+    $q->execute([$account['id']]);
+    return ['club_active'=>true,'club_expires_at'=>$q->fetchColumn()?:null];
+}
+
 function naWalletStatus(PDO $db,array $account): never {
     naWalletSchema($db);
     $balance=naWalletBalance($db,$account['id']);
     $q=$db->prepare('SELECT kind,delta_kopeks,balance_after_kopeks,created_at FROM numi_wallet_ledger WHERE account_id=? ORDER BY created_at DESC,id DESC LIMIT 30');
     $q->execute([$account['id']]);
-    naReply(200,['ok'=>true,'test'=>true,'currency'=>'RUB','balance_kopeks'=>$balance,'operations'=>$q->fetchAll()]);
+    naReply(200,array_merge(['ok'=>true,'test'=>true,'currency'=>'RUB','balance_kopeks'=>$balance,'operations'=>$q->fetchAll()],naWalletClubStatus($db,$account)));
 }
 
 function naWalletTopup(PDO $db,array $account,array $config,array $body): never {
@@ -250,6 +263,10 @@ function naWalletQuote(PDO $db,array $account,array $body): never {
         function($item){try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}
             catch(Throwable $e){return false;}});
     $item=$quote['items'][0];
+    // These prices are independently computed by the server for marketing display only.
+    // The actual debit below always recomputes the effective price and entitlements.
+    $regular=naCatalogResolve($input,false);
+    $member=naCatalogResolve($input,true);
     $entitlement=null;
     if($item['access_active'] && !$item['member_included'] && $item['kind']!=='subscription'){
         $q=$db->prepare("SELECT e.id FROM numi_entitlements e
@@ -264,6 +281,10 @@ function naWalletQuote(PDO $db,array $account,array $body): never {
     naReply(200,['ok'=>true,'test'=>true,'currency'=>'RUB',
         'balance_kopeks'=>naWalletBalance($db,$account['id']),
         'price_kopeks'=>$item['price_kopeks'],
+        'regular_price_kopeks'=>$regular['price_kopeks'],
+        'club_price_kopeks'=>$member['price_kopeks'],
+        'club_active'=>$club,
+        'club_expires_at'=>$club?naWalletClubStatus($db,$account)['club_expires_at']:null,
         'product_code'=>$item['product_code'],'kind'=>$item['kind'],
         'ready'=>($item['sale_ready']===true),
         'owned'=>$item['access_active']===true,
