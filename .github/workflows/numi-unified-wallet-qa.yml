@@ -1,0 +1,38 @@
+name: Verify unified wallet without publishing or charging
+on:
+  push:
+    branches:
+      - feature/unified-wallet-direct-access-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and existing regression tests
+        run: |
+          set -euo pipefail
+          for file in account-service/private/{core,wallet,store,fulfillment,subscriptions}.php; do php -l "$file"; done
+          node --check account-browser.js
+          node --check app.js
+          node --check store-browser.js
+          node --input-type=module --check < wallet-client.js
+          node --input-type=module --check < store-entry.js
+          node --input-type=module --check < redflag-feature.js
+          node --check moment/yes-no/yes-no.js
+          node --input-type=module --check < shared-offer.js
+          php account-service/tests/materials.php
+          php account-service/tests/store.php
+          php account-service/tests/subscriptions.php
+      - name: No cart on main homepage
+        run: |
+          set -euo pipefail
+          ! grep -q 'src="store-browser.js' index.html
+          ! grep -q 'Покупки и корзина' store-entry.js
+          grep -q 'wallet_quote' account-service/private/core.php
+          grep -q 'showInlinePurchase' redflag-feature.js
+          grep -q 'showInlinePurchase' moment/yes-no/yes-no.js
+          echo UNIFIED_WALLET_QA_OK_NO_DEPLOY
