@@ -1,4 +1,4 @@
-import { openStore } from "./store-entry.js?v=2";
+import { openStore } from "./store-entry.js?v=wallet-direct1";
 /* Один общий шаблон предложения из полного разбора.
    HTML берём из pro/index.html только по запросу; стили тоже загружаются только
    при открытии. Никакой платёж или предоставление доступа этим кодом не выполняется. */
@@ -42,7 +42,7 @@ async function prepareDialog() {
   const note = findNode(dialog, "#pro-paywall-checkout-note");
   const checkout=async plan=>{
     try { await openStore(dialog._offerConfig.subject,plan); }
-    catch (_) { note.textContent="Не удалось открыть корзину. Попробуйте ещё раз.";note.hidden=false; }
+    catch (_) { note.textContent="Не удалось открыть выбранный материал. Попробуйте ещё раз.";note.hidden=false; }
   };
   findNode(dialog,"#pro-paywall-one-time").addEventListener("click",()=>checkout("once"));
   findNode(dialog,"#pro-paywall-club").addEventListener("click",()=>checkout("club"));
@@ -84,7 +84,7 @@ export async function openSharedOffer({
   findNode(dialog, ".pro-paywall-book-art-club span").textContent = isQuestion ? "ВАШ ОТВЕТ" : "ЛИЧНЫЙ РАЗБОР";
   findNode(dialog, ".pro-paywall-compare").setAttribute("aria-label", "Варианты покупки: " + product);
   findNode(dialog, ".pro-paywall-billing-summary").textContent =
-    subscriptionOnly ? "Клуб " + clubMonthly + " ₽/мес. Материалы доступны во время подписки." : "Скидка на " + item + " действует после подтверждённой активации клуба. Окончательная сумма указана в корзине.";
+    subscriptionOnly ? "Клуб " + clubMonthly + " ₽/мес. Материалы доступны во время подписки." : "Скидка на " + item + " действует после подтверждённой активации клуба. Точная сумма будет показана перед списанием с баланса.";
   const bigReportRow = [...dialog.querySelectorAll(".pro-paywall-matrix-table tbody tr")]
     .find(row => row.querySelector('th[scope="row"]')?.textContent?.includes("Большие разборы"));
   if (bigReportRow) {
