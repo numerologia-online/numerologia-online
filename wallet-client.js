@@ -40,6 +40,34 @@ function explain(container,err){
   }
   note(container,"Не получилось открыть ответ. Повторите попытку: повторное нажатие не создаст новое списание.");
 }
+// A comparison price is marketing information only; wallet_buy prices independently.
+function clubOffer(container,quote,item,onMaterial){
+  const regular=Number(quote.regular_price_kopeks);
+  const club=Number(quote.club_price_kopeks);
+  if(quote.club_active===true||quote.kind==="subscription"
+    ||!Number.isSafeInteger(regular)||!Number.isSafeInteger(club)||club<=0||regular<=club)return;
+  const subscription=Number(quote.club_subscription_price_kopeks);
+  const message="С клубом этот материал стоит "+rub(club)+
+    (Number.isSafeInteger(subscription)&&subscription>0
+      ? ". Клуб — "+rub(subscription)+"/мес.":".");
+  const hint=el("p",message);
+  hint.style.cssText="margin:7px 0 3px;font:13px/1.5 system-ui;color:#5e6963";
+  container.append(hint);
+  const join=action(container,"Вступить в клуб",async()=>{
+    join.disabled=true;
+    try{
+      const {openStore}=await import("/store-entry.js?v=wallet-direct1");
+      await openStore({product_code:"club_month"});
+    }catch(_){
+      hint.textContent="Не удалось открыть подписку. Попробуйте ещё раз.";
+    }finally{join.disabled=false;}
+  });
+  join.style.cssText="background:transparent;border:0;padding:3px 0;color:#245f47;text-decoration:underline;font:600 13px system-ui;cursor:pointer";
+  // Reprice only after the subscription was confirmed, without closing this question.
+  window.addEventListener("numi:club-activated",()=>{
+    if(container.isConnected)void showInlinePurchase(item,container,onMaterial);
+  },{once:true});
+}
 function keyFor(item){return JSON.stringify(item);}
 export async function showInlinePurchase(item,container,onMaterial){
   if(!container||typeof onMaterial!=="function")throw new Error("INVALID_PURCHASE_TARGET");
@@ -60,10 +88,16 @@ export async function showInlinePurchase(item,container,onMaterial){
   if(!Number.isSafeInteger(amount)||amount<=0){note(container,"Не удалось проверить стоимость.");return;}
   if(Number(quote.balance_kopeks)<amount){
     note(container,"Для ответа нужно "+rub(amount)+". На балансе "+rub(quote.balance_kopeks)+".");
-    action(container,"Пополнить баланс",openAccount);return;
+    action(container,"Пополнить баланс",openAccount);
+    clubOffer(container,quote,item,onMaterial);
+    return;
   }
-  container.replaceChildren(el("p","Стоимость ответа: "+rub(amount)+"."));
-  action(container,(quote.kind==="subscription"?"Подключить подписку за ":"Открыть за ")+rub(amount),async function(){
+  const regular=Number(quote.regular_price_kopeks);
+  const isClubDeal=quote.club_active===true&&regular>amount;
+  container.replaceChildren(el("p",isClubDeal
+    ? "Ваша цена по клубу: "+rub(amount)+" (обычно "+rub(regular)+")."
+    : "Стоимость ответа: "+rub(amount)+"."));
+  const buyButton=action(container,(quote.kind==="subscription"?"Подключить подписку за ":"Открыть за ")+rub(amount),async function(){
     this.disabled=true;
     const id=keyFor(item);
     let key=pending.get(id);
@@ -84,6 +118,7 @@ export async function showInlinePurchase(item,container,onMaterial){
       }
     }
   });
+  clubOffer(container,quote,item,onMaterial);
 }
 export function renderInlineMaterial(container,material){
   container.replaceChildren();
