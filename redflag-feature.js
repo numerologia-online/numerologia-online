@@ -304,6 +304,35 @@ const ensureAnswer = (question, state) => {
 };
 
 // Prices are explicit pairs: keep the agreed 39/19 and 79/39 rounding.
+// Do not infer club status from a badge, email, or local storage.
+let activeClubMember=null; // null = guest / status not yet verified.
+async function refreshClubPrices(){
+  let next=null;
+  try{
+    const response=await fetch("/api/numi-account.php",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"wallet_status"})
+    });
+    if(response.ok){
+      const data=await response.json();
+      if(data.ok===true&&data.test===true)next=data.club_active===true;
+    }
+  }catch(_){/* A missing session must never advertise membership as active. */}
+  activeClubMember=next;
+  // Update the existing small price badges in place; preserve expanded questions.
+  categoriesRoot.querySelectorAll(".redflag-price-pair").forEach(pair=>{
+    const regular=pair.querySelector(".redflag-question-price");
+    const caption=pair.querySelector(".redflag-subscription-price span");
+    if(caption)caption.textContent=activeClubMember===true?"Ваша цена":"По подписке";
+    if(regular&&regular.dataset.regular)regular.textContent=
+      (activeClubMember===true?"Обычно ":"")+regular.dataset.regular+" ₽";
+  });
+}
+window.addEventListener("numi:wallet-updated",()=>{void refreshClubPrices();});
+window.addEventListener("numi:account-session-changed",()=>{void refreshClubPrices();});
+void refreshClubPrices();
+
 const REDFLAG_PRICE_PAIRS = {
   10: { regular: 20, subscription: 10 },
   29: { regular: 39, subscription: 19 },
@@ -363,13 +392,15 @@ const fillQuestionButton = (button, question, showExpand = false) => {
     pair.className = "redflag-price-pair";
     const price = document.createElement("span");
     price.className = "redflag-question-price";
-    price.textContent = (rates ? rates.regular : question.priceRub) + " ₽";
+    price.dataset.regular = String(rates ? rates.regular : question.priceRub);
+    price.textContent = (activeClubMember===true ? "Обычно " : "")+
+      price.dataset.regular+" ₽";
     pair.append(price);
     if (rates) {
       const subscription = document.createElement("span");
       subscription.className = "redflag-subscription-price";
       const caption = document.createElement("span");
-      caption.textContent = "По подписке";
+      caption.textContent = activeClubMember===true ? "Ваша цена" : "По подписке";
       const amount = document.createElement("strong");
       amount.textContent = rates.subscription + " ₽";
       subscription.append(caption, amount);
