@@ -21,7 +21,7 @@ function action(container,label,callback){
   b.addEventListener("click",callback);container.append(b);return b;
 }
 function note(container,message){container.replaceChildren(el("p",message));}
-function openAccount(){document.querySelector('[data-account-open="profile"]')?.click();}
+function openAccount(){const button=document.querySelector('[data-account-open="profile"]');if(button)button.click();else location.assign("/?account=1");}
 function explain(container,err){
   const error=String(err?.message||"");
   if(error==="LOGIN_REQUIRED"){
