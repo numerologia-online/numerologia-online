@@ -51,9 +51,12 @@
       button.onclick=async()=>{
         if(busy)return;busy=true;button.disabled=true;
         try{
-          const key=crypto.randomUUID();
+          const pendingKey='numi-wallet-request-'+amount;
+          let key;
+          try {const saved=sessionStorage.getItem(pendingKey);key=saved&&/^[a-f0-9-]{36}$/i.test(saved)?saved:crypto.randomUUID();sessionStorage.setItem(pendingKey,key);}
+          catch(_){key=crypto.randomUUID();}
           const data=await api('wallet_topup',{amount_rub:amount,request_key:key});
-          if(data.credited){await walletRefresh();status.textContent='Тестовый баланс пополнен.';return;}
+          if(data.credited){try{sessionStorage.removeItem(pendingKey);}catch(_){}await walletRefresh();status.textContent='Тестовый баланс пополнен.';return;}
           const url=new URL(data.confirmation_url);
           if(url.protocol!=='https:'||!['yookassa.ru','yoomoney.ru'].includes(url.hostname))throw new Error('INVALID_CONFIRMATION_URL');
           try{sessionStorage.setItem('numi-wallet-topup-pending',data.topup_id);}catch(_){}
@@ -215,7 +218,7 @@
         await walletRefresh();
         status.textContent=result.status==='credited'?'Тестовое пополнение подтверждено. Баланс обновлён.':'Платёж пока не завершён.';
         if(result.status==='credited'||result.status==='canceled'){
-          try{sessionStorage.removeItem('numi-wallet-topup-pending');}catch(_){}
+          try{sessionStorage.removeItem('numi-wallet-topup-pending');for(const n of [100,300,500])sessionStorage.removeItem('numi-wallet-request-'+n);}catch(_){}
         }
       }catch(e){error(e);}
       const u=new URL(location.href);u.searchParams.delete('wallet_topup');history.replaceState(null,'',u.pathname+u.search+u.hash);
