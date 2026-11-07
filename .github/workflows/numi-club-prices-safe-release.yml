@@ -25,7 +25,7 @@ jobs:
           fetch-depth: 0
       - name: Syntax, reviewed source, no shopping cart
         env:
-          APPROVED_SOURCE_SHA: f9b2275c7207de0b5322228d82a59a568f6be5aa
+          APPROVED_SOURCE_SHA: 902e52f9594a46bb2b28a7465d90550a20877ed8
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$APPROVED_SOURCE_SHA"
@@ -45,7 +45,7 @@ jobs:
           echo MEMBER_PRICING_CODE_APPROVED_NO_CART
       - name: Guarded exact-baseline REG.RU publication, backup, HTTPS and API verification
         env:
-          APPROVED_SOURCE_SHA: f9b2275c7207de0b5322228d82a59a568f6be5aa
+          APPROVED_SOURCE_SHA: 902e52f9594a46bb2b28a7465d90550a20877ed8
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: python3 -u scripts/deploy-club-prices-20261107.py
