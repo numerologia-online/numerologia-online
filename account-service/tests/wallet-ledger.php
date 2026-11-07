@@ -61,4 +61,48 @@ try{naWalletMergeAccounts($db,$source,$dest);}
 catch(RuntimeException $e){$rejected=$e->getMessage()==='WALLET_ALREADY_MERGED';}
 $db->rollBack();
 check($rejected,'duplicate account merge rejected');
+
+/* The two displayed prices must match the entitlement-dependent server quote. */
+$question=['product_code'=>'redflag_question','category'=>'money',
+  'question_id'=>'generosity','birth_date'=>'1986-09-09'];
+check(naCatalogResolve($question,false)['price_kopeks']===2000,'regular Red Flag price 20 RUB');
+check(naCatalogResolve($question,true)['price_kopeks']===1000,'active member price 10 RUB');
+check(naCatalogResolve(['product_code'=>'club_month'],false)['price_kopeks']===49000,
+  'club membership price comes from catalog');
+$db->exec("CREATE TABLE numi_orders (
+ id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+ account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+ status VARCHAR(30) NOT NULL,
+ verified_at DATETIME NULL
+) ENGINE=InnoDB");
+$db->exec("CREATE TABLE numi_entitlements (
+ id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+ account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+ order_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+ product_code VARCHAR(64) NOT NULL,resource_id VARCHAR(128) NOT NULL,
+ status VARCHAR(30) NOT NULL,expires_at DATETIME NULL
+) ENGINE=InnoDB");
+check(naWalletClubStatus($db,['id'=>$dest])['club_active']===false,'no club without paid entitlement');
+$clubOrder='00000000-0000-4000-8000-000000000051';
+$db->prepare("INSERT INTO numi_orders(id,account_id,status,verified_at) VALUES(?,?,'paid',UTC_TIMESTAMP())")
+    ->execute([$clubOrder,$dest]);
+$db->prepare("INSERT INTO numi_entitlements(id,account_id,order_id,product_code,resource_id,status,expires_at)
+ VALUES(?,?,?,'club_month','club','active',DATE_ADD(UTC_TIMESTAMP(),INTERVAL 30 DAY))")
+    ->execute(['00000000-0000-4000-8000-000000000052',$dest,$clubOrder]);
+$active=naWalletClubStatus($db,['id'=>$dest]);
+check($active['club_active']===true && is_string($active['club_expires_at']),
+    'verified active club and expiry shown');
+check(naWalletClubStatus($db,['id'=>$source])['club_active']===false,
+    'club is never borrowed by another account');
+$db->prepare("UPDATE numi_entitlements SET expires_at=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 SECOND) WHERE order_id=?")
+    ->execute([$clubOrder]);
+check(naWalletClubStatus($db,['id'=>$dest])['club_active']===false,
+    'expired club cannot receive discount');
+$db->prepare("UPDATE numi_entitlements SET expires_at=DATE_ADD(UTC_TIMESTAMP(),INTERVAL 30 DAY) WHERE order_id=?")
+    ->execute([$clubOrder]);
+$db->prepare("UPDATE numi_orders SET verified_at=NULL WHERE id=?")->execute([$clubOrder]);
+check(naWalletClubStatus($db,['id'=>$dest])['club_active']===false,
+    'unverified payment cannot activate discount');
+echo "CLUB_PRICING_ENTITLEMENT_TESTS_PASS\n";
+
 echo "WALLET_LEDGER_MERGE_TESTS_PASS\n";
