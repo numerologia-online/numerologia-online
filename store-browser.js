@@ -11,6 +11,16 @@
   const title=node('h2','Покупки и корзина');title.id='numi-store-title';
   const close=node('button','Закрыть');close.type='button';close.onclick=()=>dialog.close();
   const status=node('p');status.setAttribute('role','status');
+  // Sandbox-only wallet: never displays for normal clients until its private flag is enabled.
+  const walletPanel=node('section');walletPanel.id='numi-wallet-panel';walletPanel.hidden=true;
+  const walletHeading=node('h3','Мой баланс');const walletAmount=node('strong','0 ₽');
+  walletAmount.setAttribute('aria-live','polite');
+  const walletHelp=node('p','Пополнение в тестовом режиме. Настоящие деньги не списываются.');
+  const walletActions=node('div');
+  const walletHistory=node('details'),walletSummary=node('summary','История операций'),walletList=node('ul');
+  walletHistory.append(walletSummary,walletList);
+  walletPanel.append(walletHeading,walletAmount,walletHelp,walletActions,walletHistory);
+  let walletAvailable=false,walletBalance=0;
   const form=node('form'),select=node('select');select.setAttribute('aria-label','Товар');
   const date=node('input');date.type='date';date.setAttribute('aria-label','Дата рождения');
   const second=node('input');second.type='date';second.setAttribute('aria-label','Дата рождения партнёра');
@@ -28,9 +38,44 @@
   const materialPanel=node('section');materialPanel.setAttribute('aria-label','Приобретённый материал');
   const history=node('section');history.setAttribute('aria-label','История заказов и подписки');
   form.append(select,date,second,year,question,time,add);
-  dialog.append(close,title,status,form,list,total,notice,consent,signIn,confirm,refresh,history,materialPanel);document.body.append(dialog);
+  dialog.append(close,title,status,walletPanel,form,list,total,notice,consent,signIn,confirm,refresh,history,materialPanel);document.body.append(dialog);
   const css=node('style');css.textContent=`#numi-store{width:min(560px,calc(100vw - 32px));max-height:90dvh;overflow:auto;box-sizing:border-box;border:1px solid #c7bfb6;border-radius:18px;padding:22px;background:#f6f3ef;color:#343a35;font:15px/1.5 system-ui}#numi-store::backdrop{background:#17211bcc}#numi-store h2{font:28px Georgia,serif}#numi-store form{display:grid;gap:10px}#numi-store select,#numi-store input{width:100%;box-sizing:border-box;padding:10px;font:16px system-ui;background:white;color:#343a35;border:1px solid #a9aaa2;border-radius:8px}#numi-store button{padding:10px 14px;margin:5px 4px 5px 0;border:1px solid #6a7469;border-radius:8px;background:#343e35;color:white;font:inherit;cursor:pointer}#numi-store button:disabled{opacity:.5;cursor:default}#numi-store ul{list-style:none;padding:0}#numi-store li{padding:12px 0;border-bottom:1px solid #d8d4cc}#numi-store [hidden]{display:none!important}`;document.head.append(css);
   const label=code=>catalog?.products.find(p=>p.code===code)?.title||code;
+  function walletRender(){
+    walletPanel.hidden=!walletAvailable;
+    walletAmount.textContent=money(walletBalance);
+    walletActions.replaceChildren();
+    if(!walletAvailable)return;
+    for(const amount of [100,300,500]){
+      const button=node('button','Пополнить на '+amount+' ₽');button.type='button';button.disabled=busy;
+      button.onclick=async()=>{
+        if(busy)return;busy=true;button.disabled=true;
+        try{
+          const key=crypto.randomUUID();
+          const data=await api('wallet_topup',{amount_rub:amount,request_key:key});
+          if(data.credited){await walletRefresh();status.textContent='Тестовый баланс пополнен.';return;}
+          const url=new URL(data.confirmation_url);
+          if(url.protocol!=='https:'||!['yookassa.ru','yoomoney.ru'].includes(url.hostname))throw new Error('INVALID_CONFIRMATION_URL');
+          try{sessionStorage.setItem('numi-wallet-topup-pending',data.topup_id);}catch(_){}
+          location.assign(url.href);
+        }catch(e){error(e);}finally{busy=false;button.disabled=false;}
+      };
+      walletActions.append(button);
+    }
+  }
+  async function walletRefresh(){
+    try{
+      const data=await api('wallet_status');
+      if(data.test!==true)throw new Error('TEST_MODE_REQUIRED');
+      walletAvailable=true;walletBalance=Number(data.balance_kopeks)||0;
+      walletList.replaceChildren();
+      for(const op of data.operations||[]){
+        const row=node('li',((Number(op.delta_kopeks)>=0)?'+':'')+money(Number(op.delta_kopeks))+' · '+op.created_at);
+        walletList.append(row);
+      }
+    }catch(e){walletAvailable=false;walletBalance=0;}
+    walletRender();render();
+  }
   async function api(action,extra={}) {
     const response=await fetch(API,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...extra})});
     const data=await response.json();
@@ -60,6 +105,28 @@
         const read=node('button','Открыть ответ, включённый в клуб');read.type='button';read.onclick=async()=>{
           try{const response=await fetch('/api/numi-yesno-answer.php',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:item.question_id,time:item.question_time})});const data=await response.json();if(!response.ok||!data.ok||typeof data.answer!=='string')throw new Error(data.error||'ANSWER_UNAVAILABLE');materialPanel.replaceChildren(node('h3','Да или нет?'),node('p',data.answer));}catch(e){error(e);}
         };row.append(read);
+      }
+      if(walletAvailable && quote?.checkout_enabled===true && priced?.sale_ready===true
+          && !priced?.access_active && ['redflag_question','yesno_question'].includes(item.product_code)){
+        const pay=node('button','Списать '+money(priced.price_kopeks)+' с баланса и читать');pay.type='button';
+        pay.disabled=busy;
+        pay.onclick=async()=>{
+          if(busy)return;
+          if(walletBalance<Number(priced.price_kopeks)){status.textContent='На балансе недостаточно средств. Пополните его выше.';return;}
+          busy=true;pay.disabled=true;
+          try{
+            const key=crypto.randomUUID();
+            const result=await api('wallet_buy',{item,request_key:key});
+            if(result.test!==true||!result.entitlement_id)throw new Error('INVALID_WALLET_RESULT');
+            walletBalance=Number(result.balance_kopeks)||0;
+            cart.splice(i,1);save();
+            walletRender();
+            await showMaterial(result.entitlement_id);
+            status.textContent='Оплачено с баланса. Ответ открыт ниже.';
+            await walletRefresh();await update();await orders();
+          }catch(e){error(e);}finally{busy=false;render();}
+        };
+        row.append(pay);
       }
       const remove=node('button','Удалить');remove.type='button';remove.onclick=()=>{cart.splice(i,1);save();update();};row.append(remove);list.append(row);
     });
@@ -104,7 +171,7 @@
       }
     }catch(e){if(e.message!=='LOGIN_REQUIRED')error(e);}
   }
-  refresh.onclick=()=>{update();orders();};
+  refresh.onclick=()=>{update();orders();walletRefresh();};
   confirm.onclick=async()=>{
     if(busy||!quote?.checkout_enabled)return;busy=true;render();
     try{
@@ -131,14 +198,28 @@
           &&(!['yesno_question','moment_question'].includes(item.product_code)||item.question_time);
         if(valid&&!cart.some(x=>JSON.stringify(x)===JSON.stringify(item))&&cart.length<20){cart.push(item);save();}
       }
-      await update();await orders();if(options.entitlement_id)await showMaterial(options.entitlement_id);}catch(e){error(e);}
+      await walletRefresh();await update();await orders();if(options.entitlement_id)await showMaterial(options.entitlement_id);}catch(e){error(e);}
   }
   for(const parent of [document.getElementById('account-overview'),document.querySelector('main')]){
     if(!parent)continue;const button=node('button','Покупки и корзина');button.type='button';button.className='account-secondary';button.onclick=open;parent.append(button);
   }
   window.NumiStore=Object.freeze({open});
-  window.addEventListener('numi:account-logged-out',()=>{quote=null;history.replaceChildren();materialPanel.replaceChildren();render();});
+  window.addEventListener('numi:account-logged-out',()=>{quote=null;walletAvailable=false;walletBalance=0;walletRender();history.replaceChildren();materialPanel.replaceChildren();render();});
   if(new URL(location.href).searchParams.get('store')==='1')open();
+  const walletTopup=new URL(location.href).searchParams.get('wallet_topup');
+  if(walletTopup&&/^[a-f0-9-]{36}$/i.test(walletTopup)){
+    open().then(async()=>{
+      try{
+        const result=await api('wallet_sync',{topup_id:walletTopup});
+        await walletRefresh();
+        status.textContent=result.status==='credited'?'Тестовое пополнение подтверждено. Баланс обновлён.':'Платёж пока не завершён.';
+        if(result.status==='credited'||result.status==='canceled'){
+          try{sessionStorage.removeItem('numi-wallet-topup-pending');}catch(_){}
+        }
+      }catch(e){error(e);}
+      const u=new URL(location.href);u.searchParams.delete('wallet_topup');history.replaceState(null,'',u.pathname+u.search+u.hash);
+    });
+  }
   const checkout=new URL(location.href).searchParams.get('checkout');
   if(checkout&&/^[a-f0-9-]{36}$/.test(checkout)){
     open().then(async()=>{try{const result=await api('order_status',{checkout_id:checkout});if(cart.length){const priced=await api('cart_quote',{items:cart});cart=cart.filter((_,i)=>!result.items.some(o=>o.status==='paid'&&o.product_code===priced.items[i].product_code&&o.resource_id===priced.items[i].resource_id));save();}await orders();await update();status.textContent='Статус платежа проверен на сервере. Результат указан в истории заказов.';}catch(e){error(e);}});
