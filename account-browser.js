@@ -618,7 +618,7 @@
         const title=document.createElement("strong");title.textContent=purchase.product_code;
         const detail=document.createElement("small");detail.textContent="Код материала: "+purchase.resource_id;
         item.append(title,detail);
-        if(!purchase.is_test){const read=document.createElement("button");read.type="button";read.textContent="Открыть материал и PDF";read.onclick=async()=>{const {openStore}=await import("/store-entry.js?v=2");await openStore();await window.NumiStore.open({entitlement_id:purchase.entitlement_id});};item.append(read);}
+        if(!purchase.is_test&&purchase.entitlement_id){const read=document.createElement("button");read.type="button";read.textContent="Открыть";read.className="account-secondary";read.onclick=async()=>{try{const {openMaterial}=await import("/store-material.js?v=2");let box=item.querySelector(".numi-purchase-content");if(!box){box=document.createElement("div");box.className="numi-purchase-content";item.append(box);}await openMaterial(box,purchase.entitlement_id);}catch(_){read.textContent="Не удалось открыть. Повторить";}};item.append(read);}
         container.append(item);
       }
       savedPanel.querySelector(".account-empty-state")?.toggleAttribute("hidden",(result.purchases||[]).length>0);
@@ -675,6 +675,7 @@
       if(linked){setEmailForm.hidden=true;mergeForm.hidden=true;}
       render();
       void updatePurchases();
+      void refreshWalletBadge();
     }).catch(()=>{
       current=null;
       render();
