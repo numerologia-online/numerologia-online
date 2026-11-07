@@ -233,6 +233,8 @@ function naWalletBuy(PDO $db,array $account,array $body): never {
         || (int)$item['price_kopeks']<1)
         naReply(409,['ok'=>false,'error'=>'ITEM_NOT_READY']);
     $price=(int)$item['price_kopeks'];
+    // DDL must NEVER run inside a money transaction (MySQL implicit commit).
+    if($item['kind']==='subscription') naSubscriptionSchema($db);
     $db->beginTransaction();
     try {
         $db->prepare('SELECT id FROM numi_accounts WHERE id=? FOR UPDATE')->execute([$account['id']]);
@@ -274,7 +276,6 @@ function naWalletBuy(PDO $db,array $account,array $body): never {
             VALUES(?,?,?,?,?,'active',?)")
             ->execute([$entitlement,$account['id'],$order,$item['product_code'],$item['resource_id'],$expires]);
         if($item['kind']==='subscription'){
-            naSubscriptionSchema($db);
             $db->prepare("INSERT INTO numi_subscription_settings(account_id,product_code,auto_renew,source_order_id)
                 VALUES(?,?,0,?) ON DUPLICATE KEY UPDATE auto_renew=0,
                 payment_method_id=NULL,source_order_id=VALUES(source_order_id)")
