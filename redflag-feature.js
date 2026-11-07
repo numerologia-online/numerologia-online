@@ -2,6 +2,11 @@
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
 import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=20261107rftext1";
 
+// Paid content is rendered as text; do not interpret author-controlled paragraphs as HTML.
+const escapeMarkup = value => String(value??"").replace(/[&<>"']/g,char=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+})[char]);
+
 const home = document.querySelector("#home");
 const redFlag = document.querySelector("#redflag");
 const form = document.querySelector("#redflag-form");
@@ -431,18 +436,18 @@ const createQuestion = (question, state) => {
     <div class="redflag-scales" aria-label="Шкалы ответа">
       ${scales.map(({ label, value }) => `
         <div class="redflag-scale">
-          <div class="redflag-scale-label"><span>${label}</span><strong>${value}/10</strong></div>
+          <div class="redflag-scale-label"><span>${escapeMarkup(label)}</span><strong>${value}/10</strong></div>
           <div class="redflag-scale-track" aria-hidden="true"><i style="width: ${value * 10}%"></i></div>
         </div>`).join("")}
     </div>` : "";
     const verdictMarkup = response.verdict
-      ? `<p class="redflag-verdict">${response.verdict}</p>` : "";
+      ? `<p class="redflag-verdict">${escapeMarkup(response.verdict)}</p>` : "";
     const observationMarkup = response.observation
-      ? `<p class="redflag-observation"><strong>На что смотреть:</strong> ${response.observation}</p>` : "";
+      ? `<p class="redflag-observation"><strong>На что смотреть:</strong> ${escapeMarkup(response.observation)}</p>` : "";
     answer.innerHTML = `
     ${verdictMarkup}
     ${scalesMarkup}
-    ${paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")}
+    ${paragraphs.map((paragraph) => `<p>${escapeMarkup(paragraph)}</p>`).join("")}
     ${observationMarkup}`;
     addRedFlagShare(answer, formatRedFlagMessage(question, response, formattedDate));
   } else if (opened) {
