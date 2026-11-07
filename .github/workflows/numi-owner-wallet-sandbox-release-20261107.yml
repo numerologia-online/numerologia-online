@@ -1,0 +1,36 @@
+name: Release guarded owner-only TEST wallet to REG.RU (2026-11-07)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-owner-wallet-sandbox-release-20261107.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.event.head_commit.message == 'Release owner-only sandbox wallet 2026-11-07'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate minimal PHP and JS before touching live files
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/deploy-owner-wallet-sandbox-20261107.py
+          php -l account-service/private/core.php
+          php -l account-service/private/wallet.php
+          php -l account-service/private/store.php
+          node --check account-browser.js
+          node --check store-browser.js
+          node --input-type=module --check < store-entry.js
+          node --check store-material.js
+          echo WALLET_SOURCE_SYNTAX_OK
+      - name: Guarded FTPS publication and verification; rollback on failure
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+          NUMI_YOOKASSA_TEST_SECRET_KEY_1521071: ${{ secrets.NUMI_YOOKASSA_TEST_SECRET_KEY_1521071 }}
+        run: python3 -u scripts/deploy-owner-wallet-sandbox-20261107.py
