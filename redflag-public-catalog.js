@@ -18,7 +18,7 @@ export const PUBLIC_CATEGORIES = [
     "id": "flags",
     "kicker": "Красные флаги",
     "title": "Красные флаги",
-    "description": "Качели, контроль, давление и границы",
+    "description": "Где забота, а где контроль и манипуляции?",
     "bank": "flags"
   },
   {
