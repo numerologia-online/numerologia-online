@@ -2,7 +2,7 @@ name: Verify unified wallet without publishing or charging
 on:
   push:
     branches:
-      - feature/unified-wallet-direct-access-20261107
+      - feature/club-status-pricing-20261107
   workflow_dispatch:
 permissions:
   contents: read
@@ -53,5 +53,9 @@ jobs:
           ! grep -q 'Покупки и корзина' store-entry.js
           grep -q 'wallet_quote' account-service/private/core.php
           grep -q 'showInlinePurchase' redflag-feature.js
+          grep -q 'club_active' account-service/private/wallet.php
+          grep -q 'CLUB_PRICING_ENTITLEMENT_TESTS_PASS' account-service/tests/wallet-ledger.php
+          grep -q 'Ваша цена' redflag-feature.js
+          grep -q 'Вступить в клуб' wallet-client.js
           grep -q 'showInlinePurchase' moment/yes-no/yes-no.js
           echo UNIFIED_WALLET_QA_OK_NO_DEPLOY
