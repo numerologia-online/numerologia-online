@@ -16,6 +16,7 @@ function naRealWalletGate(array $config): bool {
         && ($config['real_wallet_enabled']??null)===true
         && ($config['fiscalization_verified']??null)===true
         && ($config['refunds_verified']??null)===true
+        && ($config['advance_offset_receipts_verified']??null)===true
         && ($config['launch_approved']??null)===true
         && ($config['provider_test_mode']??null)===false
         && preg_match('/^[0-9]+$/D',(string)($config['shop_id']??''))===1
@@ -142,6 +143,7 @@ function naRealWalletTopupIntent(PDO $db,array $account,array $config,int $rub,s
     if($rub<1 || $rub>100000)throw new InvalidArgumentException('INVALID_TOPUP_AMOUNT');
     $key=naWalletKey($key);
     // Expects schema already installed by CLI. No implicit DDL.
+    naRealWalletBalance($db,$account['id']);
     $q=$db->prepare('SELECT id,kopeks,status FROM numi_real_wallet_topups WHERE account_id=? AND request_key=?');
     $q->execute([$account['id'],$key]);$row=$q->fetch();
     if(!$row){
@@ -369,6 +371,8 @@ function naRealWalletMergeAccounts(PDO $db,string $from,string $to): void {
     $q->execute([$from]);if((int)$q->fetchColumn()>0)throw new RuntimeException('REAL_PENDING_TOPUP_RECONCILIATION');
     $source=naRealWalletBalance($db,$from,true);
     $target=naRealWalletBalance($db,$to,true);
+    naRealWalletAssertOpen($db,$from);
+    naRealWalletAssertOpen($db,$to);
     naRealWalletInvariant($db,$from);naRealWalletInvariant($db,$to);
     if($source>PHP_INT_MAX-$target)throw new RuntimeException('REAL_MERGE_OVERFLOW');
     $mergeId=naUuid();
