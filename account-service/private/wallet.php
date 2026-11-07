@@ -159,7 +159,7 @@ function naWalletApplyPayment(PDO $db,array $topup,array $payment): void {
             $balance=naWalletBalance($db,$topup['account_id'],true)+(int)$topup['kopeks'];
             $db->prepare('UPDATE numi_wallet_balances SET kopeks=? WHERE account_id=?')
                 ->execute([$balance,$topup['account_id']]);
-            $db->prepare('INSERT INTO numi_wallet_ledger(id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks) VALUES(?,?,"topup",?,?,?)')
+            $db->prepare("INSERT INTO numi_wallet_ledger(id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks) VALUES(?,?,'topup',?,?,?)")
                 ->execute([naUuid(),$topup['account_id'],$id,(int)$topup['kopeks'],$balance]);
             $db->prepare("UPDATE numi_wallet_topups SET status='credited' WHERE id=?")->execute([$id]);
         }
@@ -226,7 +226,7 @@ function naWalletBuy(PDO $db,array $account,array $body): never {
             ->execute([$entitlement,$account['id'],$order,$item['product_code'],$item['resource_id']]);
         $db->prepare('INSERT INTO numi_wallet_spends(id,account_id,request_key,product_code,resource_id,kopeks,order_id,entitlement_id) VALUES(?,?,?,?,?,?,?,?)')
             ->execute([$spend,$account['id'],$key,$item['product_code'],$item['resource_id'],$price,$order,$entitlement]);
-        $db->prepare('INSERT INTO numi_wallet_ledger(id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks) VALUES(?,?,"purchase",?,?,?)')
+        $db->prepare("INSERT INTO numi_wallet_ledger(id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks) VALUES(?,?,'purchase',?,?,?)")
             ->execute([naUuid(),$account['id'],$spend,-$price,$newBalance]);
         $db->commit();
         naReply(200,['ok'=>true,'test'=>true,'entitlement_id'=>$entitlement,'balance_kopeks'=>$newBalance]);
