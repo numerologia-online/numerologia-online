@@ -75,6 +75,7 @@
       }
     }catch(e){walletAvailable=false;walletBalance=0;}
     walletRender();render();
+    window.dispatchEvent(new Event('numi:wallet-updated'));
   }
   async function api(action,extra={}) {
     const response=await fetch(API,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...extra})});
@@ -178,7 +179,7 @@
       let key=sessionStorage.getItem(KEY+'-request');if(!key){key=crypto.randomUUID();sessionStorage.setItem(KEY+'-request',key);}
       const result=await api('checkout',{items:cart,request_key:key,auto_renew_consent:autoRenew.checked===true});
       if(result.test!==true)throw new Error('UNEXPECTED_PAYMENT_MODE');
-      if(result.completed){await orders();await update();status.textContent='Статус платежа проверен. Посмотрите историю заказов.';return;}
+      if(result.completed){await orders();await update();status.textContent='Статус платежа подтверждён. Купленные материалы доступны ниже.';return;}
       const url=new URL(result.confirmation_url);if(url.protocol!=='https:'||!['yoomoney.ru','yookassa.ru'].includes(url.hostname))throw new Error('INVALID_CONFIRMATION_URL');
       location.assign(url.href);
     }catch(e){error(e);}finally{busy=false;render();}
@@ -222,6 +223,10 @@
   }
   const checkout=new URL(location.href).searchParams.get('checkout');
   if(checkout&&/^[a-f0-9-]{36}$/.test(checkout)){
-    open().then(async()=>{try{const result=await api('order_status',{checkout_id:checkout});if(cart.length){const priced=await api('cart_quote',{items:cart});cart=cart.filter((_,i)=>!result.items.some(o=>o.status==='paid'&&o.product_code===priced.items[i].product_code&&o.resource_id===priced.items[i].resource_id));save();}await orders();await update();status.textContent='Статус платежа проверен на сервере. Результат указан в истории заказов.';}catch(e){error(e);}});
+    open().then(async()=>{try{const result=await api('order_status',{checkout_id:checkout});if(cart.length){const priced=await api('cart_quote',{items:cart});cart=cart.filter((_,i)=>!result.items.some(o=>o.status==='paid'&&o.product_code===priced.items[i].product_code&&o.resource_id===priced.items[i].resource_id));save();}await orders();await update();
+      const paid=await api('order_history');
+      const unlocked=(paid.orders||[]).filter(o=>o.checkout_id===checkout&&o.status==='paid'&&o.entitlement_id);
+      if(unlocked.length===1){await showMaterial(unlocked[0].entitlement_id);status.textContent='Оплата подтверждена. Ваш ответ открыт ниже.';}
+      else status.textContent='Оплата проверена. Купленные ответы можно открыть в списке заказов ниже.';}catch(e){error(e);}});
   }
 })();
