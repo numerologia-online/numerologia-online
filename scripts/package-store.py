@@ -5,7 +5,7 @@ BASE='f168651149e032a4809b49832d4993b8c7141617'
 PUBLIC=['store-entry.js','store-material.js','store-browser.js','store-catalog.json','shared-offer.js','year-feature.js','compatibility-feature.js','redflag-feature.js','destiny-code-feature.js','auth-profile.js','account-browser.js','app.js','assets/numi-school-access-20261103.js','pro/pro.js','pro/index.html','child/child.js','child/index.html','year/index.html','moment/yes-no/yes-no.js','moment/yes-no/index.html','index.html']
 PRIVATE=['subscriptions.php','fulfillment.php','store-assets.json','store-renew.php','store.php','core.php']
 def sha(data):return hashlib.sha256(data).hexdigest()
-def prepare(vault,destination):
+def prepare(vault,destination,reviewed_baseline=None):
  records=[];payload={}
  def add(source,target,scope,new=False):
   raw=source.read_bytes();key=f'{len(records):04d}';payload[key]=raw
@@ -29,6 +29,16 @@ def prepare(vault,destination):
   if name!='core.php':add(ROOT/'account-service/private'/name,'numi-account-20261031/'+name,'private')
  add(ROOT/'account-service/private/core.php','numi-account-20261031/core.php','private')
  add(ROOT/'index.html','index.html','public')
+ if reviewed_baseline is not None:
+  overrides=json.loads(reviewed_baseline.read_text())['files']
+  applied=set()
+  for record in records:
+   key=record['scope']+'/'+record['target']
+   if key in overrides:
+    digest=overrides[key]
+    if digest is not None and (not isinstance(digest,str) or len(digest)!=64 or any(c not in '0123456789abcdef' for c in digest)):raise ValueError('Invalid reviewed SHA256')
+    record['base_sha256']=digest;applied.add(key)
+  if applied!=set(overrides):raise ValueError('Unknown reviewed release target')
  manifest={'version':2,'base_commit':BASE,'private_source_commit':assets['private_ref'],'real_payments_enabled':False,'files':records}
  destination.parent.mkdir(parents=True,exist_ok=True)
  with zipfile.ZipFile(destination,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9)as z:
@@ -38,4 +48,4 @@ def prepare(vault,destination):
   for key,raw in payload.items():z.writestr('payload/'+key,raw)
  print(json.dumps({'archive':str(destination),'files':len(records),'sha256':sha(destination.read_bytes()),'bytes':destination.stat().st_size}))
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--vault',required=True,type=pathlib.Path);p.add_argument('--out',required=True,type=pathlib.Path);a=p.parse_args();prepare(a.vault.resolve(),a.out.resolve())
+ p=argparse.ArgumentParser();p.add_argument('--vault',required=True,type=pathlib.Path);p.add_argument('--out',required=True,type=pathlib.Path);p.add_argument('--reviewed-baseline',type=pathlib.Path);a=p.parse_args();prepare(a.vault.resolve(),a.out.resolve(),a.reviewed_baseline)

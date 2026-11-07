@@ -9,7 +9,11 @@ def setup(base):
  for item in manifest['files']:
   if item['base_sha256']is None:continue
   p=(home/'private'if item['scope']=='private'else site)/item['target'];p.parent.mkdir(parents=True,exist_ok=True)
-  p.write_bytes(subprocess.check_output(['git','show',manifest['base_commit']+':'+item['source']],cwd=repo));assert sha(p)==item['base_sha256']
+  raw=subprocess.check_output(['git','show',manifest['base_commit']+':'+item['source']],cwd=repo)
+  if len(sys.argv)>3:
+   fixture=pathlib.Path(sys.argv[3])/item['scope']/item['target']
+   if fixture.is_file():raw=fixture.read_bytes()
+  p.write_bytes(raw);assert sha(p)==item['base_sha256'],item['target']
  return home,site,package,manifest
 with tempfile.TemporaryDirectory(prefix='numi-release-test-')as temp:
  root=pathlib.Path(temp);home,site,package,manifest=setup(root/'success')

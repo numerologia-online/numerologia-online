@@ -9,14 +9,15 @@ declare(strict_types=1);
 const NUMI_ACCOUNT_COOKIE = '__Host-numi_session';
 const NUMI_ACCOUNT_ORIGIN = 'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai';
 
-/** Only the two verified storefront domains may submit account requests. */
+// Restrict account mutations to the two genuine storefront domains.
 function naAllowedOrigins(): array {
     return [
         NUMI_ACCOUNT_ORIGIN,
         'https://www.xn----8sbhhqijddjgdebdz2c2o.xn--p1ai',
     ];
 }
-/** Email links must return to the domain on which signup/reset began. */
+
+// Verification/reset links return to the domain where the request began.
 function naPublicOrigin(): string {
     $origin = strtolower((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
     return in_array($origin, naAllowedOrigins(), true) ? $origin : NUMI_ACCOUNT_ORIGIN;
@@ -66,7 +67,7 @@ function naEmail(mixed $value): ?string {
     return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : null;
 }
 function naPassword(mixed $password): bool {
-    return is_string($password) && strlen($password)>=9 && strlen($password)<=200;
+    return is_string($password) && strlen($password)>=1 && strlen($password)<=200;
 }
 function naCookies(string $raw, int $until): void {
     setcookie(NUMI_ACCOUNT_COOKIE, $raw, [

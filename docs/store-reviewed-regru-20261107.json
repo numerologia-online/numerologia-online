@@ -1,0 +1,11 @@
+{
+  "review": "Live affected files backed up before review; core auth behavior retained; homepage script versions only; yesno same approved answer calculation with planned access checks. Missing f168 store files confirmed absent. Installer must recheck all hashes before writing.",
+  "files": {
+    "public/store-browser.js": null,
+    "public/store-catalog.json": null,
+    "public/api/numi-yesno-answer.php": "b20d741f7107b426a6f1f6a9f35ecde0f16e20af444a820077d2b2b7594a472e",
+    "private/numi-account-20261031/store.php": null,
+    "private/numi-account-20261031/core.php": "1a8a41724cc25f44543e12407452b3a51f8f1013b6ca5505f40b8ff5a65a90ef",
+    "public/index.html": "38e81e88c1379698dc37e66a611bf6365d9ba10a72b6d01c97fdd46d5b8f7bae"
+  }
+}

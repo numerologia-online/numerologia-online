@@ -101,3 +101,6 @@ payment.canceled, refund.succeeded. Содержимое уведомления 
 Нужен сквозной тест отдельного разрешённого аккаунта: регистрация/вход, корзина,
 оплата в sandbox, webhook/возврат из оплаты, повторный вход, материал/PDF, подписка,
 продление, отмена и возврат. До него запуск продаж объявлять нельзя.
+
+
+REG.RU review, 2026-11-07: build the reconciled release with `--reviewed-baseline docs/store-reviewed-regru-20261107.json`. The six explicit exceptions were reviewed against the live backups, not automatically accepted. The homepage differed only in cache versions; existing password acceptance is retained, and the approved Yes/No calculation and private answer path are unchanged while access checks are installed. Three old store targets were never published and must still be absent. Every other target retains the f168 baseline and every target is rechecked at install time.
