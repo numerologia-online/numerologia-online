@@ -1,0 +1,82 @@
+name: Read-only REG.RU wallet readiness 2026-11-07
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/numi-wallet-release-readonly-20261107.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect live file parity and sandbox prerequisites without mutations
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+          NUMI_YOOKASSA_TEST_SECRET_KEY_1521071: ${{ secrets.NUMI_YOOKASSA_TEST_SECRET_KEY_1521071 }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,hashlib,json,pathlib,urllib.request,urllib.error
+          user=os.getenv('REG_FTP_USER','')
+          pw=os.getenv('REG_FTP_PASSWORD','')
+          if not user or not pw: raise SystemExit('REG_FTPS_UNAVAILABLE')
+          secret=os.getenv('NUMI_YOOKASSA_TEST_SECRET_KEY_1521071','')
+          print('WALLET_AUDIT_TEST_SECRET_READY',secret.startswith('test_') and len(secret)>15,flush=True)
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(user,pw);ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          site=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          mapping=[
+            ('account-service/private/core.php',home+'/private/numi-account-20261031/core.php'),
+            ('account-service/private/wallet.php',home+'/private/numi-account-20261031/wallet.php'),
+            ('account-service/private/store.php',home+'/private/numi-account-20261031/store.php'),
+            ('account-browser.js',site+'account-browser.js'),
+            ('store-browser.js',site+'store-browser.js'),
+            ('store-entry.js',site+'store-entry.js'),
+            ('index.html',site+'index.html'),
+            ('store-catalog.json',site+'store-catalog.json')
+          ]
+          def read_remote(path):
+            buff=io.BytesIO()
+            def sink(chunk):
+              if buff.tell()+len(chunk)>300000: raise RuntimeError('TOO_LARGE')
+              buff.write(chunk)
+            try: ftp.retrbinary('RETR '+path,sink)
+            except ftplib.error_perm as exc:
+              if str(exc).startswith('550'):return None
+              raise
+            return buff.getvalue()
+          try:
+            for local,remote in mapping:
+              old=read_remote(remote)
+              expected=pathlib.Path(local).read_bytes()
+              result={'file':local,'remote_exists':old is not None,'matches_current_main':old==expected if old is not None else False,'remote_sha256':hashlib.sha256(old).hexdigest() if old is not None else None,'github_sha256':hashlib.sha256(expected).hexdigest()}
+              if old is not None and local.endswith('.php'):
+                s=old.decode('utf-8','replace')
+                result['wallet_routes_present']='wallet_status' in s
+              if old is not None and local.endswith('.js'):
+                s=old.decode('utf-8','replace')
+                result['wallet_ui_present']='wallet_topup' in s or 'wallet_status' in s
+              if local=='index.html' and old is not None:
+                result['wallet_browser_ref_present']='wallet-test1' in old.decode('utf-8','replace')
+              print('WALLET_AUDIT_FILE',json.dumps(result,ensure_ascii=False),flush=True)
+            config=read_remote(home+'/private/numi-wallet-test-20261106/config.local.php')
+            print('WALLET_AUDIT_CONFIG_PRESENT',config is not None,flush=True)
+            print('WALLET_AUDIT_CONFIG_NONEMPTY',bool(config),flush=True)
+            # Never display/parse config or authentication values.
+          finally:
+            try:ftp.quit()
+            except BaseException:ftp.close()
+          for hostname in ('xn--c1adkkdfjbp1a4l.online','xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'):
+            req=urllib.request.Request('https://'+hostname+'/api/numi-account.php',data=b'{"action":"wallet_status"}',headers={'Content-Type':'application/json','Origin':'https://'+hostname,'Cache-Control':'no-store','User-Agent':'numi-wallet-readonly/1'})
+            try:
+              with urllib.request.urlopen(req,timeout=14) as resp: status=resp.status;raw=resp.read(15000)
+            except urllib.error.HTTPError as e: status=e.code;raw=e.read(15000)
+            try: data=json.loads(raw)
+            except BaseException:data={}
+            print('WALLET_AUDIT_GUEST',json.dumps({'domain':hostname,'http':status,'error':data.get('error'),'ok':data.get('ok')},ensure_ascii=False),flush=True)
+          print('WALLET_AUDIT_COMPLETE_NO_WRITES',flush=True)
+          PY
