@@ -192,6 +192,28 @@
   const identity = overview.querySelector(".account-identity");
   if (!identity) return;
   identity.insertAdjacentHTML("afterend",html);
+  // Sandbox wallet balance is presented in the existing account cabinet.
+  // Hidden unless the private server authorizes this specific test account.
+  const walletBadge=document.createElement("div");
+  walletBadge.id="numi-wallet-account-badge";
+  walletBadge.hidden=true;
+  walletBadge.style.cssText="margin:12px 0;padding:12px;border:1px solid #d7ddd5;border-radius:12px;background:#f6f7f4;color:#334238;";
+  overview.querySelector(".account-identity")?.insertAdjacentElement("afterend",walletBadge);
+  async function refreshWalletBadge(){
+    try{
+      const response=await request("wallet_status");
+      if(response.test!==true)throw new Error("TEST_ONLY");
+      walletBadge.replaceChildren();
+      const label=document.createElement("strong");label.textContent="Мой баланс: "+(Number(response.balance_kopeks)/100).toLocaleString("ru-RU")+" ₽";
+      const button=document.createElement("button");button.type="button";button.textContent="Пополнить или купить";
+      button.className="account-secondary";button.style.marginLeft="10px";
+      button.onclick=async()=>{const {openStore}=await import("/store-entry.js?v=2");await openStore();};
+      const note=document.createElement("small");note.textContent=" Тестовый баланс";note.style.color="#657567";
+      walletBadge.append(label,button,note);
+      walletBadge.hidden=false;
+    }catch(_){walletBadge.hidden=true;}
+  }
+  window.addEventListener("numi:wallet-updated",()=>{void refreshWalletBadge();});
   const root = document.getElementById("numi-account-entry");
   // Let visitors verify both typed passwords before submitting any account form.
   // Scoped to this cabinet only. Does not change credentials or submission logic.
@@ -342,10 +364,10 @@
       const session=await request("session");
       current=session.authenticated?session.account:null;
       render();
-      if (current) await updatePurchases();
+      if (current) {await updatePurchases();await refreshWalletBadge();} else walletBadge.hidden=true;
       return current;
     } catch (err) {
-      current=null;render();return null;
+      current=null;walletBadge.hidden=true;render();return null;
     }
   }
   function render() {
