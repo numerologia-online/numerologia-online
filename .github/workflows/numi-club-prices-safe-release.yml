@@ -1,0 +1,51 @@
+name: Publish club status and real member pricing (TEST money only)
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_safe_test_only:
+        description: 'Подтверждаю: только статус клуба и цены, без корзины, только тестовые деньги, резервные копии'
+        type: boolean
+        required: true
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.event_name == 'workflow_dispatch' && inputs.confirm_safe_test_only == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact reviewed member pricing branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/club-status-pricing-20261107
+          fetch-depth: 0
+      - name: Syntax, reviewed source, no shopping cart
+        env:
+          APPROVED_SOURCE_SHA: f9b2275c7207de0b5322228d82a59a568f6be5aa
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SOURCE_SHA"
+          python3 -m py_compile scripts/deploy-club-prices-20261107.py
+          php -l account-service/private/wallet.php
+          php -l account-service/private/core.php
+          node --check account-browser.js
+          node --check app.js
+          node --input-type=module --check < wallet-client.js
+          node --input-type=module --check < store-entry.js
+          node --input-type=module --check < redflag-feature.js
+          php account-service/tests/store.php
+          php account-service/tests/subscriptions.php
+          test "$(grep -c 'src="store-browser.js' index.html || true)" = "0"
+          grep -q 'Ваша цена' redflag-feature.js
+          grep -q 'club_expires_at' account-service/private/wallet.php
+          echo MEMBER_PRICING_CODE_APPROVED_NO_CART
+      - name: Guarded exact-baseline REG.RU publication, backup, HTTPS and API verification
+        env:
+          APPROVED_SOURCE_SHA: f9b2275c7207de0b5322228d82a59a568f6be5aa
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u scripts/deploy-club-prices-20261107.py
