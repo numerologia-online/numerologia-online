@@ -163,8 +163,8 @@ $db->prepare("UPDATE numi_entitlements SET expires_at=DATE_SUB(UTC_TIMESTAMP(),I
     WHERE id=?")->execute([$club['entitlement_id']]);
 $notMember=naRealWalletQuote($db,$accA,
     ['product_code'=>'redflag_question','category'=>'money','question_id'=>'provider','birth_date'=>'1986-09-09'],$ready);
-assertReal(!$notMember['club_active'] && $notMember['price_kopeks']===2000,
-    'expired REAL club receives regular price');
+assertReal(!$notMember['club_active'] && $notMember['price_kopeks']===3900,
+    'expired REAL club receives regular 39 RUB price for provider question');
 naRealWalletInvariant($db,$accountA);
 // A provider refund on a previously credited top-up must freeze, not make a negative ledger.
 $pay2['refunded_amount']['value']='100.00';
