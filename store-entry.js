@@ -9,7 +9,7 @@ export function storeDate(value){
 export async function openStore(item,plan='once'){
   if(!window.NumiStore){
     loading ||= new Promise((resolve,reject)=>{
-      const script=document.createElement('script');script.src='/store-browser.js?v=2';
+      const script=document.createElement('script');script.src='/store-browser.js?v=3';
       script.onload=resolve;script.onerror=()=>{loading=null;script.remove();reject(new Error('STORE_UNAVAILABLE'));};document.head.append(script);
     });
     await loading;
