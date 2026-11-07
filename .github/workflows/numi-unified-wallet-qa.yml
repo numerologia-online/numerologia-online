@@ -10,6 +10,23 @@ jobs:
   validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 8
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: numi_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -ptest"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      NUMI_TEST_MYSQL_DSN: "mysql:host=127.0.0.1;port=3306;dbname=numi_test;charset=utf8mb4"
+      NUMI_TEST_MYSQL_USER: root
+      NUMI_TEST_MYSQL_PASSWORD: test
     steps:
       - uses: actions/checkout@v4
       - name: Syntax and existing regression tests
@@ -28,6 +45,7 @@ jobs:
           # Never copy them into public GitHub to make a CI test pass.
           php account-service/tests/store.php
           php account-service/tests/subscriptions.php
+          php account-service/tests/wallet-ledger.php
       - name: No cart on main homepage
         run: |
           set -euo pipefail
