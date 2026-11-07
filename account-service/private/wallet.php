@@ -63,6 +63,59 @@ function naWalletSchema(PDO $db): void {
         KEY ix_wallet_ledger_account(account_id,created_at),
         CONSTRAINT fk_numi_wallet_ledger_account FOREIGN KEY(account_id) REFERENCES numi_accounts(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    // Earlier releases had a three-value ledger enum. Add explicit transfer kinds.
+    $column=$db->query("SHOW COLUMNS FROM numi_wallet_ledger LIKE 'kind'")->fetch();
+    if(!$column || !str_contains((string)($column['Type']??''),"'transfer_in'")){
+        $db->exec("ALTER TABLE numi_wallet_ledger MODIFY COLUMN kind
+            ENUM('topup','purchase','refund','transfer_in','transfer_out') NOT NULL");
+    }
+    $db->exec("CREATE TABLE IF NOT EXISTS numi_wallet_merges (
+        id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+        source_account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+        destination_account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+        kopeks BIGINT UNSIGNED NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_wallet_merge_source(source_account_id),
+        CONSTRAINT fk_wallet_merge_source FOREIGN KEY(source_account_id) REFERENCES numi_accounts(id),
+        CONSTRAINT fk_wallet_merge_destination FOREIGN KEY(destination_account_id) REFERENCES numi_accounts(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+
+/**
+ * Account merge must not abandon wallet funds under an inactive Telegram identity.
+ * Call naWalletSchema BEFORE beginning the caller's transaction (MySQL DDL commits).
+ * Preserve source ledger history, add balanced transfer entries and an immutable
+ * cross-account audit row. Never transfer any real funds: this schema is TEST-only.
+ */
+function naWalletMergeAccounts(PDO $db,string $from,string $to): void {
+    if($from===$to)return;
+    $prior=$db->prepare('SELECT id FROM numi_wallet_merges WHERE source_account_id=?');
+    $prior->execute([$from]);
+    if($prior->fetchColumn())throw new RuntimeException('WALLET_ALREADY_MERGED');
+    $source=naWalletBalance($db,$from,true);
+    $target=naWalletBalance($db,$to,true);
+    $sum=$db->prepare('SELECT COALESCE(SUM(delta_kopeks),0) FROM numi_wallet_ledger WHERE account_id=?');
+    $sum->execute([$from]);
+    if((int)$sum->fetchColumn()!==$source)throw new RuntimeException('WALLET_LEDGER_MISMATCH');
+    $sum->execute([$to]);
+    if((int)$sum->fetchColumn()!==$target)throw new RuntimeException('WALLET_LEDGER_MISMATCH');
+    if($source<0 || $target<0 || $source>PHP_INT_MAX-$target)
+        throw new RuntimeException('WALLET_MERGE_OVERFLOW');
+    $mergeId=naUuid();
+    $db->prepare('UPDATE numi_wallet_balances SET kopeks=0 WHERE account_id=?')->execute([$from]);
+    $db->prepare('UPDATE numi_wallet_balances SET kopeks=? WHERE account_id=?')
+        ->execute([$source+$target,$to]);
+    $db->prepare('UPDATE numi_wallet_topups SET account_id=? WHERE account_id=?')
+        ->execute([$to,$from]);
+    $db->prepare('UPDATE numi_wallet_spends SET account_id=? WHERE account_id=?')
+        ->execute([$to,$from]);
+    $db->prepare('INSERT INTO numi_wallet_merges(id,source_account_id,destination_account_id,kopeks) VALUES(?,?,?,?)')
+        ->execute([$mergeId,$from,$to,$source]);
+    if($source>0){
+        $record=$db->prepare('INSERT INTO numi_wallet_ledger(id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks) VALUES(?,?,?,?,?,?)');
+        $record->execute([naUuid(),$from,'transfer_out',$mergeId,-$source,0]);
+        $record->execute([naUuid(),$to,'transfer_in',$mergeId,$source,$target+$source]);
+    }
 }
 
 function naWalletKey(mixed $key): string {
