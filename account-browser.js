@@ -683,7 +683,9 @@
   }else{
     void refresh();
   }
-  if(resetToken) {
+  if(new URLSearchParams(location.search).get("account")==="1"){
+    ownerButton.click();
+  }else if(resetToken) {
     choose("password");
     ownerButton.click();
   }else if(accountVerified) {
