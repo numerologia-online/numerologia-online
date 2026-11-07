@@ -24,7 +24,8 @@ jobs:
           node --input-type=module --check < redflag-feature.js
           node --check moment/yes-no/yes-no.js
           node --input-type=module --check < shared-offer.js
-          php account-service/tests/materials.php
+          # Paid material assets live only in the private REG.RU store-content folder.
+          # Never copy them into public GitHub to make a CI test pass.
           php account-service/tests/store.php
           php account-service/tests/subscriptions.php
       - name: No cart on main homepage
