@@ -283,6 +283,7 @@ function naWalletQuote(PDO $db,array $account,array $body): never {
         'price_kopeks'=>$item['price_kopeks'],
         'regular_price_kopeks'=>$regular['price_kopeks'],
         'club_price_kopeks'=>$member['price_kopeks'],
+        'club_subscription_price_kopeks'=>naCatalogResolve(['product_code'=>'club_month'],false)['price_kopeks'],
         'club_active'=>$club,
         'club_expires_at'=>$club?naWalletClubStatus($db,$account)['club_expires_at']:null,
         'product_code'=>$item['product_code'],'kind'=>$item['kind'],
