@@ -56,7 +56,7 @@ function clubOffer(container,quote,item,onMaterial){
   const join=action(container,"Вступить в клуб",async()=>{
     join.disabled=true;
     try{
-      const {openStore}=await import("/store-entry.js?v=wallet-direct1");
+      const {openStore}=await import("/store-entry.js?v=club-prices1");
       await openStore({product_code:"club_month"});
     }catch(_){
       hint.textContent="Не удалось открыть подписку. Попробуйте ещё раз.";
