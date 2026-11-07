@@ -46,7 +46,7 @@ foreach([[$source,0],[$dest,13000]] as [$id,$balance]){
     $q->execute([$id]);check((int)$q->fetchColumn()===$balance,'ledger sum equals balance');
 }
 foreach(['numi_wallet_topups','numi_wallet_spends'] as $table){
-    $q=$db->prepare("SELECT account_id FROM $table LIMIT 1");
+    $q=$db->prepare("SELECT account_id FROM $table LIMIT 1");$q->execute();
     check($q->fetchColumn()===$dest,'transactions continue from destination account');
 }
 $q=$db->prepare('SELECT kopeks FROM numi_wallet_merges WHERE source_account_id=? AND destination_account_id=?');
