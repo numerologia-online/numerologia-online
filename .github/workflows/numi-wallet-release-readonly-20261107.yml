@@ -134,10 +134,12 @@ jobs:
             if config:
               s=config.decode('utf-8','replace')
               names=('shop_id','secret_key','store_test_enabled','store_wallet_test_enabled','store_test_account_ids','store_recurring_test_enabled')
-              found={n:bool(re.search(r"['\\\"]"+re.escape(n)+r"['\\\"]\\s*=>",s)) for n in names}
-              flags={n:bool(re.search(r"['\\\"]"+re.escape(n)+r"['\\\"]\\s*=>\\s*true",s,re.I)) for n in ('store_test_enabled','store_wallet_test_enabled','store_recurring_test_enabled')}
-              test_id=bool(re.search(r"['\\\"]shop_id['\\\"]\\s*=>\\s*['\\\"]1521071['\\\"]",s))
+              found={n:(n in s) for n in names}
+              flags={n:bool(re.search(re.escape(n)+r'.{0,32}=>\s*true',s,re.I|re.S)) for n in ('store_test_enabled','store_wallet_test_enabled','store_recurring_test_enabled')}
+              test_id=bool(re.search(r'shop_id.{0,32}1521071',s,re.S))
               print('WALLET_CONFIG_FLAG_NAMES',json.dumps({'fields_present':found,'flags_true':flags,'known_test_shop_id':test_id},ensure_ascii=False),flush=True)
+              normalized=''.join(s.split())
+              print('WALLET_CONFIG_PLACEHOLDER',normalized in ('<?phpreturn[];','<?phpreturnarray();'),flush=True)
             else:print('WALLET_CONFIG_EMPTY_OR_MISSING',flush=True)
           finally:
             ftp.quit()
