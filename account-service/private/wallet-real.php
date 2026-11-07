@@ -11,6 +11,14 @@ declare(strict_types=1);
  */
 require_once __DIR__.'/wallet.php';
 
+/** Never load live credentials from the existing TEST provider configuration. */
+function naRealWalletConfig(): array {
+    $path=dirname(__DIR__).'/numi-wallet-live/config.local.php';
+    if(!is_file($path))return [];
+    $config=require $path;
+    return is_array($config)?$config:[];
+}
+
 function naRealWalletGate(array $config): bool {
     return ($config['wallet_mode']??null)==='live'
         && ($config['real_wallet_enabled']??null)===true
