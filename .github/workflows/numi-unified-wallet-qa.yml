@@ -32,6 +32,7 @@ jobs:
       - name: Syntax and existing regression tests
         run: |
           set -euo pipefail
+          python3 -m py_compile scripts/deploy-club-prices-20261107.py
           for file in account-service/private/{core,wallet,store,fulfillment,subscriptions}.php; do php -l "$file"; done
           node --check account-browser.js
           node --check app.js
