@@ -80,3 +80,66 @@ jobs:
             print('WALLET_AUDIT_GUEST',json.dumps({'domain':hostname,'http':status,'error':data.get('error'),'ok':data.get('ok')},ensure_ascii=False),flush=True)
           print('WALLET_AUDIT_COMPLETE_NO_WRITES',flush=True)
           PY
+      - name: Compare production with known released baseline and inspect feature flags safely
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+          NUMI_YOOKASSA_TEST_SECRET_KEY_1521071: ${{ secrets.NUMI_YOOKASSA_TEST_SECRET_KEY_1521071 }}
+        run: |
+          set -e
+          git fetch --quiet --no-tags --depth=1 origin e008961ae7d9cdfc7933447d0384835ff6ea616f
+          python3 - <<'PY'
+          import ftplib,ssl,hashlib,io,os,subprocess,json,difflib,re,pathlib,hmac
+          base='e008961ae7d9cdfc7933447d0384835ff6ea616f'
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          site=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          mapping=[
+            ('account-service/private/core.php',home+'/private/numi-account-20261031/core.php'),
+            ('account-browser.js',site+'account-browser.js'),
+            ('store-browser.js',site+'store-browser.js'),
+            ('store-entry.js',site+'store-entry.js'),
+            ('index.html',site+'index.html')
+          ]
+          def remote(path):
+            b=io.BytesIO()
+            try:ftp.retrbinary('RETR '+path,b.write)
+            except ftplib.error_perm as e:
+              if str(e).startswith('550'):return None
+              raise
+            if b.tell()>300000: raise RuntimeError('FILE_TOO_LARGE')
+            return b.getvalue()
+          try:
+            for source,path in mapping:
+              live=remote(path)
+              latest=pathlib.Path(source).read_bytes()
+              try:old=subprocess.check_output(['git','show',base+':'+source])
+              except BaseException:old=None
+              matches_base=live==old if live is not None and old is not None else None
+              print('WALLET_BASELINE_MATCH',json.dumps({'file':source,'matches_release_base':matches_base},ensure_ascii=False),flush=True)
+              if live is None:continue
+              a=live.decode('utf-8','replace').splitlines()
+              b=latest.decode('utf-8','replace').splitlines()
+              op=[(kind,j-i,l-k) for kind,i,j,k,l in difflib.SequenceMatcher(a=a,b=b,autojunk=False).get_opcodes() if kind!='equal']
+              print('WALLET_DIFF_COUNTS',json.dumps({'file':source,'segments':len(op),'sample':op[:18]},ensure_ascii=False),flush=True)
+              if source=='account-service/private/core.php':
+                print('WALLET_CORE_ROUTE_INSERTION_SAFE',json.dumps({'store_routes':sum("['cart_quote','checkout','order_history','order_status','cancel_renewal']" in line for line in a),'wallet_routes':sum("['wallet_status','wallet_topup','wallet_sync','wallet_buy']" in line for line in a)},ensure_ascii=False),flush=True)
+              else:
+                target_patterns=('store-browser.js?v=','store-entry.js?v=','account-browser.js?v=','app.js?v=')
+                refs=[line.strip()[:160] for line in a if any(token in line for token in target_patterns)]
+                print('WALLET_PUBLIC_REFERENCES',json.dumps({'file':source,'refs':refs[:10]},ensure_ascii=False),flush=True)
+            config=remote(home+'/private/numi-wallet-test-20261106/config.local.php')
+            if config:
+              s=config.decode('utf-8','replace')
+              names=('shop_id','secret_key','store_test_enabled','store_wallet_test_enabled','store_test_account_ids','store_recurring_test_enabled')
+              found={n:bool(re.search(r"['\\\"]"+re.escape(n)+r"['\\\"]\\s*=>",s)) for n in names}
+              flags={n:bool(re.search(r"['\\\"]"+re.escape(n)+r"['\\\"]\\s*=>\\s*true",s,re.I)) for n in ('store_test_enabled','store_wallet_test_enabled','store_recurring_test_enabled')}
+              test_id=bool(re.search(r"['\\\"]shop_id['\\\"]\\s*=>\\s*['\\\"]1521071['\\\"]",s))
+              print('WALLET_CONFIG_FLAG_NAMES',json.dumps({'fields_present':found,'flags_true':flags,'known_test_shop_id':test_id},ensure_ascii=False),flush=True)
+            else:print('WALLET_CONFIG_EMPTY_OR_MISSING',flush=True)
+          finally:
+            ftp.quit()
+          print('WALLET_BASELINE_INSPECTION_COMPLETE_NO_WRITES',flush=True)
+          PY
