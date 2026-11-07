@@ -32,7 +32,9 @@ export async function openStore(item,plan="once"){
     if(target.product_code==="club_month"||target.product_code==="school_week"){
       const text=document.createElement("p");
       text.textContent="Подписка активирована. Продление с баланса выполняется только вручную.";
-      host.replaceChildren(text);return;
+      host.replaceChildren(text);
+      if(target.product_code==="club_month")window.dispatchEvent(new Event("numi:club-activated"));
+      return;
     }
     try{
       const {openMaterial}=await import("/store-material.js?v=2");
