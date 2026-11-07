@@ -110,7 +110,7 @@ def main():
             raise RuntimeError("PURCHASE_SERVER_LOGIC_MISSING")
         if b"numi-cart" in changed["wallet-client.js"] or b"store-browser.js" in changed["index.html"]:
             raise RuntimeError("CART_REGRESSION")
-        if b"Ваша цена" not in changed["redflag-feature.js"] or b"Вступить в клуб" not in changed["wallet-client.js"]:
+        if "Ваша цена".encode("utf-8") not in changed["redflag-feature.js"] or "Вступить в клуб".encode("utf-8") not in changed["wallet-client.js"]:
             raise RuntimeError("MEMBERSHIP_UI_NOT_PRESENT")
         manifest=json.loads(pathlib.Path("account-service/private/store-assets.json").read_text())
         sample="data/redflag/money/generosity.json"
