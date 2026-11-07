@@ -244,7 +244,7 @@
   clubJoin.addEventListener("click",async()=>{
     clubJoin.disabled=true;
     try{
-      const {openStore}=await import("/store-entry.js?v=wallet-direct1");
+      const {openStore}=await import("/store-entry.js?v=club-prices1");
       await openStore({product_code:"club_month"});
     }catch(_){walletFeedback.hidden=false;walletFeedback.textContent="Не удалось открыть оформление подписки.";}
     finally{clubJoin.disabled=false;}
