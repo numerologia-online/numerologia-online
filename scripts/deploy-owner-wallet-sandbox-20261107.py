@@ -185,7 +185,11 @@ def main():
             raise RuntimeError("EXISTING_TEST_SECRET_MISMATCH")
         if "store_wallet_test_enabled" in cfg:
             raise RuntimeError("WALLET_TEST_FLAG_ALREADY_PRESENT_REVIEW_REQUIRED")
-        cfg_new = replace_once(cfg, "return [", "return [\n    'store_wallet_test_enabled' => true,", "TEST_CONFIG_FLAG")
+        constructors = list(re.finditer(r"\breturn\s*(?:\[|array\s*\()", cfg))
+        if len(constructors) != 1:
+            raise RuntimeError("TEST_CONFIG_RETURN_LAYOUT_NOT_VERIFIED")
+        cursor = constructors[0].end()
+        cfg_new = cfg[:cursor] + "\n    'store_wallet_test_enabled' => true," + cfg[cursor:]
         after["config.local.php"] = cfg_new.encode("utf-8")
         print("WALLET_PREFLIGHT_ONLY_OWNER_TEST_AND_EXISTING_YOOKASSA_KEY", flush=True)
 
