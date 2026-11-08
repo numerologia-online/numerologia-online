@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing' || github.event.head_commit.message == 'Publish club benefits wording and navigation on REG.RU' || github.event.head_commit.message == 'Publish automatic live wallet credit and payment delay notice' || github.event.head_commit.message == 'Deploy standalone wallet topup and remember last receipt email' || github.event.head_commit.message == 'Publish approved receipt email wording on live wallet page' || github.event.head_commit.message == 'Publish quiet compact wallet status on REG.RU' || github.event.head_commit.message == 'Publish compact email field and keyboard fix to REG.RU' || github.event.head_commit.message == 'Trace live Red Flag wallet quote without a charge'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing' || github.event.head_commit.message == 'Publish club benefits wording and navigation on REG.RU' || github.event.head_commit.message == 'Publish automatic live wallet credit and payment delay notice' || github.event.head_commit.message == 'Deploy standalone wallet topup and remember last receipt email' || github.event.head_commit.message == 'Publish approved receipt email wording on live wallet page' || github.event.head_commit.message == 'Publish quiet compact wallet status on REG.RU' || github.event.head_commit.message == 'Publish compact email field and keyboard fix to REG.RU' || github.event.head_commit.message == 'Trace live Red Flag wallet quote without a charge' || github.event.head_commit.message == 'Deploy paid Red Flag quote success fix without payment'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -1651,6 +1651,81 @@ jobs:
               if swapped:
                   write(dst,original)
                   print('REDFLAG_PROBE_WORKER_ROLLED_BACK',read(dst)==original)
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+
+      - name: Publish only the verified paid-question quote fix on live REG.RU
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Deploy paid Red Flag quote success fix without payment'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l account-service/private/wallet-real-payment.php
+          php -l account-service/private/wallet-real.php
+          node --check wallet-client.js
+          python3 - <<'PY'
+          import os,io,ftplib,ssl,subprocess,urllib.request,json,hmac,hashlib
+          path='account-service/private/wallet-real-payment.php'
+          latest=open(path,'rb').read()
+          text=latest.decode('utf8')
+          assert "'ok'=>true,\n                'balance_kopeks'=>$data['real_balance_kopeks']" in text
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          dest=ftp.pwd().rstrip('/')+'/private/numi-account-20261031/wallet-real-payment.php'
+          def read(p):
+              out=io.BytesIO();ftp.retrbinary('RETR '+p,out.write);return out.getvalue()
+          def write(p,data):
+              ftp.storbinary('STOR '+p,io.BytesIO(data))
+              if read(p)!=data:raise RuntimeError('REDFLAG_WALLET_API_READBACK_FAILED')
+          initial=read(dest)
+          known=initial==latest
+          if not known:
+              revs=subprocess.check_output(['git','log','-100','--format=%H','--',path],text=True).splitlines()
+              for rev in revs:
+                  past=subprocess.run(['git','show',rev+':'+path],capture_output=True)
+                  if past.returncode==0 and past.stdout==initial:known=True;break
+          if not known:raise RuntimeError('REDFLAG_UNKNOWN_SERVER_PHP_VERSION')
+          print('REDFLAG_PHP_BASELINE_VERIFIED')
+          try:
+              if initial!=latest:
+                  backup=dest+'.before-redflag-quote-fix-20261109.bak'
+                  try:previous=read(backup)
+                  except ftplib.error_perm as error:
+                      if not str(error).startswith('550'):raise
+                      previous=None
+                  if previous is not None and previous!=initial:
+                      raise RuntimeError('REDFLAG_PHP_BACKUP_CONFLICT')
+                  if previous is None:write(backup,initial)
+                  if read(dest)!=initial:raise RuntimeError('CONCURRENT_SERVER_CHANGE')
+                  stage=dest+'.pending-redflag-quote-fix-20261109'
+                  try:read(stage);raise RuntimeError('REDFLAG_PENDING_VERSION_EXISTS')
+                  except ftplib.error_perm as error:
+                      if not str(error).startswith('550'):raise
+                  write(stage,latest)
+                  try:
+                      ftp.rename(stage,dest)
+                      if read(dest)!=latest:raise RuntimeError('SERVER_QUOTE_FIX_READBACK_FAILED')
+                  except BaseException:
+                      write(dest,initial);print('REDFLAG_QUOTE_FIX_ROLLED_BACK')
+                      raise
+              token=hmac.new(os.environ['REG_FTP_PASSWORD'].encode(),
+                b'numi-real-wallet-worker-v1@xn----8sbhhqijddjgdebdz2c2o.xn--p1ai',hashlib.sha256).hexdigest()
+              req=urllib.request.Request(
+                'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/api/numi-real-worker.php',
+                data=b'{"action":"probe"}',
+                headers={'Content-Type':'application/json','X-Numi-Worker-Token':token},method='POST')
+              with urllib.request.urlopen(req,timeout=55) as response:
+                  result=json.loads(response.read(6500))
+              if result.get('ok') is not True or result.get('wallet_status_diagnostic',{}).get('result')!='ok':
+                  raise RuntimeError('REDFLAG_POST_DEPLOY_HEALTH_FAILED')
+              if read(dest)!=latest:raise RuntimeError('REDFLAG_POST_DEPLOY_VERSION_CHANGED')
+              print('REDFLAG_LIVE_QUOTE_SUCCESS_ENVELOPE_PUBLISHED_AND_VERIFIED')
+          finally:
               try:ftp.quit()
               except BaseException:ftp.close()
           PY
