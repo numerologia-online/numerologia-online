@@ -248,6 +248,20 @@ function naRealRefundSendApprovedCase(
     if((int)$balance['kopeks']<$ref['kopeks'])
         throw new RuntimeException('REAL_REFUND_EXCEEDS_UNSPENT_BALANCE');
     naRealWalletInvariant($db,$ref['account_id']);
+    // Durable one-time claim precedes the external POST. An uncertain response
+    // must be investigated, never automatically reissued after YooKassa's
+    // 24-hour idempotency window.
+    $claim=$db->prepare("UPDATE numi_real_wallet_refund_cases
+        SET provider_request_started_at=UTC_TIMESTAMP()
+        WHERE id=? AND status='approved' AND provider_refund_id IS NULL
+          AND provider_request_started_at IS NULL");
+    $claim->execute([$caseId]);
+    if($claim->rowCount()!==1){
+        $q=$db->prepare('SELECT provider_refund_id FROM numi_real_wallet_refund_cases WHERE id=?');
+        $q->execute([$caseId]);
+        if($q->fetchColumn())throw new RuntimeException('REAL_REFUND_ALREADY_SUBMITTED');
+        throw new RuntimeException('REAL_REFUND_UNCERTAIN_RECONCILIATION_REQUIRED');
+    }
     $result=naRealRefundSend($config,$ref['case_id'],$ref['payment_id'],
         $ref['kopeks'],$testTransport);
     $q=$db->prepare("UPDATE numi_real_wallet_refund_cases SET provider_refund_id=?
