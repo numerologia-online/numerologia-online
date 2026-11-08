@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing' || github.event.head_commit.message == 'Publish club benefits wording and navigation on REG.RU' || github.event.head_commit.message == 'Publish automatic live wallet credit and payment delay notice'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing' || github.event.head_commit.message == 'Publish club benefits wording and navigation on REG.RU' || github.event.head_commit.message == 'Publish automatic live wallet credit and payment delay notice' || github.event.head_commit.message == 'Deploy standalone wallet topup and remember last receipt email'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -1247,6 +1247,126 @@ jobs:
                           print('AUTO_CREDIT_ROLLBACK_VERIFIED',remote.rsplit('/',1)[-1])
                       except BaseException:
                           print('AUTO_CREDIT_MANUAL_RECOVERY_REQUIRED',remote.rsplit('/',1)[-1])
+                  raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+
+      - name: Deploy full-page wallet topup with verified receipt email suggestion
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Deploy standalone wallet topup and remember last receipt email'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check account-browser.js
+          php -l account-service/private/wallet-real-payment.php
+          python3 - <<'PY'
+          import os,io,ftplib,ssl,subprocess,re,tempfile,hmac,hashlib,urllib.request,json
+          page=open('wallet-topup.html','rb').read().decode('utf8')
+          scripts=re.findall(r'<script>(.*?)</script>',page,re.S)
+          if len(scripts)!=1:raise RuntimeError('WALLET_PAGE_JS_MISSING_OR_AMBIGUOUS')
+          with tempfile.NamedTemporaryFile(mode='w',suffix='.js',encoding='utf-8') as js:
+              js.write(scripts[0]);js.flush()
+              subprocess.run(['node','--check',js.name],check=True)
+          if 'receipt_email_suggestion' not in page or 'id="receipt-email"' not in page:
+              raise RuntimeError('WALLET_PAGE_RECEIPT_PREFILL_MISSING')
+          if 'location.assign("/wallet-topup.html")' not in open('account-browser.js').read():
+              raise RuntimeError('WALLET_PAGE_NAVIGATION_NOT_CONNECTED')
+          if 'wallet-topup-standalone-20261108' not in open('index.html').read():
+              raise RuntimeError('WALLET_PAGE_CACHE_VERSION_MISSING')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          public=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          private=home+'/private/numi-account-20261031/'
+          targets=[
+            (public+'wallet-topup.html','wallet-topup.html',True),
+            (private+'wallet-real-payment.php','account-service/private/wallet-real-payment.php',False),
+            (public+'account-browser.js','account-browser.js',False),
+            (public+'index.html','index.html',False),
+          ]
+          def read(path):
+              b=io.BytesIO()
+              try:ftp.retrbinary('RETR '+path,b.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              if b.tell()>3000000:raise RuntimeError('WALLET_PAGE_UNEXPECTED_SIZE')
+              return b.getvalue()
+          def write(path,data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              if read(path)!=data:raise RuntimeError('WALLET_PAGE_UPLOAD_VERIFY_FAILED')
+          def recognized(path,current,updated):
+              if current==updated:return True
+              revisions=subprocess.check_output(['git','log','-100','--format=%H','--',path],text=True).splitlines()
+              for rev in revisions:
+                  old=subprocess.run(['git','show',rev+':'+path],capture_output=True)
+                  if old.returncode==0 and old.stdout==current:return True
+              return False
+          originals={};wanted={};changed=[]
+          try:
+              for remote,source,new_file in targets:
+                  old=read(remote);new=open(source,'rb').read()
+                  if new_file:
+                      if old is not None and old!=new:
+                          raise RuntimeError('WALLET_TOPUP_PAGE_ALREADY_EXISTS_DIFFERENT')
+                  elif old is None or not recognized(source,old,new):
+                      raise RuntimeError('WALLET_PAGE_UNKNOWN_REMOTE_BASELINE_'+source)
+                  originals[remote]=old;wanted[remote]=new
+              print('STANDALONE_WALLET_PREFLIGHT_OK')
+              for remote,old in originals.items():
+                  if old is None or old==wanted[remote]:continue
+                  bak=remote+'.before-wallet-standalone-20261108.bak'
+                  existing=read(bak)
+                  if existing is not None and existing!=old:
+                      raise RuntimeError('WALLET_STANDALONE_BACKUP_COLLISION')
+                  if existing is None:write(bak,old)
+              print('STANDALONE_WALLET_BACKUPS_VERIFIED')
+              try:
+                  for remote,source,is_new in targets:
+                      old=originals[remote];new=wanted[remote]
+                      if old==new:continue
+                      if read(remote)!=old:raise RuntimeError('WALLET_STANDALONE_CONCURRENT_EDIT')
+                      stage=remote+'.pending-wallet-standalone-20261108'
+                      if read(stage)is not None:raise RuntimeError('WALLET_STANDALONE_STAGING_COLLISION')
+                      write(stage,new)
+                      ftp.rename(stage,remote)
+                      changed.append(remote)
+                      if read(remote)!=new:raise RuntimeError('WALLET_STANDALONE_READBACK_MISMATCH')
+                      print('STANDALONE_WALLET_FILE_PUBLISHED',source)
+                  token=hmac.new(os.environ['REG_FTP_PASSWORD'].encode(),
+                    b'numi-real-wallet-worker-v1@xn----8sbhhqijddjgdebdz2c2o.xn--p1ai',hashlib.sha256).hexdigest()
+                  req=urllib.request.Request(
+                    'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/api/numi-real-worker.php',
+                    data=b'{"action":"probe"}',
+                    headers={'Content-Type':'application/json','X-Numi-Worker-Token':token},method='POST')
+                  with urllib.request.urlopen(req,timeout=70) as response:
+                      result=json.loads(response.read(6500))
+                  if (result.get('ok') is not True or result.get('wallet_mode_live') is not True
+                      or result.get('wallet_status_diagnostic',{}).get('result')!='ok'):
+                      raise RuntimeError('STANDALONE_WALLET_SERVER_PROBE_FAILED')
+                  # Verify actual HTTP availability of the new standalone page.
+                  with urllib.request.urlopen(
+                    'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/wallet-topup.html',timeout=30) as response:
+                      html=response.read(250000).decode('utf8')
+                  if 'id="receipt-email"' not in html or 'Пополнение баланса' not in html:
+                      raise RuntimeError('STANDALONE_WALLET_PUBLIC_PAGE_NOT_READY')
+                  for remote,source,new_file in targets:
+                      if read(remote)!=wanted[remote]:raise RuntimeError('STANDALONE_WALLET_FINAL_VERIFY_FAILED_'+source)
+                  print('STANDALONE_WALLET_AND_RECEIPT_PREFILL_LIVE_VERIFIED')
+              except BaseException:
+                  print('STANDALONE_WALLET_ROLLBACK_START')
+                  for remote in reversed(changed):
+                      try:
+                          if originals[remote] is None:ftp.delete(remote)
+                          else:write(remote,originals[remote])
+                          print('STANDALONE_WALLET_ROLLBACK_VERIFIED',remote.rsplit('/',1)[-1])
+                      except BaseException:print('STANDALONE_WALLET_MANUAL_RECOVERY_NEEDED',remote.rsplit('/',1)[-1])
                   raise
           finally:
               try:ftp.quit()
