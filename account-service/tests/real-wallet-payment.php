@@ -79,6 +79,35 @@ expectReal(fn()=>naRealRefundSend($refundConfig,$refundCaseId,'wrong!',1000,$ref
     'REAL_REFUND_PAYMENT_INVALID');
 expectReal(fn()=>naRealRefundSend($good,$refundCaseId,'live-payment-example-123',1000,$refundTransport),
     'REAL_REFUND_POLICY_NOT_APPROVED');
+// Original-payment-only refund approval: linked account, amount and payment ID
+// are read from MySQL, never from the refund caller.
+$refundTopupId='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+$refundCaseApproved='dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+$db->prepare("INSERT INTO numi_real_wallet_balances(account_id,kopeks,blocked_at,block_reason)
+    VALUES(?,0,UTC_TIMESTAMP(),'REFUND_RECONCILIATION')")
+    ->execute([$payAccountId]);
+$db->prepare("INSERT INTO numi_real_wallet_topups(id,account_id,request_key,kopeks,provider_payment_id,status)
+    VALUES(?,?,?,?,?,'credited')")
+    ->execute([$refundTopupId,$payAccountId,'refund-test-request-12345',10000,'live-payment-for-refund-123']);
+$db->prepare("INSERT INTO numi_real_wallet_refund_cases(id,account_id,topup_id,kopeks,status)
+    VALUES(?,?,?,?,'approved')")
+    ->execute([$refundCaseApproved,$payAccountId,$refundTopupId,1000]);
+$bound=naRealRefundApprovedCase($db,$refundCaseApproved);
+assertReal($bound['payment_id']==='live-payment-for-refund-123'
+    && $bound['kopeks']===1000
+    && $bound['account_id']===$payAccountId,
+    'approved refund resolves original payment and amount from protected DB records');
+$boundResult=naRealRefundSendApprovedCase($db,$refundConfig,$refundCaseApproved,$refundTransport);
+assertReal($boundResult['refund_id']==='rf_mock_123',
+    'approved source-bound refund submits through validated refund primitive');
+expectReal(fn()=>naRealRefundSendApprovedCase($db,$refundConfig,$refundCaseApproved,$refundTransport),
+    'REAL_REFUND_ALREADY_SUBMITTED');
+$db->prepare('SELECT provider_refund_id FROM numi_real_wallet_refund_cases WHERE id=?')
+    ->execute([$refundCaseApproved]);
+$refundSaved=$db->prepare('SELECT provider_refund_id FROM numi_real_wallet_refund_cases WHERE id=?');
+$refundSaved->execute([$refundCaseApproved]);
+assertReal($refundSaved->fetchColumn()==='rf_mock_123',
+    'refund result identifier persisted to case for reconciliation');
 $offsetCalls=[];
 $offsetMock=static function(array $body,string $key)use(&$offsetCalls):array{
     $offsetCalls[]=['body'=>$body,'key'=>$key];
