@@ -81,25 +81,28 @@ expectReal(fn()=>naRealRefundSend($good,$refundCaseId,'live-payment-example-123'
     'REAL_REFUND_POLICY_NOT_APPROVED');
 // Original-payment-only refund approval: linked account, amount and payment ID
 // are read from MySQL, never from the refund caller.
+$refundAccountId='00000000-0000-4000-8000-000000000105';
+$db->prepare('INSERT INTO numi_accounts(id,email,email_verified_at) VALUES(?,?,UTC_TIMESTAMP())')
+    ->execute([$refundAccountId,'refund@example.test']);
 $refundTopupId='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 $refundCaseApproved='dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 $db->prepare("INSERT INTO numi_real_wallet_balances(account_id,kopeks,blocked_at,block_reason)
     VALUES(?,1000,UTC_TIMESTAMP(),'REFUND_RECONCILIATION')")
-    ->execute([$payAccountId]);
+    ->execute([$refundAccountId]);
 $db->prepare("INSERT INTO numi_real_wallet_ledger
     (id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks)
     VALUES(?,?,'topup',?,?,?)")
-    ->execute([naUuid(),$payAccountId,$refundTopupId,1000,1000]);
+    ->execute([naUuid(),$refundAccountId,$refundTopupId,1000,1000]);
 $db->prepare("INSERT INTO numi_real_wallet_topups(id,account_id,request_key,kopeks,provider_payment_id,status)
     VALUES(?,?,?,?,?,'credited')")
-    ->execute([$refundTopupId,$payAccountId,'refund-test-request-12345',10000,'live-payment-for-refund-123']);
+    ->execute([$refundTopupId,$refundAccountId,'refund-test-request-12345',10000,'live-payment-for-refund-123']);
 $db->prepare("INSERT INTO numi_real_wallet_refund_cases(id,account_id,topup_id,kopeks,status)
     VALUES(?,?,?,?,'approved')")
-    ->execute([$refundCaseApproved,$payAccountId,$refundTopupId,1000]);
+    ->execute([$refundCaseApproved,$refundAccountId,$refundTopupId,1000]);
 $bound=naRealRefundApprovedCase($db,$refundCaseApproved);
 assertReal($bound['payment_id']==='live-payment-for-refund-123'
     && $bound['kopeks']===1000
-    && $bound['account_id']===$payAccountId,
+    && $bound['account_id']===$refundAccountId,
     'approved refund resolves original payment and amount from protected DB records');
 $boundResult=naRealRefundSendApprovedCase($db,$refundConfig,$refundCaseApproved,$refundTransport);
 assertReal($boundResult['refund_id']==='rf_mock_123',
@@ -118,9 +121,9 @@ assertReal(naRealRefundReconcile($db,$refundConfig,$refundCaseApproved,$refundGe
     'verified YooKassa refund atomically settles reserved wallet amount');
 assertReal(naRealRefundReconcile($db,$refundConfig,$refundCaseApproved,$refundGet)==='completed',
     'repeated refund reconciliation does not debit wallet again');
-assertReal(naRealWalletBalance($db,$payAccountId)===0,
+assertReal(naRealWalletBalance($db,$refundAccountId)===0,
     'settled refund debits balance exactly once');
-naRealWalletInvariant($db,$payAccountId);
+naRealWalletInvariant($db,$refundAccountId);
 $refundRow=$db->prepare("SELECT COUNT(*) FROM numi_real_wallet_ledger
     WHERE kind='refund' AND reference_id=?");
 $refundRow->execute([$refundCaseApproved]);
