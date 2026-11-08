@@ -139,6 +139,17 @@ try{
         // inside a wallet payment or transaction. Additive tables only.
         if(($settings['allow_additive_migration']??false)!==true)
             throw new RuntimeException('WORKER_MIGRATION_DISABLED');
+        // Upgrade only the contact column of the existing real-topup table.
+        // This migration is additive, authenticated, idempotent and never
+        // performed during a purchase or payment request.
+        $contactColumn=$db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA=DATABASE()
+              AND TABLE_NAME='numi_real_wallet_topups'
+              AND COLUMN_NAME='receipt_email'")->fetchColumn();
+        if((int)$contactColumn===0){
+            $db->exec("ALTER TABLE numi_real_wallet_topups
+                ADD COLUMN receipt_email VARCHAR(254) NULL AFTER kopeks");
+        }
         naRealWalletSchema($db);
         echo '{"ok":true,"action":"migrate","result":"REAL_SCHEMA_READY"}';exit;
     }
