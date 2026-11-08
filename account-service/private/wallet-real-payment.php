@@ -215,6 +215,14 @@ function naRealRefundApprovedCase(PDO $db,string $caseId): array {
     $kopeks=(int)$row['kopeks'];
     if($kopeks<1||$kopeks>(int)$row['topup_kopeks'])
         throw new RuntimeException('REAL_REFUND_AMOUNT_EXCEEDS_SOURCE');
+    // Full refunds of untouched advances are currently supported. Partial
+    // refunds require the merchant's reviewed itemized fiscal scheme.
+    if($kopeks!==(int)$row['topup_kopeks'])
+        throw new RuntimeException('REAL_PARTIAL_REFUND_FISCAL_REVIEW_REQUIRED');
+    $q=$db->prepare('SELECT COALESCE(SUM(kopeks),0) FROM numi_real_wallet_receipt_sources WHERE topup_id=?');
+    $q->execute([$row['topup_id']]);
+    if((int)$q->fetchColumn()!==0)
+        throw new RuntimeException('REAL_REFUND_SOURCE_ALREADY_SPENT');
     // One active or settled refund per source payment until partial-refund
     // allocation and the original-advance fiscal reconciliation are installed.
     $q=$db->prepare("SELECT COUNT(*) FROM numi_real_wallet_refund_cases
