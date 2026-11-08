@@ -123,7 +123,15 @@ function naMaterialBuild(string $code,string $resource,?string $root=null): arra
     return ['title'=>$title,'sections'=>$sections,'links'=>$links,'pdf_available'=>!in_array($code,['school_week','club_month'],true)];
 }
 function naMaterialEntitlement(PDO $db,array $account,string $id): ?array {
-    $q=$db->prepare("SELECT e.* FROM numi_entitlements e JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id WHERE e.id=? AND e.account_id=? AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP()) AND o.status='paid' AND o.verified_at IS NOT NULL");$q->execute([$id,$account['id']]);return $q->fetch()?:null;
+    // Once REAL mode is selected, sandbox entitlements must not open paid content.
+    $providerOnly=function_exists('naLiveWalletModeSelected')&&naLiveWalletModeSelected()
+        ?" AND o.provider='real_wallet'":"";
+    $q=$db->prepare("SELECT e.* FROM numi_entitlements e
+        JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
+        WHERE e.id=? AND e.account_id=? AND e.status='active'
+          AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
+          AND o.status='paid' AND o.verified_at IS NOT NULL $providerOnly");
+    $q->execute([$id,$account['id']]);return $q->fetch()?:null;
 }
 function naMaterialServe(PDO $db,array $body): never {
     $account=naCurrent($db);if(!$account)naReply(401,['ok'=>false,'error'=>'LOGIN_REQUIRED']);
