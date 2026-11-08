@@ -23,7 +23,12 @@ form{display:grid;gap:22px}
 .field{display:block;font-size:16px;font-weight:700;color:#254e3d}
 .field input{display:block;width:100%;min-height:58px;margin-top:9px;padding:12px 15px;border-radius:14px;border:1px solid #bdcbbd;color:#193d2e;background:white;font-size:18px;font-weight:450;box-shadow:none}
 .field input:focus-visible{outline:3px solid #9acbec;outline-offset:1px}
-.hint{display:block;color:#698070;font-weight:400;font-size:13px;line-height:1.4;margin-top:7px}
+.receipt-block{display:block;padding:16px 17px 17px;background:#fff6e7;border:2px solid #c9a268;border-radius:19px;box-shadow:0 3px 12px #715d3c0d}
+.receipt-title{display:block;font-size:clamp(19px,5vw,24px);line-height:1.24;font-weight:750;color:#1c4b38;margin-bottom:7px}
+.receipt-explanation{display:block;color:#46604b;font-size:15px;line-height:1.48;font-weight:450;margin:0 0 13px}
+.receipt-block input[type=email]{height:55px;min-height:55px;margin:0;border:1.5px solid #bca274;background:#fff;color:#1c4333;font-size:17px}
+.receipt-block input[type=email]:focus{border-color:#1c654a}
+
 .methods{padding:0;margin:0;border:0;display:flex;gap:27px;flex-wrap:wrap}
 .methods legend{font-size:16px;font-weight:700;margin-bottom:12px;padding:0}
 .methods label{display:flex;gap:9px;align-items:center;font-size:17px;color:#244c39}
@@ -47,9 +52,10 @@ form{display:grid;gap:22px}
 <label class="field" for="amount">Сумма, ₽
 <input id="amount" name="amount" type="number" min="1" max="100000" step="1" inputmode="numeric" placeholder="Введите сумму" required>
 </label>
-<label class="field" for="receipt-email">Email для чека
+<label class="receipt-block" for="receipt-email">
+<span class="receipt-title">Введите почту для получения чека</span>
+<span class="receipt-explanation">Если вам понадобится возврат денег, он поможет быстро найти и подтвердить платёж.</span>
 <input id="receipt-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="name@example.ru" required>
-<small class="hint">Только для электронного чека. Регистрироваться и подтверждать почту не нужно. Адрес предыдущего чека подставится автоматически — его можно изменить.</small>
 </label>
 <fieldset class="methods" id="methods">
 <legend>Способ оплаты</legend>
