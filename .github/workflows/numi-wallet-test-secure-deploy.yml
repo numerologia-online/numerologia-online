@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -711,6 +711,90 @@ jobs:
                   if files.get(name)=='changed':
                       try:write(root+name,originals[name]);print('LIVE_WALLET_BROWSER_ROLLED_BACK',name)
                       except BaseException:print('LIVE_WALLET_BROWSER_ROLLBACK_FAILED',name)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+
+      - name: Replace only live account browser topup UI with safe rollback
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check account-browser.js
+          node - <<'JS'
+          const fs=require('node:fs'),assert=require('node:assert/strict');
+          const src=fs.readFileSync('account-browser.js','utf8');
+          assert(src.includes('topupToggle.addEventListener("click",showTopupPage)'));
+          assert(src.includes('profile.append(topupPage)'));
+          assert(src.includes('dialog.classList.add("numi-wallet-topup-active")'));
+          assert(!src.includes('walletForm.hidden=!walletForm.hidden'));
+          assert(src.includes('const result=await request("wallet_topup",payload)'));
+          console.log('TOPUP_SCREEN_UI_CHECK_OK');
+          JS
+          python3 - <<'PY'
+          import os,ftplib,ssl,io,subprocess
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=32)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
+          original_js=subprocess.check_output(['git','cat-file','blob','01342d83d29ca07680526f19922fe27629116301'])
+          updated_js=open('account-browser.js','rb').read()
+          old_tag=b'account-browser.js?v=real-wallet-live-20261108'
+          new_tag=b'account-browser.js?v=wallet-topup-screen-20261108'
+          def read(p):
+              f=io.BytesIO()
+              try:ftp.retrbinary('RETR '+p,f.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              if f.tell()>3000000:raise RuntimeError('UNREVIEWED_FILE_SIZE')
+              return f.getvalue()
+          def write(p,contents):
+              ftp.storbinary('STOR '+p,io.BytesIO(contents))
+              if read(p)!=contents:raise RuntimeError('FTPS_READBACK_MISMATCH')
+          changed=[]
+          snapshots={}
+          def replace(name,expected,new):
+              if expected==new:return
+              p=root+name;bak=p+'.before-topup-screen-20261108.bak'
+              pending=p+'.pending-topup-screen-20261108'
+              if read(pending)is not None:raise RuntimeError('TEMP_FILE_COLLISION_'+name)
+              backup=read(bak)
+              if backup is not None and backup!=expected:raise RuntimeError('BACKUP_COLLISION_'+name)
+              if read(p)!=expected:raise RuntimeError('CONCURRENT_SERVER_CHANGE_'+name)
+              if backup is None:write(bak,expected)
+              write(pending,new)
+              ftp.rename(pending,p)
+              changed.append(name)
+              if read(p)!=new:raise RuntimeError('LIVE_FILE_MISMATCH_'+name)
+              print('TOPUP_UI_DEPLOYED',name)
+          try:
+              js=read(root+'account-browser.js')
+              html=read(root+'index.html')
+              if js not in (original_js,updated_js):raise RuntimeError('UNRECOGNIZED_LIVE_BROWSER_JS')
+              if not html:raise RuntimeError('LIVE_INDEX_MISSING')
+              if new_tag in html:
+                  if old_tag in html:raise RuntimeError('DUPLICATE_WALLET_SCRIPT_TAG')
+                  amended=html
+              else:
+                  if html.count(old_tag)!=1:raise RuntimeError('UNRECOGNIZED_LIVE_WALLET_SCRIPT_VERSION')
+                  amended=html.replace(old_tag,new_tag,1)
+              snapshots={'account-browser.js':js,'index.html':html}
+              replace('account-browser.js',js,updated_js)
+              replace('index.html',html,amended)
+              if read(root+'account-browser.js')!=updated_js or read(root+'index.html')!=amended:
+                  raise RuntimeError('TOPUP_UI_FINAL_VERIFICATION_FAILED')
+              print('TOPUP_SCREEN_LIVE_VERIFIED')
+          except BaseException:
+              for name in reversed(changed):
+                  try:write(root+name,snapshots[name]);print('TOPUP_SCREEN_ROLLED_BACK',name)
+                  except BaseException:print('TOPUP_SCREEN_ROLLBACK_FAILED',name)
               raise
           finally:
               try:ftp.quit()
