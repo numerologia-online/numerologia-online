@@ -480,6 +480,9 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             }
             $raw=naCatalogResolve($input,$data['club_active']);
             naReply(200,array_merge($data,[
+                // All authenticated wallet JSON endpoints must expose ok:true;
+                // without it the paid-question client rejects a valid quote.
+                'ok'=>true,
                 'balance_kopeks'=>$data['real_balance_kopeks'],
                 'member_included'=>$raw['member_included'],
                 'club_subscription_price_kopeks'=>naCatalogResolve(['product_code'=>'club_month'],false)['price_kopeks'],
