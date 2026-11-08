@@ -1,0 +1,53 @@
+name: REG.RU REAL wallet invoices and refunds worker
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: numi-real-wallet-fiscal-worker
+  cancel-in-progress: false
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Invoke protected REG.RU worker without exposing credentials
+        env:
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,hmac,json,os,urllib.request,urllib.error
+          password=os.environ.get('REG_FTP_PASSWORD','')
+          if not password:
+              raise SystemExit('REG_FTP_PASSWORD_SECRET_MISSING')
+          token=hmac.new(password.encode(),
+            b'numi-real-wallet-worker-v1@xn----8sbhhqijddjgdebdz2c2o.xn--p1ai',
+            hashlib.sha256).hexdigest()
+          url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/api/numi-real-worker.php'
+          req=urllib.request.Request(url,
+            data=b'{"action":"tick"}',
+            headers={'Content-Type':'application/json','X-Numi-Worker-Token':token,
+                     'Cache-Control':'no-store','User-Agent':'numi-real-wallet-worker/1'},
+            method='POST')
+          try:
+              with urllib.request.urlopen(req,timeout=70) as response:
+                  status=response.status
+                  payload=json.loads(response.read(4096))
+          except urllib.error.HTTPError as err:
+              status=err.code
+              try:payload=json.loads(err.read(2048))
+              except Exception:payload={}
+          except Exception:
+              raise SystemExit('REG_RU_WORKER_UNREACHABLE')
+          if status==503 and payload.get('error')=='LIVE_WALLET_NOT_ACTIVATED':
+              print('REAL_WALLET_DISABLED_NO_MONEY_MOVED')
+          elif status==200 and payload.get('ok') is True:
+              results=payload.get('results',{})
+              print('REAL_WALLET_MAINTENANCE',json.dumps(results,ensure_ascii=False))
+          else:
+              raise SystemExit('REG_RU_WORKER_STATUS_'+str(status)+'_'+str(payload.get('error','unknown')))
+          PY
