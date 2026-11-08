@@ -269,14 +269,14 @@
   const clubLine=document.createElement("div");clubLine.className="numi-club-status";
   const clubText=document.createElement("span");clubText.textContent="Проверяем подписку…";
   const clubJoin=document.createElement("button");clubJoin.type="button";
-  clubJoin.className="numi-wallet-small";clubJoin.textContent="Вступить в клуб";clubJoin.hidden=true;
-  clubJoin.addEventListener("click",async()=>{
-    clubJoin.disabled=true;
-    try{
-      const {openStore}=await import("/store-entry.js?v=subscription-controls-20261108");
-      await openStore({product_code:"club_month"});
-    }catch(_){walletFeedback.hidden=false;walletFeedback.textContent="Не удалось открыть оформление подписки.";}
-    finally{clubJoin.disabled=false;}
+  clubJoin.className="numi-wallet-small";clubJoin.textContent="Узнать преимущества клуба";clubJoin.hidden=true;
+  clubJoin.addEventListener("click",()=>{
+    // Inform first: show the existing club benefits and tariff comparison,
+    // not the purchase flow.
+    const pricesTile=overview.querySelector('[data-account-panel="prices"]');
+    if(pricesTile){pricesTile.click();return;}
+    walletFeedback.hidden=false;
+    walletFeedback.textContent="Не удалось открыть преимущества клуба.";
   });
   clubLine.append(clubText,clubJoin);
   const ledger=document.createElement("ul");ledger.className="numi-wallet-operations";ledger.hidden=true;
@@ -497,10 +497,10 @@
           ? new Date(response.club_expires_at.replace(" ","T")+"Z") : null;
         const until=expiry&&!Number.isNaN(expiry.getTime())
           ? " до "+expiry.toLocaleDateString("ru-RU",{timeZone:"UTC",day:"numeric",month:"long",year:"numeric"}) : "";
-        clubText.textContent="Клуб активен"+until+" · скидка 50% на ответы";
+        clubText.textContent="Клуб активен"+until+" · скидка 50% на разборы";
         clubJoin.hidden=true;
       }else{
-        clubText.textContent="Клуб не подключён · участникам ответы вдвое дешевле";
+        clubText.textContent="Клуб не подключён · участникам разборы вдвое дешевле";
         clubJoin.hidden=false;
       }
       window.dispatchEvent(new Event("numi:club-status-updated"));
