@@ -99,6 +99,20 @@ function naRealWalletSchema(PDO $db): void {
       CONSTRAINT fk_real_merge_source FOREIGN KEY(source_account_id) REFERENCES numi_accounts(id),
       CONSTRAINT fk_real_merge_destination FOREIGN KEY(destination_account_id) REFERENCES numi_accounts(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    // One purchase must have one known verified advance source before any debit.
+    // The current conservative version only permits a single-source purchase;
+    // multi-source offset receipts require separately reviewed allocation logic.
+    $db->exec("CREATE TABLE IF NOT EXISTS numi_real_wallet_receipt_sources (
+      spend_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+      topup_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+      kopeks BIGINT UNSIGNED NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      KEY ix_real_receipt_source_topup(topup_id),
+      CONSTRAINT fk_real_receipt_source_spend FOREIGN KEY(spend_id)
+        REFERENCES numi_real_wallet_spends(id),
+      CONSTRAINT fk_real_receipt_source_topup FOREIGN KEY(topup_id)
+        REFERENCES numi_real_wallet_topups(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     // Durable fiscal outbox: no wallet use without an auditable receipt event.
     // The offset receipt worker is intentionally NOT enabled before the cash-register review.
     $db->exec("CREATE TABLE IF NOT EXISTS numi_real_wallet_fiscal_events (
@@ -329,6 +343,33 @@ function naRealWalletQuote(PDO $db,array $account,array $input,callable $materia
         'real_balance_kopeks'=>naRealWalletBalance($db,$account['id'])];
 }
 /**
+ * Allocate each fulfilled purchase to its actual original credited advance.
+ * Caller MUST already hold the account FOR UPDATE lock inside the purchase
+ * transaction. Reserve one receipt for advance and one possible refund: at
+ * most 48 offset events per original provider payment (below the 50 cap).
+ * This conservative allocator refuses multi-source purchases for now.
+ */
+function naRealWalletAllocateReceiptSource(PDO $db,string $accountId,int $kopeks): string {
+    if($kopeks<1||!$db->inTransaction())
+        throw new RuntimeException('REAL_RECEIPT_SOURCE_INVALID');
+    $q=$db->prepare("SELECT id,kopeks FROM numi_real_wallet_topups
+        WHERE account_id=? AND status='credited'
+          AND provider_payment_id IS NOT NULL
+        ORDER BY credited_at ASC,id ASC FOR UPDATE");
+    $q->execute([$accountId]);
+    $sources=$q->fetchAll(PDO::FETCH_ASSOC);
+    $used=$db->prepare("SELECT COALESCE(SUM(kopeks),0) AS used_kopeks,
+         COUNT(*) AS receipt_count FROM numi_real_wallet_receipt_sources WHERE topup_id=?");
+    foreach($sources as $topup){
+        $used->execute([$topup['id']]);$amount=$used->fetch(PDO::FETCH_ASSOC);
+        $free=(int)$topup['kopeks']-(int)$amount['used_kopeks'];
+        if($free >= $kopeks && (int)$amount['receipt_count'] < 48)
+            return $topup['id'];
+    }
+    throw new RuntimeException('REAL_RECEIPT_SOURCE_UNAVAILABLE');
+}
+
+/**
  * Manual balance purchase. Never executes an external charge; no cart.
  * Only REAL paid entitlements count as owned or grant the club discount.
  */
@@ -397,6 +438,9 @@ function naRealWalletBuy(PDO $db,array $account,array $config,array $input,strin
         }
         $db->prepare('INSERT INTO numi_real_wallet_spends(id,account_id,request_key,product_code,resource_id,kopeks,order_id,entitlement_id) VALUES(?,?,?,?,?,?,?,?)')
             ->execute([$spendId,$account['id'],$requestKey,$item['product_code'],$item['resource_id'],$price,$orderId,$entitlementId]);
+        $sourceTopupId=naRealWalletAllocateReceiptSource($db,$account['id'],$price);
+        $db->prepare('INSERT INTO numi_real_wallet_receipt_sources(spend_id,topup_id,kopeks) VALUES(?,?,?)')
+            ->execute([$spendId,$sourceTopupId,$price]);
         $db->prepare("INSERT INTO numi_real_wallet_ledger(id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks)
             VALUES(?,?,'purchase',?,?,?)")
             ->execute([naUuid(),$account['id'],$spendId,-$price,$new]);
