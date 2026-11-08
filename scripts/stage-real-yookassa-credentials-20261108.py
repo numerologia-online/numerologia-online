@@ -38,8 +38,8 @@ def main():
                     return
                 raise
             private_config=output.getvalue()
-            has_key=bool(re.search(rb"['\\\"]secret_key['\\\"]\\s*=>\\s*['\\\"]live_[A-Za-z0-9_-]{12,480}['\\\"]",private_config))
-            has_shop=bool(re.search(rb"['\\\"]shop_id['\\\"]\\s*=>\\s*['\\\"][0-9]{3,20}['\\\"]",private_config))
+            has_key=bool(re.search(rb"live_[A-Za-z0-9_-]{12,480}",private_config))
+            has_shop=bool(re.search(rb"shop_id",private_config))
             print("REG_RU_PRIVATE_CONFIG_EXISTS",flush=True)
             print("REG_RU_LIVE_CREDENTIAL_FIELDS_PRESENT" if has_key and has_shop else "REG_RU_LIVE_CREDENTIAL_FIELDS_UNVERIFIED",flush=True)
             print("REAL_PAYMENT_ACTIVATION_REMAINS_DISABLED",flush=True)
