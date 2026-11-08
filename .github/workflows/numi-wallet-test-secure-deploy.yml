@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -404,7 +404,7 @@ jobs:
           PY
 
       - name: Read-only wallet status diagnostic on REG.RU
-        if: github.event_name == 'push' && (github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query')
+        if: github.event_name == 'push' && (github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS')
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
@@ -446,6 +446,23 @@ jobs:
                   raise RuntimeError('PROTECTED_WORKER_PROBE_NOT_OK')
               print('REAL_WALLET_STATUS_DIAGNOSTIC',json.dumps(report.get('wallet_status_diagnostic'),ensure_ascii=False))
               print('REAL_WALLET_MODE_ACTIVE',report.get('wallet_mode_live'))
+              jsfile=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/account-browser.js'
+              browser=io.BytesIO()
+              ftp.retrbinary('RETR '+jsfile,browser.write)
+              srcjs=open('account-browser.js','rb').read()
+              print('ACCOUNT_BROWSER_JS', 'MATCH' if browser.getvalue()==srcjs else 'DIFF')
+              try:
+                  empty=urllib.request.Request(
+                      'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/api/numi-account.php',
+                      data=b'{"action":"wallet_status"}',
+                      headers={'Content-Type':'application/json',
+                               'Origin':'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'},
+                      method='POST')
+                  with urllib.request.urlopen(empty,timeout=20) as response:
+                      print('ANONYMOUS_WALLET_HTTP',response.status)
+              except urllib.error.HTTPError as err:
+                  print('ANONYMOUS_WALLET_HTTP',err.code)
+                  print('ANONYMOUS_WALLET_ERROR',json.loads(err.read(1500)).get('error','missing'))
           finally:
               if updated:put(original)
               ftp.quit()
