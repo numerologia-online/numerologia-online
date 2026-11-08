@@ -435,6 +435,15 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     'cancelled_at'=>$byPref[$code]['cancelled_at']??null];
             }
             $result['subscriptions']=$subs;
+            // Last receipt address belongs to this authenticated account only.
+            // It is NOT a login identity and never verifies or links email.
+            $mail=$db->prepare("SELECT receipt_email
+                FROM numi_real_wallet_topups
+                WHERE account_id=? AND receipt_email IS NOT NULL
+                  AND status='credited'
+                ORDER BY credited_at DESC,id DESC LIMIT 1");
+            $mail->execute([$account['id']]);
+            $result['receipt_email_suggestion']=$mail->fetchColumn()?:null;
             $result['payment_methods']=['bank_card','sbp'];
             naReply(200,$result);
         }
