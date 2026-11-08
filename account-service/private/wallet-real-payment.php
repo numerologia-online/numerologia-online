@@ -133,6 +133,17 @@ function naRealOffsetReceiptSend(
 }
 
 /**
+ * FULL refunds of unused advances: YooKassa issues the refund receipt using
+ * the original payment details. No additional receipt payload is submitted.
+ * Partial refunds still require a separate reviewed itemized implementation.
+ */
+function naRealRefundReceiptSettings(array $config): void {
+    if(($config['refund_receipt_mode']??null)!=='yookassa_full_auto'
+       ||($config['refund_receipt_status_check']??null)!==true)
+        throw new RuntimeException('REAL_REFUND_RECEIPT_SETTINGS_MISSING');
+}
+
+/**
  * Provider refund primitive. This does not alter balances, grants or fiscal
  * records; a separate audited reconciliation must do so after confirmed success.
  * Accept only an approved server-side refund case with verified original payment.
@@ -142,6 +153,7 @@ function naRealRefundSend(
     ?callable $testTransport=null
 ): array {
     naRealWalletRequireLive($config);
+    naRealRefundReceiptSettings($config);
     if(($config['refunds_verified']??false)!==true
         ||($config['refund_worker_verified']??false)!==true)
         throw new RuntimeException('REAL_REFUND_POLICY_NOT_APPROVED');
@@ -289,6 +301,7 @@ function naRealRefundReconcile(
     PDO $db,array $config,string $caseId,?callable $testGet=null
 ): string {
     naRealWalletRequireLive($config);
+    naRealRefundReceiptSettings($config);
     if(($config['refund_worker_verified']??false)!==true)
         throw new RuntimeException('REAL_REFUND_POLICY_NOT_APPROVED');
     if(preg_match('/^[a-f0-9-]{36}$/iD',$caseId)!==1)
