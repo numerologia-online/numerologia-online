@@ -397,8 +397,56 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                   AND o.status='paid' AND o.verified_at IS NOT NULL AND o.provider='real_wallet'");
             $q->execute([$account['id']]);
             $result['club_expires_at']=$q->fetchColumn()?:null;
+            $periods=$db->prepare("SELECT e.product_code,MAX(e.expires_at) AS expires_at
+                FROM numi_entitlements e
+                JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
+                WHERE e.account_id=? AND e.product_code IN ('club_month','school_week')
+                  AND e.status='active' AND o.status='paid'
+                  AND o.verified_at IS NOT NULL AND o.provider='real_wallet'
+                GROUP BY e.product_code");
+            $periods->execute([$account['id']]);
+            $byPeriod=[];
+            foreach($periods->fetchAll(PDO::FETCH_ASSOC) as $row)
+                $byPeriod[$row['product_code']]=$row['expires_at'];
+            $prefs=$db->prepare("SELECT product_code,auto_renew,cancelled_at
+                FROM numi_subscription_settings
+                WHERE account_id=? AND product_code IN ('club_month','school_week')");
+            $prefs->execute([$account['id']]);
+            $byPref=[];
+            foreach($prefs->fetchAll(PDO::FETCH_ASSOC) as $row)
+                $byPref[$row['product_code']]=$row;
+            $now=new DateTimeImmutable('now',new DateTimeZone('UTC'));
+            $subs=[];
+            foreach(['club_month'=>49000,'school_week'=>14900] as $code=>$price){
+                $until=$byPeriod[$code]??null;
+                $active=is_string($until) && new DateTimeImmutable(
+                    $until,new DateTimeZone('UTC'))>$now;
+                // No live recurring charge is enabled until merchant approval
+                // and a verified, explicitly consented payment method exist.
+                $subs[]=['product_code'=>$code,'active'=>$active,
+                    'expires_at'=>$until,'price_kopeks'=>$price,
+                    'auto_renew'=>false,'renewal'=>'manual',
+                    'recurring_available'=>false,
+                    'cancelled_at'=>$byPref[$code]['cancelled_at']??null];
+            }
+            $result['subscriptions']=$subs;
             $result['payment_methods']=['bank_card','sbp'];
             naReply(200,$result);
+        }
+        // Live subscription management belongs to the authenticated wallet
+        // account. An opt-out never revokes the already paid membership.
+        if($action==='subscription_cancel'){
+            $code=$body['product_code']??null;
+            if(!is_string($code)||!in_array($code,['club_month','school_week'],true))
+                throw new InvalidArgumentException('INVALID_SUBSCRIPTION');
+            $db->prepare('INSERT IGNORE INTO numi_subscription_settings(account_id,product_code)
+                VALUES(?,?)')->execute([$account['id'],$code]);
+            $db->prepare("UPDATE numi_subscription_settings SET auto_renew=0,
+                payment_method_id=NULL,cancelled_at=UTC_TIMESTAMP()
+                WHERE account_id=? AND product_code=?")
+                ->execute([$account['id'],$code]);
+            naReply(200,['ok'=>true,'test'=>false,'auto_renew'=>false,
+                'product_code'=>$code,'access_unchanged'=>true]);
         }
         if($action==='wallet_quote'){
             $input=$body['item']??null;
