@@ -82,7 +82,16 @@ try{
                 $probeDb->beginTransaction();
                 try{
                     naRealWalletStatus($probeDb,['id'=>(string)$sampleId]);
-                    $walletStatusCheck=['result'=>'ok'];
+                    // Reproduce the additional subscription query used only by
+                    // the live wallet HTTP status route (not the base status helper).
+                    $clubQ=$probeDb->prepare("SELECT MAX(e.expires_at) FROM numi_entitlements e
+                        JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
+                        WHERE e.account_id=? AND e.product_code='club_month'
+                          AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
+                          AND o.status='paid' AND o.verified_at IS NOT NULL AND o.provider='real_wallet'");
+                    $clubQ->execute([(string)$sampleId]);
+                    $clubQ->fetchColumn();
+                    $walletStatusCheck=['result'=>'ok','including_club_query'=>true];
                 }finally{
                     if($probeDb->inTransaction())$probeDb->rollBack();
                 }
