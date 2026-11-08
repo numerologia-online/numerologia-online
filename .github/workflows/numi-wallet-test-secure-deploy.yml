@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing' || github.event.head_commit.message == 'Publish club benefits wording and navigation on REG.RU'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing' || github.event.head_commit.message == 'Publish club benefits wording and navigation on REG.RU' || github.event.head_commit.message == 'Publish automatic live wallet credit and payment delay notice'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -1139,6 +1139,114 @@ jobs:
                   for name in reversed(changed):
                       try:write(root+name,before[name]);print('CLUB_BENEFITS_ROLLBACK',name)
                       except BaseException:print('CLUB_BENEFITS_MANUAL_RECOVERY_NEEDED',name)
+                  raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+
+      - name: Deploy automatic immediate wallet reconciliation and warning
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Publish automatic live wallet credit and payment delay notice'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l account-service/private/wallet-real.php
+          php -l account-service/private/wallet-real-payment.php
+          node --check account-browser.js
+          grep -q 'При включённом VPN деньги могут зачисляться до десяти минут' account-browser.js
+          grep -q 'naRealWalletSyncOwnPending' account-service/private/wallet-real-payment.php
+          grep -q 'wallet-auto-credit-20261108' index.html
+          python3 - <<'PY'
+          import io,os,ssl,ftplib,subprocess,hmac,hashlib,json,urllib.request,urllib.error
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=34)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          public=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          private=home+'/private/numi-account-20261031/'
+          files=[
+            (private+'wallet-real.php','account-service/private/wallet-real.php'),
+            (private+'wallet-real-payment.php','account-service/private/wallet-real-payment.php'),
+            (public+'account-browser.js','account-browser.js'),
+            (public+'index.html','index.html'),
+          ]
+          def read(remote):
+              buf=io.BytesIO()
+              try:ftp.retrbinary('RETR '+remote,buf.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              if buf.tell()>3000000:raise RuntimeError('AUTO_CREDIT_FILE_SIZE_REVIEW')
+              return buf.getvalue()
+          def write(remote,data):
+              ftp.storbinary('STOR '+remote,io.BytesIO(data))
+              if read(remote)!=data:raise RuntimeError('AUTO_CREDIT_FTPS_VERIFY_FAILED')
+          def known(path,current,updated):
+              if current==updated:return True
+              revs=subprocess.check_output(['git','log','-100','--format=%H','--',path],text=True).splitlines()
+              for rev in revs:
+                  obj=subprocess.run(['git','show',rev+':'+path],capture_output=True)
+                  if obj.returncode==0 and obj.stdout==current:return True
+              return False
+          originals={};target={};updated=[]
+          try:
+              for remote,path in files:
+                  existing=read(remote);fresh=open(path,'rb').read()
+                  if existing is None or not known(path,existing,fresh):
+                      raise RuntimeError('AUTO_CREDIT_UNKNOWN_SERVER_BASELINE_'+path)
+                  originals[remote]=existing;target[remote]=fresh
+              print('AUTO_CREDIT_LIVE_BASELINES_VERIFIED')
+              for remote,old in originals.items():
+                  if old==target[remote]:continue
+                  bak=remote+'.before-wallet-auto-credit-20261108.bak'
+                  existing=read(bak)
+                  if existing is not None and existing!=old:
+                      raise RuntimeError('AUTO_CREDIT_BACKUP_CONFLICT')
+                  if existing is None:write(bak,old)
+              print('AUTO_CREDIT_BACKUPS_VERIFIED')
+              try:
+                  for remote,path in files:
+                      old=originals[remote];fresh=target[remote]
+                      if old==fresh:continue
+                      if read(remote)!=old:raise RuntimeError('AUTO_CREDIT_CONCURRENT_CHANGE')
+                      temp=remote+'.pending-wallet-auto-credit-20261108'
+                      if read(temp)is not None:raise RuntimeError('AUTO_CREDIT_STAGING_COLLISION')
+                      write(temp,fresh)
+                      ftp.rename(temp,remote)
+                      updated.append(remote)
+                      if read(remote)!=fresh:raise RuntimeError('AUTO_CREDIT_PUBLISHED_FILE_CHANGED')
+                      print('AUTO_CREDIT_FILE_DEPLOYED',path)
+                  # Protected read-only provider health probe (no debit/refund).
+                  token=hmac.new(os.environ['REG_FTP_PASSWORD'].encode(),
+                    b'numi-real-wallet-worker-v1@xn----8sbhhqijddjgdebdz2c2o.xn--p1ai',hashlib.sha256).hexdigest()
+                  req=urllib.request.Request(
+                    'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/api/numi-real-worker.php',
+                    data=b'{"action":"probe"}',
+                    headers={'Content-Type':'application/json','X-Numi-Worker-Token':token},method='POST')
+                  with urllib.request.urlopen(req,timeout=65) as response:
+                      response_code=response.status
+                      health=json.loads(response.read(6500))
+                  if (response_code!=200 or health.get('ok') is not True
+                      or health.get('wallet_mode_live') is not True
+                      or health.get('wallet_status_diagnostic',{}).get('result')!='ok'):
+                      raise RuntimeError('AUTO_CREDIT_LIVE_WALLET_POST_DEPLOY_PROBE_FAILED')
+                  print('AUTO_CREDIT_LIVE_WALLET_PROBE_SUCCESS')
+                  for remote,path in files:
+                      if read(remote)!=target[remote]:
+                          raise RuntimeError('AUTO_CREDIT_FINAL_READBACK_ERROR_'+path)
+                  print('AUTO_CREDIT_LIVE_SITE_PUBLISHED_AND_VERIFIED')
+              except BaseException:
+                  print('AUTO_CREDIT_DEPLOY_ROLLBACK_BEGIN')
+                  for remote in reversed(updated):
+                      try:
+                          write(remote,originals[remote])
+                          print('AUTO_CREDIT_ROLLBACK_VERIFIED',remote.rsplit('/',1)[-1])
+                      except BaseException:
+                          print('AUTO_CREDIT_MANUAL_RECOVERY_REQUIRED',remote.rsplit('/',1)[-1])
                   raise
           finally:
               try:ftp.quit()
