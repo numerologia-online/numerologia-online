@@ -56,7 +56,7 @@ function naRealWorkerReceiptSource(PDO $db,string $eventId): array {
     $q=$db->prepare("SELECT f.id AS fiscal_id,f.kopeks AS fiscal_kopeks,
         s.id AS spend_id,s.account_id,s.product_code,s.kopeks AS spend_kopeks,
         rs.kopeks AS allocated_kopeks,t.id AS topup_id,t.account_id AS topup_account_id,
-        t.provider_payment_id,t.status AS topup_status
+        t.provider_payment_id,t.receipt_email,t.status AS topup_status
         FROM numi_real_wallet_fiscal_events f
         INNER JOIN numi_real_wallet_spends s ON s.id=f.reference_id
         INNER JOIN numi_real_wallet_receipt_sources rs ON rs.spend_id=s.id
@@ -67,6 +67,7 @@ function naRealWorkerReceiptSource(PDO $db,string $eventId): array {
     if(!$row || $row['topup_status']!=='credited'
         || $row['account_id']!==$row['topup_account_id']
         || !is_string($row['provider_payment_id']) || $row['provider_payment_id']===''
+        || !is_string($row['receipt_email'])
         || (int)$row['fiscal_kopeks']!==(int)$row['spend_kopeks']
         || (int)$row['fiscal_kopeks']!==(int)$row['allocated_kopeks'])
         throw new RuntimeException('REAL_OFFSET_SOURCE_REVIEW_REQUIRED');
@@ -137,7 +138,9 @@ function naRealWorkerOffsetTick(
                 $result['manual_review']++;
                 continue;
             }
-            $email=naRealWalletRequireReceiptContact($db,['id'=>$source['account_id']]);
+            // Use the immutable email stored with the original advance, never
+            // depend on a verified account email or a later profile change.
+            $email=naRealWalletReceiptEmail($source['receipt_email']);
             $payload=naRealOffsetReceiptPayload(
                 $source['provider_payment_id'],$email,
                 naRealWorkerReceiptDescription($source['product_code']),
