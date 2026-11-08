@@ -1,7 +1,7 @@
 name: REG.RU REAL wallet invoices and refunds worker
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 permissions:
   contents: read
