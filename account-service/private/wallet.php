@@ -369,6 +369,17 @@ function naWalletBuy(PDO $db,array $account,array $body): never {
 function naWalletServe(PDO $db,string $action,array $body): never {
     $account=naCurrent($db);$config=naStoreConfig();
     if (!$account) naReply(401,['ok'=>false,'error'=>'LOGIN_REQUIRED']);
+    // The private production mode is an EXPLICIT switch, not inferred from
+    // the existence of a key. Existing REG.RU config has wallet_mode=disabled.
+    // Never fall back to sandbox balances after live mode has been selected.
+    $livePath=dirname(__DIR__).'/numi-wallet-live/config.local.php';
+    if(is_file($livePath)){
+        $liveConfig=require $livePath;
+        if(is_array($liveConfig)&&($liveConfig['wallet_mode']??'disabled')==='live'){
+            require_once __DIR__.'/wallet-real-payment.php';
+            naRealWalletServe($db,$action,$body,$account,$liveConfig);
+        }
+    }
     if (!naWalletAllowed($account,$config)) naReply(403,['ok'=>false,'error'=>'WALLET_TEST_DISABLED']);
     try {
         if ($action==='wallet_status') naWalletStatus($db,$account);
