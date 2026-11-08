@@ -74,6 +74,64 @@ function naRealOffsetReceiptPayload(
     ];
 }
 
+/**
+ * Submit an already allocated offset receipt using a stable fiscal event id.
+ * The caller must durably associate spend -> original topup before calling.
+ * Retrying with the same event id uses exactly the same YooKassa key.
+ * This is a server-internal primitive; no public API route enables it.
+ */
+function naRealOffsetReceiptSend(
+    array $config,string $eventId,array $payload,?callable $testTransport=null
+): array {
+    naRealWalletRequireLive($config);
+    if(($config['offset_receipt_worker_verified']??false)!==true
+        ||($config['offset_receipt_reviewed']??false)!==true)
+        throw new RuntimeException('REAL_OFFSET_FISCAL_POLICY_NOT_APPROVED');
+    if(preg_match('/^[a-f0-9-]{36}$/iD',$eventId)!==1)
+        throw new InvalidArgumentException('REAL_OFFSET_EVENT_INVALID');
+    if(($payload['type']??null)!=='payment'
+        ||($payload['settlements'][0]['type']??null)!=='prepayment'
+        ||($payload['items'][0]['payment_mode']??null)!=='full_payment'
+        ||!is_string($payload['payment_id']??null))
+        throw new RuntimeException('REAL_OFFSET_PAYLOAD_INVALID');
+    $key=hash('sha256','numi-real-offset-v1:'.$eventId);
+    if($testTransport!==null){
+        $response=$testTransport($payload,$key);
+    }else{
+        $curl=curl_init('https://api.yookassa.ru/v3/receipts');
+        if($curl===false)throw new RuntimeException('REAL_PROVIDER_UNAVAILABLE');
+        try{
+            curl_setopt_array($curl,[
+                CURLOPT_POST=>true,
+                CURLOPT_POSTFIELDS=>json_encode($payload,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),
+                CURLOPT_RETURNTRANSFER=>true,
+                CURLOPT_CONNECTTIMEOUT=>5,
+                CURLOPT_TIMEOUT=>20,
+                CURLOPT_FOLLOWLOCATION=>false,
+                CURLOPT_USERPWD=>$config['shop_id'].':'.$config['secret_key'],
+                CURLOPT_HTTPHEADER=>[
+                    'Content-Type: application/json',
+                    'Idempotence-Key: '.$key,
+                ],
+            ]);
+            $raw=curl_exec($curl);
+            $status=curl_getinfo($curl,CURLINFO_HTTP_CODE);
+        }finally{
+            curl_close($curl);
+        }
+        if(!is_string($raw)||!in_array($status,[200,201],true))
+            throw new RuntimeException('REAL_OFFSET_RECEIPT_UNCERTAIN');
+        $response=json_decode($raw,true,32,JSON_THROW_ON_ERROR);
+    }
+    if(!is_array($response)
+        ||!is_string($response['id']??null)
+        ||!in_array($response['status']??null,['pending','succeeded'],true)
+        ||($response['type']??null)!=='payment'
+        ||($response['payment_id']??null)!==$payload['payment_id'])
+        throw new RuntimeException('REAL_OFFSET_RECEIPT_RESPONSE_INVALID');
+    return ['receipt_id'=>$response['id'],'status'=>$response['status']];
+}
+
 /** This route is called only after the private live-mode switch AND all gates. */
 function naRealWalletServe(PDO $db,string $action,array $body,array $account,array $config): never {
     if(!naRealWalletGate($config))
