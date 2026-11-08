@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing' || github.event.head_commit.message == 'Publish club benefits wording and navigation on REG.RU'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -1062,6 +1062,83 @@ jobs:
                           print('SUBSCRIPTIONS_ROLLBACK_VERIFIED',remote.rsplit('/',1)[-1])
                       except BaseException:
                           print('SUBSCRIPTIONS_ROLLBACK_NEEDS_REVIEW',remote.rsplit('/',1)[-1])
+                  raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+
+      - name: Safe update of club benefits copy and cabinet navigation on REG.RU
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Publish club benefits wording and navigation on REG.RU'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check account-browser.js
+          grep -q 'Узнать преимущества клуба' account-browser.js
+          grep -q 'участникам разборы вдвое дешевле' account-browser.js
+          grep -q 'club-benefits-copy-20261108' index.html
+          python3 - <<'PY'
+          import io,ssl,ftplib,os,subprocess
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=32)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
+          paths=['account-browser.js','index.html']
+          def read(remote):
+              b=io.BytesIO()
+              try:ftp.retrbinary('RETR '+remote,b.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              if b.tell()>3000000:raise RuntimeError('FILE_UNEXPECTEDLY_LARGE')
+              return b.getvalue()
+          def write(remote,content):
+              ftp.storbinary('STOR '+remote,io.BytesIO(content))
+              if read(remote)!=content:raise RuntimeError('FILE_READBACK_FAILED')
+          def known(name,remote,current):
+              if remote==current:return True
+              revs=subprocess.check_output(['git','log','-80','--format=%H','--',name],text=True).splitlines()
+              for rev in revs:
+                  out=subprocess.run(['git','show',rev+':'+name],capture_output=True)
+                  if out.returncode==0 and out.stdout==remote:return True
+              return False
+          before={};wanted={};changed=[]
+          try:
+              for name in paths:
+                  remote=root+name;data=read(remote);new=open(name,'rb').read()
+                  if data is None or not known(name,data,new):
+                      raise RuntimeError('UNRECOGNIZED_LIVE_FILE_'+name)
+                  before[name]=data;wanted[name]=new
+              print('CLUB_BENEFITS_LIVE_BASELINES_VERIFIED')
+              for name in paths:
+                  if before[name]==wanted[name]:continue
+                  backup=root+name+'.before-club-benefits-20261108.bak'
+                  previous=read(backup)
+                  if previous is not None and previous!=before[name]:
+                      raise RuntimeError('CLUB_BENEFITS_BACKUP_CONFLICT')
+                  if previous is None:write(backup,before[name])
+              print('CLUB_BENEFITS_BACKUPS_SAVED')
+              try:
+                  for name in paths:
+                      old=before[name];new=wanted[name]
+                      if old==new:continue
+                      dest=root+name;temp=dest+'.staging-club-benefits-20261108'
+                      if read(dest)!=old:raise RuntimeError('LIVE_FILE_CHANGED_DURING_DEPLOY')
+                      if read(temp) is not None:raise RuntimeError('TEMP_COLLISION')
+                      write(temp,new)
+                      ftp.rename(temp,dest)
+                      changed.append(name)
+                      if read(dest)!=new:raise RuntimeError('LIVE_FILE_READBACK_MISMATCH')
+                      print('CLUB_BENEFITS_FILE_UPDATED',name)
+                  print('CLUB_BENEFITS_LIVE_PUBLISHED_VERIFIED')
+              except BaseException:
+                  for name in reversed(changed):
+                      try:write(root+name,before[name]);print('CLUB_BENEFITS_ROLLBACK',name)
+                      except BaseException:print('CLUB_BENEFITS_MANUAL_RECOVERY_NEEDED',name)
                   raise
           finally:
               try:ftp.quit()
