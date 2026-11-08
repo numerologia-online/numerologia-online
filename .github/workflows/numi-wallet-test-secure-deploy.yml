@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -634,4 +634,85 @@ jobs:
           for line in diff[:125]:
               if len(line)>450:line=line[:450]+' ...'
               print('JS_DIFF',line)
+          PY
+
+      - name: Publish reviewed live wallet JavaScript and refresh its cache key
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check account-browser.js
+          python3 - <<'PY'
+          import ftplib,ssl,io,os,subprocess,urllib.request
+          prefix='xn--c1adkkdfjbp1a4l.online'
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')+'/www/'+prefix+'/'
+          files={'account-browser.js':None,'index.html':None}
+          def read(path):
+              stream=io.BytesIO()
+              try:ftp.retrbinary('RETR '+path,stream.write)
+              except ftplib.error_perm as err:
+                  if str(err).startswith('550'):return None
+                  raise
+              if stream.tell()>3000000:raise RuntimeError('UNEXPECTED_FILE_SIZE')
+              return stream.getvalue()
+          def write(path,blob):
+              ftp.storbinary('STOR '+path,io.BytesIO(blob))
+              if read(path)!=blob:raise RuntimeError('SERVER_WRITE_MISMATCH')
+          def safe_replace(path,old,new):
+              if old==new:return
+              bak=path+'.before-live-wallet-browser-20261108.bak'
+              pending=path+'.pending-live-wallet-browser-20261108'
+              if read(pending) is not None:raise RuntimeError('PENDING_FILE_ALREADY_PRESENT')
+              prior=read(bak)
+              if prior is not None and prior!=old:raise RuntimeError('BACKUP_ALREADY_DIFFERS')
+              if prior is None:write(bak,old)
+              if read(path)!=old:raise RuntimeError('CONCURRENT_REMOTE_CHANGE')
+              write(pending,new)
+              ftp.rename(pending,path)
+              files[path.split('/')[-1]]='changed'
+              if read(path)!=new:raise RuntimeError('DEPLOY_READBACK_MISMATCH')
+          originals={}
+          try:
+              livejs=read(root+'account-browser.js')
+              livehtml=read(root+'index.html')
+              known=subprocess.check_output(['git','show','0eff1e3d4ad8:account-browser.js'])
+              updated=open('account-browser.js','rb').read()
+              if livejs not in (known,updated):raise RuntimeError('UNKNOWN_LIVE_JS_BASELINE')
+              if not livehtml:raise RuntimeError('LIVE_INDEX_MISSING')
+              oldtag=b'account-browser.js?v=club-prices1'
+              newtag=b'account-browser.js?v=real-wallet-live-20261108'
+              if newtag in livehtml:
+                  if oldtag in livehtml:raise RuntimeError('MULTIPLE_SCRIPT_VERSIONS')
+                  patched=livehtml
+              else:
+                  if livehtml.count(oldtag)!=1:raise RuntimeError('ACCOUNT_SCRIPT_TAG_NOT_FOUND_OR_DUPLICATED')
+                  patched=livehtml.replace(oldtag,newtag,1)
+              originals={'account-browser.js':livejs,'index.html':livehtml}
+              if livejs!=updated:
+                  safe_replace(root+'account-browser.js',livejs,updated)
+                  print('LIVE_WALLET_JS_DEPLOYED')
+              else:print('LIVE_WALLET_JS_ALREADY_CURRENT')
+              if patched!=livehtml:
+                  safe_replace(root+'index.html',livehtml,patched)
+                  print('LIVE_WALLET_HTML_CACHE_BUSTED')
+              else:print('LIVE_WALLET_HTML_CACHE_KEY_ALREADY_CURRENT')
+              if read(root+'account-browser.js')!=updated or read(root+'index.html')!=patched:
+                  raise RuntimeError('LIVE_BROWSER_DEPLOY_VERIFICATION_FAILED')
+              print('LIVE_WALLET_BROWSER_FILES_VERIFIED')
+          except BaseException:
+              for name in ['index.html','account-browser.js']:
+                  if files.get(name)=='changed':
+                      try:write(root+name,originals[name]);print('LIVE_WALLET_BROWSER_ROLLED_BACK',name)
+                      except BaseException:print('LIVE_WALLET_BROWSER_ROLLBACK_FAILED',name)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
           PY
