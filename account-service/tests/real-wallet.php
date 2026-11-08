@@ -214,4 +214,5 @@ $db->beginTransaction();
 expectReal(fn()=>naRealWalletMergeAccounts($db,$accountB,$accountC),'REAL_ALREADY_MERGED');
 $db->rollBack();
 expectReal(fn()=>naRealWalletRefund(),'REAL_REFUNDS_REQUIRE_FISCAL_REVIEW');
+require __DIR__.'/real-wallet-payment.php';
 echo "REAL_WALLET_ISOLATION_SETTLEMENT_CLUB_REFUND_TESTS_PASS\n";
