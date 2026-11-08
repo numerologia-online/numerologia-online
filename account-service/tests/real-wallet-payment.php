@@ -67,14 +67,20 @@ expectReal(fn()=>naRealRefundSend([],$refundCaseId,'live-payment-example-123',10
     'REAL_PAYMENTS_DISABLED');
 $refundConfig=$good;
 $refundConfig['refund_worker_verified']=true;
+expectReal(fn()=>naRealRefundSend($refundConfig,$refundCaseId,
+    'live-payment-example-123',1000,$refundTransport),
+    'REAL_REFUND_RECEIPT_SETTINGS_MISSING');
+$refundConfig['refund_receipt_mode']='yookassa_full_auto';
+$refundConfig['refund_receipt_status_check']=true;
 $refund1=naRealRefundSend($refundConfig,$refundCaseId,'live-payment-example-123',1000,$refundTransport);
 $refund2=naRealRefundSend($refundConfig,$refundCaseId,'live-payment-example-123',1000,$refundTransport);
 assertReal($refund1['refund_id']==='rf_mock_123'
     && $refund2['status']==='pending'
     && count($refundCalls)===2
     && $refundCalls[0]['key']===$refundCalls[1]['key']
-    && $refundCalls[0]['body']['amount']['value']==='10.00',
-    'refund request is amount-validated and retains stable retry key');
+    && $refundCalls[0]['body']['amount']['value']==='10.00'
+    && !array_key_exists('receipt',$refundCalls[0]['body']),
+    'full refund uses YooKassa automatic original receipt without duplicate payload');
 expectReal(fn()=>naRealRefundSend($refundConfig,$refundCaseId,'wrong!',1000,$refundTransport),
     'REAL_REFUND_PAYMENT_INVALID');
 expectReal(fn()=>naRealRefundSend($good,$refundCaseId,'live-payment-example-123',1000,$refundTransport),
