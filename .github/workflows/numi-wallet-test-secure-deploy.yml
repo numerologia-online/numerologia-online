@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU')) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -147,4 +147,66 @@ jobs:
           finally:
               try: ftp.quit()
               except BaseException: ftp.close()
+          PY
+
+      - name: Probe actual TEST YooKassa receipt acceptance (NO card charged, no live config edit)
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment'
+        env:
+          NUMI_YOOKASSA_TEST_SECRET_KEY_1521071: ${{ secrets.NUMI_YOOKASSA_TEST_SECRET_KEY_1521071 }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+          GITHUB_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,re,io,ftplib,ssl,json,hashlib,base64,urllib.request,urllib.error
+          key=os.environ.get('NUMI_YOOKASSA_TEST_SECRET_KEY_1521071','')
+          if not key.startswith('test_'):
+              f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+              f.connect('server172.hosting.reg.ru',21)
+              f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']); f.prot_p(); f.set_pasv(True)
+              try:
+                  home=f.pwd().rstrip('/')
+                  buf=io.BytesIO()
+                  f.retrbinary('RETR '+home+'/private/numi-wallet-test-20261106/config.local.php',buf.write)
+                  cfg=buf.getvalue().decode('utf-8')
+                  m=re.search(r"['\"]secret_key['\"]\s*=>\s*['\"](test_[A-Za-z0-9_-]{12,480})['\"]",cfg)
+                  key=m.group(1) if m else ''
+              finally: f.quit()
+          if not key.startswith('test_'): raise RuntimeError('TEST_KEY_NOT_CONFIGURED')
+          cred=base64.b64encode(('1521071:'+key).encode('utf-8')).decode('ascii')
+          sha=os.environ['GITHUB_SHA']
+          results={}
+          for mode in ('advance','full_prepayment'):
+              value='1.00'
+              payload={
+                  'amount':{'value':value,'currency':'RUB'},
+                  'capture':True,
+                  'confirmation':{'type':'redirect','return_url':'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'},
+                  'payment_method_data':{'type':'bank_card'},
+                  'description':'Тест чеков предоплаты без списания',
+                  'receipt':{'customer':{'email':'receipt-test@example.com'},'items':[
+                      {'description':'Тест цифровой услуги', 'quantity':1.0,
+                       'amount':{'value':value,'currency':'RUB'},'vat_code':1,
+                       'payment_mode':mode,'payment_subject':'payment' if mode=='advance' else 'service'}
+                  ]}
+              }
+              ik=hashlib.sha256(('real-wallet-fiscal-probe:'+sha+':'+mode).encode()).hexdigest()
+              req=urllib.request.Request('https://api.yookassa.ru/v3/payments',
+                  data=json.dumps(payload,ensure_ascii=False).encode('utf-8'),method='POST',
+                  headers={'Authorization':'Basic '+cred,'Content-Type':'application/json','Idempotence-Key':ik})
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as res:
+                      code=res.status; obj=json.loads(res.read(10000))
+              except urllib.error.HTTPError as res:
+                  code=res.code
+                  try: obj=json.loads(res.read(10000))
+                  except ValueError: obj={}
+              summary={'http_status':code, 'accepted': code in (200,201),
+                       'response_code':str(obj.get('code',''))[:100],
+                       'error_parameter':str(obj.get('parameter',''))[:120]}
+              results[mode]=summary
+              print('YOOKASSA_SANDBOX_RECEIPT_MODE',mode,json.dumps(summary,ensure_ascii=False))
+          print('YOOKASSA_SANDBOX_PROBE_COMPLETE_NO_REAL_PAYMENT')
           PY
