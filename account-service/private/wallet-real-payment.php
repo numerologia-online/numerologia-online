@@ -258,6 +258,96 @@ function naRealRefundSendApprovedCase(
     return $result;
 }
 
+/**
+ * Reconcile an already sent refund by fetching its status from YooKassa.
+ * The authoritative provider response is never accepted from the browser.
+ * Keep wallet frozen after settlement until fiscal review releases it.
+ */
+function naRealRefundReconcile(
+    PDO $db,array $config,string $caseId,?callable $testGet=null
+): string {
+    naRealWalletRequireLive($config);
+    if(($config['refund_worker_verified']??false)!==true)
+        throw new RuntimeException('REAL_REFUND_POLICY_NOT_APPROVED');
+    if(preg_match('/^[a-f0-9-]{36}$/iD',$caseId)!==1)
+        throw new InvalidArgumentException('REAL_REFUND_CASE_INVALID');
+    $q=$db->prepare("SELECT c.*,t.provider_payment_id,t.account_id AS topup_account_id
+        FROM numi_real_wallet_refund_cases c
+        INNER JOIN numi_real_wallet_topups t ON t.id=c.topup_id
+        WHERE c.id=? LIMIT 1");
+    $q->execute([$caseId]);$row=$q->fetch(PDO::FETCH_ASSOC);
+    if(!$row||!is_string($row['provider_refund_id'])
+       ||$row['provider_refund_id']===''
+       ||$row['account_id']!==$row['topup_account_id'])
+        throw new RuntimeException('REAL_REFUND_RECONCILIATION_REQUIRED');
+    if($row['status']==='completed')return 'completed';
+    if($row['status']!=='approved')throw new RuntimeException('REAL_REFUND_CASE_NOT_APPROVED');
+    if($testGet!==null){
+        $payment=$testGet($row['provider_refund_id']);
+    }else{
+        if(!preg_match('/^[a-zA-Z0-9-]{1,191}$/D',$row['provider_refund_id']))
+            throw new RuntimeException('REAL_REFUND_ID_INVALID');
+        $curl=curl_init('https://api.yookassa.ru/v3/refunds/'.$row['provider_refund_id']);
+        if($curl===false)throw new RuntimeException('REAL_PROVIDER_UNAVAILABLE');
+        try{
+            curl_setopt_array($curl,[
+                CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>5,
+                CURLOPT_TIMEOUT=>20,CURLOPT_FOLLOWLOCATION=>false,
+                CURLOPT_USERPWD=>$config['shop_id'].':'.$config['secret_key'],
+                CURLOPT_HTTPHEADER=>['Content-Type: application/json'],
+            ]);
+            $raw=curl_exec($curl);$status=curl_getinfo($curl,CURLINFO_HTTP_CODE);
+        }finally{curl_close($curl);}
+        if(!is_string($raw)||$status!==200)
+            throw new RuntimeException('REAL_REFUND_PROVIDER_UNAVAILABLE');
+        $payment=json_decode($raw,true,32,JSON_THROW_ON_ERROR);
+    }
+    if(!is_array($payment)
+       ||($payment['id']??null)!==$row['provider_refund_id']
+       ||($payment['payment_id']??null)!==$row['provider_payment_id']
+       ||($payment['amount']['value']??null)!==naStoreAmount((int)$row['kopeks'])
+       ||($payment['amount']['currency']??null)!=='RUB')
+        throw new RuntimeException('REAL_REFUND_PROVIDER_MISMATCH');
+    if(($payment['status']??null)!=='succeeded')return 'pending_review';
+    // Refund fiscalization differs by merchant integration. Never silently
+    // assume a refund receipt exists if YooKassa did not confirm registration.
+    if(($payment['receipt_registration']??null)!=='succeeded')
+        return 'pending_receipt';
+    $db->beginTransaction();
+    try{
+        $q=$db->prepare('SELECT * FROM numi_real_wallet_refund_cases WHERE id=? FOR UPDATE');
+        $q->execute([$caseId]);$fresh=$q->fetch(PDO::FETCH_ASSOC);
+        if(!$fresh||$fresh['provider_refund_id']!==$row['provider_refund_id'])
+            throw new RuntimeException('REAL_REFUND_RECONCILIATION_REQUIRED');
+        if($fresh['status']==='completed'){$db->commit();return 'completed';}
+        if($fresh['status']!=='approved')
+            throw new RuntimeException('REAL_REFUND_CASE_NOT_APPROVED');
+        $balance=naRealWalletBalance($db,$fresh['account_id'],true);
+        $q=$db->prepare('SELECT blocked_at FROM numi_real_wallet_balances WHERE account_id=? FOR UPDATE');
+        $q->execute([$fresh['account_id']]);
+        if($q->fetchColumn()===null)
+            throw new RuntimeException('REAL_REFUND_WALLET_MUST_BE_FROZEN');
+        $kopeks=(int)$fresh['kopeks'];
+        if($kopeks>$balance)throw new RuntimeException('REAL_REFUND_BALANCE_RECONCILIATION');
+        naRealWalletInvariant($db,$fresh['account_id']);
+        $new=$balance-$kopeks;
+        $db->prepare('UPDATE numi_real_wallet_balances SET kopeks=? WHERE account_id=?')
+            ->execute([$new,$fresh['account_id']]);
+        $db->prepare("INSERT INTO numi_real_wallet_ledger
+            (id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks)
+            VALUES(?,?,'refund',?,?,?)")
+            ->execute([naUuid(),$fresh['account_id'],$fresh['id'],-$kopeks,$new]);
+        $db->prepare("INSERT INTO numi_real_wallet_fiscal_events
+            (id,kind,reference_id,kopeks,status,provider_receipt_id)
+            VALUES(?,'refund',?,?,'verified',NULL)")
+            ->execute([naUuid(),$fresh['id'],$kopeks]);
+        $db->prepare("UPDATE numi_real_wallet_refund_cases SET status='completed' WHERE id=?")
+            ->execute([$fresh['id']]);
+        $db->commit();
+        return 'completed';
+    }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+}
+
 /** This route is called only after the private live-mode switch AND all gates. */
 function naRealWalletServe(PDO $db,string $action,array $body,array $account,array $config): never {
     if(!naRealWalletGate($config))
