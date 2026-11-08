@@ -23,6 +23,21 @@ $receipt=static fn(int $rub):array=>[
 ];
 expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,10000),
     'REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED');
+$advanceSettings=['advance_receipt_reviewed'=>true,'advance_receipt_vat_code'=>1];
+$advanceReceipt=naRealReviewedTopupReceipt($db,$payAccount,10000,$advanceSettings);
+assertReal($advanceReceipt['customer']['email']==='payment@example.test'
+    && $advanceReceipt['items'][0]['payment_mode']==='advance'
+    && $advanceReceipt['items'][0]['payment_subject']==='payment'
+    && $advanceReceipt['items'][0]['amount']['value']==='100.00',
+    'reviewed server-built advance receipt uses verified contact and exact amount');
+expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,10000,
+    ['advance_receipt_reviewed'=>true]),'REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED');
+expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,10000,
+    ['advance_receipt_reviewed'=>true,'advance_receipt_vat_code'=>99]),
+    'REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED');
+expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,0,$advanceSettings),
+    'INVALID_TOPUP_AMOUNT');
+
 assertReal(naRealPaymentMethod('bank_card')==='bank_card','bank card method');
 assertReal(naRealPaymentMethod('sbp')==='sbp','SBP method');
 expectReal(fn()=>naRealPaymentMethod('yoomoney'),'REAL_UNSUPPORTED_PAYMENT_METHOD');
