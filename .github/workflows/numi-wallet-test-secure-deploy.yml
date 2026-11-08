@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing' || github.event.head_commit.message == 'Publish club benefits wording and navigation on REG.RU' || github.event.head_commit.message == 'Publish automatic live wallet credit and payment delay notice' || github.event.head_commit.message == 'Deploy standalone wallet topup and remember last receipt email' || github.event.head_commit.message == 'Publish approved receipt email wording on live wallet page' || github.event.head_commit.message == 'Publish quiet compact wallet status on REG.RU'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing' || github.event.head_commit.message == 'Publish club benefits wording and navigation on REG.RU' || github.event.head_commit.message == 'Publish automatic live wallet credit and payment delay notice' || github.event.head_commit.message == 'Deploy standalone wallet topup and remember last receipt email' || github.event.head_commit.message == 'Publish approved receipt email wording on live wallet page' || github.event.head_commit.message == 'Publish quiet compact wallet status on REG.RU' || github.event.head_commit.message == 'Publish compact email field and keyboard fix to REG.RU'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -1514,6 +1514,81 @@ jobs:
                       try:write(root+name,backups[name]);print('COMPACT_WALLET_ROLLBACK',name)
                       except BaseException:print('COMPACT_WALLET_ROLLBACK_NEEDS_REVIEW',name)
                   raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+
+      - name: Deploy compact checkout and mobile keyboard fix
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Publish compact email field and keyboard fix to REG.RU'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import io,os,ssl,ftplib,subprocess,re,tempfile,urllib.request
+          file='wallet-topup.html'
+          new=open(file,'rb').read()
+          src=new.decode('utf-8')
+          assert 'class="receipt-block"' in src
+          assert 'text-align:center' in src
+          assert 'document.addEventListener("pointerdown"' in src
+          assert 'email.closest(".receipt-block")' in src
+          assert 'Если вам понадобится возврат денег, он поможет быстро найти и подтвердить платёж.' in src
+          pieces=re.findall(r'<script>(.*?)</script>',src,re.S)
+          if len(pieces)!=1:raise RuntimeError('CHECKOUT_SCRIPT_MISMATCH')
+          with tempfile.NamedTemporaryFile('w',suffix='.js',encoding='utf8') as handle:
+              handle.write(pieces[0]);handle.flush()
+              subprocess.run(['node','--check',handle.name],check=True)
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          dst=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/wallet-topup.html'
+          def read(path):
+              bio=io.BytesIO();ftp.retrbinary('RETR '+path,bio.write);return bio.getvalue()
+          def write(path,data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              if read(path)!=data:raise RuntimeError('COMPACT_CHECKOUT_FTPS_VERIFY_FAILED')
+          try:
+              prev=read(dst)
+              known=False
+              if prev==new:known=True
+              if not known:
+                  for rev in subprocess.check_output(['git','log','-80','--format=%H','--',file],text=True).splitlines():
+                      old=subprocess.run(['git','show',rev+':'+file],capture_output=True)
+                      if old.returncode==0 and old.stdout==prev:known=True;break
+              if not known:raise RuntimeError('COMPACT_CHECKOUT_UNKNOWN_SERVER_VERSION')
+              print('COMPACT_CHECKOUT_SERVER_BASELINE_VERIFIED')
+              if prev!=new:
+                  bak=dst+'.before-compact-checkout-20261108.bak'
+                  try:existing=read(bak)
+                  except ftplib.error_perm as e:
+                      if not str(e).startswith('550'):raise
+                      existing=None
+                  if existing is not None and existing!=prev:
+                      raise RuntimeError('COMPACT_CHECKOUT_BACKUP_COLLISION')
+                  if existing is None:write(bak,prev)
+                  if read(dst)!=prev:raise RuntimeError('COMPACT_CHECKOUT_CONCURRENT_EDIT')
+                  stage=dst+'.staged-compact-checkout-20261108'
+                  try:read(stage);raise RuntimeError('COMPACT_CHECKOUT_STAGING_COLLISION')
+                  except ftplib.error_perm as e:
+                      if not str(e).startswith('550'):raise
+                  write(stage,new)
+                  try:
+                      ftp.rename(stage,dst)
+                      if read(dst)!=new:raise RuntimeError('COMPACT_CHECKOUT_READBACK_ERROR')
+                  except BaseException:
+                      write(dst,prev)
+                      print('COMPACT_CHECKOUT_ROLLED_BACK')
+                      raise
+              with urllib.request.urlopen('https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/wallet-topup.html',timeout=30) as response:
+                  public=response.read(200000).decode('utf8')
+              if 'pointerdown' not in public or 'class="receipt-block"' not in public or 'text-align:center' not in public:
+                  raise RuntimeError('COMPACT_CHECKOUT_PUBLIC_VERSION_UNCONFIRMED')
+              print('COMPACT_CHECKOUT_LIVE_PUBLISHED_AND_VERIFIED')
           finally:
               try:ftp.quit()
               except BaseException:ftp.close()
