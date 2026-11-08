@@ -36,6 +36,9 @@ function naRealWalletRequireLive(array $config): void {
     if(!naRealWalletGate($config))throw new RuntimeException('REAL_PAYMENTS_DISABLED');
 }
 function naRealWalletSchema(PDO $db): void {
+    // The protected migration prepares subscription preferences as well.
+    // No customer payment route ever invokes this DDL.
+    naSubscriptionSchema($db);
     // Additive new tables. No historical sandbox balances or ledger are copied.
     $db->exec("CREATE TABLE IF NOT EXISTS numi_real_wallet_balances (
       account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
