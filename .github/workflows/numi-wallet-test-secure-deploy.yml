@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -500,4 +500,84 @@ jobs:
               expected=open('account-service/public/numi-account.php','rb').read()
               print('API_FILE','numi-account.php','MATCH' if remote==expected else 'DIFF_OR_MISSING')
           finally:ftp.quit()
+          PY
+
+      - name: Publish reviewed LIVE core and subscriptions PHP with safe rollback
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l account-service/private/core.php
+          php -l account-service/private/subscriptions.php
+          php -l account-service/private/wallet.php
+          php -l account-service/private/wallet-real-payment.php
+          python3 - <<'PY'
+          import os,ftplib,ssl,io,subprocess,hashlib
+          base='account-service/private/'
+          names=['subscriptions.php','core.php']
+          old_rev='0eff1e3d4ad8'
+          current={n:open(base+n,'rb').read() for n in names}
+          previous={n:subprocess.check_output(['git','show',old_rev+':'+base+n]) for n in names}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')+'/private/numi-account-20261031/'
+          def read(p):
+              stream=io.BytesIO()
+              try:ftp.retrbinary('RETR '+p,stream.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'): return None
+                  raise
+              if stream.tell()>120000:raise RuntimeError('ACCOUNT_PHP_SIZE_NOT_REVIEWED')
+              return stream.getvalue()
+          def write(p,content):
+              ftp.storbinary('STOR '+p,io.BytesIO(content))
+              if read(p)!=content:raise RuntimeError('PRIVATE_PHP_READBACK_FAILED')
+          originals={}
+          changed=[]
+          try:
+              # Preflight both server files before modifying either.
+              for name in names:
+                  remote=root+name
+                  data=read(remote)
+                  if data not in (previous[name],current[name]):
+                      raise RuntimeError('UNRECOGNIZED_SERVER_VERSION_'+name)
+                  originals[name]=data
+                  backup=root+name+'.before-live-wallet-sync-20261108.bak'
+                  existing=read(backup)
+                  if existing is not None and existing!=data:
+                      raise RuntimeError('BACKUP_COLLISION_'+name)
+              for name in names:
+                  old=originals[name];new=current[name]
+                  if old==new:
+                      print('LIVE_ACCOUNT_PHP_ALREADY_CURRENT',name)
+                      continue
+                  remote=root+name
+                  if read(remote)!=old:raise RuntimeError('CONCURRENT_CHANGE_'+name)
+                  backup=remote+'.before-live-wallet-sync-20261108.bak'
+                  if read(backup) is None:write(backup,old)
+                  tmp=remote+'.pending-live-sync-20261108'
+                  if read(tmp) is not None:raise RuntimeError('PREEXISTING_TEMP_'+name)
+                  write(tmp,new)
+                  ftp.rename(tmp,remote)
+                  changed.append(name)
+                  if read(remote)!=new:raise RuntimeError('POST_RENAME_MISMATCH_'+name)
+                  print('LIVE_ACCOUNT_PHP_PUBLISHED',name)
+              print('LIVE_ACCOUNT_PHP_VERSIONS_MATCH_COMMIT')
+          except BaseException:
+              print('LIVE_ACCOUNT_PHP_ROLLBACK_START')
+              for name in reversed(changed):
+                  try:
+                      write(root+name,originals[name])
+                      print('LIVE_ACCOUNT_PHP_ROLLED_BACK',name)
+                  except BaseException:
+                      print('LIVE_ACCOUNT_PHP_ROLLBACK_FAILED',name)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
           PY
