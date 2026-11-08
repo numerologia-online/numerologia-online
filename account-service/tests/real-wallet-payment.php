@@ -87,21 +87,21 @@ $db->prepare('INSERT INTO numi_accounts(id,email,email_verified_at) VALUES(?,?,U
 $refundTopupId='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 $refundCaseApproved='dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 $db->prepare("INSERT INTO numi_real_wallet_balances(account_id,kopeks,blocked_at,block_reason)
-    VALUES(?,1000,UTC_TIMESTAMP(),'REFUND_RECONCILIATION')")
+    VALUES(?,10000,UTC_TIMESTAMP(),'REFUND_RECONCILIATION')")
     ->execute([$refundAccountId]);
 $db->prepare("INSERT INTO numi_real_wallet_ledger
     (id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks)
     VALUES(?,?,'topup',?,?,?)")
-    ->execute([naUuid(),$refundAccountId,$refundTopupId,1000,1000]);
+    ->execute([naUuid(),$refundAccountId,$refundTopupId,10000,10000]);
 $db->prepare("INSERT INTO numi_real_wallet_topups(id,account_id,request_key,kopeks,provider_payment_id,status)
     VALUES(?,?,?,?,?,'credited')")
     ->execute([$refundTopupId,$refundAccountId,'refund-test-request-12345',10000,'live-payment-for-refund-123']);
 $db->prepare("INSERT INTO numi_real_wallet_refund_cases(id,account_id,topup_id,kopeks,status)
     VALUES(?,?,?,?,'approved')")
-    ->execute([$refundCaseApproved,$refundAccountId,$refundTopupId,1000]);
+    ->execute([$refundCaseApproved,$refundAccountId,$refundTopupId,10000]);
 $bound=naRealRefundApprovedCase($db,$refundCaseApproved);
 assertReal($bound['payment_id']==='live-payment-for-refund-123'
-    && $bound['kopeks']===1000
+    && $bound['kopeks']===10000
     && $bound['account_id']===$refundAccountId,
     'approved refund resolves original payment and amount from protected DB records');
 $boundResult=naRealRefundSendApprovedCase($db,$refundConfig,$refundCaseApproved,$refundTransport);
@@ -115,7 +115,7 @@ assertReal($refundSaved->fetchColumn()==='rf_mock_123',
     'refund result identifier persisted to case for reconciliation');
 $refundGet=static fn(string $id):array=>[
     'id'=>$id,'payment_id'=>'live-payment-for-refund-123',
-    'amount'=>['value'=>'10.00','currency'=>'RUB'],
+    'amount'=>['value'=>'100.00','currency'=>'RUB'],
     'status'=>'succeeded','receipt_registration'=>'succeeded'];
 assertReal(naRealRefundReconcile($db,$refundConfig,$refundCaseApproved,$refundGet)==='completed',
     'verified YooKassa refund atomically settles reserved wallet amount');
