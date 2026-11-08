@@ -107,6 +107,13 @@ export async function showInlinePurchase(item,container,onMaterial){
       const result=await walletRequest("wallet_buy",{item,request_key:key});
       if(result.test!==quote.test||!result.entitlement_id)throw new Error("INVALID_PURCHASE_RESULT");
       window.dispatchEvent(new Event("numi:wallet-updated"));
+      // Subscription entitlements activate a paid period; they are not PDF
+      // materials, so do not request a missing material just to confirm payment.
+      if(quote.kind==="subscription"){
+        pending.delete(id);
+        await onMaterial({sections:[]},result.entitlement_id);
+        return;
+      }
       const material=await walletMaterial(result.entitlement_id);
       pending.delete(id);
       onMaterial(material,result.entitlement_id);
