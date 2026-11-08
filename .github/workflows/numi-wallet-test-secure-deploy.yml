@@ -39,6 +39,8 @@ jobs:
           set -euo pipefail
           php -l account-service/private/wallet-real.php
           php -l account-service/private/wallet-real-payment.php
+          grep -q 'function naRealRefundReceiptSettings' account-service/private/wallet-real-payment.php
+          grep -q 'yookassa_full_auto' account-service/private/wallet-real-payment.php
           php -l account-service/private/wallet.php
           python3 -m py_compile scripts/deploy-real-wallet-reg-ru-20261108.py
           python3 -u scripts/deploy-real-wallet-reg-ru-20261108.py
