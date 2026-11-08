@@ -50,6 +50,7 @@ function naRealWalletSchema(PDO $db): void {
       account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
       request_key VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
       kopeks INT UNSIGNED NOT NULL,
+      receipt_email VARCHAR(254) NULL,
       provider_payment_id VARCHAR(191) NULL,
       payment_method ENUM('bank_card','sbp') NULL,
       provider_request_started_at DATETIME NULL,
@@ -62,6 +63,14 @@ function naRealWalletSchema(PDO $db): void {
       KEY ix_real_topup_account(account_id,status),
       CONSTRAINT fk_real_topup_account FOREIGN KEY(account_id) REFERENCES numi_accounts(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    // Additive migration for an existing live wallet. Only the protected migration
+    // endpoint invokes DDL; the payment endpoint never creates or alters tables.
+    $column=$db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='numi_real_wallet_topups'
+          AND COLUMN_NAME='receipt_email'")->fetchColumn();
+    if((int)$column===0)
+        $db->exec("ALTER TABLE numi_real_wallet_topups
+            ADD COLUMN receipt_email VARCHAR(254) NULL AFTER kopeks");
     $db->exec("CREATE TABLE IF NOT EXISTS numi_real_wallet_spends (
       id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
       account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
@@ -181,36 +190,37 @@ function naRealWalletStatus(PDO $db,array $account): array {
         'operations'=>$q->fetchAll()];
 }
 /**
- * At the current stage only a verified account email is accepted as fiscal
- * contact. Telegram-only users require a verified contact collection flow
- * before live payment activation; do not silently invent an email.
+ * Receipt email is collected at checkout, independent of account registration.
+ * Preserve the same normalized contact for the original advance and offsets.
  */
-function naRealWalletRequireReceiptContact(PDO $db,array $account): string {
-    $q=$db->prepare('SELECT email,email_verified_at FROM numi_accounts WHERE id=? LIMIT 1');
-    $q->execute([$account['id']]);$row=$q->fetch();
-    if(!$row || !$row['email_verified_at'] || !is_string($row['email'])
-        || filter_var($row['email'],FILTER_VALIDATE_EMAIL)===false)
-        throw new RuntimeException('REAL_FISCAL_CONTACT_REQUIRED');
-    return $row['email'];
+function naRealWalletReceiptEmail(mixed $value): string {
+    if(!is_string($value))throw new InvalidArgumentException('REAL_FISCAL_CONTACT_REQUIRED');
+    $email=strtolower(trim($value));
+    if($email===''||strlen($email)>254
+       ||filter_var($email,FILTER_VALIDATE_EMAIL)===false)
+        throw new InvalidArgumentException('REAL_FISCAL_CONTACT_REQUIRED');
+    return $email;
 }
-function naRealWalletTopupIntent(PDO $db,array $account,array $config,int $rub,string $key): array {
+function naRealWalletTopupIntent(PDO $db,array $account,array $config,int $rub,string $key,mixed $receiptEmail): array {
     naRealWalletRequireLive($config);
     if($rub<1 || $rub>100000)throw new InvalidArgumentException('INVALID_TOPUP_AMOUNT');
     $key=naWalletKey($key);
-    naRealWalletRequireReceiptContact($db,$account);
+    $receiptEmail=naRealWalletReceiptEmail($receiptEmail);
     // Expects schema already installed by CLI. No implicit DDL.
     naRealWalletBalance($db,$account['id']);
-    $q=$db->prepare('SELECT id,kopeks,status FROM numi_real_wallet_topups WHERE account_id=? AND request_key=?');
+    $q=$db->prepare('SELECT id,kopeks,status,receipt_email FROM numi_real_wallet_topups WHERE account_id=? AND request_key=?');
     $q->execute([$account['id'],$key]);$row=$q->fetch();
     if(!$row){
         $id=naUuid();
         try{
-            $db->prepare('INSERT INTO numi_real_wallet_topups(id,account_id,request_key,kopeks) VALUES(?,?,?,?)')
-                ->execute([$id,$account['id'],$key,$rub*100]);
+            $db->prepare('INSERT INTO numi_real_wallet_topups(id,account_id,request_key,kopeks,receipt_email) VALUES(?,?,?,?,?)')
+                ->execute([$id,$account['id'],$key,$rub*100,$receiptEmail]);
         }catch(PDOException $e){if((string)$e->getCode()!=='23000')throw $e;}
         $q->execute([$account['id'],$key]);$row=$q->fetch();
     }
     if(!$row || (int)$row['kopeks']!==$rub*100)throw new RuntimeException('REAL_TOPUP_KEY_CONFLICT');
+    if($row['receipt_email']!==$receiptEmail)
+        throw new InvalidArgumentException('REAL_FISCAL_CONTACT_MISMATCH');
     return ['topup_id'=>$row['id'],'status'=>$row['status'],'amount_kopeks'=>(int)$row['kopeks']];
 }
 function naRealWalletPaymentVerify(array $payment,array $topup,array $config): void {
@@ -355,7 +365,7 @@ function naRealWalletAllocateReceiptSource(PDO $db,string $accountId,int $kopeks
         throw new RuntimeException('REAL_RECEIPT_SOURCE_INVALID');
     $q=$db->prepare("SELECT id,kopeks FROM numi_real_wallet_topups
         WHERE account_id=? AND status='credited'
-          AND provider_payment_id IS NOT NULL
+          AND provider_payment_id IS NOT NULL AND receipt_email IS NOT NULL
         ORDER BY credited_at ASC,id ASC FOR UPDATE");
     $q->execute([$accountId]);
     $sources=$q->fetchAll(PDO::FETCH_ASSOC);
@@ -377,7 +387,7 @@ function naRealWalletAllocateReceiptSource(PDO $db,string $accountId,int $kopeks
 function naRealWalletBuy(PDO $db,array $account,array $config,array $input,string $requestKey,callable $materialReady): array {
     naRealWalletRequireLive($config);
     $requestKey=naWalletKey($requestKey);
-    naRealWalletRequireReceiptContact($db,$account);
+    // Fiscal contact comes from the original paid top-up, not the account email.
     // All schema migrations must have run before any money transaction.
     // Check material presence before the account lock, then again after.
     $pre=naRealWalletQuote($db,$account,$input,$materialReady);
