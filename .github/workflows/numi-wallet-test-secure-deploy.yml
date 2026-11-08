@@ -1,4 +1,4 @@
-name: REG.RU unified wallet release preflight (TEST ONLY, NO DEPLOY)
+name: REG.RU unified wallet guarded TEST publication
 on:
   push:
     branches: [main]
@@ -12,6 +12,12 @@ on:
       - 'account-service/tests/real-wallet.php'
       - 'account-service/tests/real-wallet-payment.php'
   workflow_dispatch:
+    inputs:
+      confirm_test_only:
+        description: 'Publish TEST wallet only to REG.RU with exact baseline checks and rollback'
+        type: boolean
+        required: true
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -42,6 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Validate current main, not deleted historical pilot branches
         shell: bash
@@ -130,10 +137,17 @@ jobs:
               try: ftp.quit()
               except Exception: ftp.close()
           PY
-      - name: Release gate - explicitly no REG.RU writes before end-to-end readiness
+      - name: Guarded TEST-only REG.RU publication with backups and rollback
+        if: github.event_name == 'workflow_dispatch' && inputs.confirm_test_only == true
         shell: bash
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+          APPROVED_SOURCE_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          grep -q '"mode": "check"' .github/reg-ru-publish.json
-          echo "NO_DEPLOY: current code reviewed by CI, but production fiscal settlement, refunds and real subscription renewal are not release-approved."
-          echo "Existing REG.RU content and all secrets remain unchanged."
+          python3 -m py_compile scripts/deploy-unified-wallet-direct-20261107.py
+          # Existing release script compares every remote file against its exact
+          # approved baseline, backs up originals, verifies HTTPS, and rolls back.
+          # On drift it MUST fail closed, never overwrite unknown server changes.
+          python3 -u scripts/deploy-unified-wallet-direct-20261107.py
