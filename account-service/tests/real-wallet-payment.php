@@ -110,6 +110,22 @@ $refundSaved=$db->prepare('SELECT provider_refund_id FROM numi_real_wallet_refun
 $refundSaved->execute([$refundCaseApproved]);
 assertReal($refundSaved->fetchColumn()==='rf_mock_123',
     'refund result identifier persisted to case for reconciliation');
+$refundGet=static fn(string $id):array=>[
+    'id'=>$id,'payment_id'=>'live-payment-for-refund-123',
+    'amount'=>['value'=>'10.00','currency'=>'RUB'],
+    'status'=>'succeeded','receipt_registration'=>'succeeded'];
+assertReal(naRealRefundReconcile($db,$refundConfig,$refundCaseApproved,$refundGet)==='completed',
+    'verified YooKassa refund atomically settles reserved wallet amount');
+assertReal(naRealRefundReconcile($db,$refundConfig,$refundCaseApproved,$refundGet)==='completed',
+    'repeated refund reconciliation does not debit wallet again');
+assertReal(naRealWalletBalance($db,$payAccountId)===0,
+    'settled refund debits balance exactly once');
+naRealWalletInvariant($db,$payAccountId);
+$refundRow=$db->prepare("SELECT COUNT(*) FROM numi_real_wallet_ledger
+    WHERE kind='refund' AND reference_id=?");
+$refundRow->execute([$refundCaseApproved]);
+assertReal((int)$refundRow->fetchColumn()===1,
+    'exactly one durable real refund ledger event');
 $offsetCalls=[];
 $offsetMock=static function(array $body,string $key)use(&$offsetCalls):array{
     $offsetCalls[]=['body'=>$body,'key'=>$key];
