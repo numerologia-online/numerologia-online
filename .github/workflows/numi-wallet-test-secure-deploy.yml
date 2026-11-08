@@ -67,6 +67,69 @@ jobs:
         run: |
           set -euo pipefail
           php account-service/tests/real-wallet.php
+      - name: Read-only FTPS inspection of current REG.RU wallet deployment
+        shell: bash
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib, hashlib, io, os, ssl
+          from pathlib import Path
+          host='server172.hosting.reg.ru'
+          user=os.environ.get('REG_FTP_USER')
+          password=os.environ.get('REG_FTP_PASSWORD')
+          if not user or not password:
+              raise SystemExit('FTPS_CREDENTIALS_MISSING - NO WRITES')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          ftp.connect(host,21)
+          ftp.login(user,password)
+          ftp.prot_p()
+          ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          domain='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
+          previous='xn--c1adkkdfjbp1a4l.online'
+          def read(path):
+              b=io.BytesIO()
+              def take(chunk):
+                  if b.tell()+len(chunk)>2000000: raise RuntimeError('REMOTE_TOO_LARGE')
+                  b.write(chunk)
+              try: ftp.retrbinary('RETR '+path,take)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'): return None
+                  raise
+              return b.getvalue()
+          try:
+              roots=[home+'/www/'+domain,home+'/www/'+previous]
+              root=next((r for r in roots if read(r+'/index.html') is not None),None)
+              if root is None: raise RuntimeError('REG_ROOT_NOT_FOUND')
+              print('REG_READ_ONLY_SITE_ROOT_FOUND',flush=True)
+              samples=[
+                  ('index.html',root+'/index.html','index.html'),
+                  ('account-browser.js',root+'/account-browser.js','account-browser.js'),
+                  ('wallet-client.js',root+'/wallet-client.js','wallet-client.js'),
+                  ('wallet.php',home+'/private/numi-account-20261031/wallet.php','account-service/private/wallet.php'),
+                  ('core.php',home+'/private/numi-account-20261031/core.php','account-service/private/core.php'),
+                  ('subscriptions.php',home+'/private/numi-account-20261031/subscriptions.php','account-service/private/subscriptions.php'),
+              ]
+              for name,remote,local in samples:
+                  live=read(remote)
+                  desired=Path(local).read_bytes()
+                  if live is None:
+                      label='MISSING'
+                  elif live==desired:
+                      label='MATCH'
+                  else:
+                      label='DIFFERENT'
+                  print('REG_SOURCE_COMPARISON',name,label,
+                        'live_sha256='+hashlib.sha256(live).hexdigest() if live is not None else '',
+                        'main_sha256='+hashlib.sha256(desired).hexdigest(),flush=True)
+              print('REG_READ_ONLY_INSPECTION_COMPLETE_NO_FILES_WRITTEN',flush=True)
+          finally:
+              try: ftp.quit()
+              except Exception: ftp.close()
+          PY
       - name: Release gate - explicitly no REG.RU writes before end-to-end readiness
         shell: bash
         run: |
