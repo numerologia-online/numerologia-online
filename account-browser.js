@@ -306,13 +306,9 @@
   topupPage.append(topupBack,topupTitle,topupIntro,topupCurrent,walletForm,topupFeedback);
   profile.append(topupPage);
   function showTopupPage(){
-    topupCurrentAmount.textContent=walletAmount.textContent;
-    topupFeedback.hidden=true;topupFeedback.textContent="";
-    overview.hidden=true;
-    for(const panel of dialog.querySelectorAll("[data-account-content]"))panel.hidden=true;
-    topupPage.hidden=false;
-    dialog.classList.add("numi-wallet-topup-active");
-    dialog.scrollTop=0;
+    // A real document navigation: no shrinking dialog and no nested sheet
+    // when the iOS/Telegram keyboard opens.
+    location.assign("/wallet-topup.html");
   }
   function leaveTopupPage(){
     amountInput.blur();
