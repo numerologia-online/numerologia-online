@@ -208,7 +208,10 @@
     "#numi-wallet-account-badge button.numi-wallet-small{border:0;padding:3px 0;background:transparent;color:#606963;text-decoration:underline;font:12px system-ui;cursor:pointer}",
     "#numi-wallet-account-badge .numi-wallet-topup-form{margin-top:10px;display:flex;align-items:end;gap:8px;flex-wrap:wrap}",
     "#numi-wallet-account-badge .numi-wallet-topup-form label{font-size:12px;color:#5d6561}",
-    "#numi-wallet-account-badge .numi-wallet-topup-form input{display:block;width:140px;max-width:100%;margin-top:4px;padding:8px;border:1px solid #b7aaa2;border-radius:9px;background:white;color:#343b39;font:16px system-ui}",
+    "#numi-wallet-account-badge .numi-wallet-topup-form input[type=number]{display:block;width:140px;max-width:100%;margin-top:4px;padding:8px;border:1px solid #b7aaa2;border-radius:9px;background:white;color:#343b39;font:16px system-ui}",
+    "#numi-wallet-account-badge .numi-wallet-payment-methods{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:0;padding:0;border:0}",
+    "#numi-wallet-account-badge .numi-wallet-payment-methods label{display:flex;align-items:center;gap:4px;font-size:13px;color:#343b39}",
+    "#numi-wallet-account-badge .numi-wallet-payment-methods input{margin:0;accent-color:#343b39}",
     "#numi-wallet-account-badge .numi-wallet-operations{margin:8px 0 0;padding:0;list-style:none;max-height:130px;overflow:auto;font-size:12px;color:#5c6561}",
     "#numi-wallet-account-badge .numi-wallet-operations li{padding:4px 0;border-bottom:1px solid #e3dfdd}",
     "#numi-wallet-account-badge .numi-wallet-feedback{font-size:12px;margin:8px 0 0;color:#5d6561}",
@@ -229,8 +232,17 @@
   const amountInput=document.createElement("input");amountInput.type="number";amountInput.min="1";amountInput.max="100000";
   amountInput.step="1";amountInput.required=true;amountInput.placeholder="Введите сумму";amountInput.inputMode="numeric";
   amountLabel.append(amountInput);
+  const methodGroup=document.createElement("fieldset");methodGroup.className="numi-wallet-payment-methods";methodGroup.hidden=true;
+  const paymentMethods=[["bank_card","Картой"],["sbp","СБП"]];
+  const methodRadios=paymentMethods.map(([value,label],index)=>{
+    const choice=document.createElement("label"),input=document.createElement("input");
+    input.type="radio";input.name="numi-wallet-payment-method";input.value=value;input.checked=index===0;
+    choice.append(input,document.createTextNode(label));methodGroup.append(choice);
+    return input;
+  });
+  let walletMode="test";
   const pay=document.createElement("button");pay.type="submit";pay.className="numi-wallet-main-button";pay.textContent="Продолжить";
-  walletForm.append(amountLabel,pay);
+  walletForm.append(amountLabel,methodGroup,pay);
   const walletLinks=document.createElement("div");walletLinks.className="numi-wallet-links";
   const ledgerToggle=document.createElement("button");ledgerToggle.type="button";ledgerToggle.className="numi-wallet-small";
   ledgerToggle.textContent="История операций";
@@ -266,7 +278,9 @@
       const result=await request("wallet_sync",{topup_id:topupId});
       walletFeedback.hidden=false;
       walletFeedback.textContent=result.status==="credited"?"Пополнение подтверждено. Баланс обновлён.":
-        result.status==="canceled"?"Пополнение отменено.":"Ожидаем подтверждения тестового платежа.";
+        result.status==="canceled"?"Пополнение отменено.":
+        result.status==="pending_receipt"?"Оплата прошла, ожидаем подтверждения чека.":
+        "Ожидаем подтверждения ЮKassa.";
       if(result.status==="credited"||result.status==="canceled"){
         for(let i=sessionStorage.length-1;i>=0;i--){
           const key=sessionStorage.key(i);if(key?.startsWith("numi-topup-request-"))sessionStorage.removeItem(key);
@@ -282,15 +296,21 @@
     if(!Number.isInteger(amount)||amount<1||amount>100000){
       walletFeedback.hidden=false;walletFeedback.textContent="Введите сумму в рублях от 1 до 100 000.";return;
     }
-    const sessionKey="numi-topup-request-"+amount;
+    const method=walletMode==="live"?(methodRadios.find(input=>input.checked)?.value||"bank_card"):"bank_card";
+    const sessionKey="numi-topup-request-"+walletMode+"-"+method+"-"+amount;
     let key=sessionStorage.getItem(sessionKey);
     if(!key||!/^[a-f0-9-]{36}$/i.test(key)){key=crypto.randomUUID();sessionStorage.setItem(sessionKey,key);}
-    pay.disabled=true;walletFeedback.hidden=false;walletFeedback.textContent="Готовим тестовое пополнение…";
+    pay.disabled=true;walletFeedback.hidden=false;
+    walletFeedback.textContent=walletMode==="test"?"Готовим тестовое пополнение…":"Готовим безопасную оплату…";
     try{
-      const result=await request("wallet_topup",{amount_rub:amount,request_key:key});
+      const payload={amount_rub:amount,request_key:key};
+      if(walletMode==="live")payload.payment_method=method;
+      const result=await request("wallet_topup",payload);
       if(result.credited){sessionStorage.removeItem(sessionKey);await refreshWalletBadge();walletFeedback.textContent="Баланс пополнен.";return;}
       const url=new URL(result.confirmation_url);
-      if(url.protocol!=="https:"||!["yookassa.ru","yoomoney.ru"].includes(url.hostname))throw new Error("INVALID_PAYMENT_DESTINATION");
+      if(url.protocol!=="https:"||url.port||url.username||url.password||
+        !["yookassa.ru","yoomoney.ru"].some(host=>url.hostname===host||url.hostname.endsWith("."+host)))
+        throw new Error("INVALID_PAYMENT_DESTINATION");
       location.assign(url.href);
     }catch(_){walletFeedback.textContent="Не удалось начать пополнение. Повторите без создания нового платежа.";}
     finally{pay.disabled=false;}
@@ -301,7 +321,10 @@
     try{
       await walletReturnedPayment();
       const response=await request("wallet_status");
-      if(response.test!==true)throw new Error("TEST_MODE_REQUIRED");
+      if(typeof response.test!=="boolean")throw new Error("UNKNOWN_WALLET_MODE");
+      walletMode=response.test?"test":"live";
+      methodGroup.hidden=walletMode!=="live";
+      testNote.textContent=walletMode==="test"?"Тестовый режим · без настоящих списаний":"Оплата через ЮKassa · картой или СБП";
       walletAmount.textContent=(Number(response.balance_kopeks)/100).toLocaleString("ru-RU")+" ₽";
       if(response.club_active===true){
         const expiry=typeof response.club_expires_at==="string"
