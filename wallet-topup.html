@@ -19,14 +19,14 @@ h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(32px,7vw,46px);li
 .balance{border:1px solid #dae4d9;border-radius:21px;background:#eff5ec;padding:20px 22px;margin-bottom:28px}
 .balance small{display:block;font-size:15px;color:#708778;margin-bottom:4px}
 .balance strong{font-size:34px;line-height:1.25;font-weight:750;color:#224d3c}
-form{display:grid;gap:22px}
+form{display:grid;gap:14px}
 .field{display:block;font-size:16px;font-weight:700;color:#254e3d}
 .field input{display:block;width:100%;min-height:58px;margin-top:9px;padding:12px 15px;border-radius:14px;border:1px solid #bdcbbd;color:#193d2e;background:white;font-size:18px;font-weight:450;box-shadow:none}
 .field input:focus-visible{outline:3px solid #9acbec;outline-offset:1px}
-.receipt-block{display:block;padding:16px 17px 17px;background:#fff6e7;border:2px solid #c9a268;border-radius:19px;box-shadow:0 3px 12px #715d3c0d}
-.receipt-title{display:block;font-size:clamp(19px,5vw,24px);line-height:1.24;font-weight:750;color:#1c4b38;margin-bottom:7px}
-.receipt-explanation{display:block;color:#46604b;font-size:15px;line-height:1.48;font-weight:450;margin:0 0 13px}
-.receipt-block input[type=email]{height:55px;min-height:55px;margin:0;border:1.5px solid #bca274;background:#fff;color:#1c4333;font-size:17px}
+.receipt-block{display:flex;flex-direction:column;gap:7px;width:100%;padding:10px 12px 11px;background:#fff9ef;border:1px solid #c9a268;border-radius:14px;text-align:center}
+.receipt-title{display:block;font-size:17px;line-height:1.2;font-weight:750;color:#1c4b38;margin:0;text-align:center}
+.receipt-explanation{display:block;color:#506354;font-size:13px;line-height:1.28;font-weight:450;margin:0;text-align:center}
+.receipt-block input[type=email]{display:block;width:100%;height:47px;min-height:47px;margin:0;padding:9px 11px;border:1px solid #bca274;border-radius:10px;background:#fff;color:#1c4333;font-size:16px;text-align:center}
 .receipt-block input[type=email]:focus{border-color:#1c654a}
 
 .methods{padding:0;margin:0;border:0;display:flex;gap:27px;flex-wrap:wrap}
@@ -50,13 +50,13 @@ form{display:grid;gap:22px}
 <section class="balance" aria-label="Текущий баланс"><small>Текущий баланс</small><strong id="balance">Проверяем…</strong></section>
 <form id="payment" novalidate>
 <label class="field" for="amount">Сумма, ₽
-<input id="amount" name="amount" type="number" min="1" max="100000" step="1" inputmode="numeric" placeholder="Введите сумму" required>
+<input id="amount" name="amount" type="number" enterkeyhint="done" min="1" max="100000" step="1" inputmode="numeric" placeholder="Введите сумму" required>
 </label>
-<label class="receipt-block" for="receipt-email">
-<span class="receipt-title">Введите почту для получения чека</span>
-<span class="receipt-explanation">Если вам понадобится возврат денег, он поможет быстро найти и подтвердить платёж.</span>
-<input id="receipt-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="name@example.ru" required>
-</label>
+<div class="receipt-block">
+<label class="receipt-title" for="receipt-email">Введите почту для получения чека</label>
+<input id="receipt-email" name="email" type="email" inputmode="email" autocomplete="email" enterkeyhint="done" maxlength="254" placeholder="name@example.ru" required>
+<p class="receipt-explanation">Если вам понадобится возврат денег, чек поможет быстро найти и подтвердить платёж.</p>
+</div>
 <fieldset class="methods" id="methods">
 <legend>Способ оплаты</legend>
 <label><input type="radio" name="method" value="bank_card" checked> Картой</label>
@@ -74,6 +74,18 @@ const form=document.getElementById("payment"),submit=document.getElementById("su
 const email=document.getElementById("receipt-email"),amount=document.getElementById("amount");
 const status=document.getElementById("status"),balance=document.getElementById("balance");
 const methods=document.getElementById("methods"),notice=document.getElementById("notice");
+// Native iOS/Telegram keyboards should close when tapping anywhere outside
+// an editable field; the payment form remains intact.
+document.addEventListener("pointerdown",event=>{
+ const active=document.activeElement;
+ if(!(active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement))return;
+ if(event.target instanceof Element && event.target.closest("input,textarea,select,[contenteditable]"))return;
+ active.blur();
+},{passive:true});
+document.addEventListener("keydown",event=>{
+ if(event.key==="Escape" && document.activeElement instanceof HTMLElement)
+  document.activeElement.blur();
+});
 let account=null,mode="live";
 const money=(kopeks)=>(Number(kopeks)/100).toLocaleString("ru-RU")+" ₽";
 function message(text){status.textContent=text;}
@@ -103,7 +115,7 @@ async function initialize(){
   balance.textContent=money(wallet.balance_kopeks);
   if(mode==="test"){
    methods.hidden=true;notice.textContent="Тестовый режим — настоящих списаний нет.";
-   email.required=false;email.closest("label").hidden=true;
+   email.required=false;email.closest(".receipt-block").hidden=true;
   }else if(typeof wallet.receipt_email_suggestion==="string"){
    // Server returns only the current signed-in account's previously paid receipt.
    email.value=wallet.receipt_email_suggestion;
