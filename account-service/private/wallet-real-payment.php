@@ -188,6 +188,71 @@ function naRealRefundSend(
     return ['refund_id'=>$response['id'],'status'=>$response['status']];
 }
 
+/**
+ * Resolve one operator-approved refund to its ORIGINAL YooKassa top-up.
+ * Never trust a payment_id, amount or account_id from a browser/HTTP request.
+ * A separate reconciliation process handles wallet deductions and fiscal
+ * reversal; this helper cannot make a live transfer by itself.
+ */
+function naRealRefundApprovedCase(PDO $db,string $caseId): array {
+    if(preg_match('/^[a-f0-9-]{36}$/iD',$caseId)!==1)
+        throw new InvalidArgumentException('REAL_REFUND_CASE_INVALID');
+    $q=$db->prepare("SELECT c.id,c.account_id,c.topup_id,c.spend_id,c.kopeks,
+            c.status,c.provider_refund_id,
+            t.account_id AS topup_account_id,t.provider_payment_id,
+            t.kopeks AS topup_kopeks,t.status AS topup_status
+        FROM numi_real_wallet_refund_cases c
+        INNER JOIN numi_real_wallet_topups t ON t.id=c.topup_id
+        WHERE c.id=? LIMIT 1");
+    $q->execute([$caseId]);$row=$q->fetch(PDO::FETCH_ASSOC);
+    if(!$row||$row['status']!=='approved'
+       ||!is_string($row['provider_payment_id'])
+       ||$row['provider_payment_id']===''
+       ||$row['topup_status']!=='credited'
+       ||$row['account_id']!==$row['topup_account_id']
+       ||$row['spend_id']!==null)
+        throw new RuntimeException('REAL_REFUND_CASE_NOT_APPROVED');
+    $kopeks=(int)$row['kopeks'];
+    if($kopeks<1||$kopeks>(int)$row['topup_kopeks'])
+        throw new RuntimeException('REAL_REFUND_AMOUNT_EXCEEDS_SOURCE');
+    // One active or settled refund per source payment until partial-refund
+    // allocation and the original-advance fiscal reconciliation are installed.
+    $q=$db->prepare("SELECT COUNT(*) FROM numi_real_wallet_refund_cases
+        WHERE topup_id=? AND id<>? AND status IN ('review','approved','completed')");
+    $q->execute([$row['topup_id'],$caseId]);
+    if((int)$q->fetchColumn()!==0)
+        throw new RuntimeException('REAL_REFUND_SOURCE_ALREADY_RESERVED');
+    if($row['provider_refund_id']!==null)
+        throw new RuntimeException('REAL_REFUND_ALREADY_SUBMITTED');
+    return ['case_id'=>$row['id'],'account_id'=>$row['account_id'],
+        'topup_id'=>$row['topup_id'],'payment_id'=>$row['provider_payment_id'],
+        'kopeks'=>$kopeks];
+}
+
+/**
+ * Send a refund ONLY for a database-approved original payment.
+ * Refuses a second send when a provider refund id has already been stored.
+ * Human approval and reconciliation still required; intentionally no HTTP route.
+ */
+function naRealRefundSendApprovedCase(
+    PDO $db,array $config,string $caseId,?callable $testTransport=null
+): array {
+    naRealWalletRequireLive($config);
+    // Refuse if the account isn't frozen for refund reconciliation.
+    $ref=naRealRefundApprovedCase($db,$caseId);
+    $q=$db->prepare('SELECT blocked_at FROM numi_real_wallet_balances WHERE account_id=?');
+    $q->execute([$ref['account_id']]);
+    if(!$q->fetchColumn())throw new RuntimeException('REAL_REFUND_WALLET_MUST_BE_FROZEN');
+    $result=naRealRefundSend($config,$ref['case_id'],$ref['payment_id'],
+        $ref['kopeks'],$testTransport);
+    $q=$db->prepare("UPDATE numi_real_wallet_refund_cases SET provider_refund_id=?
+        WHERE id=? AND status='approved' AND provider_refund_id IS NULL");
+    $q->execute([$result['refund_id'],$caseId]);
+    if($q->rowCount()!==1)
+        throw new RuntimeException('REAL_REFUND_RECONCILIATION_REQUIRED');
+    return $result;
+}
+
 /** This route is called only after the private live-mode switch AND all gates. */
 function naRealWalletServe(PDO $db,string $action,array $body,array $account,array $config): never {
     if(!naRealWalletGate($config))
