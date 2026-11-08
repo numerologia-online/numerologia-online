@@ -38,6 +38,24 @@ expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,10000,
 expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,0,$advanceSettings),
     'INVALID_TOPUP_AMOUNT');
 
+$offset=naRealOffsetReceiptPayload(
+    'live-payment-example-123','payment@example.test','Подписка на школу нумерологии',
+    14900,['offset_receipt_reviewed'=>true,'offset_receipt_vat_code'=>1]);
+assertReal($offset['payment_id']==='live-payment-example-123'
+    && $offset['type']==='payment'
+    && $offset['items'][0]['payment_mode']==='full_payment'
+    && $offset['items'][0]['payment_subject']==='service'
+    && $offset['items'][0]['amount']['value']==='149.00'
+    && $offset['settlements'][0]['type']==='prepayment'
+    && $offset['settlements'][0]['amount']['value']==='149.00',
+    'subscription offset receipt includes prepayment settlement and exact amount');
+expectReal(fn()=>naRealOffsetReceiptPayload('live-payment-example-123',
+    'payment@example.test','Вопрос',1000,[]),
+    'REAL_OFFSET_FISCAL_POLICY_NOT_APPROVED');
+expectReal(fn()=>naRealOffsetReceiptPayload('live-payment-example-123',
+    'payment@example.test','Вопрос',1000,
+    ['offset_receipt_reviewed'=>true,'offset_receipt_vat_code'=>99]),
+    'REAL_OFFSET_FISCAL_POLICY_NOT_APPROVED');
 assertReal(naRealPaymentMethod('bank_card')==='bank_card','bank card method');
 assertReal(naRealPaymentMethod('sbp')==='sbp','SBP method');
 expectReal(fn()=>naRealPaymentMethod('yoomoney'),'REAL_UNSUPPORTED_PAYMENT_METHOD');
