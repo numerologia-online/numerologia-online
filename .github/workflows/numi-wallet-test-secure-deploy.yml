@@ -52,3 +52,14 @@ jobs:
           php -l account-service/public/numi-real-worker.php
           python3 -m py_compile scripts/deploy-real-wallet-worker-20261108.py
           python3 -u scripts/deploy-real-wallet-worker-20261108.py
+      - name: Privately stage live YooKassa keys if separately configured
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+          NUMI_YOOKASSA_LIVE_SHOP_ID: ${{ secrets.NUMI_YOOKASSA_LIVE_SHOP_ID }}
+          NUMI_YOOKASSA_LIVE_SECRET_KEY: ${{ secrets.NUMI_YOOKASSA_LIVE_SECRET_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/stage-real-yookassa-credentials-20261108.py
+          python3 -u scripts/stage-real-yookassa-credentials-20261108.py
