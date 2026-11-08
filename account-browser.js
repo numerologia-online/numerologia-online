@@ -116,7 +116,9 @@
         ACCOUNT_TEMPORARILY_UNAVAILABLE:"Вход временно недоступен, попробуйте позже.",
         EMAIL_ALREADY_VERIFIED:"Почта уже привязана.",
         IDENTITY_ALREADY_LINKED:"Этот Telegram уже привязан к другому аккаунту.",
-        TELEGRAM_EMAIL_CONFLICT:"Для безопасности эти аккаунты нельзя объединить автоматически. Покупки не изменены."
+        TELEGRAM_EMAIL_CONFLICT:"Для безопасности эти аккаунты нельзя объединить автоматически. Покупки не изменены.",
+        REAL_FISCAL_CONTACT_REQUIRED:"Укажите корректный email для электронного чека. Регистрация не нужна.",
+        REAL_FISCAL_CONTACT_MISMATCH:"Для повторной попытки укажите тот же email, что при первом пополнении."
       }[json?.error] || "Не удалось выполнить действие. Попробуйте ещё раз.";
       throw new Error(message);
     }
@@ -235,6 +237,18 @@
   const amountInput=document.createElement("input");amountInput.type="number";amountInput.min="1";amountInput.max="100000";
   amountInput.step="1";amountInput.required=true;amountInput.placeholder="Введите сумму";amountInput.inputMode="numeric";
   amountLabel.append(amountInput);
+  const receiptLabel=document.createElement("label");
+  receiptLabel.textContent="Email для чека";
+  receiptLabel.hidden=true;
+  const receiptInput=document.createElement("input");
+  receiptInput.type="email";receiptInput.autocomplete="email";
+  receiptInput.inputMode="email";receiptInput.maxLength=254;
+  receiptInput.placeholder="name@example.ru";
+  receiptInput.setAttribute("aria-label","Email для отправки электронного чека");
+  const receiptNote=document.createElement("small");
+  receiptNote.textContent="Только для чека. Регистрация и подтверждение почты не нужны.";
+  receiptNote.style.cssText="display:block;margin-top:5px;color:#697b70;font-weight:400;font-size:12px";
+  receiptLabel.append(receiptInput,receiptNote);
   const methodGroup=document.createElement("fieldset");methodGroup.className="numi-wallet-payment-methods";methodGroup.hidden=true;
   const paymentMethods=[["bank_card","Картой"],["sbp","СБП"]];
   const methodRadios=paymentMethods.map(([value,label],index)=>{
@@ -245,7 +259,7 @@
   });
   let walletMode="test";
   const pay=document.createElement("button");pay.type="submit";pay.className="numi-wallet-main-button";pay.textContent="Продолжить";
-  walletForm.append(amountLabel,methodGroup,pay);
+  walletForm.append(amountLabel,receiptLabel,methodGroup,pay);
   const walletLinks=document.createElement("div");walletLinks.className="numi-wallet-links";
   const ledgerToggle=document.createElement("button");ledgerToggle.type="button";ledgerToggle.className="numi-wallet-small";
   ledgerToggle.textContent="История операций";
@@ -338,6 +352,12 @@
       topupFeedback.hidden=false;topupFeedback.textContent="Введите сумму в рублях от 1 до 100 000.";return;
     }
     const method=walletMode==="live"?(methodRadios.find(input=>input.checked)?.value||"bank_card"):"bank_card";
+    const receiptEmail=receiptInput.value.trim().toLowerCase();
+    if(walletMode==="live"&&(!receiptEmail||!receiptInput.checkValidity())){
+      topupFeedback.hidden=false;
+      topupFeedback.textContent="Введите корректный email для чека. Подтверждение не требуется.";
+      receiptInput.focus();return;
+    }
     const sessionKey="numi-topup-request-"+walletMode+"-"+method+"-"+amount;
     let key=sessionStorage.getItem(sessionKey);
     if(!key||!/^[a-f0-9-]{36}$/i.test(key)){key=crypto.randomUUID();sessionStorage.setItem(sessionKey,key);}
@@ -345,7 +365,7 @@
     topupFeedback.textContent=walletMode==="test"?"Готовим тестовое пополнение…":"Готовим безопасную оплату…";
     try{
       const payload={amount_rub:amount,request_key:key};
-      if(walletMode==="live")payload.payment_method=method;
+      if(walletMode==="live"){payload.payment_method=method;payload.receipt_email=receiptEmail;}
       const result=await request("wallet_topup",payload);
       if(result.credited){sessionStorage.removeItem(sessionKey);await refreshWalletBadge();topupFeedback.textContent="Баланс пополнен.";return;}
       const url=new URL(result.confirmation_url);
@@ -353,7 +373,7 @@
         !["yookassa.ru","yoomoney.ru"].some(host=>url.hostname===host||url.hostname.endsWith("."+host)))
         throw new Error("INVALID_PAYMENT_DESTINATION");
       location.assign(url.href);
-    }catch(_){topupFeedback.textContent="Не удалось начать пополнение. Повторите без создания нового платежа.";}
+    }catch(error){topupFeedback.textContent=error?.message||"Не удалось начать пополнение. Повторите без создания нового платежа.";}
     finally{pay.disabled=false;}
   });
   async function refreshWalletBadge(){
@@ -365,6 +385,8 @@
       if(typeof response.test!=="boolean")throw new Error("UNKNOWN_WALLET_MODE");
       walletMode=response.test?"test":"live";
       methodGroup.hidden=walletMode!=="live";
+      receiptLabel.hidden=walletMode!=="live";
+      receiptInput.required=walletMode==="live";
       testNote.textContent=walletMode==="test"?"Тестовый режим · без настоящих списаний":"Оплата через ЮKassa · картой или СБП";
       walletAmount.textContent=(Number(response.balance_kopeks)/100).toLocaleString("ru-RU")+" ₽";
       topupCurrentAmount.textContent=walletAmount.textContent;
