@@ -1,0 +1,52 @@
+name: VERIFY isolated real-wallet backend (NO deployment)
+on:
+  push:
+    branches:
+      - feature/real-wallet-backend-preflight-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-wallet:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: numi_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -ptest"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      NUMI_TEST_MYSQL_DSN: "mysql:host=127.0.0.1;port=3306;dbname=numi_test;charset=utf8mb4"
+      NUMI_TEST_MYSQL_USER: root
+      NUMI_TEST_MYSQL_PASSWORD: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint offline PHP, verify no production activation
+        run: |
+          set -euo pipefail
+          php -l account-service/private/wallet-real.php
+          php -l account-service/tests/real-wallet.php
+          php -l account-service/private/wallet.php
+          php -l account-service/private/core.php
+          php -l account-service/private/store.php
+          ! grep -q "wallet-real.php" account-service/private/core.php
+          ! grep -q "naRealWallet" account-service/private/core.php
+          ! grep -q 'src="store-browser.js' index.html
+          echo REAL_WALLET_NOT_EXPOSED_AND_NO_CART
+      - name: Test REAL and TEST account ledgers on independent MySQL schemas
+        run: |
+          set -euo pipefail
+          php account-service/tests/real-wallet.php
+      - name: Existing catalog and subscriptions remain valid
+        run: |
+          set -euo pipefail
+          php account-service/tests/store.php
+          php account-service/tests/subscriptions.php

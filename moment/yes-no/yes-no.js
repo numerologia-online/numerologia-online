@@ -52,7 +52,16 @@
       if (id !== answerRequest) return;
       if(data.error==="DAILY_LIMIT_REACHED"||data.error==="LOGIN_REQUIRED"){
         timeResult.textContent=data.error==="LOGIN_REQUIRED"?"Войдите в кабинет, чтобы получить ответ.":"Бесплатный вопрос на сегодня использован.";
-        const buy=document.createElement("button");buy.type="button";buy.textContent="Открыть варианты покупки";buy.onclick=async()=>{const {openStore}=await import("/store-entry.js?v=2");await openStore({product_code:"yesno_question",question_id:selectedQuestion.id,question_time:value});};timeResult.append(buy);return;
+        const offer=document.createElement("div");timeResult.append(offer);
+        const item={product_code:"yesno_question",question_id:selectedQuestion.id,question_time:value};
+        try{
+          const {showInlinePurchase,renderInlineMaterial}=await import("/wallet-client.js?v=direct1");
+          if(id===answerRequest)await showInlinePurchase(item,offer,(material)=>{
+            if(id!==answerRequest)return;
+            renderInlineMaterial(timeResult,material);
+          });
+        }catch(_){if(id===answerRequest)offer.textContent="Не удалось проверить доступ к ответу.";}
+        return;
       }
       if (data.error === "ANSWER_NOT_READY") {timeResult.textContent = "Ответ на этот вопрос ещё готовится.";return;}
       if (!response.ok || data.ok !== true || typeof data.answer !== "string") throw Error("answer unavailable");

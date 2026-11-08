@@ -2,9 +2,9 @@
 declare(strict_types=1);
 
 /**
- * Sandbox wallet for the existing Numi account and paid-material system.
- * Not a separate shop; never enables real funds or bypasses material readiness.
- * Activate ONLY for explicitly allowlisted sandbox accounts.
+ * Server-side RUB balance, entitlements and idempotent payments for the existing account.
+ * TEST money is isolated by deployment config and must NEVER become real funds.
+ * No real checkout or recurring debit is enabled by this module.
  */
 require_once __DIR__.'/store.php';
 
@@ -12,7 +12,8 @@ function naWalletAllowed(?array $account, array $config): bool {
     return $account !== null
         && naStoreEnabled($config)
         && ($config['store_wallet_test_enabled'] ?? false) === true
-        && naTestOwner($account); // Sandbox pilot: verified owner ONLY, never store buyer allowlist.
+        && ($config['secret_key'] ?? '') !== '';
+    // Every authenticated account can test its OWN wallet. All payments remain TEST.
 }
 
 function naWalletSchema(PDO $db): void {
@@ -62,6 +63,59 @@ function naWalletSchema(PDO $db): void {
         KEY ix_wallet_ledger_account(account_id,created_at),
         CONSTRAINT fk_numi_wallet_ledger_account FOREIGN KEY(account_id) REFERENCES numi_accounts(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    // Earlier releases had a three-value ledger enum. Add explicit transfer kinds.
+    $column=$db->query("SHOW COLUMNS FROM numi_wallet_ledger LIKE 'kind'")->fetch();
+    if(!$column || !str_contains((string)($column['Type']??''),"'transfer_in'")){
+        $db->exec("ALTER TABLE numi_wallet_ledger MODIFY COLUMN kind
+            ENUM('topup','purchase','refund','transfer_in','transfer_out') NOT NULL");
+    }
+    $db->exec("CREATE TABLE IF NOT EXISTS numi_wallet_merges (
+        id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+        source_account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+        destination_account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+        kopeks BIGINT UNSIGNED NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_wallet_merge_source(source_account_id),
+        CONSTRAINT fk_wallet_merge_source FOREIGN KEY(source_account_id) REFERENCES numi_accounts(id),
+        CONSTRAINT fk_wallet_merge_destination FOREIGN KEY(destination_account_id) REFERENCES numi_accounts(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+
+/**
+ * Account merge must not abandon wallet funds under an inactive Telegram identity.
+ * Call naWalletSchema BEFORE beginning the caller's transaction (MySQL DDL commits).
+ * Preserve source ledger history, add balanced transfer entries and an immutable
+ * cross-account audit row. Never transfer any real funds: this schema is TEST-only.
+ */
+function naWalletMergeAccounts(PDO $db,string $from,string $to): void {
+    if($from===$to)return;
+    $prior=$db->prepare('SELECT id FROM numi_wallet_merges WHERE source_account_id=?');
+    $prior->execute([$from]);
+    if($prior->fetchColumn())throw new RuntimeException('WALLET_ALREADY_MERGED');
+    $source=naWalletBalance($db,$from,true);
+    $target=naWalletBalance($db,$to,true);
+    $sum=$db->prepare('SELECT COALESCE(SUM(delta_kopeks),0) FROM numi_wallet_ledger WHERE account_id=?');
+    $sum->execute([$from]);
+    if((int)$sum->fetchColumn()!==$source)throw new RuntimeException('WALLET_LEDGER_MISMATCH');
+    $sum->execute([$to]);
+    if((int)$sum->fetchColumn()!==$target)throw new RuntimeException('WALLET_LEDGER_MISMATCH');
+    if($source<0 || $target<0 || $source>PHP_INT_MAX-$target)
+        throw new RuntimeException('WALLET_MERGE_OVERFLOW');
+    $mergeId=naUuid();
+    $db->prepare('UPDATE numi_wallet_balances SET kopeks=0 WHERE account_id=?')->execute([$from]);
+    $db->prepare('UPDATE numi_wallet_balances SET kopeks=? WHERE account_id=?')
+        ->execute([$source+$target,$to]);
+    $db->prepare('UPDATE numi_wallet_topups SET account_id=? WHERE account_id=?')
+        ->execute([$to,$from]);
+    $db->prepare('UPDATE numi_wallet_spends SET account_id=? WHERE account_id=?')
+        ->execute([$to,$from]);
+    $db->prepare('INSERT INTO numi_wallet_merges(id,source_account_id,destination_account_id,kopeks) VALUES(?,?,?,?)')
+        ->execute([$mergeId,$from,$to,$source]);
+    if($source>0){
+        $record=$db->prepare('INSERT INTO numi_wallet_ledger(id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks) VALUES(?,?,?,?,?,?)');
+        $record->execute([naUuid(),$from,'transfer_out',$mergeId,-$source,0]);
+        $record->execute([naUuid(),$to,'transfer_in',$mergeId,$source,$target+$source]);
+    }
 }
 
 function naWalletKey(mixed $key): string {
@@ -77,17 +131,30 @@ function naWalletBalance(PDO $db, string $accountId, bool $lock=false): int {
     return (int)$q->fetchColumn();
 }
 
+/** Current CLUB access is derived only from paid active entitlements, never from UI state. */
+function naWalletClubStatus(PDO $db,array $account): array {
+    $active=naCatalogHasAccess($db,$account,'club_month','club');
+    if(!$active)return ['club_active'=>false,'club_expires_at'=>null];
+    $q=$db->prepare("SELECT MAX(e.expires_at) FROM numi_entitlements e
+        JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
+        WHERE e.account_id=? AND e.product_code='club_month' AND e.resource_id='club'
+        AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
+        AND o.status='paid' AND o.verified_at IS NOT NULL");
+    $q->execute([$account['id']]);
+    return ['club_active'=>true,'club_expires_at'=>$q->fetchColumn()?:null];
+}
+
 function naWalletStatus(PDO $db,array $account): never {
     naWalletSchema($db);
     $balance=naWalletBalance($db,$account['id']);
     $q=$db->prepare('SELECT kind,delta_kopeks,balance_after_kopeks,created_at FROM numi_wallet_ledger WHERE account_id=? ORDER BY created_at DESC,id DESC LIMIT 30');
     $q->execute([$account['id']]);
-    naReply(200,['ok'=>true,'test'=>true,'currency'=>'RUB','balance_kopeks'=>$balance,'operations'=>$q->fetchAll()]);
+    naReply(200,array_merge(['ok'=>true,'test'=>true,'currency'=>'RUB','balance_kopeks'=>$balance,'operations'=>$q->fetchAll()],naWalletClubStatus($db,$account)));
 }
 
 function naWalletTopup(PDO $db,array $account,array $config,array $body): never {
     $amount=$body['amount_rub']??null;
-    if (!is_int($amount)||$amount<100||$amount>5000) throw new InvalidArgumentException('INVALID_TOPUP_AMOUNT');
+    if (!is_int($amount)||$amount<1||$amount>100000) throw new InvalidArgumentException('INVALID_TOPUP_AMOUNT');
     $key=naWalletKey($body['request_key']??null);
     naWalletSchema($db);
     $q=$db->prepare('SELECT * FROM numi_wallet_topups WHERE account_id=? AND request_key=?');
@@ -184,6 +251,49 @@ function naWalletSync(PDO $db,array $account,array $config,array $body): never {
         'balance_kopeks'=>naWalletBalance($db,$account['id'])]);
 }
 
+/** Read-only quote: server-calculated price, ownership and availability. */
+function naWalletQuote(PDO $db,array $account,array $body): never {
+    $input=$body['item']??null;
+    if (!is_array($input)) throw new InvalidArgumentException('INVALID_ITEM');
+    naWalletSchema($db);
+    $club=naCatalogHasAccess($db,$account,'club_month','club');
+    require_once __DIR__.'/fulfillment.php';
+    $quote=naCartResolve([$input],$club,
+        fn($code,$resource)=>naCatalogHasAccess($db,$account,$code,$resource),[],
+        function($item){try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}
+            catch(Throwable $e){return false;}});
+    $item=$quote['items'][0];
+    // These prices are independently computed by the server for marketing display only.
+    // The actual debit below always recomputes the effective price and entitlements.
+    $regular=naCatalogResolve($input,false);
+    $member=naCatalogResolve($input,true);
+    $entitlement=null;
+    if($item['access_active'] && !$item['member_included'] && $item['kind']!=='subscription'){
+        $q=$db->prepare("SELECT e.id FROM numi_entitlements e
+            JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
+            WHERE e.account_id=? AND e.product_code=? AND e.resource_id=?
+              AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
+              AND o.status='paid' AND o.verified_at IS NOT NULL
+            ORDER BY o.created_at DESC LIMIT 1");
+        $q->execute([$account['id'],$item['product_code'],$item['resource_id']]);
+        $entitlement=$q->fetchColumn()?:null;
+    }
+    naReply(200,['ok'=>true,'test'=>true,'currency'=>'RUB',
+        'balance_kopeks'=>naWalletBalance($db,$account['id']),
+        'price_kopeks'=>$item['price_kopeks'],
+        'regular_price_kopeks'=>$regular['price_kopeks'],
+        'club_price_kopeks'=>$member['price_kopeks'],
+        'club_subscription_price_kopeks'=>naCatalogResolve(['product_code'=>'club_month'],false)['price_kopeks'],
+        'club_active'=>$club,
+        'club_expires_at'=>$club?naWalletClubStatus($db,$account)['club_expires_at']:null,
+        'product_code'=>$item['product_code'],'kind'=>$item['kind'],
+        'ready'=>($item['sale_ready']===true),
+        'owned'=>$item['access_active']===true,
+        'member_included'=>$item['member_included']===true,
+        'entitlement_id'=>$entitlement,
+        'renewal'=>'manual']);
+}
+
 function naWalletBuy(PDO $db,array $account,array $body): never {
     $key=naWalletKey($body['request_key']??null);
     $input=$body['item']??null;
@@ -194,9 +304,12 @@ function naWalletBuy(PDO $db,array $account,array $body): never {
     $quote=naCartResolve([$input],$club,fn($code,$resource)=>naCatalogHasAccess($db,$account,$code,$resource),[],
         function($item){try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}catch(Throwable $e){return false;}});
     $item=$quote['items'][0];
-    if (!$quote['fulfillment_ready'] || $item['kind']!=='question')
+    if (!$quote['fulfillment_ready'] || !in_array($item['kind'],['question','report','subscription'],true)
+        || (int)$item['price_kopeks']<1)
         naReply(409,['ok'=>false,'error'=>'ITEM_NOT_READY']);
     $price=(int)$item['price_kopeks'];
+    // DDL must NEVER run inside a money transaction (MySQL implicit commit).
+    if($item['kind']==='subscription') naSubscriptionSchema($db);
     $db->beginTransaction();
     try {
         $db->prepare('SELECT id FROM numi_accounts WHERE id=? FOR UPDATE')->execute([$account['id']]);
@@ -209,7 +322,7 @@ function naWalletBuy(PDO $db,array $account,array $body): never {
             naReply(200,['ok'=>true,'test'=>true,'already_purchased'=>true,
                 'entitlement_id'=>$prior['entitlement_id'],'balance_kopeks'=>naWalletBalance($db,$account['id'])]);
         }
-        if (naCatalogHasAccess($db,$account,$item['product_code'],$item['resource_id']))
+        if ($item['kind']!=='subscription' && naCatalogHasAccess($db,$account,$item['product_code'],$item['resource_id']))
             throw new InvalidArgumentException('ITEM_ALREADY_OWNED');
         $pending=$db->prepare("SELECT 1 FROM numi_orders WHERE account_id=? AND product_code=? AND resource_id=? AND status='pending' LIMIT 1");
         $pending->execute([$account['id'],$item['product_code'],$item['resource_id']]);
@@ -222,14 +335,34 @@ function naWalletBuy(PDO $db,array $account,array $body): never {
         $db->prepare("INSERT INTO numi_orders(id,account_id,product_code,resource_id,amount_kopeks,provider,status,verified_at)
              VALUES(?,?,?,?,?,'sandbox_wallet','paid',UTC_TIMESTAMP())")
             ->execute([$order,$account['id'],$item['product_code'],$item['resource_id'],$price]);
-        $db->prepare("INSERT INTO numi_entitlements(id,account_id,order_id,product_code,resource_id,status) VALUES(?,?,?,?,?,'active')")
-            ->execute([$entitlement,$account['id'],$order,$item['product_code'],$item['resource_id']]);
+        $start=new DateTimeImmutable('now',new DateTimeZone('UTC'));
+        if($item['kind']==='subscription'){
+            $q=$db->prepare("SELECT MAX(e.expires_at) FROM numi_entitlements e
+                JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
+                WHERE e.account_id=? AND e.product_code=? AND e.status='active'
+                AND o.status='paid' AND o.verified_at IS NOT NULL");
+            $q->execute([$account['id'],$item['product_code']]);
+            $until=$q->fetchColumn();
+            if($until && new DateTimeImmutable($until,new DateTimeZone('UTC'))>$start)
+                $start=new DateTimeImmutable($until,new DateTimeZone('UTC'));
+        }
+        $expires=naStoreExpiry($item['product_code'],$start);
+        $db->prepare("INSERT INTO numi_entitlements(id,account_id,order_id,product_code,resource_id,status,expires_at)
+            VALUES(?,?,?,?,?,'active',?)")
+            ->execute([$entitlement,$account['id'],$order,$item['product_code'],$item['resource_id'],$expires]);
+        if($item['kind']==='subscription'){
+            $db->prepare("INSERT INTO numi_subscription_settings(account_id,product_code,auto_renew,source_order_id)
+                VALUES(?,?,0,?) ON DUPLICATE KEY UPDATE auto_renew=0,
+                payment_method_id=NULL,source_order_id=VALUES(source_order_id)")
+                ->execute([$account['id'],$item['product_code'],$order]);
+        }
         $db->prepare('INSERT INTO numi_wallet_spends(id,account_id,request_key,product_code,resource_id,kopeks,order_id,entitlement_id) VALUES(?,?,?,?,?,?,?,?)')
             ->execute([$spend,$account['id'],$key,$item['product_code'],$item['resource_id'],$price,$order,$entitlement]);
         $db->prepare("INSERT INTO numi_wallet_ledger(id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks) VALUES(?,?,'purchase',?,?,?)")
             ->execute([naUuid(),$account['id'],$spend,-$price,$newBalance]);
         $db->commit();
-        naReply(200,['ok'=>true,'test'=>true,'entitlement_id'=>$entitlement,'balance_kopeks'=>$newBalance]);
+        naReply(200,['ok'=>true,'test'=>true,'entitlement_id'=>$entitlement,'balance_kopeks'=>$newBalance,
+            'expires_at'=>$expires,'renewal'=>'manual']);
     } catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
 }
 
@@ -239,6 +372,7 @@ function naWalletServe(PDO $db,string $action,array $body): never {
     if (!naWalletAllowed($account,$config)) naReply(403,['ok'=>false,'error'=>'WALLET_TEST_DISABLED']);
     try {
         if ($action==='wallet_status') naWalletStatus($db,$account);
+        if ($action==='wallet_quote') naWalletQuote($db,$account,$body);
         if ($action==='wallet_topup') naWalletTopup($db,$account,$config,$body);
         if ($action==='wallet_sync') naWalletSync($db,$account,$config,$body);
         if ($action==='wallet_buy') naWalletBuy($db,$account,$body);

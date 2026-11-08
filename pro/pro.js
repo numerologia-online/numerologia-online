@@ -177,11 +177,11 @@ function showPaymentInfo() {
 }
 async function previewCheckout(choice) {
   try {
-    const {openStore,storeDate}=await import("../store-entry.js?v=2");
+    const {openStore,storeDate}=await import("../store-entry.js?v=wallet-direct1");
     await openStore({product_code:"life_full",birth_date:storeDate(input.value)},choice==="club"?"club":"once");
   } catch (_) {
     const note=paywallDialog?.querySelector("#pro-paywall-checkout-note");
-    if(note){note.hidden=false;note.textContent="Не удалось открыть корзину. Попробуйте ещё раз.";}
+    if(note){note.hidden=false;note.textContent="Не удалось открыть выбранный разбор. Попробуйте ещё раз.";}
   }
 }
 

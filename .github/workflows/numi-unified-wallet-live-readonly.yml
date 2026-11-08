@@ -1,0 +1,70 @@
+name: Read-only REG.RU baseline for unified wallet
+on:
+  push:
+    branches: [feature/unified-wallet-direct-access-20261107]
+    paths: [.github/workflows/numi-unified-wallet-live-readonly.yml]
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compare live files with main without any writes
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,ftplib,ssl,io,hashlib,subprocess,json,urllib.request
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          ftp.connect("server172.hosting.reg.ru",21)
+          ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip("/")
+          pub=home+"/www/xn--c1adkkdfjbp1a4l.online"
+          priv=home+"/private/numi-account-20261031"
+          names=["core.php","wallet.php","store.php","subscriptions.php","fulfillment.php",
+             "account-browser.js","store-browser.js","store-entry.js","store-material.js",
+             "index.html","app.js","shared-offer.js","redflag-feature.js",
+             "year-feature.js","compatibility-feature.js","destiny-code-feature.js",
+             "child/child.js","child/index.html","pro/pro.js","pro/index.html",
+             "moment/yes-no/yes-no.js","moment/yes-no/index.html","wallet-client.js"]
+          def read(path,limit=900000):
+            out=io.BytesIO()
+            def add(block):
+              if out.tell()+len(block)>limit:raise RuntimeError("REMOTE_TOO_LARGE")
+              out.write(block)
+            try:ftp.retrbinary("RETR "+path,add)
+            except ftplib.error_perm as e:
+              if str(e).startswith("550"):return None
+              raise
+            return out.getvalue()
+          try:
+            page=read(pub+"/index.html")
+            if page is None:raise RuntimeError("WEBROOT_NOT_FOUND")
+            req=urllib.request.Request("https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/index.html?read_only=1",headers={"Cache-Control":"no-cache"})
+            with urllib.request.urlopen(req,timeout=25) as r:
+              if r.status!=200 or r.read(900001)!=page:raise RuntimeError("PUBLIC_AND_FTPS_DIFFER")
+            print("LIVE_WEBROOT_VERIFIED")
+            diffs=[]
+            for name in names:
+              repo_path="account-service/private/"+name if name in ("core.php","wallet.php","store.php","subscriptions.php","fulfillment.php") else name
+              path=(priv if repo_path.startswith("account-service/") else pub)+"/"+name
+              live=read(path)
+              try:base=subprocess.check_output(["git","show","origin/main:"+repo_path],stderr=subprocess.DEVNULL)
+              except subprocess.CalledProcessError:base=None
+              status="MISSING" if live is None else "NO_MAIN" if base is None else "MATCH" if base==live else "DIFFERS"
+              print("FILE",name,status)
+              if status=="DIFFERS":diffs.append(name)
+            manifest=json.load(open("account-service/private/store-assets.json"))
+            key="data/redflag/money/generosity.json"
+            material=read(priv+"/store-content/"+key)
+            ok=material is not None and hashlib.sha256(material).hexdigest()==manifest["files"][key]
+            print("MATERIAL_SAMPLE", "VERIFIED" if ok else "MISSING_OR_DIFFERENT")
+            print("READONLY_AUDIT_DONE",len(diffs),"DIFFERENCES")
+          finally:ftp.quit()
+          PY

@@ -1,0 +1,62 @@
+name: Verify unified wallet without publishing or charging
+on:
+  push:
+    branches:
+      - feature/club-status-pricing-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: numi_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -ptest"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      NUMI_TEST_MYSQL_DSN: "mysql:host=127.0.0.1;port=3306;dbname=numi_test;charset=utf8mb4"
+      NUMI_TEST_MYSQL_USER: root
+      NUMI_TEST_MYSQL_PASSWORD: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and existing regression tests
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/deploy-club-prices-20261107.py
+          for file in account-service/private/{core,wallet,store,fulfillment,subscriptions}.php; do php -l "$file"; done
+          node --check account-browser.js
+          node --check app.js
+          node --check store-browser.js
+          node --input-type=module --check < wallet-client.js
+          node --input-type=module --check < store-entry.js
+          node --input-type=module --check < redflag-feature.js
+          node --check moment/yes-no/yes-no.js
+          node --input-type=module --check < shared-offer.js
+          # Paid material assets live only in the private REG.RU store-content folder.
+          # Never copy them into public GitHub to make a CI test pass.
+          php account-service/tests/store.php
+          php account-service/tests/subscriptions.php
+          php account-service/tests/wallet-ledger.php
+      - name: No cart on main homepage
+        run: |
+          set -euo pipefail
+          ! grep -q 'src="store-browser.js' index.html
+          ! grep -q 'Покупки и корзина' store-entry.js
+          grep -q 'wallet_quote' account-service/private/core.php
+          grep -q 'showInlinePurchase' redflag-feature.js
+          grep -q 'club_active' account-service/private/wallet.php
+          grep -q 'CLUB_PRICING_ENTITLEMENT_TESTS_PASS' account-service/tests/wallet-ledger.php
+          grep -q 'Ваша цена' redflag-feature.js
+          grep -q 'Вступить в клуб' wallet-client.js
+          grep -q 'showInlinePurchase' moment/yes-no/yes-no.js
+          echo UNIFIED_WALLET_QA_OK_NO_DEPLOY

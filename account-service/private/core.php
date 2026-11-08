@@ -384,6 +384,10 @@ function naMergeTelegramEmail(PDO $db,array $body): never {
     if (!$target['email_verified_at']) naReply(403,['ok'=>false,'error'=>'EMAIL_NOT_VERIFIED']);
     $tgId=(string)$telegram['id'];
     $targetId=(string)$target['id'];
+    // CREATE/ALTER TABLE must be completed BEFORE an atomic identity/money transfer.
+    require_once __DIR__.'/wallet.php';
+    naStoreSchema($db);
+    naWalletSchema($db);
     $db->beginTransaction();
     try {
         // Lock the identity row: concurrent merges cannot silently overwrite each other.
@@ -392,6 +396,10 @@ function naMergeTelegramEmail(PDO $db,array $body): never {
         $fromId=$stmt->fetchColumn();
         $fromId=$fromId===false?null:(string)$fromId;
         if ($fromId!==null && $fromId!==$targetId) {
+            // The debit path locks account rows; lock both before moving any funds.
+            $accounts=$db->prepare('SELECT id FROM numi_accounts WHERE id IN (?,?) ORDER BY id FOR UPDATE');
+            $accounts->execute([$fromId,$targetId]);
+            if(count($accounts->fetchAll())!==2)throw new RuntimeException('SOURCE_ACCOUNT_MISSING');
             $stmt=$db->prepare('SELECT id,email,email_verified_at,birth_date FROM numi_accounts WHERE id=? FOR UPDATE');
             $stmt->execute([$fromId]);
             $from=$stmt->fetch();
@@ -409,6 +417,9 @@ function naMergeTelegramEmail(PDO $db,array $body): never {
             }
             $db->prepare('UPDATE numi_orders SET account_id=? WHERE account_id=?')->execute([$targetId,$fromId]);
             $db->prepare('UPDATE numi_entitlements SET account_id=? WHERE account_id=?')->execute([$targetId,$fromId]);
+            $db->prepare('UPDATE numi_checkouts SET account_id=? WHERE account_id=?')->execute([$targetId,$fromId]);
+            naSubscriptionMergeAccounts($db,$fromId,$targetId);
+            naWalletMergeAccounts($db,$fromId,$targetId);
             $db->prepare('UPDATE numi_identities SET account_id=? WHERE provider=? AND provider_user_id=? AND account_id=?')
                 ->execute([$targetId,'telegram',$tgId,$fromId]);
             $db->prepare('UPDATE numi_accounts SET birth_date=COALESCE(birth_date,?) WHERE id=?')
@@ -742,7 +753,7 @@ function naServe(): never {
             require_once __DIR__.'/store.php';
             naStoreServe($db,$action,$body);
         }
-        if (in_array($action,['wallet_status','wallet_topup','wallet_sync','wallet_buy'],true)) {
+        if (in_array($action,['wallet_status','wallet_quote','wallet_topup','wallet_sync','wallet_buy'],true)) {
             require_once __DIR__.'/wallet.php';
             naWalletServe($db,$action,$body);
         }

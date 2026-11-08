@@ -24,7 +24,7 @@ const loadStylesheet = (href) => new Promise((resolve, reject) => {
 });
 
 const getYearFeature = () => {
-    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=store2");
+    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=wallet-direct1");
   return yearFeatureLoading;
 };
 
@@ -50,7 +50,7 @@ const openMatrixFeature = async () => {
 };
 
 const getRedFlagFeature = () => {
-  if (!redFlagFeatureLoading) redFlagFeatureLoading = import("./redflag-feature.js?v=20261107rftext1");
+  if (!redFlagFeatureLoading) redFlagFeatureLoading = import("./redflag-feature.js?v=club-prices1");
   return redFlagFeatureLoading;
 };
 
@@ -63,7 +63,7 @@ const openRedFlagFeature = async () => {
 };
 
 const getCompatibilityFeature = () => {
-  if (!compatibilityFeatureLoading) compatibilityFeatureLoading = import("./compatibility-feature.js?v=store2");
+  if (!compatibilityFeatureLoading) compatibilityFeatureLoading = import("./compatibility-feature.js?v=wallet-direct1");
   return compatibilityFeatureLoading;
 };
 
@@ -89,7 +89,7 @@ const openPersonalDayFeature = async () => {
 window.setTimeout(() => getPersonalDayFeature().catch(() => {}), 900);
 
 const getDestinyCodeFeature = () => {
-  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=store2");
+  if (!destinyCodeFeatureLoading) destinyCodeFeatureLoading = import("./destiny-code-feature.js?v=wallet-direct1");
   return destinyCodeFeatureLoading;
 };
 

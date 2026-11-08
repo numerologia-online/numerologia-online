@@ -2,6 +2,11 @@
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
 import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=20261107rftext1";
 
+// Paid content is rendered as text; do not interpret author-controlled paragraphs as HTML.
+const escapeMarkup = value => String(value??"").replace(/[&<>"']/g,char=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+})[char]);
+
 const home = document.querySelector("#home");
 const redFlag = document.querySelector("#redflag");
 const form = document.querySelector("#redflag-form");
@@ -254,58 +259,80 @@ const clearError = () => {
 };
 
 // Resolve only the opened question. Cache its result for this calculated date.
-const showQuestionOffer = async (question) => {
-  const rates = REDFLAG_PRICE_PAIRS[question.priceRub];
-  if (!rates) return;
-  const { openSharedOffer } = await import("./shared-offer.js?v=store2");
-  await openSharedOffer({
-    subject:{product_code:"redflag_question",question_id:question.id,
-      category:[...categoryStates].find(([,state])=>state.questions?.includes(question))?.[0],
-      birth_date:birthDateInput.value.split(".").reverse().join("-")},
-    product: "ответ на вопрос «" + question.title + "»",
-    title: question.title, itemKind: "question",
-    oncePrice: rates.regular, memberPrice: rates.subscription, clubMonthly: 490
-  });
-};
-// Remove this single set when all six blocks are finished.
+// Paid questions are opened IN PLACE; never send the reader into a cart.
 const REDFLAG_SOON_BLOCKS = new Set(["flags", "infidelity", "intimacy", "family", "language", "verdict"]);
 const ensureAnswer = (question, state) => {
-  if (question.isComingSoon) return; // No paid loading or purchase for drafts.
-  const id = question.id;
-  if (state.answers.has(id) || state.answerRequests.has(id)) return;
-  const profile = activeProfile;
-  if (!profile) return;
-  if (!question.isFree && question.id.startsWith("comic-verdict-")) {
-    state.activeQuestionId = null;
-    renderCategories();
-    void showQuestionOffer(question).catch(() => {});
+  if(question.isComingSoon)return;
+  const id=question.id;
+  if(state.answers.has(id)||state.answerRequests.has(id))return;
+  const profile=activeProfile;
+  if(!profile)return;
+  state.answerErrors.delete(id);
+  if(!question.isFree){
+    const category=[...categoryStates].find(([,value])=>value===state)?.[0];
+    const item={product_code:"redflag_question",category,question_id:id,
+      birth_date:birthDateInput.value.split(".").reverse().join("-")};
+    const article=[...categoriesRoot.querySelectorAll(".redflag-question")]
+      .find(node=>node.dataset.questionId===id);
+    const target=article?.querySelector(".redflag-answer");
+    if(!category||!target){state.answerErrors.set(id,"Не удалось проверить вопрос. Откройте его ещё раз.");return;}
+    const task=import("./wallet-client.js?v=club-prices1").then(({showInlinePurchase})=>
+      showInlinePurchase(item,target,(material)=>{
+        if(activeProfile!==profile)return;
+        const paragraphs=(material.sections||[]).flatMap(section=>section.paragraphs||[]);
+        if(!paragraphs.length){state.answerErrors.set(id,"Материал пока недоступен.");return;}
+        state.answers.set(id,{answer:paragraphs.join("\n"),paragraphs});
+        renderCategories({type:"question",id});
+      }));
+    state.answerRequests.set(id,task);
+    void task.catch(()=>{if(profile===activeProfile)state.answerErrors.set(id,"Не удалось проверить покупку.");})
+      .finally(()=>{if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);});
     return;
   }
-  state.answerErrors.delete(id);
-  const request = Promise.resolve().then(() => question.answer(profile));
-  state.answerRequests.set(id, request);
-  void request.then((response) => {
-    if (profile === activeProfile) state.answers.set(id, response);
-  }, async (error) => {
-    if (profile !== activeProfile) return;
-    if (!question.isFree) {
-      state.activeQuestionId = null;
-      renderCategories();
-      try { await showQuestionOffer(question); }
-      catch (_) { state.answerErrors.set(id, "Не удалось открыть варианты покупки. Попробуйте ещё раз."); }
-    } else {
-      state.answerErrors.set(id, "Не удалось загрузить ответ. Закрой и открой вопрос ещё раз.");
-    }
-  }).finally(() => {
-    if (state.answerRequests.get(id) === request) state.answerRequests.delete(id);
-    if (profile === activeProfile && state.expanded && state.activeQuestionId === id) {
-      // Repaint the answer without jumping to the start of the question.
-      renderCategories({ type: "question", id });
-    }
+  // First question in each published category remains genuinely free.
+  const task=Promise.resolve().then(()=>question.answer(profile));
+  state.answerRequests.set(id,task);
+  void task.then(response=>{
+    if(profile===activeProfile)state.answers.set(id,response);
+  },()=>{
+    if(profile===activeProfile)state.answerErrors.set(id,"Не удалось загрузить ответ. Откройте вопрос ещё раз.");
+  }).finally(()=>{
+    if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
+    if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
+      renderCategories({type:"question",id});
   });
 };
 
 // Prices are explicit pairs: keep the agreed 39/19 and 79/39 rounding.
+// Do not infer club status from a badge, email, or local storage.
+let activeClubMember=null; // null = guest / status not yet verified.
+async function refreshClubPrices(){
+  let next=null;
+  try{
+    const response=await fetch("/api/numi-account.php",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"wallet_status"})
+    });
+    if(response.ok){
+      const data=await response.json();
+      if(data.ok===true&&data.test===true)next=data.club_active===true;
+    }
+  }catch(_){/* A missing session must never advertise membership as active. */}
+  activeClubMember=next;
+  // Update the existing small price badges in place; preserve expanded questions.
+  categoriesRoot.querySelectorAll(".redflag-price-pair").forEach(pair=>{
+    const regular=pair.querySelector(".redflag-question-price");
+    const caption=pair.querySelector(".redflag-subscription-price span");
+    if(caption)caption.textContent=activeClubMember===true?"Ваша цена":"По подписке";
+    if(regular&&regular.dataset.regular)regular.textContent=
+      (activeClubMember===true?"Обычно ":"")+regular.dataset.regular+" ₽";
+  });
+}
+window.addEventListener("numi:wallet-updated",()=>{void refreshClubPrices();});
+window.addEventListener("numi:account-session-changed",()=>{void refreshClubPrices();});
+void refreshClubPrices();
+
 const REDFLAG_PRICE_PAIRS = {
   10: { regular: 20, subscription: 10 },
   29: { regular: 39, subscription: 19 },
@@ -365,13 +392,15 @@ const fillQuestionButton = (button, question, showExpand = false) => {
     pair.className = "redflag-price-pair";
     const price = document.createElement("span");
     price.className = "redflag-question-price";
-    price.textContent = (rates ? rates.regular : question.priceRub) + " ₽";
+    price.dataset.regular = String(rates ? rates.regular : question.priceRub);
+    price.textContent = (activeClubMember===true ? "Обычно " : "")+
+      price.dataset.regular+" ₽";
     pair.append(price);
     if (rates) {
       const subscription = document.createElement("span");
       subscription.className = "redflag-subscription-price";
       const caption = document.createElement("span");
-      caption.textContent = "По подписке";
+      caption.textContent = activeClubMember===true ? "Ваша цена" : "По подписке";
       const amount = document.createElement("strong");
       amount.textContent = rates.subscription + " ₽";
       subscription.append(caption, amount);
@@ -438,18 +467,18 @@ const createQuestion = (question, state) => {
     <div class="redflag-scales" aria-label="Шкалы ответа">
       ${scales.map(({ label, value }) => `
         <div class="redflag-scale">
-          <div class="redflag-scale-label"><span>${label}</span><strong>${value}/10</strong></div>
+          <div class="redflag-scale-label"><span>${escapeMarkup(label)}</span><strong>${value}/10</strong></div>
           <div class="redflag-scale-track" aria-hidden="true"><i style="width: ${value * 10}%"></i></div>
         </div>`).join("")}
     </div>` : "";
     const verdictMarkup = response.verdict
-      ? `<p class="redflag-verdict">${response.verdict}</p>` : "";
+      ? `<p class="redflag-verdict">${escapeMarkup(response.verdict)}</p>` : "";
     const observationMarkup = response.observation
-      ? `<p class="redflag-observation"><strong>На что смотреть:</strong> ${response.observation}</p>` : "";
+      ? `<p class="redflag-observation"><strong>На что смотреть:</strong> ${escapeMarkup(response.observation)}</p>` : "";
     answer.innerHTML = `
     ${verdictMarkup}
     ${scalesMarkup}
-    ${paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join("")}
+    ${paragraphs.map((paragraph) => `<p>${escapeMarkup(paragraph)}</p>`).join("")}
     ${observationMarkup}`;
     addRedFlagShare(answer, formatRedFlagMessage(question, response, formattedDate));
   } else if (opened) {

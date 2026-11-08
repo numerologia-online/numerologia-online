@@ -192,26 +192,140 @@
   const identity = overview.querySelector(".account-identity");
   if (!identity) return;
   identity.insertAdjacentHTML("afterend",html);
-  // Sandbox wallet balance is presented in the existing account cabinet.
-  // Hidden unless the private server authorizes this specific test account.
-  const walletBadge=document.createElement("div");
-  walletBadge.id="numi-wallet-account-badge";
-  walletBadge.hidden=true;
-  walletBadge.style.cssText="margin:12px 0;padding:12px;border:1px solid #d7ddd5;border-radius:12px;background:#f6f7f4;color:#334238;";
+  // A single wallet balance in the account header, without any cart or separate store.
+  const walletBadge=document.createElement("section");
+  walletBadge.id="numi-wallet-account-badge";walletBadge.hidden=true;
+  walletBadge.setAttribute("aria-label","Мой баланс");
   overview.querySelector(".account-identity")?.insertAdjacentElement("afterend",walletBadge);
-  async function refreshWalletBadge(){
+  const walletStyle=document.createElement("style");
+  walletStyle.textContent=[
+    "#numi-wallet-account-badge{margin:12px 0 18px;padding:14px 16px;background:#f4f1f0;border:1px solid #e1d9d4;border-radius:15px;color:#343b39;font:14px/1.5 system-ui}",
+    "#numi-wallet-account-badge .numi-wallet-main{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}",
+    "#numi-wallet-account-badge .numi-wallet-total{display:block;font-size:24px;font-weight:750;line-height:1.2}",
+    "#numi-wallet-account-badge .numi-wallet-caption{display:block;font-size:12px;color:#69716d}",
+    "#numi-wallet-account-badge button.numi-wallet-main-button{border:0;border-radius:10px;background:#343b39;color:white;padding:10px 15px;font:600 13px system-ui;cursor:pointer}",
+    "#numi-wallet-account-badge .numi-wallet-links{display:flex;gap:12px;align-items:center;margin-top:6px;flex-wrap:wrap}",
+    "#numi-wallet-account-badge button.numi-wallet-small{border:0;padding:3px 0;background:transparent;color:#606963;text-decoration:underline;font:12px system-ui;cursor:pointer}",
+    "#numi-wallet-account-badge .numi-wallet-topup-form{margin-top:10px;display:flex;align-items:end;gap:8px;flex-wrap:wrap}",
+    "#numi-wallet-account-badge .numi-wallet-topup-form label{font-size:12px;color:#5d6561}",
+    "#numi-wallet-account-badge .numi-wallet-topup-form input{display:block;width:140px;max-width:100%;margin-top:4px;padding:8px;border:1px solid #b7aaa2;border-radius:9px;background:white;color:#343b39;font:16px system-ui}",
+    "#numi-wallet-account-badge .numi-wallet-operations{margin:8px 0 0;padding:0;list-style:none;max-height:130px;overflow:auto;font-size:12px;color:#5c6561}",
+    "#numi-wallet-account-badge .numi-wallet-operations li{padding:4px 0;border-bottom:1px solid #e3dfdd}",
+    "#numi-wallet-account-badge .numi-wallet-feedback{font-size:12px;margin:8px 0 0;color:#5d6561}",
+    "#numi-wallet-account-badge .numi-club-status{margin:8px 0 0;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;color:#5b6961;font:12px/1.4 system-ui}",
+    "#numi-wallet-account-badge [hidden]{display:none!important}"
+  ].join("");
+  dialog.append(walletStyle);
+  const walletMain=document.createElement("div");walletMain.className="numi-wallet-main";
+  const walletText=document.createElement("div");
+  const walletCaption=document.createElement("small");walletCaption.className="numi-wallet-caption";walletCaption.textContent="Мой баланс";
+  const walletAmount=document.createElement("strong");walletAmount.className="numi-wallet-total";walletAmount.textContent="0 ₽";
+  walletText.append(walletCaption,walletAmount);
+  const topupToggle=document.createElement("button");topupToggle.type="button";
+  topupToggle.className="numi-wallet-main-button";topupToggle.textContent="Пополнить";
+  walletMain.append(walletText,topupToggle);
+  const walletForm=document.createElement("form");walletForm.className="numi-wallet-topup-form";walletForm.hidden=true;
+  const amountLabel=document.createElement("label");amountLabel.textContent="Сумма, ₽";
+  const amountInput=document.createElement("input");amountInput.type="number";amountInput.min="1";amountInput.max="100000";
+  amountInput.step="1";amountInput.required=true;amountInput.placeholder="Введите сумму";amountInput.inputMode="numeric";
+  amountLabel.append(amountInput);
+  const pay=document.createElement("button");pay.type="submit";pay.className="numi-wallet-main-button";pay.textContent="Продолжить";
+  walletForm.append(amountLabel,pay);
+  const walletLinks=document.createElement("div");walletLinks.className="numi-wallet-links";
+  const ledgerToggle=document.createElement("button");ledgerToggle.type="button";ledgerToggle.className="numi-wallet-small";
+  ledgerToggle.textContent="История операций";
+  const testNote=document.createElement("small");testNote.className="numi-wallet-caption";
+  testNote.textContent="Тестовый режим · без настоящих списаний";
+  walletLinks.append(ledgerToggle,testNote);
+  const clubLine=document.createElement("div");clubLine.className="numi-club-status";
+  const clubText=document.createElement("span");clubText.textContent="Проверяем подписку…";
+  const clubJoin=document.createElement("button");clubJoin.type="button";
+  clubJoin.className="numi-wallet-small";clubJoin.textContent="Вступить в клуб";clubJoin.hidden=true;
+  clubJoin.addEventListener("click",async()=>{
+    clubJoin.disabled=true;
     try{
+      const {openStore}=await import("/store-entry.js?v=club-prices1");
+      await openStore({product_code:"club_month"});
+    }catch(_){walletFeedback.hidden=false;walletFeedback.textContent="Не удалось открыть оформление подписки.";}
+    finally{clubJoin.disabled=false;}
+  });
+  clubLine.append(clubText,clubJoin);
+  const ledger=document.createElement("ul");ledger.className="numi-wallet-operations";ledger.hidden=true;
+  const walletFeedback=document.createElement("p");walletFeedback.className="numi-wallet-feedback";walletFeedback.hidden=true;
+  walletBadge.append(walletMain,walletForm,walletLinks,clubLine,ledger,walletFeedback);
+  topupToggle.addEventListener("click",()=>{walletForm.hidden=!walletForm.hidden;if(!walletForm.hidden)amountInput.focus();});
+  ledgerToggle.addEventListener("click",()=>{ledger.hidden=!ledger.hidden;});
+  let walletReturnHandled=false;
+  async function walletReturnedPayment(){
+    if(walletReturnHandled)return;
+    const params=new URLSearchParams(location.search);
+    const topupId=params.get("wallet_topup");
+    if(!topupId||!/^[a-f0-9-]{36}$/i.test(topupId))return;
+    walletReturnHandled=true;
+    try{
+      const result=await request("wallet_sync",{topup_id:topupId});
+      walletFeedback.hidden=false;
+      walletFeedback.textContent=result.status==="credited"?"Пополнение подтверждено. Баланс обновлён.":
+        result.status==="canceled"?"Пополнение отменено.":"Ожидаем подтверждения тестового платежа.";
+      if(result.status==="credited"||result.status==="canceled"){
+        for(let i=sessionStorage.length-1;i>=0;i--){
+          const key=sessionStorage.key(i);if(key?.startsWith("numi-topup-request-"))sessionStorage.removeItem(key);
+        }
+      }
+    }catch(_){walletFeedback.hidden=false;walletFeedback.textContent="Не удалось проверить пополнение. Без подтверждения ЮKassa зачисления нет.";}
+    params.delete("wallet_topup");
+    history.replaceState(null,"",location.pathname+(params.toString()?"?"+params:"")+location.hash);
+  }
+  walletForm.addEventListener("submit",async event=>{
+    event.preventDefault();
+    const amount=Number(amountInput.value);
+    if(!Number.isInteger(amount)||amount<1||amount>100000){
+      walletFeedback.hidden=false;walletFeedback.textContent="Введите сумму в рублях от 1 до 100 000.";return;
+    }
+    const sessionKey="numi-topup-request-"+amount;
+    let key=sessionStorage.getItem(sessionKey);
+    if(!key||!/^[a-f0-9-]{36}$/i.test(key)){key=crypto.randomUUID();sessionStorage.setItem(sessionKey,key);}
+    pay.disabled=true;walletFeedback.hidden=false;walletFeedback.textContent="Готовим тестовое пополнение…";
+    try{
+      const result=await request("wallet_topup",{amount_rub:amount,request_key:key});
+      if(result.credited){sessionStorage.removeItem(sessionKey);await refreshWalletBadge();walletFeedback.textContent="Баланс пополнен.";return;}
+      const url=new URL(result.confirmation_url);
+      if(url.protocol!=="https:"||!["yookassa.ru","yoomoney.ru"].includes(url.hostname))throw new Error("INVALID_PAYMENT_DESTINATION");
+      location.assign(url.href);
+    }catch(_){walletFeedback.textContent="Не удалось начать пополнение. Повторите без создания нового платежа.";}
+    finally{pay.disabled=false;}
+  });
+  async function refreshWalletBadge(){
+    if(!current){walletBadge.hidden=true;return;}
+    walletBadge.hidden=false;walletAmount.textContent="…";
+    try{
+      await walletReturnedPayment();
       const response=await request("wallet_status");
-      if(response.test!==true)throw new Error("TEST_ONLY");
-      walletBadge.replaceChildren();
-      const label=document.createElement("strong");label.textContent="Мой баланс: "+(Number(response.balance_kopeks)/100).toLocaleString("ru-RU")+" ₽";
-      const button=document.createElement("button");button.type="button";button.textContent="Пополнить или купить";
-      button.className="account-secondary";button.style.marginLeft="10px";
-      button.onclick=async()=>{const {openStore}=await import("/store-entry.js?v=2");await openStore();};
-      const note=document.createElement("small");note.textContent=" Тестовый баланс";note.style.color="#657567";
-      walletBadge.append(label,button,note);
-      walletBadge.hidden=false;
-    }catch(_){walletBadge.hidden=true;}
+      if(response.test!==true)throw new Error("TEST_MODE_REQUIRED");
+      walletAmount.textContent=(Number(response.balance_kopeks)/100).toLocaleString("ru-RU")+" ₽";
+      if(response.club_active===true){
+        const expiry=typeof response.club_expires_at==="string"
+          ? new Date(response.club_expires_at.replace(" ","T")+"Z") : null;
+        const until=expiry&&!Number.isNaN(expiry.getTime())
+          ? " до "+expiry.toLocaleDateString("ru-RU",{timeZone:"UTC",day:"numeric",month:"long",year:"numeric"}) : "";
+        clubText.textContent="Клуб активен"+until+" · скидка 50% на ответы";
+        clubJoin.hidden=true;
+      }else{
+        clubText.textContent="Клуб не подключён · участникам ответы вдвое дешевле";
+        clubJoin.hidden=false;
+      }
+      window.dispatchEvent(new Event("numi:club-status-updated"));
+      ledger.replaceChildren();
+      const labels={topup:"Пополнение",purchase:"Покупка",refund:"Возврат"};
+      for(const item of response.operations||[]){
+        const line=document.createElement("li"),delta=Number(item.delta_kopeks);
+        line.textContent=(labels[item.kind]||"Операция")+" · "+(delta>0?"+":"")+
+          (delta/100).toLocaleString("ru-RU")+" ₽";
+        ledger.append(line);
+      }
+      if(!ledger.childElementCount){const li=document.createElement("li");li.textContent="Операций пока нет";ledger.append(li);}
+    }catch(_){walletAmount.textContent="Недоступен";walletFeedback.hidden=false;
+      walletFeedback.textContent="Не получилось проверить баланс. Покупки без подтверждения сервера не выполняются.";}
   }
   window.addEventListener("numi:wallet-updated",()=>{void refreshWalletBadge();});
   const root = document.getElementById("numi-account-entry");
@@ -364,10 +478,11 @@
       const session=await request("session");
       current=session.authenticated?session.account:null;
       render();
+      window.dispatchEvent(new Event("numi:account-session-changed"));
       if (current) {await updatePurchases();await refreshWalletBadge();} else walletBadge.hidden=true;
       return current;
     } catch (err) {
-      current=null;walletBadge.hidden=true;render();return null;
+      current=null;walletBadge.hidden=true;render();window.dispatchEvent(new Event("numi:account-session-changed"));return null;
     }
   }
   function render() {
@@ -463,6 +578,7 @@
       choose("login");
       render();
       window.dispatchEvent(new Event("numi:account-logged-out"));
+      window.dispatchEvent(new Event("numi:account-session-changed"));
       if(isTelegram() && typeof window.Telegram?.WebApp?.close==="function") {
         window.Telegram.WebApp.close();
       } else if(!isTelegram() && dialog.open) {
@@ -530,7 +646,7 @@
         const title=document.createElement("strong");title.textContent=purchase.product_code;
         const detail=document.createElement("small");detail.textContent="Код материала: "+purchase.resource_id;
         item.append(title,detail);
-        if(!purchase.is_test){const read=document.createElement("button");read.type="button";read.textContent="Открыть материал и PDF";read.onclick=async()=>{const {openStore}=await import("/store-entry.js?v=2");await openStore();await window.NumiStore.open({entitlement_id:purchase.entitlement_id});};item.append(read);}
+        if(!purchase.is_test&&purchase.entitlement_id){const read=document.createElement("button");read.type="button";read.textContent="Открыть";read.className="account-secondary";read.onclick=async()=>{try{const {openMaterial}=await import("/store-material.js?v=2");let box=item.querySelector(".numi-purchase-content");if(!box){box=document.createElement("div");box.className="numi-purchase-content";item.append(box);}await openMaterial(box,purchase.entitlement_id);}catch(_){read.textContent="Не удалось открыть. Повторить";}};item.append(read);}
         container.append(item);
       }
       savedPanel.querySelector(".account-empty-state")?.toggleAttribute("hidden",(result.purchases||[]).length>0);
@@ -586,7 +702,9 @@
       document.getElementById("numi-telegram-email-linked").hidden=!linked;
       if(linked){setEmailForm.hidden=true;mergeForm.hidden=true;}
       render();
+      window.dispatchEvent(new Event("numi:account-session-changed"));
       void updatePurchases();
+      void refreshWalletBadge();
     }).catch(()=>{
       current=null;
       render();
@@ -594,7 +712,9 @@
   }else{
     void refresh();
   }
-  if(resetToken) {
+  if(new URLSearchParams(location.search).get("account")==="1"){
+    ownerButton.click();
+  }else if(resetToken) {
     choose("password");
     ownerButton.click();
   }else if(accountVerified) {
