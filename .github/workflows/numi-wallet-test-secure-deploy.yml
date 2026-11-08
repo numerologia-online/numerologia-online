@@ -416,7 +416,8 @@ jobs:
           import os,io,ssl,ftplib,subprocess,json,hashlib,hmac,urllib.request
           src='account-service/public/numi-real-worker.php'
           proposed=open(src,'rb').read()
-          old_git=subprocess.check_output(['git','show','HEAD~2:'+src])
+          revisions=subprocess.check_output(['git','log','-30','--format=%H','--',src],text=True).splitlines()
+          known_versions=[subprocess.check_output(['git','show',rev+':'+src]) for rev in revisions]
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
@@ -428,7 +429,7 @@ jobs:
               ftp.storbinary('STOR '+path,io.BytesIO(data))
               if read()!=data:raise RuntimeError('WORKER_DIAG_SERVER_READBACK_MISMATCH')
           original=read()
-          if original!=old_git and original!=proposed:
+          if original not in known_versions and original!=proposed:
               raise RuntimeError('PROTECTED_WORKER_HAS_UNRECOGNIZED_SERVER_CHANGES')
           updated=original!=proposed
           try:
