@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#254d3d">
+<title>Пополнение баланса — Нумерология онлайн</title>
+<script src="/assets/telegram-web-app-20261102.js" defer></script>
+<style>
+:root{color-scheme:light;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f4938;background:#315646}
+*{box-sizing:border-box}
+html{min-height:100%;background:#315646}
+body{min-height:100svh;margin:0;background:#315646;padding:clamp(12px,3vw,24px);padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(22px,env(safe-area-inset-bottom));overflow-y:auto}
+main{max-width:690px;min-height:calc(100svh - 36px);margin:0 auto;background:#fffdf8;border:1px solid #ddcead;border-radius:27px;padding:clamp(20px,5vw,38px);box-shadow:0 10px 28px #142f2226}
+.back{display:inline-flex;align-items:center;gap:7px;padding:11px 13px;border:1px solid #dfd5c0;border-radius:13px;background:#fff9ec;color:#345944;text-decoration:none;font-size:14px;font-weight:700;min-height:45px}
+.kicker{margin:30px 0 10px;color:#b28843;letter-spacing:.17em;font-size:12px;font-weight:800;text-transform:uppercase}
+h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(32px,7vw,46px);line-height:1.1;font-weight:500;color:#204737;margin:0 0 26px}
+.balance{border:1px solid #dae4d9;border-radius:21px;background:#eff5ec;padding:20px 22px;margin-bottom:28px}
+.balance small{display:block;font-size:15px;color:#708778;margin-bottom:4px}
+.balance strong{font-size:34px;line-height:1.25;font-weight:750;color:#224d3c}
+form{display:grid;gap:22px}
+.field{display:block;font-size:16px;font-weight:700;color:#254e3d}
+.field input{display:block;width:100%;min-height:58px;margin-top:9px;padding:12px 15px;border-radius:14px;border:1px solid #bdcbbd;color:#193d2e;background:white;font-size:18px;font-weight:450;box-shadow:none}
+.field input:focus-visible{outline:3px solid #9acbec;outline-offset:1px}
+.hint{display:block;color:#698070;font-weight:400;font-size:13px;line-height:1.4;margin-top:7px}
+.methods{padding:0;margin:0;border:0;display:flex;gap:27px;flex-wrap:wrap}
+.methods legend{font-size:16px;font-weight:700;margin-bottom:12px;padding:0}
+.methods label{display:flex;gap:9px;align-items:center;font-size:17px;color:#244c39}
+.methods input{width:19px;height:19px;accent-color:#205b42;margin:0}
+.submit{width:100%;min-height:57px;border:none;border-radius:15px;background:#1f5640;color:#fff;font-weight:750;font-size:17px;cursor:pointer}
+.submit:disabled{opacity:.65;cursor:wait}
+.notice{font-size:15px;font-weight:700;line-height:1.45;color:#40604e;margin:1px 0 0}
+.status{font-size:14px;line-height:1.5;color:#4f6958;margin:0;min-height:18px}
+.status:empty{display:none}
+[hidden]{display:none!important}
+@media(max-width:410px){main{padding:22px 19px;border-radius:23px}.balance{padding:17px 18px}.kicker{margin-top:25px}}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="/?account=1" id="back">← Назад в личный кабинет</a>
+<p class="kicker">Нумерология онлайн</p>
+<h1>Пополнение баланса</h1>
+<section class="balance" aria-label="Текущий баланс"><small>Текущий баланс</small><strong id="balance">Проверяем…</strong></section>
+<form id="payment" novalidate>
+<label class="field" for="amount">Сумма, ₽
+<input id="amount" name="amount" type="number" min="1" max="100000" step="1" inputmode="numeric" placeholder="Введите сумму" required>
+</label>
+<label class="field" for="receipt-email">Email для чека
+<input id="receipt-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="name@example.ru" required>
+<small class="hint">Только для электронного чека. Регистрироваться и подтверждать почту не нужно. Адрес предыдущего чека подставится автоматически — его можно изменить.</small>
+</label>
+<fieldset class="methods" id="methods">
+<legend>Способ оплаты</legend>
+<label><input type="radio" name="method" value="bank_card" checked> Картой</label>
+<label><input type="radio" name="method" value="sbp"> СБП</label>
+</fieldset>
+<button class="submit" type="submit" id="submit" disabled>Продолжить</button>
+<p class="notice" id="notice">При включённом VPN деньги могут зачисляться до десяти минут.</p>
+<p class="status" id="status" role="status" aria-live="polite"></p>
+</form>
+</main>
+<script>
+(()=>{"use strict";
+const api="/api/numi-account.php";
+const form=document.getElementById("payment"),submit=document.getElementById("submit");
+const email=document.getElementById("receipt-email"),amount=document.getElementById("amount");
+const status=document.getElementById("status"),balance=document.getElementById("balance");
+const methods=document.getElementById("methods"),notice=document.getElementById("notice");
+let account=null,mode="live";
+const money=(kopeks)=>(Number(kopeks)/100).toLocaleString("ru-RU")+" ₽";
+function message(text){status.textContent=text;}
+async function request(action,payload={}){
+ const response=await fetch(api,{method:"POST",credentials:"same-origin",cache:"no-store",
+  headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...payload})});
+ let data;try{data=await response.json();}catch(_){throw new Error("Сервер временно недоступен.");}
+ if(!response.ok||data.ok!==true)throw new Error(data.error||"Сервер временно недоступен.");
+ return data;
+}
+async function initialize(){
+ try{
+  let session=await request("session");
+  if(!session.authenticated){
+   const signed=window.Telegram?.WebApp?.initData;
+   if(signed){
+    await request("telegram",{init_data:signed});
+    session=await request("session");
+   }
+  }
+  if(!session.authenticated||!session.account?.id)
+   throw new Error("Для пополнения войдите через личный кабинет.");
+  account=session.account;
+  const wallet=await request("wallet_status");
+  if(typeof wallet.test!=="boolean")throw new Error("Не удалось проверить режим оплаты.");
+  mode=wallet.test?"test":"live";
+  balance.textContent=money(wallet.balance_kopeks);
+  if(mode==="test"){
+   methods.hidden=true;notice.textContent="Тестовый режим — настоящих списаний нет.";
+   email.required=false;email.closest("label").hidden=true;
+  }else if(typeof wallet.receipt_email_suggestion==="string"){
+   // Server returns only the current signed-in account's previously paid receipt.
+   email.value=wallet.receipt_email_suggestion;
+  }
+  submit.disabled=false;
+  if(Number(wallet.pending_topups)>0)
+   message("Предыдущее пополнение ещё проверяется. Не оплачивайте его повторно.");
+ }catch(error){
+  balance.textContent="Недоступен";
+  message(error?.message||"Не удалось проверить баланс.");
+ }
+}
+form.addEventListener("submit",async event=>{
+ event.preventDefault();
+ if(!account||submit.disabled)return;
+ const rub=Number(amount.value);
+ if(!Number.isInteger(rub)||rub<1||rub>100000){
+  message("Введите сумму от 1 до 100 000 ₽.");amount.focus();return;
+ }
+ const receipt=email.value.trim().toLowerCase();
+ if(mode==="live"&&(!receipt||!email.checkValidity())){
+  message("Введите корректный email для электронного чека.");email.focus();return;
+ }
+ const method=form.querySelector('input[name="method"]:checked')?.value||"bank_card";
+ const skey="numi-topup-request-"+mode+"-"+method+"-"+rub;
+ const emailKey=skey+"-receipt";
+ let key=sessionStorage.getItem(skey);
+ if(!key||!/^[0-9a-f-]{36}$/i.test(key)){
+  key=crypto.randomUUID();sessionStorage.setItem(skey,key);
+  if(mode==="live")sessionStorage.setItem(emailKey,receipt);
+ }else if(mode==="live"&&sessionStorage.getItem(emailKey)
+    &&sessionStorage.getItem(emailKey)!==receipt){
+  message("Для незавершённой попытки используйте прежний email для чека. Новую попытку можно начать после проверки предыдущей оплаты.");
+  return;
+ }
+ submit.disabled=true;message("Проверяем и открываем безопасную оплату…");
+ try{
+  const payload={amount_rub:rub,request_key:key};
+  if(mode==="live"){payload.receipt_email=receipt;payload.payment_method=method;}
+  const result=await request("wallet_topup",payload);
+  if(result.credited){
+   sessionStorage.removeItem(skey);sessionStorage.removeItem(emailKey);
+   balance.textContent=money(result.balance_kopeks);message("Баланс пополнен.");return;
+  }
+  const url=new URL(result.confirmation_url);
+  if(url.protocol!=="https:"||url.port||url.username||url.password||
+    !["yookassa.ru","yoomoney.ru"].some(host=>url.hostname===host||url.hostname.endsWith("."+host)))
+   throw new Error("Платёжная страница не подтверждена.");
+  location.assign(url.href);
+ }catch(error){message(error?.message||"Не удалось открыть оплату. Не оплачивайте повторно до проверки операции.");}
+ finally{submit.disabled=false;}
+});
+initialize();
+})();
+</script>
+</body>
+</html>
