@@ -56,6 +56,29 @@ expectReal(fn()=>naRealOffsetReceiptPayload('live-payment-example-123',
     'payment@example.test','Вопрос',1000,
     ['offset_receipt_reviewed'=>true,'offset_receipt_vat_code'=>99]),
     'REAL_OFFSET_FISCAL_POLICY_NOT_APPROVED');
+$refundCalls=[];
+$refundTransport=static function(array $body,string $key)use(&$refundCalls):array{
+    $refundCalls[]=['body'=>$body,'key'=>$key];
+    return ['id'=>'rf_mock_123','status'=>'pending',
+        'payment_id'=>$body['payment_id'],'amount'=>$body['amount']];
+};
+$refundCaseId='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+expectReal(fn()=>naRealRefundSend([],$refundCaseId,'live-payment-example-123',1000,$refundTransport),
+    'REAL_PAYMENTS_DISABLED');
+$refundConfig=$good;
+$refundConfig['refund_worker_verified']=true;
+$refund1=naRealRefundSend($refundConfig,$refundCaseId,'live-payment-example-123',1000,$refundTransport);
+$refund2=naRealRefundSend($refundConfig,$refundCaseId,'live-payment-example-123',1000,$refundTransport);
+assertReal($refund1['refund_id']==='rf_mock_123'
+    && $refund2['status']==='pending'
+    && count($refundCalls)===2
+    && $refundCalls[0]['key']===$refundCalls[1]['key']
+    && $refundCalls[0]['body']['amount']['value']==='10.00',
+    'refund request is amount-validated and retains stable retry key');
+expectReal(fn()=>naRealRefundSend($refundConfig,$refundCaseId,'wrong!',1000,$refundTransport),
+    'REAL_REFUND_PAYMENT_INVALID');
+expectReal(fn()=>naRealRefundSend($good,$refundCaseId,'live-payment-example-123',1000,$refundTransport),
+    'REAL_REFUND_POLICY_NOT_APPROVED');
 $offsetCalls=[];
 $offsetMock=static function(array $body,string $key)use(&$offsetCalls):array{
     $offsetCalls[]=['body'=>$body,'key'=>$key];
