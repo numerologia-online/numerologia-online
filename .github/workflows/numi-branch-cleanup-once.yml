@@ -1,0 +1,50 @@
+name: ONCE remove fully consolidated feature branches (keep main and gh-pages)
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/numi-branch-cleanup-once.yml
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    if: github.repository == 'numerologia-online/numerologia-online' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Verify exact one-time consolidation and heads before deleting any refs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = '2f38de2dd51cf86e511e98f75a3308eb38428751'
+          test "$(git ls-tree HEAD account-service/private/wallet-real.php | awk '{print $3}')" = '0a003fb09088383b410e3b4d2bab7e81a71ca5ef'
+          test "$(git ls-tree HEAD archive/school-20261008/pro/school/school.js | awk '{print $3}')" = '43a94263b371070a342f892c28bf51c7c4ae8d01'
+          test "$(git ls-tree HEAD wallet-client.js | awk '{print $3}')" = 'e2efff91da24b82e1c5e9c1c354d45994a28f895'
+          branches=(
+            'audit/payment-readonly-20261108|a1ea7506ef4f8a36c272f32356ee8d2c7466c6b5'
+            'feature/club-status-pricing-20261107|dda97c0e040a8af7e0f33dec5eff78c444236c15'
+            'feature/pro-text-school-20261008|35d6fea899a5e022f2db0b7635e8d7a06c230f3d'
+            'feature/real-wallet-backend-preflight-20261107|567f0d46961d02017952f737c306a0355a902ae6'
+            'feature/unified-wallet-direct-access-20261107|8c7bd81af24357679de6ff5503ff8aee965dd878'
+          )
+          for spec in "${branches[@]}"; do
+            branch="${spec%%|*}"; expected="${spec#*|}"
+            actual="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${branch}" --jq '.object.sha')"
+            if [[ "$actual" != "$expected" ]]; then
+              echo "::error::Branch changed, no deletion: $branch"; exit 2
+            fi
+          done
+          echo "ALL_BRANCH_HEADS_VERIFIED_AND_CONSOLIDATED"
+          for spec in "${branches[@]}"; do
+            branch="${spec%%|*}"
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}" >/dev/null
+            echo "DELETED_UNUSED_BRANCH: $branch"
+          done
+          echo "LEFT_INTACT: main gh-pages"
