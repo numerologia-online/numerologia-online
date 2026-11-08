@@ -34,9 +34,24 @@ function naSubscriptionSettled(PDO $db,array $checkout,array $order,array $payme
     }
 }
 function naSubscriptionList(PDO $db,array $account,array $config): array {
-    $q=$db->prepare("SELECT e.product_code,MAX(e.expires_at) AS expires_at FROM numi_entitlements e JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id WHERE e.account_id=? AND e.product_code IN ('club_month','school_week') AND e.status='active' AND o.status='paid' AND o.verified_at IS NOT NULL GROUP BY e.product_code");$q->execute([$account['id']]);$periods=$q->fetchAll();
+    $live=function_exists('naLiveWalletModeSelected')&&naLiveWalletModeSelected();
+    $providerOnly=$live?" AND o.provider='real_wallet'":"";
+    $q=$db->prepare("SELECT e.product_code,MAX(e.expires_at) AS expires_at
+        FROM numi_entitlements e JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
+        WHERE e.account_id=? AND e.product_code IN ('club_month','school_week')
+          AND e.status='active' AND o.status='paid' AND o.verified_at IS NOT NULL
+          $providerOnly GROUP BY e.product_code");
+    $q->execute([$account['id']]);$periods=$q->fetchAll();
     naSubscriptionSchema($db);$prefs=$db->prepare('SELECT product_code,auto_renew,cancelled_at FROM numi_subscription_settings WHERE account_id=?');$prefs->execute([$account['id']]);$by=[];foreach($prefs->fetchAll()as$p)$by[$p['product_code']]=$p;
-    return array_map(function($p)use($by,$config){$setting=$by[$p['product_code']]??[];$enabled=(bool)($setting['auto_renew']??false);return $p+['status'=>naSubscriptionState($p['expires_at']),'auto_renew'=>$enabled,'renewal'=>$enabled?'provider':'manual','processing_enabled'=>($config['store_recurring_test_enabled']??false)===true,'cancelled_at'=>$setting['cancelled_at']??null];},$periods);
+    return array_map(function($p)use($by,$config,$live){
+        $setting=$by[$p['product_code']]??[];
+        // LIVE subscriptions currently use only manually renewed wallet funds.
+        $enabled=!$live&&(bool)($setting['auto_renew']??false);
+        return $p+['status'=>naSubscriptionState($p['expires_at']),
+            'auto_renew'=>$enabled,'renewal'=>$enabled?'provider':'manual',
+            'processing_enabled'=>!$live&&($config['store_recurring_test_enabled']??false)===true,
+            'cancelled_at'=>$setting['cancelled_at']??null];
+    },$periods);
 }
 /** Merge active subscription records by entitlements; never inherit recurring consent silently. */
 function naSubscriptionMergeAccounts(PDO $db,string $from,string $to): void {
