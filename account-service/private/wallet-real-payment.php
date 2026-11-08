@@ -55,7 +55,7 @@ function naRealPaymentPayload(array $topup,string $method,string $verifiedEmail,
         'payment_method_data'=>['type'=>$method],
         'confirmation'=>[
             'type'=>'redirect',
-            'return_url'=>'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?account=1&wallet_return=1',
+            'return_url'=>'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?account=1&wallet_topup='.$id,
         ],
         'description'=>'Пополнение баланса Numerologia Online №'.substr($id,0,8),
         'save_payment_method'=>false,
