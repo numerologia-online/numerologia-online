@@ -1,4 +1,4 @@
-name: REG.RU REAL wallet, receipts and refunds publication
+name: REG.RU REAL wallet, fiscal worker and YooKassa verification
 on:
   push:
     branches: [main]
