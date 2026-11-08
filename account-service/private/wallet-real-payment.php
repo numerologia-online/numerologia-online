@@ -11,6 +11,112 @@ declare(strict_types=1);
  */
 require_once __DIR__.'/wallet-real.php';
 
+/**
+ * This is intentionally a hard stop: the connected YooKassa fiscal service
+ * documents that arbitrary advance is not supported. Do not disguise a wallet
+ * top-up as full prepayment for a specified item or trust browser fiscal fields.
+ * When a supported receipt policy is reviewed, replace ONLY this builder.
+ */
+function naRealReviewedTopupReceipt(PDO $db,array $account,int $kopeks): array {
+    throw new RuntimeException('REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED');
+}
+
+/** This route is called only after the private live-mode switch AND all gates. */
+function naRealWalletServe(PDO $db,string $action,array $body,array $account,array $config): never {
+    if(!naRealWalletGate($config))
+        naReply(503,['ok'=>false,'error'=>'REAL_PAYMENTS_DISABLED']);
+    try {
+        if($action==='wallet_status'){
+            $result=naRealWalletStatus($db,$account);
+            $q=$db->prepare("SELECT MAX(e.expires_at) FROM numi_entitlements e
+                JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
+                WHERE e.account_id=? AND e.product_code='club_month'
+                  AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
+                  AND o.status='paid' AND o.verified_at IS NOT NULL AND o.provider='real_wallet'");
+            $q->execute([$account['id']]);
+            $result['club_expires_at']=$q->fetchColumn()?:null;
+            $result['payment_methods']=['bank_card','sbp'];
+            naReply(200,$result);
+        }
+        if($action==='wallet_quote'){
+            $input=$body['item']??null;
+            if(!is_array($input))throw new InvalidArgumentException('INVALID_ITEM');
+            require_once __DIR__.'/fulfillment.php';
+            $ready=static function(array $item):bool{
+                if(($item['kind']??null)==='subscription')return true;
+                try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}
+                catch(Throwable $e){return false;}
+            };
+            $data=naRealWalletQuote($db,$account,$input,$ready);
+            $entitlement=null;
+            if($data['owned'] && $data['kind']!=='subscription'){
+                $q=$db->prepare("SELECT e.id FROM numi_entitlements e
+                    JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
+                    WHERE e.account_id=? AND e.product_code=? AND e.resource_id=?
+                      AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
+                      AND o.status='paid' AND o.verified_at IS NOT NULL AND o.provider='real_wallet'
+                    ORDER BY o.created_at DESC LIMIT 1");
+                $q->execute([$account['id'],$data['product_code'],$data['resource_id']]);
+                $entitlement=$q->fetchColumn()?:null;
+            }
+            $raw=naCatalogResolve($input,$data['club_active']);
+            naReply(200,array_merge($data,[
+                'balance_kopeks'=>$data['real_balance_kopeks'],
+                'member_included'=>$raw['member_included'],
+                'club_subscription_price_kopeks'=>naCatalogResolve(['product_code'=>'club_month'],false)['price_kopeks'],
+                'entitlement_id'=>$entitlement,
+                'currency'=>'RUB','test'=>false,'renewal'=>'manual',
+            ]));
+        }
+        if($action==='wallet_topup'){
+            $rub=$body['amount_rub']??null;
+            if(!is_int($rub)||$rub<1||$rub>100000)
+                throw new InvalidArgumentException('INVALID_TOPUP_AMOUNT');
+            $method=naRealPaymentMethod($body['payment_method']??null);
+            $key=naWalletKey($body['request_key']??null);
+            // Strictly fail before any payment initiation until legal fiscalization
+            // of a wallet topup is actually supported by the configured provider.
+            $receipt=naRealReviewedTopupReceipt($db,$account,$rub*100);
+            $payment=naRealWalletCreatePayment($db,$account,$config,$rub,$key,$method,$receipt);
+            naReply(200,array_merge(['ok'=>true,'test'=>false],$payment));
+        }
+        if($action==='wallet_sync'){
+            $id=$body['topup_id']??null;
+            if(!is_string($id)||preg_match('/^[a-f0-9-]{36}$/iD',$id)!==1)
+                throw new InvalidArgumentException('INVALID_TOPUP_ID');
+            $state=naRealWalletReconcileTopup($db,$config,$id,$account['id']);
+            naReply(200,['ok'=>true,'test'=>false,'status'=>$state,'topup_id'=>$id,
+                'balance_kopeks'=>naRealWalletBalance($db,$account['id'])]);
+        }
+        if($action==='wallet_buy'){
+            $input=$body['item']??null;
+            if(!is_array($input))throw new InvalidArgumentException('INVALID_ITEM');
+            $key=naWalletKey($body['request_key']??null);
+            require_once __DIR__.'/fulfillment.php';
+            $ready=static function(array $item):bool{
+                if(($item['kind']??null)==='subscription')return true;
+                try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}
+                catch(Throwable $e){return false;}
+            };
+            $result=naRealWalletBuy($db,$account,$config,$input,$key,$ready);
+            naReply(200,array_merge(['ok'=>true,'test'=>false],$result));
+        }
+        naReply(400,['ok'=>false,'error'=>'UNKNOWN_ACTION']);
+    } catch(InvalidArgumentException $e){
+        naReply(400,['ok'=>false,'error'=>$e->getMessage()]);
+    } catch(RuntimeException $e){
+        // Expected fiscal/cashflow blockers are safe to surface as error codes.
+        if(in_array($e->getMessage(),[
+            'REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED',
+            'REAL_FISCAL_CONTACT_REQUIRED','REAL_PAYMENTS_DISABLED',
+            'REAL_TOPUP_RECONCILIATION_REQUIRED','REAL_TOPUP_METHOD_CHANGED',
+            'REAL_ALREADY_PURCHASED','REAL_INSUFFICIENT_BALANCE',
+            'REAL_MATERIAL_NOT_READY','REAL_WALLET_FROZEN',
+        ],true))naReply(409,['ok'=>false,'error'=>$e->getMessage()]);
+        throw $e;
+    }
+}
+
 function naRealPaymentMethod(mixed $method): string {
     if (!is_string($method) || !in_array($method,['bank_card','sbp'],true))
         throw new InvalidArgumentException('REAL_UNSUPPORTED_PAYMENT_METHOD');
