@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback') ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU')) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -30,6 +30,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Guarded REG.RU REAL wallet deployment
+        if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback'
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
@@ -42,6 +43,7 @@ jobs:
           python3 -m py_compile scripts/deploy-real-wallet-reg-ru-20261108.py
           python3 -u scripts/deploy-real-wallet-reg-ru-20261108.py
       - name: Install REAL wallet receipt and approved-refund scheduler on REG.RU
+        if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback'
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
@@ -53,6 +55,7 @@ jobs:
           python3 -m py_compile scripts/deploy-real-wallet-worker-20261108.py
           python3 -u scripts/deploy-real-wallet-worker-20261108.py
       - name: Privately stage live YooKassa keys if separately configured
+        if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback'
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
@@ -63,3 +66,85 @@ jobs:
           set -euo pipefail
           python3 -m py_compile scripts/stage-real-yookassa-credentials-20261108.py
           python3 -u scripts/stage-real-yookassa-credentials-20261108.py
+
+      - name: Set confirmed non-VAT codes in existing private REG.RU wallet config (charges stay disabled)
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib, ssl, os, io, re, hashlib, hmac, json, urllib.request
+          host='server172.hosting.reg.ru'
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect(host,21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          config=home+'/private/numi-wallet-live/config.local.php'
+          backup=home+'/private/numi-wallet-live/config.local.php.before-vat-20261108.bak'
+          def read(path):
+              b=io.BytesIO()
+              try: ftp.retrbinary('RETR '+path,b.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'): return None
+                  raise
+              if len(b.getvalue())>10000: raise RuntimeError('PRIVATE_CONFIG_TOO_LARGE')
+              return b.getvalue()
+          def write(path,data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              if read(path)!=data: raise RuntimeError('PRIVATE_CONFIG_READBACK_MISMATCH')
+          try:
+              original=read(config)
+              if not original: raise RuntimeError('PRIVATE_LIVE_CONFIG_MISSING')
+              value=original.decode('utf-8')
+              required={
+                'wallet_mode':r"['\"]wallet_mode['\"]\s*=>\s*['\"]disabled['\"]",
+                'real_wallet_enabled':r"['\"]real_wallet_enabled['\"]\s*=>\s*false",
+                'provider_test_mode':r"['\"]provider_test_mode['\"]\s*=>\s*false",
+                'shop_id':r"['\"]shop_id['\"]\s*=>\s*['\"]1515851['\"]",
+                'live_secret':r"['\"]secret_key['\"]\s*=>\s*['\"]live_[A-Za-z0-9_-]{12,480}['\"]",
+              }
+              if not all(re.search(p,value) for p in required.values()):
+                  raise RuntimeError('PRIVATE_LIVE_CONFIG_NOT_EXPECTED_DISABLED_BASELINE')
+              for flag in ['fiscalization_verified','refunds_verified','advance_offset_receipts_verified','offset_receipt_worker_verified','launch_approved']:
+                  if re.search(r"['\"]"+flag+r"['\"]\s*=>\s*true",value):
+                      raise RuntimeError('UNEXPECTED_ACTIVE_LIVE_FLAG')
+              names=['advance_receipt_vat_code','offset_receipt_vat_code']
+              present=[bool(re.search(r"['\"]"+n+r"['\"]\s*=>",value)) for n in names]
+              if all(present):
+                  if not all(re.search(r"['\"]"+n+r"['\"]\s*=>\s*1\s*[,\n]",value) for n in names):
+                      raise RuntimeError('VAT_CODES_EXIST_BUT_DIFFER')
+                  print('REAL_WALLET_VAT_ALREADY_CONFIGURED_NO_WRITE')
+              else:
+                  if any(present) or value.count('\n];')!=1:
+                      raise RuntimeError('CONFIG_FORMAT_UNRECOGNIZED_NO_WRITE')
+                  new=value.replace('\n];',"\n    'advance_receipt_vat_code' => 1,\n    'offset_receipt_vat_code' => 1,\n];",1).encode('utf-8')
+                  existing_backup=read(backup)
+                  if existing_backup is not None:
+                      raise RuntimeError('EXISTING_FISCAL_BACKUP_WOULD_BE_OVERWRITTEN')
+                  write(backup,original)
+                  try: write(config,new)
+                  except BaseException:
+                      write(config,original)
+                      raise
+                  print('PRIVATE_LIVE_VAT_CODES_SET_NO_LIVE_ACTIVATION')
+              digest=hmac.new(os.environ['REG_FTP_PASSWORD'].encode(),
+                  b'numi-real-wallet-worker-v1@xn----8sbhhqijddjgdebdz2c2o.xn--p1ai',hashlib.sha256).hexdigest()
+              req=urllib.request.Request(
+                  'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/api/numi-real-worker.php',
+                  data=b'{"action":"probe"}',
+                  headers={'Content-Type':'application/json','X-Numi-Worker-Token':digest},method='POST')
+              with urllib.request.urlopen(req,timeout=35) as response:
+                  status=json.loads(response.read(3000))
+              if not (status.get('ok') is True and status.get('vat_codes_set') is True
+                      and status.get('provider_authenticated') is True
+                      and status.get('wallet_mode_live') is False):
+                  raise RuntimeError('PRIVATE_FISCAL_PROBE_NOT_VERIFIED')
+              print('REG_RU_VAT_AND_LIVE_PROVIDER_VERIFIED_CHARGING_STILL_DISABLED')
+          finally:
+              try: ftp.quit()
+              except BaseException: ftp.close()
+          PY
