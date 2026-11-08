@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing' || github.event.head_commit.message == 'Publish club benefits wording and navigation on REG.RU' || github.event.head_commit.message == 'Publish automatic live wallet credit and payment delay notice' || github.event.head_commit.message == 'Deploy standalone wallet topup and remember last receipt email'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing' || github.event.head_commit.message == 'Publish club benefits wording and navigation on REG.RU' || github.event.head_commit.message == 'Publish automatic live wallet credit and payment delay notice' || github.event.head_commit.message == 'Deploy standalone wallet topup and remember last receipt email' || github.event.head_commit.message == 'Publish approved receipt email wording on live wallet page'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -1368,6 +1368,67 @@ jobs:
                           print('STANDALONE_WALLET_ROLLBACK_VERIFIED',remote.rsplit('/',1)[-1])
                       except BaseException:print('STANDALONE_WALLET_MANUAL_RECOVERY_NEEDED',remote.rsplit('/',1)[-1])
                   raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+
+      - name: Publish approved receipt explanatory text with safe rollback
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Publish approved receipt email wording on live wallet page'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import io,ssl,ftplib,os,subprocess,urllib.request
+          filename='wallet-topup.html'
+          latest=open(filename,'rb').read()
+          expected_title='Введите почту для получения чека'.encode()
+          expected_body='Если вам понадобится возврат денег, он поможет быстро найти и подтвердить платёж.'.encode()
+          assert latest.count(expected_title)==1 and latest.count(expected_body)==1
+          assert b'class="receipt-block"' in latest and b'receipt_email_suggestion' in latest
+          old=subprocess.check_output(['git','cat-file','blob','d960132f147b70285d69a62dfd25006f0941f67b'])
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          dest=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/wallet-topup.html'
+          def read(p):
+              b=io.BytesIO();ftp.retrbinary('RETR '+p,b.write);return b.getvalue()
+          def write(p,data):
+              ftp.storbinary('STOR '+p,io.BytesIO(data))
+              if read(p)!=data:raise RuntimeError('RECEIPT_PAGE_READBACK_FAILED')
+          try:
+              active=read(dest)
+              if active not in (old,latest):raise RuntimeError('UNRECOGNIZED_RECEIPT_PAGE_VERSION')
+              if active!=latest:
+                  backup=dest+'.before-receipt-copy-20261108.bak'
+                  try:prior=read(backup)
+                  except ftplib.error_perm as e:
+                      if not str(e).startswith('550'):raise
+                      prior=None
+                  if prior is not None and prior!=active:raise RuntimeError('RECEIPT_COPY_BACKUP_COLLISION')
+                  if prior is None:write(backup,active)
+                  stage=dest+'.staged-receipt-copy-20261108'
+                  try:read(stage);raise RuntimeError('RECEIPT_COPY_STAGING_COLLISION')
+                  except ftplib.error_perm as e:
+                      if not str(e).startswith('550'):raise
+                  if read(dest)!=active:raise RuntimeError('RECEIPT_PAGE_CHANGED_DURING_DEPLOY')
+                  write(stage,latest)
+                  try:
+                      ftp.rename(stage,dest)
+                      if read(dest)!=latest:raise RuntimeError('RECEIPT_COPY_DEPLOY_READBACK_FAILED')
+                  except BaseException:
+                      write(dest,active)
+                      print('RECEIPT_PAGE_ROLLED_BACK')
+                      raise
+              public='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/wallet-topup.html'
+              with urllib.request.urlopen(public,timeout=30) as response:page=response.read(280000)
+              if expected_title not in page or expected_body not in page:
+                  raise RuntimeError('PUBLIC_RECEIPT_PAGE_COPY_NOT_VISIBLE')
+              print('RECEIPT_PAGE_APPROVED_WORDING_PUBLISHED_AND_VERIFIED')
           finally:
               try:ftp.quit()
               except BaseException:ftp.close()
