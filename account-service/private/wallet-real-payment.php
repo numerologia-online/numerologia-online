@@ -439,12 +439,7 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             $code=$body['product_code']??null;
             if(!is_string($code)||!in_array($code,['club_month','school_week'],true))
                 throw new InvalidArgumentException('INVALID_SUBSCRIPTION');
-            $db->prepare('INSERT IGNORE INTO numi_subscription_settings(account_id,product_code)
-                VALUES(?,?)')->execute([$account['id'],$code]);
-            $db->prepare("UPDATE numi_subscription_settings SET auto_renew=0,
-                payment_method_id=NULL,cancelled_at=UTC_TIMESTAMP()
-                WHERE account_id=? AND product_code=?")
-                ->execute([$account['id'],$code]);
+            naRealWalletCancelSubscription($db,$account,$code);
             naReply(200,['ok'=>true,'test'=>false,'auto_renew'=>false,
                 'product_code'=>$code,'access_unchanged'=>true]);
         }
