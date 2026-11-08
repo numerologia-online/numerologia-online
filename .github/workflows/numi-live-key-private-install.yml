@@ -1,0 +1,98 @@
+name: SAFE one-time install YooKassa LIVE key into private REG.RU config (NO live payments)
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_install_only:
+        description: 'Only create /private/numi-wallet-live/config.local.php, all payments DISABLED'
+        type: boolean
+        required: true
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  install:
+    if: github.event_name == 'workflow_dispatch' && inputs.confirm_install_only == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+      REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+      NUMI_YOOKASSA_LIVE_SECRET_KEY: ${{ secrets.NUMI_YOOKASSA_LIVE_SECRET_KEY }}
+    steps:
+      - name: Store LIVE key in private REG.RU file, never print it (no checkout, no public changes)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,io,ssl,ftplib,hashlib,json,re,uuid
+          key=os.environ.get("NUMI_YOOKASSA_LIVE_SECRET_KEY","")
+          if not (16<=len(key)<=500 and re.fullmatch(r'[A-Za-z0-9_-]+',key)):
+              raise RuntimeError("MISSING_OR_UNEXPECTED_LIVE_KEY_FORMAT")
+          user=os.environ.get("REG_FTP_USER","")
+          password=os.environ.get("REG_FTP_PASSWORD","")
+          if not user or not password:raise RuntimeError("FTP_SECRETS_MISSING")
+          # Restricted ASCII key: Python JSON double-quoted value is also valid in PHP.
+          php="""<?php
+          // Private production credential. All live-money operations disabled.
+          return [
+              'wallet_mode' => 'disabled',
+              'real_wallet_enabled' => false,
+              'fiscalization_verified' => false,
+              'refunds_verified' => false,
+              'advance_offset_receipts_verified' => false,
+              'offset_receipt_worker_verified' => false,
+              'launch_approved' => false,
+              'provider_test_mode' => false,
+              'shop_id' => '1515851',
+              'secret_key' => """+json.dumps(key,ensure_ascii=True)+""",
+          ];
+          """
+          payload=php.encode('utf-8')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect("server172.hosting.reg.ru",21)
+          ftp.login(user,password)
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')
+          folder=root+'/private/numi-wallet-live'
+          target=folder+'/config.local.php'
+          stage=folder+'/.config.local.php.stage.'+uuid.uuid4().hex
+          backup=folder+'/config.local.php.empty-before-key-install'
+          def fetch(path):
+              dst=io.BytesIO()
+              try:ftp.retrbinary('RETR '+path,dst.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith("550"):return None
+                  raise
+              return dst.getvalue()
+          try:
+              ftp.cwd(folder)
+              current=fetch(target)
+              if current is None:raise RuntimeError("EXISTING_CONFIG_FILE_NOT_FOUND")
+              if current!=b'':raise RuntimeError("EXISTING_CONFIG_NONEMPTY_REFUSE_OVERWRITE")
+              if fetch(backup) is not None:raise RuntimeError("EMPTY_BACKUP_EXISTS_REFUSE_REPEAT")
+              ftp.storbinary('STOR '+stage,io.BytesIO(payload),blocksize=8192)
+              staged=fetch(stage)
+              if staged is None or hashlib.sha256(staged).digest()!=hashlib.sha256(payload).digest():
+                  raise RuntimeError("STAGED_FILE_VERIFY_FAILED")
+              try:ftp.sendcmd('SITE CHMOD 600 '+stage)
+              except ftplib.error_perm:raise RuntimeError("SECURE_CHMOD_NOT_SUPPORTED_NO_INSTALL")
+              ftp.rename(target,backup)
+              try:ftp.rename(stage,target)
+              except Exception:
+                  ftp.rename(backup,target)
+                  raise
+              final=fetch(target)
+              if final is None or hashlib.sha256(final).digest()!=hashlib.sha256(payload).digest():
+                  raise RuntimeError("PRIVATE_CONFIG_VERIFY_FAILED")
+              print("PRIVATE_LIVE_KEY_CONFIG_STORED_ALL_PAYMENTS_DISABLED",flush=True)
+          except:
+              try:ftp.delete(stage)
+              except Exception:pass
+              raise
+          finally:
+              try:ftp.quit()
+              except Exception:pass
+          PY
