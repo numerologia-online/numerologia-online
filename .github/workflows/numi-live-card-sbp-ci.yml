@@ -1,0 +1,57 @@
+name: Verify future live card and SBP wallet flow (MOCK ONLY, NO DEPLOY)
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'account-service/private/wallet-real-payment.php'
+      - 'account-service/private/wallet-real.php'
+      - 'account-service/tests/real-wallet-payment.php'
+      - 'account-service/tests/real-wallet.php'
+      - '.github/workflows/numi-live-card-sbp-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-card-sbp:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: numi_real_payment_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -ptest"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      NUMI_TEST_MYSQL_DSN: "mysql:host=127.0.0.1;port=3306;dbname=numi_real_payment_test;charset=utf8mb4"
+      NUMI_TEST_MYSQL_USER: root
+      NUMI_TEST_MYSQL_PASSWORD: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check PHP syntax, future module remains fully disconnected from public API
+        run: |
+          set -euo pipefail
+          php -l account-service/private/wallet-real-payment.php
+          php -l account-service/private/wallet-real.php
+          php -l account-service/private/core.php
+          php -l account-service/tests/real-wallet-payment.php
+          php -l account-service/tests/real-wallet.php
+          ! grep -q 'wallet-real-payment.php' account-service/private/core.php
+          ! grep -q 'wallet-real.php' account-service/private/core.php
+          echo "NO_PUBLIC_LIVE_CHARGE_ROUTE"
+      - name: Mock MySQL settlements with two distinct payment methods, no YooKassa API requests
+        run: |
+          set -euo pipefail
+          php account-service/tests/real-wallet.php
+      - name: Existing product checkout and subscription tests
+        run: |
+          set -euo pipefail
+          php account-service/tests/store.php
+          php account-service/tests/subscriptions.php
