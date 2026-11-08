@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -936,6 +936,132 @@ jobs:
                           print('RECEIPT_CONTACT_FILE_ROLLED_BACK',dest.rsplit('/',1)[-1])
                       except BaseException:
                           print('RECEIPT_CONTACT_ROLLBACK_NEEDS_REVIEW',dest.rsplit('/',1)[-1])
+                  raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+
+      - name: Deploy subscription management UI and validated LIVE account routes
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Publish live subscription controls and verified club pricing'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l account-service/private/core.php
+          php -l account-service/private/wallet-real.php
+          php -l account-service/private/wallet-real-payment.php
+          node --check account-browser.js
+          node --experimental-vm-modules - <<'JS'
+          const fs=require('fs'),vm=require('vm');
+          for(const file of ['wallet-client.js','store-entry.js'])
+            new vm.SourceTextModule(fs.readFileSync(file,'utf8'));
+          const ui=fs.readFileSync('account-browser.js','utf8');
+          if(!ui.includes('request("subscription_cancel"')||!ui.includes('request("wallet_buy"'))
+            throw Error('SUBSCRIPTION_BUTTONS_NOT_BOUND');
+          console.log('SUBSCRIPTION_UI_STATIC_CHECKS_PASS');
+          JS
+          python3 - <<'PY'
+          import os,io,ssl,ftplib,subprocess,hmac,hashlib,urllib.request,urllib.error,json
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=32)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          public=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          private=home+'/private/numi-account-20261031/'
+          files=[
+            (private+'wallet-real.php','account-service/private/wallet-real.php'),
+            (private+'wallet-real-payment.php','account-service/private/wallet-real-payment.php'),
+            (private+'core.php','account-service/private/core.php'),
+            (public+'wallet-client.js','wallet-client.js'),
+            (public+'store-entry.js','store-entry.js'),
+            (public+'account-browser.js','account-browser.js'),
+            (public+'index.html','index.html'),
+          ]
+          def read(remote):
+              buf=io.BytesIO()
+              try:ftp.retrbinary('RETR '+remote,buf.write)
+              except ftplib.error_perm as err:
+                  if str(err).startswith('550'):return None
+                  raise
+              if buf.tell()>3000000:raise RuntimeError('SUBSCRIPTIONS_UNEXPECTED_FILE_SIZE')
+              return buf.getvalue()
+          def write(remote,content):
+              ftp.storbinary('STOR '+remote,io.BytesIO(content))
+              if read(remote)!=content:raise RuntimeError('SUBSCRIPTIONS_FTPS_READBACK_ERROR')
+          def known(source,data,new):
+              if data==new:return True
+              revisions=subprocess.check_output(['git','log','-100','--format=%H','--',source],text=True).splitlines()
+              for rev in revisions:
+                  previous=subprocess.run(['git','show',rev+':'+source],capture_output=True)
+                  if previous.returncode==0 and previous.stdout==data:return True
+              return False
+          initial={};target={};changed=[]
+          try:
+              for remote,source in files:
+                  old=read(remote);new=open(source,'rb').read()
+                  if old is None or not known(source,old,new):
+                      raise RuntimeError('SUBSCRIPTIONS_UNRECOGNIZED_SERVER_FILE_'+source)
+                  initial[remote]=old;target[remote]=new
+              # Verify existing public API and worker files still serve the same domain.
+              if read(public+'api/numi-account.php') is None:
+                  raise RuntimeError('SUBSCRIPTIONS_ACCOUNT_API_MISSING')
+              if read(public+'api/numi-real-worker.php') is None:
+                  raise RuntimeError('SUBSCRIPTIONS_WORKER_MISSING')
+              print('SUBSCRIPTIONS_ALL_SERVER_BASELINES_VERIFIED')
+              for remote,old in initial.items():
+                  if old==target[remote]:continue
+                  backup=remote+'.before-subscription-controls-20261108.bak'
+                  saved=read(backup)
+                  if saved is not None and saved!=old:
+                      raise RuntimeError('SUBSCRIPTIONS_BACKUP_CONFLICT')
+                  if saved is None:write(backup,old)
+              print('SUBSCRIPTIONS_SERVER_BACKUPS_VERIFIED')
+              def update(remote):
+                  old=initial[remote];new=target[remote]
+                  if old==new:return
+                  if read(remote)!=old:raise RuntimeError('SUBSCRIPTIONS_CONCURRENT_MODIFICATION')
+                  stage=remote+'.staging-subscription-controls-20261108'
+                  if read(stage) is not None:raise RuntimeError('SUBSCRIPTIONS_EXISTING_STAGED_FILE')
+                  write(stage,new)
+                  ftp.rename(stage,remote)
+                  changed.append(remote)
+                  if read(remote)!=new:raise RuntimeError('SUBSCRIPTIONS_FILE_NOT_UPDATED')
+                  print('SUBSCRIPTION_FILE_VERIFIED',remote.rsplit('/',1)[-1])
+              def migrate():
+                  key=hmac.new(os.environ['REG_FTP_PASSWORD'].encode(),
+                    b'numi-real-wallet-worker-v1@xn----8sbhhqijddjgdebdz2c2o.xn--p1ai',hashlib.sha256).hexdigest()
+                  req=urllib.request.Request(
+                    'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/api/numi-real-worker.php',
+                    data=b'{"action":"migrate"}',
+                    headers={'Content-Type':'application/json','X-Numi-Worker-Token':key},method='POST')
+                  with urllib.request.urlopen(req,timeout=70) as response:
+                      body=json.loads(response.read(3500))
+                  if body.get('result')!='REAL_SCHEMA_READY' or body.get('ok') is not True:
+                      raise RuntimeError('SUBSCRIPTIONS_DATABASE_MIGRATION_NOT_CONFIRMED')
+              try:
+                  # The private schema is prepared before status endpoint begins
+                  # querying subscription settings. Existing balances stay untouched.
+                  update(files[0][0])
+                  migrate()
+                  print('SUBSCRIPTIONS_EXISTING_SCHEMA_CONFIRMED')
+                  for remote,_ in files[1:]:update(remote)
+                  for remote,source in files:
+                      if read(remote)!=target[remote]:
+                          raise RuntimeError('SUBSCRIPTIONS_FINAL_FILE_VERIFY_FAILED_'+source)
+                  print('SUBSCRIPTIONS_LIVE_UI_AND_ACCOUNT_API_PUBLISHED')
+                  print('LIVE_AUTO_RECURRING_REMAINS_DISABLED_PENDING_PROVIDER_APPROVAL')
+              except BaseException:
+                  print('SUBSCRIPTIONS_ROLLBACK_STARTED')
+                  for remote in reversed(changed):
+                      try:
+                          write(remote,initial[remote])
+                          print('SUBSCRIPTIONS_ROLLBACK_VERIFIED',remote.rsplit('/',1)[-1])
+                      except BaseException:
+                          print('SUBSCRIPTIONS_ROLLBACK_NEEDS_REVIEW',remote.rsplit('/',1)[-1])
                   raise
           finally:
               try:ftp.quit()
