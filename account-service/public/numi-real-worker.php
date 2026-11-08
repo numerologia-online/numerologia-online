@@ -30,12 +30,54 @@ if($raw===false||strlen($raw)>900){
 }
 $request=json_decode($raw,true);
 $action=is_array($request)?($request['action']??null):null;
-if(!in_array($action,['tick','migrate'],true)){
+if(!in_array($action,['tick','migrate','probe'],true)){
     http_response_code(400);echo '{"ok":false,"error":"INVALID_WORKER_ACTION"}';exit;
 }
 try{
     require dirname(__DIR__,3).'/private/numi-account-20261031/core.php';
     require dirname(__DIR__,3).'/private/numi-account-20261031/wallet-real-worker.php';
+    if($action==='probe'){
+        // Safe read-only credential verification. Never expose key, shop ID,
+        // provider payment records, or identifying customer data.
+        $live=naRealWalletConfig();
+        $required=[
+            'real_wallet_enabled','fiscalization_verified','refunds_verified',
+            'advance_offset_receipts_verified','offset_receipt_worker_verified',
+            'refund_worker_verified','advance_receipt_reviewed',
+            'offset_receipt_reviewed','launch_approved',
+        ];
+        $flags=[];
+        foreach($required as $flag)$flags[$flag]=($live[$flag]??false)===true;
+        $validKey=is_string($live['secret_key']??null)
+            && preg_match('/^live_[A-Za-z0-9_-]{12,480}$/D',$live['secret_key'])===1;
+        $validShop=preg_match('/^[0-9]+$/D',(string)($live['shop_id']??''))===1;
+        $authenticated=false;
+        if($validKey&&$validShop){
+            $curl=curl_init('https://api.yookassa.ru/v3/payments?limit=1');
+            if($curl!==false){
+                try{
+                    curl_setopt_array($curl,[
+                        CURLOPT_RETURNTRANSFER=>true,
+                        CURLOPT_CONNECTTIMEOUT=>5,CURLOPT_TIMEOUT=>20,
+                        CURLOPT_FOLLOWLOCATION=>false,
+                        CURLOPT_USERPWD=>$live['shop_id'].':'.$live['secret_key'],
+                        CURLOPT_HTTPHEADER=>['Accept: application/json'],
+                    ]);
+                    $body=curl_exec($curl);$status=curl_getinfo($curl,CURLINFO_HTTP_CODE);
+                }finally{curl_close($curl);}
+                $authenticated=is_string($body)&&$status===200;
+            }
+        }
+        echo json_encode(['ok'=>true,'action'=>'probe',
+            'private_credentials_present'=>$validKey&&$validShop,
+            'provider_authenticated'=>$authenticated,
+            'wallet_mode_live'=>($live['wallet_mode']??null)==='live',
+            'provider_test_mode_false'=>($live['provider_test_mode']??null)===false,
+            'vat_codes_set'=>is_int($live['advance_receipt_vat_code']??null)
+                &&is_int($live['offset_receipt_vat_code']??null),
+            'flags'=>$flags],JSON_THROW_ON_ERROR);
+        exit;
+    }
     $db=naDB();
     if($action==='migrate'){
         // Schema DDL is an explicit authenticated operation, never performed
