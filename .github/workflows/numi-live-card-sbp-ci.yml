@@ -4,6 +4,12 @@ on:
     branches:
       - main
     paths:
+      - 'account-browser.js'
+      - 'wallet-client.js'
+      - 'account-service/private/wallet.php'
+      - 'account-service/private/core.php'
+      - 'account-service/private/fulfillment.php'
+      - 'account-service/private/subscriptions.php'
       - 'account-service/private/wallet-real-payment.php'
       - 'account-service/private/wallet-real.php'
       - 'account-service/tests/real-wallet-payment.php'
@@ -40,12 +46,22 @@ jobs:
           set -euo pipefail
           php -l account-service/private/wallet-real-payment.php
           php -l account-service/private/wallet-real.php
+          php -l account-service/private/wallet.php
           php -l account-service/private/core.php
+          php -l account-service/private/fulfillment.php
+          php -l account-service/private/subscriptions.php
           php -l account-service/tests/real-wallet-payment.php
           php -l account-service/tests/real-wallet.php
-          ! grep -q 'wallet-real-payment.php' account-service/private/core.php
-          ! grep -q 'wallet-real.php' account-service/private/core.php
-          echo "NO_PUBLIC_LIVE_CHARGE_ROUTE"
+          node --check account-browser.js
+          node --input-type=module --check < wallet-client.js
+          # No deployment or automatic live payment: public routes switch only
+          # after every explicit private gate is approved.
+          ! grep -q "wallet-real-payment.php" account-service/private/core.php
+          grep -q "naRealWalletServe" account-service/private/wallet.php
+          grep -q "REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED" account-service/private/wallet-real-payment.php
+          grep -q "walletMode===\"live\"" account-browser.js
+          grep -q "result.test!==quote.test" wallet-client.js
+          echo "PRIVATE_LIVE_SWITCH_TEST_MODE_UNTOUCHED"
       - name: Mock MySQL settlements with two distinct payment methods, no YooKassa API requests
         run: |
           set -euo pipefail
