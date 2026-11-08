@@ -56,6 +56,30 @@ expectReal(fn()=>naRealOffsetReceiptPayload('live-payment-example-123',
     'payment@example.test','Вопрос',1000,
     ['offset_receipt_reviewed'=>true,'offset_receipt_vat_code'=>99]),
     'REAL_OFFSET_FISCAL_POLICY_NOT_APPROVED');
+$offsetCalls=[];
+$offsetMock=static function(array $body,string $key)use(&$offsetCalls):array{
+    $offsetCalls[]=['body'=>$body,'key'=>$key];
+    return ['id'=>'rt_test_offset_123','type'=>'payment','status'=>'pending',
+        'payment_id'=>$body['payment_id']];
+};
+$eventId='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+expectReal(fn()=>naRealOffsetReceiptSend([],$eventId,$offset,$offsetMock),
+    'REAL_PAYMENTS_DISABLED');
+$notApproved=$good;$notApproved['offset_receipt_reviewed']=false;
+expectReal(fn()=>naRealOffsetReceiptSend($notApproved,$eventId,$offset,$offsetMock),
+    'REAL_OFFSET_FISCAL_POLICY_NOT_APPROVED');
+$offsetGood=$good;$offsetGood['offset_receipt_reviewed']=true;
+$sent=naRealOffsetReceiptSend($offsetGood,$eventId,$offset,$offsetMock);
+$repeated=naRealOffsetReceiptSend($offsetGood,$eventId,$offset,$offsetMock);
+assertReal($sent['receipt_id']==='rt_test_offset_123'
+    && $sent['status']==='pending'
+    && $repeated['receipt_id']===$sent['receipt_id']
+    && count($offsetCalls)===2
+    && $offsetCalls[0]['key']===$offsetCalls[1]['key'],
+    'offset send is guarded and stable-key retries do not change provider request');
+expectReal(fn()=>naRealOffsetReceiptSend($offsetGood,$eventId,
+    array_replace($offset,['type'=>'refund']),$offsetMock),
+    'REAL_OFFSET_PAYLOAD_INVALID');
 assertReal(naRealPaymentMethod('bank_card')==='bank_card','bank card method');
 assertReal(naRealPaymentMethod('sbp')==='sbp','SBP method');
 expectReal(fn()=>naRealPaymentMethod('yoomoney'),'REAL_UNSUPPORTED_PAYMENT_METHOD');
