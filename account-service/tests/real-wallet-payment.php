@@ -84,8 +84,12 @@ expectReal(fn()=>naRealRefundSend($good,$refundCaseId,'live-payment-example-123'
 $refundTopupId='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 $refundCaseApproved='dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 $db->prepare("INSERT INTO numi_real_wallet_balances(account_id,kopeks,blocked_at,block_reason)
-    VALUES(?,0,UTC_TIMESTAMP(),'REFUND_RECONCILIATION')")
+    VALUES(?,1000,UTC_TIMESTAMP(),'REFUND_RECONCILIATION')")
     ->execute([$payAccountId]);
+$db->prepare("INSERT INTO numi_real_wallet_ledger
+    (id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks)
+    VALUES(?,?,'topup',?,?,?)")
+    ->execute([naUuid(),$payAccountId,$refundTopupId,1000,1000]);
 $db->prepare("INSERT INTO numi_real_wallet_topups(id,account_id,request_key,kopeks,provider_payment_id,status)
     VALUES(?,?,?,?,?,'credited')")
     ->execute([$refundTopupId,$payAccountId,'refund-test-request-12345',10000,'live-payment-for-refund-123']);
