@@ -1,0 +1,117 @@
+name: AUDIT existing REG.RU payment stack READ ONLY (2026-11-08)
+on:
+  push:
+    branches:
+      - audit/payment-readonly-20261108
+    paths:
+      - .github/workflows/numi-payment-audit-readonly-20261108.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  readonly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compare live bytes, private content and guest guards, never write files
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,io,os,re,hashlib,json,subprocess,urllib.request,urllib.error
+          BASE="dda97c0e040a8af7e0f33dec5eff78c444236c15"
+          DOMAIN="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+          ROOT="xn--c1adkkdfjbp1a4l.online"
+          names=[
+              "account-service/private/core.php",
+              "account-service/private/wallet.php",
+              "account-service/private/store.php",
+              "account-service/private/subscriptions.php",
+              "account-service/private/fulfillment.php",
+              "index.html","app.js","wallet-client.js","store-entry.js",
+              "store-material.js","account-browser.js","shared-offer.js",
+              "redflag-feature.js","redflag-categories.js",
+              "year-feature.js","compatibility-feature.js","destiny-code-feature.js",
+              "child/index.html","child/child.js","pro/index.html","pro/pro.js",
+              "moment/yes-no/index.html","moment/yes-no/yes-no.js"]
+          private_set={"core.php","wallet.php","store.php","subscriptions.php","fulfillment.php"}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect("server172.hosting.reg.ru",21)
+          ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip("/")
+          pub=home+"/www/"+ROOT
+          priv=home+"/private/numi-account-20261031"
+          def read(path,limit=2000000):
+              out=io.BytesIO()
+              def add(b):
+                  if out.tell()+len(b)>limit:raise RuntimeError("REMOTE_FILE_TOO_LARGE")
+                  out.write(b)
+              try:ftp.retrbinary("RETR "+path,add)
+              except ftplib.error_perm as e:
+                  if str(e).startswith("550"):return None
+                  raise
+              return out.getvalue()
+          try:
+              page=read(pub+"/index.html")
+              if page is None:raise RuntimeError("PUBLIC_ROOT_NOT_FOUND")
+              req=urllib.request.Request("https://"+DOMAIN+"/index.html?payment_audit=1",
+                  headers={"Cache-Control":"no-cache"})
+              with urllib.request.urlopen(req,timeout=25) as res:
+                  if res.status!=200 or res.read(2000001)!=page:raise RuntimeError("PUBLIC_HTTP_AND_FTPS_ROOT_MISMATCH")
+              print("PUBLIC_DOMAIN_MATCHES_FTPS_TRUE",flush=True)
+              drift=[]
+              for path in names:
+                  basename=path.rsplit("/",1)[-1]
+                  target=(priv+"/"+basename if path.startswith("account-service/private/") and basename in private_set else pub+"/"+path)
+                  actual=read(target)
+                  expected=subprocess.check_output(["git","show",BASE+":"+path],stderr=subprocess.DEVNULL)
+                  result="MISSING" if actual is None else "MATCH" if actual==expected else "DRIFT"
+                  print("LIVE_CODE",path,result,flush=True)
+                  if result!="MATCH":drift.append(path)
+              cfg=read(home+"/private/numi-wallet-test-20261106/config.local.php",12000)
+              cfgText=cfg.decode("utf-8") if cfg else ""
+              test_flag=(re.search(r"""['"]store_wallet_test_enabled['"]\s*=>\s*true\b""",cfgText) is not None)
+              test_shop=(re.search(r"""['"]shop_id['"]\s*=>\s*['"]1521071['"]""",cfgText) is not None)
+              test_key=(re.search(r"""['"]secret_key['"]\s*=>\s*['"]test_[A-Za-z0-9_-]{12,480}['"]""",cfgText) is not None)
+              live_config_exists=read(home+"/private/numi-wallet-live/config.local.php",12000) is not None
+              print("TEST_STORE_ENABLED",test_flag,"TEST_SHOP_VERIFIED",test_shop,
+                    "TEST_SECRET_IS_TEST_KEY",test_key,flush=True)
+              print("SEPARATE_LIVE_CONFIG_PRESENT",live_config_exists,flush=True)
+              manifest=json.loads(open("account-service/private/store-assets.json",encoding="utf-8").read())
+              sample="data/redflag/money/generosity.json"
+              sample_bytes=read(priv+"/store-content/"+sample)
+              sample_ok=sample_bytes is not None and hashlib.sha256(sample_bytes).hexdigest()==manifest["files"][sample]
+              print("PRIVATE_MATERIAL_HASH_VERIFIED",sample_ok,flush=True)
+              def api(action,origin):
+                  request=urllib.request.Request("https://"+DOMAIN+"/api/numi-account.php",
+                      data=json.dumps({"action":action}).encode(),method="POST",
+                      headers={"Content-Type":"application/json","Origin":origin,"Cache-Control":"no-store"})
+                  try:r=urllib.request.urlopen(request,timeout=20)
+                  except urllib.error.HTTPError as exc:r=exc
+                  with r:
+                      try:body=json.loads(r.read(30000))
+                      except (ValueError,UnicodeError):body={}
+                      return r.status,body
+              status,body=api("health","https://"+DOMAIN)
+              health=status==200 and body.get("database") is True
+              print("GUEST_HEALTH_DATABASE_OK",health,flush=True)
+              statuses=[]
+              for action in ("wallet_status","wallet_quote","wallet_buy","wallet_topup","wallet_sync","material","purchases"):
+                  status,body=api(action,"https://"+DOMAIN)
+                  result=status==401 and body.get("error")=="LOGIN_REQUIRED"
+                  statuses.append(result)
+                  print("ANONYMOUS_REJECTED",action,result,flush=True)
+              status,body=api("wallet_status","https://attacker.invalid")
+              foreign=status==403 and body.get("error")=="ORIGIN_DENIED"
+              print("FOREIGN_ORIGIN_DENIED",foreign,flush=True)
+              print("READ_ONLY_AUDIT_FINISHED_DRIFT",",".join(drift) if drift else "NONE",flush=True)
+              if drift or not all([health,test_flag,test_shop,test_key,sample_ok,foreign]+statuses):
+                  raise RuntimeError("AUDIT_FOUND_ISSUES_NO_FILES_MODIFIED")
+          finally:
+              ftp.quit()
+          PY
