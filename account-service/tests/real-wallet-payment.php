@@ -102,8 +102,6 @@ assertReal($boundResult['refund_id']==='rf_mock_123',
     'approved source-bound refund submits through validated refund primitive');
 expectReal(fn()=>naRealRefundSendApprovedCase($db,$refundConfig,$refundCaseApproved,$refundTransport),
     'REAL_REFUND_ALREADY_SUBMITTED');
-$db->prepare('SELECT provider_refund_id FROM numi_real_wallet_refund_cases WHERE id=?')
-    ->execute([$refundCaseApproved]);
 $refundSaved=$db->prepare('SELECT provider_refund_id FROM numi_real_wallet_refund_cases WHERE id=?');
 $refundSaved->execute([$refundCaseApproved]);
 assertReal($refundSaved->fetchColumn()==='rf_mock_123',
