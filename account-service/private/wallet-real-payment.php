@@ -38,6 +38,42 @@ function naRealReviewedTopupReceipt(PDO $db,array $account,int $kopeks,array $co
     ];
 }
 
+/**
+ * Server-only receipt data for one fulfilled wallet purchase, including
+ * manually/automatically renewed subscriptions. This does not submit a receipt.
+ * Caller must allocate the spend against a verified original topup payment,
+ * preserving the provider's per-payment receipt limit.
+ */
+function naRealOffsetReceiptPayload(
+    string $paymentId,string $verifiedEmail,string $description,
+    int $kopeks,array $fiscalConfig
+): array {
+    if(!preg_match('/^[a-zA-Z0-9_-]{1,191}$/D',$paymentId))
+        throw new InvalidArgumentException('REAL_OFFSET_PAYMENT_ID_INVALID');
+    if(!filter_var($verifiedEmail,FILTER_VALIDATE_EMAIL))
+        throw new InvalidArgumentException('REAL_FISCAL_CONTACT_REQUIRED');
+    if(trim($description)==='' || mb_strlen($description)>128 || $kopeks<1)
+        throw new InvalidArgumentException('REAL_OFFSET_ITEM_INVALID');
+    $vat=$fiscalConfig['offset_receipt_vat_code']??null;
+    if(($fiscalConfig['offset_receipt_reviewed']??false)!==true
+        || !is_int($vat) || $vat<1 || $vat>12)
+        throw new RuntimeException('REAL_OFFSET_FISCAL_POLICY_NOT_APPROVED');
+    $amount=['value'=>naStoreAmount($kopeks),'currency'=>'RUB'];
+    return [
+        'customer'=>['email'=>$verifiedEmail],
+        'payment_id'=>$paymentId,
+        'type'=>'payment',
+        'send'=>true,
+        'items'=>[[
+            'description'=>$description,'quantity'=>1.0,
+            'amount'=>$amount,'vat_code'=>$vat,
+            'payment_mode'=>'full_payment',
+            'payment_subject'=>'service',
+        ]],
+        'settlements'=>[['type'=>'prepayment','amount'=>$amount]],
+    ];
+}
+
 /** This route is called only after the private live-mode switch AND all gates. */
 function naRealWalletServe(PDO $db,string $action,array $body,array $account,array $config): never {
     if(!naRealWalletGate($config))
