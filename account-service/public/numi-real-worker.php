@@ -68,6 +68,33 @@ try{
                 $authenticated=is_string($body)&&$status===200;
             }
         }
+        // Protected read-only-style diagnostic for the newly activated REAL wallet.
+        // Exercise the same account status code in a rolled-back transaction;
+        // return only exception type/code and no account data or credentials.
+        $walletStatusCheck=['result'=>'unavailable'];
+        $probeDb=null;
+        try {
+            $probeDb=naDB();
+            $sampleId=$probeDb->query('SELECT id FROM numi_accounts LIMIT 1')->fetchColumn();
+            if(!$sampleId){
+                $walletStatusCheck=['result'=>'no_accounts'];
+            }else{
+                $probeDb->beginTransaction();
+                try{
+                    naRealWalletStatus($probeDb,['id'=>(string)$sampleId]);
+                    $walletStatusCheck=['result'=>'ok'];
+                }finally{
+                    if($probeDb->inTransaction())$probeDb->rollBack();
+                }
+            }
+        }catch(Throwable $diagnosticError){
+            if($probeDb instanceof PDO && $probeDb->inTransaction())$probeDb->rollBack();
+            $walletStatusCheck=['result'=>'error',
+                'exception'=>get_class($diagnosticError),
+                'code'=>(string)$diagnosticError->getCode()];
+            error_log('NUMI_REAL_WALLET_STATUS_DIAG class='.get_class($diagnosticError)
+                .' code='.(string)$diagnosticError->getCode());
+        }
         echo json_encode(['ok'=>true,'action'=>'probe',
             'private_credentials_present'=>$validKey&&$validShop,
             'provider_authenticated'=>$authenticated,
@@ -75,7 +102,7 @@ try{
             'provider_test_mode_false'=>($live['provider_test_mode']??null)===false,
             'vat_codes_set'=>is_int($live['advance_receipt_vat_code']??null)
                 &&is_int($live['offset_receipt_vat_code']??null),
-            'flags'=>$flags],JSON_THROW_ON_ERROR);
+            'flags'=>$flags,'wallet_status_diagnostic'=>$walletStatusCheck],JSON_THROW_ON_ERROR);
         exit;
     }
     $db=naDB();
