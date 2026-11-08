@@ -16,7 +16,7 @@ require_once __DIR__.'/wallet-real.php';
  * the advance + offset scheme; fiscal parameters are private configuration.
  * Never accept vat_code or fiscal identity from the browser.
  */
-function naRealReviewedTopupReceipt(PDO $db,array $account,int $kopeks,array $config=[]): array {
+function naRealReviewedTopupReceipt(PDO $db,array $account,int $kopeks,mixed $receiptEmail,array $config=[]): array {
     if ($kopeks<100 || $kopeks>10000000)
         throw new InvalidArgumentException('INVALID_TOPUP_AMOUNT');
     // Tax treatment is merchant-specific: no assumed VAT rate or tax regime.
@@ -24,7 +24,7 @@ function naRealReviewedTopupReceipt(PDO $db,array $account,int $kopeks,array $co
     if (($config['advance_receipt_reviewed']??false)!==true || !is_int($vat)
         || $vat<1 || $vat>12)
         throw new RuntimeException('REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED');
-    $email=naRealWalletRequireReceiptContact($db,$account);
+    $email=naRealWalletReceiptEmail($receiptEmail);
     return [
         'customer'=>['email'=>$email],
         'items'=>[[
@@ -438,8 +438,9 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             $key=naWalletKey($body['request_key']??null);
             // Strictly fail before any payment initiation until legal fiscalization
             // of a wallet topup is actually supported by the configured provider.
-            $receipt=naRealReviewedTopupReceipt($db,$account,$rub*100,$config);
-            $payment=naRealWalletCreatePayment($db,$account,$config,$rub,$key,$method,$receipt);
+            $email=naRealWalletReceiptEmail($body['receipt_email']??null);
+            $receipt=naRealReviewedTopupReceipt($db,$account,$rub*100,$email,$config);
+            $payment=naRealWalletCreatePayment($db,$account,$config,$rub,$key,$method,$email,$receipt);
             naReply(200,array_merge(['ok'=>true,'test'=>false],$payment));
         }
         if($action==='wallet_sync'){
@@ -470,7 +471,7 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
         // Expected fiscal/cashflow blockers are safe to surface as error codes.
         if(in_array($e->getMessage(),[
             'REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED',
-            'REAL_FISCAL_CONTACT_REQUIRED','REAL_PAYMENTS_DISABLED',
+            'REAL_FISCAL_CONTACT_REQUIRED','REAL_FISCAL_CONTACT_MISMATCH','REAL_PAYMENTS_DISABLED',
             'REAL_TOPUP_RECONCILIATION_REQUIRED','REAL_TOPUP_METHOD_CHANGED',
             'REAL_ALREADY_PURCHASED','REAL_INSUFFICIENT_BALANCE',
             'REAL_MATERIAL_NOT_READY','REAL_WALLET_FROZEN',
@@ -587,12 +588,12 @@ function naRealPaymentTransport(array $config,string $idempotenceKey,array $payl
  */
 function naRealWalletCreatePayment(
     PDO $db,array $account,array $config,int $rub,string $requestKey,string $method,
-    array $reviewedServerReceipt,?callable $testTransport=null
+    mixed $receiptEmail,array $reviewedServerReceipt,?callable $testTransport=null
 ): array {
     naRealWalletRequireLive($config);
     $method=naRealPaymentMethod($method);
-    $email=naRealWalletRequireReceiptContact($db,$account);
-    $intent=naRealWalletTopupIntent($db,$account,$config,$rub,$requestKey);
+    $email=naRealWalletReceiptEmail($receiptEmail);
+    $intent=naRealWalletTopupIntent($db,$account,$config,$rub,$requestKey,$email);
     $topupId=$intent['topup_id'];
     $db->beginTransaction();
     try {
@@ -607,6 +608,8 @@ function naRealWalletCreatePayment(
         if ($topup['status']!=='pending')throw new RuntimeException('REAL_TOPUP_NOT_PENDING');
         if ($topup['payment_method']!==null && $topup['payment_method']!==$method)
             throw new RuntimeException('REAL_TOPUP_METHOD_CHANGED');
+        if ($topup['receipt_email']!==$email)
+            throw new InvalidArgumentException('REAL_FISCAL_CONTACT_MISMATCH');
         // Check receipt before registering the intended method: bad fiscal data must fail closed.
         $payload=naRealPaymentPayload($topup,$method,$email,$reviewedServerReceipt);
         if ($topup['provider_payment_id']) {
