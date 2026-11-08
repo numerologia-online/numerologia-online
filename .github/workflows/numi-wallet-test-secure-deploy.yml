@@ -1,4 +1,4 @@
-name: REG.RU REAL wallet backend publication
+name: REG.RU REAL wallet, receipts and refunds publication
 on:
   push:
     branches: [main]
