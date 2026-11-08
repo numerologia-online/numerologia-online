@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Guarded REG.RU REAL wallet deployment
-        if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback'
+        if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU'
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
@@ -209,4 +209,74 @@ jobs:
               results[mode]=summary
               print('YOOKASSA_SANDBOX_RECEIPT_MODE',mode,json.dumps(summary,ensure_ascii=False))
           print('YOOKASSA_SANDBOX_PROBE_COMPLETE_NO_REAL_PAYMENT')
+          PY
+
+      - name: Set automatic FULL refund receipt policy in existing REG.RU private config
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib, ssl, io, os, re
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p(); ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          src=home+'/private/numi-wallet-live/config.local.php'
+          backup=home+'/private/numi-wallet-live/config.local.php.before-refund-receipt-20261108.bak'
+          def read(p):
+              b=io.BytesIO()
+              try: ftp.retrbinary('RETR '+p,b.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'): return None
+                  raise
+              if len(b.getvalue())>12000: raise RuntimeError('PRIVATE_CONFIG_TOO_LARGE')
+              return b.getvalue()
+          def put(p,data):
+              ftp.storbinary('STOR '+p,io.BytesIO(data))
+              if read(p)!=data: raise RuntimeError('PRIVATE_CONFIG_READBACK_MISMATCH')
+          try:
+              old=read(src)
+              if old is None: raise RuntimeError('PRIVATE_CONFIG_MISSING')
+              text=old.decode('utf-8')
+              required=[
+                r"['\"]wallet_mode['\"]\s*=>\s*['\"]disabled['\"]",
+                r"['\"]real_wallet_enabled['\"]\s*=>\s*false",
+                r"['\"]provider_test_mode['\"]\s*=>\s*false",
+                r"['\"]advance_receipt_vat_code['\"]\s*=>\s*1",
+                r"['\"]offset_receipt_vat_code['\"]\s*=>\s*1",
+                r"['\"]secret_key['\"]\s*=>\s*['\"]live_[A-Za-z0-9_-]{12,480}['\"]",
+              ]
+              if not all(re.search(p,text) for p in required):
+                  raise RuntimeError('REFUND_CONFIG_PRECONDITIONS_NOT_MET')
+              names=['refund_receipt_mode','refund_receipt_status_check']
+              presence=[bool(re.search(r"['\"]"+x+r"['\"]\s*=>",text)) for x in names]
+              if all(presence):
+                  if not (re.search(r"['\"]refund_receipt_mode['\"]\s*=>\s*['\"]yookassa_full_auto['\"]",text)
+                      and re.search(r"['\"]refund_receipt_status_check['\"]\s*=>\s*true",text)):
+                      raise RuntimeError('REFUND_SETTINGS_ALREADY_DIFFER')
+                  print('FULL_REFUND_RECEIPT_SETTINGS_ALREADY_CURRENT')
+              elif any(presence):
+                  raise RuntimeError('PARTIAL_REFUND_CONFIG_MANUAL_REVIEW')
+              else:
+                  if text.count('\n];')!=1 or read(backup) is not None:
+                      raise RuntimeError('UNEXPECTED_CONFIG_FORMAT_OR_EXISTING_BACKUP')
+                  new=text.replace('\n];',"\n    'refund_receipt_mode' => 'yookassa_full_auto',\n    'refund_receipt_status_check' => true,\n];",1).encode('utf-8')
+                  put(backup,old)
+                  try: put(src,new)
+                  except BaseException:
+                      put(src,old)
+                      raise
+                  print('FULL_REFUND_RECEIPT_SETTINGS_PUBLISHED')
+              if not (re.search(r"['\"]wallet_mode['\"]\s*=>\s*['\"]disabled['\"]",read(src).decode('utf-8'))
+                  and b'\x27refund_receipt_status_check\x27 => true' in read(src)):
+                  raise RuntimeError('REFUND_RECEIPT_SERVER_VERIFICATION_FAILED')
+              print('FULL_REFUND_RECEIPT_CONFIG_VERIFIED_NO_LIVE_CHARGING')
+          finally:
+              try: ftp.quit()
+              except BaseException: ftp.close()
           PY
