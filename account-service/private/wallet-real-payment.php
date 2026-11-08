@@ -240,9 +240,14 @@ function naRealRefundSendApprovedCase(
     naRealWalletRequireLive($config);
     // Refuse if the account isn't frozen for refund reconciliation.
     $ref=naRealRefundApprovedCase($db,$caseId);
-    $q=$db->prepare('SELECT blocked_at FROM numi_real_wallet_balances WHERE account_id=?');
+    $q=$db->prepare('SELECT blocked_at,kopeks FROM numi_real_wallet_balances WHERE account_id=?');
     $q->execute([$ref['account_id']]);
-    if(!$q->fetchColumn())throw new RuntimeException('REAL_REFUND_WALLET_MUST_BE_FROZEN');
+    $balance=$q->fetch(PDO::FETCH_ASSOC);
+    if(!$balance||$balance['blocked_at']===null)
+        throw new RuntimeException('REAL_REFUND_WALLET_MUST_BE_FROZEN');
+    if((int)$balance['kopeks']<$ref['kopeks'])
+        throw new RuntimeException('REAL_REFUND_EXCEEDS_UNSPENT_BALANCE');
+    naRealWalletInvariant($db,$ref['account_id']);
     $result=naRealRefundSend($config,$ref['case_id'],$ref['payment_id'],
         $ref['kopeks'],$testTransport);
     $q=$db->prepare("UPDATE numi_real_wallet_refund_cases SET provider_refund_id=?
