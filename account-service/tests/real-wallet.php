@@ -134,7 +134,18 @@ assertReal(naRealWalletApplyVerifiedPayment($db,$row,$pay,$good)==='pending_rece
     'paid provider status alone cannot credit wallet');
 assertReal(naRealWalletBalance($db,$accountA)===0,'no funds without fiscal registration');
 $pay['receipt_registration']='succeeded';
-assertReal(naRealWalletApplyVerifiedPayment($db,$row,$pay,$good)==='credited','verified receipt credits real money');
+// Re-opening the actual cabinet now settles an awaiting payment without any
+// scheduled job and without a second charge or client payment metadata.
+$immediate=naRealWalletSyncOwnPending($db,$good,$accA,
+    static function(PDO $connection,array $config,string $id,string $accountId) use($row,$pay):string {
+        assertReal($id===$row['id'] && $accountId===$row['account_id'],
+            'status reconciles only the signed-in account topup');
+        return naRealWalletApplyVerifiedPayment($connection,$row,$pay,$config);
+    });
+assertReal($immediate['pending_topups']===0 && $immediate['credited_now']===1,
+    'opening the account immediately reconciles one verified payment');
+assertReal(naRealWalletApplyVerifiedPayment($db,$row,$pay,$good)==='credited',
+    'duplicate provider receipt remains idempotent after status reconciliation');
 assertReal(naRealWalletApplyVerifiedPayment($db,$row,$pay,$good)==='credited','duplicate provider notification is idempotent');
 assertReal(naRealWalletBalance($db,$accountA)===10000,'only one real credit');
 $qFiscal=$db->prepare("SELECT kind,kopeks,status FROM numi_real_wallet_fiscal_events WHERE reference_id=?");
@@ -228,6 +239,11 @@ expectReal(fn()=>naRealWalletBuy($db,$accA,$good,
 naRealWalletInvariant($db,$accountA);
 // Separate identities: pending external money must block a merge, then audited transfer.
 $pending=naRealWalletTopupIntent($db,$accB,$good,25,'account-b-topup-0000001','second@example.test');
+$seen=0;
+$foreign=naRealWalletSyncOwnPending($db,$good,$accA,
+    static function()use(&$seen):string{$seen++;return 'credited';});
+assertReal($foreign['pending_topups']===0 && $seen===0,
+    'status never requests reconciliation of another account topup');
 $db->beginTransaction();
 expectReal(fn()=>naRealWalletMergeAccounts($db,$accountB,$accountC),'REAL_PENDING_TOPUP_RECONCILIATION');
 $db->rollBack();
