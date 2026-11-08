@@ -132,6 +132,62 @@ function naRealOffsetReceiptSend(
     return ['receipt_id'=>$response['id'],'status'=>$response['status']];
 }
 
+/**
+ * Provider refund primitive. This does not alter balances, grants or fiscal
+ * records; a separate audited reconciliation must do so after confirmed success.
+ * Accept only an approved server-side refund case with verified original payment.
+ */
+function naRealRefundSend(
+    array $config,string $caseId,string $paymentId,int $kopeks,
+    ?callable $testTransport=null
+): array {
+    naRealWalletRequireLive($config);
+    if(($config['refunds_verified']??false)!==true
+        ||($config['refund_worker_verified']??false)!==true)
+        throw new RuntimeException('REAL_REFUND_POLICY_NOT_APPROVED');
+    if(preg_match('/^[a-f0-9-]{36}$/iD',$caseId)!==1)
+        throw new InvalidArgumentException('REAL_REFUND_CASE_INVALID');
+    if(preg_match('/^[a-zA-Z0-9-]{1,191}$/D',$paymentId)!==1
+        ||$kopeks<1||$kopeks>10000000)
+        throw new InvalidArgumentException('REAL_REFUND_PAYMENT_INVALID');
+    $payload=['payment_id'=>$paymentId,
+        'amount'=>['value'=>naStoreAmount($kopeks),'currency'=>'RUB'],
+        'description'=>'Возврат покупателю Нумерология онлайн'];
+    $key=hash('sha256','numi-real-refund-v1:'.$caseId);
+    if($testTransport!==null){
+        $response=$testTransport($payload,$key);
+    }else{
+        $curl=curl_init('https://api.yookassa.ru/v3/refunds');
+        if($curl===false)throw new RuntimeException('REAL_PROVIDER_UNAVAILABLE');
+        try{
+            curl_setopt_array($curl,[
+                CURLOPT_POST=>true,
+                CURLOPT_POSTFIELDS=>json_encode($payload,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),
+                CURLOPT_RETURNTRANSFER=>true,
+                CURLOPT_CONNECTTIMEOUT=>5,
+                CURLOPT_TIMEOUT=>20,
+                CURLOPT_FOLLOWLOCATION=>false,
+                CURLOPT_USERPWD=>$config['shop_id'].':'.$config['secret_key'],
+                CURLOPT_HTTPHEADER=>['Content-Type: application/json',
+                    'Idempotence-Key: '.$key],
+            ]);
+            $raw=curl_exec($curl);
+            $status=curl_getinfo($curl,CURLINFO_HTTP_CODE);
+        }finally{curl_close($curl);}
+        if(!is_string($raw)||!in_array($status,[200,201],true))
+            throw new RuntimeException('REAL_REFUND_PROVIDER_UNCERTAIN');
+        $response=json_decode($raw,true,32,JSON_THROW_ON_ERROR);
+    }
+    if(!is_array($response)
+        ||!is_string($response['id']??null)
+        ||!in_array($response['status']??null,['pending','succeeded','canceled'],true)
+        ||($response['payment_id']??null)!==$paymentId
+        ||($response['amount']['value']??null)!==naStoreAmount($kopeks)
+        ||($response['amount']['currency']??null)!=='RUB')
+        throw new RuntimeException('REAL_REFUND_RESPONSE_INVALID');
+    return ['refund_id'=>$response['id'],'status'=>$response['status']];
+}
+
 /** This route is called only after the private live-mode switch AND all gates. */
 function naRealWalletServe(PDO $db,string $action,array $body,array $account,array $config): never {
     if(!naRealWalletGate($config))
