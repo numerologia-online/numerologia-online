@@ -7,7 +7,7 @@ declare(strict_types=1);
 require_once __DIR__.'/../private/wallet-real-payment.php';
 $payAccountId='00000000-0000-4000-8000-000000000104';
 $payAccount=['id'=>$payAccountId];
-$db->prepare('INSERT INTO numi_accounts(id,email,email_verified_at) VALUES(?,?,UTC_TIMESTAMP())')
+$db->prepare('INSERT INTO numi_accounts(id,email,email_verified_at) VALUES(?,?,NULL)')
     ->execute([$payAccountId,'payment@example.test']);
 $receipt=static fn(int $rub):array=>[
     'customer'=>['email'=>'payment@example.test'],
@@ -21,21 +21,23 @@ $receipt=static fn(int $rub):array=>[
         'payment_mode'=>'advance','payment_subject'=>'payment',
     ]],
 ];
-expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,10000),
+expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,10000,'payment@example.test'),
     'REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED');
 $advanceSettings=['advance_receipt_reviewed'=>true,'advance_receipt_vat_code'=>1];
-$advanceReceipt=naRealReviewedTopupReceipt($db,$payAccount,10000,$advanceSettings);
+$advanceReceipt=naRealReviewedTopupReceipt($db,$payAccount,10000,'payment@example.test',$advanceSettings);
+expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,10000,'invalid-email',$advanceSettings),
+    'REAL_FISCAL_CONTACT_REQUIRED');
 assertReal($advanceReceipt['customer']['email']==='payment@example.test'
     && $advanceReceipt['items'][0]['payment_mode']==='advance'
     && $advanceReceipt['items'][0]['payment_subject']==='payment'
     && $advanceReceipt['items'][0]['amount']['value']==='100.00',
     'reviewed server-built advance receipt uses verified contact and exact amount');
-expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,10000,
+expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,10000,'payment@example.test',
     ['advance_receipt_reviewed'=>true]),'REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED');
-expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,10000,
+expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,10000,'payment@example.test',
     ['advance_receipt_reviewed'=>true,'advance_receipt_vat_code'=>99]),
     'REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED');
-expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,0,$advanceSettings),
+expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,0,'payment@example.test',$advanceSettings),
     'INVALID_TOPUP_AMOUNT');
 
 $offset=naRealOffsetReceiptPayload(
@@ -207,27 +209,30 @@ $mock=function(array $payload,string $idem)use(&$mockCalls):array{
     ];
 };
 expectReal(fn()=>naRealWalletCreatePayment($db,$payAccount,[],100,'card-topup-00000000001',
-    'bank_card',$receipt(100),$mock),'REAL_PAYMENTS_DISABLED');
+    'bank_card','payment@example.test',$receipt(100),$mock),'REAL_PAYMENTS_DISABLED');
 $card=naRealWalletCreatePayment($db,$payAccount,$good,100,'card-topup-00000000001',
-    'bank_card',$receipt(100),$mock);
+    'bank_card','payment@example.test',$receipt(100),$mock);
 assertReal($card['method']==='bank_card'&&!$card['reused']
     && str_starts_with((string)$card['confirmation_url'],'https://yookassa.ru/')
     && count($mockCalls)===1,'card creates one pending provider payment');
 $repeat=naRealWalletCreatePayment($db,$payAccount,$good,100,'card-topup-00000000001',
-    'bank_card',$receipt(100),$mock);
+    'bank_card','payment@example.test',$receipt(100),$mock);
+expectReal(fn()=>naRealWalletCreatePayment($db,$payAccount,$good,100,
+    'card-topup-00000000001','bank_card','second@example.test',$receipt(100),$mock),
+    'REAL_FISCAL_CONTACT_MISMATCH');
 assertReal($repeat['reused']===true && $repeat['payment_id']===$card['payment_id']
     && count($mockCalls)===1,'same card topup repeats without creating another provider charge');
 expectReal(fn()=>naRealWalletCreatePayment($db,$payAccount,$good,100,
-    'card-topup-00000000001','sbp',$receipt(100),$mock),'REAL_TOPUP_METHOD_CHANGED');
+    'card-topup-00000000001','sbp','payment@example.test',$receipt(100),$mock),'REAL_TOPUP_METHOD_CHANGED');
 expectReal(fn()=>naRealWalletCreatePayment($db,$payAccount,$good,200,
-    'card-topup-00000000001','bank_card',$receipt(200),$mock),'REAL_TOPUP_KEY_CONFLICT');
+    'card-topup-00000000001','bank_card','payment@example.test',$receipt(200),$mock),'REAL_TOPUP_KEY_CONFLICT');
 $sbp=naRealWalletCreatePayment($db,$payAccount,$good,500,'sbp-topup-00000000002',
-    'sbp',$receipt(500),$mock);
+    'sbp','payment@example.test',$receipt(500),$mock);
 assertReal($sbp['method']==='sbp' && !$sbp['reused']&&count($mockCalls)===2
     && $mockCalls[0]['idempotence']!==$mockCalls[1]['idempotence'],
     'SBP creates separate pending payment with different idempotence key');
 $sbpRepeat=naRealWalletCreatePayment($db,$payAccount,$good,500,'sbp-topup-00000000002',
-    'sbp',$receipt(500),$mock);
+    'sbp','payment@example.test',$receipt(500),$mock);
 assertReal($sbpRepeat['reused']===true&&count($mockCalls)===2,'SBP repeated retry does not POST');
 assertReal(naRealWalletBalance($db,$payAccountId)===0,
     'pending card and SBP never credit wallet');
@@ -250,11 +255,11 @@ assertReal(naRealWalletApplyVerifiedPayment($db,$savedCard,$settledCard,$good)==
     && naRealWalletBalance($db,$payAccountId)===10000,
     'duplicate settlement after card payment does not double credit');
 naRealWalletInvariant($db,$payAccountId);
-$lost=naRealWalletTopupIntent($db,$payAccount,$good,25,'lost-response-0000000003');
+$lost=naRealWalletTopupIntent($db,$payAccount,$good,25,'lost-response-0000000003','payment@example.test');
 $db->prepare("UPDATE numi_real_wallet_topups SET payment_method='sbp',
     provider_request_started_at=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 24 HOUR) WHERE id=?")
     ->execute([$lost['topup_id']]);
 expectReal(fn()=>naRealWalletCreatePayment($db,$payAccount,$good,25,'lost-response-0000000003',
-    'sbp',$receipt(25),$mock),'REAL_TOPUP_RECONCILIATION_REQUIRED');
+    'sbp','payment@example.test',$receipt(25),$mock),'REAL_TOPUP_RECONCILIATION_REQUIRED');
 assertReal(count($mockCalls)===3,'expired uncertain payment never POSTs a new external debit');
 echo "REAL_CARD_SBP_MOCK_PAYMENT_IDEMPOTENCY_RECEIPTS_PASS\n";
