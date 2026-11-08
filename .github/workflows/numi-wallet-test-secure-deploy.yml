@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -796,6 +796,147 @@ jobs:
                   try:write(root+name,snapshots[name]);print('TOPUP_SCREEN_ROLLED_BACK',name)
                   except BaseException:print('TOPUP_SCREEN_ROLLBACK_FAILED',name)
               raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+
+      - name: Safe REG.RU checkout receipt contact migration and deployment
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l account-service/private/wallet-real.php
+          php -l account-service/private/wallet-real-payment.php
+          php -l account-service/private/wallet-real-worker.php
+          php -l account-service/public/numi-real-worker.php
+          node --check account-browser.js
+          python3 - <<'PY'
+          import os,io,ftplib,ssl,subprocess,hmac,hashlib,json,urllib.request,urllib.error
+          host='server172.hosting.reg.ru'
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect(host,21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          web=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          private=home+'/private/numi-account-20261031/'
+          files=[
+            (web+'api/numi-real-worker.php','account-service/public/numi-real-worker.php'),
+            (private+'wallet-real.php','account-service/private/wallet-real.php'),
+            (private+'wallet-real-payment.php','account-service/private/wallet-real-payment.php'),
+            (private+'wallet-real-worker.php','account-service/private/wallet-real-worker.php'),
+            (web+'account-browser.js','account-browser.js'),
+          ]
+          def read(path):
+              b=io.BytesIO()
+              try:ftp.retrbinary('RETR '+path,b.write)
+              except ftplib.error_perm as error:
+                  if str(error).startswith('550'):return None
+                  raise
+              if b.tell()>3000000:raise RuntimeError('UNREVIEWED_REMOTE_FILE_SIZE')
+              return b.getvalue()
+          def write(path,data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              if read(path)!=data:raise RuntimeError('FTPS_READBACK_FAILED')
+          def known_version(path,live,updated):
+              if live==updated:return True
+              revs=subprocess.check_output(['git','log','-100','--format=%H','--',path],text=True).splitlines()
+              for rev in revs:
+                  old=subprocess.run(['git','show',rev+':'+path],capture_output=True)
+                  if old.returncode==0 and old.stdout==live:return True
+              return False
+          oldtag=b'account-browser.js?v=wallet-topup-screen-20261108'
+          newtag=b'account-browser.js?v=receipt-contact-20261108'
+          originals={}
+          targets={}
+          htmlpath=web+'index.html'
+          try:
+              for dest,source in files:
+                  current=read(dest);new=open(source,'rb').read()
+                  if current is None or not known_version(source,current,new):
+                      raise RuntimeError('UNEXPECTED_SERVER_VERSION_'+source)
+                  originals[dest]=current;targets[dest]=new
+              oldhtml=read(htmlpath)
+              if oldhtml is None:raise RuntimeError('LIVE_INDEX_MISSING')
+              if newtag in oldhtml:
+                  if oldtag in oldhtml:raise RuntimeError('DUPLICATE_CHECKOUT_JS_VERSION')
+                  updatedhtml=oldhtml
+              else:
+                  if oldhtml.count(oldtag)!=1:raise RuntimeError('UNEXPECTED_LIVE_INDEX_SCRIPT_TAG')
+                  updatedhtml=oldhtml.replace(oldtag,newtag,1)
+              originals[htmlpath]=oldhtml;targets[htmlpath]=updatedhtml
+              print('CHECKOUT_CONTACT_DEPLOY_BASELINES_VERIFIED')
+              # Make independent, same-directory backups before modifying any file.
+              for dest,original in originals.items():
+                  if original==targets[dest]:continue
+                  backup=dest+'.before-receipt-contact-20261108.bak'
+                  existing=read(backup)
+                  if existing is not None and existing!=original:
+                      raise RuntimeError('BACKUP_VERSION_CONFLICT')
+                  if existing is None:write(backup,original)
+              print('CHECKOUT_CONTACT_BACKUPS_VERIFIED')
+              changes=[]
+              def swap(path):
+                  previous=originals[path];new=targets[path]
+                  if previous==new:return
+                  if read(path)!=previous:raise RuntimeError('CONCURRENT_CHANGE_DETECTED')
+                  tmp=path+'.pending-receipt-contact-20261108'
+                  if read(tmp) is not None:raise RuntimeError('PENDING_FILE_COLLISION')
+                  write(tmp,new)
+                  ftp.rename(tmp,path)
+                  changes.append(path)
+                  if read(path)!=new:raise RuntimeError('DEPLOYED_FILE_MISMATCH')
+              def worker(action):
+                  token=hmac.new(os.environ['REG_FTP_PASSWORD'].encode(),
+                    b'numi-real-wallet-worker-v1@xn----8sbhhqijddjgdebdz2c2o.xn--p1ai',hashlib.sha256).hexdigest()
+                  req=urllib.request.Request(
+                    'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/api/numi-real-worker.php',
+                    data=json.dumps({'action':action}).encode(),
+                    headers={'Content-Type':'application/json','X-Numi-Worker-Token':token},
+                    method='POST')
+                  try:
+                      with urllib.request.urlopen(req,timeout=65) as response:
+                          status=response.status;result=json.loads(response.read(7000))
+                  except urllib.error.HTTPError as error:
+                      status=error.code
+                      try:result=json.loads(error.read(2000))
+                      except Exception:result={}
+                  if status!=200 or result.get('ok') is not True:
+                      raise RuntimeError('REG_RU_PROTECTED_WORKER_'+action+'_FAILED_'+str(status)+'_'+str(result.get('error','unknown')))
+                  return result
+              try:
+                  # 1) Worker supports an authenticated additive migration.
+                  swap(files[0][0])
+                  migrated=worker('migrate')
+                  if migrated.get('result')!='REAL_SCHEMA_READY':
+                      raise RuntimeError('RECEIPT_CONTACT_SCHEMA_NOT_CONFIRMED')
+                  print('RECEIPT_CONTACT_DATABASE_MIGRATION_CONFIRMED')
+                  # 2) Both payment modules and the fiscal offset worker.
+                  for dest,_ in files[1:4]:swap(dest)
+                  check=worker('probe')
+                  if(check.get('wallet_mode_live') is not True
+                     or not check.get('provider_authenticated')
+                     or check.get('wallet_status_diagnostic',{}).get('result')!='ok'):
+                      raise RuntimeError('REAL_WALLET_POST_DEPLOY_PROBE_FAILED')
+                  print('REAL_WALLET_SERVER_POST_DEPLOY_PROBE_OK')
+                  # 3) Publish the UI only after backend and schema are ready.
+                  swap(files[4][0]);swap(htmlpath)
+                  for dest,data in targets.items():
+                      if read(dest)!=data:raise RuntimeError('FINAL_FTSP_FILE_MISMATCH')
+                  print('RECEIPT_CONTACT_CHECKOUT_PUBLISHED_AND_VERIFIED')
+              except BaseException:
+                  print('RECEIPT_CONTACT_DEPLOY_ROLLBACK_START')
+                  for dest in reversed(changes):
+                      try:
+                          write(dest,originals[dest])
+                          print('RECEIPT_CONTACT_FILE_ROLLED_BACK',dest.rsplit('/',1)[-1])
+                      except BaseException:
+                          print('RECEIPT_CONTACT_ROLLBACK_NEEDS_REVIEW',dest.rsplit('/',1)[-1])
+                  raise
           finally:
               try:ftp.quit()
               except BaseException:ftp.close()
