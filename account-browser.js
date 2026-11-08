@@ -205,6 +205,7 @@
     "#numi-wallet-account-badge .numi-wallet-main{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}",
     "#numi-wallet-account-badge .numi-wallet-total{display:block;font-size:24px;font-weight:750;line-height:1.2}",
     "#numi-wallet-account-badge .numi-wallet-caption{display:block;font-size:12px;color:#69716d}",
+    "#numi-wallet-account-badge .numi-wallet-vpn-warning{display:block;margin:8px 0 0;color:#365649;font:700 15px/1.35 system-ui}",
     "#numi-wallet-account-badge button.numi-wallet-main-button{border:0;border-radius:10px;background:#343b39;color:white;padding:10px 15px;font:600 13px system-ui;cursor:pointer}",
     "#numi-wallet-account-badge .numi-wallet-links{display:flex;gap:12px;align-items:center;margin-top:6px;flex-wrap:wrap}",
     "#numi-wallet-account-badge button.numi-wallet-small{border:0;padding:3px 0;background:transparent;color:#606963;text-decoration:underline;font:12px system-ui;cursor:pointer}",
@@ -266,6 +267,10 @@
   const testNote=document.createElement("small");testNote.className="numi-wallet-caption";
   testNote.textContent="Тестовый режим · без настоящих списаний";
   walletLinks.append(ledgerToggle,testNote);
+  const vpnWarning=document.createElement("strong");
+  vpnWarning.className="numi-wallet-vpn-warning";
+  vpnWarning.textContent="При включённом VPN деньги могут зачисляться до десяти минут.";
+  vpnWarning.hidden=true;
   const clubLine=document.createElement("div");clubLine.className="numi-club-status";
   const clubText=document.createElement("span");clubText.textContent="Проверяем подписку…";
   const clubJoin=document.createElement("button");clubJoin.type="button";
@@ -281,7 +286,7 @@
   clubLine.append(clubText,clubJoin);
   const ledger=document.createElement("ul");ledger.className="numi-wallet-operations";ledger.hidden=true;
   const walletFeedback=document.createElement("p");walletFeedback.className="numi-wallet-feedback";walletFeedback.hidden=true;
-  walletBadge.append(walletMain,walletLinks,clubLine,ledger,walletFeedback);
+  walletBadge.append(walletMain,walletLinks,vpnWarning,clubLine,ledger,walletFeedback);
   // Show a dedicated cabinet screen: no nested expanding top-up window.
   const topupPage=document.createElement("section");
   topupPage.className="numi-wallet-topup-page";topupPage.hidden=true;
@@ -477,6 +482,40 @@
       }finally{subscriptionBusy=false;}
     });
   }
+  let pendingWalletRefreshTimer=null;
+  let pendingWalletRefreshCount=0;
+  let pendingWalletNote=false;
+  function scheduleWalletPendingRefresh(response){
+    const pending=response?.test===false && Number(response.pending_topups)>0;
+    if(!pending){
+      pendingWalletRefreshCount=0;
+      if(pendingWalletRefreshTimer!==null){
+        clearTimeout(pendingWalletRefreshTimer);
+        pendingWalletRefreshTimer=null;
+      }
+      if(pendingWalletNote){
+        pendingWalletNote=false;walletFeedback.hidden=true;walletFeedback.textContent="";
+      }
+      return;
+    }
+    pendingWalletNote=true;
+    walletFeedback.hidden=false;
+    walletFeedback.textContent="Проверяем платёж и чек ЮKassa. Баланс обновится автоматически. Не оплачивайте повторно.";
+    // The next status call queries YooKassa for THIS signed-in account only.
+    // Do not create another payment or retry wallet_topup in this loop.
+    if(pendingWalletRefreshTimer!==null||pendingWalletRefreshCount>=45||!dialog.open)return;
+    pendingWalletRefreshCount++;
+    pendingWalletRefreshTimer=setTimeout(()=>{
+      pendingWalletRefreshTimer=null;
+      if(current&&dialog.open)void refreshWalletBadge();
+    },8000);
+  }
+  dialog.addEventListener("close",()=>{
+    if(pendingWalletRefreshTimer!==null){
+      clearTimeout(pendingWalletRefreshTimer);
+      pendingWalletRefreshTimer=null;
+    }
+  });
   async function refreshWalletBadge(){
     if(!current){walletBadge.hidden=true;return;}
     walletBadge.hidden=false;walletAmount.textContent="…";
@@ -489,8 +528,10 @@
       receiptLabel.hidden=walletMode!=="live";
       receiptInput.required=walletMode==="live";
       testNote.textContent=walletMode==="test"?"Тестовый режим · без настоящих списаний":"Оплата через ЮKassa · картой или СБП";
+      vpnWarning.hidden=walletMode!=="live";
       walletAmount.textContent=(Number(response.balance_kopeks)/100).toLocaleString("ru-RU")+" ₽";
       topupCurrentAmount.textContent=walletAmount.textContent;
+      scheduleWalletPendingRefresh(response);
       renderSubscriptions(response);
       if(response.club_active===true){
         const expiry=typeof response.club_expires_at==="string"
@@ -513,7 +554,9 @@
         ledger.append(line);
       }
       if(!ledger.childElementCount){const li=document.createElement("li");li.textContent="Операций пока нет";ledger.append(li);}
-    }catch(_){renderSubscriptions(null);walletAmount.textContent="Недоступен";walletFeedback.hidden=false;
+    }catch(_){
+      if(pendingWalletRefreshTimer!==null){clearTimeout(pendingWalletRefreshTimer);pendingWalletRefreshTimer=null;}
+      renderSubscriptions(null);walletAmount.textContent="Недоступен";walletFeedback.hidden=false;
       walletFeedback.textContent="Не получилось проверить баланс. Покупки без подтверждения сервера не выполняются.";}
   }
   window.addEventListener("numi:wallet-updated",()=>{void refreshWalletBadge();});
