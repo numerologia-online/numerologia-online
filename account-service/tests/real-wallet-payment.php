@@ -21,6 +21,8 @@ $receipt=static fn(int $rub):array=>[
         'payment_mode'=>'advance','payment_subject'=>'payment',
     ]],
 ];
+expectReal(fn()=>naRealReviewedTopupReceipt($db,$payAccount,10000),
+    'REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED');
 assertReal(naRealPaymentMethod('bank_card')==='bank_card','bank card method');
 assertReal(naRealPaymentMethod('sbp')==='sbp','SBP method');
 expectReal(fn()=>naRealPaymentMethod('yoomoney'),'REAL_UNSUPPORTED_PAYMENT_METHOD');
@@ -34,8 +36,9 @@ assertReal($built['payment_method_data']['type']==='sbp'
     && $built['amount']['value']==='100.00'
     && $built['receipt']['customer']['email']==='payment@example.test',
     'SBP payload uses reviewed fiscal data and exact amount');
-assertReal(str_starts_with($built['confirmation']['return_url'],'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'),
-    'return URL pinned to production IDN, never browser input');
+assertReal(str_starts_with($built['confirmation']['return_url'],'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/')
+    && str_contains($built['confirmation']['return_url'],'wallet_topup='.$fakeTopup['id']),
+    'return URL includes verified topup ID and canonical production host');
 assertReal(strlen(naRealPaymentIdempotenceKey($fakeTopup['id']))===64
     && naRealPaymentIdempotenceKey($fakeTopup['id'])===naRealPaymentIdempotenceKey($fakeTopup['id']),
     'stable 64-char idempotence key');
