@@ -12,13 +12,30 @@ declare(strict_types=1);
 require_once __DIR__.'/wallet-real.php';
 
 /**
- * This is intentionally a hard stop: the connected YooKassa fiscal service
- * documents that arbitrary advance is not supported. Do not disguise a wallet
- * top-up as full prepayment for a specified item or trust browser fiscal fields.
- * When a supported receipt policy is reviewed, replace ONLY this builder.
+ * Build a free-amount advance receipt on the server. YooKassa support confirmed
+ * the advance + offset scheme; fiscal parameters are private configuration.
+ * Never accept vat_code or fiscal identity from the browser.
  */
-function naRealReviewedTopupReceipt(PDO $db,array $account,int $kopeks): array {
-    throw new RuntimeException('REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED');
+function naRealReviewedTopupReceipt(PDO $db,array $account,int $kopeks,array $config=[]): array {
+    if ($kopeks<100 || $kopeks>10000000)
+        throw new InvalidArgumentException('INVALID_TOPUP_AMOUNT');
+    // Tax treatment is merchant-specific: no assumed VAT rate or tax regime.
+    $vat=$config['advance_receipt_vat_code']??null;
+    if (($config['advance_receipt_reviewed']??false)!==true || !is_int($vat)
+        || $vat<1 || $vat>12)
+        throw new RuntimeException('REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED');
+    $email=naRealWalletRequireReceiptContact($db,$account);
+    return [
+        'customer'=>['email'=>$email],
+        'items'=>[[
+            'description'=>'Аванс за цифровые услуги Нумерология онлайн',
+            'quantity'=>1.0,
+            'amount'=>['value'=>naStoreAmount($kopeks),'currency'=>'RUB'],
+            'vat_code'=>$vat,
+            'payment_mode'=>'advance',
+            'payment_subject'=>'payment',
+        ]],
+    ];
 }
 
 /** This route is called only after the private live-mode switch AND all gates. */
@@ -76,7 +93,7 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             $key=naWalletKey($body['request_key']??null);
             // Strictly fail before any payment initiation until legal fiscalization
             // of a wallet topup is actually supported by the configured provider.
-            $receipt=naRealReviewedTopupReceipt($db,$account,$rub*100);
+            $receipt=naRealReviewedTopupReceipt($db,$account,$rub*100,$config);
             $payment=naRealWalletCreatePayment($db,$account,$config,$rub,$key,$method,$receipt);
             naReply(200,array_merge(['ok'=>true,'test'=>false],$payment));
         }
