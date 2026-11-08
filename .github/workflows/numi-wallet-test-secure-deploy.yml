@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -449,4 +449,55 @@ jobs:
           finally:
               if updated:put(original)
               ftp.quit()
+          PY
+
+      - name: Compare deployed account API PHP with committed versions (read only)
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Audit live wallet account API files on REG.RU'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,io,ftplib,ssl,subprocess,hashlib
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=28)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')
+          private=root+'/private/numi-account-20261031/'
+          public=root+'/www/xn--c1adkkdfjbp1a4l.online/api/'
+          names={
+            'core.php':'account-service/private/core.php',
+            'wallet.php':'account-service/private/wallet.php',
+            'wallet-real.php':'account-service/private/wallet-real.php',
+            'wallet-real-payment.php':'account-service/private/wallet-real-payment.php',
+            'store.php':'account-service/private/store.php',
+            'subscriptions.php':'account-service/private/subscriptions.php',
+          }
+          def read(remote):
+              buf=io.BytesIO()
+              try:ftp.retrbinary('RETR '+remote,buf.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              if buf.tell()>1500000:raise RuntimeError('UNEXPECTED_FILE_SIZE')
+              return buf.getvalue()
+          try:
+              for name,path in names.items():
+                  live=read(private+name)
+                  intended=open(path,'rb').read()
+                  if live is None: print('API_FILE',name,'MISSING');continue
+                  if live==intended: print('API_FILE',name,'MATCH');continue
+                  revs=subprocess.check_output(['git','log','-100','--format=%H','--',path],text=True).splitlines()
+                  found='UNKNOWN'
+                  for rev in revs:
+                      old=subprocess.run(['git','show',rev+':'+path],capture_output=True)
+                      if old.returncode==0 and old.stdout==live:found=rev[:12];break
+                  print('API_FILE',name,'DIFF',found)
+              remote=read(public+'numi-account.php')
+              expected=open('account-service/public/numi-account.php','rb').read()
+              print('API_FILE','numi-account.php','MATCH' if remote==expected else 'DIFF_OR_MISSING')
+          finally:ftp.quit()
           PY
