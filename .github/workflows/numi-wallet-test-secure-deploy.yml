@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -597,4 +597,41 @@ jobs:
           finally:
               try:ftp.quit()
               except BaseException:ftp.close()
+          PY
+
+      - name: Compare live account-browser.js without deployment
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Inspect exact live account browser JS delta'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib,ssl,io,os,subprocess,difflib,hashlib
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=28)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          path=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/account-browser.js'
+          buf=io.BytesIO()
+          try:ftp.retrbinary('RETR '+path,buf.write)
+          finally:ftp.quit()
+          live=buf.getvalue()
+          expected=open('account-browser.js','rb').read()
+          print('DEPLOYED_JS_BYTES',len(live),'GIT_JS_BYTES',len(expected))
+          print('JS_MATCH',live==expected)
+          revs=subprocess.check_output(['git','log','-100','--format=%H','--','account-browser.js'],text=True).splitlines()
+          known=[]
+          for rev in revs:
+              d=subprocess.run(['git','show',rev+':account-browser.js'],capture_output=True)
+              if d.returncode==0 and d.stdout==live:known.append(rev[:12])
+          print('KNOWN_BROWSER_VERSIONS',','.join(known[:4]) if known else 'NONE')
+          a=live.decode('utf-8','replace').splitlines()
+          b=expected.decode('utf-8','replace').splitlines()
+          diff=list(difflib.unified_diff(a,b,fromfile='deployed',tofile='main',n=2))
+          print('DIFF_LINES',len(diff))
+          for line in diff[:125]:
+              if len(line)>450:line=line[:450]+' ...'
+              print('JS_DIFF',line)
           PY
