@@ -92,6 +92,30 @@ try{
                     $clubQ->execute([(string)$sampleId]);
                     $clubQ->fetchColumn();
                     $walletStatusCheck=['result'=>'ok','including_club_query'=>true];
+                    // Read-only checkout diagnostic: exact quote/readiness path for
+                    // the first paid Red Flag question. No charge or customer data.
+                    $walletQuestionCheck=['result'=>'unavailable'];
+                    try{
+                        require_once dirname(__DIR__,3).'/private/numi-account-20261031/fulfillment.php';
+                        $subject=['product_code'=>'redflag_question','category'=>'money',
+                            'question_id'=>'generosity','birth_date'=>'1986-09-09'];
+                        $ready=static function(array $item):bool{
+                            try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}
+                            catch(Throwable $error){return false;}
+                        };
+                        $quote=naRealWalletQuote($probeDb,['id'=>(string)$sampleId],$subject,$ready);
+                        $walletQuestionCheck=['result'=>'ok',
+                            'ready'=>$quote['ready']??null,
+                            'price_kopeks'=>$quote['price_kopeks']??null,
+                            'kind'=>$quote['kind']??null];
+                    }catch(Throwable $quoteError){
+                        $walletQuestionCheck=['result'=>'error',
+                            'class'=>get_class($quoteError),
+                            'code'=>(string)$quoteError->getCode(),
+                            'safe_message'=>preg_match('/^[A-Z_]{3,80}$/D',$quoteError->getMessage())
+                                ?$quoteError->getMessage():'EXCEPTION'];
+                    }
+
                     // Compare the same read-only flow across other accounts.
                     // Never return account IDs, balances or personal records.
                     $count=0;$fail=0;$firstError=null;
@@ -130,7 +154,8 @@ try{
             'provider_test_mode_false'=>($live['provider_test_mode']??null)===false,
             'vat_codes_set'=>is_int($live['advance_receipt_vat_code']??null)
                 &&is_int($live['offset_receipt_vat_code']??null),
-            'flags'=>$flags,'wallet_status_diagnostic'=>$walletStatusCheck],JSON_THROW_ON_ERROR);
+            'flags'=>$flags,'wallet_status_diagnostic'=>$walletStatusCheck,
+            'wallet_question_diagnostic'=>$walletQuestionCheck??['result'=>'no_accounts']],JSON_THROW_ON_ERROR);
         exit;
     }
     $db=naDB();
