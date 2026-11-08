@@ -28,14 +28,14 @@ function explain(container,err){
     note(container,"Войдите в личный кабинет, чтобы открыть ответ.");
     action(container,"Войти",openAccount);return;
   }
-  if(error==="INSUFFICIENT_BALANCE"){
+  if(error==="INSUFFICIENT_BALANCE"||error==="REAL_INSUFFICIENT_BALANCE"){
     note(container,"Недостаточно средств на балансе.");
     action(container,"Пополнить баланс",openAccount);return;
   }
-  if(error==="ITEM_ALREADY_OWNED"){
+  if(error==="ITEM_ALREADY_OWNED"||error==="REAL_ALREADY_PURCHASED"){
     note(container,"Ответ уже куплен. Нажмите на вопрос ещё раз.");return;
   }
-  if(["MATERIAL_NOT_READY","ITEM_NOT_READY","UNKNOWN_QUESTION"].includes(error)){
+  if(["MATERIAL_NOT_READY","REAL_MATERIAL_NOT_READY","ITEM_NOT_READY","UNKNOWN_QUESTION"].includes(error)){
     note(container,"Этот материал ещё готовится. Деньги не списаны.");return;
   }
   note(container,"Не получилось открыть ответ. Повторите попытку: повторное нажатие не создаст новое списание.");
@@ -74,7 +74,7 @@ export async function showInlinePurchase(item,container,onMaterial){
   note(container,"Проверяем доступ и баланс…");
   let quote;
   try{quote=await walletRequest("wallet_quote",{item});}catch(e){explain(container,e);return;}
-  if(quote.test!==true){note(container,"Покупка пока недоступна.");return;}
+  if(typeof quote.test!=="boolean"){note(container,"Покупка пока недоступна.");return;}
   if(quote.owned===true&&quote.entitlement_id){
     try{const material=await walletMaterial(quote.entitlement_id);onMaterial(material,quote.entitlement_id);}catch(e){explain(container,e);}
     return;
@@ -105,7 +105,7 @@ export async function showInlinePurchase(item,container,onMaterial){
     note(container,"Открываем оплаченный ответ…");
     try{
       const result=await walletRequest("wallet_buy",{item,request_key:key});
-      if(result.test!==true||!result.entitlement_id)throw new Error("INVALID_PURCHASE_RESULT");
+      if(result.test!==quote.test||!result.entitlement_id)throw new Error("INVALID_PURCHASE_RESULT");
       window.dispatchEvent(new Event("numi:wallet-updated"));
       const material=await walletMaterial(result.entitlement_id);
       pending.delete(id);
