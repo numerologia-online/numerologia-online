@@ -480,7 +480,6 @@
   }
   let pendingWalletRefreshTimer=null;
   let pendingWalletRefreshCount=0;
-  let pendingWalletNote=false;
   function scheduleWalletPendingRefresh(response){
     const pending=response?.test===false && Number(response.pending_topups)>0;
     if(!pending){
@@ -489,14 +488,8 @@
         clearTimeout(pendingWalletRefreshTimer);
         pendingWalletRefreshTimer=null;
       }
-      if(pendingWalletNote){
-        pendingWalletNote=false;walletFeedback.hidden=true;walletFeedback.textContent="";
-      }
       return;
     }
-    pendingWalletNote=true;
-    walletFeedback.hidden=false;
-    walletFeedback.textContent="Проверяем платёж и чек ЮKassa. Баланс обновится автоматически. Не оплачивайте повторно.";
     // The next status call queries YooKassa for THIS signed-in account only.
     // Do not create another payment or retry wallet_topup in this loop.
     if(pendingWalletRefreshTimer!==null||pendingWalletRefreshCount>=45||!dialog.open)return;
@@ -528,6 +521,9 @@
       walletAmount.textContent=(Number(response.balance_kopeks)/100).toLocaleString("ru-RU")+" ₽";
       topupCurrentAmount.textContent=walletAmount.textContent;
       scheduleWalletPendingRefresh(response);
+      // Status checks are silent; only errors deserve space inside the card.
+      walletFeedback.hidden=true;
+      walletFeedback.textContent="";
       renderSubscriptions(response);
       if(response.club_active===true){
         const expiry=typeof response.club_expires_at==="string"
