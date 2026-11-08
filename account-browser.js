@@ -376,6 +376,107 @@
     }catch(error){topupFeedback.textContent=error?.message||"Не удалось начать пополнение. Повторите без создания нового платежа.";}
     finally{pay.disabled=false;}
   });
+  // These controls are bound to the authenticated server account, never to
+  // an unverified localStorage subscription flag or a browser-side price.
+  const subscriptionFeedback=document.getElementById("numi-subscription-feedback");
+  const subscriptionEntries=[
+    {code:"club_month",short:"club",name:"Клуб",price:49000},
+    {code:"school_week",short:"school",name:"Школа",price:14900}
+  ];
+  let subscriptionBusy=false;
+  function subscriptionUntil(raw){
+    if(typeof raw!=="string"||!raw)return "";
+    const date=new Date(raw.replace(" ","T")+"Z");
+    return Number.isNaN(date.getTime())?"":date.toLocaleDateString("ru-RU",{
+      timeZone:"UTC",day:"numeric",month:"long",year:"numeric"
+    });
+  }
+  function renderSubscriptions(response){
+    const subs=Array.isArray(response?.subscriptions)?response.subscriptions:[];
+    for(const entry of subscriptionEntries){
+      const info=subs.find(item=>item?.product_code===entry.code);
+      const status=document.getElementById("numi-"+entry.short+"-subscription-status");
+      const renew=document.getElementById("numi-"+entry.short+"-subscription-renew");
+      const cancel=document.getElementById("numi-"+entry.short+"-subscription-cancel");
+      if(!status||!renew||!cancel)continue;
+      if(!info){
+        status.textContent="Не удалось загрузить статус подписки.";
+        renew.disabled=true;cancel.disabled=true;continue;
+      }
+      const until=subscriptionUntil(info.expires_at);
+      status.textContent=info.active===true
+        ?"Активна"+(until?" до "+until:"")+
+          (info.auto_renew===true?" · автопродление включено":" · автосписаний нет")
+        : "Не подключена"+(until?" · предыдущий период закончился "+until:"");
+      renew.textContent=info.active===true?"Продлить":"Подключить";
+      renew.disabled=subscriptionBusy;
+      cancel.disabled=subscriptionBusy||!(info.active===true||info.auto_renew===true);
+      cancel.textContent=info.auto_renew===true?"Отключить автопродление":"Отключить продление";
+    }
+    const tariffs=document.querySelector('#account-dialog [data-account-content="prices"]');
+    if(tariffs){
+      let note=tariffs.querySelector("#numi-personal-club-price-note");
+      if(!note){
+        note=document.createElement("p");note.id="numi-personal-club-price-note";
+        note.style.cssText="margin:8px 0 15px;color:#1d5b43;font-weight:700;font-size:14px";
+        tariffs.querySelector("h3")?.insertAdjacentElement("afterend",note);
+      }
+      note.textContent=response.club_active===true
+        ?"Ваш клуб активен — при покупке применяются клубные цены."
+        :"Цены клуба применяются только при действующей подписке.";
+    }
+    document.documentElement.classList.toggle("numi-club-active",response.club_active===true);
+  }
+  function subscriptionMessage(message){
+    if(subscriptionFeedback)subscriptionFeedback.textContent=message;
+  }
+  for(const entry of subscriptionEntries){
+    document.getElementById("numi-"+entry.short+"-subscription-renew")?.addEventListener("click",async()=>{
+      if(subscriptionBusy||!current)return;
+      subscriptionBusy=true;subscriptionMessage("Проверяем цену и баланс…");
+      try{
+        const item={product_code:entry.code};
+        const quote=await request("wallet_quote",{item});
+        if(quote.test!==false||quote.kind!=="subscription"||quote.ready!==true)
+          throw new Error("Подписка сейчас недоступна для покупки.");
+        const required=Number(quote.price_kopeks);
+        const available=Number(quote.balance_kopeks);
+        if(!Number.isSafeInteger(required)||required<1||!Number.isSafeInteger(available))
+          throw new Error("Не удалось проверить сумму.");
+        if(available<required){
+          subscriptionMessage("Для продления нужно "+(required/100)+" ₽. Пополните баланс и затем нажмите «Продлить».");
+          showTopupPage();return;
+        }
+        const keyId="numi-subscription-renew-"+entry.code;
+        let key=sessionStorage.getItem(keyId);
+        if(!key||!/^[a-f0-9-]{36}$/i.test(key)){
+          key=crypto.randomUUID();sessionStorage.setItem(keyId,key);
+        }
+        const result=await request("wallet_buy",{item,request_key:key});
+        if(result.test!==false||!result.entitlement_id)
+          throw new Error("Сервер не подтвердил продление.");
+        sessionStorage.removeItem(keyId);
+        subscriptionMessage(entry.name+" оплачена. Срок доступа обновлён.");
+        await refreshWalletBadge();
+        window.dispatchEvent(new Event("numi:club-activated"));
+      }catch(error){
+        subscriptionMessage(error?.message||"Не удалось продлить подписку. Деньги не списываем повторно.");
+      }finally{subscriptionBusy=false;}
+    });
+    document.getElementById("numi-"+entry.short+"-subscription-cancel")?.addEventListener("click",async()=>{
+      if(subscriptionBusy||!current)return;
+      subscriptionBusy=true;subscriptionMessage("Отключаем будущие списания…");
+      try{
+        const result=await request("subscription_cancel",{product_code:entry.code});
+        if(result.auto_renew!==false||result.access_unchanged!==true)
+          throw new Error("Сервер не подтвердил отключение.");
+        subscriptionMessage("Автопродление отключено. Уже оплаченный период сохраняется.");
+        await refreshWalletBadge();
+      }catch(error){
+        subscriptionMessage(error?.message||"Не удалось отключить автопродление.");
+      }finally{subscriptionBusy=false;}
+    });
+  }
   async function refreshWalletBadge(){
     if(!current){walletBadge.hidden=true;return;}
     walletBadge.hidden=false;walletAmount.textContent="…";
@@ -390,6 +491,7 @@
       testNote.textContent=walletMode==="test"?"Тестовый режим · без настоящих списаний":"Оплата через ЮKassa · картой или СБП";
       walletAmount.textContent=(Number(response.balance_kopeks)/100).toLocaleString("ru-RU")+" ₽";
       topupCurrentAmount.textContent=walletAmount.textContent;
+      renderSubscriptions(response);
       if(response.club_active===true){
         const expiry=typeof response.club_expires_at==="string"
           ? new Date(response.club_expires_at.replace(" ","T")+"Z") : null;
@@ -411,7 +513,7 @@
         ledger.append(line);
       }
       if(!ledger.childElementCount){const li=document.createElement("li");li.textContent="Операций пока нет";ledger.append(li);}
-    }catch(_){walletAmount.textContent="Недоступен";walletFeedback.hidden=false;
+    }catch(_){renderSubscriptions(null);walletAmount.textContent="Недоступен";walletFeedback.hidden=false;
       walletFeedback.textContent="Не получилось проверить баланс. Покупки без подтверждения сервера не выполняются.";}
   }
   window.addEventListener("numi:wallet-updated",()=>{void refreshWalletBadge();});
