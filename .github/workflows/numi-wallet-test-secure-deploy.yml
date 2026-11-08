@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing' || github.event.head_commit.message == 'Publish club benefits wording and navigation on REG.RU' || github.event.head_commit.message == 'Publish automatic live wallet credit and payment delay notice' || github.event.head_commit.message == 'Deploy standalone wallet topup and remember last receipt email' || github.event.head_commit.message == 'Publish approved receipt email wording on live wallet page'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging' || github.event.head_commit.message == 'Verify full live wallet and club status query' || github.event.head_commit.message == 'Audit live wallet account API files on REG.RU' || github.event.head_commit.message == 'Sync existing live account PHP versions on REG.RU' || github.event.head_commit.message == 'Trace wallet status across accounts and deployed JS' || github.event.head_commit.message == 'Inspect exact live account browser JS delta' || github.event.head_commit.message == 'Deploy live wallet browser JS and cache bust' || github.event.head_commit.message == 'Publish dedicated wallet topup screen on REG.RU' || github.event.head_commit.message == 'Deploy checkout receipt contact without verified account email' || github.event.head_commit.message == 'Publish live subscription controls and verified club pricing' || github.event.head_commit.message == 'Publish club benefits wording and navigation on REG.RU' || github.event.head_commit.message == 'Publish automatic live wallet credit and payment delay notice' || github.event.head_commit.message == 'Deploy standalone wallet topup and remember last receipt email' || github.event.head_commit.message == 'Publish approved receipt email wording on live wallet page' || github.event.head_commit.message == 'Publish quiet compact wallet status on REG.RU'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -1429,6 +1429,91 @@ jobs:
               if expected_title not in page or expected_body not in page:
                   raise RuntimeError('PUBLIC_RECEIPT_PAGE_COPY_NOT_VISIBLE')
               print('RECEIPT_PAGE_APPROVED_WORDING_PUBLISHED_AND_VERIFIED')
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+
+      - name: Remove redundant wallet status line and collapse extra space on live REG.RU
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Publish quiet compact wallet status on REG.RU'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check account-browser.js
+          python3 - <<'PY'
+          import os,io,ssl,ftplib,subprocess,urllib.request
+          js=open('account-browser.js','rb').read()
+          html=open('index.html','rb').read()
+          assert b'wallet-quiet-status-20261108' in html
+          assert 'Проверяем платёж и чек ЮKassa. Баланс обновится автоматически.'.encode() not in js
+          assert b'walletFeedback.hidden=true' in js
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
+          files=['account-browser.js','index.html']
+          def read(path):
+              bio=io.BytesIO()
+              try:ftp.retrbinary('RETR '+path,bio.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              if bio.tell()>3000000:raise RuntimeError('UNEXPECTED_WALLET_PAGE_SIZE')
+              return bio.getvalue()
+          def write(path,data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              if read(path)!=data:raise RuntimeError('UNVERIFIED_FTPS_UPLOAD')
+          def known(path,current,new):
+              if current==new:return True
+              commits=subprocess.check_output(['git','log','-100','--format=%H','--',path],text=True).splitlines()
+              for sha in commits:
+                  previous=subprocess.run(['git','show',sha+':'+path],capture_output=True)
+                  if previous.returncode==0 and previous.stdout==current:return True
+              return False
+          backups={};updated={};changed=[]
+          try:
+              for name in files:
+                  dest=root+name
+                  old=read(dest);new=open(name,'rb').read()
+                  if old is None or not known(name,old,new):
+                      raise RuntimeError('UNKNOWN_SERVER_VERSION_'+name)
+                  backups[name]=old;updated[name]=new
+              print('COMPACT_WALLET_LIVE_BASELINES_VERIFIED')
+              for name in files:
+                  if updated[name]==backups[name]:continue
+                  bak=root+name+'.before-compact-wallet-20261108.bak'
+                  previous=read(bak)
+                  if previous is not None and previous!=backups[name]:
+                      raise RuntimeError('COMPACT_WALLET_BACKUP_CONFLICT')
+                  if previous is None:write(bak,backups[name])
+              print('COMPACT_WALLET_BACKUPS_VERIFIED')
+              try:
+                  for name in files:
+                      if updated[name]==backups[name]:continue
+                      path=root+name
+                      if read(path)!=backups[name]:raise RuntimeError('LIVE_CONCURRENT_EDIT')
+                      tmp=path+'.pending-compact-wallet-20261108'
+                      if read(tmp)is not None:raise RuntimeError('PENDING_FILE_ALREADY_EXISTS')
+                      write(tmp,updated[name])
+                      ftp.rename(tmp,path)
+                      changed.append(name)
+                      if read(path)!=updated[name]:raise RuntimeError('COMPACT_WALLET_READBACK_ERROR')
+                      print('COMPACT_WALLET_FILE_UPDATED',name)
+                  url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+                  with urllib.request.urlopen(url,timeout=30) as resp:
+                      page=resp.read(250000)
+                  if b'wallet-quiet-status-20261108' not in page:
+                      raise RuntimeError('COMPACT_WALLET_HTML_NOT_VISIBLE')
+                  print('COMPACT_WALLET_LIVE_PUBLISHED_VERIFIED')
+              except BaseException:
+                  for name in reversed(changed):
+                      try:write(root+name,backups[name]);print('COMPACT_WALLET_ROLLBACK',name)
+                      except BaseException:print('COMPACT_WALLET_ROLLBACK_NEEDS_REVIEW',name)
+                  raise
           finally:
               try:ftp.quit()
               except BaseException:ftp.close()
