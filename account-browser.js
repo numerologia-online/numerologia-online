@@ -219,6 +219,9 @@
     "#numi-wallet-account-badge [hidden]{display:none!important}"
   ].join("");
   dialog.append(walletStyle);
+  const topupStyle=document.createElement("style");
+  topupStyle.textContent="#account-dialog .numi-wallet-topup-page[hidden]{display:none!important}\n#account-dialog .numi-wallet-topup-page{width:100%;box-sizing:border-box;padding:8px 0 28px;color:#234839;font:15px/1.5 system-ui}\n#account-dialog .numi-wallet-topup-back{border:1px solid #dcc8a0;border-radius:13px;background:#fff8eb;color:#8b672f;padding:10px 14px;min-height:46px;font:650 14px/1.3 system-ui;cursor:pointer;margin-bottom:23px}\n#account-dialog .numi-wallet-topup-page h3{margin:0 0 8px;color:#1a4937;font:normal clamp(29px,7vw,38px)/1.15 Georgia,serif}\n#account-dialog .numi-wallet-topup-intro{margin:0 0 22px;color:#607368;font-size:14px}\n#account-dialog .numi-wallet-topup-current{margin:0 0 24px;border:1px solid #dae2d9;background:#f0f5ee;border-radius:18px;padding:16px 18px}\n#account-dialog .numi-wallet-topup-current small{display:block;color:#697b70;font-size:12px}\n#account-dialog .numi-wallet-topup-current strong{font-size:25px;line-height:1.2;color:#204635}\n#account-dialog .numi-wallet-topup-form{display:grid;gap:20px;margin:0}\n#account-dialog .numi-wallet-topup-form>label{display:block;font-weight:650;font-size:15px;color:#274b3b}\n#account-dialog .numi-wallet-topup-form input[type=number]{display:block;width:100%;min-height:54px;box-sizing:border-box;margin-top:8px;padding:11px 14px;border:1px solid #b9c8b7;border-radius:14px;background:#fff;color:#253c32;font:18px system-ui}\n#account-dialog .numi-wallet-payment-methods{display:flex;gap:18px;flex-wrap:wrap;margin:0;padding:0;border:0}\n#account-dialog .numi-wallet-payment-methods label{display:flex;align-items:center;gap:7px;font-size:15px;color:#274b3b}\n#account-dialog .numi-wallet-payment-methods input{accent-color:#245c46;width:18px;height:18px}\n#account-dialog .numi-wallet-topup-form button.numi-wallet-main-button{display:block;width:100%;min-height:52px;border:0;border-radius:14px;background:#224e3c;color:white;font:700 16px system-ui;cursor:pointer}\n#account-dialog .numi-wallet-topup-form button:disabled{opacity:.6;cursor:wait}\n#account-dialog .numi-wallet-topup-feedback{margin:16px 0 0;color:#4b6256;font:14px/1.5 system-ui}\n@media(max-width:700px){#account-dialog.numi-wallet-topup-active{height:calc(100dvh - 22px)!important;max-height:calc(100dvh - 22px)!important;min-height:0!important;margin:auto!important;overflow-y:auto!important;box-sizing:border-box}}";
+  dialog.append(topupStyle);
   const walletMain=document.createElement("div");walletMain.className="numi-wallet-main";
   const walletText=document.createElement("div");
   const walletCaption=document.createElement("small");walletCaption.className="numi-wallet-caption";walletCaption.textContent="Мой баланс";
@@ -227,7 +230,7 @@
   const topupToggle=document.createElement("button");topupToggle.type="button";
   topupToggle.className="numi-wallet-main-button";topupToggle.textContent="Пополнить";
   walletMain.append(walletText,topupToggle);
-  const walletForm=document.createElement("form");walletForm.className="numi-wallet-topup-form";walletForm.hidden=true;
+  const walletForm=document.createElement("form");walletForm.className="numi-wallet-topup-form";
   const amountLabel=document.createElement("label");amountLabel.textContent="Сумма, ₽";
   const amountInput=document.createElement("input");amountInput.type="number";amountInput.min="1";amountInput.max="100000";
   amountInput.step="1";amountInput.required=true;amountInput.placeholder="Введите сумму";amountInput.inputMode="numeric";
@@ -264,8 +267,46 @@
   clubLine.append(clubText,clubJoin);
   const ledger=document.createElement("ul");ledger.className="numi-wallet-operations";ledger.hidden=true;
   const walletFeedback=document.createElement("p");walletFeedback.className="numi-wallet-feedback";walletFeedback.hidden=true;
-  walletBadge.append(walletMain,walletForm,walletLinks,clubLine,ledger,walletFeedback);
-  topupToggle.addEventListener("click",()=>{walletForm.hidden=!walletForm.hidden;if(!walletForm.hidden)amountInput.focus();});
+  walletBadge.append(walletMain,walletLinks,clubLine,ledger,walletFeedback);
+  // Show a dedicated cabinet screen: no nested expanding top-up window.
+  const topupPage=document.createElement("section");
+  topupPage.className="numi-wallet-topup-page";topupPage.hidden=true;
+  topupPage.setAttribute("aria-labelledby","numi-wallet-topup-title");
+  const topupBack=document.createElement("button");topupBack.type="button";
+  topupBack.className="numi-wallet-topup-back";topupBack.textContent="← Назад в личный кабинет";
+  const topupTitle=document.createElement("h3");topupTitle.id="numi-wallet-topup-title";
+  topupTitle.textContent="Пополнение баланса";
+  const topupIntro=document.createElement("p");topupIntro.className="numi-wallet-topup-intro";
+  topupIntro.textContent="Введите сумму и выберите способ оплаты.";
+  const topupCurrent=document.createElement("div");topupCurrent.className="numi-wallet-topup-current";
+  const topupCurrentLabel=document.createElement("small");topupCurrentLabel.textContent="Текущий баланс";
+  const topupCurrentAmount=document.createElement("strong");topupCurrentAmount.textContent="0 ₽";
+  topupCurrent.append(topupCurrentLabel,topupCurrentAmount);
+  const topupFeedback=document.createElement("p");topupFeedback.className="numi-wallet-topup-feedback";
+  topupFeedback.setAttribute("role","status");topupFeedback.hidden=true;
+  topupPage.append(topupBack,topupTitle,topupIntro,topupCurrent,walletForm,topupFeedback);
+  profile.append(topupPage);
+  function showTopupPage(){
+    topupCurrentAmount.textContent=walletAmount.textContent;
+    topupFeedback.hidden=true;topupFeedback.textContent="";
+    overview.hidden=true;
+    for(const panel of dialog.querySelectorAll("[data-account-content]"))panel.hidden=true;
+    topupPage.hidden=false;
+    dialog.classList.add("numi-wallet-topup-active");
+    dialog.scrollTop=0;
+  }
+  function leaveTopupPage(){
+    amountInput.blur();
+    topupPage.hidden=true;overview.hidden=false;
+    dialog.classList.remove("numi-wallet-topup-active");
+    dialog.scrollTop=0;
+  }
+  topupToggle.addEventListener("click",showTopupPage);
+  topupBack.addEventListener("click",leaveTopupPage);
+  dialog.addEventListener("close",()=>{
+    topupPage.hidden=true;
+    dialog.classList.remove("numi-wallet-topup-active");
+  });
   ledgerToggle.addEventListener("click",()=>{ledger.hidden=!ledger.hidden;});
   let walletReturnHandled=false;
   async function walletReturnedPayment(){
@@ -294,25 +335,25 @@
     event.preventDefault();
     const amount=Number(amountInput.value);
     if(!Number.isInteger(amount)||amount<1||amount>100000){
-      walletFeedback.hidden=false;walletFeedback.textContent="Введите сумму в рублях от 1 до 100 000.";return;
+      topupFeedback.hidden=false;topupFeedback.textContent="Введите сумму в рублях от 1 до 100 000.";return;
     }
     const method=walletMode==="live"?(methodRadios.find(input=>input.checked)?.value||"bank_card"):"bank_card";
     const sessionKey="numi-topup-request-"+walletMode+"-"+method+"-"+amount;
     let key=sessionStorage.getItem(sessionKey);
     if(!key||!/^[a-f0-9-]{36}$/i.test(key)){key=crypto.randomUUID();sessionStorage.setItem(sessionKey,key);}
-    pay.disabled=true;walletFeedback.hidden=false;
-    walletFeedback.textContent=walletMode==="test"?"Готовим тестовое пополнение…":"Готовим безопасную оплату…";
+    pay.disabled=true;topupFeedback.hidden=false;
+    topupFeedback.textContent=walletMode==="test"?"Готовим тестовое пополнение…":"Готовим безопасную оплату…";
     try{
       const payload={amount_rub:amount,request_key:key};
       if(walletMode==="live")payload.payment_method=method;
       const result=await request("wallet_topup",payload);
-      if(result.credited){sessionStorage.removeItem(sessionKey);await refreshWalletBadge();walletFeedback.textContent="Баланс пополнен.";return;}
+      if(result.credited){sessionStorage.removeItem(sessionKey);await refreshWalletBadge();topupFeedback.textContent="Баланс пополнен.";return;}
       const url=new URL(result.confirmation_url);
       if(url.protocol!=="https:"||url.port||url.username||url.password||
         !["yookassa.ru","yoomoney.ru"].some(host=>url.hostname===host||url.hostname.endsWith("."+host)))
         throw new Error("INVALID_PAYMENT_DESTINATION");
       location.assign(url.href);
-    }catch(_){walletFeedback.textContent="Не удалось начать пополнение. Повторите без создания нового платежа.";}
+    }catch(_){topupFeedback.textContent="Не удалось начать пополнение. Повторите без создания нового платежа.";}
     finally{pay.disabled=false;}
   });
   async function refreshWalletBadge(){
@@ -326,6 +367,7 @@
       methodGroup.hidden=walletMode!=="live";
       testNote.textContent=walletMode==="test"?"Тестовый режим · без настоящих списаний":"Оплата через ЮKassa · картой или СБП";
       walletAmount.textContent=(Number(response.balance_kopeks)/100).toLocaleString("ru-RU")+" ₽";
+      topupCurrentAmount.textContent=walletAmount.textContent;
       if(response.club_active===true){
         const expiry=typeof response.club_expires_at==="string"
           ? new Date(response.club_expires_at.replace(" ","T")+"Z") : null;
