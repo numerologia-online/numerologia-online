@@ -153,10 +153,10 @@ function naRealRefundSend(
     ?callable $testTransport=null
 ): array {
     naRealWalletRequireLive($config);
-    naRealRefundReceiptSettings($config);
     if(($config['refunds_verified']??false)!==true
         ||($config['refund_worker_verified']??false)!==true)
         throw new RuntimeException('REAL_REFUND_POLICY_NOT_APPROVED');
+    naRealRefundReceiptSettings($config);
     if(preg_match('/^[a-f0-9-]{36}$/iD',$caseId)!==1)
         throw new InvalidArgumentException('REAL_REFUND_CASE_INVALID');
     if(preg_match('/^[a-zA-Z0-9-]{1,191}$/D',$paymentId)!==1
@@ -301,9 +301,9 @@ function naRealRefundReconcile(
     PDO $db,array $config,string $caseId,?callable $testGet=null
 ): string {
     naRealWalletRequireLive($config);
-    naRealRefundReceiptSettings($config);
     if(($config['refund_worker_verified']??false)!==true)
         throw new RuntimeException('REAL_REFUND_POLICY_NOT_APPROVED');
+    naRealRefundReceiptSettings($config);
     if(preg_match('/^[a-f0-9-]{36}$/iD',$caseId)!==1)
         throw new InvalidArgumentException('REAL_REFUND_CASE_INVALID');
     $q=$db->prepare("SELECT c.*,t.provider_payment_id,t.account_id AS topup_account_id
