@@ -73,11 +73,12 @@ $bad=$good;$bad['secret_key']='test_ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 assertReal(!naRealWalletGate($bad),'test key cannot enable real funds');
 $bad=$good;$bad['provider_test_mode']=true;
 assertReal(!naRealWalletGate($bad),'sandbox provider cannot enable real funds');
-expectReal(fn()=>naRealWalletTopupIntent($db,$accA,[],100,'request-key-123456789'), 'REAL_PAYMENTS_DISABLED');
+expectReal(fn()=>naRealWalletTopupIntent($db,$accA,[],100,'request-key-123456789','receipt@example.test'), 'REAL_PAYMENTS_DISABLED');
 $db->prepare('UPDATE numi_accounts SET email_verified_at=NULL WHERE id=?')->execute([$accountA]);
-expectReal(fn()=>naRealWalletTopupIntent($db,$accA,$good,100,'contact-required-123456789'),
+expectReal(fn()=>naRealWalletTopupIntent($db,$accA,$good,100,'contact-required-123456789',null),
     'REAL_FISCAL_CONTACT_REQUIRED');
-$db->prepare('UPDATE numi_accounts SET email_verified_at=UTC_TIMESTAMP() WHERE id=?')->execute([$accountA]);
+// No verified account email is required. The original payment records its
+// own receipt contact for subsequent offset receipts.
 // Test payment and entitlement intentionally belong to TEST tables; must not leak into real status.
 $db->prepare("INSERT INTO numi_wallet_balances(account_id,kopeks) VALUES(?,?)")->execute([$accountA,20000]);
 $db->prepare("INSERT INTO numi_wallet_ledger(id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks)
@@ -96,12 +97,19 @@ $ready=static fn(array $item):bool=>true;
 $before=naRealWalletQuote($db,$accA,$question,$ready);
 assertReal((int)$before['price_kopeks']===2000 && !$before['club_active'],
     '20 RUB price without real club even when TEST club is active');
-expectReal(fn()=>naRealWalletTopupIntent($db,$accA,$good,0,'amount-invalid-1234'),'INVALID_TOPUP_AMOUNT');
-$top=naRealWalletTopupIntent($db,$accA,$good,100,'topup-unique-123456789001');
+expectReal(fn()=>naRealWalletTopupIntent($db,$accA,$good,0,'amount-invalid-1234','receipt@example.test'),'INVALID_TOPUP_AMOUNT');
+$top=naRealWalletTopupIntent($db,$accA,$good,100,'topup-unique-123456789001','receipt@example.test');
 assertReal($top['status']==='pending' && $top['amount_kopeks']===10000,'create pending real intent');
-assertReal(naRealWalletTopupIntent($db,$accA,$good,100,'topup-unique-123456789001')['topup_id']===$top['topup_id'],
+assertReal(naRealWalletTopupIntent($db,$accA,$good,100,'topup-unique-123456789001','receipt@example.test')['topup_id']===$top['topup_id'],
     'topup retry is idempotent');
-expectReal(fn()=>naRealWalletTopupIntent($db,$accA,$good,101,'topup-unique-123456789001'),'REAL_TOPUP_KEY_CONFLICT');
+expectReal(fn()=>naRealWalletTopupIntent($db,$accA,$good,100,
+    'topup-unique-123456789001','different@example.test'),'REAL_FISCAL_CONTACT_MISMATCH');
+$qContact=$db->prepare('SELECT receipt_email FROM numi_real_wallet_topups WHERE id=?');
+$qContact->execute([$top['topup_id']]);
+assertReal($qContact->fetchColumn()==='receipt@example.test',
+    'receipt email is stored on the advance, independent of verified login email');
+
+expectReal(fn()=>naRealWalletTopupIntent($db,$accA,$good,101,'topup-unique-123456789001','receipt@example.test'),'REAL_TOPUP_KEY_CONFLICT');
 $q=$db->prepare('SELECT * FROM numi_real_wallet_topups WHERE id=?');$q->execute([$top['topup_id']]);$row=$q->fetch();
 $pay=[
     'id'=>'live-payment-example-123','test'=>false,'status'=>'succeeded','paid'=>true,
@@ -157,7 +165,7 @@ expectReal(fn()=>naRealWalletBuy($db,$accA,$good,$question,
     'buy-unique-another-123456',$ready),'REAL_ALREADY_PURCHASED');
 naRealWalletInvariant($db,$accountA);
 // Second payment funds one actual club subscription.
-$top2=naRealWalletTopupIntent($db,$accA,$good,500,'topup-unique-123456789002');
+$top2=naRealWalletTopupIntent($db,$accA,$good,500,'topup-unique-123456789002','receipt@example.test');
 $q->execute([$top2['topup_id']]);$row2=$q->fetch();
 $pay2=$pay;$pay2['id']='live-payment-example-456';$pay2['amount']['value']='500.00';
 $pay2['metadata']['numi_real_wallet_topup']=$top2['topup_id'];
@@ -195,7 +203,7 @@ expectReal(fn()=>naRealWalletBuy($db,$accA,$good,
     'blocked-real-buy-123456',$ready),'REAL_WALLET_FROZEN');
 naRealWalletInvariant($db,$accountA);
 // Separate identities: pending external money must block a merge, then audited transfer.
-$pending=naRealWalletTopupIntent($db,$accB,$good,25,'account-b-topup-0000001');
+$pending=naRealWalletTopupIntent($db,$accB,$good,25,'account-b-topup-0000001','second@example.test');
 $db->beginTransaction();
 expectReal(fn()=>naRealWalletMergeAccounts($db,$accountB,$accountC),'REAL_PENDING_TOPUP_RECONCILIATION');
 $db->rollBack();
