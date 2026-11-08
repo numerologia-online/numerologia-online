@@ -465,6 +465,20 @@ function naRealWalletBuy(PDO $db,array $account,array $config,array $input,strin
             'renewal'=>'manual'];
     }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
 }
+/**
+ * Stop future subscription billing immediately, without revoking already paid
+ * access. This action is authorized by the existing login session and does not
+ * require calling an external payment provider.
+ */
+function naRealWalletCancelSubscription(PDO $db,array $account,string $code): void {
+    if(!in_array($code,['club_month','school_week'],true))
+        throw new InvalidArgumentException('INVALID_SUBSCRIPTION');
+    $db->prepare("INSERT IGNORE INTO numi_subscription_settings(account_id,product_code)
+        VALUES(?,?)")->execute([$account['id'],$code]);
+    $db->prepare("UPDATE numi_subscription_settings
+        SET auto_renew=0,payment_method_id=NULL,cancelled_at=UTC_TIMESTAMP()
+        WHERE account_id=? AND product_code=?")->execute([$account['id'],$code]);
+}
 /** Atomic account merge; caller locks numi_accounts in sorted order. */
 function naRealWalletMergeAccounts(PDO $db,string $from,string $to): void {
     if($from===$to)return;
