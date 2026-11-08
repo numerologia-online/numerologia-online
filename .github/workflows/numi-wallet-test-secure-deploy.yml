@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate real YooKassa prepayments on REG.RU'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -281,117 +281,4 @@ jobs:
           finally:
               try: ftp.quit()
               except BaseException: ftp.close()
-          PY
-
-      - name: Enable existing REAL wallet configuration on REG.RU (production prepayments)
-        if: github.event_name == 'push' && github.event.head_commit.message == 'Activate real YooKassa prepayments on REG.RU'
-        env:
-          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
-          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import ftplib,ssl,io,os,re,hashlib,hmac,json,urllib.request,urllib.error
-          host='server172.hosting.reg.ru'
-          domain='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
-          pw=os.environ['REG_FTP_PASSWORD']
-          token=hmac.new(pw.encode(),('numi-real-wallet-worker-v1@'+domain).encode(),hashlib.sha256).hexdigest()
-          url='https://'+domain+'/api/numi-real-worker.php'
-          def call(action):
-              req=urllib.request.Request(url,
-                data=json.dumps({'action':action}).encode(),
-                headers={'Content-Type':'application/json','X-Numi-Worker-Token':token},
-                method='POST')
-              try:
-                  with urllib.request.urlopen(req,timeout=42) as res:
-                      status=res.status; obj=json.loads(res.read(6000))
-              except urllib.error.HTTPError as ex:
-                  status=ex.code; obj=json.loads(ex.read(6000))
-              return status,obj
-          status,preflight=call('probe')
-          if status!=200 or not preflight.get('ok') or not preflight.get('provider_authenticated')
-              or not preflight.get('private_credentials_present') or not preflight.get('vat_codes_set')
-              or preflight.get('provider_test_mode_false') is not True:
-              raise RuntimeError('REAL_LIVE_PREFLIGHT_FAILED_NO_CHANGES')
-          print('REAL_PROVIDER_AUTHENTICATED_PRE_ACTIVATION')
-          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
-          ftp.connect(host,21)
-          ftp.login(os.environ['REG_FTP_USER'],pw)
-          ftp.prot_p();ftp.set_pasv(True)
-          home=ftp.pwd().rstrip('/')
-          cfg=home+'/private/numi-wallet-live/config.local.php'
-          bak=home+'/private/numi-wallet-live/config.local.php.before-live-20261108.bak'
-          def read(path):
-              buf=io.BytesIO()
-              try: ftp.retrbinary('RETR '+path,buf.write)
-              except ftplib.error_perm as ex:
-                  if str(ex).startswith('550'):return None
-                  raise
-              if buf.tell()>12000:raise RuntimeError('PRIVATE_LIVE_CONFIG_TOO_LARGE')
-              return buf.getvalue()
-          def write(path,data):
-              ftp.storbinary('STOR '+path,io.BytesIO(data))
-              if read(path)!=data:raise RuntimeError('REG_RU_WRITE_UNVERIFIED')
-          changed=False
-          try:
-              old=read(cfg)
-              if not old:raise RuntimeError('REAL_WALLET_CONFIG_NOT_PRESENT')
-              src=old.decode('utf-8')
-              required={
-                  'shop':r"['\"]shop_id['\"]\s*=>\s*['\"]1515851['\"]",
-                  'secret':r"['\"]secret_key['\"]\s*=>\s*['\"]live_[A-Za-z0-9_-]{12,480}['\"]",
-                  'provider':r"['\"]provider_test_mode['\"]\s*=>\s*false",
-                  'vat_advance':r"['\"]advance_receipt_vat_code['\"]\s*=>\s*1",
-                  'vat_offset':r"['\"]offset_receipt_vat_code['\"]\s*=>\s*1",
-                  'refund_mode':r"['\"]refund_receipt_mode['\"]\s*=>\s*['\"]yookassa_full_auto['\"]",
-                  'refund_status':r"['\"]refund_receipt_status_check['\"]\s*=>\s*true",
-              }
-              if not all(re.search(pattern,src) for pattern in required.values()):
-                  raise RuntimeError('REAL_ACTIVATION_PREREQUISITES_MISSING')
-              flags=['real_wallet_enabled','fiscalization_verified','refunds_verified',
-                     'advance_offset_receipts_verified','offset_receipt_worker_verified',
-                     'refund_worker_verified','advance_receipt_reviewed','offset_receipt_reviewed',
-                     'launch_approved']
-              is_live=bool(re.search(r"['\"]wallet_mode['\"]\s*=>\s*['\"]live['\"]",src))
-              if is_live:
-                  if not all(re.search(r"['\"]"+n+r"['\"]\s*=>\s*true",src) for n in flags):
-                      raise RuntimeError('REAL_WALLET_PARTIALLY_LIVE_REVIEW_REQUIRED')
-                  print('REAL_WALLET_ALREADY_ACTIVE')
-              else:
-                  pattern=r"(['\"]wallet_mode['\"]\s*=>\s*)['\"]disabled['\"]"
-                  src,n=re.subn(pattern,r"\g<1>'live'",src)
-                  if n!=1:raise RuntimeError('REAL_WALLET_MODE_NOT_EXACTLY_DISABLED')
-                  for name in flags:
-                      patt=r"(['\"]"+name+r"['\"]\s*=>\s*)false\b"
-                      src,n=re.subn(patt,r'\g<1>true',src)
-                      if n!=1:raise RuntimeError('REAL_WALLET_FLAG_BASELINE_MISMATCH_'+name)
-                  new=src.encode('utf-8')
-                  if read(bak) is not None:raise RuntimeError('LIVE_BACKUP_ALREADY_EXISTS')
-                  write(bak,old)
-                  if read(cfg)!=old:raise RuntimeError('CONCURRENT_LIVE_CONFIG_CHANGE')
-                  try:
-                      write(cfg,new); changed=True
-                  except BaseException:
-                      write(cfg,old)
-                      raise
-                  print('REAL_WALLET_LIVE_FLAGS_ACTIVATED')
-              status,probe=call('probe')
-              if status!=200 or probe.get('wallet_mode_live') is not True
-                  or probe.get('provider_authenticated') is not True
-                  or probe.get('vat_codes_set') is not True
-                  or not all(probe.get('flags',{}).get(n) is True for n in flags):
-                  raise RuntimeError('ACTIVATION_PROBE_FAILED')
-              status,tick=call('tick')
-              if status!=200 or tick.get('ok') is not True:
-                  raise RuntimeError('LIVE_WORKER_TICK_FAILED')
-              print('REAL_WALLET_ACTIVATION_AND_WORKER_CONFIRMED')
-          except BaseException:
-              if changed:
-                  write(cfg,old)
-                  print('REAL_WALLET_LIVE_FLAGS_ROLLED_BACK')
-              raise
-          finally:
-              try: ftp.quit()
-              except BaseException:ftp.close()
           PY
