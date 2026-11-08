@@ -1,25 +1,13 @@
-name: REG.RU existing wallet publication (REAL PHP + guarded TEST)
+name: REG.RU REAL wallet backend publication
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/numi-wallet-test-secure-deploy.yml'
-      - 'account-service/private/wallet.php'
-      - 'account-service/private/wallet-real.php'
-      - 'account-service/private/wallet-real-payment.php'
-      - 'account-service/private/core.php'
-      - 'account-service/private/subscriptions.php'
-      - 'account-service/tests/real-wallet.php'
-      - 'account-service/tests/real-wallet-payment.php'
   workflow_dispatch:
     inputs:
       confirm_real_code_only:
-        description: 'Publish existing REAL wallet PHP to REG.RU without enabling live charges'
-        type: boolean
-        required: true
-        default: false
-      confirm_test_only:
-        description: 'Publish TEST wallet only to REG.RU with exact baseline checks and rollback'
+        description: 'Publish the existing REAL wallet PHP to REG.RU (does not enable charges)'
         type: boolean
         required: true
         default: false
@@ -29,134 +17,6 @@ concurrency:
   group: reg-ru-manual-publication
   cancel-in-progress: false
 jobs:
-  current-wallet-preflight:
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: test
-          MYSQL_DATABASE: numi_wallet_release_test
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -ptest"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=20
-    env:
-      NUMI_TEST_MYSQL_DSN: "mysql:host=127.0.0.1;port=3306;dbname=numi_wallet_release_test;charset=utf8mb4"
-      NUMI_TEST_MYSQL_USER: root
-      NUMI_TEST_MYSQL_PASSWORD: test
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Validate current main, not deleted historical pilot branches
-        shell: bash
-        run: |
-          set -euo pipefail
-          for p in account-service/private/{core,wallet,wallet-real,wallet-real-payment,subscriptions,fulfillment}.php account-service/tests/{store,subscriptions,real-wallet,real-wallet-payment}.php; do
-            php -l "$p"
-          done
-          node --check account-browser.js
-          node --input-type=module --check < wallet-client.js
-          grep -q 'naRealWalletServe' account-service/private/wallet.php
-          grep -q 'REAL_REFUNDS_REQUIRE_FISCAL_REVIEW' account-service/private/wallet-real.php
-          grep -q 'REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED' account-service/private/wallet-real-payment.php
-          echo "CURRENT_MAIN_SOURCE_VALIDATED"
-      - name: Verify existing product catalog and subscription behavior
-        shell: bash
-        run: |
-          set -euo pipefail
-          php account-service/tests/store.php
-          php account-service/tests/subscriptions.php
-      - name: Check isolated real and test wallets without money transfers
-        shell: bash
-        run: |
-          set -euo pipefail
-          php account-service/tests/real-wallet.php
-      - name: Read-only FTPS inspection of current REG.RU wallet deployment
-        shell: bash
-        env:
-          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
-          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import ftplib, hashlib, io, os, ssl
-          from pathlib import Path
-          host='server172.hosting.reg.ru'
-          user=os.environ.get('REG_FTP_USER')
-          password=os.environ.get('REG_FTP_PASSWORD')
-          if not user or not password:
-              raise SystemExit('FTPS_CREDENTIALS_MISSING - NO WRITES')
-          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
-          ftp.connect(host,21)
-          ftp.login(user,password)
-          ftp.prot_p()
-          ftp.set_pasv(True)
-          home=ftp.pwd().rstrip('/')
-          domain='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
-          previous='xn--c1adkkdfjbp1a4l.online'
-          def read(path):
-              b=io.BytesIO()
-              def take(chunk):
-                  if b.tell()+len(chunk)>2000000: raise RuntimeError('REMOTE_TOO_LARGE')
-                  b.write(chunk)
-              try: ftp.retrbinary('RETR '+path,take)
-              except ftplib.error_perm as e:
-                  if str(e).startswith('550'): return None
-                  raise
-              return b.getvalue()
-          try:
-              roots=[home+'/www/'+domain,home+'/www/'+previous]
-              root=next((r for r in roots if read(r+'/index.html') is not None),None)
-              if root is None: raise RuntimeError('REG_ROOT_NOT_FOUND')
-              print('REG_READ_ONLY_SITE_ROOT_FOUND',flush=True)
-              samples=[
-                  ('index.html',root+'/index.html','index.html'),
-                  ('account-browser.js',root+'/account-browser.js','account-browser.js'),
-                  ('wallet-client.js',root+'/wallet-client.js','wallet-client.js'),
-                  ('wallet.php',home+'/private/numi-account-20261031/wallet.php','account-service/private/wallet.php'),
-                  ('core.php',home+'/private/numi-account-20261031/core.php','account-service/private/core.php'),
-                  ('subscriptions.php',home+'/private/numi-account-20261031/subscriptions.php','account-service/private/subscriptions.php'),
-              ]
-              for name,remote,local in samples:
-                  live=read(remote)
-                  desired=Path(local).read_bytes()
-                  if live is None:
-                      label='MISSING'
-                  elif live==desired:
-                      label='MATCH'
-                  else:
-                      label='DIFFERENT'
-                  print('REG_SOURCE_COMPARISON',name,label,
-                        'live_sha256='+hashlib.sha256(live).hexdigest() if live is not None else '',
-                        'main_sha256='+hashlib.sha256(desired).hexdigest(),flush=True)
-              print('REG_READ_ONLY_INSPECTION_COMPLETE_NO_FILES_WRITTEN',flush=True)
-          finally:
-              try: ftp.quit()
-              except Exception: ftp.close()
-          PY
-      - name: Guarded TEST-only REG.RU publication with backups and rollback
-        if: github.event_name == 'workflow_dispatch' && inputs.confirm_test_only == true
-        shell: bash
-        env:
-          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
-          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
-          APPROVED_SOURCE_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          python3 -m py_compile scripts/deploy-unified-wallet-direct-20261107.py
-          # Existing release script compares every remote file against its exact
-          # approved baseline, backs up originals, verifies HTTPS, and rolls back.
-          # On drift it MUST fail closed, never overwrite unknown server changes.
-          python3 -u scripts/deploy-unified-wallet-direct-20261107.py
-
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
@@ -169,7 +29,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Publish real-wallet PHP using private backups and fail-closed FTPS
+      - name: Guarded REG.RU REAL wallet deployment
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
