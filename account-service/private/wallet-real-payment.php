@@ -389,7 +389,12 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
         naReply(503,['ok'=>false,'error'=>'REAL_PAYMENTS_DISABLED']);
     try {
         if($action==='wallet_status'){
+            // The normal cabinet status endpoint also reconciles a signed-in
+            // customer's pending card/SBP payment. No new payment is created.
+            $pending=naRealWalletSyncOwnPending($db,$config,$account);
             $result=naRealWalletStatus($db,$account);
+            $result['pending_topups']=$pending['pending_topups'];
+            $result['credited_now']=$pending['credited_now'];
             $q=$db->prepare("SELECT MAX(e.expires_at) FROM numi_entitlements e
                 JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
                 WHERE e.account_id=? AND e.product_code='club_month'
