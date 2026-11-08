@@ -17,6 +17,19 @@ function naAllowedOrigins(): array {
     ];
 }
 
+/**
+ * All access to REAL material and membership must switch together with the
+ * private wallet. A key merely existing in REG.RU does NOT enable this mode.
+ */
+function naLiveWalletModeSelected(): bool {
+    static $selected=null;
+    if($selected!==null)return $selected;
+    $path=dirname(__DIR__).'/numi-wallet-live/config.local.php';
+    if(!is_file($path))return $selected=false;
+    $config=require $path;
+    return $selected=is_array($config)&&($config['wallet_mode']??null)==='live';
+}
+
 // Verification/reset links return to the domain where the request began.
 function naPublicOrigin(): string {
     $origin = strtolower((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
@@ -388,6 +401,9 @@ function naMergeTelegramEmail(PDO $db,array $body): never {
     require_once __DIR__.'/wallet.php';
     naStoreSchema($db);
     naWalletSchema($db);
+    // Production wallet schema is migrated separately, never inside a login.
+    // Require the live merge helper before moving any financial identifiers.
+    if(naLiveWalletModeSelected())require_once __DIR__.'/wallet-real.php';
     $db->beginTransaction();
     try {
         // Lock the identity row: concurrent merges cannot silently overwrite each other.
@@ -419,6 +435,7 @@ function naMergeTelegramEmail(PDO $db,array $body): never {
             $db->prepare('UPDATE numi_entitlements SET account_id=? WHERE account_id=?')->execute([$targetId,$fromId]);
             $db->prepare('UPDATE numi_checkouts SET account_id=? WHERE account_id=?')->execute([$targetId,$fromId]);
             naSubscriptionMergeAccounts($db,$fromId,$targetId);
+            if(naLiveWalletModeSelected())naRealWalletMergeAccounts($db,$fromId,$targetId);
             naWalletMergeAccounts($db,$fromId,$targetId);
             $db->prepare('UPDATE numi_identities SET account_id=? WHERE provider=? AND provider_user_id=? AND account_id=?')
                 ->execute([$targetId,'telegram',$tgId,$fromId]);
@@ -554,10 +571,12 @@ function naHideSaved(PDO $db,array $body): never {
     naEnsureSavedHidden($db);
     $db->beginTransaction();
     try {
+        $providerOnly=naLiveWalletModeSelected()?" AND o.provider='real_wallet'":"";
         $stmt=$db->prepare("SELECT e.id FROM numi_entitlements e
             JOIN numi_orders o ON o.id=e.order_id
             WHERE e.id=? AND e.account_id=? AND e.status='active'
               AND o.status='paid' AND o.verified_at IS NOT NULL
+              $providerOnly
             FOR UPDATE");
         $stmt->execute([$id,$account['id']]);
         if (!$stmt->fetchColumn()) {
@@ -585,12 +604,13 @@ function naCatalogDate(mixed $input): ?string {
 }
 function naCatalogHasAccess(PDO $db, ?array $account, string $code, string $resource): bool {
     if ($account===null) return false;
+    $providerOnly=naLiveWalletModeSelected()?" AND o.provider='real_wallet'":"";
     $stmt=$db->prepare("SELECT 1 FROM numi_entitlements e
         INNER JOIN numi_orders o ON o.id=e.order_id
         WHERE e.account_id=? AND e.product_code=? AND e.resource_id=?
           AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
           AND o.status='paid' AND o.verified_at IS NOT NULL
-          LIMIT 1");
+          $providerOnly LIMIT 1");
     $stmt->execute([$account['id'],$code,$resource]);
     return (bool)$stmt->fetchColumn();
 }
@@ -706,12 +726,14 @@ function naPurchases(PDO $db): never {
             ];
         }
     }
+    $providerOnly=naLiveWalletModeSelected()?" AND o.provider='real_wallet'":"";
     $stmt=$db->prepare("SELECT e.id AS entitlement_id,e.product_code,e.resource_id,e.expires_at,e.created_at
         FROM numi_entitlements e JOIN numi_orders o ON o.id=e.order_id
         LEFT JOIN numi_saved_hidden h ON h.entitlement_id=e.id
         WHERE e.account_id=? AND e.status='active' AND o.status='paid' AND o.verified_at IS NOT NULL
             AND h.entitlement_id IS NULL
             AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
+            $providerOnly
         ORDER BY e.created_at DESC LIMIT 100");
     $stmt->execute([$account['id']]);
     naReply(200,['ok'=>true,'purchases'=>array_merge($testPurchases,$stmt->fetchAll()),'test_enabled'=>$testOwner,'account'=>naPublicAccount($account)]);
