@@ -775,7 +775,7 @@ function naServe(): never {
             require_once __DIR__.'/store.php';
             naStoreServe($db,$action,$body);
         }
-        if (in_array($action,['wallet_status','wallet_quote','wallet_topup','wallet_sync','wallet_buy'],true)) {
+        if (in_array($action,['wallet_status','wallet_quote','wallet_topup','wallet_sync','wallet_buy','subscription_cancel'],true)) {
             require_once __DIR__.'/wallet.php';
             naWalletServe($db,$action,$body);
         }
