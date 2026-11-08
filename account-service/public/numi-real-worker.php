@@ -92,6 +92,25 @@ try{
                     $clubQ->execute([(string)$sampleId]);
                     $clubQ->fetchColumn();
                     $walletStatusCheck=['result'=>'ok','including_club_query'=>true];
+                    // Compare the same read-only flow across other accounts.
+                    // Never return account IDs, balances or personal records.
+                    $count=0;$fail=0;$firstError=null;
+                    $ids=$probeDb->query('SELECT id FROM numi_accounts ORDER BY id DESC LIMIT 40')
+                        ->fetchAll(PDO::FETCH_COLUMN);
+                    foreach($ids as $candidate){
+                        try{
+                            naRealWalletStatus($probeDb,['id'=>(string)$candidate]);
+                            $clubQ->execute([(string)$candidate]);
+                            $clubQ->fetchColumn();
+                            $count++;
+                        }catch(Throwable $probeError){
+                            $fail++;
+                            $firstError??=get_class($probeError);
+                        }
+                    }
+                    $walletStatusCheck['checked_accounts']=$count+$fail;
+                    $walletStatusCheck['failed_accounts']=$fail;
+                    if($firstError!==null)$walletStatusCheck['first_error_type']=$firstError;
                 }finally{
                     if($probeDb->inTransaction())$probeDb->rollBack();
                 }
