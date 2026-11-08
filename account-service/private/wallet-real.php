@@ -136,6 +136,7 @@ function naRealWalletSchema(PDO $db): void {
       kopeks BIGINT UNSIGNED NOT NULL,
       status ENUM('review','approved','rejected','completed') NOT NULL DEFAULT 'review',
       provider_refund_id VARCHAR(191) NULL,
+      provider_request_started_at DATETIME NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       UNIQUE KEY uq_real_refund_provider(provider_refund_id),
       CONSTRAINT fk_real_refund_account FOREIGN KEY(account_id) REFERENCES numi_accounts(id)
