@@ -342,6 +342,40 @@ function naRealWalletReconcileTopup(PDO $db,array $config,string $topupId,string
     $payment=naRealWalletFetchPayment($config,$topup['provider_payment_id']);
     return naRealWalletApplyVerifiedPayment($db,$topup,$payment,$config);
 }
+/**
+ * Check this signed-in customer's pending real top-up on demand.
+ * It only reads verified provider state; the existing settlement routine
+ * credits once after BOTH payment success and fiscal receipt confirmation.
+ * Never let a transient YooKassa outage make the balance UI unavailable.
+ */
+function naRealWalletSyncOwnPending(
+    PDO $db,array $config,array $account,?callable $reconcile=null
+): array {
+    naRealWalletRequireLive($config);
+    $q=$db->prepare("SELECT id FROM numi_real_wallet_topups
+        WHERE account_id=? AND status='pending'
+          AND provider_payment_id IS NOT NULL
+        ORDER BY created_at DESC,id DESC LIMIT 2");
+    $q->execute([$account['id']]);
+    $ids=$q->fetchAll(PDO::FETCH_COLUMN);
+    $verified=0;
+    foreach($ids as $id){
+        try {
+            $status=$reconcile!==null
+                ? $reconcile($db,$config,(string)$id,(string)$account['id'])
+                : naRealWalletReconcileTopup($db,$config,(string)$id,(string)$account['id']);
+            if($status==='credited')$verified++;
+        } catch(Throwable $e) {
+            // Fail open only for reading the *existing* balance: NEVER credit
+            // on a provider failure or on an unconfirmed receipt.
+            error_log('NUMI_WALLET_LIVE_STATUS_RETRY '.get_class($e));
+        }
+    }
+    $pending=$db->prepare("SELECT COUNT(*) FROM numi_real_wallet_topups
+        WHERE account_id=? AND status='pending' AND provider_payment_id IS NOT NULL");
+    $pending->execute([$account['id']]);
+    return ['pending_topups'=>(int)$pending->fetchColumn(),'credited_now'=>$verified];
+}
 function naRealWalletQuote(PDO $db,array $account,array $input,callable $materialReady): array {
     $club=naRealWalletHasAccess($db,$account,'club_month','club');
     $quote=naCartResolve([$input],$club,
