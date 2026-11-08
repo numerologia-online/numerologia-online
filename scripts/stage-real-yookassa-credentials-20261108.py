@@ -17,8 +17,36 @@ def main():
     key=os.environ.get("NUMI_YOOKASSA_LIVE_SECRET_KEY","").strip()
     if not shop or not key:
         print("LIVE_CREDENTIALS_NOT_PROVIDED_IN_GITHUB_SECRETS",flush=True)
-        print("REAL_PAYMENT_ACTIVATION_REMAINS_DISABLED",flush=True)
-        return
+        user,password=os.environ.get("REG_FTP_USER"),os.environ.get("REG_FTP_PASSWORD")
+        if not user or not password:
+            print("REG_FTP_SECRETS_MISSING_CANNOT_CHECK_SERVER_CONFIG",flush=True)
+            return
+        ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+        ftp.connect(HOST,21)
+        ftp.login(user,password)
+        ftp.prot_p()
+        ftp.set_pasv(True)
+        try:
+            home=ftp.pwd().rstrip("/")
+            remote=home+"/private/numi-wallet-live/config.local.php"
+            output=io.BytesIO()
+            try:ftp.retrbinary("RETR "+remote,output.write)
+            except ftplib.error_perm as exc:
+                if str(exc).startswith("550"):
+                    print("REG_RU_LIVE_CREDENTIAL_CONFIG_ABSENT",flush=True)
+                    print("REAL_PAYMENT_ACTIVATION_REMAINS_DISABLED",flush=True)
+                    return
+                raise
+            private_config=output.getvalue()
+            has_key=bool(re.search(rb"['\\\"]secret_key['\\\"]\\s*=>\\s*['\\\"]live_[A-Za-z0-9_-]{12,480}['\\\"]",private_config))
+            has_shop=bool(re.search(rb"['\\\"]shop_id['\\\"]\\s*=>\\s*['\\\"][0-9]{3,20}['\\\"]",private_config))
+            print("REG_RU_PRIVATE_CONFIG_EXISTS",flush=True)
+            print("REG_RU_LIVE_CREDENTIAL_FIELDS_PRESENT" if has_key and has_shop else "REG_RU_LIVE_CREDENTIAL_FIELDS_UNVERIFIED",flush=True)
+            print("REAL_PAYMENT_ACTIVATION_REMAINS_DISABLED",flush=True)
+            return
+        finally:
+            try:ftp.quit()
+            except BaseException:ftp.close()
     if not re.fullmatch(r"[0-9]{3,20}",shop):
         raise RuntimeError("INVALID_LIVE_SHOP_ID")
     if not re.fullmatch(r"live_[A-Za-z0-9_-]{12,480}",key):
