@@ -176,6 +176,30 @@ $club=naRealWalletBuy($db,$accA,$good,['product_code'=>'club_month'],
     'buy-club-unique-123456789',$ready);
 assertReal($club['price_kopeks']===49000,'club charged catalog price');
 assertReal(naRealWalletHasAccess($db,$accA,'club_month','club'),'real club now active');
+$yearQuote=naRealWalletQuote($db,$accA,
+    ['product_code'=>'year_full','year'=>2026,'birth_date'=>'1986-09-09'],$ready);
+assertReal($yearQuote['club_active']===true
+    && $yearQuote['price_kopeks']===49000
+    && $yearQuote['regular_price_kopeks']===99000,
+    'verified live club has 490 RUB year report instead of 990 RUB');
+// Cancellation is an account-local preference and must NOT take away
+// already paid access or restore the regular price early.
+$db->prepare("UPDATE numi_subscription_settings
+    SET auto_renew=1,payment_method_id='fixture-saved-card',consent_at=UTC_TIMESTAMP()
+    WHERE account_id=? AND product_code='club_month'")->execute([$accountA]);
+naRealWalletCancelSubscription($db,$accA,'club_month');
+$cancelled=$db->prepare("SELECT auto_renew,payment_method_id,cancelled_at
+    FROM numi_subscription_settings WHERE account_id=? AND product_code='club_month'");
+$cancelled->execute([$accountA]);$cancelledRow=$cancelled->fetch();
+assertReal((int)$cancelledRow['auto_renew']===0
+    && $cancelledRow['payment_method_id']===null
+    && $cancelledRow['cancelled_at']!==null,
+    'cancel disconnects future billing and invalidates old method token');
+assertReal(naRealWalletHasAccess($db,$accA,'club_month','club')
+    && naRealWalletQuote($db,$accA,
+        ['product_code'=>'year_full','year'=>2026,'birth_date'=>'1986-09-09'],$ready)['price_kopeks']===49000,
+    'cancel keeps club rights and discounted prices until paid period ends');
+
 $otherQuestion=['product_code'=>'redflag_question','category'=>'money','question_id'=>'courtship','birth_date'=>'1986-09-09'];
 $clubQuote=naRealWalletQuote($db,$accA,$otherQuestion,$ready);
 assertReal($clubQuote['club_active'] && $clubQuote['price_kopeks']===1000,
