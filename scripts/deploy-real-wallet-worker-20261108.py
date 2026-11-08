@@ -149,6 +149,24 @@ def main():
                 # Never print request headers, body, token or private credentials.
                 raise RuntimeError("REAL_DB_MIGRATION_HTTP_"+str(exc.code)) from None
             print("REAL_WALLET_ADDITIVE_MYSQL_SCHEMA_CONFIRMED",flush=True)
+            # Protected GET-like probe using POST to our server: no charges
+            # and no customer or payment information in the response.
+            probe=urllib.request.Request(
+                "https://"+DOMAIN+"/api/numi-real-worker.php",
+                data=b'{"action":"probe"}',
+                headers={"Content-Type":"application/json",
+                         "X-Numi-Worker-Token":token,
+                         "Cache-Control":"no-store"},
+                method="POST")
+            try:
+                with urllib.request.urlopen(probe,timeout=35) as response:
+                    status=response.status
+                    body=json.loads(response.read(6000))
+                    if status!=200 or body.get("action")!="probe":
+                        raise RuntimeError("LIVE_PROVIDER_PROBE_INVALID")
+            except urllib.error.HTTPError as exc:
+                raise RuntimeError("LIVE_PROVIDER_PROBE_HTTP_"+str(exc.code)) from None
+            print("LIVE_PROVIDER_SAFE_PROBE",json.dumps(body,ensure_ascii=False),flush=True)
             print("REAL_WORKER_GATEWAY_DEPLOYED_NO_LIVE_CHARGES",flush=True)
         except BaseException:
             print("REAL_WORKER_ROLLBACK_STARTED",flush=True)
