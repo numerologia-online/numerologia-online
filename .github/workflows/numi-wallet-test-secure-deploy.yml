@@ -20,7 +20,7 @@ jobs:
   publish-real-wallet-code:
     if: >-
       github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU'))) ||
+      ((github.event_name == 'push' && (github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback' || (github.event.head_commit.message == 'Configure existing real wallet fiscal VAT codes on REG.RU' || github.event.head_commit.message == 'Probe existing YooKassa sandbox advance receipt code without payment' || github.event.head_commit.message == 'Configure full refund receipt settings on REG.RU' || github.event.head_commit.message == 'Activate existing real wallet prepayment on REG.RU' || github.event.head_commit.message == 'Diagnose deployed live wallet status without charging'))) ||
        (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -401,4 +401,51 @@ jobs:
           finally:
               try: ftp.quit()
               except BaseException:ftp.close()
+          PY
+
+      - name: Read-only wallet status diagnostic on REG.RU
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Diagnose deployed live wallet status without charging'
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l account-service/public/numi-real-worker.php
+          python3 - <<'PY'
+          import os,io,ssl,ftplib,subprocess,json,hashlib,hmac,urllib.request
+          src='account-service/public/numi-real-worker.php'
+          proposed=open(src,'rb').read()
+          old_git=subprocess.check_output(['git','show','HEAD~2:'+src])
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          path=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/api/numi-real-worker.php'
+          def read():
+              b=io.BytesIO();ftp.retrbinary('RETR '+path,b.write);return b.getvalue()
+          def put(data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              if read()!=data:raise RuntimeError('WORKER_DIAG_SERVER_READBACK_MISMATCH')
+          original=read()
+          if original!=old_git and original!=proposed:
+              raise RuntimeError('PROTECTED_WORKER_HAS_UNRECOGNIZED_SERVER_CHANGES')
+          updated=original!=proposed
+          try:
+              if updated:put(proposed)
+              secret=os.environ['REG_FTP_PASSWORD'].encode()
+              token=hmac.new(secret,b'numi-real-wallet-worker-v1@xn----8sbhhqijddjgdebdz2c2o.xn--p1ai',hashlib.sha256).hexdigest()
+              req=urllib.request.Request(
+                'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/api/numi-real-worker.php',
+                data=b'{"action":"probe"}',
+                headers={'Content-Type':'application/json','X-Numi-Worker-Token':token},method='POST')
+              with urllib.request.urlopen(req,timeout=35) as response:
+                  report=json.loads(response.read(6000))
+              if report.get('ok') is not True:
+                  raise RuntimeError('PROTECTED_WORKER_PROBE_NOT_OK')
+              print('REAL_WALLET_STATUS_DIAGNOSTIC',json.dumps(report.get('wallet_status_diagnostic'),ensure_ascii=False))
+              print('REAL_WALLET_MODE_ACTIVE',report.get('wallet_mode_live'))
+          finally:
+              if updated:put(original)
+              ftp.quit()
           PY
