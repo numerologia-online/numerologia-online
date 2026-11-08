@@ -1,4 +1,4 @@
-name: REG.RU unified wallet guarded TEST publication
+name: REG.RU existing wallet publication (REAL PHP + guarded TEST)
 on:
   push:
     branches: [main]
@@ -13,6 +13,11 @@ on:
       - 'account-service/tests/real-wallet-payment.php'
   workflow_dispatch:
     inputs:
+      confirm_real_code_only:
+        description: 'Publish existing REAL wallet PHP to REG.RU without enabling live charges'
+        type: boolean
+        required: true
+        default: false
       confirm_test_only:
         description: 'Publish TEST wallet only to REG.RU with exact baseline checks and rollback'
         type: boolean
@@ -151,3 +156,28 @@ jobs:
           # approved baseline, backs up originals, verifies HTTPS, and rolls back.
           # On drift it MUST fail closed, never overwrite unknown server changes.
           python3 -u scripts/deploy-unified-wallet-direct-20261107.py
+
+  publish-real-wallet-code:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      ((github.event_name == 'push' && github.event.head_commit.message == 'Publish existing real wallet PHP to REG.RU with rollback') ||
+       (github.event_name == 'workflow_dispatch' && inputs.confirm_real_code_only == true))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Publish real-wallet PHP using private backups and fail-closed FTPS
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l account-service/private/wallet-real.php
+          php -l account-service/private/wallet-real-payment.php
+          php -l account-service/private/wallet.php
+          python3 -m py_compile scripts/deploy-real-wallet-reg-ru-20261108.py
+          python3 -u scripts/deploy-real-wallet-reg-ru-20261108.py
