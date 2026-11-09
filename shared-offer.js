@@ -79,7 +79,7 @@ export async function openSharedOffer({
   findNode(dialog, ".pro-paywall-plan-club .pro-paywall-plan-price").textContent = (subscriptionOnly ? clubMonthly + " ₽ / мес." : memberPrice + " ₽");
   findNode(dialog, ".pro-paywall-plan-detail-club").textContent =
     subscriptionOnly ? "Все материалы раздела входят в клуб" : "−50% по подписке — " + memberPrice + " ₽ за " + item;
-  findNode(dialog, ".pro-paywall-plan-once .pro-paywall-plan-detail").textContent = isQuestion ? "Разовая покупка выбранного ответа" : "Все ответы и PDF навсегда";
+  findNode(dialog, ".pro-paywall-plan-once .pro-paywall-plan-detail").textContent = isQuestion ? "Разовая покупка выбранного ответа" : "Полный разбор и PDF доступны 1 год с момента покупки";
   findNode(dialog, ".pro-paywall-book-art-once span").textContent = isQuestion ? "ВАШ ОТВЕТ" : "ЛИЧНЫЙ РАЗБОР";
   findNode(dialog, ".pro-paywall-book-art-club span").textContent = isQuestion ? "ВАШ ОТВЕТ" : "ЛИЧНЫЙ РАЗБОР";
   findNode(dialog, ".pro-paywall-compare").setAttribute("aria-label", "Варианты покупки: " + product);
