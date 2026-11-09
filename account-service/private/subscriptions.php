@@ -246,7 +246,9 @@ function naLiveSubscriptionCreatePayment(
         $q=$db->prepare('SELECT id FROM numi_accounts WHERE id=? FOR UPDATE');
         $q->execute([$accountId]);
         if(!$q->fetchColumn())throw new RuntimeException('ACCOUNT_NOT_FOUND');
-        // Do not issue any new card charge while account funds are under review.
+        // A new subscriber may not yet have a balance row; create the empty row
+        // before checking an existing account freeze. This does not credit funds.
+        naRealWalletBalance($db,$accountId);
         naRealWalletAssertOpen($db,$accountId);
         $checkout=naLiveSubscriptionCheckoutData($db,$checkoutId,$accountId);
         $order=['provider'=>$checkout['provider'],'amount_kopeks'=>$checkout['order_amount']];
