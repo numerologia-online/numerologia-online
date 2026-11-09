@@ -76,7 +76,7 @@ jobs:
           grep -Fq "redflag-question-stable-20261109" redflag-feature.js
           grep -Fq "app.js?v=unified-sale-status-20261109" index.html
           grep -Fq "naRedFlagCatalog()" account-service/private/core.php
-          grep -Fq "AUTHOR_TEXT_NOT_CONFIRMED" account-service/private/store.php
+          grep -Fq "\$quote[\x27availability\x27]===\x27FULFILLMENT_NOT_CONNECTED\x27" account-service/private/store.php
           grep -Fq "recognizePurchasedReport" store-entry.js
           grep -Fq "recognizePurchasedReport" year-feature.js
           grep -Fq "recognizePurchasedReport" pro/pro.js
