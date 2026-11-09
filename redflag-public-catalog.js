@@ -77,13 +77,13 @@ export const PUBLIC_QUESTIONS = {
       "id": "courtship",
       "title": "Будет красиво ухаживать или максимум кофе и прогулка?",
       "priceRub": 10,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "provider",
       "title": "Умеет зарабатывать или всю жизнь будет искать себя?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "words-or-deeds",
@@ -95,7 +95,7 @@ export const PUBLIC_QUESTIONS = {
       "id": "family-load",
       "title": "Будет опорой для семьи или всё снова окажется на твоих плечах?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "resource",
