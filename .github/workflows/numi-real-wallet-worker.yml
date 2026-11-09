@@ -37,7 +37,9 @@ jobs:
           grep -q 'Оформить подписку' account-browser.js
           grep -q 'auto_renew_consent:true' account-browser.js
           ! grep -q 'consent.type="checkbox"' account-browser.js
-          grep -q 'Самоучитель · 149 ₽/нед.' index.html
+          grep -q 'Клуб — 490 рублей в месяц' index.html
+          grep -q 'Самоучитель — 149 рублей в неделю' index.html
+          grep -q 'Отменить подписку' account-browser.js
           grep -q 'REG_RU_COMPACT_SUBSCRIPTIONS_VIEW_UPDATED' scripts/deploy-real-wallet-worker-20261108.py
           ! grep -q 'row.append(email,payAuto,terms,note)' account-browser.js
           test "$(grep -c 'src="store-browser.js' index.html || true)" = "0"
@@ -92,4 +94,4 @@ jobs:
               raise SystemExit('REG_RU_WORKER_STATUS_'+str(status)+'_'+str(payload.get('error','unknown')))
           PY
 
-# compact subscription mobile layout 20261109: one-screen club and self-study
+# mobile subscriptions headings and side-by-side cancel link 20261109
