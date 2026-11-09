@@ -485,7 +485,7 @@
         status.textContent="Не удалось загрузить статус подписки.";
         renew.disabled=true;cancel.disabled=true;
         const ui=subscriptionAutopay.get(entry.code);
-        if(ui){ui.available=false;ui.payAuto.disabled=true;}continue;
+        if(ui){ui.available=false;ui.payAuto.disabled=true;ui.row.hidden=true;}continue;
       }
       const until=subscriptionUntil(info.expires_at);
       status.textContent=info.active===true
@@ -498,7 +498,7 @@
       const auto=subscriptionAutopay.get(entry.code);
       if(auto){
         auto.available=info.recurring_available===true;
-        auto.row.hidden=info.auto_renew===true;
+        auto.row.hidden=walletMode!=="live"||info.auto_renew===true;
         auto.payAuto.disabled=!auto.available||!auto.consent.checked||subscriptionBusy;
         auto.note.textContent=auto.available
           ?"Оплата картой через ЮKassa; карту и будущие списания можно отключить здесь."
