@@ -392,12 +392,12 @@
     if(!renew)continue;
     const row=document.createElement("div");
     row.className="numi-subscription-autopay";
-    row.style.cssText="max-width:390px;margin:8px 0 12px;font-size:13px;line-height:1.4";
+
     const consentLabel=document.createElement("label");
-    consentLabel.style.cssText="display:flex;align-items:flex-start;gap:8px;cursor:pointer";
+    consentLabel.className="numi-subscription-consent";
     const consent=document.createElement("input");
     consent.type="checkbox";consent.checked=false;
-    consent.style.marginTop="4px";
+
     const period=entry.code==="club_month"?"каждый месяц":"каждые 7 дней";
     const consentText=document.createElement("span");
     consentText.textContent="Согласна на сохранение способа оплаты в ЮKassa и автоматическое списание "+
@@ -406,16 +406,19 @@
     const email=document.createElement("input");
     email.type="email";email.autocomplete="email";email.maxLength=254;
     email.placeholder="Email для электронного чека";email.setAttribute("aria-label","Email для чека за подписку");
-    email.style.cssText="box-sizing:border-box;width:100%;max-width:340px;margin:8px 0;padding:8px 10px";
+    email.className="numi-subscription-email";
     const payAuto=document.createElement("button");
-    payAuto.type="button";payAuto.className="numi-wallet-small";
+    payAuto.type="button";payAuto.className="numi-subscription-card-pay";
     payAuto.textContent="Оплатить картой с автопродлением · "+(entry.price/100)+" ₽";
     payAuto.disabled=true;
     const note=document.createElement("p");
-    note.style.cssText="margin:6px 0 0;font-size:12px;opacity:.8";
+    note.className="numi-subscription-note";
     note.textContent="Автосписания подключаются ЮKassa; до активации доступна ручная оплата.";
     row.append(consentLabel,email,payAuto,note);
-    renew.insertAdjacentElement("afterend",row);
+    // The payment block belongs BELOW the action row, never inside its flex layout.
+    const actions=renew.closest(".account-actions");
+    if(actions)actions.insertAdjacentElement("afterend",row);
+    else renew.insertAdjacentElement("afterend",row);
     const ui={row,consent,email,payAuto,note,available:false};
     subscriptionAutopay.set(entry.code,ui);
     consent.addEventListener("change",()=>{
