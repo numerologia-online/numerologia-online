@@ -520,7 +520,7 @@ function naRealWalletCancelSubscription(PDO $db,array $account,string $code): vo
         $db->prepare("INSERT IGNORE INTO numi_subscription_settings(account_id,product_code)
             VALUES(?,?)")->execute([$account['id'],$code]);
         $db->prepare("UPDATE numi_subscription_settings
-            SET auto_renew=0,payment_method_id=NULL,consent_at=NULL,
+            SET auto_renew=0,payment_method_id=NULL,
                 cancelled_at=UTC_TIMESTAMP()
             WHERE account_id=? AND product_code=?")->execute([$account['id'],$code]);
         $db->commit();
