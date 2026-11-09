@@ -28,6 +28,18 @@ jobs:
           set -euo pipefail
           python3 -m py_compile scripts/deploy-real-wallet-worker-20261108.py
           node --check account-browser.js
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path("wallet-topup.html").read_text(encoding="utf-8")
+          js=html.split("<script>\n",1)[1].split("\n</script>",1)[0]
+          assert 'window.Telegram.WebApp.openLink(prepared.href)' in js
+          assert 'completedFingerprint' in js
+          assert 'sessionStorage.getItem(skey)' in js
+          assert 'location.assign(paymentUrl(result.confirmation_url))' in js
+          assert 'id="submit"' in html and 'Готовим оплату…' in js
+          Path("/tmp/numi-wallet-topup-20261109.js").write_text(js,encoding="utf-8")
+          PY
+          node --check /tmp/numi-wallet-topup-20261109.js
           for f in account-service/private/{core,store,wallet,wallet-real,wallet-real-payment,wallet-real-worker,subscriptions,fulfillment}.php; do
             php -l "$f"
           done
@@ -94,4 +106,4 @@ jobs:
               raise SystemExit('REG_RU_WORKER_STATUS_'+str(status)+'_'+str(payload.get('error','unknown')))
           PY
 
-# retry verified mobile subscriptions: already-removed inline style is allowed, keep backup and rollback
+# one-tap external live checkout release in existing publisher; no additional buttons or charges
