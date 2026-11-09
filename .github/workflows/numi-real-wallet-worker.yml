@@ -111,4 +111,4 @@ jobs:
               raise SystemExit('REG_RU_WORKER_STATUS_'+str(status)+'_'+str(payload.get('error','unknown')))
           PY
 
-# one-tap checkout: direct native Telegram web_app_open_link event, no stale SDK version fallback
+# approved safe release: native Telegram bridge and matching publisher guard
