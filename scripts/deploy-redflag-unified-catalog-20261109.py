@@ -24,7 +24,6 @@ PUBLIC = [
     "redflag-public-catalog.js",
     "redflag-text-bank.js",
     "redflag-categories.js",
-    "redflag-text-bank.js",
     "redflag-feature.js",
     "app.js",
 ]
@@ -80,6 +79,11 @@ def known_git_baseline(path, raw, source):
 
 
 def prepare():
+    # A duplicate path causes our own successful write to be mistaken for a concurrent edit.
+    planned = [*BANK_FILES, "store-assets.json", "redflag-catalog.json", "store.php",
+               "core.php", *PUBLIC, "index.html"]
+    if len(planned) != len(set(planned)):
+        raise RuntimeError("DUPLICATE_PUBLICATION_PATH")
     subprocess.run(['python3', 'scripts/build-store-catalog.py'], check=True)
     subprocess.run(['python3', 'scripts/build-store-assets.py'], check=True)
     generated = ['redflag-public-catalog.js', 'store-catalog.json',
