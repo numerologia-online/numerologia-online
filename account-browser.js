@@ -259,7 +259,7 @@
     return input;
   });
   let walletMode="test";
-  const pay=document.createElement("button");pay.type="submit";pay.className="numi-wallet-main-button";pay.textContent="Продолжить";
+  const pay=document.createElement("button");pay.type="submit";pay.className="numi-wallet-main-button";pay.textContent="Продолжить";pay.disabled=true;
   walletForm.append(amountLabel,receiptLabel,methodGroup,pay);
   const walletLinks=document.createElement("div");walletLinks.className="numi-wallet-links";
   const ledgerToggle=document.createElement("button");ledgerToggle.type="button";ledgerToggle.className="numi-wallet-small";
@@ -306,11 +306,20 @@
   topupPage.append(topupBack,topupTitle,topupIntro,topupCurrent,walletForm,topupFeedback);
   profile.append(topupPage);
   function showTopupPage(){
-    // A real document navigation: no shrinking dialog and no nested sheet
-    // when the iOS/Telegram keyboard opens.
-    location.assign("/wallet-topup.html");
+    // Keep the authenticated main Telegram WebView: no navigation that loses
+    // its native bridge before the user taps Continue.
+    overview.hidden=true;
+    topupPage.hidden=false;
+    dialog.classList.add("numi-wallet-topup-active");
+    topupCurrentAmount.textContent=walletAmount.textContent;
+    topupFeedback.hidden=true;
+    topupFeedback.textContent="";
+    dialog.scrollTop=0;
+    scheduleDirectCheckoutPreparation();
   }
   function leaveTopupPage(){
+    ++directPrepareSerial;
+    directResetTimer();
     amountInput.blur();
     topupPage.hidden=true;overview.hidden=false;
     dialog.classList.remove("numi-wallet-topup-active");
@@ -346,36 +355,189 @@
     params.delete("wallet_topup");
     history.replaceState(null,"",location.pathname+(params.toString()?"?"+params:"")+location.hash);
   }
-  walletForm.addEventListener("submit",async event=>{
-    event.preventDefault();
+  // Prepare a durable YooKassa confirmation URL BEFORE the customer's click.
+  // Telegram only accepts openLink synchronously within the original user gesture.
+  // All payments stay on the existing server wallet_topup API and reuse the same
+  // per-account idempotence key; preparation itself does not charge a card.
+  let directPrepared=null, directPrepareSerial=0, directPrepareTimer=null;
+  let directPending=null, directCompleted=null, directSyncBusy=false;
+  const directFingerprint=choice=>[walletMode,choice.amount,choice.method,choice.email].join("|");
+  function directChoice(){
     const amount=Number(amountInput.value);
-    if(!Number.isInteger(amount)||amount<1||amount>100000){
-      topupFeedback.hidden=false;topupFeedback.textContent="Введите сумму в рублях от 1 до 100 000.";return;
-    }
+    if(!Number.isInteger(amount)||amount<1||amount>100000)return null;
     const method=walletMode==="live"?(methodRadios.find(input=>input.checked)?.value||"bank_card"):"bank_card";
-    const receiptEmail=receiptInput.value.trim().toLowerCase();
-    if(walletMode==="live"&&(!receiptEmail||!receiptInput.checkValidity())){
-      topupFeedback.hidden=false;
-      topupFeedback.textContent="Введите корректный email для чека. Подтверждение не требуется.";
-      receiptInput.focus();return;
+    const email=receiptInput.value.trim().toLowerCase();
+    if(walletMode==="live"&&(!email||!receiptInput.checkValidity()))return null;
+    return {amount,method,email};
+  }
+  function directPaymentUrl(raw){
+    if(typeof raw!=="string")throw new Error("ЮKassa пока не вернула платёжную ссылку.");
+    const url=new URL(raw);
+    if(url.protocol!=="https:"||url.port||url.username||url.password||
+      !["yookassa.ru","yoomoney.ru"].some(host=>url.hostname===host||url.hostname.endsWith("."+host)))
+      throw new Error("ЮKassa вернула недопустимый адрес оплаты.");
+    return url.href;
+  }
+  function directIntent(choice){
+    const keyName="numi-topup-request-"+walletMode+"-"+choice.method+"-"+choice.amount;
+    const emailName=keyName+"-receipt";
+    let key=sessionStorage.getItem(keyName);
+    if(!key||!/^[a-f0-9-]{36}$/i.test(key)){
+      key=crypto.randomUUID();
+      sessionStorage.setItem(keyName,key);
+      if(walletMode==="live")sessionStorage.setItem(emailName,choice.email);
+    }else if(walletMode==="live"&&sessionStorage.getItem(emailName)&&
+      sessionStorage.getItem(emailName)!==choice.email){
+      throw new Error("Для незавершённой оплаты укажите прежний email для чека.");
     }
-    const sessionKey="numi-topup-request-"+walletMode+"-"+method+"-"+amount;
-    let key=sessionStorage.getItem(sessionKey);
-    if(!key||!/^[a-f0-9-]{36}$/i.test(key)){key=crypto.randomUUID();sessionStorage.setItem(sessionKey,key);}
-    pay.disabled=true;topupFeedback.hidden=false;
-    topupFeedback.textContent=walletMode==="test"?"Готовим тестовое пополнение…":"Готовим безопасную оплату…";
+    const payload={amount_rub:choice.amount,request_key:key};
+    if(walletMode==="live"){
+      payload.payment_method=choice.method;
+      payload.receipt_email=choice.email;
+    }
+    return {payload,keyName,emailName};
+  }
+  function directMessage(value){
+    topupFeedback.hidden=!value;
+    topupFeedback.textContent=value||"";
+  }
+  function directResetTimer(){
+    if(directPrepareTimer!==null){clearTimeout(directPrepareTimer);directPrepareTimer=null;}
+  }
+  function scheduleDirectCheckoutPreparation(){
+    if(topupPage.hidden||!current)return;
+    directResetTimer();
+    const choice=directChoice();
+    if(!choice){
+      directPrepareSerial++;
+      directPrepared=null;
+      pay.textContent="Продолжить";
+      pay.disabled=true;
+      return;
+    }
+    const fingerprint=directFingerprint(choice);
+    if(directCompleted===fingerprint){
+      pay.textContent="Оплачено";pay.disabled=true;return;
+    }
+    if(directPrepared?.fingerprint===fingerprint){
+      pay.textContent="Продолжить";pay.disabled=false;return;
+    }
+    const serial=++directPrepareSerial;
+    directPrepared=null;
+    pay.textContent="Готовим оплату…";
+    pay.disabled=true;
+    directMessage("Подготавливаем защищённую оплату ЮKassa…");
+    directPrepareTimer=setTimeout(async()=>{
+      directPrepareTimer=null;
+      const abort=new AbortController();
+      const timeout=setTimeout(()=>abort.abort(),28000);
+      try{
+        const intent=directIntent(choice);
+        // A timed-out API call may still create a pending intent. The SAME
+        // stable idempotence key is retained for all retry attempts.
+        const result=await request("wallet_topup",intent.payload,abort.signal);
+        if(serial!==directPrepareSerial||topupPage.hidden||directFingerprint(directChoice()||{})!==fingerprint)return;
+        if(result.credited){
+          directCompleted=fingerprint;
+          sessionStorage.removeItem(intent.keyName);
+          sessionStorage.removeItem(intent.emailName);
+          pay.textContent="Оплачено";pay.disabled=true;
+          directMessage("Баланс уже пополнен.");
+          void refreshWalletBadge();return;
+        }
+        const href=directPaymentUrl(result.confirmation_url);
+        if(typeof result.topup_id!=="string"||!/^[a-f0-9-]{36}$/i.test(result.topup_id))
+          throw new Error("Не удалось проверить номер пополнения.");
+        directPrepared={fingerprint,href,topupId:result.topup_id,...intent};
+        pay.textContent="Продолжить";
+        pay.disabled=false;
+        directMessage("");
+      }catch(error){
+        if(serial!==directPrepareSerial||topupPage.hidden)return;
+        pay.textContent="Повторить подготовку";
+        pay.disabled=false;
+        directMessage(error?.name==="AbortError"?
+          "ЮKassa долго отвечает. Повторим проверку без создания нового платежа.":
+          error?.message||"Не удалось подготовить оплату.");
+      }finally{clearTimeout(timeout);}
+    },400);
+  }
+  for(const field of [amountInput,receiptInput,...methodRadios]){
+    field.addEventListener("input",scheduleDirectCheckoutPreparation);
+    field.addEventListener("change",scheduleDirectCheckoutPreparation);
+  }
+  function directExternalOpen(url){
+    // The original authenticated Telegram document retains the native bridge.
+    // Request the external browser directly on the Continue click, without
+    // navigating to wallet-topup.html or to the payment page in this WebView.
+    if(isTelegram()){
+      if(typeof window.TelegramWebviewProxy?.postEvent==="function"){
+        window.TelegramWebviewProxy.postEvent("web_app_open_link",JSON.stringify({url}));
+      }else if(typeof window.external?.notify==="function"){
+        window.external.notify(JSON.stringify({eventType:"web_app_open_link",eventData:{url}}));
+      }else if(typeof window.Telegram?.WebApp?.openLink==="function"){
+        window.Telegram.WebApp.openLink(url);
+      }else{
+        throw new Error("Telegram не разрешил открыть браузер. Откройте мини-приложение заново.");
+      }
+    }else{
+      location.assign(url);
+    }
+  }
+  async function directSyncOnReturn(){
+    if(!directPending||directSyncBusy||document.hidden)return;
+    directSyncBusy=true;
     try{
-      const payload={amount_rub:amount,request_key:key};
-      if(walletMode==="live"){payload.payment_method=method;payload.receipt_email=receiptEmail;}
-      const result=await request("wallet_topup",payload);
-      if(result.credited){sessionStorage.removeItem(sessionKey);await refreshWalletBadge();topupFeedback.textContent="Баланс пополнен.";return;}
-      const url=new URL(result.confirmation_url);
-      if(url.protocol!=="https:"||url.port||url.username||url.password||
-        !["yookassa.ru","yoomoney.ru"].some(host=>url.hostname===host||url.hostname.endsWith("."+host)))
-        throw new Error("INVALID_PAYMENT_DESTINATION");
-      location.assign(url.href);
-    }catch(error){topupFeedback.textContent=error?.message||"Не удалось начать пополнение. Повторите без создания нового платежа.";}
-    finally{pay.disabled=false;}
+      const result=await request("wallet_sync",{topup_id:directPending.topupId});
+      if(result.status==="credited"){
+        directCompleted=directPending.fingerprint;
+        sessionStorage.removeItem(directPending.keyName);
+        sessionStorage.removeItem(directPending.emailName);
+        directPending=null;directPrepared=null;
+        pay.textContent="Оплачено";pay.disabled=true;
+        directMessage("Оплата подтверждена. Баланс обновлён.");
+        void refreshWalletBadge();
+      }else if(result.status==="canceled"){
+        directPending=null;
+        directMessage("Платёж отменён. Деньги не списаны.");
+        pay.disabled=false;
+      }else{
+        directMessage("Проверяем статус оплаты. Повторных списаний нет.");
+        // Reopening the same already-created provider URL is safe.
+        pay.disabled=false;
+        pay.textContent="Продолжить";
+      }
+    }catch(_){
+      directMessage("Проверяем оплату. Новый платёж не создаём.");
+      pay.disabled=false;
+    }finally{directSyncBusy=false;}
+  }
+  window.addEventListener("focus",()=>{void directSyncOnReturn();});
+  document.addEventListener("visibilitychange",()=>{
+    if(!document.hidden)void directSyncOnReturn();
+  });
+  walletForm.addEventListener("submit",event=>{
+    event.preventDefault();
+    if(!current||pay.disabled)return;
+    const choice=directChoice();
+    if(!choice){
+      directMessage("Введите сумму и корректный email для чека.");
+      return;
+    }
+    if(!directPrepared||directPrepared.fingerprint!==directFingerprint(choice)){
+      scheduleDirectCheckoutPreparation();
+      return;
+    }
+    try{
+      directExternalOpen(directPrepared.href); // synchronous user gesture
+      directPending=directPrepared;
+      pay.disabled=true;
+      pay.textContent="Оплата открыта";
+      directMessage("ЮKassa открывается в браузере. Вернитесь сюда после оплаты.");
+    }catch(error){
+      directMessage(error?.message||"Не удалось открыть внешний браузер.");
+      pay.disabled=false;
+    }
   });
   // These controls are bound to the authenticated server account, never to
   // an unverified localStorage subscription flag or a browser-side price.
@@ -640,6 +802,7 @@
       await subscriptionReturnedPayment();
       const response=await request("wallet_status");
       if(typeof response.test!=="boolean")throw new Error("UNKNOWN_WALLET_MODE");
+      const previousWalletMode=walletMode;
       walletMode=response.test?"test":"live";
       methodGroup.hidden=walletMode!=="live";
       receiptLabel.hidden=walletMode!=="live";
@@ -648,6 +811,11 @@
       vpnWarning.hidden=walletMode!=="live";
       walletAmount.textContent=(Number(response.balance_kopeks)/100).toLocaleString("ru-RU")+" ₽";
       topupCurrentAmount.textContent=walletAmount.textContent;
+      if(!topupPage.hidden && previousWalletMode!==walletMode) scheduleDirectCheckoutPreparation();
+      if(!receiptInput.value && typeof response.receipt_email_suggestion==="string"){
+        receiptInput.value=response.receipt_email_suggestion;
+        if(!topupPage.hidden) scheduleDirectCheckoutPreparation();
+      }
       scheduleWalletPendingRefresh(response);
       // Status checks are silent; only errors deserve space inside the card.
       walletFeedback.hidden=true;
