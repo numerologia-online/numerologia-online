@@ -57,6 +57,11 @@ jobs:
           for f in account-service/private/{core,store,wallet,wallet-real,wallet-real-payment,wallet-real-worker,subscriptions,fulfillment}.php; do
             php -l "$f"
           done
+          grep -q 'CREATE TABLE IF NOT EXISTS numi_real_wallet_receipt_allocations' account-service/private/wallet-real.php
+          grep -q 'naRealWalletAllocateReceiptSources' account-service/private/wallet-real.php
+          grep -q 'JOIN numi_real_wallet_fiscal_events f' account-service/tests/real-wallet-payment.php
+          grep -q 'LEFT JOIN numi_real_wallet_receipt_allocations a' account-service/private/wallet-real-worker.php
+          grep -q 'numi_real_wallet_receipt_allocations WHERE topup_id' account-service/private/wallet-real-payment.php
           grep -q "recurring_merchant_approved" account-service/private/subscriptions.php
           grep -q "'save_payment_method'=>false" account-service/private/wallet-real-payment.php
           grep -q 'subscription_cancel' account-service/private/core.php
@@ -120,4 +125,4 @@ jobs:
               raise SystemExit('REG_RU_WORKER_STATUS_'+str(status)+'_'+str(payload.get('error','unknown')))
           PY
 
-# approve same-window checkout with conditional VPN warning in existing guarded REG.RU publisher
+# deploy atomic split-advance wallet debit, protected per-source offset fiscal events and safe refund guard
