@@ -796,7 +796,7 @@ const showChildPdfOffer = async () => {
   }
   if (!hasChildPaidAccess()) {
     try {
-      const { openSharedOffer } = await import("../shared-offer.js?v=wallet-direct1");
+      const { openSharedOffer } = await import("../shared-offer.js?v=report-annual-20261109");
       await openSharedOffer({ subject:{product_code:"child_full_v1",birth_date:[birth.year,String(birth.month).padStart(2,"0"),String(birth.day).padStart(2,"0")].join("-")}, product: "полный разбор ребёнка", title: "Откройте полный разбор ребёнка", oncePrice: 990, memberPrice: 490 });
     } catch (error) { alert("Не удалось открыть варианты покупки. Попробуйте ещё раз."); }
     return;
