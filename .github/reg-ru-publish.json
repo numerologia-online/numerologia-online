@@ -1,9 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "data/day/general/general-day-13.json",
-    "data/day/general/general-day-17.json",
-    "data/day/general/general-day-21.json"
-  ],
-  "note": "Owner-approved sixth editorial batch: 50 expanded personal-day readings (energy 13: 21, energy 17: 18, energy 21: 11). Back up and verify only three files."
+  "mode": "check",
+  "files": [],
+  "note": "Sixth approved batch of 50 expanded personal-day readings saved and verified on REG.RU run 42683462275; synced to existing gh-pages. Read-only standby."
 }
