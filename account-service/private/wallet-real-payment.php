@@ -456,12 +456,12 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             if(!is_string($code)||!in_array($code,['club_month','school_week'],true))
                 throw new InvalidArgumentException('INVALID_SUBSCRIPTION');
             naRealWalletCancelSubscription($db,$account,$code);
-            $proof=$db->prepare("SELECT auto_renew,payment_method_id,consent_at
+            $proof=$db->prepare("SELECT auto_renew,payment_method_id
                 FROM numi_subscription_settings WHERE account_id=? AND product_code=?");
             $proof->execute([$account['id'],$code]);
             $state=$proof->fetch(PDO::FETCH_ASSOC);
             if(!$state || (int)$state['auto_renew']!==0
-                || $state['payment_method_id']!==null || $state['consent_at']!==null)
+                || $state['payment_method_id']!==null)
                 throw new RuntimeException('SUBSCRIPTION_UNLINK_NOT_CONFIRMED');
             naReply(200,['ok'=>true,'test'=>false,'auto_renew'=>false,
                 'payment_method_unlinked'=>true,
