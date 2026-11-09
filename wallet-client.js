@@ -29,14 +29,14 @@ function explain(container,err){
     action(container,"Войти",openAccount);return;
   }
   if(error==="INSUFFICIENT_BALANCE"||error==="REAL_INSUFFICIENT_BALANCE"){
-    note(container,"Недостаточно средств на балансе.");
+    note(container,"Недостаточно средств на балансе. Пополните баланс, чтобы открыть ответ.");
     action(container,"Пополнить баланс",openAccount);return;
   }
   if(error==="ITEM_ALREADY_OWNED"||error==="REAL_ALREADY_PURCHASED"){
     note(container,"Ответ уже куплен. Нажмите на вопрос ещё раз.");return;
   }
   if(["MATERIAL_NOT_READY","REAL_MATERIAL_NOT_READY","ITEM_NOT_READY","UNKNOWN_QUESTION"].includes(error)){
-    note(container,"Этот материал ещё готовится. Деньги не списаны.");return;
+    note(container,"Этот ответ сейчас недоступен для покупки. Деньги не списаны.");return;
   }
   note(container,"Не получилось открыть ответ. Повторите попытку: повторное нажатие не создаст новое списание.");
 }
@@ -83,11 +83,11 @@ export async function showInlinePurchase(item,container,onMaterial){
     note(container,"Ответ включён в подписку. Откройте вопрос через раздел «Да или нет».");
     return;
   }
-  if(quote.ready!==true){note(container,"Этот материал ещё готовится. Деньги не списаны.");return;}
+  if(quote.ready!==true){note(container,"Этот ответ сейчас недоступен для покупки. Деньги не списаны.");return;}
   const amount=Number(quote.price_kopeks);
   if(!Number.isSafeInteger(amount)||amount<=0){note(container,"Не удалось проверить стоимость.");return;}
   if(Number(quote.balance_kopeks)<amount){
-    note(container,"Для ответа нужно "+rub(amount)+". На балансе "+rub(quote.balance_kopeks)+".");
+    note(container,"Недостаточно средств на балансе. Для ответа нужно "+rub(amount)+", сейчас на балансе "+rub(quote.balance_kopeks)+".");
     action(container,"Пополнить баланс",openAccount);
     clubOffer(container,quote,item,onMaterial);
     return;
