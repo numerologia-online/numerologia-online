@@ -32,7 +32,8 @@ def published_paid_question(category, question):
     bank = read_json(path)
     if bank.get("status") not in ("ready", "complete"):
         return False
-    if bank.get("section") != category or bank.get("questionId") != question["id"]:
+    if (bank.get("section") != category or bank.get("questionId") != question["id"]
+            or bank.get("question") != question["title"]):
         return False
     if bank.get("keyRule") != "day-month":
         return False
@@ -44,10 +45,19 @@ def published_paid_question(category, question):
         for month in range(1, 13)
         for day in range(1, calendar.monthrange(2024, month)[1] + 1)
     }
-    return set(entries) == dates and all(
-        isinstance(entries[date], str) and entries[date].strip()
+    if set(entries) != dates or not all(
+        isinstance(entries[date], str) and len(entries[date].strip()) > 200
         for date in dates
-    )
+    ):
+        return False
+    if len(set(entries.values())) != 366:
+        return False
+    if question["id"] == "family-load" and not all(
+        len([part for part in re.split(r"\\n\\s*\\n", entries[date]) if part.strip()]) >= 2
+        for date in dates
+    ):
+        return False
+    return True
 
 
 products = [
@@ -75,6 +85,10 @@ for category in categories:
     safe = []
     private_questions[name] = {}
     for index, question in enumerate(questions):
+        # Never allow a second, conflicting editorial status in the question index.
+        # The ONLY author-controlled status lives inside the 366-answer bank.
+        if "status" in question:
+            raise ValueError("Duplicate editorial status: " + name + "/" + question["id"])
         tier = question.get("priceRub")
         if type(tier) is not int or tier not in (10, 29, 49):
             raise ValueError("Invalid Red Flag price tier: " + name + "/" + question["id"])
