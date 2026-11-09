@@ -1,12 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "data/day/general/general-day-04.json",
-    "data/day/general/general-day-07.json",
-    "data/day/general/general-day-10.json",
-    "data/day/general/general-day-12.json",
-    "data/day/general/general-day-14.json",
-    "data/day/general/general-day-17.json"
-  ],
-  "note": "Owner-approved publication of 20 edited personal-day texts. Back up originals and verify FTPS writes. No other files."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-09 personal-day editorial release completed: six JSON files backed up and FTPS-verified. Manual publisher returned to read-only mode."
 }
