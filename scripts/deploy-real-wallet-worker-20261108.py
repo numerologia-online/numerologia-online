@@ -65,6 +65,8 @@ def main():
         "account-browser.js": "account-browser.js",
         # Existing site modules only; no new deployment engine or extra folder.
         "store-entry.js": "store-entry.js",
+        "wallet-client.js": "wallet-client.js",
+        "redflag-feature.js": "redflag-feature.js",
         "shared-offer.js": "shared-offer.js",
         "app.js": "app.js",
         "year-feature.js": "year-feature.js",
@@ -82,6 +84,7 @@ def main():
     sources["worker.local.php"] = worker_cfg
     public_files = ("account-browser.js","wallet-topup.html","index.html",
                     "store-entry.js","shared-offer.js","app.js",
+                    "wallet-client.js","redflag-feature.js",
                     "year-feature.js","compatibility-feature.js",
                     "pro/pro.js","pro/index.html","child/child.js","child/index.html")
     for name, data in sources.items():
@@ -101,8 +104,12 @@ def main():
                  "pro/pro.js","child/child.js"):
         if b"recognizePurchasedReport" not in sources[name]:
             raise RuntimeError("ANNUAL_REPORT_CLIENT_GUARD_MISSING:"+name)
-    if b"app.js?v=report-annual-20261109" not in sources["index.html"]:
-        raise RuntimeError("ANNUAL_REPORT_HOMEPAGE_CACHE_TAG_MISSING")
+    if b"app.js?v=redflag-status-fix-20261109" not in sources["index.html"]:
+        raise RuntimeError("PAID_ANSWER_HOMEPAGE_CACHE_TAG_MISSING")
+    if (b"naRedFlagPaidStatus" not in sources["fulfillment.php"]
+        or b"Недостаточно средств на балансе. Для ответа нужно " not in sources["wallet-client.js"]
+        or b"./wallet-client.js?v=redflag-status-fix-20261109" not in sources["redflag-feature.js"]):
+        raise RuntimeError("PAID_ANSWER_READY_AND_BALANCE_GUARDS_MISSING")
     if (b"openPaymentInThisWindow(prepared.href)" not in sources["wallet-topup.html"]
         or b"location.assign(href)" not in sources["wallet-topup.html"]
         or b"scheduleTelegramPreparation" not in sources["wallet-topup.html"]
@@ -158,6 +165,22 @@ def main():
         core=read(private+"/core.php")
         if not core or b"wallet" not in core:
             raise RuntimeError("EXISTING_ACCOUNT_WALLET_API_MISSING")
+        # Prove the specifically reported paid answer is published and complete
+        # before changing its server gate. No content leaves the protected site.
+        report_path="data/redflag/money/words-or-deeds.json"
+        existing_report=read(private+"/store-content/"+report_path)
+        manifest=json.loads(pathlib.Path("account-service/private/store-assets.json").read_text())
+        if (existing_report is None
+            or hashlib.sha256(existing_report).hexdigest()!=manifest["files"].get(report_path)):
+            raise RuntimeError("REDFLAG_COMPLETE_ANSWER_PRIVATE_HASH_MISMATCH")
+        recorded=json.loads(existing_report)
+        if (recorded.get("status")!="complete"
+            or recorded.get("questionId")!="words-or-deeds"
+            or recorded.get("section")!="money"
+            or len(recorded.get("entries") or {})!=366
+            or not (recorded.get("entries") or {}).get("9-9")):
+            raise RuntimeError("REDFLAG_COMPLETE_ANSWER_NOT_VERIFIED")
+        print("REDFLAG_COMPLETE_366_PRIVATE_ANSWERS_VERIFIED",flush=True)
         try:ftp.mkd(live_dir)
         except ftplib.error_perm:
             ftp.cwd(live_dir)  # Only treat as existing when actually accessible.
@@ -228,6 +251,7 @@ def main():
             # expiry migration and the read-only provider probe succeed.
             # Verify each served HTTP file, not just the private FTP copy.
             for name in ("store-entry.js","shared-offer.js","app.js",
+                         "wallet-client.js","redflag-feature.js",
                          "year-feature.js","compatibility-feature.js",
                          "pro/pro.js","pro/index.html","child/child.js","child/index.html"):
                 if read(dest[name])!=originals[name]:
@@ -316,9 +340,13 @@ def main():
                 changedhtml=changedhtml.replace(previous,updated,1)
             if changedhtml.count(updated)!=1:
                 raise RuntimeError("UNKNOWN_LIVE_ACCOUNT_SCRIPT_VERSION_DO_NOT_OVERWRITE")
-            old_app=b"app.js?v=club-prices1"
-            new_app=b"app.js?v=report-annual-20261109"
-            if changedhtml.count(new_app)==0 and changedhtml.count(old_app)==1:
+            original_app=b"app.js?v=club-prices1"
+            prior_app=b"app.js?v=report-annual-20261109"
+            new_app=b"app.js?v=redflag-status-fix-20261109"
+            if changedhtml.count(new_app)==0:
+                old_app=prior_app if changedhtml.count(prior_app)==1 else original_app
+                if changedhtml.count(old_app)!=1:
+                    raise RuntimeError("UNKNOWN_LIVE_APP_SCRIPT_VERSION_DO_NOT_OVERWRITE")
                 changedhtml=changedhtml.replace(old_app,new_app,1)
             if changedhtml.count(new_app)!=1:
                 raise RuntimeError("UNKNOWN_LIVE_APP_SCRIPT_VERSION_DO_NOT_OVERWRITE")
