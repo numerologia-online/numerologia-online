@@ -241,17 +241,24 @@ def main():
                 ("Пока продление оплачивается с баланса вручную. Автосписания заработают после отдельного подключения в ЮKassa и согласия покупателя.",
                  "Автосписания станут доступны после одобрения ЮKassa."),
             ]
-            for before,after in html_patches:
-                before,after=before.encode("utf-8"),after.encode("utf-8")
-                # An empty replacement is already applied when the original
-                # attribute is absent; counting b'' is never a valid check.
-                if after==b"" and changedhtml.count(before)==0:
-                    continue
-                if after and changedhtml.count(after)==1:
-                    continue
-                if changedhtml.count(before)!=1:
-                    raise RuntimeError("LIVE_SUBSCRIPTION_HTML_CONFLICT")
-                changedhtml=changedhtml.replace(before,after,1)
+            # All previous subscription labels may already be published:
+            # avoid interpreting the completed two-step rename as a conflict.
+            final_labels=(
+                "Клуб — 490 рублей в месяц".encode("utf-8"),
+                "Самоучитель — 149 рублей в неделю".encode("utf-8"),
+                "Автосписания станут доступны после одобрения ЮKassa.".encode("utf-8"),
+            )
+            already_final=all(changedhtml.count(label)==1 for label in final_labels)
+            if not already_final:
+                for before,after in html_patches:
+                    before,after=before.encode("utf-8"),after.encode("utf-8")
+                    if after==b"" and changedhtml.count(before)==0:
+                        continue
+                    if after and changedhtml.count(after)==1:
+                        continue
+                    if changedhtml.count(before)!=1:
+                        raise RuntimeError("LIVE_SUBSCRIPTION_HTML_CONFLICT")
+                    changedhtml=changedhtml.replace(before,after,1)
             if changedhtml.count(updated)==0 and changedhtml.count(previous)==1:
                 changedhtml=changedhtml.replace(previous,updated,1)
             if changedhtml.count(updated)!=1:
