@@ -1,5 +1,12 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-07 Red Flag public category subtitle and five-module cache-bust published successfully with verified REG.RU FTPS backups. Owner-only manual publishing returned to safe read-only mode. No further automatic writes."
+  "mode": "publish",
+  "files": [
+    "data/day/general/general-day-04.json",
+    "data/day/general/general-day-07.json",
+    "data/day/general/general-day-10.json",
+    "data/day/general/general-day-12.json",
+    "data/day/general/general-day-14.json",
+    "data/day/general/general-day-17.json"
+  ],
+  "note": "Owner-approved publication of 20 edited personal-day texts. Back up originals and verify FTPS writes. No other files."
 }
