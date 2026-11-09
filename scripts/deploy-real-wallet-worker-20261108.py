@@ -194,10 +194,10 @@ def main():
                 changed.append(name)
                 write(dest[name],sources[name])
             print("REG_RU_SUBSCRIPTION_UI_SOURCE_VERIFIED",flush=True)
-            # Patch only the reviewed subscription CSS inside the existing
-            # style block; preserve all unrelated live index.html changes.
-            previous=b"account-browser.js?v=live-subscriptions-mobile-20261109"
-            updated=b"account-browser.js?v=live-subscriptions-cta-20261109"
+            # Patch only the reviewed mobile-subscription block and four
+            # exact texts. Do NOT overwrite unrelated live homepage changes.
+            previous=b"account-browser.js?v=live-subscriptions-cta-20261109"
+            updated=b"account-browser.js?v=live-subscriptions-compact-20261109"
             sourcehtml=sources["index.html"]
             if sourcehtml.count(updated)!=1:
                 raise RuntimeError("REVIEWED_INDEX_CACHE_TAG_MISSING")
@@ -206,19 +206,41 @@ def main():
             if sourcehtml.count(css_anchor)!=1 or sourcehtml.count(css_marker)!=1:
                 raise RuntimeError("REVIEWED_SUBSCRIPTION_CSS_MISSING")
             css_tail=sourcehtml.split(css_anchor,1)[1].split(b"</style>",1)[0]
-            if css_tail.count(css_marker)!=1 or len(css_tail)>12000:
-                raise RuntimeError("REVIEWED_SUBSCRIPTION_CSS_INVALID")
+            previous_html=subprocess.check_output([
+                "git","show","c9deda20f0d11cbb7536c5e38d8a341532d8278c:index.html"
+            ])
+            if previous_html.count(css_anchor)!=1:
+                raise RuntimeError("REVIEWED_PREVIOUS_CSS_MISSING")
+            previous_tail=previous_html.split(css_anchor,1)[1].split(b"</style>",1)[0]
+            if previous_tail==css_tail or len(css_tail)>12000:
+                raise RuntimeError("REVIEWED_COMPACT_CSS_INVALID")
             oldhtml=originals["index.html"]
             if oldhtml is None or oldhtml.count(css_anchor)!=1:
                 raise RuntimeError("LIVE_HOMEPAGE_BASELINE_UNKNOWN")
             changedhtml=oldhtml
-            if changedhtml.count(css_marker)==0:
-                css_before=css_anchor+b"\n    </style>"
-                if changedhtml.count(css_before)!=1:
-                    raise RuntimeError("LIVE_STYLE_SECTION_MODIFIED_DO_NOT_OVERWRITE")
-                changedhtml=changedhtml.replace(css_before,css_anchor+css_tail+b"</style>",1)
-            elif changedhtml.count(css_marker)!=1:
-                raise RuntimeError("LIVE_SUBSCRIPTION_CSS_CONFLICT")
+            live_tail=oldhtml.split(css_anchor,1)[1].split(b"</style>",1)[0]
+            if live_tail==previous_tail:
+                before=css_anchor+previous_tail+b"</style>"
+                after=css_anchor+css_tail+b"</style>"
+                if changedhtml.count(before)!=1:
+                    raise RuntimeError("LIVE_SUBSCRIPTION_STYLE_AMBIGUOUS")
+                changedhtml=changedhtml.replace(before,after,1)
+            elif live_tail!=css_tail:
+                raise RuntimeError("UNKNOWN_LIVE_SUBSCRIPTION_CSS_DO_NOT_OVERWRITE")
+            html_patches=[
+                ("Клуб — 490 ₽ / месяц","Клуб · 490 ₽/мес."),
+                ("Школа — 149 ₽ / неделю","Самоучитель · 149 ₽/нед."),
+                ('style="margin-top:18px"',''),
+                ("Пока продление оплачивается с баланса вручную. Автосписания заработают после отдельного подключения в ЮKassa и согласия покупателя.",
+                 "Автосписания станут доступны после одобрения ЮKassa."),
+            ]
+            for before,after in html_patches:
+                before,after=before.encode("utf-8"),after.encode("utf-8")
+                if changedhtml.count(after)==1:
+                    continue
+                if changedhtml.count(before)!=1:
+                    raise RuntimeError("LIVE_SUBSCRIPTION_HTML_CONFLICT")
+                changedhtml=changedhtml.replace(before,after,1)
             if changedhtml.count(updated)==0 and changedhtml.count(previous)==1:
                 changedhtml=changedhtml.replace(previous,updated,1)
             if changedhtml.count(updated)!=1:
@@ -228,9 +250,9 @@ def main():
                     raise RuntimeError("CONCURRENT_SERVER_EDIT:index.html")
                 changed.append("index.html")
                 write(dest["index.html"],changedhtml)
-                print("REG_RU_MOBILE_SUBSCRIPTIONS_LAYOUT_UPDATED",flush=True)
+                print("REG_RU_COMPACT_SUBSCRIPTIONS_VIEW_UPDATED",flush=True)
             else:
-                print("REG_RU_MOBILE_SUBSCRIPTIONS_ALREADY_CURRENT",flush=True)
+                print("REG_RU_COMPACT_SUBSCRIPTIONS_VIEW_ALREADY_CURRENT",flush=True)
             # No cookies or customer data: only an anonymous API check.
             account_url="https://"+DOMAIN+"/api/numi-account.php"
             anonymous=urllib.request.Request(account_url,
