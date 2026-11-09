@@ -81,73 +81,82 @@
       #account-dialog .account-birth-section .account-actions{flex-wrap:wrap}
       /* Mobile-first subscriptions: never lay consent beside giant flex buttons. */
       #account-dialog #numi-subscription-settings,
-      #account-dialog #numi-subscription-settings * {box-sizing:border-box}
-      #account-dialog #numi-subscription-settings {min-width:0;max-width:100%;overflow-wrap:normal}
-      #account-dialog #numi-subscription-settings > section {
-        display:block;min-width:0;width:100%;margin:12px 0 0;padding:15px 13px;
-        border:1px solid #e0e8e1;border-radius:16px;background:#fff;
+      #account-dialog #numi-subscription-settings *{box-sizing:border-box}
+      #account-dialog #numi-subscription-settings{
+        width:100%;min-width:0;max-width:100%;margin:9px 0 0!important;
+        padding:0!important;border:0!important;border-radius:0!important;
+        background:transparent!important;box-shadow:none!important;
       }
-      #account-dialog #numi-subscription-settings > section > strong {
-        display:block;color:#184b3a;font-size:17px;line-height:1.35;
+      #account-dialog #numi-subscription-settings > h4{
+        margin:0 0 6px!important;font-size:16px;line-height:1.25;
       }
-      #account-dialog #numi-subscription-settings > section > .account-muted {
-        margin:7px 0 12px;font-size:13px;line-height:1.4;
+      #account-dialog #numi-subscription-settings > section{
+        display:block;width:100%;min-width:0;margin:0!important;
+        padding:9px 0 10px!important;border:0!important;
+        border-bottom:1px solid #dce5dc!important;border-radius:0!important;
+        background:transparent!important;box-shadow:none!important;
       }
-      #account-dialog #numi-subscription-settings .account-actions {
-        display:flex;flex-direction:column;align-items:stretch;
-        gap:9px;width:100%;margin:0;
+      #account-dialog #numi-subscription-settings > section > strong{
+        display:block;margin:0;color:#184b3a;font-size:15px;line-height:1.3;
       }
-      #account-dialog #numi-subscription-settings .account-actions > button {
-        display:block;position:static;flex:none;width:100%;max-width:100%;
-        height:auto;min-height:44px;max-height:none;margin:0;padding:11px 13px;
-        font-size:14px;line-height:1.3;text-align:center;
-        white-space:normal;overflow-wrap:break-word;
+      #account-dialog #numi-subscription-settings > section > .account-muted{
+        margin:2px 0 5px!important;font-size:11px;line-height:1.25;
       }
-      #account-dialog #numi-subscription-settings .account-actions > button:disabled {
-        opacity:.5;cursor:not-allowed;
+      #account-dialog #numi-subscription-settings .numi-subscription-autopay{
+        display:block;width:100%;min-width:0;margin:0!important;
+        padding:0!important;border:0!important;border-radius:0!important;
+        background:transparent!important;box-shadow:none!important;
       }
-      #account-dialog #numi-subscription-settings .numi-subscription-autopay {
-        display:block;width:100%;min-width:0;margin:13px 0 0;padding:12px;
-        border:1px solid #e5e8e0;border-radius:12px;background:#f9faf7;
-        font-size:13px;line-height:1.45;
-      }
-      #account-dialog #numi-subscription-settings .numi-subscription-autopay[hidden] {
+      #account-dialog #numi-subscription-settings .numi-subscription-autopay[hidden],
+      #account-dialog #numi-subscription-settings button[hidden]{
         display:none!important;
       }
-      #account-dialog #numi-subscription-settings .numi-subscription-consent {
-        display:flex;align-items:flex-start;gap:10px;min-width:0;cursor:pointer;
-        color:#234638;font-size:13px;line-height:1.45;
+      #account-dialog #numi-subscription-settings .numi-subscription-email{
+        display:block;width:100%;max-width:100%;min-width:0;height:36px;
+        margin:5px 0 6px!important;padding:7px 10px!important;
+        border:1px solid #d5dfd6;border-radius:9px;background:#fff;
+        color:#193f31;font-size:13px;line-height:1.2;
       }
-      #account-dialog #numi-subscription-settings .numi-subscription-consent input {
-        flex:0 0 19px;width:19px;height:19px;margin:1px 0 0;accent-color:#176044;
+      #account-dialog #numi-subscription-settings .numi-subscription-card-pay{
+        display:block;width:100%;height:38px;min-height:38px;max-height:38px;
+        margin:0;padding:8px 12px;border:0;border-radius:9px;
+        background:#196346;color:#fff;font:650 13px/1.25 system-ui,sans-serif;
+        text-align:center;white-space:normal;cursor:pointer;
       }
-      #account-dialog #numi-subscription-settings .numi-subscription-consent span {
-        flex:1;min-width:0;overflow-wrap:break-word;
-      }
-      #account-dialog #numi-subscription-settings .numi-subscription-email {
-        display:block;width:100%;min-width:0;max-width:100%;height:44px;
-        margin:12px 0 9px;padding:10px 12px;border:1px solid #d7dfd7;
-        border-radius:10px;background:#fff;color:#193f31;font-size:14px;
-      }
-      #account-dialog #numi-subscription-settings .numi-subscription-card-pay {
-        display:block;width:100%;min-width:0;min-height:44px;height:auto;
-        margin:0;padding:10px 12px;border:0;border-radius:11px;
-        background:#196346;color:#fff;font:700 14px/1.35 system-ui,sans-serif;
-        text-align:center;white-space:normal;overflow-wrap:break-word;cursor:pointer;
-      }
-      #account-dialog #numi-subscription-settings .numi-subscription-card-pay:disabled {
+      #account-dialog #numi-subscription-settings .numi-subscription-card-pay:disabled{
         background:#dce4dd;color:#688074;cursor:not-allowed;
       }
-      #account-dialog #numi-subscription-settings .numi-subscription-note {
-        margin:9px 0 0;color:#64786c;font-size:12px;line-height:1.45;
+      #account-dialog #numi-subscription-settings .numi-subscription-note{
+        margin:5px 0 0!important;color:#65786c;
+        font-size:10px;line-height:1.32;font-weight:400;
       }
-      #account-dialog #numi-subscription-recurring-note {
-        margin:14px 0 5px;font-size:12px;line-height:1.4;
+      #account-dialog #numi-subscription-settings .account-actions{
+        display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;
+        justify-content:flex-start;gap:12px;width:100%;margin:4px 0 0!important;
+        padding:0!important;
       }
-      @media(max-width:460px) {
-        #account-dialog #numi-subscription-settings > section {padding:13px 11px}
-        #account-dialog #numi-subscription-settings .numi-subscription-autopay {padding:11px}
+      #account-dialog #numi-subscription-settings .account-actions > button{
+        position:static;display:inline-block;flex:0 1 auto;
+        width:auto!important;min-width:0!important;max-width:100%;
+        height:auto!important;min-height:28px!important;max-height:none!important;
+        margin:0!important;padding:3px 0!important;
+        border:0!important;border-radius:0!important;
+        background:transparent!important;color:#476f5d!important;
+        font:600 11px/1.25 system-ui,sans-serif!important;
+        text-align:left;text-decoration:underline;text-underline-offset:2px;
+        white-space:normal;overflow-wrap:break-word;cursor:pointer;
       }
+      #account-dialog #numi-subscription-settings .account-actions > button:disabled{
+        opacity:.5;cursor:not-allowed;
+      }
+      #account-dialog #numi-subscription-recurring-note{
+        margin:7px 0 0!important;color:#7b8b80;
+        font-size:10px;line-height:1.3;
+      }
+      #account-dialog #numi-subscription-feedback{
+        margin:4px 0 0;font-size:11px;line-height:1.3;
+      }
+      #account-dialog #numi-subscription-feedback:empty{display:none}
     </style>
     <style id="numi-stable-cabinet-height-20261031">
       /* The account dialog must not collapse after the email-link form disappears. */
@@ -1145,22 +1154,22 @@ document.addEventListener("DOMContentLoaded",()=>{
           <div class="account-birth-section" id="numi-subscription-settings">
             <h4 class="account-label">Мои подписки</h4>
             <section aria-label="Клуб нумерологии">
-              <strong>Клуб — 490 ₽ / месяц</strong>
+              <strong>Клуб · 490 ₽/мес.</strong>
               <p class="account-muted" id="numi-club-subscription-status" role="status">Проверяем подписку…</p>
               <div class="account-actions">
                 <button type="button" class="account-primary" id="numi-club-subscription-renew">Продлить</button>
                 <button type="button" class="account-secondary" id="numi-club-subscription-cancel">Отключить автопродление</button>
               </div>
             </section>
-            <section aria-label="Школа нумерологии" style="margin-top:18px">
-              <strong>Школа — 149 ₽ / неделю</strong>
+            <section aria-label="Школа нумерологии" >
+              <strong>Самоучитель · 149 ₽/нед.</strong>
               <p class="account-muted" id="numi-school-subscription-status" role="status">Проверяем подписку…</p>
               <div class="account-actions">
                 <button type="button" class="account-primary" id="numi-school-subscription-renew">Продлить</button>
                 <button type="button" class="account-secondary" id="numi-school-subscription-cancel">Отключить автопродление</button>
               </div>
             </section>
-            <p class="account-field-hint" id="numi-subscription-recurring-note">Пока продление оплачивается с баланса вручную. Автосписания заработают после отдельного подключения в ЮKassa и согласия покупателя.</p>
+            <p class="account-field-hint" id="numi-subscription-recurring-note">Автосписания станут доступны после одобрения ЮKassa.</p>
             <p class="account-muted" id="numi-subscription-feedback" role="status" aria-live="polite"></p>
           </div>
         </section>
@@ -1185,7 +1194,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   <script src="artwork-loader.js?v=1" defer></script>
   <script src="install.js?v=4" defer></script>
   <script src="auth-profile.js?v=store2" defer></script>
-  <script src="account-browser.js?v=live-subscriptions-cta-20261109" defer></script>
+  <script src="account-browser.js?v=live-subscriptions-compact-20261109" defer></script>
   <script type="module" src="app.js?v=club-prices1"></script>
   <!-- Cookie notice: optional analytics only by explicit choice; essential storage remains available. -->
   <style>
