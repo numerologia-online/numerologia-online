@@ -310,3 +310,232 @@ function naLiveSubscriptionCreatePayment(
             'confirmation_url'=>$url,'status'=>$payment['status']??'pending','reused'=>false];
     }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
 }
+
+
+/** Reconcile only a persisted live provider payment; never trust browser status. */
+function naLiveSubscriptionSync(PDO $db,array $config,string $checkoutId,string $accountId): array {
+    naRealWalletRequireLive($config);
+    $checkout=naLiveSubscriptionCheckoutData($db,$checkoutId,$accountId);
+    if(!$checkout['provider_payment_id'])
+        return ['checkout_id'=>$checkoutId,'status'=>'pending'];
+    $payment=naRealWalletFetchPayment($config,$checkout['provider_payment_id']);
+    if(($payment['id']??null)!==$checkout['provider_payment_id'])
+        throw new RuntimeException('REAL_SUBSCRIPTION_PAYMENT_REFERENCE_MISMATCH');
+    naLiveSubscriptionPaymentCheck($payment,$checkout,[
+        'provider'=>$checkout['provider'],'amount_kopeks'=>$checkout['order_amount'],
+    ]);
+    $state=$payment['status']??'pending';
+    $refunded=$payment['refunded_amount']['value']??'0.00';
+    if(!is_string($refunded) || !preg_match('/^[0-9]+\.[0-9]{2}$/D',$refunded)
+        || ($payment['refunded_amount']['currency']??'RUB')!=='RUB')
+        throw new RuntimeException('REAL_SUBSCRIPTION_REFUND_NEEDS_REVIEW');
+    if(!in_array($state,['succeeded','canceled'],true))
+        return ['checkout_id'=>$checkoutId,'status'=>'pending'];
+    if($state==='succeeded' && ($payment['paid']??null)!==true)
+        throw new RuntimeException('REAL_SUBSCRIPTION_PAYMENT_NOT_PAID');
+    if($state==='succeeded' && $refunded==='0.00'
+        && ($payment['receipt_registration']??null)!=='succeeded')
+        return ['checkout_id'=>$checkoutId,'status'=>'pending_receipt'];
+    $db->beginTransaction();
+    try{
+        $q=$db->prepare('SELECT id FROM numi_accounts WHERE id=? FOR UPDATE');
+        $q->execute([$accountId]);
+        if(!$q->fetchColumn())throw new RuntimeException('ACCOUNT_NOT_FOUND');
+        $fresh=naLiveSubscriptionCheckoutData($db,$checkoutId,$accountId);
+        if($fresh['provider_payment_id']!==$payment['id'])
+            throw new RuntimeException('REAL_SUBSCRIPTION_PAYMENT_REFERENCE_MISMATCH');
+        $order=$db->prepare('SELECT status,product_code FROM numi_orders WHERE id=? FOR UPDATE');
+        $order->execute([$fresh['order_id']]);$row=$order->fetch(PDO::FETCH_ASSOC);
+        if(!$row)throw new RuntimeException('REAL_SUBSCRIPTION_ORDER_MISSING');
+        $code=$row['product_code'];
+        $db->prepare("INSERT IGNORE INTO numi_subscription_settings
+            (account_id,product_code) VALUES(?,?)")->execute([$accountId,$code]);
+        $pref=$db->prepare("SELECT auto_renew,payment_method_id,cancelled_at,source_order_id
+            FROM numi_subscription_settings WHERE account_id=? AND product_code=? FOR UPDATE");
+        $pref->execute([$accountId,$code]);$settings=$pref->fetch(PDO::FETCH_ASSOC);
+        if($refunded!=='0.00' || $state==='canceled'){
+            $status=$refunded!=='0.00'?'refunded':'cancelled';
+            if($row['status']==='pending' || $row['status']==='paid'){
+                $db->prepare('UPDATE numi_orders SET status=? WHERE id=?')
+                    ->execute([$status,$fresh['order_id']]);
+                $db->prepare("UPDATE numi_entitlements SET status='revoked'
+                    WHERE order_id=?")->execute([$fresh['order_id']]);
+            }
+            $db->prepare("UPDATE numi_subscription_settings
+                SET auto_renew=0,payment_method_id=NULL,cancelled_at=UTC_TIMESTAMP()
+                WHERE account_id=? AND product_code=?")->execute([$accountId,$code]);
+            $db->commit();
+            return ['checkout_id'=>$checkoutId,'status'=>$status,'auto_renew'=>false];
+        }
+        if($row['status']==='pending'){
+            // Entitlement extension and payment settlement happen exactly once.
+            $period=$db->prepare("SELECT MAX(e.expires_at) FROM numi_entitlements e
+                JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
+                WHERE e.account_id=? AND e.product_code=? AND e.status='active'
+                    AND o.status='paid' AND o.verified_at IS NOT NULL
+                    AND o.provider IN ('real_wallet','real_subscription')");
+            $period->execute([$accountId,$code]);
+            $oldUntil=$period->fetchColumn();
+            $start=new DateTimeImmutable('now',new DateTimeZone('UTC'));
+            if(is_string($oldUntil) && $oldUntil!=='' &&
+                new DateTimeImmutable($oldUntil,new DateTimeZone('UTC'))>$start)
+                $start=new DateTimeImmutable($oldUntil,new DateTimeZone('UTC'));
+            $expires=naStoreExpiry($code,$start);
+            $db->prepare("UPDATE numi_orders SET status='paid',verified_at=UTC_TIMESTAMP()
+                WHERE id=? AND status='pending'")->execute([$fresh['order_id']]);
+            $db->prepare("INSERT IGNORE INTO numi_entitlements
+                (id,account_id,order_id,product_code,resource_id,status,expires_at)
+                VALUES(?,?,?,?,?,'active',?)")
+                ->execute([naUuid(),$accountId,$fresh['order_id'],$code,$fresh['resource_id'],$expires]);
+            $consent=$db->prepare("SELECT receipt_email,consent_at FROM numi_checkout_consents
+                WHERE checkout_id=? AND product_code=? AND version='live-subscription-v1'");
+            $consent->execute([$checkoutId,$code]);$first=$consent->fetch(PDO::FETCH_ASSOC);
+            if($first){
+                $method=$payment['payment_method']??[];
+                $savedId=$method['id']??null;
+                $valid=($method['saved']??null)===true
+                    && ($method['type']??null)==='bank_card'
+                    && is_string($savedId)
+                    && preg_match('/^[A-Za-z0-9-]{1,191}$/D',$savedId)===1;
+                if($settings['cancelled_at']===null && $valid){
+                    $db->prepare("UPDATE numi_subscription_settings
+                        SET auto_renew=1,payment_method_id=?,receipt_email=?,
+                            consent_at=?,source_order_id=?
+                        WHERE account_id=? AND product_code=? AND cancelled_at IS NULL")
+                        ->execute([$savedId,$first['receipt_email'],$first['consent_at'],
+                            $fresh['order_id'],$accountId,$code]);
+                }else{
+                    // Paid access remains valid even if saving the card failed
+                    // or user revoked consent while the initial payment was pending.
+                    $db->prepare("UPDATE numi_subscription_settings
+                        SET auto_renew=0,payment_method_id=NULL,source_order_id=?
+                        WHERE account_id=? AND product_code=?")
+                        ->execute([$fresh['order_id'],$accountId,$code]);
+                }
+            }else{
+                // A renewal never grants fresh consent or reactivates a cancelled card.
+                $db->prepare("UPDATE numi_subscription_settings SET source_order_id=?
+                    WHERE account_id=? AND product_code=? AND auto_renew=1
+                    AND payment_method_id IS NOT NULL AND cancelled_at IS NULL")
+                    ->execute([$fresh['order_id'],$accountId,$code]);
+            }
+        }
+        $pref->execute([$accountId,$code]);$after=$pref->fetch(PDO::FETCH_ASSOC);
+        $db->commit();
+        return ['checkout_id'=>$checkoutId,'status'=>'paid',
+            'auto_renew'=>(bool)($after['auto_renew']??false)];
+    }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+}
+
+/** A durable renewal intent keyed to the last successfully settled order. */
+function naLiveSubscriptionRenewIntent(PDO $db,array $config,string $accountId,string $code): ?array {
+    if(!naLiveRecurringAllowed($config))return null;
+    $item=naLiveSubscriptionItem($code);
+    $db->beginTransaction();
+    try{
+        $q=$db->prepare('SELECT id FROM numi_accounts WHERE id=? FOR UPDATE');
+        $q->execute([$accountId]);
+        if(!$q->fetchColumn())throw new RuntimeException('ACCOUNT_NOT_FOUND');
+        $q=$db->prepare("SELECT auto_renew,payment_method_id,cancelled_at,receipt_email,source_order_id
+            FROM numi_subscription_settings WHERE account_id=? AND product_code=? FOR UPDATE");
+        $q->execute([$accountId,$code]);$setting=$q->fetch(PDO::FETCH_ASSOC);
+        if(!$setting || !(bool)$setting['auto_renew'] || $setting['cancelled_at']!==null
+            || !is_string($setting['payment_method_id']) || $setting['payment_method_id']===''
+            || !is_string($setting['source_order_id'])){
+            $db->commit();return null;
+        }
+        $email=naRealWalletReceiptEmail($setting['receipt_email']);
+        $q=$db->prepare("SELECT MAX(e.expires_at) FROM numi_entitlements e
+            JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
+            WHERE e.account_id=? AND e.product_code=? AND e.status='active'
+              AND o.status='paid' AND o.verified_at IS NOT NULL
+              AND o.provider IN ('real_wallet','real_subscription')");
+        $q->execute([$accountId,$code]);$expires=$q->fetchColumn();
+        if(!is_string($expires) || $expires===''){
+            // Without a verified original paid period, refuse a charge.
+            $db->commit();return null;
+        }
+        if(new DateTimeImmutable($expires,new DateTimeZone('UTC')) >
+            new DateTimeImmutable('now',new DateTimeZone('UTC'))){
+            $db->commit();return null;
+        }
+        $q=$db->prepare("SELECT c.id,c.provider_payment_id
+            FROM numi_checkouts c JOIN numi_checkout_items i ON i.checkout_id=c.id
+            JOIN numi_orders o ON o.id=i.order_id
+            WHERE c.account_id=? AND o.account_id=? AND o.product_code=?
+              AND o.provider='real_subscription' AND o.status='pending'
+            ORDER BY c.created_at LIMIT 1");
+        $q->execute([$accountId,$accountId,$code]);$pending=$q->fetch(PDO::FETCH_ASSOC);
+        if($pending){
+            $db->commit();
+            return ['checkout_id'=>$pending['id'],'payment_method_id'=>$setting['payment_method_id'],
+                'has_payment'=>$pending['provider_payment_id']!==null];
+        }
+        $key='sub-renew-'.substr(hash('sha256',$accountId.'|'.$code.'|'.$setting['source_order_id']),0,48);
+        $hash=hash('sha256',json_encode(['real_subscription_renewal_v1',$code,
+            $item['price_kopeks'],$setting['source_order_id'],$email],JSON_THROW_ON_ERROR));
+        $q=$db->prepare('SELECT id,cart_hash FROM numi_checkouts WHERE account_id=? AND request_key=?');
+        $q->execute([$accountId,$key]);$prior=$q->fetch(PDO::FETCH_ASSOC);
+        if($prior){
+            if(!hash_equals($prior['cart_hash'],$hash))
+                throw new RuntimeException('REAL_SUBSCRIPTION_RENEWAL_KEY_REUSED');
+            $id=$prior['id'];
+        }else{
+            $id=naUuid();$orderId=naUuid();
+            $db->prepare("INSERT INTO numi_checkouts
+                (id,account_id,request_key,cart_hash,amount_kopeks) VALUES(?,?,?,?,?)")
+                ->execute([$id,$accountId,$key,$hash,$item['price_kopeks']]);
+            $db->prepare("INSERT INTO numi_orders
+                (id,account_id,product_code,resource_id,amount_kopeks,provider)
+                VALUES(?,?,?,?,?,'real_subscription')")
+                ->execute([$orderId,$accountId,$code,$item['resource_id'],$item['price_kopeks']]);
+            $db->prepare('INSERT INTO numi_checkout_items(checkout_id,order_id) VALUES(?,?)')
+                ->execute([$id,$orderId]);
+        }
+        $db->commit();
+        return ['checkout_id'=>$id,'payment_method_id'=>$setting['payment_method_id'],
+            'has_payment'=>false];
+    }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+}
+/** Invoked only by the existing authenticated worker, never a customer API. */
+function naLiveSubscriptionTick(PDO $db,array $config): array {
+    if(!naLiveRecurringAllowed($config))return ['enabled'=>false,'processed'=>0];
+    $result=['enabled'=>true,'reconciled'=>0,'started'=>0,'review'=>0];
+    // Reconcile pending payment/receipt first, even when user has disabled renewal.
+    $pending=$db->query("SELECT c.id,c.account_id FROM numi_checkouts c
+        JOIN numi_checkout_items i ON i.checkout_id=c.id
+        JOIN numi_orders o ON o.id=i.order_id
+        WHERE o.provider='real_subscription' AND o.status='pending'
+        AND c.provider_payment_id IS NOT NULL ORDER BY c.created_at LIMIT 30");
+    foreach($pending->fetchAll(PDO::FETCH_ASSOC) as $row){
+        try{
+            naLiveSubscriptionSync($db,$config,$row['id'],$row['account_id']);
+            $result['reconciled']++;
+        }catch(Throwable $e){
+            $result['review']++;
+            error_log('NUMI_LIVE_SUBSCRIPTION_RECONCILE '.get_class($e));
+        }
+    }
+    $q=$db->query("SELECT account_id,product_code FROM numi_subscription_settings
+        WHERE auto_renew=1 AND cancelled_at IS NULL AND payment_method_id IS NOT NULL
+          AND receipt_email IS NOT NULL
+          AND product_code IN ('club_month','school_week')
+        ORDER BY account_id LIMIT 20");
+    foreach($q->fetchAll(PDO::FETCH_ASSOC) as $item){
+        try{
+            $renew=naLiveSubscriptionRenewIntent($db,$config,$item['account_id'],$item['product_code']);
+            if($renew===null)continue;
+            if($renew['has_payment']){
+                naLiveSubscriptionSync($db,$config,$renew['checkout_id'],$item['account_id']);
+            }else{
+                naLiveSubscriptionCreatePayment($db,$config,$renew['checkout_id'],
+                    $item['account_id'],$renew['payment_method_id']);
+            }
+            $result['started']++;
+        }catch(Throwable $e){
+            $result['review']++;
+            error_log('NUMI_LIVE_SUBSCRIPTION_RENEW '.get_class($e));
+        }
+    }
+    return $result;
+}
