@@ -107,7 +107,7 @@ def main():
     if b"app.js?v=redflag-status-fix-20261109" not in sources["index.html"]:
         raise RuntimeError("PAID_ANSWER_HOMEPAGE_CACHE_TAG_MISSING")
     if (b"naRedFlagPaidStatus" not in sources["fulfillment.php"]
-        or b"Недостаточно средств на балансе. Для ответа нужно " not in sources["wallet-client.js"]
+        or "Недостаточно средств на балансе. Для ответа нужно ".encode("utf-8") not in sources["wallet-client.js"]
         or b"./wallet-client.js?v=redflag-status-fix-20261109" not in sources["redflag-feature.js"]):
         raise RuntimeError("PAID_ANSWER_READY_AND_BALANCE_GUARDS_MISSING")
     if (b"openPaymentInThisWindow(prepared.href)" not in sources["wallet-topup.html"]
