@@ -213,7 +213,7 @@ def main():
                 raise RuntimeError("LIVE_HOMEPAGE_BASELINE_UNKNOWN")
             changedhtml=oldhtml
             if changedhtml.count(css_marker)==0:
-                css_before=css_anchor+b"\\n    </style>"
+                css_before=css_anchor+b"\n    </style>"
                 if changedhtml.count(css_before)!=1:
                     raise RuntimeError("LIVE_STYLE_SECTION_MODIFIED_DO_NOT_OVERWRITE")
                 changedhtml=changedhtml.replace(css_before,css_anchor+css_tail+b"</style>",1)
