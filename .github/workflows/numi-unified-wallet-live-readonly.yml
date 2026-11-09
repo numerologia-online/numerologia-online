@@ -1,14 +1,14 @@
 name: Read-only REG.RU baseline for unified wallet
 on:
   push:
-    branches: [feature/unified-wallet-direct-access-20261107]
+    branches: [main]
     paths: [.github/workflows/numi-unified-wallet-live-readonly.yml]
 permissions:
   contents: read
 jobs:
   audit:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,6 +28,7 @@ jobs:
           pub=home+"/www/xn--c1adkkdfjbp1a4l.online"
           priv=home+"/private/numi-account-20261031"
           names=["core.php","wallet.php","store.php","subscriptions.php","fulfillment.php",
+             "wallet-real.php","wallet-real-payment.php","wallet-real-worker.php",
              "account-browser.js","store-browser.js","store-entry.js","store-material.js",
              "index.html","app.js","shared-offer.js","redflag-feature.js",
              "year-feature.js","compatibility-feature.js","destiny-code-feature.js",
@@ -52,7 +53,8 @@ jobs:
             print("LIVE_WEBROOT_VERIFIED")
             diffs=[]
             for name in names:
-              repo_path="account-service/private/"+name if name in ("core.php","wallet.php","store.php","subscriptions.php","fulfillment.php") else name
+              repo_path="account-service/private/"+name if name in ("core.php","wallet.php","store.php","subscriptions.php","fulfillment.php",
+                "wallet-real.php","wallet-real-payment.php","wallet-real-worker.php") else name
               path=(priv if repo_path.startswith("account-service/") else pub)+"/"+name
               live=read(path)
               try:base=subprocess.check_output(["git","show","origin/main:"+repo_path],stderr=subprocess.DEVNULL)
@@ -61,10 +63,39 @@ jobs:
               print("FILE",name,status)
               if status=="DIFFERS":diffs.append(name)
             manifest=json.load(open("account-service/private/store-assets.json"))
-            key="data/redflag/money/generosity.json"
-            material=read(priv+"/store-content/"+key)
-            ok=material is not None and hashlib.sha256(material).hexdigest()==manifest["files"][key]
-            print("MATERIAL_SAMPLE", "VERIFIED" if ok else "MISSING_OR_DIFFERENT")
-            print("READONLY_AUDIT_DONE",len(diffs),"DIFFERENCES")
+            # Read-only existence check for ALL referenced private materials.
+            # Never send file contents to logs or copy them into the public repo.
+            listed=manifest["files"]
+            ftp.voidcmd("TYPE I")
+            missing=[]
+            for key in listed:
+              try:
+                exists=ftp.size(priv+"/store-content/"+key)
+              except ftplib.error_perm as error:
+                if str(error).startswith("550"):exists=None
+                else:raise
+              if exists is None:missing.append(key)
+            print("PRIVATE_MATERIAL_EXISTENCE",len(listed),"listed",len(missing),"missing")
+            # Hash-check representative content from every major paid category.
+            samples=[
+              "data/year/energy-1.txt","data/year/odd/energy-9.txt",
+              "data/redflag/money/generosity.json",
+              "knowledge/full-report/sections/energy-1.json",
+              "knowledge/full-report/sections/energy-22.json",
+              "data/compatibility/deep/energy-1.json",
+              "data/compatibility/deep/energy-22.json",
+              "child/data/matrix/sections/energy-1.json",
+              "child/data/matrix/sections/energy-22.json",
+              "data/money-rituals.json","school-allowlist.json"]
+            samples+=[k for k in listed if k.startswith("child/data/matrix/karmic-tail/")][:2]
+            samples+=[k for k in listed if k.startswith("moment/yes-no/answers/")][:2]
+            bad=[]
+            for key in samples:
+              material=read(priv+"/store-content/"+key,5_300_000)
+              if material is None or hashlib.sha256(material).hexdigest()!=listed[key]:
+                bad.append(key)
+            print("PRIVATE_MATERIAL_HASHES",len(samples),"tested",len(bad),"bad")
+            print("READONLY_AUDIT_DONE",len(diffs),"CODE_DIFFERENCES",len(missing),"MISSING_PRIVATE",len(bad),"HASH_MISMATCHES")
+            if missing or bad:raise RuntimeError("PRIVATE_PAID_MATERIALS_INCOMPLETE")
           finally:ftp.quit()
           PY
