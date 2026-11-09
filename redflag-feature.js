@@ -316,7 +316,7 @@ async function refreshClubPrices(){
     });
     if(response.ok){
       const data=await response.json();
-      if(data.ok===true&&data.test===true)next=data.club_active===true;
+      if(data.ok===true&&typeof data.club_active==="boolean")next=data.club_active;
     }
   }catch(_){/* A missing session must never advertise membership as active. */}
   activeClubMember=next;
