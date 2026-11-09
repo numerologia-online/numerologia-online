@@ -194,25 +194,43 @@ def main():
                 changed.append(name)
                 write(dest[name],sources[name])
             print("REG_RU_SUBSCRIPTION_UI_SOURCE_VERIFIED",flush=True)
-            # Refresh exactly one script cache key without replacing unrelated
-            # live homepage edits. Any unknown homepage version is left alone.
-            previous=b"account-browser.js?v=wallet-quiet-status-20261108"
-            updated=b"account-browser.js?v=live-subscriptions-20261109"
-            if sources["index.html"].count(updated)!=1:
+            # Patch only the reviewed subscription CSS inside the existing
+            # style block; preserve all unrelated live index.html changes.
+            previous=b"account-browser.js?v=live-subscriptions-20261109"
+            updated=b"account-browser.js?v=live-subscriptions-mobile-20261109"
+            sourcehtml=sources["index.html"]
+            if sourcehtml.count(updated)!=1:
                 raise RuntimeError("REVIEWED_INDEX_CACHE_TAG_MISSING")
+            css_anchor=b"#account-dialog .account-birth-section .account-actions{flex-wrap:wrap}"
+            css_marker=b"/* Mobile-first subscriptions: never lay consent beside giant flex buttons. */"
+            if sourcehtml.count(css_anchor)!=1 or sourcehtml.count(css_marker)!=1:
+                raise RuntimeError("REVIEWED_SUBSCRIPTION_CSS_MISSING")
+            css_tail=sourcehtml.split(css_anchor,1)[1].split(b"</style>",1)[0]
+            if css_tail.count(css_marker)!=1 or len(css_tail)>12000:
+                raise RuntimeError("REVIEWED_SUBSCRIPTION_CSS_INVALID")
             oldhtml=originals["index.html"]
-            if oldhtml is None:
-                raise RuntimeError("LIVE_HOMEPAGE_MISSING")
-            if oldhtml.count(updated)==1:
-                print("REG_RU_SUBSCRIPTION_CACHE_ALREADY_CURRENT",flush=True)
-            elif oldhtml.count(previous)==1 and oldhtml.count(updated)==0:
+            if oldhtml is None or oldhtml.count(css_anchor)!=1:
+                raise RuntimeError("LIVE_HOMEPAGE_BASELINE_UNKNOWN")
+            changedhtml=oldhtml
+            if changedhtml.count(css_marker)==0:
+                css_before=css_anchor+b"\\n    </style>"
+                if changedhtml.count(css_before)!=1:
+                    raise RuntimeError("LIVE_STYLE_SECTION_MODIFIED_DO_NOT_OVERWRITE")
+                changedhtml=changedhtml.replace(css_before,css_anchor+css_tail+b"</style>",1)
+            elif changedhtml.count(css_marker)!=1:
+                raise RuntimeError("LIVE_SUBSCRIPTION_CSS_CONFLICT")
+            if changedhtml.count(updated)==0 and changedhtml.count(previous)==1:
+                changedhtml=changedhtml.replace(previous,updated,1)
+            if changedhtml.count(updated)!=1:
+                raise RuntimeError("UNKNOWN_LIVE_ACCOUNT_SCRIPT_VERSION_DO_NOT_OVERWRITE")
+            if changedhtml!=oldhtml:
                 if read(dest["index.html"])!=oldhtml:
                     raise RuntimeError("CONCURRENT_SERVER_EDIT:index.html")
                 changed.append("index.html")
-                write(dest["index.html"],oldhtml.replace(previous,updated,1))
-                print("REG_RU_SUBSCRIPTION_CACHE_VERSION_UPDATED",flush=True)
+                write(dest["index.html"],changedhtml)
+                print("REG_RU_MOBILE_SUBSCRIPTIONS_LAYOUT_UPDATED",flush=True)
             else:
-                raise RuntimeError("UNKNOWN_LIVE_ACCOUNT_SCRIPT_VERSION_DO_NOT_OVERWRITE")
+                print("REG_RU_MOBILE_SUBSCRIPTIONS_ALREADY_CURRENT",flush=True)
             # No cookies or customer data: only an anonymous API check.
             account_url="https://"+DOMAIN+"/api/numi-account.php"
             anonymous=urllib.request.Request(account_url,
