@@ -1,0 +1,426 @@
+{
+  "version": 1,
+  "questions": {
+    "money": {
+      "gift": {
+        "tier": 10,
+        "free": true,
+        "ready": true
+      },
+      "generosity": {
+        "tier": 10,
+        "free": false,
+        "ready": true
+      },
+      "courtship": {
+        "tier": 10,
+        "free": false,
+        "ready": false
+      },
+      "provider": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "words-or-deeds": {
+        "tier": 29,
+        "free": false,
+        "ready": true
+      },
+      "family-load": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "resource": {
+        "tier": 29,
+        "free": false,
+        "ready": true
+      },
+      "solve-or-create": {
+        "tier": 49,
+        "free": false,
+        "ready": true
+      },
+      "responsibility": {
+        "tier": 49,
+        "free": false,
+        "ready": true
+      },
+      "celebration": {
+        "tier": 49,
+        "free": false,
+        "ready": true
+      },
+      "comic-verdict-money": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      }
+    },
+    "love": {
+      "first-step": {
+        "tier": 10,
+        "free": true,
+        "ready": true
+      },
+      "romance": {
+        "tier": 10,
+        "free": false,
+        "ready": false
+      },
+      "relationship-or-comfort": {
+        "tier": 10,
+        "free": false,
+        "ready": false
+      },
+      "adult-partner": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "near-him": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "hard-moment": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "relationship-format": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "family-or-triangle": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "honest-or-disappear": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "love-or-attention": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      }
+    },
+    "flags": {
+      "say-no": {
+        "tier": 10,
+        "free": true,
+        "ready": true
+      },
+      "care-or-control": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "hero": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "jealousy": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "argument": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "abuse-signal": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "support-or-cause": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "apology": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "weak-place": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "calm-or-swings": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      }
+    },
+    "infidelity": {
+      "faithful": {
+        "tier": 10,
+        "free": true,
+        "ready": true
+      },
+      "options": {
+        "tier": 10,
+        "free": false,
+        "ready": false
+      },
+      "flirt": {
+        "tier": 10,
+        "free": false,
+        "ready": false
+      },
+      "trust": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "ex": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "temptation": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "physical-or-emotional": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "secrecy": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "return": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "after-mistake": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      }
+    },
+    "intimacy": {
+      "fire": {
+        "tier": 10,
+        "free": true,
+        "ready": true
+      },
+      "her-pleasure": {
+        "tier": 10,
+        "free": false,
+        "ready": false
+      },
+      "pace": {
+        "tier": 10,
+        "free": false,
+        "ready": false
+      },
+      "desire-talk": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "tenderness": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "boundaries": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "closeness": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "initiative": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "compatibility": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "after": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      }
+    },
+    "family": {
+      "independent": {
+        "tier": 10,
+        "free": true,
+        "ready": true
+      },
+      "household": {
+        "tier": 10,
+        "free": false,
+        "ready": false
+      },
+      "vacation": {
+        "tier": 10,
+        "free": false,
+        "ready": false
+      },
+      "plans": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "children": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "roles": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "home": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "conflict": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "money-at-home": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "care": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      }
+    },
+    "language": {
+      "love-language": {
+        "tier": 10,
+        "free": true,
+        "ready": true
+      },
+      "how-to-talk": {
+        "tier": 10,
+        "free": false,
+        "ready": false
+      },
+      "accept-love": {
+        "tier": 10,
+        "free": false,
+        "ready": false
+      },
+      "show-love": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "criticism": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "ask": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "distance": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "hurt": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "conflict-style": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "compliment": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      }
+    },
+    "verdict": {
+      "final": {
+        "tier": 10,
+        "free": true,
+        "ready": true
+      },
+      "worth-it": {
+        "tier": 10,
+        "free": false,
+        "ready": false
+      },
+      "beauty-and-flag": {
+        "tier": 10,
+        "free": false,
+        "ready": false
+      },
+      "check": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "main-advice": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "his-need": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "weak-point": {
+        "tier": 29,
+        "free": false,
+        "ready": false
+      },
+      "best-side": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "format": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      },
+      "bottom-line": {
+        "tier": 49,
+        "free": false,
+        "ready": false
+      }
+    }
+  }
+}
