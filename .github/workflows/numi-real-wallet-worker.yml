@@ -57,6 +57,20 @@ jobs:
           for f in account-service/private/{core,store,wallet,wallet-real,wallet-real-payment,wallet-real-worker,subscriptions,fulfillment}.php; do
             php -l "$f"
           done
+          php -l account-service/public/numi-real-worker.php
+          for file in app.js year-feature.js compatibility-feature.js pro/pro.js child/child.js store-entry.js shared-offer.js; do node --check "$file"; done
+          grep -Fq "modify('+1 year')" account-service/private/store.php
+          grep -Fq "INTERVAL 1 YEAR" account-service/public/numi-real-worker.php
+          grep -Fq "expires_at'=>\$expiresAt" account-service/private/wallet-real-payment.php
+          grep -Fq "app.js?v=report-annual-20261109" index.html
+          grep -Fq "pro/pro.js?v=report-annual-20261109" pro/index.html
+          grep -Fq "./child.js?v=report-annual-20261109" child/index.html
+          grep -Fq "recognizePurchasedReport" store-entry.js
+          grep -Fq "recognizePurchasedReport" year-feature.js
+          grep -Fq "recognizePurchasedReport" compatibility-feature.js
+          grep -Fq "recognizePurchasedReport" pro/pro.js
+          grep -Fq "recognizePurchasedReport" child/child.js
+          grep -Fq "на 1 год" pro/index.html
           grep -q 'CREATE TABLE IF NOT EXISTS numi_real_wallet_receipt_allocations' account-service/private/wallet-real.php
           grep -q 'naRealWalletAllocateReceiptSources' account-service/private/wallet-real.php
           grep -q 'JOIN numi_real_wallet_fiscal_events f' account-service/tests/real-wallet-payment.php
@@ -125,4 +139,4 @@ jobs:
               raise SystemExit('REG_RU_WORKER_STATUS_'+str(status)+'_'+str(payload.get('error','unknown')))
           PY
 
-# deploy atomic split-advance wallet debit, protected per-source offset fiscal events and safe refund guard
+# annual report entitlement by exact subject; guard 1-year expiry and live original-page rendering
