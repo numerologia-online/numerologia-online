@@ -1,7 +1,8 @@
 {
   "mode": "publish",
   "files": [
-    "data/day/general/general-day-11.json"
+    "data/day/general/general-day-12.json",
+    "data/day/general/general-day-14.json"
   ],
-  "note": "Owner-approved minimal one-file FTPS live upload test; energy 11 contains six revised approved readings. Backup original and verify content."
+  "note": "Owner-approved third editorial batch remaining 44 day texts in energy 12 and energy 14; back up and verify only these two files."
 }
