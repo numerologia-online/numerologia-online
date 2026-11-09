@@ -93,6 +93,10 @@ function naStoreSync(PDO $db,array $config,array $checkout): void {
     naStoreApply($db,$checkout,$payment);
 }
 function naStoreExpiry(string $code,DateTimeImmutable $now): ?string {
+    // Personal reports are licensed to the exact birth-date/year/pair key for
+    // one calendar year from the successful purchase, never permanently.
+    if(in_array($code,['year_full','life_full','compatibility_full','child_full_v1'],true))
+        return $now->modify('+1 year')->format('Y-m-d H:i:s');
     if ($code==='school_week') return $now->modify('+7 days')->format('Y-m-d H:i:s');
     if ($code!=='club_month') return null;
     $next=$now->modify('first day of next month');
