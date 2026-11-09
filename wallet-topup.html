@@ -128,47 +128,174 @@ async function initialize(){
   message(error?.message||"Не удалось проверить баланс.");
  }
 }
-form.addEventListener("submit",async event=>{
- event.preventDefault();
- if(!account||submit.disabled)return;
+// Telegram allows opening an external browser only directly after a tap.
+// Prepare a verified YooKassa URL in advance, then invoke openLink synchronously
+// from the EXISTING Continue button. Preparation creates no card charge.
+const telegramExternal=()=>Boolean(window.Telegram?.WebApp?.initData &&
+  typeof window.Telegram?.WebApp?.openLink==="function");
+let prepared=null,prepareSeq=0,prepareTimer=null,pendingExternal=null,rechecking=false;
+function selection(){
  const rub=Number(amount.value);
- if(!Number.isInteger(rub)||rub<1||rub>100000){
-  message("Введите сумму от 1 до 100 000 ₽.");amount.focus();return;
- }
  const receipt=email.value.trim().toLowerCase();
- if(mode==="live"&&(!receipt||!email.checkValidity())){
-  message("Введите корректный email для электронного чека.");email.focus();return;
- }
  const method=form.querySelector('input[name="method"]:checked')?.value||"bank_card";
- const skey="numi-topup-request-"+mode+"-"+method+"-"+rub;
+ if(!Number.isInteger(rub)||rub<1||rub>100000)return null;
+ if(mode==="live"&&(!receipt||!email.checkValidity()))return null;
+ return {rub,receipt,method,fingerprint:[mode,rub,method,receipt].join("|")};
+}
+function paymentUrl(raw){
+ if(typeof raw!=="string")throw new Error("Платёжная ссылка пока недоступна.");
+ const url=new URL(raw);
+ if(url.protocol!=="https:"||url.port||url.username||url.password||
+   !["yookassa.ru","yoomoney.ru"].some(host=>
+     url.hostname===host||url.hostname.endsWith("."+host)))
+   throw new Error("Платёжная страница не подтверждена.");
+ return url.href;
+}
+function intent(choice){
+ const skey="numi-topup-request-"+mode+"-"+choice.method+"-"+choice.rub;
  const emailKey=skey+"-receipt";
  let key=sessionStorage.getItem(skey);
  if(!key||!/^[0-9a-f-]{36}$/i.test(key)){
-  key=crypto.randomUUID();sessionStorage.setItem(skey,key);
-  if(mode==="live")sessionStorage.setItem(emailKey,receipt);
- }else if(mode==="live"&&sessionStorage.getItem(emailKey)
-    &&sessionStorage.getItem(emailKey)!==receipt){
-  message("Для незавершённой попытки используйте прежний email для чека. Новую попытку можно начать после проверки предыдущей оплаты.");
-  return;
+   key=crypto.randomUUID();
+   sessionStorage.setItem(skey,key);
+   if(mode==="live")sessionStorage.setItem(emailKey,choice.receipt);
+ }else if(mode==="live"&&sessionStorage.getItem(emailKey)&&
+   sessionStorage.getItem(emailKey)!==choice.receipt){
+   throw new Error("Для незавершённой оплаты оставьте прежний email для чека.");
  }
+ const payload={amount_rub:choice.rub,request_key:key};
+ if(mode==="live"){
+   payload.receipt_email=choice.receipt;
+   payload.payment_method=choice.method;
+ }
+ return {payload,skey,emailKey};
+}
+function showReady(){
+ submit.textContent="Продолжить";
+ submit.disabled=false;
+}
+// Reuse one pending provider payment for the same amount, method and email.
+// The debounce avoids making a provider request for each keystroke.
+function scheduleTelegramPreparation(){
+ if(!account||!telegramExternal()||mode!=="live")return;
+ if(prepareTimer!==null){clearTimeout(prepareTimer);prepareTimer=null;}
+ const choice=selection();
+ if(!choice){
+   ++prepareSeq;
+   prepared=null;
+   submit.textContent="Продолжить";
+   submit.disabled=true;
+   return;
+ }
+ if(prepared?.fingerprint===choice.fingerprint){showReady();return;}
+ const seq=++prepareSeq;
+ prepared=null;
+ submit.disabled=true;
+ submit.textContent="Готовим оплату…";
+ prepareTimer=setTimeout(async()=>{
+   prepareTimer=null;
+   try{
+     const identity=intent(choice);
+     const result=await request("wallet_topup",identity.payload);
+     if(result.credited){
+       if(seq!==prepareSeq)return;
+       sessionStorage.removeItem(identity.skey);
+       sessionStorage.removeItem(identity.emailKey);
+       const latest=await request("wallet_status");
+       balance.textContent=money(latest.balance_kopeks);
+       message("Баланс пополнен.");
+       showReady();
+       return;
+     }
+     const href=paymentUrl(result.confirmation_url);
+     if(!/^[0-9a-f-]{36}$/i.test(result.topup_id||""))
+       throw new Error("Не удалось проверить номер платежа.");
+     if(seq!==prepareSeq||selection()?.fingerprint!==choice.fingerprint)return;
+     prepared={fingerprint:choice.fingerprint,href,topupId:result.topup_id,
+       skey:identity.skey,emailKey:identity.emailKey};
+     message("");
+     showReady();
+   }catch(error){
+     if(seq!==prepareSeq)return;
+     submit.textContent="Продолжить";
+     submit.disabled=false;
+     message(error?.message||"Не удалось подготовить оплату.");
+   }
+ },650);
+}
+for(const control of [amount,email,...form.querySelectorAll('input[name="method"]')]){
+ control.addEventListener("input",scheduleTelegramPreparation);
+ control.addEventListener("change",scheduleTelegramPreparation);
+}
+async function checkReturnedPayment(){
+ if(rechecking||!pendingExternal||document.hidden)return;
+ rechecking=true;
+ try{
+   const result=await request("wallet_sync",{topup_id:pendingExternal.topupId});
+   if(result.status==="credited"){
+     balance.textContent=money(result.balance_kopeks);
+     sessionStorage.removeItem(pendingExternal.skey);
+     sessionStorage.removeItem(pendingExternal.emailKey);
+     pendingExternal=null;prepared=null;
+     message("Оплата подтверждена. Баланс обновлён.");
+     scheduleTelegramPreparation();
+   }else{
+     message("Проверяем оплату. Повторно списывать деньги не будем.");
+   }
+ }catch(_){message("Проверяем оплату. Не создавайте повторный платёж.");}
+ finally{rechecking=false;}
+}
+window.addEventListener("focus",()=>{void checkReturnedPayment();});
+document.addEventListener("visibilitychange",()=>{
+ if(!document.hidden)void checkReturnedPayment();
+});
+form.addEventListener("submit",async event=>{
+ event.preventDefault();
+ if(!account||submit.disabled)return;
+ const choice=selection();
+ if(!choice){
+   const rub=Number(amount.value);
+   if(!Number.isInteger(rub)||rub<1||rub>100000){
+     message("Введите сумму от 1 до 100 000 ₽.");amount.focus();
+   }else{
+     message("Введите корректный email для электронного чека.");email.focus();
+   }
+   return;
+ }
+ if(telegramExternal()&&mode==="live"){
+   // Must be synchronous: Telegram gives the tap only one second of validity.
+   if(!prepared||prepared.fingerprint!==choice.fingerprint){
+     message("Ссылка на оплату готовится…");
+     scheduleTelegramPreparation();
+     return;
+   }
+   try{
+     window.Telegram.WebApp.openLink(prepared.href);
+     pendingExternal=prepared;
+     message("Оплата открыта в браузере. После возвращения проверим баланс.");
+   }catch(_){
+     message("Не удалось открыть браузер. Попробуйте ещё раз.");
+   }
+   return;
+ }
+ // Ordinary Safari/Chrome and the isolated test checkout retain the known
+ // working direct redirect. A repeated tap reuses the SAME provider request.
  submit.disabled=true;message("Проверяем и открываем безопасную оплату…");
  try{
-  const payload={amount_rub:rub,request_key:key};
-  if(mode==="live"){payload.receipt_email=receipt;payload.payment_method=method;}
-  const result=await request("wallet_topup",payload);
-  if(result.credited){
-   sessionStorage.removeItem(skey);sessionStorage.removeItem(emailKey);
-   balance.textContent=money(result.balance_kopeks);message("Баланс пополнен.");return;
-  }
-  const url=new URL(result.confirmation_url);
-  if(url.protocol!=="https:"||url.port||url.username||url.password||
-    !["yookassa.ru","yoomoney.ru"].some(host=>url.hostname===host||url.hostname.endsWith("."+host)))
-   throw new Error("Платёжная страница не подтверждена.");
-  location.assign(url.href);
- }catch(error){message(error?.message||"Не удалось открыть оплату. Не оплачивайте повторно до проверки операции.");}
- finally{submit.disabled=false;}
+   const identity=intent(choice);
+   const result=await request("wallet_topup",identity.payload);
+   if(result.credited){
+     sessionStorage.removeItem(identity.skey);
+     sessionStorage.removeItem(identity.emailKey);
+     balance.textContent=money(result.balance_kopeks);
+     message("Баланс пополнен.");return;
+   }
+   location.assign(paymentUrl(result.confirmation_url));
+ }catch(error){
+   message(error?.message||"Не удалось открыть оплату. Проверьте предыдущую операцию.");
+ }finally{submit.disabled=false;}
 });
-initialize();
+initialize().then(scheduleTelegramPreparation);
 })();
 </script>
 </body>
