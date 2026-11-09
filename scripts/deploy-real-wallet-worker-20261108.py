@@ -196,8 +196,8 @@ def main():
             print("REG_RU_SUBSCRIPTION_UI_SOURCE_VERIFIED",flush=True)
             # Patch only the reviewed subscription CSS inside the existing
             # style block; preserve all unrelated live index.html changes.
-            previous=b"account-browser.js?v=live-subscriptions-20261109"
-            updated=b"account-browser.js?v=live-subscriptions-mobile-20261109"
+            previous=b"account-browser.js?v=live-subscriptions-mobile-20261109"
+            updated=b"account-browser.js?v=live-subscriptions-cta-20261109"
             sourcehtml=sources["index.html"]
             if sourcehtml.count(updated)!=1:
                 raise RuntimeError("REVIEWED_INDEX_CACHE_TAG_MISSING")
