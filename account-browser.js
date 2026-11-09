@@ -396,34 +396,28 @@
 
     const period=entry.code==="club_month"?"каждый месяц":"каждые 7 дней";
     const price=(entry.price/100)+" ₽";
-    const subscriptionPrice=entry.code==="club_month"?price+"/мес.":price+"/7 дней";
+
     const email=document.createElement("input");
     email.type="email";email.autocomplete="email";email.maxLength=254;
-    email.placeholder="Email для электронного чека";email.setAttribute("aria-label","Email для чека за подписку");
+    email.placeholder="Email для чека";email.setAttribute("aria-label","Email для электронного чека за подписку");
     email.className="numi-subscription-email";
     const payAuto=document.createElement("button");
     payAuto.type="button";payAuto.className="numi-subscription-card-pay";
-    payAuto.textContent="Оформить подписку — "+subscriptionPrice;
+    payAuto.textContent="Оформить подписку";
     payAuto.disabled=true;
     const terms=document.createElement("p");
     terms.className="numi-subscription-note";
-    terms.textContent="Нажимая «Оформить подписку», вы соглашаетесь на сохранение способа оплаты "+
-      "в ЮKassa и автоматическое списание "+price+" "+period+
-      ". Продление действует до отмены. Отключить автосписания и отвязать карту "+
-      "можно в личном кабинете → Мои данные → Мои подписки. "+
-      "Оплаченный период сохраняется.";
-    const note=document.createElement("p");
-    note.className="numi-subscription-note";
-    note.textContent="Автосписания подключаются ЮKassa; пока доступна разовая оплата.";
-    row.append(email,payAuto,terms,note);
-    row.style.marginBottom="12px";
+    terms.textContent="Нажимая кнопку, вы соглашаетесь на сохранение способа оплаты ЮKassa "+
+      "и списание "+price+" "+period+" до отмены. "+
+      "Отключение и отвязка карты — здесь, в «Моих подписках». Оплаченный срок сохраняется.";
+    row.append(email,payAuto,terms);
     // Show the default subscription offer FIRST, then optional one-off payment.
     const actions=renew.closest(".account-actions");
     if(actions)actions.insertAdjacentElement("beforebegin",row);
     else renew.insertAdjacentElement("beforebegin",row);
     renew.classList.remove("account-primary");
     renew.classList.add("account-secondary");
-    const ui={row,email,payAuto,note,available:false};
+    const ui={row,email,payAuto,available:false};
     subscriptionAutopay.set(entry.code,ui);
     payAuto.addEventListener("click",async()=>{
       if(subscriptionBusy||!current||!ui.available)return;
@@ -498,19 +492,18 @@
            info.payment_method_attached===true?" · автосписаний нет, карту можно отвязать":" · автосписаний нет")
         : "Не подключена"+(until?" · предыдущий период закончился "+until:"");
       renew.textContent=info.active===true
-        ?"Продлить один период с баланса"
-        :"Оплатить один период с баланса";
+        ?"Продлить с баланса"
+        :"Разовая оплата с баланса";
       renew.disabled=subscriptionBusy;
       const auto=subscriptionAutopay.get(entry.code);
       if(auto){
         auto.available=info.recurring_available===true;
         auto.row.hidden=walletMode!=="live"||info.auto_renew===true;
         auto.payAuto.disabled=!auto.available||subscriptionBusy;
-        auto.note.textContent=auto.available
-          ?"Оплата картой через ЮKassa; карту и будущие списания можно отключить здесь."
-          :"Рекуррентные платежи ожидают одобрения ЮKassa. Пока доступна ручная оплата.";
+
       }
-      cancel.disabled=subscriptionBusy||!(info.active===true||info.auto_renew===true||info.payment_method_attached===true);
+      cancel.disabled=subscriptionBusy||!(info.auto_renew===true||info.payment_method_attached===true);
+      cancel.hidden=!(info.auto_renew===true||info.payment_method_attached===true);
       cancel.textContent=info.payment_method_attached===true
         ?"Отключить автосписания и отвязать карту"
         :info.auto_renew===true?"Отключить автопродление":"Отключить продление";
