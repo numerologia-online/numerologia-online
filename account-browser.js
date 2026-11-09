@@ -382,7 +382,7 @@
   const subscriptionFeedback=document.getElementById("numi-subscription-feedback");
   const subscriptionEntries=[
     {code:"club_month",short:"club",name:"Клуб",price:49000},
-    {code:"school_week",short:"school",name:"Школа",price:14900}
+    {code:"school_week",short:"school",name:"Самоучитель нумерологии",price:14900}
   ];
   let subscriptionBusy=false;
   function subscriptionUntil(raw){
@@ -407,12 +407,15 @@
       const until=subscriptionUntil(info.expires_at);
       status.textContent=info.active===true
         ?"Активна"+(until?" до "+until:"")+
-          (info.auto_renew===true?" · автопродление включено":" · автосписаний нет")
+          (info.auto_renew===true?" · автопродление включено":
+           info.payment_method_attached===true?" · автосписаний нет, карту можно отвязать":" · автосписаний нет")
         : "Не подключена"+(until?" · предыдущий период закончился "+until:"");
       renew.textContent=info.active===true?"Продлить":"Подключить";
       renew.disabled=subscriptionBusy;
-      cancel.disabled=subscriptionBusy||!(info.active===true||info.auto_renew===true);
-      cancel.textContent=info.auto_renew===true?"Отключить автопродление":"Отключить продление";
+      cancel.disabled=subscriptionBusy||!(info.active===true||info.auto_renew===true||info.payment_method_attached===true);
+      cancel.textContent=info.payment_method_attached===true
+        ?"Отключить автосписания и отвязать карту"
+        :info.auto_renew===true?"Отключить автопродление":"Отключить продление";
     }
     const tariffs=document.querySelector('#account-dialog [data-account-content="prices"]');
     if(tariffs){
@@ -469,9 +472,10 @@
       subscriptionBusy=true;subscriptionMessage("Отключаем будущие списания…");
       try{
         const result=await request("subscription_cancel",{product_code:entry.code});
-        if(result.auto_renew!==false||result.access_unchanged!==true)
-          throw new Error("Сервер не подтвердил отключение.");
-        subscriptionMessage("Автопродление отключено. Уже оплаченный период сохраняется.");
+        if(result.auto_renew!==false||result.access_unchanged!==true||
+          (result.test===false&&result.payment_method_unlinked!==true))
+          throw new Error("Сервер не подтвердил отключение и отвязку карты.");
+        subscriptionMessage("Будущие списания отключены, привязка карты удалена. Уже оплаченный период сохраняется.");
         await refreshWalletBadge();
       }catch(error){
         subscriptionMessage(error?.message||"Не удалось отключить автопродление.");
