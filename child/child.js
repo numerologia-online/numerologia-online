@@ -16,8 +16,28 @@ const matrixSections = byId("child-matrix-sections");
  * A flag, query string, or localStorage value must NEVER unlock paid readings.
  * This static frontend is not DRM: private JSON must be migrated off GitHub Pages. */
 const FREE_CHILD_POINT = "character";
-const childEntitlement = { status: "preview", childId: null, birthDate: null };
+const childEntitlement = {status:"preview",childId:null,birthDate:null,expires:0};
+let purchasedChild=null;
+const purchasedChildRegion=document.createElement("section");
+purchasedChildRegion.hidden=true;
+purchasedChildRegion.setAttribute("aria-label","Оплаченный разбор ребёнка");
+result.prepend(purchasedChildRegion);
+async function refreshPurchasedChild(){
+  if(!birth)return;
+  const key=[birth.year,String(birth.month).padStart(2,"0"),String(birth.day).padStart(2,"0")].join("-");
+  const {recognizePurchasedReport}=await import("../store-entry.js?v=report-annual-20261109");
+  const granted=await recognizePurchasedReport(
+    {product_code:"child_full_v1",birth_date:key},purchasedChildRegion);
+  if(!birth || key!==[birth.year,String(birth.month).padStart(2,"0"),String(birth.day).padStart(2,"0")].join("-"))return;
+  purchasedChild=granted;
+  childEntitlement.status=granted?"active":"preview";
+  childEntitlement.childId=granted?.entitlement_id||null;
+  childEntitlement.birthDate=granted?key:null;
+  childEntitlement.expires=granted?.expires_at?Date.parse(granted.expires_at.replace(" ","T")+"Z"):0;
+}
+window.addEventListener("numi:wallet-updated",()=>{if(birth&&!result.hidden)void refreshPurchasedChild();});
 const hasChildPaidAccess = () => childEntitlement.status === "active" &&
+  Number.isFinite(childEntitlement.expires)&&childEntitlement.expires>Date.now() &&
   !!childEntitlement.childId && !!birth &&
   childEntitlement.birthDate === [birth.year, String(birth.month).padStart(2,"0"), String(birth.day).padStart(2,"0")].join("-");
 const childPointIsLocked = point => point.id !== FREE_CHILD_POINT && !hasChildPaidAccess();
@@ -197,6 +217,17 @@ const openPointReading = async (point, source = null) => {
     button.addEventListener("click", showChildPdfOffer);
     body.append(note, button);
     return;
+  }
+  // Exact purchased birth date: use the server-verified full material rather
+  // than the public free-only character bank.
+  if(hasChildPaidAccess()&&purchasedChild?.material){
+    const ordered=matrixDefinitions(calculateMatrix(birth));
+    const index=ordered.findIndex(item=>item.id===(point.id==="tail-detail"?"tail":point.id));
+    const purchasedSection=purchasedChild.material.sections?.[index];
+    if(purchasedSection?.paragraphs?.length){
+      showChildParagraphs(body,purchasedSection.paragraphs);
+      return;
+    }
   }
   // A karmic tail is a three-energy combination, never a generic energy text.
   if (point.id === "tail" || point.id === "tail-detail") {
@@ -616,6 +647,13 @@ form.addEventListener("submit", async (event) => {
   submit.disabled = true;
   try {
     birth = entered;
+    purchasedChild=null;
+    childEntitlement.status="preview";
+    childEntitlement.childId=null;
+    childEntitlement.birthDate=null;
+    childEntitlement.expires=0;
+    purchasedChildRegion.hidden=true;
+    purchasedChildRegion.dataset.numiReportKey="";
     invalidateChildPdf();
     chosenDate = currentDate();
     closeInsight();
@@ -627,6 +665,7 @@ form.addEventListener("submit", async (event) => {
     setTab("matrix");
     preview.hidden = true;
     result.hidden = false;
+    void refreshPurchasedChild();
     // Show the child's birth date and both navigation prompts after calculating.
     // Starting at the result header also keeps the first topic cards in view on
     // taller mobile screens; the responsive overview below adapts shorter screens.
@@ -727,7 +766,9 @@ const prepareChildPdf=(date)=>{
   return promise;
 };
 const warmChildPdf=()=>{
-  if(!birth || !hasChildPaidAccess()) return;
+  // Purchased clients use the protected in-page PDF builder instead of the
+  // public preview's free-only PDF data.
+  if(purchasedChild||!birth || !hasChildPaidAccess()) return;
   const date={...birth},key=childPdfKey(date);
   const warm=()=>{
     if(childPdfKey(birth)!==key || preparedChildPdf?.key===key) return;
@@ -750,6 +791,9 @@ document.addEventListener("click", (event) => {
 }, true);
 const showChildPdfOffer = async () => {
   if (!birth) return;
+  if(hasChildPaidAccess()&&purchasedChild&&!purchasedChildRegion.hidden){
+    purchasedChildRegion.scrollIntoView({behavior:"smooth",block:"start"});return;
+  }
   if (!hasChildPaidAccess()) {
     try {
       const { openSharedOffer } = await import("../shared-offer.js?v=wallet-direct1");
