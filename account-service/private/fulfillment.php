@@ -56,6 +56,11 @@ function naYearParse(string $text): array {
     foreach($out as &$fields)foreach($fields as &$body)$body=trim(preg_replace('/\s+/u',' ',$body));
     return $out;
 }
+// A 'complete' bank is editorially approved alongside 'ready'. Draft
+// labels such as 'in-progress' must NEVER become sellable by inference.
+function naRedFlagPaidStatus(mixed $status): bool {
+    return in_array($status,['ready','complete'],true);
+}
 function naMaterialBuild(string $code,string $resource,?string $root=null): array {
     $sections=[];$title='';$links=[];
     if($code==='year_full'&&preg_match('/^year:(\d{4}):(\d{4}-\d{2}-\d{2})$/D',$resource,$match)){
@@ -87,7 +92,7 @@ function naMaterialBuild(string $code,string $resource,?string $root=null): arra
         [, $month,$day]=array_map('intval',explode('-',$m[3]));$text=$data['entries'][$day.'-'.$month]??null;
         // Both editorial approvals mean a validated, paid-ready bank. A draft
         // ('in-progress') is still blocked, regardless of how many keys exist.
-        if(!in_array($data['status']??null,['ready','complete'],true)||($data['section']??'')!==$m[1]||($data['questionId']??'')!==$m[2]||!is_string($text)||trim($text)==='')throw new RuntimeException('MATERIAL_NOT_READY');
+        if(!naRedFlagPaidStatus($data['status']??null)||($data['section']??'')!==$m[1]||($data['questionId']??'')!==$m[2]||!is_string($text)||trim($text)==='')throw new RuntimeException('MATERIAL_NOT_READY');
         $title=$data['question'];$sections[]=['title'=>$title,'paragraphs'=>[$text]];
     } elseif($code==='yesno_question'&&preg_match('/^yesno:(yn-(man|love|work|money|choice|future|home)-\d{3}):([0-2]\d:[0-5]\d)$/D',$resource,$m)){
         if(!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/D',$m[3]))throw new RuntimeException('MATERIAL_NOT_READY');
