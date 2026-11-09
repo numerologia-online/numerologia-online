@@ -22,6 +22,14 @@ on:
       - 'redflag-feature.js'
       - 'account-service/private/fulfillment.php'
       - 'account-service/tests/store.php'
+      - 'account-service/tests/real-wallet.php'
+      - 'account-service/private/core.php'
+      - 'account-service/private/redflag-catalog.json'
+      - 'scripts/build-store-catalog.py'
+      - 'redflag-public-catalog.js'
+      - 'data/redflag/banks/**'
+      - 'data/redflag/money/**'
+      - 'data/redflag/love/**'
   workflow_dispatch:
 permissions:
   contents: read
@@ -65,8 +73,10 @@ jobs:
           for file in year-feature.js compatibility-feature.js pro/pro.js child/child.js store-entry.js shared-offer.js app.js wallet-client.js redflag-feature.js; do node --check "$file"; done
           grep -Fq "naRedFlagPaidStatus" account-service/private/fulfillment.php
           grep -Fq "Недостаточно средств на балансе. Для ответа нужно " wallet-client.js
-          grep -Fq "redflag-status-fix-20261109" redflag-feature.js
-          grep -Fq "app.js?v=redflag-status-fix-20261109" index.html
+          grep -Fq "redflag-question-stable-20261109" redflag-feature.js
+          grep -Fq "app.js?v=unified-sale-status-20261109" index.html
+          grep -Fq "naRedFlagCatalog()" account-service/private/core.php
+          grep -Fq "AUTHOR_TEXT_NOT_CONFIRMED" account-service/private/store.php
           grep -Fq "recognizePurchasedReport" store-entry.js
           grep -Fq "recognizePurchasedReport" year-feature.js
           grep -Fq "recognizePurchasedReport" pro/pro.js
@@ -77,6 +87,12 @@ jobs:
         run: |
           set -euo pipefail
           php account-service/tests/real-wallet.php
+      - name: Verify generated Red Flag catalog matches the one editorial source
+        run: |
+          set -euo pipefail
+          python3 scripts/build-store-catalog.py
+          git diff --exit-code -- account-service/private/redflag-catalog.json redflag-public-catalog.js store-catalog.json
+          node --test tests/redflag-calendar-coverage.test.mjs
       - name: Existing catalog and subscriptions remain valid
         run: |
           set -euo pipefail
