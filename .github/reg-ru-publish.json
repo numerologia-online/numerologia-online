@@ -1,5 +1,9 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-09 third batch 50 personal-day texts saved in main, but GitHub Actions startup failed twice with zero jobs; REG.RU publication NOT CONFIRMED. Manual publisher reset to read-only."
+  "mode": "publish",
+  "files": [
+    "data/day/general/general-day-11.json",
+    "data/day/general/general-day-12.json",
+    "data/day/general/general-day-14.json"
+  ],
+  "note": "Owner-approved 50 new personal-day texts. Retry same verified guarded FTPS publisher, with backups and checksum verification."
 }
