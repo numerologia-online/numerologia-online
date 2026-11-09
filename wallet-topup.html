@@ -134,6 +134,7 @@ async function initialize(){
 const telegramExternal=()=>Boolean(window.Telegram?.WebApp?.initData &&
   typeof window.Telegram?.WebApp?.openLink==="function");
 let prepared=null,prepareSeq=0,prepareTimer=null,pendingExternal=null,rechecking=false;
+let completedFingerprint=null;
 function selection(){
  const rub=Number(amount.value);
  const receipt=email.value.trim().toLowerCase();
@@ -187,6 +188,9 @@ function scheduleTelegramPreparation(){
    submit.disabled=true;
    return;
  }
+ if(completedFingerprint===choice.fingerprint){
+   submit.textContent="Оплачено";submit.disabled=true;return;
+ }
  if(prepared?.fingerprint===choice.fingerprint){showReady();return;}
  const seq=++prepareSeq;
  prepared=null;
@@ -203,8 +207,10 @@ function scheduleTelegramPreparation(){
        sessionStorage.removeItem(identity.emailKey);
        const latest=await request("wallet_status");
        balance.textContent=money(latest.balance_kopeks);
+       completedFingerprint=choice.fingerprint;
+       prepared=null;
+       submit.textContent="Оплачено";submit.disabled=true;
        message("Баланс пополнен.");
-       showReady();
        return;
      }
      const href=paymentUrl(result.confirmation_url);
@@ -236,9 +242,10 @@ async function checkReturnedPayment(){
      balance.textContent=money(result.balance_kopeks);
      sessionStorage.removeItem(pendingExternal.skey);
      sessionStorage.removeItem(pendingExternal.emailKey);
+     completedFingerprint=pendingExternal.fingerprint;
      pendingExternal=null;prepared=null;
+     submit.textContent="Оплачено";submit.disabled=true;
      message("Оплата подтверждена. Баланс обновлён.");
-     scheduleTelegramPreparation();
    }else{
      message("Проверяем оплату. Повторно списывать деньги не будем.");
    }
