@@ -56,6 +56,7 @@ def main():
     # deployment system, new branches or new production directories.
     source_paths = {
         "core.php": "account-service/private/core.php",
+        "redflag-catalog.json": "account-service/private/redflag-catalog.json",
         "wallet-real.php": "account-service/private/wallet-real.php",
         "wallet-real-payment.php": "account-service/private/wallet-real-payment.php",
         "wallet-real-worker.php": "account-service/private/wallet-real-worker.php",
@@ -66,6 +67,9 @@ def main():
         # Existing site modules only; no new deployment engine or extra folder.
         "store-entry.js": "store-entry.js",
         "wallet-client.js": "wallet-client.js",
+        "redflag-public-catalog.js": "redflag-public-catalog.js",
+        "redflag-text-bank.js": "redflag-text-bank.js",
+        "redflag-categories.js": "redflag-categories.js",
         "redflag-feature.js": "redflag-feature.js",
         "shared-offer.js": "shared-offer.js",
         "app.js": "app.js",
@@ -85,11 +89,21 @@ def main():
     public_files = ("account-browser.js","wallet-topup.html","index.html",
                     "store-entry.js","shared-offer.js","app.js",
                     "wallet-client.js","redflag-feature.js",
+                    "redflag-public-catalog.js","redflag-text-bank.js",
+                    "redflag-categories.js",
                     "year-feature.js","compatibility-feature.js",
                     "pro/pro.js","pro/index.html","child/child.js","child/index.html")
     for name, data in sources.items():
-        if len(data)>LIMIT or (name not in public_files and not data.startswith(b"<?php")):
+        if len(data)>LIMIT or (name not in public_files
+            and name!="redflag-catalog.json" and not data.startswith(b"<?php")):
             raise RuntimeError("INVALID_RELEASE_SOURCE:"+name)
+    # Private metadata only: no paid answers or unrecognized structures.
+    private_catalog=json.loads(sources["redflag-catalog.json"])
+    if (private_catalog.get("version")!=1
+        or not isinstance(private_catalog.get("questions"),dict)
+        or len(private_catalog["questions"])!=8
+        or sum(len(bank) for bank in private_catalog["questions"].values())!=81):
+        raise RuntimeError("REDFLAG_CATALOG_INVALID")
     if b"subscription_checkout" not in sources["core.php"] or (
         b"recurring_merchant_approved" not in sources["subscriptions.php"]
     ) or b"save_payment_method" not in sources["subscriptions.php"]:
@@ -104,7 +118,7 @@ def main():
                  "pro/pro.js","child/child.js"):
         if b"recognizePurchasedReport" not in sources[name]:
             raise RuntimeError("ANNUAL_REPORT_CLIENT_GUARD_MISSING:"+name)
-    if b"app.js?v=redflag-question-stable-20261109" not in sources["index.html"]:
+    if b"app.js?v=unified-sale-status-20261109" not in sources["index.html"]:
         raise RuntimeError("PAID_ANSWER_HOMEPAGE_CACHE_TAG_MISSING")
     if (b"naRedFlagPaidStatus" not in sources["fulfillment.php"]
         or "Недостаточно средств на балансе. Для ответа нужно ".encode("utf-8") not in sources["wallet-client.js"]
@@ -202,7 +216,8 @@ def main():
             # Private PHP before public API and public JS. Preserve the existing
             # secret derivation and never change the private live flags.
             for name in ("store.php","subscriptions.php","wallet-real.php",
-                         "wallet-real-payment.php","fulfillment.php","core.php",
+                         "wallet-real-payment.php","fulfillment.php",
+                         "redflag-catalog.json","core.php",
                          "wallet-real-worker.php","worker.local.php",
                          "numi-real-worker.php"):
                 remote=dest[name]
@@ -251,7 +266,9 @@ def main():
             # expiry migration and the read-only provider probe succeed.
             # Verify each served HTTP file, not just the private FTP copy.
             for name in ("store-entry.js","shared-offer.js","app.js",
-                         "wallet-client.js","redflag-feature.js",
+                         "wallet-client.js","redflag-public-catalog.js",
+                         "redflag-text-bank.js","redflag-categories.js",
+                         "redflag-feature.js",
                          "year-feature.js","compatibility-feature.js",
                          "pro/pro.js","pro/index.html","child/child.js","child/index.html"):
                 if read(dest[name])!=originals[name]:
@@ -343,9 +360,11 @@ def main():
             original_app=b"app.js?v=club-prices1"
             prior_app=b"app.js?v=report-annual-20261109"
             last_app=b"app.js?v=redflag-status-fix-20261109"
-            new_app=b"app.js?v=redflag-question-stable-20261109"
+            next_app=b"app.js?v=redflag-question-stable-20261109"
+            new_app=b"app.js?v=unified-sale-status-20261109"
             if changedhtml.count(new_app)==0:
-                old_app=(last_app if changedhtml.count(last_app)==1 else
+                old_app=(next_app if changedhtml.count(next_app)==1 else
+                         last_app if changedhtml.count(last_app)==1 else
                          prior_app if changedhtml.count(prior_app)==1 else original_app)
                 if changedhtml.count(old_app)!=1:
                     raise RuntimeError("UNKNOWN_LIVE_APP_SCRIPT_VERSION_DO_NOT_OVERWRITE")
