@@ -18,6 +18,10 @@ on:
       - 'store-entry.js'
       - 'shared-offer.js'
       - 'app.js'
+      - 'wallet-client.js'
+      - 'redflag-feature.js'
+      - 'account-service/private/fulfillment.php'
+      - 'account-service/tests/store.php'
   workflow_dispatch:
 permissions:
   contents: read
@@ -55,9 +59,14 @@ jobs:
           grep -q 'naRealWorkerReceiptSource' account-service/private/wallet-real-worker.php
           echo REAL_WALLET_MULTI_ADVANCE_STATIC_PASS
           php -l account-service/public/numi-real-worker.php
+          php -l account-service/private/fulfillment.php
           grep -Fq "modify('+1 year')" account-service/private/store.php
           grep -Fq "INTERVAL 1 YEAR" account-service/public/numi-real-worker.php
-          for file in year-feature.js compatibility-feature.js pro/pro.js child/child.js store-entry.js shared-offer.js app.js; do node --check "$file"; done
+          for file in year-feature.js compatibility-feature.js pro/pro.js child/child.js store-entry.js shared-offer.js app.js wallet-client.js redflag-feature.js; do node --check "$file"; done
+          grep -Fq "naRedFlagPaidStatus" account-service/private/fulfillment.php
+          grep -Fq "Недостаточно средств на балансе. Для ответа нужно " wallet-client.js
+          grep -Fq "redflag-status-fix-20261109" redflag-feature.js
+          grep -Fq "app.js?v=redflag-status-fix-20261109" index.html
           grep -Fq "recognizePurchasedReport" store-entry.js
           grep -Fq "recognizePurchasedReport" year-feature.js
           grep -Fq "recognizePurchasedReport" pro/pro.js
