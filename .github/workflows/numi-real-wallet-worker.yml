@@ -106,4 +106,4 @@ jobs:
               raise SystemExit('REG_RU_WORKER_STATUS_'+str(status)+'_'+str(payload.get('error','unknown')))
           PY
 
-# one-tap external live checkout release in existing publisher; no additional buttons or charges
+# one-tap external live checkout retry: recognize already-published mobile subscription labels
