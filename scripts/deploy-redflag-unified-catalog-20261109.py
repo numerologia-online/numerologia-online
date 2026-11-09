@@ -24,6 +24,7 @@ PUBLIC = [
     "redflag-public-catalog.js",
     "redflag-text-bank.js",
     "redflag-categories.js",
+    "redflag-text-bank.js",
     "redflag-feature.js",
     "app.js",
 ]
@@ -39,8 +40,9 @@ PRIVATE = {
 OLD_TAGS = [
     b'app.js?v=redflag-question-stable-20261109',
     b'app.js?v=redflag-status-fix-20261109',
+    b'app.js?v=unified-sale-status-20261109',
 ]
-NEW_TAG = b'app.js?v=unified-sale-status-20261109'
+NEW_TAG = b'app.js?v=redflag-catalog-refresh-20261109b'
 
 
 def read(ftp, path, allow_missing=False):
