@@ -211,7 +211,8 @@ assertReal(naRealWalletHasAccess($db,$accA,'club_month','club')
         ['product_code'=>'year_full','year'=>2026,'birth_date'=>'1986-09-09'],$ready)['price_kopeks']===49000,
     'cancel keeps club rights and discounted prices until paid period ends');
 
-$otherQuestion=['product_code'=>'redflag_question','category'=>'money','question_id'=>'courtship','birth_date'=>'1986-09-09'];
+// A second 10-RUB approved question uses another birth-date resource; courtship is still an editorial draft.
+$otherQuestion=['product_code'=>'redflag_question','category'=>'money','question_id'=>'generosity','birth_date'=>'1997-05-12'];
 $clubQuote=naRealWalletQuote($db,$accA,$otherQuestion,$ready);
 assertReal($clubQuote['club_active'] && $clubQuote['price_kopeks']===1000,
     'verified real club gets 10 RUB price');
@@ -234,7 +235,7 @@ naRealWalletInvariant($db,$accountA);
 $pay2['refunded_amount']['value']='100.00';
 assertReal(naRealWalletApplyVerifiedPayment($db,$row2,$pay2,$good)==='review','external refund triggers manual reconciliation');
 expectReal(fn()=>naRealWalletBuy($db,$accA,$good,
-    ['product_code'=>'redflag_question','category'=>'money','question_id'=>'provider','birth_date'=>'1986-09-09'],
+    ['product_code'=>'redflag_question','category'=>'money','question_id'=>'resource','birth_date'=>'1986-09-09'],
     'blocked-real-buy-123456',$ready),'REAL_WALLET_FROZEN');
 naRealWalletInvariant($db,$accountA);
 // Separate identities: pending external money must block a merge, then audited transfer.
