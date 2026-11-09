@@ -1,9 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "data/day/general/general-day-11.json",
-    "data/day/general/general-day-12.json",
-    "data/day/general/general-day-14.json"
-  ],
-  "note": "Owner-approved third editorial batch, retry guarded publication after GitHub workflow failed before starting any job; backup and verify only three JSON files."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-09 third batch 50 personal-day texts saved in main, but GitHub Actions startup failed twice with zero jobs; REG.RU publication NOT CONFIRMED. Manual publisher reset to read-only."
 }
