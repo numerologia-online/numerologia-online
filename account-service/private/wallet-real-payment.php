@@ -413,7 +413,7 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             $byPeriod=[];
             foreach($periods->fetchAll(PDO::FETCH_ASSOC) as $row)
                 $byPeriod[$row['product_code']]=$row['expires_at'];
-            $prefs=$db->prepare("SELECT product_code,auto_renew,cancelled_at
+            $prefs=$db->prepare("SELECT product_code,auto_renew,payment_method_id,consent_at,cancelled_at
                 FROM numi_subscription_settings
                 WHERE account_id=? AND product_code IN ('club_month','school_week')");
             $prefs->execute([$account['id']]);
@@ -432,6 +432,8 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     'expires_at'=>$until,'price_kopeks'=>$price,
                     'auto_renew'=>false,'renewal'=>'manual',
                     'recurring_available'=>false,
+                    'payment_method_attached'=>is_string($byPref[$code]['payment_method_id']??null)
+                        && ($byPref[$code]['payment_method_id']??'')!=='',
                     'cancelled_at'=>$byPref[$code]['cancelled_at']??null];
             }
             $result['subscriptions']=$subs;
@@ -454,7 +456,15 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             if(!is_string($code)||!in_array($code,['club_month','school_week'],true))
                 throw new InvalidArgumentException('INVALID_SUBSCRIPTION');
             naRealWalletCancelSubscription($db,$account,$code);
+            $proof=$db->prepare("SELECT auto_renew,payment_method_id,consent_at
+                FROM numi_subscription_settings WHERE account_id=? AND product_code=?");
+            $proof->execute([$account['id'],$code]);
+            $state=$proof->fetch(PDO::FETCH_ASSOC);
+            if(!$state || (int)$state['auto_renew']!==0
+                || $state['payment_method_id']!==null || $state['consent_at']!==null)
+                throw new RuntimeException('SUBSCRIPTION_UNLINK_NOT_CONFIRMED');
             naReply(200,['ok'=>true,'test'=>false,'auto_renew'=>false,
+                'payment_method_unlinked'=>true,
                 'product_code'=>$code,'access_unchanged'=>true]);
         }
         if($action==='wallet_quote'){
