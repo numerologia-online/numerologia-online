@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 
 const source = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
 const banks = ["money-questions", "love", "flags", "infidelity", "intimacy", "family", "language", "verdict"];
@@ -20,6 +21,8 @@ test("80 core Red Flag questions plus the recorded bonus have unique identities"
       assert.ok(question.id && question.title, bank);
       assert.ok(!ids.has(question.id), "Duplicate question: " + question.id);
       ids.add(question.id);
+      assert.equal(Object.hasOwn(question, "status"), false,
+        "Duplicate editorial status found in question index: " + question.id);
       // Unpublished questions may have draft files without public textFile links.
       // Sale readiness is validated separately against the actual reviewed bank.
     }
@@ -121,4 +124,38 @@ test("Published Red Flag purchase badges reflect approved 366-day banks, never j
   assert.match(feature, /isComingSoon:\s*question\.status !== "ready"/);
   assert.doesNotMatch(feature, /REDFLAG_SOON_BLOCKS/);
   assert.doesNotMatch(feature, /11 вопросов/);
+});
+
+
+test("Nine paid Money questions derive readiness from their ONLY author-approved bank", async () => {
+  const list = JSON.parse(await source("data/redflag/banks/money-questions.json")).questions;
+  const publicModule = await source("redflag-public-catalog.js");
+  const publicBank = JSON.parse(publicModule.split("export const PUBLIC_QUESTIONS = ")[1].trim().slice(0, -1)).money;
+  const protectedBank = JSON.parse(await source("account-service/private/redflag-catalog.json")).questions.money;
+  const assets = JSON.parse(await source("account-service/private/store-assets.json")).files;
+  assert.equal(list.length, 11);
+  let complete = 0;
+  for (const [index, question] of list.entries()) {
+    assert.ok(!Object.hasOwn(question, "status"), "Do not duplicate source status in index");
+    const bankName = "data/redflag/money/" + question.textFile.split("?")[0].split("/")[1];
+    const raw = await source(bankName);
+    const material = JSON.parse(raw);
+    const hash = createHash("sha256").update(raw).digest("hex");
+    assert.equal(assets[bankName], hash, "Protected vault hash must match: " + question.id);
+    assert.equal(material.questionId, question.id);
+    if (index < 10) {
+      assert.ok(["ready", "complete"].includes(material.status));
+      assert.equal(material.question, question.title, "Paid headline differs from catalogue");
+      assert.equal(material.keyRule, "day-month");
+      assert.equal(Object.keys(material.entries || {}).length, 366);
+      assert.equal(new Set(Object.values(material.entries || {})).size, 366);
+      assert.equal(publicBank[index].status, "ready");
+      assert.equal(protectedBank[question.id].ready, true);
+      complete++;
+    } else {
+      assert.equal(publicBank[index].status, "soon");
+      assert.equal(protectedBank[question.id].ready, false);
+    }
+  }
+  assert.equal(complete, 10);
 });
