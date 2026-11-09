@@ -53,14 +53,23 @@ function naRealWorkerReceiptDescription(string $productCode): string {
 
 /** Never submit until the spend -> original topup source is durably recorded. */
 function naRealWorkerReceiptSource(PDO $db,string $eventId): array {
+    // Old one-source events reference spend_id. New split-source events
+    // reference a unique allocation_id, which belongs to exactly one advance.
     $q=$db->prepare("SELECT f.id AS fiscal_id,f.kopeks AS fiscal_kopeks,
         s.id AS spend_id,s.account_id,s.product_code,s.kopeks AS spend_kopeks,
-        rs.kopeks AS allocated_kopeks,t.id AS topup_id,t.account_id AS topup_account_id,
+        a.id AS allocation_id,
+        COALESCE(a.kopeks,rs.kopeks) AS allocated_kopeks,
+        t.id AS topup_id,t.account_id AS topup_account_id,
         t.provider_payment_id,t.receipt_email,t.status AS topup_status
         FROM numi_real_wallet_fiscal_events f
-        INNER JOIN numi_real_wallet_spends s ON s.id=f.reference_id
-        INNER JOIN numi_real_wallet_receipt_sources rs ON rs.spend_id=s.id
-        INNER JOIN numi_real_wallet_topups t ON t.id=rs.topup_id
+        LEFT JOIN numi_real_wallet_receipt_allocations a
+            ON a.id=f.reference_id
+        LEFT JOIN numi_real_wallet_receipt_sources rs
+            ON rs.spend_id=f.reference_id AND a.id IS NULL
+        INNER JOIN numi_real_wallet_spends s
+            ON s.id=COALESCE(a.spend_id,rs.spend_id)
+        INNER JOIN numi_real_wallet_topups t
+            ON t.id=COALESCE(a.topup_id,rs.topup_id)
         WHERE f.id=? AND f.kind='advance_offset' LIMIT 1");
     $q->execute([$eventId]);
     $row=$q->fetch(PDO::FETCH_ASSOC);
@@ -68,9 +77,16 @@ function naRealWorkerReceiptSource(PDO $db,string $eventId): array {
         || $row['account_id']!==$row['topup_account_id']
         || !is_string($row['provider_payment_id']) || $row['provider_payment_id']===''
         || !is_string($row['receipt_email'])
-        || (int)$row['fiscal_kopeks']!==(int)$row['spend_kopeks']
-        || (int)$row['fiscal_kopeks']!==(int)$row['allocated_kopeks'])
+        || (int)$row['fiscal_kopeks']!==(int)$row['allocated_kopeks']
+        || $row['allocation_id']===null
+            && (int)$row['fiscal_kopeks']!==(int)$row['spend_kopeks'])
         throw new RuntimeException('REAL_OFFSET_SOURCE_REVIEW_REQUIRED');
+    if($row['allocation_id']!==null){
+        $sum=$db->prepare('SELECT COALESCE(SUM(kopeks),0) FROM numi_real_wallet_receipt_allocations WHERE spend_id=?');
+        $sum->execute([$row['spend_id']]);
+        if((int)$sum->fetchColumn()!==(int)$row['spend_kopeks'])
+            throw new RuntimeException('REAL_OFFSET_ALLOCATION_INCOMPLETE');
+    }
     $q=$db->prepare("SELECT status FROM numi_real_wallet_fiscal_events
         WHERE kind='advance_in' AND reference_id=? LIMIT 1");
     $q->execute([$row['topup_id']]);
@@ -238,6 +254,7 @@ function naRealWalletWorkerTick(PDO $db,array $config): array {
     naRealWalletRequireLive($config);
     // Fail closed if schema has not been explicitly installed. No DDL here.
     $db->query('SELECT 1 FROM numi_real_wallet_receipt_sources LIMIT 1');
+    $db->query('SELECT 1 FROM numi_real_wallet_receipt_allocations LIMIT 1');
     return [
         'topups'=>naRealWorkerTopupTick($db,$config),
         'receipts'=>naRealWorkerOffsetTick($db,$config),
