@@ -52,16 +52,31 @@ def main():
         "    'allow_additive_migration' => true,\n"
         "];\n"
     ).encode()
-    sources = {
-        "wallet-real-worker.php": pathlib.Path(
-            "account-service/private/wallet-real-worker.php").read_bytes(),
-        "numi-real-worker.php": pathlib.Path(
-            "account-service/public/numi-real-worker.php").read_bytes(),
-        "worker.local.php": worker_cfg,
+    # Extend the established guarded publisher; do not introduce a second
+    # deployment system, new branches or new production directories.
+    source_paths = {
+        "core.php": "account-service/private/core.php",
+        "wallet-real.php": "account-service/private/wallet-real.php",
+        "wallet-real-payment.php": "account-service/private/wallet-real-payment.php",
+        "wallet-real-worker.php": "account-service/private/wallet-real-worker.php",
+        "subscriptions.php": "account-service/private/subscriptions.php",
+        "store.php": "account-service/private/store.php",
+        "fulfillment.php": "account-service/private/fulfillment.php",
+        "account-browser.js": "account-browser.js",
+        "numi-real-worker.php": "account-service/public/numi-real-worker.php",
     }
+    sources = {name: pathlib.Path(src).read_bytes()
+               for name, src in source_paths.items()}
+    sources["worker.local.php"] = worker_cfg
     for name, data in sources.items():
-        if len(data)>LIMIT or not data.startswith(b"<?php"):
+        if len(data)>LIMIT or (name!="account-browser.js" and not data.startswith(b"<?php")):
             raise RuntimeError("INVALID_RELEASE_SOURCE:"+name)
+    if b"subscription_checkout" not in sources["core.php"] or (
+        b"recurring_merchant_approved" not in sources["subscriptions.php"]
+    ) or b"save_payment_method" not in sources["subscriptions.php"]:
+        raise RuntimeError("RECURRING_GATE_OR_ROUTE_MISSING")
+    if b"'save_payment_method'=>false" not in sources["wallet-real-payment.php"]:
+        raise RuntimeError("TOPUP_CARD_MUST_NOT_BE_SAVED")
     ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
     ftp.connect(HOST,21)
     ftp.login(user,password)
@@ -71,11 +86,11 @@ def main():
     root=home+"/www/"+WEBROOT
     private=home+"/private/numi-account-20261031"
     live_dir=home+"/private/numi-wallet-live"
-    dest={
-        "wallet-real-worker.php":private+"/wallet-real-worker.php",
-        "worker.local.php":live_dir+"/worker.local.php",
-        "numi-real-worker.php":root+"/api/numi-real-worker.php",
-    }
+    dest={name: (root+"/"+name if name=="account-browser.js"
+                 else root+"/api/"+name if name=="numi-real-worker.php"
+                 else live_dir+"/"+name if name=="worker.local.php"
+                 else private+"/"+name)
+          for name in sources}
     originals={}
     changed=[]
 
@@ -109,10 +124,8 @@ def main():
         for name in sources:
             originals[name]=read(dest[name])
             old=originals[name]
-            if name=="wallet-real-worker.php" and not approved_version("account-service/private/wallet-real-worker.php",old):
-                raise RuntimeError("UNKNOWN_PRIVATE_WORKER_BASELINE")
-            if name=="numi-real-worker.php" and not approved_version("account-service/public/numi-real-worker.php",old):
-                raise RuntimeError("UNKNOWN_PUBLIC_GATEWAY_BASELINE")
+            if name in source_paths and not approved_version(source_paths[name],old):
+                raise RuntimeError("UNKNOWN_SERVER_FILE_BASELINE:"+name)
             if name=="worker.local.php" and old is not None and old!=sources[name]:
                 raise RuntimeError("EXISTING_WORKER_SECRET_DIFFERS_DO_NOT_OVERWRITE")
         stamp=os.getenv("GITHUB_RUN_ID") or str(int(time.time()))
@@ -123,15 +136,19 @@ def main():
                 write(backup+"/"+name+".before",original)
                 print("VERIFIED_PRIVATE_BACKUP",name,flush=True)
         try:
-            # Endpoint always last: no public exposure during partial upload.
-            for name in ("wallet-real-worker.php","worker.local.php","numi-real-worker.php"):
+            # Private PHP before public API and public JS. Preserve the existing
+            # secret derivation and never change the private live flags.
+            for name in ("store.php","subscriptions.php","wallet-real.php",
+                         "wallet-real-payment.php","fulfillment.php","core.php",
+                         "wallet-real-worker.php","worker.local.php",
+                         "numi-real-worker.php"):
                 remote=dest[name]
                 if read(remote)!=originals[name]:
                     raise RuntimeError("CONCURRENT_SERVER_EDIT:"+name)
                 if originals[name]!=sources[name]:
                     changed.append(name)
                     write(remote,sources[name])
-                print("REAL_WORKER_FILE_VERIFIED",name,flush=True)
+                print("REAL_SUBSCRIPTION_FILE_VERIFIED",name,flush=True)
             # Explicit, authenticated additive database schema migration.
             req=urllib.request.Request(
                 "https://"+DOMAIN+"/api/numi-real-worker.php",
@@ -167,16 +184,40 @@ def main():
             except urllib.error.HTTPError as exc:
                 raise RuntimeError("LIVE_PROVIDER_PROBE_HTTP_"+str(exc.code)) from None
             print("LIVE_PROVIDER_SAFE_PROBE",json.dumps(body,ensure_ascii=False),flush=True)
-            print("REAL_WORKER_GATEWAY_DEPLOYED_NO_LIVE_CHARGES",flush=True)
+            # Publish the new cabinet UI only after backend, schema and
+            # private-provider diagnostics have all succeeded.
+            name="account-browser.js"
+            if read(dest[name])!=originals[name]:
+                raise RuntimeError("CONCURRENT_SERVER_EDIT:"+name)
+            if originals[name]!=sources[name]:
+                changed.append(name)
+                write(dest[name],sources[name])
+            print("REG_RU_SUBSCRIPTION_UI_SOURCE_VERIFIED",flush=True)
+            # No cookies or customer data: only an anonymous API check.
+            account_url="https://"+DOMAIN+"/api/numi-account.php"
+            anonymous=urllib.request.Request(account_url,
+                data=b'{"action":"subscription_checkout","auto_renew_consent":true}',
+                headers={"Content-Type":"application/json",
+                         "Origin":"https://"+DOMAIN,
+                         "Cache-Control":"no-store"},method="POST")
+            try:
+                with urllib.request.urlopen(anonymous,timeout=25) as response:
+                    status=response.status
+            except urllib.error.HTTPError as exc:
+                status=exc.code
+            if status!=401:
+                raise RuntimeError("ANONYMOUS_SUBSCRIPTION_NOT_DENIED:"+str(status))
+            print("REG_RU_ANONYMOUS_SUBSCRIPTION_FORBIDDEN",flush=True)
+            print("REAL_SUBSCRIPTION_DEPLOYED_APPROVAL_GATE_STILL_REQUIRED",flush=True)
         except BaseException:
-            print("REAL_WORKER_ROLLBACK_STARTED",flush=True)
+            print("REAL_SUBSCRIPTION_ROLLBACK_STARTED",flush=True)
             for name in reversed(changed):
                 try:
                     if originals[name] is None:ftp.delete(dest[name])
                     else:write(dest[name],originals[name])
-                    print("REAL_WORKER_ROLLBACK_VERIFIED",name,flush=True)
+                    print("REAL_SUBSCRIPTION_ROLLBACK_VERIFIED",name,flush=True)
                 except BaseException:
-                    print("REAL_WORKER_ROLLBACK_NEEDS_MANUAL_ATTENTION",name,flush=True)
+                    print("REAL_SUBSCRIPTION_ROLLBACK_NEEDS_MANUAL_ATTENTION",name,flush=True)
             raise
     finally:
         try:ftp.quit()
