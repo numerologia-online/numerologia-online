@@ -399,7 +399,7 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                 JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
                 WHERE e.account_id=? AND e.product_code='club_month'
                   AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
-                  AND o.status='paid' AND o.verified_at IS NOT NULL AND o.provider='real_wallet'");
+                  AND o.status='paid' AND o.verified_at IS NOT NULL AND o.provider IN ('real_wallet','real_subscription')");
             $q->execute([$account['id']]);
             $result['club_expires_at']=$q->fetchColumn()?:null;
             $periods=$db->prepare("SELECT e.product_code,MAX(e.expires_at) AS expires_at
@@ -407,7 +407,7 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                 JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
                 WHERE e.account_id=? AND e.product_code IN ('club_month','school_week')
                   AND e.status='active' AND o.status='paid'
-                  AND o.verified_at IS NOT NULL AND o.provider='real_wallet'
+                  AND o.verified_at IS NOT NULL AND o.provider IN ('real_wallet','real_subscription')
                 GROUP BY e.product_code");
             $periods->execute([$account['id']]);
             $byPeriod=[];
@@ -483,7 +483,7 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
                     WHERE e.account_id=? AND e.product_code=? AND e.resource_id=?
                       AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
-                      AND o.status='paid' AND o.verified_at IS NOT NULL AND o.provider='real_wallet'
+                      AND o.status='paid' AND o.verified_at IS NOT NULL AND o.provider IN ('real_wallet','real_subscription')
                     ORDER BY o.created_at DESC LIMIT 1");
                 $q->execute([$account['id'],$data['product_code'],$data['resource_id']]);
                 $entitlement=$q->fetchColumn()?:null;
