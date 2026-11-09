@@ -53,7 +53,7 @@ def published_paid_question(category, question):
     if len(set(entries.values())) != 366:
         return False
     if question["id"] == "family-load" and not all(
-        len([part for part in re.split(r"\\n\\s*\\n", entries[date]) if part.strip()]) >= 2
+        len([part for part in re.split(r"\n\s*\n", entries[date]) if part.strip()]) >= 2
         for date in dates
     ):
         return False
