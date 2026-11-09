@@ -141,7 +141,22 @@ const telegramBridge=()=>Boolean(
    window.Telegram.WebApp.platform!=="web")
 );
 const telegramExternal=()=>Boolean(telegramBridge() &&
-  typeof window.Telegram?.WebApp?.openLink==="function");
+  (typeof window.TelegramWebviewProxy?.postEvent==="function" ||
+   typeof window.external?.notify==="function" ||
+   typeof window.Telegram?.WebApp?.openLink==="function"));
+// Use Telegram's documented native event. Without original launch parameters
+// the SDK may assume version 6.0 and fall back to window.open(), which keeps
+// the payment inside the Mini App on iOS.
+function openPaymentExternally(href){
+ const eventType="web_app_open_link",eventData={url:href};
+ if(typeof window.TelegramWebviewProxy?.postEvent==="function"){
+   window.TelegramWebviewProxy.postEvent(eventType,JSON.stringify(eventData));
+ }else if(typeof window.external?.notify==="function"){
+   window.external.notify(JSON.stringify({eventType,eventData}));
+ }else{
+   window.Telegram.WebApp.openLink(href);
+ }
+}
 let prepared=null,prepareSeq=0,prepareTimer=null,pendingExternal=null,rechecking=false;
 let completedFingerprint=null;
 function selection(){
@@ -286,7 +301,7 @@ form.addEventListener("submit",async event=>{
      return;
    }
    try{
-     window.Telegram.WebApp.openLink(prepared.href);
+     openPaymentExternally(prepared.href);
      pendingExternal=prepared;
      message("Оплата открыта в браузере. После возвращения проверим баланс.");
    }catch(_){
