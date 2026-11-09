@@ -1,8 +1,10 @@
 name: Check live VPN DNS records
 on:
   push:
+    branches: [main]
     paths:
       - .github/workflows/numi-dns-vpn-check.yml
+      - scripts/diagnose-vpn-dns.py
 permissions:
   contents: write
 jobs:
