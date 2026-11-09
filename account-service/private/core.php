@@ -614,6 +614,29 @@ function naCatalogHasAccess(PDO $db, ?array $account, string $code, string $reso
     $stmt->execute([$account['id'],$code,$resource]);
     return (bool)$stmt->fetchColumn();
 }
+/**
+ * Single generated Red Flag catalogue (questions, tiers, publication state).
+ * Built from data/redflag/banks by scripts/build-store-catalog.py.
+ * Installed as a PRIVATE sibling of core.php; never read from webroot.
+ * Missing/malformed file blocks purchases instead of falling back to stale rules.
+ */
+function naRedFlagCatalog(): array {
+    static $catalog=null;
+    if($catalog!==null)return $catalog;
+    $path=__DIR__.'/redflag-catalog.json';
+    if(!is_file($path)||filesize($path)>250000)
+        throw new RuntimeException('REDFLAG_CATALOG_UNAVAILABLE');
+    $raw=file_get_contents($path);
+    if(!is_string($raw)||$raw==='')
+        throw new RuntimeException('REDFLAG_CATALOG_UNAVAILABLE');
+    try{$data=json_decode($raw,true,32,JSON_THROW_ON_ERROR);}
+    catch(JsonException $e){throw new RuntimeException('REDFLAG_CATALOG_UNAVAILABLE',0,$e);}
+    if(!is_array($data)||($data['version']??null)!==1
+       ||!is_array($data['questions']??null))
+        throw new RuntimeException('REDFLAG_CATALOG_UNAVAILABLE');
+    return $catalog=$data['questions'];
+}
+
 function naCatalogResolve(array $input,bool $club): array {
     $code=$input['product_code']??null;
     if (!is_string($code) || strlen($code)>64) throw new InvalidArgumentException('INVALID_PRODUCT');
@@ -646,18 +669,22 @@ function naCatalogResolve(array $input,bool $club): array {
         $category=$input['category']??null; $question=$input['question_id']??null;
         if (!is_string($category) || !is_string($question) || $date===null)
             throw new InvalidArgumentException('INVALID_QUESTION_SUBJECT');
-        $catalog=json_decode('{"money":{"gift":[10,1,1],"generosity":[10,0,1],"courtship":[10,0,1],"provider":[29,0,0],"words-or-deeds":[29,0,1],"family-load":[29,0,0],"resource":[29,0,1],"solve-or-create":[49,0,1],"responsibility":[49,0,1],"celebration":[49,0,1],"comic-verdict-money":[49,0,0]},"love":{"first-step":[10,1,0],"romance":[10,0,0],"relationship-or-comfort":[10,0,0],"adult-partner":[29,0,0],"near-him":[29,0,0],"hard-moment":[29,0,0],"relationship-format":[29,0,0],"family-or-triangle":[49,0,0],"honest-or-disappear":[49,0,0],"love-or-attention":[49,0,0]},"flags":{"say-no":[10,1,0],"care-or-control":[29,0,0],"hero":[29,0,0],"jealousy":[29,0,0],"argument":[29,0,0],"abuse-signal":[49,0,0],"support-or-cause":[49,0,0],"apology":[49,0,0],"weak-place":[49,0,0],"calm-or-swings":[49,0,0]},"infidelity":{"faithful":[10,1,0],"options":[10,0,0],"flirt":[10,0,0],"trust":[29,0,0],"ex":[29,0,0],"temptation":[29,0,0],"physical-or-emotional":[29,0,0],"secrecy":[49,0,0],"return":[49,0,0],"after-mistake":[49,0,0]},"intimacy":{"fire":[10,1,0],"her-pleasure":[10,0,0],"pace":[10,0,0],"desire-talk":[29,0,0],"tenderness":[29,0,0],"boundaries":[29,0,0],"closeness":[29,0,0],"initiative":[49,0,0],"compatibility":[49,0,0],"after":[49,0,0]},"family":{"independent":[10,1,0],"household":[10,0,0],"vacation":[10,0,0],"plans":[29,0,0],"children":[29,0,0],"roles":[29,0,0],"home":[29,0,0],"conflict":[49,0,0],"money-at-home":[49,0,0],"care":[49,0,0]},"language":{"love-language":[10,1,0],"how-to-talk":[10,0,0],"accept-love":[10,0,0],"show-love":[49,0,0],"criticism":[29,0,0],"ask":[29,0,0],"distance":[29,0,0],"hurt":[49,0,0],"conflict-style":[49,0,0],"compliment":[49,0,0]},"verdict":{"final":[10,1,0],"worth-it":[10,0,0],"beauty-and-flag":[10,0,0],"check":[29,0,0],"main-advice":[29,0,0],"his-need":[29,0,0],"weak-point":[29,0,0],"best-side":[49,0,0],"format":[49,0,0],"bottom-line":[49,0,0]}}',true,16,JSON_THROW_ON_ERROR);
+        $catalog=naRedFlagCatalog();
         $meta=$catalog[$category][$question]??null;
-        if (!is_array($meta) || count($meta)!==3)
+        if (!is_array($meta)
+            || !in_array($meta['tier']??null,[10,29,49],true)
+            || !is_bool($meta['free']??null)
+            || !is_bool($meta['ready']??null))
             throw new InvalidArgumentException('UNKNOWN_QUESTION');
-        $tier=(int)$meta[0]; $isPreview=(bool)$meta[1]; $isReady=(bool)$meta[2];
+        $tier=$meta['tier'];$isPreview=$meta['free'];$isReady=$meta['ready'];
         $prices=[10=>[2000,1000],29=>[3900,1900],49=>[7900,3900]];
         $price=$isPreview?0:($club?$prices[$tier][1]:$prices[$tier][0]);
         $resource='redflag:'.$category.':'.$question.':'.$date;
         $kind='question';
-        $availability=$isPreview?'FREE_PREVIEW':(
-            !$isReady || !in_array($category,['money','love'],true)
-             ?'AUTHOR_TEXT_NOT_CONFIRMED':'FULFILLMENT_NOT_CONNECTED');
+        // The published flag is generated from editorial approval + 366 dates.
+        // The actual material is independently verified before any charge.
+        $availability=$isPreview?'FREE_PREVIEW':
+            ($isReady?'FULFILLMENT_NOT_CONNECTED':'AUTHOR_TEXT_NOT_CONFIRMED');
     } elseif ($code==='yesno_question') {
         $question=$input['question_id']??null;
         $clock=$input['question_time']??null;
