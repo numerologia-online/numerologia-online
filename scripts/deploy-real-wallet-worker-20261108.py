@@ -52,6 +52,15 @@ def main():
         "    'allow_additive_migration' => true,\n"
         "];\n"
     ).encode()
+    # Refuse an out-of-sync catalog BEFORE contacting REG.RU. Questions and
+    # availability must be regenerated from editorial banks on each release.
+    subprocess.run(["python3", "scripts/build-store-catalog.py"], check=True)
+    generated = ["account-service/private/redflag-catalog.json",
+                 "redflag-public-catalog.js", "store-catalog.json"]
+    compare = subprocess.run(["git", "diff", "--exit-code", "--", *generated],
+                             stdout=subprocess.DEVNULL)
+    if compare.returncode != 0:
+        raise RuntimeError("REDFLAG_GENERATED_CATALOG_OUT_OF_SYNC")
     # Extend the established guarded publisher; do not introduce a second
     # deployment system, new branches or new production directories.
     source_paths = {
