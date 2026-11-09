@@ -131,7 +131,16 @@ async function initialize(){
 // Telegram allows opening an external browser only directly after a tap.
 // Prepare a verified YooKassa URL in advance, then invoke openLink synchronously
 // from the EXISTING Continue button. Preparation creates no card charge.
-const telegramExternal=()=>Boolean(window.Telegram?.WebApp?.initData &&
+// initData is NOT a reliable browser detector after navigating within a Mini App:
+// the signed launch payload may be missing while the native Telegram bridge lives.
+const telegramBridge=()=>Boolean(
+  typeof window.TelegramWebviewProxy?.postEvent==="function" ||
+  typeof window.external?.notify==="function" ||
+  (window.Telegram?.WebApp?.platform &&
+   window.Telegram.WebApp.platform!=="unknown" &&
+   window.Telegram.WebApp.platform!=="web")
+);
+const telegramExternal=()=>Boolean(telegramBridge() &&
   typeof window.Telegram?.WebApp?.openLink==="function");
 let prepared=null,prepareSeq=0,prepareTimer=null,pendingExternal=null,rechecking=false;
 let completedFingerprint=null;
