@@ -25,7 +25,11 @@ function naCartResolve(array $inputs,bool $club,callable $owns,array $ready=[],?
         $seen[$key]=true;
         $quote['access_active']=$owns($quote['product_code'],$quote['resource_id']) || $quote['member_included'];
         // Readiness requires a reviewed fulfillment adapter; a client flag never makes an item sellable.
-        $quote['sale_ready']=$quote['product_code']!=='moment_question'
+        // All Red Flag pricing and publication states come from ONE generated
+        // catalogue. Even if a bank file exists, a draft may not be charged.
+        $published=$quote['product_code']!=='redflag_question'
+            || $quote['availability']==='FULFILLMENT_NOT_CONNECTED';
+        $quote['sale_ready']=$published && $quote['product_code']!=='moment_question'
             && is_int($quote['price_kopeks']) && $quote['price_kopeks']>0
             && ($readyCheck ? $readyCheck($quote) : (in_array($quote['product_code'],$ready,true) && $quote['availability']==='FULFILLMENT_NOT_CONNECTED'));
         if (($quote['access_active'] && $quote['kind']!=='subscription') || !$quote['sale_ready']) $blocked=true;
