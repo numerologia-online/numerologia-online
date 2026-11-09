@@ -1,4 +1,5 @@
-// PUBLIC METADATA ONLY. Only each category's first, free answer may include variants.
+// GENERATED from data/redflag banks and approved material files.
+// Public metadata and free answers only. NEVER add paid text here.
 export const PUBLIC_CATEGORIES = [
   {
     "id": "money",
@@ -18,7 +19,7 @@ export const PUBLIC_CATEGORIES = [
     "id": "flags",
     "kicker": "Красные флаги",
     "title": "Красные флаги",
-    "description": "Где забота, а где контроль и манипуляции?",
+    "description": "Качели, контроль, давление и границы",
     "bank": "flags"
   },
   {
@@ -63,8 +64,8 @@ export const PUBLIC_QUESTIONS = {
       "id": "gift",
       "title": "Будет дарить подарки или даже цветы придётся выпрашивать?",
       "priceRub": 10,
-      "status": "ready",
-      "textFile": "money/gift.json"
+      "textFile": "money/gift.json?v=6",
+      "status": "ready"
     },
     {
       "id": "generosity",
@@ -76,13 +77,13 @@ export const PUBLIC_QUESTIONS = {
       "id": "courtship",
       "title": "Будет красиво ухаживать или максимум кофе и прогулка?",
       "priceRub": 10,
-      "status": "ready"
+      "status": "soon"
     },
     {
       "id": "provider",
       "title": "Умеет зарабатывать или всю жизнь будет искать себя?",
       "priceRub": 29,
-      "status": "in-progress"
+      "status": "soon"
     },
     {
       "id": "words-or-deeds",
@@ -94,7 +95,7 @@ export const PUBLIC_QUESTIONS = {
       "id": "family-load",
       "title": "Будет опорой для семьи или всё снова окажется на твоих плечах?",
       "priceRub": 29,
-      "status": "in-review"
+      "status": "soon"
     },
     {
       "id": "resource",
@@ -124,7 +125,7 @@ export const PUBLIC_QUESTIONS = {
       "id": "comic-verdict-money",
       "title": "😂 Шуточный вердикт",
       "priceRub": 49,
-      "status": "in-progress"
+      "status": "soon"
     }
   ],
   "love": [
@@ -132,52 +133,62 @@ export const PUBLIC_QUESTIONS = {
       "id": "first-step",
       "title": "Пишет первым или ждёт инициативы от женщины?",
       "priceRub": 10,
-      "textFile": "love/first-step.json"
+      "textFile": "love/first-step.json?v=2",
+      "status": "ready"
     },
     {
       "id": "romance",
       "title": "Романтик в жизни или только в переписке?",
-      "priceRub": 10
+      "priceRub": 10,
+      "status": "soon"
     },
     {
       "id": "relationship-or-comfort",
       "title": "Ищет любовь или просто удобную женщину?",
-      "priceRub": 10
+      "priceRub": 10,
+      "status": "soon"
     },
     {
       "id": "adult-partner",
       "title": "Мужчина для семьи или вечный мальчик?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "near-him",
       "title": "Рядом с ним женщина расцветает или гаснет?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "hard-moment",
       "title": "Поддержит в беде или исчезнет первым?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "relationship-format",
       "title": "Готов к серьёзным отношениям или вечно «я не готов»?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "family-or-triangle",
       "title": "Способен быть с одной женщиной или его тянет в любовные треугольники?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "honest-or-disappear",
       "title": "Почему он исчезает без объяснений?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "love-or-attention",
       "title": "Умеет любить или только позволяет себя любить?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     }
   ],
   "flags": [
@@ -200,52 +211,63 @@ export const PUBLIC_QUESTIONS = {
           "answer": "Отказ может запускать обиды, исчезновения или давление. Здесь важно не торговаться собственной свободой ради мира."
         }
       },
-      "observation": "Проверьте на маленьком отказе: остаётся ли рядом уважение?"
+      "usePeriod": false,
+      "observation": "Проверьте на маленьком отказе: остаётся ли рядом уважение?",
+      "status": "ready"
     },
     {
       "id": "care-or-control",
       "title": "Заботится или будет контролировать каждый твой шаг?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "hero",
       "title": "Скромный мужчина или считает себя подарком судьбы?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "jealousy",
       "title": "Ревнует от любви или устроит допрос за каждый лайк?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "argument",
       "title": "Умеет говорить о проблемах или наказывает молчанием?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "abuse-signal",
       "title": "Какой тревожный сигнал нельзя пропустить в начале знакомства?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "support-or-cause",
       "title": "Будет твоей опорой или сам доведёт до слёз?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "apology",
       "title": "После ссоры извинится или виноватой сделает тебя?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "weak-place",
       "title": "Какая его слабость может разрушить ваши отношения?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "calm-or-swings",
       "title": "С ним спокойно или тебя ждут эмоциональные качели?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     }
   ],
   "infidelity": [
@@ -269,52 +291,62 @@ export const PUBLIC_QUESTIONS = {
         }
       },
       "usePeriod": true,
-      "observation": "Совпадают ли у вас представления о том, что считается флиртом и уважением к паре?"
+      "observation": "Совпадают ли у вас представления о том, что считается флиртом и уважением к паре?",
+      "status": "ready"
     },
     {
       "id": "options",
       "title": "Верный или постоянно ищет запасные варианты?",
-      "priceRub": 10
+      "priceRub": 10,
+      "status": "soon"
     },
     {
       "id": "flirt",
       "title": "Флиртует по привычке или ему правда важна одна женщина?",
-      "priceRub": 10
+      "priceRub": 10,
+      "status": "soon"
     },
     {
       "id": "trust",
       "title": "Ему можно доверять или лучше снять розовые очки?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "ex",
       "title": "Если напишет бывшая — поставит точку или приоткроет дверь?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "temptation",
       "title": "Как он ведёт себя, когда появляется соблазн?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "physical-or-emotional",
       "title": "Любитель крутить тайные романы в своей голове?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "secrecy",
       "title": "Говорит о себе правду или скрывает половину своей жизни?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "return",
       "title": "Уходит навсегда или возвращается ко всем бывшим?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "after-mistake",
       "title": "Если поймаешь на измене, признается или сделает виноватой тебя?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     }
   ],
   "intimacy": [
@@ -337,52 +369,63 @@ export const PUBLIC_QUESTIONS = {
           "answer": "Его желание зависит от состояния, новизны и эмоционального контакта; резкие выводы после одной встречи будут неточны."
         }
       },
-      "observation": "Уважает ли он ваш темп или торопит ради собственного сценария?"
+      "usePeriod": false,
+      "observation": "Уважает ли он ваш темп или торопит ради собственного сценария?",
+      "status": "ready"
     },
     {
       "id": "her-pleasure",
       "title": "В близости думает о женщине или только любуется собой?",
-      "priceRub": 10
+      "priceRub": 10,
+      "status": "soon"
     },
     {
       "id": "pace",
       "title": "Страстный партнёр или быстро начинает скучать?",
-      "priceRub": 10
+      "priceRub": 10,
+      "status": "soon"
     },
     {
       "id": "desire-talk",
       "title": "Энергия желания есть или разговор про темперамент обречён?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "tenderness",
       "title": "Способен к нежности или для него важна только искра?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "boundaries",
       "title": "Умеет слышать границы или считает отказ личным оскорблением?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "closeness",
       "title": "Близость для любви или для самоутверждения?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "initiative",
       "title": "Он внимательный инициатор или ждёт, что женщина всё организует сама?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "compatibility",
       "title": "Горячий любовник или секс по праздникам?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "after",
       "title": "После секса привязывается или теряет интерес?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     }
   ],
   "family": [
@@ -406,52 +449,62 @@ export const PUBLIC_QUESTIONS = {
         }
       },
       "usePeriod": true,
-      "observation": "Кто сейчас решает его бытовые, финансовые и медицинские вопросы — он сам или кто-то вместо него?"
+      "observation": "Кто сейчас решает его бытовые, финансовые и медицинские вопросы — он сам или кто-то вместо него?",
+      "status": "ready"
     },
     {
       "id": "household",
       "title": "Хозяйственный или из серии «мама всё делала»?",
-      "priceRub": 10
+      "priceRub": 10,
+      "status": "soon"
     },
     {
       "id": "vacation",
       "title": "С ним в отпуск кайф или нервный квест на выживание?",
-      "priceRub": 10
+      "priceRub": 10,
+      "status": "soon"
     },
     {
       "id": "plans",
       "title": "Обещает и делает или просто король планов?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "children",
       "title": "Готов ли он к ребёнку или пока сам ещё растёт?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "roles",
       "title": "Будет партнёром или начальником в семье?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "home",
       "title": "Семья для него главное или дома его не дождёшься?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "conflict",
       "title": "При первых семейных проблемах будет бороться или соберёт чемодан?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "money-at-home",
       "title": "Умеет ли он создавать опору для дома, а не только говорить о будущем?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "care",
       "title": "Он заботится в быту или ждёт, что любовь всё сама устроит?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     }
   ],
   "language": [
@@ -474,52 +527,63 @@ export const PUBLIC_QUESTIONS = {
           "answer": "Ему важны вдохновение, восхищение и ощущение особой связи. Но отношения не должны держаться только на вспышке."
         }
       },
-      "observation": "На что он реагирует теплее: слова, помощь, время вместе, прикосновения или уважение к его пространству?"
+      "usePeriod": false,
+      "observation": "На что он реагирует теплее: слова, помощь, время вместе, прикосновения или уважение к его пространству?",
+      "status": "ready"
     },
     {
       "id": "how-to-talk",
       "title": "Как с ним говорить, чтобы не биться в стену?",
-      "priceRub": 10
+      "priceRub": 10,
+      "status": "soon"
     },
     {
       "id": "accept-love",
       "title": "Как он принимает любовь и заботу, чтобы не было мимо?",
-      "priceRub": 10
+      "priceRub": 10,
+      "status": "soon"
     },
     {
       "id": "show-love",
       "title": "Язык любви - как понять по поступкам, что у него есть чувства?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "criticism",
       "title": "Как он реагирует на критику и неудобную правду?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "ask",
       "title": "Как у него лучше просить, а не ждать телепатии?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "distance",
       "title": "Что делать, когда он отдаляется?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "hurt",
       "title": "Что его ранит сильнее всего в отношениях?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "conflict-style",
       "title": "Как не промахнуться с ним в конфликте?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "compliment",
       "title": "Какая поддержка для него правда работает?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     }
   ],
   "verdict": [
@@ -543,52 +607,62 @@ export const PUBLIC_QUESTIONS = {
         }
       },
       "usePeriod": true,
-      "observation": "Выбирайте не потенциал человека, а ту реальность, которую он уже создаёт рядом с вами."
+      "observation": "Выбирайте не потенциал человека, а ту реальность, которую он уже создаёт рядом с вами.",
+      "status": "ready"
     },
     {
       "id": "worth-it",
       "title": "С ним вообще стоит связываться или лучше не тратить время?",
-      "priceRub": 10
+      "priceRub": 10,
+      "status": "soon"
     },
     {
       "id": "beauty-and-flag",
       "title": "Красивый мужчина или Red Flag с красивыми глазами?",
-      "priceRub": 10
+      "priceRub": 10,
+      "status": "soon"
     },
     {
       "id": "check",
       "title": "Его ещё проверять поступками или уже всё понятно?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "main-advice",
       "title": "Какой главный совет женщине рядом с ним?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "his-need",
       "title": "Что ему нужно от женщины, чтобы правда раскрыться?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "weak-point",
       "title": "Где его главный риск в отношениях?",
-      "priceRub": 29
+      "priceRub": 29,
+      "status": "soon"
     },
     {
       "id": "best-side",
       "title": "Чем он способен порадовать в любви?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "format",
       "title": "Какой формат отношений с ним будет самым здоровым?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     },
     {
       "id": "bottom-line",
       "title": "Как понять, что пора выбрать себя, а не ждать его?",
-      "priceRub": 49
+      "priceRub": 49,
+      "status": "soon"
     }
   ]
 };
