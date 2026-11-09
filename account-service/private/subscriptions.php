@@ -220,9 +220,10 @@ function naLiveSubscriptionStart(
             if((bool)$pref->fetchColumn())throw new RuntimeException('REAL_SUBSCRIPTION_ALREADY_AUTO_RENEWING');
             $db->prepare("UPDATE numi_subscription_settings
                 SET cancelled_at=NULL,auto_renew=0,receipt_email=?,
-                    consent_at=UTC_TIMESTAMP(),payment_method_id=NULL
+                    consent_at=UTC_TIMESTAMP(),payment_method_id=NULL,
+                    source_order_id=?
                 WHERE account_id=? AND product_code=?")
-                ->execute([$email,$account['id'],$code]);
+                ->execute([$email,$orderId,$account['id'],$code]);
         }
         $db->commit();
     }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
@@ -259,7 +260,7 @@ function naLiveSubscriptionCreatePayment(
         $age=time()-(new DateTimeImmutable($checkout['created_at'],new DateTimeZone('UTC')))->getTimestamp();
         if($age>23*3600 || $age<(-60))
             throw new RuntimeException('REAL_SUBSCRIPTION_RECONCILIATION_REQUIRED');
-        $pref=$db->prepare("SELECT auto_renew,payment_method_id,cancelled_at,receipt_email
+        $pref=$db->prepare("SELECT auto_renew,payment_method_id,cancelled_at,receipt_email,source_order_id
             FROM numi_subscription_settings WHERE account_id=? AND product_code=? FOR UPDATE");
         $pref->execute([$accountId,$code]);$state=$pref->fetch(PDO::FETCH_ASSOC);
         if(!$state || $state['cancelled_at']!==null)
@@ -269,7 +270,8 @@ function naLiveSubscriptionCreatePayment(
         $consent->execute([$checkoutId,$code]);$firstEmail=$consent->fetchColumn();
         $initial=$firstEmail!==false;
         if($initial){
-            if($renewMethod!==null)throw new RuntimeException('REAL_SUBSCRIPTION_INVALID_MODE');
+            if($renewMethod!==null || $state['source_order_id']!==$checkout['order_id'])
+                throw new RuntimeException('REAL_SUBSCRIPTION_INVALID_MODE');
             $email=naRealWalletReceiptEmail($firstEmail);
         }else{
             if(!(bool)$state['auto_renew']
@@ -402,7 +404,8 @@ function naLiveSubscriptionSync(PDO $db,array $config,string $checkoutId,string 
                     && ($method['type']??null)==='bank_card'
                     && is_string($savedId)
                     && preg_match('/^[A-Za-z0-9-]{1,191}$/D',$savedId)===1;
-                if($settings['cancelled_at']===null && $valid){
+                if($settings['cancelled_at']===null
+                    && $settings['source_order_id']===$fresh['order_id'] && $valid){
                     $db->prepare("UPDATE numi_subscription_settings
                         SET auto_renew=1,payment_method_id=?,receipt_email=?,
                             consent_at=?,source_order_id=?
