@@ -107,3 +107,206 @@ function naSubscriptionTick(PDO $db,array $config): array {
     }
     return $result;
 }
+
+
+/**
+ * LIVE card subscription, distinct from wallet top-ups and TEST renewals.
+ * Reuses numi_checkouts, numi_checkout_items, numi_checkout_consents,
+ * numi_subscription_settings, numi_orders and numi_entitlements.
+ * Merchant approval, fiscal review and an explicit private opt-in are ALL
+ * required before a real card payment can be created.
+ */
+function naLiveRecurringAllowed(array $config): bool {
+    return naRealWalletGate($config)
+        && ($config['recurring_merchant_approved']??false)===true
+        && ($config['subscription_receipts_verified']??false)===true
+        && ($config['live_recurring_enabled']??false)===true
+        && ($config['offset_receipt_reviewed']??false)===true
+        && is_int($config['offset_receipt_vat_code']??null);
+}
+function naLiveSubscriptionItem(string $code): array {
+    if(!naSubscriptionCode($code))throw new InvalidArgumentException('INVALID_SUBSCRIPTION');
+    $item=naCatalogResolve(['product_code'=>$code],false);
+    if(($item['kind']??null)!=='subscription' || ($item['price_kopeks']??0)<1)
+        throw new RuntimeException('SUBSCRIPTION_PRODUCT_UNAVAILABLE');
+    return $item;
+}
+function naLiveSubscriptionReceipt(array $config,string $code,int $kopeks,string $email): array {
+    if(!naLiveRecurringAllowed($config))throw new RuntimeException('REAL_RECURRING_NOT_APPROVED');
+    $email=naRealWalletReceiptEmail($email);
+    $vat=$config['offset_receipt_vat_code'];
+    if($vat<1 || $vat>12)throw new RuntimeException('REAL_SUBSCRIPTION_VAT_NOT_REVIEWED');
+    $label=$code==='club_month'?'Подписка Нумерология онлайн, 1 месяц'
+        :'Самоучитель нумерологии, 7 дней';
+    return ['customer'=>['email'=>$email],'items'=>[[
+        'description'=>$label,'quantity'=>1.0,
+        'amount'=>['value'=>naStoreAmount($kopeks),'currency'=>'RUB'],
+        'vat_code'=>$vat,'payment_mode'=>'full_payment',
+        'payment_subject'=>'service',
+    ]]];
+}
+function naLiveSubscriptionPaymentCheck(array $payment,array $checkout,array $order): void {
+    if(($payment['test']??null)!==false
+        || !is_string($payment['id']??null)
+        || !preg_match('/^[A-Za-z0-9-]{1,191}$/D',$payment['id'])
+        || ($payment['amount']['currency']??null)!=='RUB'
+        || ($payment['amount']['value']??null)!==naStoreAmount((int)$checkout['amount_kopeks'])
+        || ($payment['metadata']['numi_subscription_checkout']??null)!==$checkout['id']
+        || ($order['provider']??null)!=='real_subscription'
+        || (int)$order['amount_kopeks']!==(int)$checkout['amount_kopeks'])
+        throw new RuntimeException('REAL_SUBSCRIPTION_PAYMENT_VERIFICATION_FAILED');
+}
+function naLiveSubscriptionCheckoutData(PDO $db,string $checkoutId,string $accountId): array {
+    $q=$db->prepare("SELECT c.*,o.id AS order_id,o.product_code,
+        o.resource_id,o.amount_kopeks AS order_amount,o.provider,o.status AS order_status
+        FROM numi_checkouts c JOIN numi_checkout_items i ON i.checkout_id=c.id
+        JOIN numi_orders o ON o.id=i.order_id
+        WHERE c.id=? AND c.account_id=? AND o.account_id=? AND o.provider='real_subscription'
+        LIMIT 1");
+    $q->execute([$checkoutId,$accountId,$accountId]);
+    $row=$q->fetch(PDO::FETCH_ASSOC);
+    if(!$row)throw new RuntimeException('REAL_SUBSCRIPTION_CHECKOUT_NOT_FOUND');
+    return $row;
+}
+/** Explicitly consented *initial* purchase, not a wallet top-up. */
+function naLiveSubscriptionStart(
+    PDO $db,array $account,array $config,string $code,string $email,string $requestKey
+): array {
+    if(!naLiveRecurringAllowed($config))throw new RuntimeException('REAL_RECURRING_NOT_APPROVED');
+    $item=naLiveSubscriptionItem($code);
+    $email=naRealWalletReceiptEmail($email);
+    $key=naWalletKey($requestKey);
+    $hash=hash('sha256',json_encode(['real_subscription_v1',$code,$item['price_kopeks'],$email],JSON_THROW_ON_ERROR));
+    $db->beginTransaction();
+    try{
+        $q=$db->prepare('SELECT id FROM numi_accounts WHERE id=? FOR UPDATE');
+        $q->execute([$account['id']]);
+        if(!$q->fetchColumn())throw new RuntimeException('ACCOUNT_NOT_FOUND');
+        $q=$db->prepare('SELECT * FROM numi_checkouts WHERE account_id=? AND request_key=?');
+        $q->execute([$account['id'],$key]);$existing=$q->fetch(PDO::FETCH_ASSOC);
+        if($existing && !hash_equals($existing['cart_hash'],$hash))
+            throw new InvalidArgumentException('REAL_SUBSCRIPTION_REQUEST_KEY_REUSED');
+        if($existing){
+            $id=$existing['id'];
+            $saved=naLiveSubscriptionCheckoutData($db,$id,$account['id']);
+            if($saved['product_code']!==$code || $saved['order_status']==='cancelled')
+                throw new RuntimeException('REAL_SUBSCRIPTION_ORDER_CANCELED');
+        }else{
+            $q=$db->prepare("SELECT 1 FROM numi_orders WHERE account_id=?
+                AND product_code=? AND provider='real_subscription' AND status='pending' LIMIT 1");
+            $q->execute([$account['id'],$code]);
+            if($q->fetchColumn())throw new RuntimeException('REAL_SUBSCRIPTION_PENDING_REVIEW');
+            $id=naUuid();$orderId=naUuid();
+            $db->prepare('INSERT INTO numi_checkouts
+                (id,account_id,request_key,cart_hash,amount_kopeks) VALUES(?,?,?,?,?)')
+                ->execute([$id,$account['id'],$key,$hash,$item['price_kopeks']]);
+            $db->prepare("INSERT INTO numi_orders
+                (id,account_id,product_code,resource_id,amount_kopeks,provider)
+                VALUES(?,?,?,?,?,'real_subscription')")
+                ->execute([$orderId,$account['id'],$code,$item['resource_id'],$item['price_kopeks']]);
+            $db->prepare('INSERT INTO numi_checkout_items(checkout_id,order_id) VALUES(?,?)')
+                ->execute([$id,$orderId]);
+            $db->prepare("INSERT INTO numi_checkout_consents
+                (checkout_id,product_code,consent_at,version,receipt_email)
+                VALUES(?,?,UTC_TIMESTAMP(),'live-subscription-v1',?)")
+                ->execute([$id,$code,$email]);
+            $db->prepare("INSERT IGNORE INTO numi_subscription_settings
+                (account_id,product_code) VALUES(?,?)")->execute([$account['id'],$code]);
+            $pref=$db->prepare("SELECT auto_renew FROM numi_subscription_settings
+                WHERE account_id=? AND product_code=? FOR UPDATE");
+            $pref->execute([$account['id'],$code]);
+            if((bool)$pref->fetchColumn())throw new RuntimeException('REAL_SUBSCRIPTION_ALREADY_AUTO_RENEWING');
+            $db->prepare("UPDATE numi_subscription_settings
+                SET cancelled_at=NULL,auto_renew=0,receipt_email=?,
+                    consent_at=UTC_TIMESTAMP(),payment_method_id=NULL
+                WHERE account_id=? AND product_code=?")
+                ->execute([$email,$account['id'],$code]);
+        }
+        $db->commit();
+    }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+    return naLiveSubscriptionCreatePayment($db,$config,$id,$account['id'],null);
+}
+/**
+ * Runs under the account lock, including the provider POST: a cancellation
+ * cannot race a new charge after it has returned. Same checkout UUID means
+ * same provider idempotency key; ambiguous requests are never replayed after 23h.
+ */
+function naLiveSubscriptionCreatePayment(
+    PDO $db,array $config,string $checkoutId,string $accountId,?string $renewMethod
+): array {
+    if(!naLiveRecurringAllowed($config))throw new RuntimeException('REAL_RECURRING_NOT_APPROVED');
+    $db->beginTransaction();
+    try{
+        $q=$db->prepare('SELECT id FROM numi_accounts WHERE id=? FOR UPDATE');
+        $q->execute([$accountId]);
+        if(!$q->fetchColumn())throw new RuntimeException('ACCOUNT_NOT_FOUND');
+        $checkout=naLiveSubscriptionCheckoutData($db,$checkoutId,$accountId);
+        $order=['provider'=>$checkout['provider'],'amount_kopeks'=>$checkout['order_amount']];
+        $code=$checkout['product_code'];
+        if($checkout['order_status']!=='pending')
+            throw new RuntimeException('REAL_SUBSCRIPTION_NOT_PENDING');
+        if($checkout['provider_payment_id']!==null){
+            $db->commit();
+            return ['checkout_id'=>$checkoutId,'payment_id'=>$checkout['provider_payment_id'],
+                'confirmation_url'=>$checkout['confirmation_url'],
+                'reused'=>true,'status'=>'pending'];
+        }
+        $age=time()-(new DateTimeImmutable($checkout['created_at'],new DateTimeZone('UTC')))->getTimestamp();
+        if($age>23*3600 || $age<(-60))
+            throw new RuntimeException('REAL_SUBSCRIPTION_RECONCILIATION_REQUIRED');
+        $pref=$db->prepare("SELECT auto_renew,payment_method_id,cancelled_at,receipt_email
+            FROM numi_subscription_settings WHERE account_id=? AND product_code=? FOR UPDATE");
+        $pref->execute([$accountId,$code]);$state=$pref->fetch(PDO::FETCH_ASSOC);
+        if(!$state || $state['cancelled_at']!==null)
+            throw new RuntimeException('REAL_SUBSCRIPTION_CONSENT_REVOKED');
+        $consent=$db->prepare("SELECT receipt_email FROM numi_checkout_consents
+            WHERE checkout_id=? AND product_code=? AND version='live-subscription-v1'");
+        $consent->execute([$checkoutId,$code]);$firstEmail=$consent->fetchColumn();
+        $initial=$firstEmail!==false;
+        if($initial){
+            if($renewMethod!==null)throw new RuntimeException('REAL_SUBSCRIPTION_INVALID_MODE');
+            $email=naRealWalletReceiptEmail($firstEmail);
+        }else{
+            if(!(bool)$state['auto_renew']
+                || !is_string($state['payment_method_id'])
+                || !hash_equals($state['payment_method_id'],(string)$renewMethod))
+                throw new RuntimeException('REAL_SUBSCRIPTION_CONSENT_REVOKED');
+            $email=naRealWalletReceiptEmail($state['receipt_email']);
+        }
+        $receipt=naLiveSubscriptionReceipt($config,$code,(int)$checkout['amount_kopeks'],$email);
+        $payload=[
+            'amount'=>['value'=>naStoreAmount((int)$checkout['amount_kopeks']),'currency'=>'RUB'],
+            'capture'=>true,
+            'description'=>$code==='club_month'?'Подписка Нумерология онлайн'
+                :'Самоучитель нумерологии',
+            'metadata'=>['numi_subscription_checkout'=>$checkoutId],
+            'receipt'=>$receipt,
+        ];
+        if($initial){
+            $payload['payment_method_data']=['type'=>'bank_card'];
+            $payload['save_payment_method']=true;
+            $payload['confirmation']=['type'=>'redirect',
+                'return_url'=>naPublicOrigin().'/?account=1&subscription_checkout='.$checkoutId];
+        }else{
+            $payload['payment_method_id']=$renewMethod;
+            $payload['save_payment_method']=false;
+        }
+        $key=hash('sha256','numi-live-sub-v1:'.$checkoutId);
+        $payment=naRealPaymentTransport($config,$key,$payload);
+        naLiveSubscriptionPaymentCheck($payment,$checkout,$order);
+        $url=$initial?naRealPaymentConfirmationUrl($payment):null;
+        if($initial && ($payment['status']??null)==='pending' && $url===null)
+            throw new RuntimeException('REAL_SUBSCRIPTION_CONFIRMATION_MISSING');
+        if(!$initial && isset($payment['confirmation']))
+            throw new RuntimeException('REAL_SUBSCRIPTION_RENEWAL_REQUIRES_REVIEW');
+        $db->prepare("UPDATE numi_checkouts SET provider_payment_id=?,confirmation_url=?
+            WHERE id=? AND provider_payment_id IS NULL")
+            ->execute([$payment['id'],$url,$checkoutId]);
+        $db->prepare("UPDATE numi_orders SET provider_payment_id=?
+            WHERE id=? AND provider_payment_id IS NULL")
+            ->execute([$payment['id'],$checkout['order_id']]);
+        $db->commit();
+        return ['checkout_id'=>$checkoutId,'payment_id'=>$payment['id'],
+            'confirmation_url'=>$url,'status'=>$payment['status']??'pending','reused'=>false];
+    }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+}
