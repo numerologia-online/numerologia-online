@@ -5,5 +5,5 @@
     "data/day/general/general-day-12.json",
     "data/day/general/general-day-14.json"
   ],
-  "note": "Owner-approved third editorial batch: 50 reviewed personal-day texts; guarded FTPS upload and backup of exactly these 3 JSON files."
+  "note": "Owner-approved third editorial batch, retry guarded publication after GitHub workflow failed before starting any job; backup and verify only three JSON files."
 }
