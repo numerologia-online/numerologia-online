@@ -442,6 +442,18 @@
         });
         if(result.test!==false||!result.checkout_id)
           throw new Error("Сервер не подтвердил заказ подписки.");
+        if(!result.confirmation_url){
+          const verified=await request("subscription_status",{checkout_id:result.checkout_id});
+          if(verified.status==="paid"){
+            sessionStorage.removeItem(keyId);
+            subscriptionMessage("Подписка оплачена. Автопродление: "+
+              (verified.auto_renew===true?"включено.":"не включено."));
+            await refreshWalletBadge();
+          }else{
+            subscriptionMessage("Платёж ещё проверяется ЮKassa. Повторное списание не создаём.");
+          }
+          return;
+        }
         const url=new URL(result.confirmation_url);
         if(url.protocol!=="https:"||url.port||url.username||url.password||
           !["yookassa.ru","yoomoney.ru"].some(host=>
