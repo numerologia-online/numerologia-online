@@ -11,11 +11,11 @@ const calendarDates = Array.from({ length: 12 }, (_, i) => {
 }).flat();
 const expected = new Set(calendarDates);
 
-test("80 questions have stable unique identities, ten in each of eight sections", async () => {
+test("80 core Red Flag questions plus the recorded bonus have unique identities", async () => {
   const ids = new Set();
   for (const bank of banks) {
     const data = JSON.parse(await source(`data/redflag/banks/${bank}.json`));
-    assert.equal(data.questions?.length, 10, bank);
+    assert.equal(data.questions?.length, bank === "money-questions" ? 11 : 10, bank);
     for (const question of data.questions) {
       assert.ok(question.id && question.title, bank);
       assert.ok(!ids.has(question.id), "Duplicate question: " + question.id);
@@ -24,7 +24,7 @@ test("80 questions have stable unique identities, ten in each of eight sections"
         "Question without a text bank or a recorded pending state: " + question.id);
     }
   }
-  assert.equal(ids.size, 80);
+  assert.equal(ids.size, 81);
 });
 
 test("Completed date-based Red Flag banks have exactly 366 distinct answers", async (t) => {
