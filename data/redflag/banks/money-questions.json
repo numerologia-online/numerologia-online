@@ -4,77 +4,66 @@
       "id": "gift",
       "title": "Будет дарить подарки или даже цветы придётся выпрашивать?",
       "textFile": "money/gift.json?v=6",
-      "status": "ready",
       "priceRub": 10,
       "isFree": true
     },
     {
       "id": "generosity",
       "title": "Щедрый мужчина или считает каждую копейку?",
-      "status": "ready",
       "textFile": "money/generosity.json?v=5",
       "priceRub": 10
     },
     {
       "id": "courtship",
       "title": "Будет красиво ухаживать или максимум кофе и прогулка?",
-      "status": "ready",
       "textFile": "money/courtship.json?v=12",
       "priceRub": 10
     },
     {
       "id": "provider",
       "title": "Умеет зарабатывать или всю жизнь будет искать себя?",
-      "status": "in-progress",
       "textFile": "money/provider.json?v=2",
       "priceRub": 29
     },
     {
       "id": "words-or-deeds",
       "title": "Держит слово или опять одни красивые разговоры?",
-      "status": "ready",
       "textFile": "money/words-or-deeds.json?v=1",
       "priceRub": 29
     },
     {
       "id": "family-load",
       "title": "Будет опорой для семьи или всё снова окажется на твоих плечах?",
-      "status": "in-review",
       "textFile": "money/family-load.json?v=4",
       "priceRub": 29
     },
     {
       "id": "resource",
       "title": "Рядом с ним ты будешь жить лучше или начнёшь экономить на себе?",
-      "status": "ready",
       "priceRub": 29,
       "textFile": "money/resource.json?v=7"
     },
     {
       "id": "solve-or-create",
       "title": "Есть ли у него потенциал стать богатым мужчиной?",
-      "status": "ready",
       "priceRub": 49,
       "textFile": "money/solve-or-create.json?v=7"
     },
     {
       "id": "responsibility",
       "title": "Будет ли мужчина жить за твой счёт?",
-      "status": "ready",
       "priceRub": 49,
       "textFile": "money/responsibility.json?v=7"
     },
     {
       "id": "celebration",
       "title": "Он приумножит ваши деньги или может оставить тебя с долгами?",
-      "status": "ready",
       "priceRub": 49,
       "textFile": "money/celebration.json?v=7"
     },
     {
       "id": "comic-verdict-money",
       "title": "😂 Шуточный вердикт",
-      "status": "in-progress",
       "priceRub": 49,
       "textFile": "money/comic-verdict.json?v=2"
     }
