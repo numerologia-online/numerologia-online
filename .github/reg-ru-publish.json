@@ -1,5 +1,9 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "Fifth editorial batch of 50 approved readings was backed up and verified on REG.RU (run 42681180622); Pages branch contains same approved texts. Read-only standby."
+  "mode": "publish",
+  "files": [
+    "data/day/general/general-day-13.json",
+    "data/day/general/general-day-17.json",
+    "data/day/general/general-day-21.json"
+  ],
+  "note": "Owner-approved sixth editorial batch: 50 expanded personal-day readings (energy 13: 21, energy 17: 18, energy 21: 11). Back up and verify only three files."
 }
