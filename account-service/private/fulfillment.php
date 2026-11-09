@@ -125,7 +125,7 @@ function naMaterialBuild(string $code,string $resource,?string $root=null): arra
 function naMaterialEntitlement(PDO $db,array $account,string $id): ?array {
     // Once REAL mode is selected, sandbox entitlements must not open paid content.
     $providerOnly=function_exists('naLiveWalletModeSelected')&&naLiveWalletModeSelected()
-        ?" AND o.provider='real_wallet'":"";
+        ?" AND o.provider IN ('real_wallet','real_subscription')":"";
     $q=$db->prepare("SELECT e.* FROM numi_entitlements e
         JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
         WHERE e.id=? AND e.account_id=? AND e.status='active'
