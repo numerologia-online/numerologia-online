@@ -34,6 +34,9 @@ jobs:
           grep -q "recurring_merchant_approved" account-service/private/subscriptions.php
           grep -q "'save_payment_method'=>false" account-service/private/wallet-real-payment.php
           grep -q 'subscription_cancel' account-service/private/core.php
+          grep -q 'Оформить подписку' account-browser.js
+          grep -q 'auto_renew_consent:true' account-browser.js
+          ! grep -q 'consent.type="checkbox"' account-browser.js
           test "$(grep -c 'src="store-browser.js' index.html || true)" = "0"
           echo "SUBSCRIPTION_RELEASE_STATIC_GATES_PASSED"
       - name: Guarded REG.RU comparison, backups, only necessary files and rollback
@@ -86,4 +89,4 @@ jobs:
               raise SystemExit('REG_RU_WORKER_STATUS_'+str(status)+'_'+str(payload.get('error','unknown')))
           PY
 
-# mobile subscriptions layout revision 20261109: verified CSS patch, no payment changes
+# recurring subscription purchase CTA revision 20261109: consent by explicit button click, no checkbox
