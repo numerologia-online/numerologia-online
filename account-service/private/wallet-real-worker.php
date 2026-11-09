@@ -242,5 +242,6 @@ function naRealWalletWorkerTick(PDO $db,array $config): array {
         'topups'=>naRealWorkerTopupTick($db,$config),
         'receipts'=>naRealWorkerOffsetTick($db,$config),
         'refunds'=>naRealWorkerRefundTick($db,$config),
+        'subscriptions'=>naLiveSubscriptionTick($db,$config),
     ];
 }
