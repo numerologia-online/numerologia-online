@@ -2,9 +2,15 @@
 declare(strict_types=1);
 require __DIR__.'/../private/core.php';
 require __DIR__.'/../private/store.php';
+require __DIR__.'/../private/fulfillment.php';
 $count=0;
 function check(bool $condition,string $message): void {global $count;$count++;if(!$condition)throw new RuntimeException($message);}
 function invalid(callable $call,string $message): void {try{$call();}catch(InvalidArgumentException|RuntimeException $e){check(true,$message);return;}throw new RuntimeException($message);}
+check(naRedFlagPaidStatus('ready') && naRedFlagPaidStatus('complete'),
+    'published Red Flag text allows ready and complete statuses');
+check(!naRedFlagPaidStatus('in-progress') && !naRedFlagPaidStatus('draft')
+    && !naRedFlagPaidStatus(null),
+    'unapproved Red Flag text never charged');
 $subjects=[
  ['product_code'=>'year_full','birth_date'=>'1986-09-09','year'=>2026],
  ['product_code'=>'life_full','birth_date'=>'1986-09-09'],
