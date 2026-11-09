@@ -147,6 +147,25 @@ function loadFreeImpression(energy) {
 }
 const paywallBanner = document.querySelector("#pro-paywall-banner");
 const paywallDialog = document.querySelector("#pro-paywall-dialog");
+const purchasedProRegion=document.createElement("section");
+purchasedProRegion.hidden=true;
+purchasedProRegion.setAttribute("aria-label","Оплаченный полный разбор жизни");
+results.prepend(purchasedProRegion);
+let purchasedPro=null;
+async function refreshPurchasedPro(){
+  if(schoolClientMode)return;
+  const chosen=input.value.trim();
+  const match=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(chosen);
+  if(!match)return;
+  const {recognizePurchasedReport}=await import("../store-entry.js?v=report-annual-20261109");
+  const granted=await recognizePurchasedReport(
+    {product_code:"life_full",birth_date:match[3]+"-"+match[2]+"-"+match[1]},purchasedProRegion);
+  if(chosen===input.value.trim()){
+    purchasedPro=granted;
+    if(granted&&paywallBanner)paywallBanner.hidden=true;
+  }
+}
+window.addEventListener("numi:wallet-updated",()=>{if(!results.hidden)void refreshPurchasedPro();});
 const oldPreviewParam = new URL(location.href);
 const startBrowserLogin = oldPreviewParam.searchParams.get("sign_in") === "telegram";
 let cleanedUrl = false;
@@ -163,6 +182,9 @@ if (startBrowserLogin) {
   location.assign(AUTH_SERVER + "/api/start?return_to=pro");
 }
 function showPaymentInfo() {
+  if(purchasedPro&&!purchasedProRegion.hidden){
+    purchasedProRegion.scrollIntoView({behavior:"smooth",block:"start"});return;
+  }
   if (schoolClientMode || !paywallDialog) return;
   const note = paywallDialog.querySelector("#pro-paywall-checkout-note");
   if (note) {
@@ -1422,6 +1444,9 @@ form.addEventListener("submit", async(event)=>{
   error.hidden=true;
   closeKarmicInline();
   invalidateFullPdf();
+  purchasedPro=null;
+  purchasedProRegion.hidden=true;
+  purchasedProRegion.dataset.numiReportKey="";
   pdfControls.hidden = true;
   pdfButtons.replaceChildren();
   syncPaywallUi();
@@ -1460,6 +1485,7 @@ form.addEventListener("submit", async(event)=>{
     });
     diagram.querySelectorAll(".pro-node").forEach(node => node.classList.remove("pro-karmic-highlight"));
     results.hidden=false;
+    void refreshPurchasedPro();
     rememberCalculatedBirth(formattedDate);
     // On refresh do not force the reader away from the browser's restored scroll.
     if (!restoringRememberedBirth) {
