@@ -26,6 +26,8 @@ on:
       - 'account-service/private/core.php'
       - 'account-service/private/redflag-catalog.json'
       - 'scripts/build-store-catalog.py'
+      - 'scripts/deploy-redflag-unified-catalog-20261109.py'
+      - 'tests/redflag-calendar-coverage.test.mjs'
       - 'redflag-public-catalog.js'
       - 'data/redflag/banks/**'
       - 'data/redflag/money/**'
@@ -68,6 +70,7 @@ jobs:
           echo REAL_WALLET_MULTI_ADVANCE_STATIC_PASS
           php -l account-service/public/numi-real-worker.php
           php -l account-service/private/fulfillment.php
+          python3 -m py_compile scripts/build-store-catalog.py scripts/deploy-redflag-unified-catalog-20261109.py
           grep -Fq "modify('+1 year')" account-service/private/store.php
           grep -Fq "INTERVAL 1 YEAR" account-service/public/numi-real-worker.php
           for file in year-feature.js compatibility-feature.js pro/pro.js child/child.js store-entry.js shared-offer.js app.js wallet-client.js redflag-feature.js; do node --check "$file"; done
@@ -98,3 +101,36 @@ jobs:
           set -euo pipefail
           php account-service/tests/store.php
           php account-service/tests/subscriptions.php
+
+  publish-reviewed-redflag:
+    # Exact release-message gate and required passing wallet regressions.
+    needs: real-wallet
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Release guarded unified Red Flag catalog to REG.RU'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    concurrency:
+      group: reg-ru-manual-publication
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify only reviewed single-source content and no leaked answers
+        run: |
+          set -euo pipefail
+          python3 scripts/build-store-catalog.py
+          git diff --exit-code -- redflag-public-catalog.js account-service/private/redflag-catalog.json store-catalog.json
+          php -l account-service/private/core.php
+          php -l account-service/private/store.php
+          node --check redflag-public-catalog.js
+          node --check redflag-text-bank.js
+          node --check redflag-categories.js
+          node --check redflag-feature.js
+          node --check app.js
+          python3 -m py_compile scripts/deploy-redflag-unified-catalog-20261109.py
+      - name: Guarded REG.RU publication of Red Flag only, with rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u scripts/deploy-redflag-unified-catalog-20261109.py
