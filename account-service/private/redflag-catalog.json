@@ -15,12 +15,12 @@
       "courtship": {
         "tier": 10,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "provider": {
         "tier": 29,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "words-or-deeds": {
         "tier": 29,
@@ -30,7 +30,7 @@
       "family-load": {
         "tier": 29,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "resource": {
         "tier": 29,
