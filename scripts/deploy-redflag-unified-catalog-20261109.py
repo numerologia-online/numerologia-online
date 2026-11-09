@@ -4,6 +4,7 @@ Uses existing FTPS credentials, guards exact live baselines, saves backups
 outside webroot, verifies HTTPS and rolls back changed files on failure.
 """
 import ftplib
+import hashlib
 import io
 import json
 import os
@@ -16,6 +17,9 @@ HOST = "server172.hosting.reg.ru"
 DOMAIN = "xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
 WEBROOT = "xn--c1adkkdfjbp1a4l.online"
 MAX = 900_000
+# Files edited only after 366 unique interpretations were verified.
+BANK_FILES = ("courtship.json", "provider.json", "family-load.json")
+BANK_PREFIX = "data/redflag/money/"
 PUBLIC = [
     "redflag-public-catalog.js",
     "redflag-text-bank.js",
@@ -25,6 +29,10 @@ PUBLIC = [
 ]
 PRIVATE = {
     "redflag-catalog.json": "account-service/private/redflag-catalog.json",
+    "store-assets.json": "account-service/private/store-assets.json",
+    "courtship.json": "data/redflag/money/courtship.json",
+    "provider.json": "data/redflag/money/provider.json",
+    "family-load.json": "data/redflag/money/family-load.json",
     "core.php": "account-service/private/core.php",
     "store.php": "account-service/private/store.php",
 }
@@ -71,8 +79,10 @@ def known_git_baseline(path, raw, source):
 
 def prepare():
     subprocess.run(['python3', 'scripts/build-store-catalog.py'], check=True)
+    subprocess.run(['python3', 'scripts/build-store-assets.py'], check=True)
     generated = ['redflag-public-catalog.js', 'store-catalog.json',
-                 'account-service/private/redflag-catalog.json']
+                 'account-service/private/redflag-catalog.json',
+                 'account-service/private/store-assets.json']
     if subprocess.run(['git', 'diff', '--exit-code', '--', *generated],
                       capture_output=True).returncode:
         raise RuntimeError('CATALOG_GENERATION_CHANGED_SOURCE')
@@ -84,6 +94,24 @@ def prepare():
         raise RuntimeError('INVALID_FREE_QUESTION_COUNT')
     sources = {name: Path(name).read_bytes() for name in PUBLIC}
     sources.update({name: Path(path).read_bytes() for name, path in PRIVATE.items()})
+    assets = json.loads(sources["store-assets.json"])
+    if assets.get("version") != 2 or len(assets.get("files", {})) < 250:
+        raise RuntimeError("INVALID_PROTECTED_MATERIAL_MANIFEST")
+    for name in BANK_FILES:
+        material = json.loads(sources[name])
+        date_keys = {f"{day}-{month}" for month in range(1, 13)
+                     for day in range(1, __import__("calendar").monthrange(2024, month)[1] + 1)}
+        entries = material.get("entries", {})
+        if (material.get("status") != "ready"
+            or material.get("section") != "money"
+            or material.get("questionId") != name[:-5]
+            or material.get("keyRule") != "day-month"
+            or not isinstance(entries, dict) or set(entries) != date_keys
+            or any(not isinstance(value, str) or len(value.strip()) <= 200
+                   for value in entries.values())
+            or len(set(entries.values())) != 366
+            or assets["files"].get(BANK_PREFIX + name) != hashlib.sha256(sources[name]).hexdigest()):
+            raise RuntimeError("BANK_NOT_APPROVED_OR_HASH_MISMATCH:" + name)
     for name, data in sources.items():
         if not data or len(data) > MAX:
             raise RuntimeError('INVALID_SOURCE:' + name)
@@ -106,7 +134,9 @@ def main():
     pub = home + '/www/' + WEBROOT
     private = home + '/private/numi-account-20261031'
     paths = {name: pub + '/' + name for name in PUBLIC}
-    paths.update({name: private + '/' + name for name in PRIVATE})
+    paths.update({name: private + ('/store-content/' + BANK_PREFIX + name
+                                    if name in BANK_FILES else '/' + name)
+                  for name in PRIVATE})
     paths['index.html'] = pub + '/index.html'
     originals = {}
     changed = []
@@ -127,6 +157,21 @@ def main():
                         raise ValueError('Unknown private catalog')
                 except Exception:
                     raise RuntimeError('UNKNOWN_PRIVATE_CATALOG_BASELINE')
+        # Refuse to replace any unexpected protected material. A manifest from
+        # a different live revision must not be overwritten by this release.
+        previous_manifest = json.loads(originals['store-assets.json'])
+        next_manifest = json.loads(sources['store-assets.json'])
+        for asset_path, previous_hash in previous_manifest.get('files', {}).items():
+            if asset_path not in {BANK_PREFIX + name for name in BANK_FILES}:
+                if next_manifest['files'].get(asset_path) != previous_hash:
+                    raise RuntimeError('UNRELATED_MATERIAL_HASH_CHANGED')
+        if set(previous_manifest['files']) != set(next_manifest['files']):
+            raise RuntimeError('UNEXPECTED_MATERIAL_MANIFEST_MEMBERSHIP_CHANGE')
+        for name in BANK_FILES:
+            previous = originals[name]
+            old_hash = previous_manifest['files'].get(BANK_PREFIX + name)
+            if previous is None or hashlib.sha256(previous).hexdigest() != old_hash:
+                raise RuntimeError('EXISTING_PRIVATE_MATERIAL_NOT_VERIFIED:' + name)
         old_index = originals['index.html']
         if old_index is None:
             raise RuntimeError('SITE_INDEX_MISSING')
@@ -146,8 +191,11 @@ def main():
                 write(ftp, backup + '/' + name.replace('/', '__') + '.before', old)
         print('PRIVATE_BACKUPS_SAVED', flush=True)
         try:
-            # Install private metadata first. No database, payments or balances touched.
-            for name in ['redflag-catalog.json', 'store.php', 'core.php', *PUBLIC, 'index.html']:
+            # Install approved private answer files first, then matching hashes,
+            # then purchase metadata, then public UI. No payment/DB changes.
+            for name in [*BANK_FILES, 'store-assets.json',
+                         'redflag-catalog.json', 'store.php', 'core.php',
+                         *PUBLIC, 'index.html']:
                 remote = paths[name]
                 if read(ftp, remote, allow_missing=name == 'redflag-catalog.json') != originals[name]:
                     raise RuntimeError('CONCURRENT_REMOTE_EDIT:' + name)
