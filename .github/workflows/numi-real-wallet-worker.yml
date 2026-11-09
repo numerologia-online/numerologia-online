@@ -33,6 +33,9 @@ jobs:
           html=Path("wallet-topup.html").read_text(encoding="utf-8")
           js=html.split("<script>\n",1)[1].split("\n</script>",1)[0]
           assert 'window.Telegram.WebApp.openLink(prepared.href)' in js
+          assert 'window.TelegramWebviewProxy?.postEvent' in js
+          assert 'window.Telegram?.WebApp?.initData &&' not in js
+          assert 'telegramExternal()&&mode==="live"' in js
           assert 'completedFingerprint' in js
           assert 'sessionStorage.getItem(skey)' in js
           assert 'location.assign(paymentUrl(result.confirmation_url))' in js
@@ -106,4 +109,4 @@ jobs:
               raise SystemExit('REG_RU_WORKER_STATUS_'+str(status)+'_'+str(payload.get('error','unknown')))
           PY
 
-# one-tap external live checkout retry: recognize already-published mobile subscription labels
+# live one-tap checkout: native Telegram bridge detection, not initData after navigation
