@@ -7,6 +7,7 @@ No per-question storefront logic or public copy of paid answers is generated.
 import calendar
 import json
 import pathlib
+import re
 
 root = pathlib.Path(__file__).resolve().parents[1]
 
@@ -20,7 +21,12 @@ def write_json(path, data):
 
 
 def published_paid_question(category, question):
-    path = root / "data/redflag" / category / (question["id"] + ".json")
+    # An item's existing textFile is the only route to its protected bank.
+    # The public catalogue never receives the bank content.
+    relative = question.get("textFile", category + "/" + question["id"] + ".json").split("?", 1)[0]
+    if not re.fullmatch(re.escape(category) + r"/[a-z0-9-]+\\.json", relative):
+        raise ValueError("Invalid Red Flag bank path: " + relative)
+    path = root / "data/redflag" / relative
     if not path.is_file():
         return False
     bank = read_json(path)
@@ -61,12 +67,23 @@ products = [
 categories = read_json(root / "data/redflag/catalog.json")
 redflag = []
 public_questions = {}
+private_questions = {}
 for category in categories:
     name = category["id"]
     bank_name = "money-questions" if name == "money" else name
     questions = read_json(root / f"data/redflag/banks/{bank_name}.json")["questions"]
     safe = []
+    private_questions[name] = {}
     for index, question in enumerate(questions):
+        tier = question.get("priceRub")
+        if type(tier) is not int or tier not in (10, 29, 49):
+            raise ValueError("Invalid Red Flag price tier: " + name + "/" + question["id"])
+        ready = index == 0 or published_paid_question(name, question)
+        private_questions[name][question["id"]] = {
+            "tier": tier,
+            "free": index == 0,
+            "ready": ready,
+        }
         redflag.append({
             "id": question["id"],
             "category": name,
@@ -84,7 +101,7 @@ for category in categories:
                 "id": question["id"],
                 "title": question["title"],
                 "priceRub": question["priceRub"],
-                "status": "ready" if published_paid_question(name, question) else "soon",
+                "status": "ready" if ready else "soon",
             }
         safe.append(public)
     public_questions[name] = safe
@@ -96,6 +113,12 @@ catalog = {
     "moment": read_json(root / "moment/questions.json")["questions"],
 }
 write_json(root / "store-catalog.json", catalog)
+# This file is deployed only alongside the PHP checkout core, outside webroot.
+# It contains metadata, not paid answers, and is generated from the SAME banks.
+write_json(root / "account-service/private/redflag-catalog.json", {
+    "version": 1,
+    "questions": private_questions,
+})
 public_categories = [
     {key: item[key] for key in ("id", "kicker", "title", "description", "bank") if key in item}
     for item in categories
@@ -107,4 +130,4 @@ public_js = (
     "export const PUBLIC_QUESTIONS = " + json.dumps(public_questions, ensure_ascii=False, indent=2) + ";\n"
 )
 (root / "redflag-public-catalog.js").write_text(public_js, encoding="utf-8")
-print("Generated store catalog and Red Flag public statuses; paid texts remain private")
+print("Generated store catalog, private checkout metadata and public Red Flag statuses; paid texts remain private")
