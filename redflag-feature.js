@@ -521,20 +521,13 @@ const ensureQuestions = async (category) => {
   renderCategories({ type: "category", id: category.id });
   try {
     const content = await category.load();
-    state.questions = [
-      ...content.QUESTIONS.map((question, index) => ({
-        ...question, isFree: index === 0,
-        priceRub: index === 0 ? 0 : question.priceRub,
-        isComingSoon: question.status !== "ready"
-      })),
-      ...(category.id === "money" ? [] : [{
-        id: "comic-verdict-" + category.id,
-        title: "😂 Шуточный вердикт",
-        priceRub: 49,
-        isComingSoon: REDFLAG_SOON_BLOCKS.has(category.id),
-        answer: async () => ({ answer: "Шуточный вердикт для этого раздела пока готовится. Мы напишем его отдельно." })
-      }])
-    ];
+    // Only published catalog items exist. Never invent a separate paid
+    // question or a price inside the accordion.
+    state.questions = content.QUESTIONS.map((question, index) => ({
+      ...question, isFree: index === 0,
+      priceRub: index === 0 ? 0 : question.priceRub,
+      isComingSoon: question.status !== "ready"
+    }));
   } finally {
     state.loading = false;
     renderCategories({ type: "category", id: category.id });
@@ -550,7 +543,8 @@ const createCategory = (category, index) => {
   toggle.className = "redflag-category-toggle";
   toggle.type = "button";
   toggle.setAttribute("aria-expanded", String(state.expanded));
-  toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · 11 вопросов</small><strong>${category.title}</strong>${category.id === "intimacy" ? '<span class="redflag-age-label" aria-label="Для взрослых, 18 плюс">18+</span>' : ""}<small class="redflag-category-count">11 вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
+  const questionCount = state.questions?.length ?? category.questionCount;
+  toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · ${questionCount} вопросов</small><strong>${category.title}</strong>${category.id === "intimacy" ? '<span class="redflag-age-label" aria-label="Для взрослых, 18 плюс">18+</span>' : ""}<small class="redflag-category-count">${questionCount} вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
   toggle.addEventListener("click", () => {
     const headingTop = toggle.getBoundingClientRect().top;
     const opening = !state.expanded;
