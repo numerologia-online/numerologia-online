@@ -35,7 +35,7 @@ function naSubscriptionSettled(PDO $db,array $checkout,array $order,array $payme
 }
 function naSubscriptionList(PDO $db,array $account,array $config): array {
     $live=function_exists('naLiveWalletModeSelected')&&naLiveWalletModeSelected();
-    $providerOnly=$live?" AND o.provider='real_wallet'":"";
+    $providerOnly=$live?" AND o.provider IN ('real_wallet','real_subscription')":"";
     $q=$db->prepare("SELECT e.product_code,MAX(e.expires_at) AS expires_at
         FROM numi_entitlements e JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
         WHERE e.account_id=? AND e.product_code IN ('club_month','school_week')
