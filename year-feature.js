@@ -33,7 +33,7 @@ const showYearPaywall = async () => {
     purchasedYearRegion.scrollIntoView({behavior:"smooth",block:"start"});return;
   }
   try {
-    const { openSharedOffer } = await import("./shared-offer.js?v=wallet-direct1");
+    const { openSharedOffer } = await import("./shared-offer.js?v=report-annual-20261109");
     await openSharedOffer({
       subject: {product_code:"year_full",birth_date:birthInput.value.split(".").reverse().join("-"),year:Number(yearInput.value)},
       product: "полный разбор года",
