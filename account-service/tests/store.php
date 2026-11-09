@@ -85,4 +85,47 @@ foreach(['redflag'=>'redflag_question','yesno'=>'yesno_question','moment'=>'mome
         $quote=naCatalogResolve($input,$club);check($quote['product_code']===$code,'catalog coverage '.$question['id']);
     }
 }
+
+$private=json_decode((string)file_get_contents(__DIR__.'/../private/redflag-catalog.json'),true,32,JSON_THROW_ON_ERROR);
+check(($private['version']??null)===1,'private catalog version');
+$groups=['money'=>'money-questions','love'=>'love','flags'=>'flags','infidelity'=>'infidelity',
+    'intimacy'=>'intimacy','family'=>'family','language'=>'language','verdict'=>'verdict'];
+$seen=0;
+foreach($groups as $category=>$bank){
+    $original=json_decode((string)file_get_contents(__DIR__.'/../../data/redflag/banks/'.$bank.'.json'),true,32,JSON_THROW_ON_ERROR);
+    check(count($private['questions'][$category]??[])===count($original['questions']), 'no extra or missing '.$category);
+    foreach($original['questions'] as $index=>$question){
+        $id=$question['id'];$meta=$private['questions'][$category][$id]??null;
+        check(is_array($meta) && ($meta['tier']??null)===$question['priceRub']
+            && ($meta['free']??null)===($index===0)
+            && is_bool($meta['ready']??null), 'one tier and status source: '.$category.'/'.$id);
+        $input=['product_code'=>'redflag_question','category'=>$category,
+            'question_id'=>$id,'birth_date'=>'1986-09-09'];
+        foreach([false,true] as $club){
+            $quote=naCatalogResolve($input,$club);
+            $expectedPrices=[10=>[2000,1000],29=>[3900,1900],49=>[7900,3900]];
+            $expected=$index===0?0:$expectedPrices[$question['priceRub']][$club?1:0];
+            check($quote['price_kopeks']===$expected,'one server price: '.$category.'/'.$id);
+            $expectedStatus=$index===0?'FREE_PREVIEW':
+                ($meta['ready']?'FULFILLMENT_NOT_CONNECTED':'AUTHOR_TEXT_NOT_CONFIRMED');
+            check($quote['availability']===$expectedStatus,'one readiness: '.$category.'/'.$id);
+            if($index!==0){
+                $canBuy=naCartResolve([$input],$club,fn()=>false,[],fn()=>true);
+                check($canBuy['fulfillment_ready']===$meta['ready'],
+                    'draft cannot be charged even when material adapter returns ready: '.$category.'/'.$id);
+            }
+        }
+        $seen++;
+    }
+}
+check($seen===81,'80 core questions plus one bonus must be registered');
+invalid(fn()=>naCatalogResolve(['product_code'=>'redflag_question',
+    'category'=>'money','question_id'=>'invented','birth_date'=>'1986-09-09'],false),
+    'unregistered question cannot be charged');
+invalid(fn()=>naCatalogResolve(['product_code'=>'redflag_question',
+    'category'=>'../money','question_id'=>'generosity','birth_date'=>'1986-09-09'],false),
+    'unsafe category cannot resolve to a purchasable item');
+check(!str_contains((string)file_get_contents(__DIR__.'/../private/core.php'),
+    '$catalog=json_decode(\'{"money"'), 'duplicated hard-coded PHP question list removed');
+
 echo 'PASS '.$count." checks including every public question and both tariffs\n";
