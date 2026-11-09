@@ -202,8 +202,8 @@ def main():
             print("REG_RU_SUBSCRIPTION_UI_SOURCE_VERIFIED",flush=True)
             # Patch only the reviewed mobile-subscription block and four
             # exact texts. Do NOT overwrite unrelated live homepage changes.
-            previous=b"account-browser.js?v=live-subscriptions-compact-20261109"
-            updated=b"account-browser.js?v=live-subscriptions-clear-20261109"
+            previous=b"account-browser.js?v=live-subscriptions-clear-20261109"
+            updated=b"account-browser.js?v=wallet-direct-external-20261109"
             sourcehtml=sources["index.html"]
             if sourcehtml.count(updated)!=1:
                 raise RuntimeError("REVIEWED_INDEX_CACHE_TAG_MISSING")
@@ -291,6 +291,21 @@ def main():
                 if response.status!=200 or published!=sources[name]:
                     raise RuntimeError("REG_RU_TOPUP_EXTERNAL_ONE_TAP_HTTP_MISMATCH")
             print("REG_RU_TOPUP_EXTERNAL_ONE_TAP_HTTP_VERIFIED",flush=True)
+            # Public HTTP verification of the *actual* cabinet JS and live
+            # index tag. FTP readback alone does not prove clients get it.
+            cabinet_url="https://"+DOMAIN+"/account-browser.js?code_check="+stamp
+            with urllib.request.urlopen(urllib.request.Request(cabinet_url,
+                headers={"Cache-Control":"no-cache"}),timeout=30) as response:
+                served_js=response.read(LIMIT+1)
+                if response.status!=200 or served_js!=sources["account-browser.js"]:
+                    raise RuntimeError("CABINET_DIRECT_EXTERNAL_JS_NOT_PUBLIC")
+            with urllib.request.urlopen(urllib.request.Request(
+                "https://"+DOMAIN+"/index.html?code_check="+stamp,
+                headers={"Cache-Control":"no-cache"}),timeout=30) as response:
+                served_index=response.read(LIMIT+1)
+                if response.status!=200 or served_index.count(updated)!=1:
+                    raise RuntimeError("CABINET_DIRECT_EXTERNAL_CACHE_TAG_NOT_PUBLIC")
+            print("REG_RU_CABINET_EXTERNAL_ONE_TAP_HTTP_VERIFIED",flush=True)
             # No cookies or customer data: only an anonymous API check.
             account_url="https://"+DOMAIN+"/api/numi-account.php"
             anonymous=urllib.request.Request(account_url,
