@@ -238,7 +238,11 @@ def main():
             ]
             for before,after in html_patches:
                 before,after=before.encode("utf-8"),after.encode("utf-8")
-                if changedhtml.count(after)==1:
+                # An empty replacement is already applied when the original
+                # attribute is absent; counting b'' is never a valid check.
+                if after==b"" and changedhtml.count(before)==0:
+                    continue
+                if after and changedhtml.count(after)==1:
                     continue
                 if changedhtml.count(before)!=1:
                     raise RuntimeError("LIVE_SUBSCRIPTION_HTML_CONFLICT")
