@@ -428,12 +428,16 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     $until,new DateTimeZone('UTC'))>$now;
                 // No live recurring charge is enabled until merchant approval
                 // and a verified, explicitly consented payment method exist.
+                $attached=is_string($byPref[$code]['payment_method_id']??null)
+                    && ($byPref[$code]['payment_method_id']??'')!=='';
+                $enabled=naLiveRecurringAllowed($config)
+                    && $attached && ($byPref[$code]['cancelled_at']??null)===null
+                    && (bool)($byPref[$code]['auto_renew']??false);
                 $subs[]=['product_code'=>$code,'active'=>$active,
                     'expires_at'=>$until,'price_kopeks'=>$price,
-                    'auto_renew'=>false,'renewal'=>'manual',
-                    'recurring_available'=>false,
-                    'payment_method_attached'=>is_string($byPref[$code]['payment_method_id']??null)
-                        && ($byPref[$code]['payment_method_id']??'')!=='',
+                    'auto_renew'=>$enabled,'renewal'=>$enabled?'provider':'manual',
+                    'recurring_available'=>naLiveRecurringAllowed($config),
+                    'payment_method_attached'=>$attached,
                     'cancelled_at'=>$byPref[$code]['cancelled_at']??null];
             }
             $result['subscriptions']=$subs;
@@ -448,6 +452,25 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             $result['receipt_email_suggestion']=$mail->fetchColumn()?:null;
             $result['payment_methods']=['bank_card','sbp'];
             naReply(200,$result);
+        }
+        // Card subscription payments require separate, recorded consent.
+        // They never debit or credit the ordinary RUB wallet.
+        if($action==='subscription_checkout'){
+            if(($body['auto_renew_consent']??null)!==true)
+                throw new InvalidArgumentException('REAL_SUBSCRIPTION_CONSENT_REQUIRED');
+            $code=$body['product_code']??null;
+            if(!is_string($code))throw new InvalidArgumentException('INVALID_SUBSCRIPTION');
+            $email=naRealWalletReceiptEmail($body['receipt_email']??null);
+            $key=naWalletKey($body['request_key']??null);
+            $payment=naLiveSubscriptionStart($db,$account,$config,$code,$email,$key);
+            naReply(200,array_merge(['ok'=>true,'test'=>false],$payment));
+        }
+        if($action==='subscription_status'){
+            $id=$body['checkout_id']??null;
+            if(!is_string($id)||preg_match('/^[a-f0-9-]{36}$/iD',$id)!==1)
+                throw new InvalidArgumentException('INVALID_CHECKOUT_ID');
+            $result=naLiveSubscriptionSync($db,$config,$id,$account['id']);
+            naReply(200,array_merge(['ok'=>true,'test'=>false],$result));
         }
         // Live subscription management belongs to the authenticated wallet
         // account. An opt-out never revokes the already paid membership.
@@ -545,6 +568,8 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             'REAL_TOPUP_RECONCILIATION_REQUIRED','REAL_TOPUP_METHOD_CHANGED',
             'REAL_ALREADY_PURCHASED','REAL_INSUFFICIENT_BALANCE',
             'REAL_MATERIAL_NOT_READY','REAL_WALLET_FROZEN',
+            'REAL_RECURRING_NOT_APPROVED','REAL_SUBSCRIPTION_PENDING_REVIEW',
+            'REAL_SUBSCRIPTION_RECONCILIATION_REQUIRED','REAL_SUBSCRIPTION_CONSENT_REVOKED',
         ],true))naReply(409,['ok'=>false,'error'=>$e->getMessage()]);
         throw $e;
     }
