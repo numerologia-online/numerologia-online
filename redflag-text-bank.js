@@ -159,4 +159,7 @@ export const loadQuestionBank = async (bankName) => {
     }))
   };
 };
-export const loadCategoryCatalog = async () => PUBLIC_CATEGORIES;
+export const loadCategoryCatalog = async () => PUBLIC_CATEGORIES.map(category => ({
+  ...category,
+  questionCount: PUBLIC_QUESTIONS[category.bank]?.length ?? 0
+}));
