@@ -262,4 +262,75 @@ $db->prepare("UPDATE numi_real_wallet_topups SET payment_method='sbp',
 expectReal(fn()=>naRealWalletCreatePayment($db,$payAccount,$good,25,'lost-response-0000000003',
     'sbp','payment@example.test',$receipt(25),$mock),'REAL_TOPUP_RECONCILIATION_REQUIRED');
 assertReal(count($mockCalls)===3,'expired uncertain payment never POSTs a new external debit');
+// A single 20 RUB purchase against multiple fiscalized 10 RUB advances
+// must debit ONCE, issue two separately linked offset events, and deliver
+// an entitlement immediately. These are isolated MySQL fixtures only.
+require_once __DIR__.'/../private/wallet-real-worker.php';
+$splitId='00000000-0000-4000-8000-000000000106';
+$splitAccount=['id'=>$splitId];
+$db->prepare('INSERT INTO numi_accounts(id,email,email_verified_at) VALUES(?,?,UTC_TIMESTAMP())')
+    ->execute([$splitId,'split@example.test']);
+$db->prepare('INSERT INTO numi_real_wallet_balances(account_id,kopeks) VALUES(?,3000)')
+    ->execute([$splitId]);
+for($i=1;$i<=3;$i++){
+    $sourceId=sprintf('99999999-9999-4999-8999-%012d',$i);
+    $db->prepare("INSERT INTO numi_real_wallet_topups
+        (id,account_id,request_key,kopeks,receipt_email,provider_payment_id,status,credited_at)
+        VALUES(?,?,?,?,?,?,'credited',UTC_TIMESTAMP())")
+        ->execute([$sourceId,$splitId,'split-fixture-'.$i,1000,
+            'split@example.test','split-provider-'.$i]);
+    $db->prepare("INSERT INTO numi_real_wallet_ledger
+        (id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks)
+        VALUES(?,?,'topup',?,?,?)")
+        ->execute([naUuid(),$splitId,$sourceId,1000,$i*1000]);
+    $db->prepare("INSERT INTO numi_real_wallet_fiscal_events
+        (id,kind,reference_id,kopeks,status)
+        VALUES(?,'advance_in',?,1000,'verified')")
+        ->execute([naUuid(),$sourceId]);
+}
+$splitItem=['product_code'=>'redflag_question','category'=>'money',
+    'question_id'=>'generosity','birth_date'=>'1986-09-09'];
+$splitKey='split-actual-purchase-123';
+$splitReady=static fn(array $item):bool=>true;
+$splitResult=naRealWalletBuy($db,$splitAccount,$good,$splitItem,$splitKey,$splitReady);
+assertReal($splitResult['price_kopeks']===2000
+    && $splitResult['balance_kopeks']===1000
+    && is_string($splitResult['entitlement_id']),
+    'single atomic purchase debits 20 RUB across 10+10 RUB advances');
+$q=$db->prepare("SELECT a.id,a.spend_id,a.topup_id,a.kopeks,f.kopeks AS fiscal_amount
+    FROM numi_real_wallet_receipt_allocations a
+    JOIN numi_real_wallet_fiscal_events f ON f.kind='advance_offset'
+        AND f.reference_id=a.id
+    JOIN numi_real_wallet_spends s ON s.id=a.spend_id
+    WHERE s.account_id=? ORDER BY a.topup_id");
+$q->execute([$splitId]);$offsetParts=$q->fetchAll(PDO::FETCH_ASSOC);
+assertReal(count($offsetParts)===2
+    && array_sum(array_map(static fn($r)=>(int)$r['kopeks'],$offsetParts))===2000
+    && (int)$offsetParts[0]['fiscal_amount']===1000
+    && (int)$offsetParts[1]['fiscal_amount']===1000,
+    'purchase reserves two original advance sources and two exact offset receipts');
+$reader=$db->prepare("SELECT id FROM numi_real_wallet_fiscal_events
+    WHERE reference_id=? AND kind='advance_offset'");
+foreach($offsetParts as $part){
+    $reader->execute([$part['id']]);$fiscalId=$reader->fetchColumn();
+    $source=naRealWorkerReceiptSource($db,(string)$fiscalId);
+    assertReal($source['topup_id']===$part['topup_id']
+        && (int)$source['fiscal_kopeks']===(int)$part['kopeks'],
+        'fiscal worker binds each receipt to its real original advance');
+}
+$repeatSplit=naRealWalletBuy($db,$splitAccount,$good,$splitItem,$splitKey,$splitReady);
+assertReal($repeatSplit['already_purchased']===true
+    && naRealWalletBalance($db,$splitId)===1000,
+    'repeated purchase key never causes a second debit');
+$q=$db->prepare("SELECT COUNT(*) FROM numi_real_wallet_spends WHERE account_id=?");
+$q->execute([$splitId]);
+assertReal((int)$q->fetchColumn()===1,'one purchase row despite two fiscal offsets');
+$refundId='88888888-8888-4888-8888-888888888888';
+$db->prepare("INSERT INTO numi_real_wallet_refund_cases
+    (id,account_id,topup_id,kopeks,status) VALUES(?,?,?,1000,'approved')")
+    ->execute([$refundId,$splitId,$offsetParts[0]['topup_id']]);
+expectReal(fn()=>naRealRefundApprovedCase($db,$refundId),
+    'REAL_REFUND_SOURCE_ALREADY_SPENT');
+naRealWalletInvariant($db,$splitId);
+echo "REAL_MULTI_ADVANCE_PURCHASE_AND_RECEIPT_ALLOCATION_PASS\n";
 echo "REAL_CARD_SBP_MOCK_PAYMENT_IDEMPOTENCY_RECEIPTS_PASS\n";
