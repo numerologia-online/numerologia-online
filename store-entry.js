@@ -1,5 +1,5 @@
 /* Legacy links now open ONE selected material directly; no cart is loaded. */
-import {showInlinePurchase,renderInlineMaterial,walletRequest,walletMaterial} from "./wallet-client.js?v=subscription-controls-20261108";
+import {showInlinePurchase,renderInlineMaterial,walletRequest,walletMaterial} from "./wallet-client.js?v=redflag-status-fix-20261109";
 export function storeDate(value){
   if(typeof value!=="string")return undefined;
   if(/^\d{4}-\d{2}-\d{2}$/.test(value))return value;
