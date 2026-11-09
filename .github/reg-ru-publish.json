@@ -1,8 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "data/day/general/general-day-12.json",
-    "data/day/general/general-day-14.json"
-  ],
-  "note": "Owner-approved third editorial batch remaining 44 day texts in energy 12 and energy 14; back up and verify only these two files."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-09 third editorial batch of 50 approved personal-day texts successfully backed up and deployed to REG.RU in runs 42674786608 and 42674887577. Read-only standby."
 }
