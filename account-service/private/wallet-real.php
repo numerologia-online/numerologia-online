@@ -138,6 +138,21 @@ function naRealWalletSchema(PDO $db): void {
       CONSTRAINT fk_real_receipt_source_topup FOREIGN KEY(topup_id)
         REFERENCES numi_real_wallet_topups(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    // Additive allocation ledger: one paid purchase may consume several
+    // independently fiscalized advances. Legacy one-source receipts stay as-is.
+    $db->exec("CREATE TABLE IF NOT EXISTS numi_real_wallet_receipt_allocations (
+      id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+      spend_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+      topup_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+      kopeks BIGINT UNSIGNED NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_real_receipt_allocation_source(spend_id,topup_id),
+      KEY ix_real_allocation_topup(topup_id),
+      CONSTRAINT fk_real_allocation_spend FOREIGN KEY(spend_id)
+        REFERENCES numi_real_wallet_spends(id),
+      CONSTRAINT fk_real_allocation_topup FOREIGN KEY(topup_id)
+        REFERENCES numi_real_wallet_topups(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     // Durable fiscal outbox: no wallet use without an auditable receipt event.
     // The offset receipt worker is intentionally NOT enabled before the cash-register review.
     $db->exec("CREATE TABLE IF NOT EXISTS numi_real_wallet_fiscal_events (
@@ -404,13 +419,14 @@ function naRealWalletQuote(PDO $db,array $account,array $input,callable $materia
         'real_balance_kopeks'=>naRealWalletBalance($db,$account['id'])];
 }
 /**
- * Allocate each fulfilled purchase to its actual original credited advance.
- * Caller MUST already hold the account FOR UPDATE lock inside the purchase
- * transaction. Reserve one receipt for advance and one possible refund: at
- * most 48 offset events per original provider payment (below the 50 cap).
- * This conservative allocator refuses multi-source purchases for now.
+ * Allocate a paid purchase across already credited, individually fiscalized
+ * advances. The account row is locked by the caller for the entire transaction.
+ * Count both historical single-source and new split-source offset receipts.
+ * Never spend a refunded/frozen source, and never exceed YooKassa receipt cap.
+ *
+ * @return list<array{topup_id:string,kopeks:int}>
  */
-function naRealWalletAllocateReceiptSource(PDO $db,string $accountId,int $kopeks): string {
+function naRealWalletAllocateReceiptSources(PDO $db,string $accountId,int $kopeks): array {
     if($kopeks<1||!$db->inTransaction())
         throw new RuntimeException('REAL_RECEIPT_SOURCE_INVALID');
     $q=$db->prepare("SELECT id,kopeks FROM numi_real_wallet_topups
@@ -418,16 +434,27 @@ function naRealWalletAllocateReceiptSource(PDO $db,string $accountId,int $kopeks
           AND provider_payment_id IS NOT NULL AND receipt_email IS NOT NULL
         ORDER BY credited_at ASC,id ASC FOR UPDATE");
     $q->execute([$accountId]);
-    $sources=$q->fetchAll(PDO::FETCH_ASSOC);
-    $used=$db->prepare("SELECT COALESCE(SUM(kopeks),0) AS used_kopeks,
-         COUNT(*) AS receipt_count FROM numi_real_wallet_receipt_sources WHERE topup_id=?");
-    foreach($sources as $topup){
-        $used->execute([$topup['id']]);$amount=$used->fetch(PDO::FETCH_ASSOC);
-        $free=(int)$topup['kopeks']-(int)$amount['used_kopeks'];
-        if($free >= $kopeks && (int)$amount['receipt_count'] < 48)
-            return $topup['id'];
+    $legacy=$db->prepare("SELECT COALESCE(SUM(kopeks),0) AS used_kopeks,
+        COUNT(*) AS receipt_count FROM numi_real_wallet_receipt_sources
+        WHERE topup_id=?");
+    $split=$db->prepare("SELECT COALESCE(SUM(kopeks),0) AS used_kopeks,
+        COUNT(*) AS receipt_count FROM numi_real_wallet_receipt_allocations
+        WHERE topup_id=?");
+    $remaining=$kopeks;$allocations=[];
+    foreach($q->fetchAll(PDO::FETCH_ASSOC) as $topup){
+        $legacy->execute([$topup['id']]);$prior=$legacy->fetch(PDO::FETCH_ASSOC);
+        $split->execute([$topup['id']]);$extra=$split->fetch(PDO::FETCH_ASSOC);
+        $used=(int)$prior['used_kopeks']+(int)$extra['used_kopeks'];
+        $count=(int)$prior['receipt_count']+(int)$extra['receipt_count'];
+        $available=(int)$topup['kopeks']-$used;
+        if($available<=0||$count>=48)continue;
+        $take=min($available,$remaining);
+        $allocations[]=['topup_id'=>$topup['id'],'kopeks'=>$take];
+        $remaining-=$take;
+        if($remaining===0)break;
     }
-    throw new RuntimeException('REAL_RECEIPT_SOURCE_UNAVAILABLE');
+    if($remaining!==0)throw new RuntimeException('REAL_RECEIPT_SOURCE_UNAVAILABLE');
+    return $allocations;
 }
 
 /**
@@ -470,6 +497,9 @@ function naRealWalletBuy(PDO $db,array $account,array $config,array $input,strin
         $balance=naRealWalletBalance($db,$account['id'],true);
         naRealWalletAssertOpen($db,$account['id']);
         if($balance<$price)throw new RuntimeException('REAL_INSUFFICIENT_BALANCE');
+        // Reserve the entire amount against real advances BEFORE any debit.
+        // All reservations and receipt events commit atomically with access.
+        $allocations=naRealWalletAllocateReceiptSources($db,$account['id'],$price);
         $new=$balance-$price;
         $orderId=naUuid();$entitlementId=naUuid();$spendId=naUuid();
         $db->prepare('UPDATE numi_real_wallet_balances SET kopeks=? WHERE account_id=?')
@@ -499,16 +529,30 @@ function naRealWalletBuy(PDO $db,array $account,array $config,array $input,strin
         }
         $db->prepare('INSERT INTO numi_real_wallet_spends(id,account_id,request_key,product_code,resource_id,kopeks,order_id,entitlement_id) VALUES(?,?,?,?,?,?,?,?)')
             ->execute([$spendId,$account['id'],$requestKey,$item['product_code'],$item['resource_id'],$price,$orderId,$entitlementId]);
-        $sourceTopupId=naRealWalletAllocateReceiptSource($db,$account['id'],$price);
-        $db->prepare('INSERT INTO numi_real_wallet_receipt_sources(spend_id,topup_id,kopeks) VALUES(?,?,?)')
-            ->execute([$spendId,$sourceTopupId,$price]);
+        if(count($allocations)===1){
+            // Preserve the existing one-source format and fiscal outbox entry.
+            $db->prepare('INSERT INTO numi_real_wallet_receipt_sources(spend_id,topup_id,kopeks) VALUES(?,?,?)')
+                ->execute([$spendId,$allocations[0]['topup_id'],$price]);
+        }else{
+            // Each original advance gets its own accurately itemized offset.
+            $insert=$db->prepare('INSERT INTO numi_real_wallet_receipt_allocations(id,spend_id,topup_id,kopeks) VALUES(?,?,?,?)');
+            $event=$db->prepare("INSERT INTO numi_real_wallet_fiscal_events(id,kind,reference_id,kopeks,status)
+                VALUES(?,'advance_offset',?,?,'pending')");
+            foreach($allocations as $allocation){
+                $allocationId=naUuid();
+                $insert->execute([$allocationId,$spendId,$allocation['topup_id'],$allocation['kopeks']]);
+                $event->execute([naUuid(),$allocationId,$allocation['kopeks']]);
+            }
+        }
         $db->prepare("INSERT INTO numi_real_wallet_ledger(id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks)
             VALUES(?,?,'purchase',?,?,?)")
             ->execute([naUuid(),$account['id'],$spendId,-$price,$new]);
-        // Exactly one fiscal offset outbox event per spend, atomically.
-        $db->prepare("INSERT INTO numi_real_wallet_fiscal_events(id,kind,reference_id,kopeks,status)
-            VALUES(?,'advance_offset',?,?,'pending')")
-            ->execute([naUuid(),$spendId,$price]);
+        // Legacy single-advance purchases retain one receipt event per spend.
+        if(count($allocations)===1){
+            $db->prepare("INSERT INTO numi_real_wallet_fiscal_events(id,kind,reference_id,kopeks,status)
+                VALUES(?,'advance_offset',?,?,'pending')")
+                ->execute([naUuid(),$spendId,$price]);
+        }
         $db->commit();
         return ['already_purchased'=>false,'entitlement_id'=>$entitlementId,
             'balance_kopeks'=>$new,'price_kopeks'=>$price,'expires_at'=>$expiry,
