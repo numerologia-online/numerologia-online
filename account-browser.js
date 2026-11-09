@@ -223,7 +223,7 @@
   ].join("");
   dialog.append(walletStyle);
   const topupStyle=document.createElement("style");
-  topupStyle.textContent="#account-dialog .numi-wallet-topup-page[hidden]{display:none!important}\n#account-dialog .numi-wallet-topup-page{width:100%;box-sizing:border-box;padding:8px 0 28px;color:#234839;font:15px/1.5 system-ui}\n#account-dialog .numi-wallet-topup-back{border:1px solid #dcc8a0;border-radius:13px;background:#fff8eb;color:#8b672f;padding:10px 14px;min-height:46px;font:650 14px/1.3 system-ui;cursor:pointer;margin-bottom:23px}\n#account-dialog .numi-wallet-topup-page h3{margin:0 0 8px;color:#1a4937;font:normal clamp(29px,7vw,38px)/1.15 Georgia,serif}\n#account-dialog .numi-wallet-topup-intro{margin:0 0 22px;color:#607368;font-size:14px}\n#account-dialog .numi-wallet-vpn-banner{display:block;padding:18px 16px;margin:0 0 20px;border:2px solid #b68c46;border-radius:16px;background:#efeeeb;color:#243b30;text-align:center;box-shadow:0 2px 8px #1e36251c}\n#account-dialog .numi-wallet-vpn-banner strong{display:block;font:800 clamp(18px,4.6vw,23px)/1.28 system-ui;color:#243b30}\n#account-dialog .numi-wallet-vpn-banner p{margin:9px 0 0;font:650 15px/1.45 system-ui;color:#3e5046}\n#account-dialog .numi-wallet-topup-current{margin:0 0 24px;border:1px solid #dae2d9;background:#f0f5ee;border-radius:18px;padding:16px 18px}\n#account-dialog .numi-wallet-topup-current small{display:block;color:#697b70;font-size:12px}\n#account-dialog .numi-wallet-topup-current strong{font-size:25px;line-height:1.2;color:#204635}\n#account-dialog .numi-wallet-topup-form{display:grid;gap:20px;margin:0}\n#account-dialog .numi-wallet-topup-form>label{display:block;font-weight:650;font-size:15px;color:#274b3b}\n#account-dialog .numi-wallet-topup-form input[type=number]{display:block;width:100%;min-height:54px;box-sizing:border-box;margin-top:8px;padding:11px 14px;border:1px solid #b9c8b7;border-radius:14px;background:#fff;color:#253c32;font:18px system-ui}\n#account-dialog .numi-wallet-topup-form input[type=email]{display:block;box-sizing:border-box;width:100%;min-height:49px;margin:9px 0 0;padding:10px 12px;border:1px solid #bca274;border-radius:12px;background:#fff;color:#234839;font:16px system-ui;text-align:center}\n#account-dialog .numi-wallet-payment-methods{display:flex;gap:18px;flex-wrap:wrap;margin:0;padding:0;border:0}\n#account-dialog .numi-wallet-payment-methods label{display:flex;align-items:center;gap:7px;font-size:15px;color:#274b3b}\n#account-dialog .numi-wallet-payment-methods input{accent-color:#245c46;width:18px;height:18px}\n#account-dialog .numi-wallet-topup-form button.numi-wallet-main-button{display:block;width:100%;min-height:52px;border:0;border-radius:14px;background:#224e3c;color:white;font:700 16px system-ui;cursor:pointer}\n#account-dialog .numi-wallet-topup-form button:disabled{opacity:.6;cursor:wait}\n#account-dialog .numi-wallet-topup-feedback{margin:16px 0 0;color:#4b6256;font:14px/1.5 system-ui}\n@media(max-width:700px){#account-dialog.numi-wallet-topup-active{height:calc(100dvh - 22px)!important;max-height:calc(100dvh - 22px)!important;min-height:0!important;margin:auto!important;overflow-y:auto!important;box-sizing:border-box}}";
+  topupStyle.textContent="#account-dialog .numi-wallet-topup-page[hidden]{display:none!important}\n#account-dialog .numi-wallet-topup-page{width:100%;box-sizing:border-box;padding:8px 0 28px;color:#234839;font:15px/1.5 system-ui}\n#account-dialog .numi-wallet-topup-back{border:1px solid #dcc8a0;border-radius:13px;background:#fff8eb;color:#8b672f;padding:10px 14px;min-height:46px;font:650 14px/1.3 system-ui;cursor:pointer;margin-bottom:23px}\n#account-dialog .numi-wallet-topup-page h3{margin:0 0 8px;color:#1a4937;font:normal clamp(29px,7vw,38px)/1.15 Georgia,serif}\n#account-dialog .numi-wallet-topup-intro{margin:0 0 22px;color:#607368;font-size:14px}\n#account-dialog .numi-wallet-topup-current{margin:0 0 24px;border:1px solid #dae2d9;background:#f0f5ee;border-radius:18px;padding:16px 18px}\n#account-dialog .numi-wallet-topup-current small{display:block;color:#697b70;font-size:12px}\n#account-dialog .numi-wallet-topup-current strong{font-size:25px;line-height:1.2;color:#204635}\n#account-dialog .numi-wallet-topup-form{display:grid;gap:20px;margin:0}\n#account-dialog .numi-wallet-topup-form>label{display:block;font-weight:650;font-size:15px;color:#274b3b}\n#account-dialog .numi-wallet-topup-form input[type=number]{display:block;width:100%;min-height:54px;box-sizing:border-box;margin-top:8px;padding:11px 14px;border:1px solid #b9c8b7;border-radius:14px;background:#fff;color:#253c32;font:18px system-ui}\n#account-dialog .numi-wallet-topup-form input[type=email]{display:block;box-sizing:border-box;width:100%;min-height:49px;margin:9px 0 0;padding:10px 12px;border:1px solid #bca274;border-radius:12px;background:#fff;color:#234839;font:16px system-ui;text-align:center}\n#account-dialog .numi-wallet-payment-methods{display:flex;gap:18px;flex-wrap:wrap;margin:0;padding:0;border:0}\n#account-dialog .numi-wallet-payment-methods label{display:flex;align-items:center;gap:7px;font-size:15px;color:#274b3b}\n#account-dialog .numi-wallet-payment-methods input{accent-color:#245c46;width:18px;height:18px}\n#account-dialog .numi-wallet-topup-form button.numi-wallet-main-button{display:block;width:100%;min-height:52px;border:0;border-radius:14px;background:#224e3c;color:white;font:700 16px system-ui;cursor:pointer}\n#account-dialog .numi-wallet-topup-form button:disabled{opacity:.6;cursor:wait}\n#account-dialog .numi-wallet-topup-feedback{margin:16px 0 0;color:#4b6256;font:14px/1.5 system-ui}\n@media(max-width:700px){#account-dialog.numi-wallet-topup-active{height:calc(100dvh - 22px)!important;max-height:calc(100dvh - 22px)!important;min-height:0!important;margin:auto!important;overflow-y:auto!important;box-sizing:border-box}}";
   dialog.append(topupStyle);
   const walletMain=document.createElement("div");walletMain.className="numi-wallet-main";
   const walletText=document.createElement("div");
@@ -269,7 +269,7 @@
   walletLinks.append(ledgerToggle,testNote);
   const vpnWarning=document.createElement("strong");
   vpnWarning.className="numi-wallet-vpn-warning";
-  vpnWarning.textContent="Перед оплатой через ЮMoney отключите VPN.";
+  vpnWarning.textContent="При включённом VPN деньги могут зачисляться до десяти минут.";
   vpnWarning.hidden=true;
   const clubLine=document.createElement("div");clubLine.className="numi-club-status";
   const clubText=document.createElement("span");clubText.textContent="Проверяем подписку…";
@@ -297,20 +297,13 @@
   topupTitle.textContent="Пополнение баланса";
   const topupIntro=document.createElement("p");topupIntro.className="numi-wallet-topup-intro";
   topupIntro.textContent="Введите сумму и выберите способ оплаты.";
-  const vpnBanner=document.createElement("aside");vpnBanner.className="numi-wallet-vpn-banner";vpnBanner.hidden=true;
-  vpnBanner.setAttribute("aria-label","Важно перед оплатой");
-  const vpnBannerTitle=document.createElement("strong");
-  vpnBannerTitle.textContent="ЮMoney — российский платёжный сервис";
-  const vpnBannerDetails=document.createElement("p");
-  vpnBannerDetails.textContent="При оплате отключите VPN. С включённым VPN платёж может зависнуть.";
-  vpnBanner.append(vpnBannerTitle,vpnBannerDetails);
   const topupCurrent=document.createElement("div");topupCurrent.className="numi-wallet-topup-current";
   const topupCurrentLabel=document.createElement("small");topupCurrentLabel.textContent="Текущий баланс";
   const topupCurrentAmount=document.createElement("strong");topupCurrentAmount.textContent="0 ₽";
   topupCurrent.append(topupCurrentLabel,topupCurrentAmount);
   const topupFeedback=document.createElement("p");topupFeedback.className="numi-wallet-topup-feedback";
   topupFeedback.setAttribute("role","status");topupFeedback.hidden=true;
-  topupPage.append(topupBack,topupTitle,topupIntro,vpnBanner,topupCurrent,walletForm,topupFeedback);
+  topupPage.append(topupBack,topupTitle,topupIntro,topupCurrent,walletForm,topupFeedback);
   profile.append(topupPage);
   function showTopupPage(){
     // Keep the authenticated main Telegram WebView: no navigation that loses
@@ -362,8 +355,8 @@
     params.delete("wallet_topup");
     history.replaceState(null,"",location.pathname+(params.toString()?"?"+params:"")+location.hash);
   }
-  // Prepare a durable YooKassa confirmation URL before Continue.
-  // The customer stays in the same Mini App or website browser tab.
+  // Prepare a durable YooKassa confirmation URL BEFORE the customer's click.
+  // Telegram only accepts openLink synchronously within the original user gesture.
   // All payments stay on the existing server wallet_topup API and reuse the same
   // per-account idempotence key; preparation itself does not charge a card.
   let directPrepared=null, directPrepareSerial=0, directPrepareTimer=null;
@@ -473,10 +466,23 @@
     field.addEventListener("input",scheduleDirectCheckoutPreparation);
     field.addEventListener("change",scheduleDirectCheckoutPreparation);
   }
-  function directOpenHere(url){
-    // Keep YooKassa in the current browsing context: in Telegram the Mini App
-    // WebView, and on the website the same browser tab (no new window).
-    location.assign(url);
+  function directExternalOpen(url){
+    // The original authenticated Telegram document retains the native bridge.
+    // Request the external browser directly on the Continue click, without
+    // navigating to wallet-topup.html or to the payment page in this WebView.
+    if(isTelegram()){
+      if(typeof window.TelegramWebviewProxy?.postEvent==="function"){
+        window.TelegramWebviewProxy.postEvent("web_app_open_link",JSON.stringify({url}));
+      }else if(typeof window.external?.notify==="function"){
+        window.external.notify(JSON.stringify({eventType:"web_app_open_link",eventData:{url}}));
+      }else if(typeof window.Telegram?.WebApp?.openLink==="function"){
+        window.Telegram.WebApp.openLink(url);
+      }else{
+        throw new Error("Telegram не разрешил открыть браузер. Откройте мини-приложение заново.");
+      }
+    }else{
+      location.assign(url);
+    }
   }
   async function directSyncOnReturn(){
     if(!directPending||directSyncBusy||document.hidden)return;
@@ -523,14 +529,13 @@
       return;
     }
     try{
+      directExternalOpen(directPrepared.href); // synchronous user gesture
       directPending=directPrepared;
       pay.disabled=true;
-      pay.textContent="Переходим к оплате…";
-      directMessage("Открываем ЮMoney в этом окне.");
-      directOpenHere(directPrepared.href);
+      pay.textContent="Оплата открыта";
+      directMessage("ЮKassa открывается в браузере. Вернитесь сюда после оплаты.");
     }catch(error){
-      pay.disabled=false;
-      directMessage(error?.message||"Не удалось открыть страницу оплаты.");
+      directMessage(error?.message||"Не удалось открыть внешний браузер.");
       pay.disabled=false;
     }
   });
@@ -804,7 +809,6 @@
       receiptInput.required=walletMode==="live";
       testNote.textContent=walletMode==="test"?"Тестовый режим · без настоящих списаний":"Оплата через ЮKassa · картой или СБП";
       vpnWarning.hidden=walletMode!=="live";
-      vpnBanner.hidden=walletMode!=="live";
       walletAmount.textContent=(Number(response.balance_kopeks)/100).toLocaleString("ru-RU")+" ₽";
       topupCurrentAmount.textContent=walletAmount.textContent;
       if(!topupPage.hidden && previousWalletMode!==walletMode) scheduleDirectCheckoutPreparation();
