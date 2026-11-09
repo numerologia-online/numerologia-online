@@ -24,7 +24,7 @@ def published_paid_question(category, question):
     # An item's existing textFile is the only route to its protected bank.
     # The public catalogue never receives the bank content.
     relative = question.get("textFile", category + "/" + question["id"] + ".json").split("?", 1)[0]
-    if not re.fullmatch(re.escape(category) + r"/[a-z0-9-]+\\.json", relative):
+    if not re.fullmatch(re.escape(category) + r"/[a-z0-9-]+\.json", relative):
         raise ValueError("Invalid Red Flag bank path: " + relative)
     path = root / "data/redflag" / relative
     if not path.is_file():
