@@ -79,7 +79,8 @@ def main():
         raise RuntimeError("RECURRING_GATE_OR_ROUTE_MISSING")
     if b"'save_payment_method'=>false" not in sources["wallet-real-payment.php"]:
         raise RuntimeError("TOPUP_CARD_MUST_NOT_BE_SAVED")
-    if (b"window.Telegram.WebApp.openLink(prepared.href)" not in sources["wallet-topup.html"]
+    if (b"openPaymentExternally(prepared.href)" not in sources["wallet-topup.html"]
+        or b"window.TelegramWebviewProxy.postEvent(eventType,JSON.stringify(eventData))" not in sources["wallet-topup.html"]
         or b"scheduleTelegramPreparation" not in sources["wallet-topup.html"]
         or b"completedFingerprint" not in sources["wallet-topup.html"]):
         raise RuntimeError("TOPUP_EXTERNAL_BROWSER_GUARDS_MISSING")
