@@ -506,14 +506,16 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             $data=naRealWalletQuote($db,$account,$input,$ready);
             $entitlement=null;
             if($data['owned'] && $data['kind']!=='subscription'){
-                $q=$db->prepare("SELECT e.id FROM numi_entitlements e
+                $q=$db->prepare("SELECT e.id,e.expires_at FROM numi_entitlements e
                     JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
                     WHERE e.account_id=? AND e.product_code=? AND e.resource_id=?
                       AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
                       AND o.status='paid' AND o.verified_at IS NOT NULL AND o.provider IN ('real_wallet','real_subscription')
                     ORDER BY o.created_at DESC LIMIT 1");
                 $q->execute([$account['id'],$data['product_code'],$data['resource_id']]);
-                $entitlement=$q->fetchColumn()?:null;
+                $ownedRow=$q->fetch(PDO::FETCH_ASSOC);
+                $entitlement=$ownedRow['id']??null;
+                $expiresAt=$ownedRow['expires_at']??null;
             }
             $raw=naCatalogResolve($input,$data['club_active']);
             naReply(200,array_merge($data,[
@@ -524,6 +526,7 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                 'member_included'=>$raw['member_included'],
                 'club_subscription_price_kopeks'=>naCatalogResolve(['product_code'=>'club_month'],false)['price_kopeks'],
                 'entitlement_id'=>$entitlement,
+                'expires_at'=>$expiresAt??null,
                 'currency'=>'RUB','test'=>false,'renewal'=>'manual',
             ]));
         }
