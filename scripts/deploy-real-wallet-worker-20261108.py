@@ -63,13 +63,14 @@ def main():
         "store.php": "account-service/private/store.php",
         "fulfillment.php": "account-service/private/fulfillment.php",
         "account-browser.js": "account-browser.js",
+        "index.html": "index.html",
         "numi-real-worker.php": "account-service/public/numi-real-worker.php",
     }
     sources = {name: pathlib.Path(src).read_bytes()
                for name, src in source_paths.items()}
     sources["worker.local.php"] = worker_cfg
     for name, data in sources.items():
-        if len(data)>LIMIT or (name!="account-browser.js" and not data.startswith(b"<?php")):
+        if len(data)>LIMIT or (name not in ("account-browser.js","index.html") and not data.startswith(b"<?php")):
             raise RuntimeError("INVALID_RELEASE_SOURCE:"+name)
     if b"subscription_checkout" not in sources["core.php"] or (
         b"recurring_merchant_approved" not in sources["subscriptions.php"]
@@ -86,7 +87,7 @@ def main():
     root=home+"/www/"+WEBROOT
     private=home+"/private/numi-account-20261031"
     live_dir=home+"/private/numi-wallet-live"
-    dest={name: (root+"/"+name if name=="account-browser.js"
+    dest={name: (root+"/"+name if name in ("account-browser.js","index.html")
                  else root+"/api/"+name if name=="numi-real-worker.php"
                  else live_dir+"/"+name if name=="worker.local.php"
                  else private+"/"+name)
@@ -124,7 +125,7 @@ def main():
         for name in sources:
             originals[name]=read(dest[name])
             old=originals[name]
-            if name in source_paths and not approved_version(source_paths[name],old):
+            if name in source_paths and name!="index.html" and not approved_version(source_paths[name],old):
                 raise RuntimeError("UNKNOWN_SERVER_FILE_BASELINE:"+name)
             if name=="worker.local.php" and old is not None and old!=sources[name]:
                 raise RuntimeError("EXISTING_WORKER_SECRET_DIFFERS_DO_NOT_OVERWRITE")
@@ -193,6 +194,25 @@ def main():
                 changed.append(name)
                 write(dest[name],sources[name])
             print("REG_RU_SUBSCRIPTION_UI_SOURCE_VERIFIED",flush=True)
+            # Refresh exactly one script cache key without replacing unrelated
+            # live homepage edits. Any unknown homepage version is left alone.
+            previous=b"account-browser.js?v=wallet-quiet-status-20261108"
+            updated=b"account-browser.js?v=live-subscriptions-20261109"
+            if sources["index.html"].count(updated)!=1:
+                raise RuntimeError("REVIEWED_INDEX_CACHE_TAG_MISSING")
+            oldhtml=originals["index.html"]
+            if oldhtml is None:
+                raise RuntimeError("LIVE_HOMEPAGE_MISSING")
+            if oldhtml.count(updated)==1:
+                print("REG_RU_SUBSCRIPTION_CACHE_ALREADY_CURRENT",flush=True)
+            elif oldhtml.count(previous)==1 and oldhtml.count(updated)==0:
+                if read(dest["index.html"])!=oldhtml:
+                    raise RuntimeError("CONCURRENT_SERVER_EDIT:index.html")
+                changed.append("index.html")
+                write(dest["index.html"],oldhtml.replace(previous,updated,1))
+                print("REG_RU_SUBSCRIPTION_CACHE_VERSION_UPDATED",flush=True)
+            else:
+                raise RuntimeError("UNKNOWN_LIVE_ACCOUNT_SCRIPT_VERSION_DO_NOT_OVERWRITE")
             # No cookies or customer data: only an anonymous API check.
             account_url="https://"+DOMAIN+"/api/numi-account.php"
             anonymous=urllib.request.Request(account_url,
