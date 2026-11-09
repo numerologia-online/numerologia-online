@@ -196,8 +196,8 @@ def main():
             print("REG_RU_SUBSCRIPTION_UI_SOURCE_VERIFIED",flush=True)
             # Patch only the reviewed mobile-subscription block and four
             # exact texts. Do NOT overwrite unrelated live homepage changes.
-            previous=b"account-browser.js?v=live-subscriptions-cta-20261109"
-            updated=b"account-browser.js?v=live-subscriptions-compact-20261109"
+            previous=b"account-browser.js?v=live-subscriptions-compact-20261109"
+            updated=b"account-browser.js?v=live-subscriptions-clear-20261109"
             sourcehtml=sources["index.html"]
             if sourcehtml.count(updated)!=1:
                 raise RuntimeError("REVIEWED_INDEX_CACHE_TAG_MISSING")
@@ -207,7 +207,7 @@ def main():
                 raise RuntimeError("REVIEWED_SUBSCRIPTION_CSS_MISSING")
             css_tail=sourcehtml.split(css_anchor,1)[1].split(b"</style>",1)[0]
             previous_html=subprocess.check_output([
-                "git","show","c9deda20f0d11cbb7536c5e38d8a341532d8278c:index.html"
+                "git","show","0e60080a8e60e14fdbbd0cc5b0e475ff8c1a119c:index.html"
             ])
             if previous_html.count(css_anchor)!=1:
                 raise RuntimeError("REVIEWED_PREVIOUS_CSS_MISSING")
@@ -231,6 +231,8 @@ def main():
                 ("Клуб — 490 ₽ / месяц","Клуб · 490 ₽/мес."),
                 ("Школа — 149 ₽ / неделю","Самоучитель · 149 ₽/нед."),
                 ('style="margin-top:18px"',''),
+                ("Клуб · 490 ₽/мес.","Клуб — 490 рублей в месяц"),
+                ("Самоучитель · 149 ₽/нед.","Самоучитель — 149 рублей в неделю"),
                 ("Пока продление оплачивается с баланса вручную. Автосписания заработают после отдельного подключения в ЮKassa и согласия покупателя.",
                  "Автосписания станут доступны после одобрения ЮKassa."),
             ]
