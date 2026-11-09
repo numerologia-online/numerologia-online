@@ -10,7 +10,7 @@
         {
           "type": 1,
           "data": "31.31.196.214",
-          "TTL": 3600
+          "TTL": 1806
         }
       ]
     },
@@ -32,14 +32,26 @@
       "type": "AAAA",
       "resolver": "google",
       "status": 0,
-      "answers": []
+      "answers": [
+        {
+          "type": 28,
+          "data": "2a00:f940:2:2:1:1:0:172",
+          "TTL": 3600
+        }
+      ]
     },
     {
       "name": "xn--c1adkkdfjbp1a4l.online",
       "type": "AAAA",
       "resolver": "cloudflare",
       "status": 0,
-      "answers": []
+      "answers": [
+        {
+          "type": 28,
+          "data": "2a00:f940:2:2:1:1:0:172",
+          "TTL": 3600
+        }
+      ]
     },
     {
       "name": "www.xn--c1adkkdfjbp1a4l.online",
@@ -50,7 +62,7 @@
         {
           "type": 1,
           "data": "31.31.196.214",
-          "TTL": 3600
+          "TTL": 3411
         }
       ]
     },
@@ -72,14 +84,26 @@
       "type": "AAAA",
       "resolver": "google",
       "status": 0,
-      "answers": []
+      "answers": [
+        {
+          "type": 28,
+          "data": "2a00:f940:2:2:1:1:0:172",
+          "TTL": 3600
+        }
+      ]
     },
     {
       "name": "www.xn--c1adkkdfjbp1a4l.online",
       "type": "AAAA",
       "resolver": "cloudflare",
       "status": 0,
-      "answers": []
+      "answers": [
+        {
+          "type": 28,
+          "data": "2a00:f940:2:2:1:1:0:172",
+          "TTL": 3600
+        }
+      ]
     }
   ]
 }
