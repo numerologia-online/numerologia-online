@@ -79,11 +79,20 @@ def main():
         raise RuntimeError("RECURRING_GATE_OR_ROUTE_MISSING")
     if b"'save_payment_method'=>false" not in sources["wallet-real-payment.php"]:
         raise RuntimeError("TOPUP_CARD_MUST_NOT_BE_SAVED")
-    if (b"openPaymentExternally(prepared.href)" not in sources["wallet-topup.html"]
-        or b"window.TelegramWebviewProxy.postEvent(eventType,JSON.stringify(eventData))" not in sources["wallet-topup.html"]
+    if (b"openPaymentInThisWindow(prepared.href)" not in sources["wallet-topup.html"]
+        or b"location.assign(href)" not in sources["wallet-topup.html"]
         or b"scheduleTelegramPreparation" not in sources["wallet-topup.html"]
-        or b"completedFingerprint" not in sources["wallet-topup.html"]):
-        raise RuntimeError("TOPUP_EXTERNAL_BROWSER_GUARDS_MISSING")
+        or b"completedFingerprint" not in sources["wallet-topup.html"]
+        or b"openPaymentExternally(" in sources["wallet-topup.html"]
+        or b"web_app_open_link" in sources["wallet-topup.html"]
+        or "Если окно оплаты зависает, отключите VPN.".encode("utf-8") not in sources["wallet-topup.html"]):
+        raise RuntimeError("TOPUP_SAME_WINDOW_VPN_GUARDS_MISSING")
+    if (b"directOpenHere(directPrepared.href)" not in sources["account-browser.js"]
+        or b"location.assign(url)" not in sources["account-browser.js"]
+        or b"directExternalOpen(" in sources["account-browser.js"]
+        or b"web_app_open_link" in sources["account-browser.js"]
+        or "Если окно оплаты зависает, отключите VPN.".encode("utf-8") not in sources["account-browser.js"]):
+        raise RuntimeError("CABINET_SAME_WINDOW_VPN_GUARDS_MISSING")
     ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
     ftp.connect(HOST,21)
     ftp.login(user,password)
@@ -202,8 +211,8 @@ def main():
             print("REG_RU_SUBSCRIPTION_UI_SOURCE_VERIFIED",flush=True)
             # Patch only the reviewed mobile-subscription block and four
             # exact texts. Do NOT overwrite unrelated live homepage changes.
-            previous=b"account-browser.js?v=live-subscriptions-clear-20261109"
-            updated=b"account-browser.js?v=wallet-direct-external-20261109"
+            previous=b"account-browser.js?v=wallet-direct-external-20261109"
+            updated=b"account-browser.js?v=wallet-same-tab-vpn-20261109"
             sourcehtml=sources["index.html"]
             if sourcehtml.count(updated)!=1:
                 raise RuntimeError("REVIEWED_INDEX_CACHE_TAG_MISSING")
@@ -305,7 +314,7 @@ def main():
                 served_index=response.read(LIMIT+1)
                 if response.status!=200 or served_index.count(updated)!=1:
                     raise RuntimeError("CABINET_DIRECT_EXTERNAL_CACHE_TAG_NOT_PUBLIC")
-            print("REG_RU_CABINET_EXTERNAL_ONE_TAP_HTTP_VERIFIED",flush=True)
+            print("REG_RU_CABINET_SAME_WINDOW_VPN_HTTP_VERIFIED",flush=True)
             # No cookies or customer data: only an anonymous API check.
             account_url="https://"+DOMAIN+"/api/numi-account.php"
             anonymous=urllib.request.Request(account_url,
