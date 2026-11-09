@@ -97,7 +97,7 @@ export async function showInlinePurchase(item,container,onMaterial){
   container.replaceChildren(el("p",isClubDeal
     ? "Ваша цена по клубу: "+rub(amount)+" (обычно "+rub(regular)+")."
     : "Стоимость ответа: "+rub(amount)+"."));
-  const buyButton=action(container,(quote.kind==="subscription"?"Подключить подписку за ":"Открыть за ")+rub(amount),async function(){
+  const buyButton=action(container,(quote.kind==="subscription"?"Подключить подписку за "+rub(amount):"Списать "+rub(amount)+" и открыть ответ"),async function(){
     this.disabled=true;
     const id=keyFor(item);
     let key=pending.get(id);

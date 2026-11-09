@@ -61,14 +61,16 @@ jobs:
           for file in app.js year-feature.js compatibility-feature.js pro/pro.js child/child.js store-entry.js shared-offer.js wallet-client.js redflag-feature.js; do node --check "$file"; done
           grep -Fq "naRedFlagPaidStatus" account-service/private/fulfillment.php
           grep -Fq "Недостаточно средств на балансе. Для ответа нужно " wallet-client.js
-          grep -Fq "redflag-status-fix-20261109" redflag-feature.js
+          grep -Fq "redflag-question-stable-20261109" redflag-feature.js
+          grep -Fq "const repaintOnlyQuestions" redflag-feature.js
+          grep -Fq "Списать " wallet-client.js
           grep -Fq "REDFLAG_COMPLETE_366_PRIVATE_ANSWERS_VERIFIED" scripts/deploy-real-wallet-worker-20261108.py
           grep -Fq "PAID_ANSWER_READY_AND_BALANCE_GUARDS_MISSING" scripts/deploy-real-wallet-worker-20261108.py
           test "$(grep -c 'Этот материал ещё готовится' wallet-client.js || true)" = "0"
           grep -Fq "modify('+1 year')" account-service/private/store.php
           grep -Fq "INTERVAL 1 YEAR" account-service/public/numi-real-worker.php
           grep -Fq "expires_at'=>\$expiresAt" account-service/private/wallet-real-payment.php
-          grep -Fq "app.js?v=redflag-status-fix-20261109" index.html
+          grep -Fq "app.js?v=redflag-question-stable-20261109" index.html
           grep -Fq "pro/pro.js?v=report-annual-20261109" pro/index.html
           grep -Fq "./child.js?v=report-annual-20261109" child/index.html
           grep -Fq "recognizePurchasedReport" store-entry.js

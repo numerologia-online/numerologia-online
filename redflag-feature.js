@@ -276,7 +276,7 @@ const ensureAnswer = (question, state) => {
       .find(node=>node.dataset.questionId===id);
     const target=article?.querySelector(".redflag-answer");
     if(!category||!target){state.answerErrors.set(id,"Не удалось проверить вопрос. Откройте его ещё раз.");return;}
-    const task=import("./wallet-client.js?v=redflag-status-fix-20261109").then(({showInlinePurchase})=>
+    const task=import("./wallet-client.js?v=redflag-question-stable-20261109").then(({showInlinePurchase})=>
       showInlinePurchase(item,target,(material)=>{
         if(activeProfile!==profile)return;
         const paragraphs=(material.sections||[]).flatMap(section=>section.paragraphs||[]);
@@ -603,13 +603,35 @@ const createCategory = (category, index) => {
   return section;
 };
 
-// Update only the changed category. Rebuilding the entire long list and
-// compensating with scrollBy caused large jumps in mobile Safari/WebKit.
+// Only the tapped question (and the previously opened one) is updated.
+// Rebuilding the whole accordion destroys mobile Safari's scroll anchor.
+const repaintOnlyQuestions = (questionId) => {
+  const index = REDFLAG_CATEGORIES.findIndex(category => {
+    const state = categoryStates.get(category.id);
+    return state.expanded && state.questions?.some(question => question.id === questionId);
+  });
+  if (index < 0) return false;
+  const category = REDFLAG_CATEGORIES[index];
+  const state = categoryStates.get(category.id);
+  const cards = [...categoriesRoot.children[index].querySelectorAll(".redflag-question")];
+  if (cards.length !== state.questions.length) return false;
+  const records = new Map(state.questions.map(question => [question.id, question]));
+  if (!cards.every(card => records.has(card.dataset.questionId))) return false;
+  for (const card of cards) {
+    const question = records.get(card.dataset.questionId);
+    const shouldOpen = !question.isComingSoon && state.activeQuestionId === question.id;
+    if (question.id === questionId || card.classList.contains("is-open") !== shouldOpen) {
+      card.replaceWith(createQuestion(question, state));
+    }
+  }
+  return true;
+};
 const renderCategories = (anchor = null) => {
   if (categoriesRoot.children.length !== REDFLAG_CATEGORIES.length) {
     categoriesRoot.replaceChildren(...REDFLAG_CATEGORIES.map(createCategory));
     return;
   }
+  if (anchor?.type === "question" && repaintOnlyQuestions(anchor.id)) return;
   REDFLAG_CATEGORIES.forEach((category, index) => {
     const element = categoriesRoot.children[index];
     const state = categoryStates.get(category.id);

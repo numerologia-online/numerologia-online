@@ -104,11 +104,11 @@ def main():
                  "pro/pro.js","child/child.js"):
         if b"recognizePurchasedReport" not in sources[name]:
             raise RuntimeError("ANNUAL_REPORT_CLIENT_GUARD_MISSING:"+name)
-    if b"app.js?v=redflag-status-fix-20261109" not in sources["index.html"]:
+    if b"app.js?v=redflag-question-stable-20261109" not in sources["index.html"]:
         raise RuntimeError("PAID_ANSWER_HOMEPAGE_CACHE_TAG_MISSING")
     if (b"naRedFlagPaidStatus" not in sources["fulfillment.php"]
         or "Недостаточно средств на балансе. Для ответа нужно ".encode("utf-8") not in sources["wallet-client.js"]
-        or b"./wallet-client.js?v=redflag-status-fix-20261109" not in sources["redflag-feature.js"]):
+        or b"./wallet-client.js?v=redflag-question-stable-20261109" not in sources["redflag-feature.js"]):
         raise RuntimeError("PAID_ANSWER_READY_AND_BALANCE_GUARDS_MISSING")
     if (b"openPaymentInThisWindow(prepared.href)" not in sources["wallet-topup.html"]
         or b"location.assign(href)" not in sources["wallet-topup.html"]
@@ -342,9 +342,11 @@ def main():
                 raise RuntimeError("UNKNOWN_LIVE_ACCOUNT_SCRIPT_VERSION_DO_NOT_OVERWRITE")
             original_app=b"app.js?v=club-prices1"
             prior_app=b"app.js?v=report-annual-20261109"
-            new_app=b"app.js?v=redflag-status-fix-20261109"
+            last_app=b"app.js?v=redflag-status-fix-20261109"
+            new_app=b"app.js?v=redflag-question-stable-20261109"
             if changedhtml.count(new_app)==0:
-                old_app=prior_app if changedhtml.count(prior_app)==1 else original_app
+                old_app=(last_app if changedhtml.count(last_app)==1 else
+                         prior_app if changedhtml.count(prior_app)==1 else original_app)
                 if changedhtml.count(old_app)!=1:
                     raise RuntimeError("UNKNOWN_LIVE_APP_SCRIPT_VERSION_DO_NOT_OVERWRITE")
                 changedhtml=changedhtml.replace(old_app,new_app,1)
