@@ -176,6 +176,18 @@ try{
                 ADD COLUMN receipt_email VARCHAR(254) NULL AFTER kopeks");
         }
         naRealWalletSchema($db);
+        // Apply the one-year license rule to previously sold REAL reports that
+        // were stored without an expiry. Use their verified original payment
+        // timestamp so a repeat visit cannot silently extend the paid period.
+        // Idempotent and limited to these four report codes; never change a
+        // subscriber's paid period or touch money/receipt records.
+        $db->exec("UPDATE numi_entitlements e
+            INNER JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
+            SET e.expires_at=DATE_ADD(COALESCE(o.verified_at,e.created_at),INTERVAL 1 YEAR)
+            WHERE e.product_code IN ('year_full','life_full','compatibility_full','child_full_v1')
+              AND e.expires_at IS NULL
+              AND o.status='paid' AND o.verified_at IS NOT NULL
+              AND o.provider IN ('real_wallet','real_subscription')");
         echo '{"ok":true,"action":"migrate","result":"REAL_SCHEMA_READY"}';exit;
     }
     $live=naRealWalletConfig();
