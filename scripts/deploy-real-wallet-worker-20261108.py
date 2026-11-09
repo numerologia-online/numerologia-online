@@ -63,6 +63,16 @@ def main():
         "store.php": "account-service/private/store.php",
         "fulfillment.php": "account-service/private/fulfillment.php",
         "account-browser.js": "account-browser.js",
+        # Existing site modules only; no new deployment engine or extra folder.
+        "store-entry.js": "store-entry.js",
+        "shared-offer.js": "shared-offer.js",
+        "app.js": "app.js",
+        "year-feature.js": "year-feature.js",
+        "compatibility-feature.js": "compatibility-feature.js",
+        "pro/pro.js": "pro/pro.js",
+        "pro/index.html": "pro/index.html",
+        "child/child.js": "child/child.js",
+        "child/index.html": "child/index.html",
         "wallet-topup.html": "wallet-topup.html",
         "index.html": "index.html",
         "numi-real-worker.php": "account-service/public/numi-real-worker.php",
@@ -70,8 +80,12 @@ def main():
     sources = {name: pathlib.Path(src).read_bytes()
                for name, src in source_paths.items()}
     sources["worker.local.php"] = worker_cfg
+    public_files = ("account-browser.js","wallet-topup.html","index.html",
+                    "store-entry.js","shared-offer.js","app.js",
+                    "year-feature.js","compatibility-feature.js",
+                    "pro/pro.js","pro/index.html","child/child.js","child/index.html")
     for name, data in sources.items():
-        if len(data)>LIMIT or (name not in ("account-browser.js","index.html","wallet-topup.html") and not data.startswith(b"<?php")):
+        if len(data)>LIMIT or (name not in public_files and not data.startswith(b"<?php")):
             raise RuntimeError("INVALID_RELEASE_SOURCE:"+name)
     if b"subscription_checkout" not in sources["core.php"] or (
         b"recurring_merchant_approved" not in sources["subscriptions.php"]
@@ -79,6 +93,16 @@ def main():
         raise RuntimeError("RECURRING_GATE_OR_ROUTE_MISSING")
     if b"'save_payment_method'=>false" not in sources["wallet-real-payment.php"]:
         raise RuntimeError("TOPUP_CARD_MUST_NOT_BE_SAVED")
+    if (b"modify('+1 year')" not in sources["store.php"]
+        or b"INTERVAL 1 YEAR" not in sources["numi-real-worker.php"]
+        or b"'expires_at'=>$expiresAt??null" not in sources["wallet-real-payment.php"]):
+        raise RuntimeError("ANNUAL_REPORT_SERVER_GUARDS_MISSING")
+    for name in ("store-entry.js","year-feature.js","compatibility-feature.js",
+                 "pro/pro.js","child/child.js"):
+        if b"recognizePurchasedReport" not in sources[name]:
+            raise RuntimeError("ANNUAL_REPORT_CLIENT_GUARD_MISSING:"+name)
+    if b"app.js?v=report-annual-20261109" not in sources["index.html"]:
+        raise RuntimeError("ANNUAL_REPORT_HOMEPAGE_CACHE_TAG_MISSING")
     if (b"openPaymentInThisWindow(prepared.href)" not in sources["wallet-topup.html"]
         or b"location.assign(href)" not in sources["wallet-topup.html"]
         or b"scheduleTelegramPreparation" not in sources["wallet-topup.html"]
@@ -102,7 +126,7 @@ def main():
     root=home+"/www/"+WEBROOT
     private=home+"/private/numi-account-20261031"
     live_dir=home+"/private/numi-wallet-live"
-    dest={name: (root+"/"+name if name in ("account-browser.js","index.html","wallet-topup.html")
+    dest={name: (root+"/"+name if name in public_files
                  else root+"/api/"+name if name=="numi-real-worker.php"
                  else live_dir+"/"+name if name=="worker.local.php"
                  else private+"/"+name)
@@ -149,7 +173,7 @@ def main():
         ftp.mkd(backup)
         for name,original in originals.items():
             if original is not None:
-                write(backup+"/"+name+".before",original)
+                write(backup+"/"+name.replace("/","__")+".before",original)
                 print("VERIFIED_PRIVATE_BACKUP",name,flush=True)
         try:
             # Private PHP before public API and public JS. Preserve the existing
@@ -200,6 +224,25 @@ def main():
             except urllib.error.HTTPError as exc:
                 raise RuntimeError("LIVE_PROVIDER_PROBE_HTTP_"+str(exc.code)) from None
             print("LIVE_PROVIDER_SAFE_PROBE",json.dumps(body,ensure_ascii=False),flush=True)
+            # Publish existing report pages and modules ONLY after private
+            # expiry migration and the read-only provider probe succeed.
+            # Verify each served HTTP file, not just the private FTP copy.
+            for name in ("store-entry.js","shared-offer.js","app.js",
+                         "year-feature.js","compatibility-feature.js",
+                         "pro/pro.js","pro/index.html","child/child.js","child/index.html"):
+                if read(dest[name])!=originals[name]:
+                    raise RuntimeError("CONCURRENT_SERVER_EDIT:"+name)
+                if originals[name]!=sources[name]:
+                    changed.append(name)
+                    write(dest[name],sources[name])
+                print("REG_RU_ANNUAL_REPORT_SOURCE_VERIFIED",name,flush=True)
+                url="https://"+DOMAIN+"/"+name+"?code_check="+stamp
+                with urllib.request.urlopen(urllib.request.Request(
+                        url,headers={"Cache-Control":"no-cache"}),timeout=30) as response:
+                    served=response.read(LIMIT+1)
+                    if response.status!=200 or served!=sources[name]:
+                        raise RuntimeError("ANNUAL_REPORT_HTTP_MISMATCH:"+name)
+                print("REG_RU_ANNUAL_REPORT_HTTP_VERIFIED",name,flush=True)
             # Publish the new cabinet UI only after backend, schema and
             # private-provider diagnostics have all succeeded.
             name="account-browser.js"
@@ -273,6 +316,12 @@ def main():
                 changedhtml=changedhtml.replace(previous,updated,1)
             if changedhtml.count(updated)!=1:
                 raise RuntimeError("UNKNOWN_LIVE_ACCOUNT_SCRIPT_VERSION_DO_NOT_OVERWRITE")
+            old_app=b"app.js?v=club-prices1"
+            new_app=b"app.js?v=report-annual-20261109"
+            if changedhtml.count(new_app)==0 and changedhtml.count(old_app)==1:
+                changedhtml=changedhtml.replace(old_app,new_app,1)
+            if changedhtml.count(new_app)!=1:
+                raise RuntimeError("UNKNOWN_LIVE_APP_SCRIPT_VERSION_DO_NOT_OVERWRITE")
             if changedhtml!=oldhtml:
                 if read(dest["index.html"])!=oldhtml:
                     raise RuntimeError("CONCURRENT_SERVER_EDIT:index.html")
@@ -314,6 +363,8 @@ def main():
                 served_index=response.read(LIMIT+1)
                 if response.status!=200 or served_index.count(updated)!=1:
                     raise RuntimeError("CABINET_DIRECT_EXTERNAL_CACHE_TAG_NOT_PUBLIC")
+                if served_index.count(new_app)!=1:
+                    raise RuntimeError("ANNUAL_REPORT_HOMEPAGE_TAG_NOT_PUBLIC")
             print("REG_RU_CABINET_SAME_WINDOW_VPN_HTTP_VERIFIED",flush=True)
             # No cookies or customer data: only an anonymous API check.
             account_url="https://"+DOMAIN+"/api/numi-account.php"
