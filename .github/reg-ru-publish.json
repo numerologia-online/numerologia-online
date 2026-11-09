@@ -1,5 +1,5 @@
 {
   "mode": "check",
   "files": [],
-  "note": "Owner-approved 50 personal-day readings in main; publication run 42672909292 failed before creating jobs. No verified REG.RU upload; read-only until GitHub Actions scheduling is restored."
+  "note": "2026-11-09 owner-requested minimal smoke test of GitHub Actions: check only; no REG.RU files changed."
 }
