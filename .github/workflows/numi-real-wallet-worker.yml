@@ -86,4 +86,4 @@ jobs:
               raise SystemExit('REG_RU_WORKER_STATUS_'+str(status)+'_'+str(payload.get('error','unknown')))
           PY
 
-# account JS cache revision 20261109: safely patch only verified live script reference
+# mobile subscriptions layout revision 20261109: verified CSS patch, no payment changes
