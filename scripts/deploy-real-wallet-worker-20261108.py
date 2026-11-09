@@ -63,6 +63,7 @@ def main():
         "store.php": "account-service/private/store.php",
         "fulfillment.php": "account-service/private/fulfillment.php",
         "account-browser.js": "account-browser.js",
+        "wallet-topup.html": "wallet-topup.html",
         "index.html": "index.html",
         "numi-real-worker.php": "account-service/public/numi-real-worker.php",
     }
@@ -70,7 +71,7 @@ def main():
                for name, src in source_paths.items()}
     sources["worker.local.php"] = worker_cfg
     for name, data in sources.items():
-        if len(data)>LIMIT or (name not in ("account-browser.js","index.html") and not data.startswith(b"<?php")):
+        if len(data)>LIMIT or (name not in ("account-browser.js","index.html","wallet-topup.html") and not data.startswith(b"<?php")):
             raise RuntimeError("INVALID_RELEASE_SOURCE:"+name)
     if b"subscription_checkout" not in sources["core.php"] or (
         b"recurring_merchant_approved" not in sources["subscriptions.php"]
@@ -78,6 +79,10 @@ def main():
         raise RuntimeError("RECURRING_GATE_OR_ROUTE_MISSING")
     if b"'save_payment_method'=>false" not in sources["wallet-real-payment.php"]:
         raise RuntimeError("TOPUP_CARD_MUST_NOT_BE_SAVED")
+    if (b"window.Telegram.WebApp.openLink(prepared.href)" not in sources["wallet-topup.html"]
+        or b"scheduleTelegramPreparation" not in sources["wallet-topup.html"]
+        or b"completedFingerprint" not in sources["wallet-topup.html"]):
+        raise RuntimeError("TOPUP_EXTERNAL_BROWSER_GUARDS_MISSING")
     ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
     ftp.connect(HOST,21)
     ftp.login(user,password)
@@ -87,7 +92,7 @@ def main():
     root=home+"/www/"+WEBROOT
     private=home+"/private/numi-account-20261031"
     live_dir=home+"/private/numi-wallet-live"
-    dest={name: (root+"/"+name if name in ("account-browser.js","index.html")
+    dest={name: (root+"/"+name if name in ("account-browser.js","index.html","wallet-topup.html")
                  else root+"/api/"+name if name=="numi-real-worker.php"
                  else live_dir+"/"+name if name=="worker.local.php"
                  else private+"/"+name)
@@ -259,6 +264,25 @@ def main():
                 print("REG_RU_COMPACT_SUBSCRIPTIONS_VIEW_UPDATED",flush=True)
             else:
                 print("REG_RU_COMPACT_SUBSCRIPTIONS_VIEW_ALREADY_CURRENT",flush=True)
+            # Safely publish ONLY the existing live top-up page.
+            # This is client-side navigation; no merchant keys or money logic change.
+            name="wallet-topup.html"
+            remote=dest[name]
+            if originals[name] is None:
+                raise RuntimeError("EXISTING_TOPUP_PAGE_MISSING")
+            if read(remote)!=originals[name]:
+                raise RuntimeError("CONCURRENT_SERVER_EDIT:wallet-topup.html")
+            if originals[name]!=sources[name]:
+                changed.append(name)
+                write(remote,sources[name])
+            print("REG_RU_TOPUP_EXTERNAL_ONE_TAP_FILE_VERIFIED",flush=True)
+            topup_url="https://"+DOMAIN+"/wallet-topup.html?code_check="+stamp
+            with urllib.request.urlopen(urllib.request.Request(topup_url,
+                headers={"Cache-Control":"no-cache"}),timeout=30) as response:
+                published=response.read(LIMIT+1)
+                if response.status!=200 or published!=sources[name]:
+                    raise RuntimeError("REG_RU_TOPUP_EXTERNAL_ONE_TAP_HTTP_MISMATCH")
+            print("REG_RU_TOPUP_EXTERNAL_ONE_TAP_HTTP_VERIFIED",flush=True)
             # No cookies or customer data: only an anonymous API check.
             account_url="https://"+DOMAIN+"/api/numi-account.php"
             anonymous=urllib.request.Request(account_url,
