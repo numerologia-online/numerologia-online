@@ -333,4 +333,59 @@ expectReal(fn()=>naRealRefundApprovedCase($db,$refundId),
     'REAL_REFUND_SOURCE_ALREADY_SPENT');
 naRealWalletInvariant($db,$splitId);
 echo "REAL_MULTI_ADVANCE_PURCHASE_AND_RECEIPT_ALLOCATION_PASS\n";
+// Paid personalized reports are keyed to their exact subject and expire
+// exactly one calendar year after purchase. Expired access cannot be reused.
+$licenseStart=new DateTimeImmutable('2026-11-09 12:30:00',new DateTimeZone('UTC'));
+foreach(['year_full','life_full','compatibility_full','child_full_v1'] as $reportCode){
+    assertReal(naStoreExpiry($reportCode,$licenseStart)==='2027-11-09 12:30:00',
+        $reportCode.' has a one-year paid-access term');
+}
+assertReal(naStoreExpiry('redflag_question',$licenseStart)===null,
+    'one-year license does not change ordinary question access');
+assertReal(naStoreExpiry('school_week',$licenseStart)==='2026-11-16 12:30:00',
+    'school renewal duration remains weekly');
+
+$licenseAccountId='77777777-7777-4777-8777-777777777777';
+$licenseAccount=['id'=>$licenseAccountId];
+$licenseTopupId='77777777-7777-4777-8777-777777777778';
+$db->prepare('INSERT INTO numi_accounts(id,email,email_verified_at) VALUES(?,?,UTC_TIMESTAMP())')
+    ->execute([$licenseAccountId,'license@example.test']);
+$db->prepare('INSERT INTO numi_real_wallet_balances(account_id,kopeks) VALUES(?,100000)')
+    ->execute([$licenseAccountId]);
+$db->prepare("INSERT INTO numi_real_wallet_topups
+    (id,account_id,request_key,kopeks,receipt_email,provider_payment_id,status,credited_at)
+    VALUES(?,?,?,?,?,?,'credited',UTC_TIMESTAMP())")
+    ->execute([$licenseTopupId,$licenseAccountId,'license-topup-20261109',100000,
+        'license@example.test','license-provider-fixture']);
+$db->prepare("INSERT INTO numi_real_wallet_ledger
+    (id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks)
+    VALUES(?,?,'topup',?,?,?)")
+    ->execute([naUuid(),$licenseAccountId,$licenseTopupId,100000,100000]);
+$db->prepare("INSERT INTO numi_real_wallet_fiscal_events
+    (id,kind,reference_id,kopeks,status) VALUES(?,'advance_in',?,100000,'verified')")
+    ->execute([naUuid(),$licenseTopupId]);
+$subject=['product_code'=>'life_full','birth_date'=>'1986-09-09'];
+$licenseBought=naRealWalletBuy($db,$licenseAccount,$good,$subject,
+    'license-life-purchase-20261109',$splitReady);
+assertReal(is_string($licenseBought['expires_at']??null)
+    && (new DateTimeImmutable($licenseBought['expires_at'],new DateTimeZone('UTC')))
+       >new DateTimeImmutable('now',new DateTimeZone('UTC')),
+    'paid life report receives non-null future expiry');
+$ownedQuote=naRealWalletQuote($db,$licenseAccount,$subject,$splitReady);
+assertReal($ownedQuote['owned']===true,
+    'exact same birthday recognizes existing paid report');
+$wrongQuote=naRealWalletQuote($db,$licenseAccount,
+    ['product_code'=>'life_full','birth_date'=>'1986-09-10'],$splitReady);
+assertReal($wrongQuote['owned']===false,
+    'another birth date cannot inherit a purchased report');
+$wrongKind=naRealWalletQuote($db,$licenseAccount,
+    ['product_code'=>'child_full_v1','birth_date'=>'1986-09-09'],$splitReady);
+assertReal($wrongKind['owned']===false,
+    'another report type cannot inherit a purchased report');
+$db->prepare("UPDATE numi_entitlements SET expires_at=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 SECOND)
+    WHERE id=?")->execute([$licenseBought['entitlement_id']]);
+assertReal(naRealWalletQuote($db,$licenseAccount,$subject,$splitReady)['owned']===false
+    && !naRealWalletHasAccess($db,$licenseAccount,'life_full','life:1986-09-09'),
+    'expired yearly report no longer grants access or duplicate-free purchase');
+echo "REAL_ANNUAL_REPORT_SCOPE_AND_EXPIRY_PASS\n";
 echo "REAL_CARD_SBP_MOCK_PAYMENT_IDEMPOTENCY_RECEIPTS_PASS\n";
