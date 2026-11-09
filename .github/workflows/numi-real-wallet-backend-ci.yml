@@ -25,6 +25,8 @@ on:
       - 'account-service/tests/real-wallet.php'
       - 'account-service/private/core.php'
       - 'account-service/private/redflag-catalog.json'
+      - 'account-service/private/store-assets.json'
+      - 'scripts/build-store-assets.py'
       - 'scripts/build-store-catalog.py'
       - 'scripts/deploy-redflag-unified-catalog-20261109.py'
       - 'tests/redflag-calendar-coverage.test.mjs'
@@ -94,7 +96,8 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/build-store-catalog.py
-          git diff --exit-code -- account-service/private/redflag-catalog.json redflag-public-catalog.js store-catalog.json
+          python3 scripts/build-store-assets.py
+          git diff --exit-code -- account-service/private/redflag-catalog.json redflag-public-catalog.js store-catalog.json account-service/private/store-assets.json
           node --test tests/redflag-calendar-coverage.test.mjs
       - name: Existing catalog and subscriptions remain valid
         run: |
@@ -120,7 +123,8 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/build-store-catalog.py
-          git diff --exit-code -- redflag-public-catalog.js account-service/private/redflag-catalog.json store-catalog.json
+          python3 scripts/build-store-assets.py
+          git diff --exit-code -- redflag-public-catalog.js account-service/private/redflag-catalog.json store-catalog.json account-service/private/store-assets.json
           php -l account-service/private/core.php
           php -l account-service/private/store.php
           node --check redflag-public-catalog.js
