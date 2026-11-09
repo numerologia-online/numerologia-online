@@ -571,7 +571,7 @@ function naHideSaved(PDO $db,array $body): never {
     naEnsureSavedHidden($db);
     $db->beginTransaction();
     try {
-        $providerOnly=naLiveWalletModeSelected()?" AND o.provider='real_wallet'":"";
+        $providerOnly=naLiveWalletModeSelected()?" AND o.provider IN ('real_wallet','real_subscription')":"";
         $stmt=$db->prepare("SELECT e.id FROM numi_entitlements e
             JOIN numi_orders o ON o.id=e.order_id
             WHERE e.id=? AND e.account_id=? AND e.status='active'
@@ -604,7 +604,7 @@ function naCatalogDate(mixed $input): ?string {
 }
 function naCatalogHasAccess(PDO $db, ?array $account, string $code, string $resource): bool {
     if ($account===null) return false;
-    $providerOnly=naLiveWalletModeSelected()?" AND o.provider='real_wallet'":"";
+    $providerOnly=naLiveWalletModeSelected()?" AND o.provider IN ('real_wallet','real_subscription')":"";
     $stmt=$db->prepare("SELECT 1 FROM numi_entitlements e
         INNER JOIN numi_orders o ON o.id=e.order_id
         WHERE e.account_id=? AND e.product_code=? AND e.resource_id=?
@@ -726,7 +726,7 @@ function naPurchases(PDO $db): never {
             ];
         }
     }
-    $providerOnly=naLiveWalletModeSelected()?" AND o.provider='real_wallet'":"";
+    $providerOnly=naLiveWalletModeSelected()?" AND o.provider IN ('real_wallet','real_subscription')":"";
     $stmt=$db->prepare("SELECT e.id AS entitlement_id,e.product_code,e.resource_id,e.expires_at,e.created_at
         FROM numi_entitlements e JOIN numi_orders o ON o.id=e.order_id
         LEFT JOIN numi_saved_hidden h ON h.entitlement_id=e.id
