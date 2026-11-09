@@ -260,7 +260,7 @@ const clearError = () => {
 
 // Resolve only the opened question. Cache its result for this calculated date.
 // Paid questions are opened IN PLACE; never send the reader into a cart.
-const REDFLAG_SOON_BLOCKS = new Set(["flags", "infidelity", "intimacy", "family", "language", "verdict"]);
+// Publication state comes from the approved material catalogue, not a per-section switch.
 const ensureAnswer = (question, state) => {
   if(question.isComingSoon)return;
   const id=question.id;
@@ -525,7 +525,7 @@ const ensureQuestions = async (category) => {
       ...content.QUESTIONS.map((question, index) => ({
         ...question, isFree: index === 0,
         priceRub: index === 0 ? 0 : question.priceRub,
-        isComingSoon: REDFLAG_SOON_BLOCKS.has(category.id)
+        isComingSoon: question.status !== "ready"
       })),
       ...(category.id === "money" ? [] : [{
         id: "comic-verdict-" + category.id,
