@@ -1,5 +1,9 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-09 second batch of 50 personal-day texts published to REG.RU with protected backups and verified upload of energy 04 and energy 10 JSON banks. Guarded publisher reset to read-only."
+  "mode": "publish",
+  "files": [
+    "data/day/general/general-day-11.json",
+    "data/day/general/general-day-12.json",
+    "data/day/general/general-day-14.json"
+  ],
+  "note": "Owner-approved third editorial batch: 50 reviewed personal-day texts; guarded FTPS upload and backup of exactly these 3 JSON files."
 }
