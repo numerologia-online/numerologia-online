@@ -35,7 +35,7 @@ form{display:grid;gap:14px}
 .methods input{width:19px;height:19px;accent-color:#205b42;margin:0}
 .submit{width:100%;min-height:57px;border:none;border-radius:15px;background:#1f5640;color:#fff;font-weight:750;font-size:17px;cursor:pointer}
 .submit:disabled{opacity:.65;cursor:wait}
-.notice{font-size:15px;font-weight:700;line-height:1.45;color:#40604e;margin:1px 0 0}
+.notice{font-size:clamp(17px,4.6vw,21px);font-weight:800;line-height:1.35;color:#593d16;margin:2px 0 0;padding:17px 15px;border:2px solid #b68c46;background:#fff8e8;border-radius:15px;text-align:center}
 .status{font-size:14px;line-height:1.5;color:#4f6958;margin:0;min-height:18px}
 .status:empty{display:none}
 [hidden]{display:none!important}
@@ -63,7 +63,7 @@ form{display:grid;gap:14px}
 <label><input type="radio" name="method" value="sbp"> СБП</label>
 </fieldset>
 <button class="submit" type="submit" id="submit" disabled>Продолжить</button>
-<p class="notice" id="notice">При включённом VPN деньги могут зачисляться до десяти минут.</p>
+<p class="notice" id="notice">Если окно оплаты зависает, отключите VPN.</p>
 <p class="status" id="status" role="status" aria-live="polite"></p>
 </form>
 </main>
@@ -128,35 +128,14 @@ async function initialize(){
   message(error?.message||"Не удалось проверить баланс.");
  }
 }
-// Telegram allows opening an external browser only directly after a tap.
-// Prepare a verified YooKassa URL in advance, then invoke openLink synchronously
-// from the EXISTING Continue button. Preparation creates no card charge.
-// initData is NOT a reliable browser detector after navigating within a Mini App:
-// the signed launch payload may be missing while the native Telegram bridge lives.
-const telegramBridge=()=>Boolean(
+// Keep the provider payment in the same browsing context.
+// The normal site stays in its tab; Telegram stays in its Mini App WebView.
+const telegramExternal=()=>Boolean(
   typeof window.TelegramWebviewProxy?.postEvent==="function" ||
   typeof window.external?.notify==="function" ||
-  (window.Telegram?.WebApp?.platform &&
-   window.Telegram.WebApp.platform!=="unknown" &&
-   window.Telegram.WebApp.platform!=="web")
+  (window.Telegram?.WebApp?.platform && window.Telegram.WebApp.platform!=="unknown")
 );
-const telegramExternal=()=>Boolean(telegramBridge() &&
-  (typeof window.TelegramWebviewProxy?.postEvent==="function" ||
-   typeof window.external?.notify==="function" ||
-   typeof window.Telegram?.WebApp?.openLink==="function"));
-// Use Telegram's documented native event. Without original launch parameters
-// the SDK may assume version 6.0 and fall back to window.open(), which keeps
-// the payment inside the Mini App on iOS.
-function openPaymentExternally(href){
- const eventType="web_app_open_link",eventData={url:href};
- if(typeof window.TelegramWebviewProxy?.postEvent==="function"){
-   window.TelegramWebviewProxy.postEvent(eventType,JSON.stringify(eventData));
- }else if(typeof window.external?.notify==="function"){
-   window.external.notify(JSON.stringify({eventType,eventData}));
- }else{
-   window.Telegram.WebApp.openLink(href);
- }
-}
+function openPaymentInThisWindow(href){ location.assign(href); }
 let prepared=null,prepareSeq=0,prepareTimer=null,pendingExternal=null,rechecking=false;
 let completedFingerprint=null;
 function selection(){
@@ -294,18 +273,18 @@ form.addEventListener("submit",async event=>{
    return;
  }
  if(telegramExternal()&&mode==="live"){
-   // Must be synchronous: Telegram gives the tap only one second of validity.
+   // The URL is already prepared; use the same window without external handoff.
    if(!prepared||prepared.fingerprint!==choice.fingerprint){
      message("Ссылка на оплату готовится…");
      scheduleTelegramPreparation();
      return;
    }
    try{
-     openPaymentExternally(prepared.href);
+     openPaymentInThisWindow(prepared.href);
      pendingExternal=prepared;
-     message("Оплата открыта в браузере. После возвращения проверим баланс.");
+     message("Открываем оплату в этом окне.");
    }catch(_){
-     message("Не удалось открыть браузер. Попробуйте ещё раз.");
+     message("Не удалось открыть оплату. Попробуйте ещё раз.");
    }
    return;
  }
