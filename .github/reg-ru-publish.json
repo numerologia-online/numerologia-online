@@ -1,9 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "data/day/general/general-day-11.json",
-    "data/day/general/general-day-12.json",
-    "data/day/general/general-day-14.json"
-  ],
-  "note": "Owner-approved 50 new personal-day texts. Retry same verified guarded FTPS publisher, with backups and checksum verification."
+  "mode": "check",
+  "files": [],
+  "note": "Owner-approved 50 personal-day readings in main; publication run 42672909292 failed before creating jobs. No verified REG.RU upload; read-only until GitHub Actions scheduling is restored."
 }
