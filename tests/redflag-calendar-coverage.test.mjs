@@ -70,3 +70,49 @@ test("Completed date-based Red Flag banks have exactly 366 distinct answers", as
   assert.ok(complete >= 10, "At least ten date-based banks must contain 366 full interpretations");
   t.diagnostic(`Complete: ${complete}, in documented migration: ${migrating}, target: 80 × 366`);
 });
+
+
+test("Published Red Flag purchase badges reflect approved 366-day banks, never just a filled draft", async () => {
+  const moduleText = await source("redflag-public-catalog.js");
+  const raw = moduleText.split("export const PUBLIC_QUESTIONS = ")[1]?.trim();
+  assert.ok(raw?.endsWith(";"), "Generated public question catalogue must exist");
+  const published = JSON.parse(raw.slice(0, -1));
+  const approved = (bank, id, category) => {
+    if (!bank || !["ready", "complete"].includes(bank.status)) return false;
+    if (bank.questionId !== id || bank.section !== category || bank.keyRule !== "day-month") return false;
+    const entries = bank.entries;
+    return entries && Object.keys(entries).length === 366 &&
+      calendarDates.every(date => typeof entries[date] === "string" && entries[date].trim());
+  };
+  for (const bankName of banks) {
+    const category = bankName === "money-questions" ? "money" : bankName;
+    const originals = JSON.parse(await source("data/redflag/banks/" + bankName + ".json")).questions;
+    const publicBank = published[category];
+    assert.equal(publicBank?.length, originals.length, category + " has duplicated or missing questions");
+    for (let index = 0; index < originals.length; index++) {
+      const question = originals[index];
+      const view = publicBank[index];
+      assert.equal(view.id, question.id, "Question order must match: " + category);
+      if (index === 0) {
+        assert.equal(view.status, "ready", "Existing free question must remain free");
+        continue;
+      }
+      // A public price is only displayed when the same reviewed bank can
+      // actually be served by account-service/private/fulfillment.php.
+      let material = null;
+      try {
+        material = JSON.parse(await source("data/redflag/" + category + "/" + question.id + ".json"));
+      } catch (error) {
+        if (error.code !== "ENOENT") throw error;
+      }
+      assert.equal(view.status, approved(material, question.id, category) ? "ready" : "soon",
+        "Public sale state must follow material approval: " + category + "/" + question.id);
+      assert.ok(!("entries" in view) && !("textFile" in view) && !("variants" in view),
+        "Paid answer leaked into public catalogue: " + question.id);
+    }
+  }
+  const feature = await source("redflag-feature.js");
+  assert.match(feature, /isComingSoon:\s*question\.status !== "ready"/);
+  assert.doesNotMatch(feature, /REDFLAG_SOON_BLOCKS/);
+  assert.doesNotMatch(feature, /11 вопросов/);
+});
