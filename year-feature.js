@@ -13,7 +13,25 @@ const loaderTrack = calculationLoader.querySelector(".loader-track");
 const loaderProgress = document.querySelector("#loader-progress");
 const submitButton = form.querySelector(".primary-button");
 const yearPaywallDialog = document.querySelector("#year-paywall-dialog");
+const purchasedYearRegion=document.createElement("section");
+purchasedYearRegion.hidden=true;
+purchasedYearRegion.setAttribute("aria-label","Оплаченный разбор года");
+report.append(purchasedYearRegion);
+let purchasedYear=null;
+async function refreshPurchasedYear(){
+  const born=birthInput.value.trim(),selectedYear=Number(yearInput.value);
+  const match=/^(\\d{2})\\.(\\d{2})\\.(\\d{4})$/.exec(born);
+  if(!match||!Number.isInteger(selectedYear)||selectedYear<1900||selectedYear>2050)return;
+  const item={product_code:"year_full",birth_date:match[3]+"-"+match[2]+"-"+match[1],year:selectedYear};
+  const {recognizePurchasedReport}=await import("./store-entry.js?v=report-annual-20261109");
+  const granted=await recognizePurchasedReport(item,purchasedYearRegion);
+  if(born===birthInput.value.trim()&&selectedYear===Number(yearInput.value))purchasedYear=granted;
+}
+window.addEventListener("numi:wallet-updated",()=>{if(!report.hidden)void refreshPurchasedYear();});
 const showYearPaywall = async () => {
+  if(purchasedYear&&!purchasedYearRegion.hidden){
+    purchasedYearRegion.scrollIntoView({behavior:"smooth",block:"start"});return;
+  }
   try {
     const { openSharedOffer } = await import("./shared-offer.js?v=wallet-direct1");
     await openSharedOffer({
@@ -95,6 +113,9 @@ const loadYearForGuest = async (birthDate, reportYearValue) => {
 let reportRevealTimer;
 
 const showCalculationLoading = () => {
+  purchasedYear=null;
+  purchasedYearRegion.hidden=true;
+  purchasedYearRegion.dataset.numiReportKey="";
   window.clearTimeout(reportRevealTimer);
   report.hidden = true;
   report.classList.remove("is-revealing", "is-visible");
@@ -354,6 +375,7 @@ form.addEventListener("submit", async (event) => {
   }
 
   showCalculatedReport();
+  void refreshPurchasedYear();
   if (hasVerifiedYearAccess()) warmPdfInBackground();
 });
 
