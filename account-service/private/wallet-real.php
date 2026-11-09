@@ -192,7 +192,7 @@ function naRealWalletHasAccess(PDO $db,array $account,string $code,string $resou
         JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
         WHERE e.account_id=? AND e.product_code=? AND e.resource_id=?
         AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>UTC_TIMESTAMP())
-        AND o.status='paid' AND o.verified_at IS NOT NULL AND o.provider='real_wallet'
+        AND o.status='paid' AND o.verified_at IS NOT NULL AND o.provider IN ('real_wallet','real_subscription')
         LIMIT 1");
     $q->execute([$account['id'],$code,$resource]);
     return (bool)$q->fetchColumn();
@@ -481,7 +481,7 @@ function naRealWalletBuy(PDO $db,array $account,array $config,array $input,strin
         if($item['kind']==='subscription'){
             $q=$db->prepare("SELECT MAX(e.expires_at) FROM numi_entitlements e
                 JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
-                WHERE e.account_id=? AND e.product_code=? AND o.provider='real_wallet'
+                WHERE e.account_id=? AND e.product_code=? AND o.provider IN ('real_wallet','real_subscription')
                   AND e.status='active' AND o.status='paid' AND o.verified_at IS NOT NULL");
             $q->execute([$account['id'],$item['product_code']]);$expiry=$q->fetchColumn();
             if($expiry && new DateTimeImmutable($expiry,new DateTimeZone('UTC'))>$starts)
