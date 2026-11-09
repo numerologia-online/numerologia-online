@@ -1,4 +1,4 @@
-import { openStore } from "./store-entry.js?v=wallet-direct1";
+import { openStore } from "./store-entry.js?v=report-annual-20261109";
 /* Один общий шаблон предложения из полного разбора.
    HTML берём из pro/index.html только по запросу; стили тоже загружаются только
    при открытии. Никакой платёж или предоставление доступа этим кодом не выполняется. */
