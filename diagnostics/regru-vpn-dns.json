@@ -2,6 +2,110 @@
   "check": "Public DNS read-only",
   "results": [
     {
+      "name": "xn----8sbhhqijddjgdebdz2c2o.xn--p1ai",
+      "type": "A",
+      "resolver": "google",
+      "status": 0,
+      "answers": [
+        {
+          "type": 1,
+          "data": "31.31.196.214",
+          "TTL": 3600
+        }
+      ]
+    },
+    {
+      "name": "xn----8sbhhqijddjgdebdz2c2o.xn--p1ai",
+      "type": "A",
+      "resolver": "cloudflare",
+      "status": 0,
+      "answers": [
+        {
+          "type": 1,
+          "data": "31.31.196.214",
+          "TTL": 3600
+        }
+      ]
+    },
+    {
+      "name": "xn----8sbhhqijddjgdebdz2c2o.xn--p1ai",
+      "type": "AAAA",
+      "resolver": "google",
+      "status": 0,
+      "answers": [
+        {
+          "type": 28,
+          "data": "2a00:f940:2:2:1:1:0:172",
+          "TTL": 3600
+        }
+      ]
+    },
+    {
+      "name": "xn----8sbhhqijddjgdebdz2c2o.xn--p1ai",
+      "type": "AAAA",
+      "resolver": "cloudflare",
+      "status": 0,
+      "answers": [
+        {
+          "type": 28,
+          "data": "2a00:f940:2:2:1:1:0:172",
+          "TTL": 3600
+        }
+      ]
+    },
+    {
+      "name": "www.xn----8sbhhqijddjgdebdz2c2o.xn--p1ai",
+      "type": "A",
+      "resolver": "google",
+      "status": 0,
+      "answers": [
+        {
+          "type": 1,
+          "data": "31.31.196.214",
+          "TTL": 3600
+        }
+      ]
+    },
+    {
+      "name": "www.xn----8sbhhqijddjgdebdz2c2o.xn--p1ai",
+      "type": "A",
+      "resolver": "cloudflare",
+      "status": 0,
+      "answers": [
+        {
+          "type": 1,
+          "data": "31.31.196.214",
+          "TTL": 3600
+        }
+      ]
+    },
+    {
+      "name": "www.xn----8sbhhqijddjgdebdz2c2o.xn--p1ai",
+      "type": "AAAA",
+      "resolver": "google",
+      "status": 0,
+      "answers": [
+        {
+          "type": 28,
+          "data": "2a00:f940:2:2:1:1:0:172",
+          "TTL": 3600
+        }
+      ]
+    },
+    {
+      "name": "www.xn----8sbhhqijddjgdebdz2c2o.xn--p1ai",
+      "type": "AAAA",
+      "resolver": "cloudflare",
+      "status": 0,
+      "answers": [
+        {
+          "type": 28,
+          "data": "2a00:f940:2:2:1:1:0:172",
+          "TTL": 3600
+        }
+      ]
+    },
+    {
       "name": "xn--c1adkkdfjbp1a4l.online",
       "type": "A",
       "resolver": "google",
@@ -10,7 +114,7 @@
         {
           "type": 1,
           "data": "31.31.196.214",
-          "TTL": 1806
+          "TTL": 3600
         }
       ]
     },
@@ -62,7 +166,7 @@
         {
           "type": 1,
           "data": "31.31.196.214",
-          "TTL": 3411
+          "TTL": 3600
         }
       ]
     },
