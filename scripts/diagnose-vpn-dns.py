@@ -1,6 +1,8 @@
-"""Read-only DNS comparison for the two public website hostnames."""
+"""Read-only DNS comparison for the current and former site domains."""
 import json, urllib.request, urllib.parse, socket, pathlib, concurrent.futures
-names=["xn--c1adkkdfjbp1a4l.online","www.xn--c1adkkdfjbp1a4l.online"]
+names=["xn----8sbhhqijddjgdebdz2c2o.xn--p1ai",
+       "www.xn----8sbhhqijddjgdebdz2c2o.xn--p1ai",
+       "xn--c1adkkdfjbp1a4l.online","www.xn--c1adkkdfjbp1a4l.online"]
 resolvers={"google":"https://dns.google/resolve","cloudflare":"https://cloudflare-dns.com/dns-query"}
 results=[]
 def check(args):
