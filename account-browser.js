@@ -384,6 +384,75 @@
     {code:"club_month",short:"club",name:"Клуб",price:49000},
     {code:"school_week",short:"school",name:"Самоучитель нумерологии",price:14900}
   ];
+  // Existing subscription cards receive one compact, optional card-autopay row.
+  // Default remains one-off wallet purchase. No card token is stored in the browser.
+  const subscriptionAutopay=new Map();
+  for(const entry of subscriptionEntries){
+    const renew=document.getElementById("numi-"+entry.short+"-subscription-renew");
+    if(!renew)continue;
+    const row=document.createElement("div");
+    row.className="numi-subscription-autopay";
+    row.style.cssText="max-width:390px;margin:8px 0 12px;font-size:13px;line-height:1.4";
+    const consentLabel=document.createElement("label");
+    consentLabel.style.cssText="display:flex;align-items:flex-start;gap:8px;cursor:pointer";
+    const consent=document.createElement("input");
+    consent.type="checkbox";consent.checked=false;
+    consent.style.marginTop="4px";
+    const period=entry.code==="club_month"?"каждый месяц":"каждые 7 дней";
+    const consentText=document.createElement("span");
+    consentText.textContent="Согласна на сохранение способа оплаты в ЮKassa и автоматическое списание "+
+      (entry.price/100)+" ₽ "+period+" до отключения. Отключить можно здесь, в личном кабинете.";
+    consentLabel.append(consent,consentText);
+    const email=document.createElement("input");
+    email.type="email";email.autocomplete="email";email.maxLength=254;
+    email.placeholder="Email для электронного чека";email.setAttribute("aria-label","Email для чека за подписку");
+    email.style.cssText="box-sizing:border-box;width:100%;max-width:340px;margin:8px 0;padding:8px 10px";
+    const payAuto=document.createElement("button");
+    payAuto.type="button";payAuto.className="numi-wallet-small";
+    payAuto.textContent="Оплатить картой с автопродлением · "+(entry.price/100)+" ₽";
+    payAuto.disabled=true;
+    const note=document.createElement("p");
+    note.style.cssText="margin:6px 0 0;font-size:12px;opacity:.8";
+    note.textContent="Автосписания подключаются ЮKassa; до активации доступна ручная оплата.";
+    row.append(consentLabel,email,payAuto,note);
+    renew.insertAdjacentElement("afterend",row);
+    const ui={row,consent,email,payAuto,note,available:false};
+    subscriptionAutopay.set(entry.code,ui);
+    consent.addEventListener("change",()=>{
+      payAuto.disabled=!ui.available||!consent.checked||subscriptionBusy;
+    });
+    payAuto.addEventListener("click",async()=>{
+      if(subscriptionBusy||!current||!ui.available||!consent.checked)return;
+      const address=email.value.trim().toLowerCase();
+      if(!address||!email.checkValidity()){
+        subscriptionMessage("Введите корректный email для чека.");
+        email.focus();return;
+      }
+      const keyId="numi-subscription-card-"+entry.code;
+      let key=sessionStorage.getItem(keyId);
+      if(!key||!/^[a-f0-9-]{36}$/i.test(key)){
+        key=crypto.randomUUID();sessionStorage.setItem(keyId,key);
+      }
+      subscriptionBusy=true;payAuto.disabled=true;
+      subscriptionMessage("Открываем безопасную оплату подписки в ЮKassa…");
+      try{
+        const result=await request("subscription_checkout",{
+          product_code:entry.code,receipt_email:address,
+          auto_renew_consent:true,request_key:key
+        });
+        if(result.test!==false||!result.checkout_id)
+          throw new Error("Сервер не подтвердил заказ подписки.");
+        const url=new URL(result.confirmation_url);
+        if(url.protocol!=="https:"||url.port||url.username||url.password||
+          !["yookassa.ru","yoomoney.ru"].some(host=>
+            url.hostname===host||url.hostname.endsWith("."+host)))
+          throw new Error("Небезопасный адрес платежной формы.");
+        location.assign(url.href);
+      }catch(error){
+        subscriptionMessage(error?.message||"Не удалось начать оплату подписки.");
+      }finally{subscriptionBusy=false;payAuto.disabled=!ui.available||!consent.checked;}
+    });
+  }
   let subscriptionBusy=false;
   function subscriptionUntil(raw){
     if(typeof raw!=="string"||!raw)return "";
@@ -402,7 +471,9 @@
       if(!status||!renew||!cancel)continue;
       if(!info){
         status.textContent="Не удалось загрузить статус подписки.";
-        renew.disabled=true;cancel.disabled=true;continue;
+        renew.disabled=true;cancel.disabled=true;
+        const ui=subscriptionAutopay.get(entry.code);
+        if(ui){ui.available=false;ui.payAuto.disabled=true;}continue;
       }
       const until=subscriptionUntil(info.expires_at);
       status.textContent=info.active===true
@@ -412,6 +483,15 @@
         : "Не подключена"+(until?" · предыдущий период закончился "+until:"");
       renew.textContent=info.active===true?"Продлить":"Подключить";
       renew.disabled=subscriptionBusy;
+      const auto=subscriptionAutopay.get(entry.code);
+      if(auto){
+        auto.available=info.recurring_available===true;
+        auto.row.hidden=info.auto_renew===true;
+        auto.payAuto.disabled=!auto.available||!auto.consent.checked||subscriptionBusy;
+        auto.note.textContent=auto.available
+          ?"Оплата картой через ЮKassa; карту и будущие списания можно отключить здесь."
+          :"Рекуррентные платежи ожидают одобрения ЮKassa. Пока доступна ручная оплата.";
+      }
       cancel.disabled=subscriptionBusy||!(info.active===true||info.auto_renew===true||info.payment_method_attached===true);
       cancel.textContent=info.payment_method_attached===true
         ?"Отключить автосписания и отвязать карту"
@@ -433,6 +513,38 @@
   }
   function subscriptionMessage(message){
     if(subscriptionFeedback)subscriptionFeedback.textContent=message;
+  }
+  let subscriptionReturnHandled=false;
+  async function subscriptionReturnedPayment(){
+    if(subscriptionReturnHandled)return;
+    const params=new URLSearchParams(location.search);
+    const id=params.get("subscription_checkout");
+    if(!id||!/^[a-f0-9-]{36}$/i.test(id))return;
+    subscriptionReturnHandled=true;
+    try{
+      const response=await request("subscription_status",{checkout_id:id});
+      const state=response.status;
+      subscriptionMessage(state==="paid"
+        ? "Подписка оплачена. "+(response.auto_renew===true
+          ?"Автопродление активно. Отключить его можно в личном кабинете."
+          :"Автопродление не включено; доступ оплачен.")
+        :state==="pending_receipt"?"Платёж принят, ожидаем регистрацию чека."
+        :state==="canceled"?"Оплата подписки отменена."
+        :state==="refunded"?"Оплата подписки возвращена."
+        :"Проверяем подтверждение платежа ЮKassa.");
+      if(["paid","canceled","refunded"].includes(state)){
+        for(const entry of subscriptionEntries)
+          sessionStorage.removeItem("numi-subscription-card-"+entry.code);
+        params.delete("subscription_checkout");
+        history.replaceState(null,"",location.pathname+
+          (params.toString()?"?"+params:"")+location.hash);
+      }else{
+        subscriptionReturnHandled=false;
+      }
+    }catch(_){
+      subscriptionReturnHandled=false;
+      subscriptionMessage("Платёж проверяется. Без подтверждения ЮKassa новый срок не выдаётся.");
+    }
   }
   for(const entry of subscriptionEntries){
     document.getElementById("numi-"+entry.short+"-subscription-renew")?.addEventListener("click",async()=>{
@@ -514,6 +626,7 @@
     walletBadge.hidden=false;walletAmount.textContent="…";
     try{
       await walletReturnedPayment();
+      await subscriptionReturnedPayment();
       const response=await request("wallet_status");
       if(typeof response.test!=="boolean")throw new Error("UNKNOWN_WALLET_MODE");
       walletMode=response.test?"test":"live";
