@@ -276,7 +276,7 @@ const ensureAnswer = (question, state) => {
       .find(node=>node.dataset.questionId===id);
     const target=article?.querySelector(".redflag-answer");
     if(!category||!target){state.answerErrors.set(id,"Не удалось проверить вопрос. Откройте его ещё раз.");return;}
-    const task=import("./wallet-client.js?v=club-prices1").then(({showInlinePurchase})=>
+    const task=import("./wallet-client.js?v=redflag-status-fix-20261109").then(({showInlinePurchase})=>
       showInlinePurchase(item,target,(material)=>{
         if(activeProfile!==profile)return;
         const paragraphs=(material.sections||[]).flatMap(section=>section.paragraphs||[]);
