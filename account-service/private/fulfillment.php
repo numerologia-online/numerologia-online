@@ -85,7 +85,9 @@ function naMaterialBuild(string $code,string $resource,?string $root=null): arra
         if(!naCatalogDate($m[3]))throw new RuntimeException('MATERIAL_NOT_READY');
         $data=naMaterialJson('data/redflag/'.$m[1].'/'.$m[2].'.json',$root);
         [, $month,$day]=array_map('intval',explode('-',$m[3]));$text=$data['entries'][$day.'-'.$month]??null;
-        if(($data['status']??'')!=='ready'||($data['section']??'')!==$m[1]||($data['questionId']??'')!==$m[2]||!is_string($text)||trim($text)==='')throw new RuntimeException('MATERIAL_NOT_READY');
+        // Both editorial approvals mean a validated, paid-ready bank. A draft
+        // ('in-progress') is still blocked, regardless of how many keys exist.
+        if(!in_array($data['status']??null,['ready','complete'],true)||($data['section']??'')!==$m[1]||($data['questionId']??'')!==$m[2]||!is_string($text)||trim($text)==='')throw new RuntimeException('MATERIAL_NOT_READY');
         $title=$data['question'];$sections[]=['title'=>$title,'paragraphs'=>[$text]];
     } elseif($code==='yesno_question'&&preg_match('/^yesno:(yn-(man|love|work|money|choice|future|home)-\d{3}):([0-2]\d:[0-5]\d)$/D',$resource,$m)){
         if(!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/D',$m[3]))throw new RuntimeException('MATERIAL_NOT_READY');
