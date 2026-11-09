@@ -39,6 +39,19 @@ function naRealWalletSchema(PDO $db): void {
     // The protected migration prepares subscription preferences as well.
     // No customer payment route ever invokes this DDL.
     naSubscriptionSchema($db);
+    // Reuse the existing checkout/order/consent tables for subscription card payments.
+    // This explicit migration is never invoked from a customer request.
+    naStoreSchema($db);
+    foreach ([
+        'numi_subscription_settings'=>'receipt_email',
+        'numi_checkout_consents'=>'receipt_email',
+    ] as $table=>$column) {
+        $check=$db->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND COLUMN_NAME=?");
+        $check->execute([$table,$column]);
+        if((int)$check->fetchColumn()===0)
+            $db->exec("ALTER TABLE ".$table." ADD COLUMN receipt_email VARCHAR(254) NULL");
+    }
     // Additive new tables. No historical sandbox balances or ledger are copied.
     $db->exec("CREATE TABLE IF NOT EXISTS numi_real_wallet_balances (
       account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
