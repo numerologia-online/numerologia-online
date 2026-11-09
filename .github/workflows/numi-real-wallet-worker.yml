@@ -32,7 +32,9 @@ jobs:
           from pathlib import Path
           html=Path("wallet-topup.html").read_text(encoding="utf-8")
           js=html.split("<script>\n",1)[1].split("\n</script>",1)[0]
-          assert 'window.Telegram.WebApp.openLink(prepared.href)' in js
+          assert 'openPaymentExternally(prepared.href)' in js
+          assert 'window.TelegramWebviewProxy.postEvent(eventType,JSON.stringify(eventData))' in js
+          assert 'eventType="web_app_open_link"' in js
           assert 'window.TelegramWebviewProxy?.postEvent' in js
           assert 'window.Telegram?.WebApp?.initData &&' not in js
           assert 'telegramExternal()&&mode==="live"' in js
@@ -109,4 +111,4 @@ jobs:
               raise SystemExit('REG_RU_WORKER_STATUS_'+str(status)+'_'+str(payload.get('error','unknown')))
           PY
 
-# live one-tap checkout: native Telegram bridge detection, not initData after navigation
+# one-tap checkout: direct native Telegram web_app_open_link event, no stale SDK version fallback
