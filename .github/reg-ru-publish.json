@@ -1,5 +1,7 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-09 owner-requested minimal smoke test of GitHub Actions: check only; no REG.RU files changed."
+  "mode": "publish",
+  "files": [
+    "data/day/general/general-day-11.json"
+  ],
+  "note": "Owner-approved minimal one-file FTPS live upload test; energy 11 contains six revised approved readings. Backup original and verify content."
 }
