@@ -388,4 +388,69 @@ assertReal(naRealWalletQuote($db,$licenseAccount,$subject,$splitReady)['owned']=
     && !naRealWalletHasAccess($db,$licenseAccount,'life_full','life:1986-09-09'),
     'expired yearly report no longer grants access or duplicate-free purchase');
 echo "REAL_ANNUAL_REPORT_SCOPE_AND_EXPIRY_PASS\n";
+// Club discount and independently purchased annual report MUST have
+// different expiry schedules. Expiring club cannot revoke a paid report.
+$clubBuyerId='66666666-6666-4666-8666-666666666666';
+$clubBuyer=['id'=>$clubBuyerId];
+$clubTopupId='66666666-6666-4666-8666-666666666667';
+$db->prepare('INSERT INTO numi_accounts(id,email,email_verified_at) VALUES(?,?,UTC_TIMESTAMP())')
+    ->execute([$clubBuyerId,'member-report@example.test']);
+$db->prepare('INSERT INTO numi_real_wallet_balances(account_id,kopeks) VALUES(?,150000)')
+    ->execute([$clubBuyerId]);
+$db->prepare("INSERT INTO numi_real_wallet_topups
+    (id,account_id,request_key,kopeks,receipt_email,provider_payment_id,status,credited_at)
+    VALUES(?,?,?,?,?,?,'credited',UTC_TIMESTAMP())")
+    ->execute([$clubTopupId,$clubBuyerId,'member-report-topup-20261109',150000,
+        'member-report@example.test','member-report-provider-fixture']);
+$db->prepare("INSERT INTO numi_real_wallet_ledger
+    (id,account_id,kind,reference_id,delta_kopeks,balance_after_kopeks)
+    VALUES(?,?,'topup',?,?,?)")
+    ->execute([naUuid(),$clubBuyerId,$clubTopupId,150000,150000]);
+$db->prepare("INSERT INTO numi_real_wallet_fiscal_events
+    (id,kind,reference_id,kopeks,status) VALUES(?,'advance_in',?,150000,'verified')")
+    ->execute([naUuid(),$clubTopupId]);
+
+$clubReport=['product_code'=>'life_full','birth_date'=>'1986-09-09'];
+$beforeClub=naRealWalletQuote($db,$clubBuyer,$clubReport,$splitReady);
+assertReal($beforeClub['price_kopeks']===99000
+    && $beforeClub['club_active']===false,'full price before membership');
+
+$clubPurchase=naRealWalletBuy($db,$clubBuyer,$good,
+    ['product_code'=>'club_month'],'member-club-buy-20261109',$splitReady);
+assertReal($clubPurchase['price_kopeks']===49000
+    && naRealWalletHasAccess($db,$clubBuyer,'club_month','club'),
+    'real paid club opens discounted pricing');
+$memberQuote=naRealWalletQuote($db,$clubBuyer,$clubReport,$splitReady);
+assertReal($memberQuote['price_kopeks']===49000
+    && $memberQuote['club_active']===true,
+    'active membership offers 490 RUB report');
+$memberReportPurchase=naRealWalletBuy($db,$clubBuyer,$good,$clubReport,
+    'member-life-buy-20261109',$splitReady);
+assertReal($memberReportPurchase['price_kopeks']===49000
+    && $memberReportPurchase['balance_kopeks']===52000,
+    'independent report purchase uses club discounted price');
+$db->prepare("UPDATE numi_entitlements SET expires_at=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 SECOND)
+    WHERE id=?")->execute([$clubPurchase['entitlement_id']]);
+assertReal(!naRealWalletHasAccess($db,$clubBuyer,'club_month','club'),
+    'expired club grants no continuing membership');
+assertReal(naRealWalletHasAccess($db,$clubBuyer,'life_full','life:1986-09-09'),
+    'already-purchased report survives club expiry');
+require_once __DIR__.'/../private/fulfillment.php';
+assertReal(naMaterialEntitlement($db,$clubBuyer,$memberReportPurchase['entitlement_id'])!==null,
+    'report stays accessible through server material endpoint after club expiry');
+$afterClub=naRealWalletQuote($db,$clubBuyer,$clubReport,$splitReady);
+assertReal($afterClub['owned']===true && $afterClub['club_active']===false
+    && $afterClub['price_kopeks']===99000,
+    'expired club removes discount for future purchases but preserves report');
+assertReal(naRealWalletQuote($db,$clubBuyer,
+    ['product_code'=>'life_full','birth_date'=>'1986-09-10'],$splitReady)['price_kopeks']===99000,
+    'new report after club expiry reverts to full price');
+$db->prepare("UPDATE numi_entitlements SET expires_at=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 SECOND)
+    WHERE id=?")->execute([$memberReportPurchase['entitlement_id']]);
+assertReal(!naRealWalletHasAccess($db,$clubBuyer,'life_full','life:1986-09-09')
+    && naMaterialEntitlement($db,$clubBuyer,$memberReportPurchase['entitlement_id'])===null,
+    'expired paid report is blocked even if it was bought with club discount');
+naRealWalletInvariant($db,$clubBuyerId);
+echo "REAL_CLUB_DISCOUNT_REPORT_SURVIVES_SUBSCRIPTION_EXPIRY_PASS\n";
+
 echo "REAL_CARD_SBP_MOCK_PAYMENT_IDEMPOTENCY_RECEIPTS_PASS\n";
