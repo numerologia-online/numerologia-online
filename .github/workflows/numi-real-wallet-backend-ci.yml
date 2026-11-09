@@ -140,3 +140,4 @@ jobs:
         run: python3 -u scripts/deploy-redflag-unified-catalog-20261109.py
 
 # Approved Red Flag release: verified catalog 81 entries, 8 free; no payment engine changes.
+# Approved 366-day content repair: statuses derive solely from the protected answer bank; three vault files and hashes deploy together.
