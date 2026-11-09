@@ -28,6 +28,12 @@ jobs:
           set -euo pipefail
           python3 -m py_compile scripts/deploy-real-wallet-worker-20261108.py
           node --check account-browser.js
+          grep -q 'account-browser.js?v=wallet-direct-external-20261109' index.html
+          grep -q 'directExternalOpen(directPrepared.href)' account-browser.js
+          grep -q 'scheduleDirectCheckoutPreparation' account-browser.js
+          grep -q 'window.TelegramWebviewProxy.postEvent("web_app_open_link"' account-browser.js
+          grep -q 'request("wallet_topup",intent.payload,abort.signal)' account-browser.js
+          ! grep -Fq 'location.assign("/wallet-topup.html")' account-browser.js
           python3 - <<'PY'
           from pathlib import Path
           html=Path("wallet-topup.html").read_text(encoding="utf-8")
@@ -111,4 +117,4 @@ jobs:
               raise SystemExit('REG_RU_WORKER_STATUS_'+str(status)+'_'+str(payload.get('error','unknown')))
           PY
 
-# approved safe release: native Telegram bridge and matching publisher guard
+# approve one-tap external checkout from original Telegram cabinet with idempotent prefetch
