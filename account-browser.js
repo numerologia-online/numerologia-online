@@ -481,7 +481,7 @@
       if(!status||!renew||!cancel)continue;
       if(!info){
         status.textContent="Не удалось загрузить статус подписки.";
-        renew.disabled=true;cancel.disabled=true;
+        renew.disabled=true;cancel.disabled=true;cancel.hidden=false;
         const ui=subscriptionAutopay.get(entry.code);
         if(ui){ui.available=false;ui.payAuto.disabled=true;ui.row.hidden=true;}continue;
       }
@@ -502,11 +502,11 @@
         auto.payAuto.disabled=!auto.available||subscriptionBusy;
 
       }
-      cancel.disabled=subscriptionBusy||!(info.auto_renew===true||info.payment_method_attached===true);
-      cancel.hidden=!(info.auto_renew===true||info.payment_method_attached===true);
-      cancel.textContent=info.payment_method_attached===true
-        ?"Отключить автосписания и отвязать карту"
-        :info.auto_renew===true?"Отключить автопродление":"Отключить продление";
+      // Keep cancellation visible beside the one-off purchase, even for a guest
+      // without an active subscription. Only enable an actual cancellation.
+      cancel.hidden=false;
+      cancel.disabled=subscriptionBusy||!(info.active===true||info.auto_renew===true||info.payment_method_attached===true);
+      cancel.textContent="Отменить подписку";
     }
     const tariffs=document.querySelector('#account-dialog [data-account-content="prices"]');
     if(tariffs){
