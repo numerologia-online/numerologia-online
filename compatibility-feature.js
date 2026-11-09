@@ -14,6 +14,38 @@ const topicsRoot = document.querySelector("#compatibility-topics");
 const result = document.querySelector("#compatibility-result");
 const back = document.querySelector("#back-compatibility-home");
 const pdfButtons = [...document.querySelectorAll("#compatibility .compatibility-pdf-button")];
+const purchasedCompatibilityRegion=document.createElement("section");
+purchasedCompatibilityRegion.hidden=true;
+purchasedCompatibilityRegion.setAttribute("aria-label","Оплаченная совместимость");
+topicsRoot.before(purchasedCompatibilityRegion);
+let purchasedCompatibility=null;
+let calculatedCompatibilityTopics=[];
+async function refreshPurchasedCompatibility(){
+  const first=aField.value.trim(),second=bField.value.trim();
+  const date=/^(\d{2})\.(\d{2})\.(\d{4})$/;
+  const a=date.exec(first),b=date.exec(second);
+  if(!a||!b)return;
+  const {recognizePurchasedReport}=await import("./store-entry.js?v=report-annual-20261109");
+  const granted=await recognizePurchasedReport({
+    product_code:"compatibility_full",
+    birth_date:a[3]+"-"+a[2]+"-"+a[1],
+    partner_birth_date:b[3]+"-"+b[2]+"-"+b[1]
+  },purchasedCompatibilityRegion);
+  if(first!==aField.value.trim()||second!==bField.value.trim())return;
+  purchasedCompatibility=granted;
+  if(granted){
+    const cards=[...topicsRoot.querySelectorAll(".compatibility-topic")];
+    cards.forEach((card,index)=>{
+      if(index===0)return;
+      const toggle=card.querySelector(".compatibility-topic-toggle");
+      card.classList.remove("is-locked");
+      card.classList.add("is-purchased");
+      toggle.querySelector(".compatibility-topic-icon").textContent="+";
+      toggle.setAttribute("aria-label","Открыть оплаченный ответ: "+calculatedCompatibilityTopics[index]?.title);
+    });
+  }
+}
+window.addEventListener("numi:wallet-updated",()=>{if(!result.hidden)void refreshPurchasedCompatibility();});
 
 const cache = new Map();
 const getBank = (energy) => {
@@ -41,6 +73,9 @@ const offer = Object.freeze({
   clubMonthly: 490
 });
 const showOffer = () => {
+  if(purchasedCompatibility&&!purchasedCompatibilityRegion.hidden){
+    purchasedCompatibilityRegion.scrollIntoView({behavior:"smooth",block:"start"});return;
+  }
   openSharedOffer({...offer,subject:{product_code:"compatibility_full",birth_date:aField.value.split(".").reverse().join("-"),partner_birth_date:bField.value.split(".").reverse().join("-")}}).catch(error => {
     console.error("Окно покупки:", error);
     alert("Не удалось открыть варианты доступа. Проверьте интернет и попробуйте снова.");
@@ -81,8 +116,11 @@ const addParagraphs = (target, content) => {
 };
 
 const showTopic = async (topic, article, isFree) => {
-  // Только первый вопрос. Не загружаем банк ответов для остальных 12.
-  if (!isFree) { showOffer(); return; }
+  // Paid answers are read from the verified account entitlement, never a
+  // client-side flag or an unprotected guest content bank.
+  const selectedIndex=calculatedCompatibilityTopics.findIndex(t=>t.key===topic.key);
+  const purchasedPart=!isFree && purchasedCompatibility?.material?.sections?.[selectedIndex];
+  if(!isFree && !purchasedPart){showOffer();return;}
   const body = article.querySelector(".compatibility-topic-body");
   const button = article.querySelector(".compatibility-topic-toggle");
   if (selected === topic.key) { clearSelection(); return; }
@@ -94,6 +132,14 @@ const showTopic = async (topic, article, isFree) => {
   body.textContent = "Открываю ваш разбор…";
   const token = ++requestNumber;
   try {
+    if(purchasedPart){
+      body.replaceChildren();
+      if(purchasedPart.title){const h=document.createElement("h3");h.textContent=purchasedPart.title;body.append(h);}
+      for(const line of purchasedPart.paragraphs||[]){
+        const p=document.createElement("p");p.textContent=line;body.append(p);
+      }
+      return;
+    }
     const blocks = await getBank(topic.energy);
     if (token !== requestNumber || selected !== topic.key) return;
     const copy = blocks[topic.key];
@@ -147,10 +193,15 @@ form.addEventListener("submit", (event) => {
     return;
   }
   const topics = calculateCompatibility(first, second);
+  purchasedCompatibility=null;
+  purchasedCompatibilityRegion.hidden=true;
+  purchasedCompatibilityRegion.dataset.numiReportKey="";
+  calculatedCompatibilityTopics=topics;
   renderTopics(topics);
   summary.textContent = `Расчёт для ${aField.value} и ${bField.value} готов. Выбирайте любой вопрос, чтобы прочитать свой разбор.`;
   result.hidden = false;
   error.hidden = true;
+  void refreshPurchasedCompatibility();
   result.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
