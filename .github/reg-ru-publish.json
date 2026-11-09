@@ -1,8 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "data/day/general/general-day-04.json",
-    "data/day/general/general-day-10.json"
-  ],
-  "note": "2026-11-09 final owner-approved publication of 50 edited day texts after manual correction of sentence endings. Backup and verify both JSON files."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-09 second batch of 50 personal-day texts published to REG.RU with protected backups and verified upload of energy 04 and energy 10 JSON banks. Guarded publisher reset to read-only."
 }
