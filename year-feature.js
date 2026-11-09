@@ -20,7 +20,7 @@ report.append(purchasedYearRegion);
 let purchasedYear=null;
 async function refreshPurchasedYear(){
   const born=birthInput.value.trim(),selectedYear=Number(yearInput.value);
-  const match=/^(\\d{2})\\.(\\d{2})\\.(\\d{4})$/.exec(born);
+  const match=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(born);
   if(!match||!Number.isInteger(selectedYear)||selectedYear<1900||selectedYear>2050)return;
   const item={product_code:"year_full",birth_date:match[3]+"-"+match[2]+"-"+match[1],year:selectedYear};
   const {recognizePurchasedReport}=await import("./store-entry.js?v=report-annual-20261109");
