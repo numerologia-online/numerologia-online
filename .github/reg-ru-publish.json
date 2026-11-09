@@ -1,5 +1,8 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-09 personal-day editorial release completed: six JSON files backed up and FTPS-verified. Manual publisher returned to read-only mode."
+  "mode": "publish",
+  "files": [
+    "data/day/general/general-day-04.json",
+    "data/day/general/general-day-10.json"
+  ],
+  "note": "Owner-approved second editorial batch: 50 expanded day texts. Backup and verify only these two JSON files."
 }
