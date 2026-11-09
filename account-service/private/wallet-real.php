@@ -510,11 +510,21 @@ function naRealWalletBuy(PDO $db,array $account,array $config,array $input,strin
 function naRealWalletCancelSubscription(PDO $db,array $account,string $code): void {
     if(!in_array($code,['club_month','school_week'],true))
         throw new InvalidArgumentException('INVALID_SUBSCRIPTION');
-    $db->prepare("INSERT IGNORE INTO numi_subscription_settings(account_id,product_code)
-        VALUES(?,?)")->execute([$account['id'],$code]);
-    $db->prepare("UPDATE numi_subscription_settings
-        SET auto_renew=0,payment_method_id=NULL,cancelled_at=UTC_TIMESTAMP()
-        WHERE account_id=? AND product_code=?")->execute([$account['id'],$code]);
+    // Serialize consent revocation with the account's other money operations.
+    // Never retain a reusable provider method token after cancellation.
+    $db->beginTransaction();
+    try {
+        $lock=$db->prepare('SELECT id FROM numi_accounts WHERE id=? FOR UPDATE');
+        $lock->execute([$account['id']]);
+        if(!$lock->fetchColumn())throw new RuntimeException('ACCOUNT_NOT_FOUND');
+        $db->prepare("INSERT IGNORE INTO numi_subscription_settings(account_id,product_code)
+            VALUES(?,?)")->execute([$account['id'],$code]);
+        $db->prepare("UPDATE numi_subscription_settings
+            SET auto_renew=0,payment_method_id=NULL,consent_at=NULL,
+                cancelled_at=UTC_TIMESTAMP()
+            WHERE account_id=? AND product_code=?")->execute([$account['id'],$code]);
+        $db->commit();
+    }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
 }
 /** Atomic account merge; caller locks numi_accounts in sorted order. */
 function naRealWalletMergeAccounts(PDO $db,string $from,string $to): void {
