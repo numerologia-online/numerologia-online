@@ -122,7 +122,9 @@ function naLiveRecurringAllowed(array $config): bool {
         && ($config['subscription_receipts_verified']??false)===true
         && ($config['live_recurring_enabled']??false)===true
         && ($config['offset_receipt_reviewed']??false)===true
-        && is_int($config['offset_receipt_vat_code']??null);
+        && is_int($config['offset_receipt_vat_code']??null)
+        && $config['offset_receipt_vat_code']>=1
+        && $config['offset_receipt_vat_code']<=12;
 }
 function naLiveSubscriptionItem(string $code): array {
     if(!naSubscriptionCode($code))throw new InvalidArgumentException('INVALID_SUBSCRIPTION');
@@ -224,6 +226,9 @@ function naLiveSubscriptionStart(
         }
         $db->commit();
     }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+    if(isset($saved) && $saved['order_status']==='paid')
+        return ['checkout_id'=>$id,'status'=>'succeeded','confirmation_url'=>null,
+            'reused'=>true];
     return naLiveSubscriptionCreatePayment($db,$config,$id,$account['id'],null);
 }
 /**
