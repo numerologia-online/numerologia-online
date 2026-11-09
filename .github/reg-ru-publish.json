@@ -1,5 +1,17 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "Sixth approved batch of 50 expanded personal-day readings saved and verified on REG.RU run 42683462275; synced to existing gh-pages. Read-only standby."
+  "mode": "publish",
+  "files": [
+    "data/day/general/general-day-01.json",
+    "data/day/general/general-day-04.json",
+    "data/day/general/general-day-05.json",
+    "data/day/general/general-day-06.json",
+    "data/day/general/general-day-07.json",
+    "data/day/general/general-day-08.json",
+    "data/day/general/general-day-09.json",
+    "data/day/general/general-day-10.json",
+    "data/day/general/general-day-11.json",
+    "data/day/general/general-day-21.json",
+    "data/day/general/general-day-22.json"
+  ],
+  "note": "Owner-approved last 64 short personal-day readings across 11 energies. Backup, upload and verify selected JSON files on REG.RU; no other files."
 }
