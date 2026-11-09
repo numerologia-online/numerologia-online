@@ -63,6 +63,7 @@ jobs:
           grep -Fq "Недостаточно средств на балансе. Для ответа нужно " wallet-client.js
           grep -Fq "redflag-status-fix-20261109" redflag-feature.js
           grep -Fq "REDFLAG_COMPLETE_366_PRIVATE_ANSWERS_VERIFIED" scripts/deploy-real-wallet-worker-20261108.py
+          grep -Fq "PAID_ANSWER_READY_AND_BALANCE_GUARDS_MISSING" scripts/deploy-real-wallet-worker-20261108.py
           test "$(grep -c 'Этот материал ещё готовится' wallet-client.js || true)" = "0"
           grep -Fq "modify('+1 year')" account-service/private/store.php
           grep -Fq "INTERVAL 1 YEAR" account-service/public/numi-real-worker.php
