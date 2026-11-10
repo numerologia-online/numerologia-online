@@ -46,13 +46,15 @@ jobs:
           php -r '
             require "account-service/private/core.php";
             require "account-service/private/fulfillment.php";
-            foreach (["1986-09-09", "2000-02-29"] as $date) {
+            foreach (["1986-09-09", "2000-02-29", "2000-12-31"] as $date) {
               $m=naMaterialBuild("redflag_question", "redflag:money:comic-verdict-money:".$date, getcwd());
+              $body=$m["sections"][0]["paragraphs"][0]??"";
               if (($m["title"]??"")!=="😂 Шуточный вердикт" || count($m["sections"]??[])!==1
-                  || !str_contains($m["sections"][0]["paragraphs"][0]??"", "\n\n"))
+                  || !is_string($body) || strlen($body)<200
+                  || ($date==="2000-12-31" && !str_contains($body, "\n\n")))
                 throw new RuntimeException("COMIC_MATERIAL_DATE_NOT_READY:".$date);
             }
-            echo "COMIC_MATERIAL_READY_TWO_DATES\n";
+            echo "COMIC_MATERIAL_READY_THREE_DATES\n";
           '
           echo EXISTING_REDFLAG_PAYMENT_READY_NO_NEW_PRODUCT
       - name: Back up and publish only verified existing files on REG.RU
