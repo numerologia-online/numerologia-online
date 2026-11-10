@@ -1,4 +1,4 @@
-name: Publish clear centered VPN notice to REG.RU
+name: Publish compact Telegram email link card to REG.RU
 on:
   push:
     paths:
@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   release:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish centered VPN notice on REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish compact Telegram email link card on REG.RU'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -18,34 +18,29 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify only the warning text and CSS changed
+      - name: Verify only two redundant text lines are removed
         run: |
           set -euo pipefail
           node --check account-browser.js
           python3 -m py_compile account-service/deploy-telegram-exit-visibility-20261110.py
           python3 - <<'PY'
-          import subprocess, pathlib
-          original=subprocess.check_output(["git","show","34ba2e0cc52241d699c37a3c1475cf6339ceb076^:account-browser.js"])
-          updated=pathlib.Path("account-browser.js").read_bytes()
-          a=original.splitlines()
-          b=updated.splitlines()
-          assert len(a)==len(b)
-          edits=[(x,y) for x,y in zip(a,b) if x!=y]
-          assert len(edits)==2
-          assert b'.numi-wallet-vpn-warning{' in edits[0][0]
-          assert b'.numi-wallet-vpn-warning{' in edits[0][1]
-          assert b'background:#e6f0ea' in edits[0][1]
-          assert b'width:fit-content' in edits[0][1]
-          assert b'color:#173e30' in edits[0][1]
-          assert 'vpnWarning.textContent="Если окно оплаты зависает, отключите VPN."'.encode() in edits[1][0]
-          assert 'vpnWarning.textContent="Зависла оплата? Отключите VPN."'.encode() in edits[1][1]
-          assert b'for(const exit of logoutControls) exit.hidden=(tg||!current);' in updated
-          old_html=subprocess.check_output(["git","show","f7a27906784fb07f0c872fc1ec80506bf1eefbfd^:index.html"])
-          new_html=pathlib.Path("index.html").read_bytes()
-          assert new_html==old_html.replace(b'account-browser.js?v=vpn-soft-dark-20261110',b'account-browser.js?v=vpn-centered-notice-20261110')
-          print("CENTERED_WALLET_NOTICE_ONLY",flush=True)
+          import pathlib,subprocess
+          old=subprocess.check_output(["git","show","17729c72af2eb5bd0bd2854711f0a24f30982a3d^:account-browser.js"]).decode()
+          new=pathlib.Path("account-browser.js").read_text()
+          remove_a="          '<p><strong>Вы уже регистрировались через почту?</strong> Выберите свой вариант:</p>',\n"
+          remove_b='          \'<p class="numi-account-privacy">Почта и Telegram нужны для входа и сохранения ваших покупок. Мы не отправляем рекламные письма и не пишем вам личные сообщения.</p>\',\n'
+          assert old.count(remove_a)==old.count(remove_b)==1
+          assert new==old.replace(remove_a,"",1).replace(remove_b,"",1)
+          assert '<button type="button" id="numi-existing-email-open"' in new
+          assert '<button type="button" id="numi-set-email-open"' in new
+          assert '<h3>♡ Пусть ваши покупки всегда будут с вами</h3>' in new
+          html_before=subprocess.check_output(["git","show","03477baef255666af8d0748aa23889b641d8ea5b^:index.html"])
+          html_after=pathlib.Path("index.html").read_bytes()
+          assert html_before.count(b'account-browser.js?v=vpn-centered-notice-20261110')==1
+          assert html_after==html_before.replace(b'account-browser.js?v=vpn-centered-notice-20261110',b'account-browser.js?v=telegram-email-link-compact-20261110')
+          print("TWO_TEXT_LINES_REMOVED_ONLY",flush=True)
           PY
-      - name: Deploy verified notice with guarded backup and HTTPS check
+      - name: Deploy exact compact card with backup and HTTPS verification
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
