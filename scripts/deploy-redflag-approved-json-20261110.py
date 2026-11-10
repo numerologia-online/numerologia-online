@@ -22,12 +22,12 @@ NEW_DOMAIN = "xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
 OLD_DOMAIN = "xn--c1adkkdfjbp1a4l.online"
 BANK = "data/redflag/money/comic-verdict.json"
 MANIFEST = "account-service/private/store-assets.json"
-BANK_BASE = "369f0d8ef49da0e1a7ecb00ab122f4d09cf94a54"
-MANIFEST_BASE = "4b702556026faf8d358234ccd98a59ba4867b95f"
-OLD_SHA = "673755044bdf885a18f12c439941f5dad9f8f5317124b77a15cfc0e667a91653"
-NEW_SHA = "1cb9bed5e750adc8e6ddc7d157e26b7a87a6edea308aeb48d61320142b180234"
+BANK_BASE = "8364d5ce82f15f639161691db5f1bbca2efe1c62"
+MANIFEST_BASE = "8ba4619124fb5d0164e3df6466dbab464de743a1"
+OLD_SHA = "1cb9bed5e750adc8e6ddc7d157e26b7a87a6edea308aeb48d61320142b180234"
+NEW_SHA = "855403bf2c8c382a68e1b90896f9cdf93e3ee0b2a223a60bf9792218ae3c17c0"
 LIMIT = 950_000
-ADDED_DATES = {*(f"{d}-7" for d in range(21, 32)), *(f"{d}-8" for d in range(1, 32)), *(f"{d}-9" for d in range(1, 9))}
+ADDED_DATES = {*(f"{d}-9" for d in range(9, 31)), *(f"{d}-10" for d in range(1, 29))}
 
 
 def git_base(ref, name):
@@ -55,13 +55,15 @@ def validate():
         raise RuntimeError("BANK_METADATA_CHANGED")
     old_entries = before["entries"]
     new_entries = after["entries"]
-    if len(old_entries) != 202 or len(new_entries) != 252:
+    if len(old_entries) != 252 or len(new_entries) != 302:
         raise RuntimeError("UNEXPECTED_ANSWER_COUNTS")
     if set(new_entries) - set(old_entries) != ADDED_DATES or set(old_entries) - set(new_entries):
         raise RuntimeError("UNEXPECTED_DATES_CHANGED")
     if any(new_entries[k] != v for k, v in old_entries.items()):
-        raise RuntimeError("PREVIOUS_202_ANSWERS_CHANGED")
-    if any(not isinstance(new_entries[k], str) or len(new_entries[k].strip()) < 450 for k in ADDED_DATES):
+        raise RuntimeError("PREVIOUS_252_ANSWERS_CHANGED")
+    if any(not isinstance(new_entries[k], str) or len(new_entries[k].strip()) < 450
+           or "\n\n" not in new_entries[k] or "—" in new_entries[k] or "–" in new_entries[k]
+           for k in ADDED_DATES):
         raise RuntimeError("EMPTY_OR_SHORT_NEW_ANSWER")
     old_meta, new_meta = json.loads(old_m), json.loads(new_m)
     if old_meta["files"].get(BANK) != OLD_SHA or new_meta["files"].get(BANK) != NEW_SHA:
@@ -71,7 +73,7 @@ def validate():
         raise RuntimeError("UNRELATED_MANIFEST_CHANGE")
     if len(prev) > LIMIT or len(desired) > LIMIT or len(old_m) > LIMIT or len(new_m) > LIMIT:
         raise RuntimeError("SOURCE_TOO_LARGE")
-    print("APPROVED_BATCH_VERIFIED 50 unique July-September dates; previous 202 unchanged", flush=True)
+    print("APPROVED_BATCH_VERIFIED 50 unique Sept-Oct dates; previous 252 unchanged; no long dashes", flush=True)
     return prev, desired, old_m, new_m
 
 
@@ -163,7 +165,7 @@ def main():
             raise RuntimeError("UNREVIEWED_SERVER_MANIFEST_BASELINE")
         if actual_bank == desired and actual_manifest == new_m:
             anonymous_denied()
-            print("REDFLAG_COMIC_SEPT_8_ALREADY_LIVE_VERIFIED", flush=True)
+            print("REDFLAG_COMIC_OCT_28_ALREADY_LIVE_VERIFIED", flush=True)
             return
         if actual_bank != prev or actual_manifest != old_m:
             raise RuntimeError("SERVER_JSON_MANIFEST_OUT_OF_SYNC")
@@ -172,7 +174,7 @@ def main():
             ftp.mkd(backup_root)
         except ftplib.error_perm:
             ftp.cwd(backup_root)
-        backup = backup_root + "/redflag-comic-sept-8-" + os.environ.get("GITHUB_RUN_ID", str(time.time_ns()))
+        backup = backup_root + "/redflag-comic-oct-28-" + os.environ.get("GITHUB_RUN_ID", str(time.time_ns()))
         ftp.mkd(backup)
         put(backup + "/comic-verdict.json.before", actual_bank)
         put(backup + "/store-assets.json.before", actual_manifest)
@@ -192,7 +194,7 @@ def main():
             if read(site + "/.htaccess") != guard or read(site + "/index.html") != index:
                 raise RuntimeError("PUBLIC_FILES_CHANGED")
             anonymous_denied()
-            print("REDFLAG_COMIC_SEPT_8_PRIVATE_LIVE_VERIFIED", NEW_DOMAIN, flush=True)
+            print("REDFLAG_COMIC_OCT_28_PRIVATE_LIVE_VERIFIED", NEW_DOMAIN, flush=True)
         except BaseException:
             for target, original in reversed(changed):
                 try:
