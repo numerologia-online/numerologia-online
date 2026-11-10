@@ -205,7 +205,7 @@
     "#numi-wallet-account-badge .numi-wallet-main{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}",
     "#numi-wallet-account-badge .numi-wallet-total{display:block;font-size:24px;font-weight:750;line-height:1.2}",
     "#numi-wallet-account-badge .numi-wallet-caption{display:block;font-size:12px;color:#69716d}",
-    "#numi-wallet-account-badge .numi-wallet-vpn-warning{display:block;margin:3px 0 0;color:#252d29;-webkit-text-stroke:0;text-shadow:none;text-align:center;white-space:nowrap;letter-spacing:.055em;transform:scaleX(.88);transform-origin:center;font:300 clamp(12px,3.6vw,16px)/1.22 \"Helvetica Neue\",Arial,sans-serif}",
+    "#numi-wallet-account-badge .numi-wallet-vpn-warning{display:block;box-sizing:border-box;width:fit-content;max-width:100%;margin:8px auto 3px;padding:7px 12px;border:1px solid #bed5c8;border-radius:9px;background:#e6f0ea;color:#173e30;text-align:center;white-space:normal;letter-spacing:0;font:700 15px/1.25 system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif}",
     "#numi-wallet-account-badge button.numi-wallet-main-button{border:0;border-radius:10px;background:#343b39;color:white;padding:10px 15px;font:600 13px system-ui;cursor:pointer}",
     "#numi-wallet-account-badge .numi-wallet-links{display:flex;gap:12px;align-items:center;margin-top:6px;flex-wrap:wrap}",
     "#numi-wallet-account-badge button.numi-wallet-small{border:0;padding:3px 0;background:transparent;color:#606963;text-decoration:underline;font:12px system-ui;cursor:pointer}",
@@ -272,7 +272,7 @@
   walletLinks.append(ledgerToggle,testNote);
   const vpnWarning=document.createElement("strong");
   vpnWarning.className="numi-wallet-vpn-warning";
-  vpnWarning.textContent="Если окно оплаты зависает, отключите VPN.";
+  vpnWarning.textContent="Зависла оплата? Отключите VPN.";
   vpnWarning.hidden=true;
   const clubLine=document.createElement("div");clubLine.className="numi-club-status";
   const clubText=document.createElement("span");clubText.textContent="Проверяем подписку…";
