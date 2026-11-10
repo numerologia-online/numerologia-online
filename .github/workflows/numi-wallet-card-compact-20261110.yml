@@ -1,0 +1,129 @@
+name: Publish compact wallet card on REG.RU
+on:
+  push:
+    paths:
+      - .github/workflows/numi-wallet-card-compact-20261110.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish compact balance card on REG.RU'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify CSS-only change and one cache tag
+        run: |
+          node --check account-browser.js
+          python3 - <<'PY'
+          import pathlib,subprocess
+          old=subprocess.check_output(["git","show","fba7c25d3599811b156756ddb30a6926065e0512^:account-browser.js"])
+          new=pathlib.Path("account-browser.js").read_bytes()
+          b=b'const walletStyle=document.createElement("style");'
+          e=b'dialog.append(walletStyle);'
+          assert old.count(b)==new.count(b)==1 and old.count(e)==new.count(e)==1
+          assert old.split(b,1)[0]==new.split(b,1)[0] and old.split(e,1)[1]==new.split(e,1)[1]
+          assert b'padding:9px 16px' in new and b'color:#ed1c24;text-align:center' in new
+          assert b'flex-direction:column;gap:2px;align-items:center;text-align:center' in new
+          oi=subprocess.check_output(["git","show","adc2ed21fc362a46a776f151b19a44596d1d9b05^:index.html"])
+          ni=pathlib.Path("index.html").read_bytes()
+          assert ni==oi.replace(b'account-browser.js?v=wallet-same-tab-vpn-20261109',b'account-browser.js?v=wallet-card-compact-20261110')
+          print("CSS_AND_CACHE_TAG_ONLY",flush=True)
+          PY
+      - name: Back up, publish and verify exactly two frontend files
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,hashlib,io,os,pathlib,ssl,subprocess,time,urllib.parse,urllib.request
+          HOST="server172.hosting.reg.ru"
+          NEW="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+          OLD="xn--c1adkkdfjbp1a4l.online"
+          NAMES=("account-browser.js","index.html")
+          BASE={"account-browser.js":"fba7c25d3599811b156756ddb30a6926065e0512^",
+                "index.html":"adc2ed21fc362a46a776f151b19a44596d1d9b05^"}
+          original_git={n:subprocess.check_output(["git","show",BASE[n]+":"+n]) for n in NAMES}
+          desired={n:pathlib.Path(n).read_bytes() for n in NAMES}
+          def http(name):
+            url="https://"+NEW+"/"+name+"?balance_20261110="+str(time.time_ns())
+            req=urllib.request.Request(url,headers={"Cache-Control":"no-cache"})
+            with urllib.request.urlopen(req,timeout=30) as r:
+              if r.status!=200 or urllib.parse.urlsplit(r.geturl()).hostname!=NEW:
+                raise RuntimeError("LIVE_DOMAIN_MISMATCH")
+              data=r.read(1900001)
+              if len(data)>1900000:raise RuntimeError("FILE_TOO_LARGE")
+              return data
+          if not os.environ.get("REG_FTP_USER") or not os.environ.get("REG_FTP_PASSWORD"):
+            raise RuntimeError("CREDENTIALS_UNAVAILABLE")
+          web_index=http("index.html")
+          web_js=http("account-browser.js")
+          ftps=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftps.connect(HOST,21)
+          ftps.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          ftps.prot_p();ftps.set_pasv(True)
+          def read(p):
+            buf=io.BytesIO()
+            ftps.retrbinary("RETR "+p,buf.write)
+            if buf.tell()>1900000:raise RuntimeError("SERVER_FILE_TOO_LARGE")
+            return buf.getvalue()
+          def put(p,content):
+            ftps.storbinary("STOR "+p,io.BytesIO(content))
+            if read(p)!=content:raise RuntimeError("WRITE_MISMATCH")
+          written=[]
+          try:
+            home=ftps.pwd().rstrip("/")
+            site=None
+            for d in (NEW,OLD):
+              candidate=home+"/www/"+d
+              try: idx=read(candidate+"/index.html")
+              except ftplib.error_perm:continue
+              if idx==web_index:site=candidate;break
+            if not site:raise RuntimeError("UNVERIFIED_SITE_ROOT")
+            live={n:read(site+"/"+n) for n in NAMES}
+            if live["account-browser.js"]!=web_js:raise RuntimeError("PUBLIC_JS_NOT_SAME_AS_FTP")
+            for n in NAMES:
+              if live[n]!=original_git[n] and live[n]!=desired[n]:
+                raise RuntimeError("LIVE_FILE_HAS_UNCOMMITTED_CHANGES:"+n)
+            guard=read(site+"/.htaccess")
+            if b"NUMI PAID STATIC ACCESS GUARD BEGIN 2026-10-31" not in guard:
+              raise RuntimeError("PAID_ACCESS_GUARD_MISSING")
+            changes=[n for n in NAMES if live[n]!=desired[n]]
+            if not changes:
+              print("ALREADY_LIVE_VERIFIED",flush=True)
+            else:
+              root=home+"/site-safeguard-backups"
+              try:ftps.mkd(root)
+              except ftplib.error_perm:ftps.cwd(root)
+              folder=root+"/wallet-card-"+str(os.environ.get("GITHUB_RUN_ID",time.time_ns()))
+              ftps.mkd(folder)
+              for n in changes:
+                put(folder+"/"+n+".bak",live[n])
+                print("BACKUP_VERIFIED",n,flush=True)
+              try:
+                for n in changes:
+                  if read(site+"/"+n)!=live[n]:raise RuntimeError("CONCURRENT_SERVER_EDIT:"+n)
+                  written.append(n)
+                  put(site+"/"+n,desired[n])
+                for n in NAMES:
+                  if http(n)!=desired[n]:raise RuntimeError("HTTPS_VERIFICATION_FAILED:"+n)
+                if read(site+"/.htaccess")!=guard:raise RuntimeError("GUARD_MODIFIED")
+                print("REG_RU_COMPACT_BALANCE_LIVE_VERIFIED",NEW,flush=True)
+              except BaseException:
+                for n in reversed(written):
+                  try:
+                    put(site+"/"+n,live[n])
+                    print("ROLLBACK_VERIFIED",n,flush=True)
+                  except BaseException:
+                    print("ROLLBACK_FAILED",n,flush=True)
+                raise
+          finally:
+            try:ftps.quit()
+            except BaseException:ftps.close()
+          PY
