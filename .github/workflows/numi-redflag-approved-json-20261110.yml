@@ -62,3 +62,148 @@ jobs:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: python3 -u scripts/deploy-redflag-approved-json-20261110.py
+
+  sync_love_jan1:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Sync nine approved Love January 1 texts to REG.RU private bank'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Safely sync nine approved JSON answers to existing REG.RU private storage
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib, hashlib, io, json, os, pathlib, ssl, subprocess, urllib.request, urllib.error
+          repo_root=pathlib.Path.cwd()
+          before='f9b65a4fb981fda6b6d775bf5dc7805a7a9f5048'
+          content_commit='119a838539f3336288e29a2bd8541ddc6cecf387'
+          names=['romance','relationship-or-comfort','adult-partner','near-him',
+                 'hard-moment','relationship-format','family-or-triangle',
+                 'honest-or-disappear','love-or-attention']
+          files=['data/redflag/love/'+id+'.json' for id in names]
+          manifest='account-service/private/store-assets.json'
+          workflow='.github/workflows/numi-redflag-approved-json-20261110.yml'
+          sha=lambda v: hashlib.sha256(v).hexdigest()
+          def old_git(commit,path):
+              return subprocess.check_output(['git','show',commit+':'+path],timeout=35)
+          def changed(a,b):
+              return set(subprocess.check_output(['git','diff','--name-only',a,b],timeout=35).decode().splitlines())
+          if changed(before,content_commit)!=set(files):
+              raise RuntimeError('UNEXPECTED_REVIEWED_CONTENT_DIFF')
+          if changed(content_commit,'HEAD')!={manifest,workflow}:
+              raise RuntimeError('UNRELATED_RELEASE_CHANGES')
+          old_manifest_raw=old_git(content_commit,manifest)
+          new_manifest_raw=pathlib.Path(manifest).read_bytes()
+          old_manifest=json.loads(old_manifest_raw)
+          new_manifest=json.loads(new_manifest_raw)
+          if old_manifest.get('version')!=2 or new_manifest.get('version')!=2:
+              raise RuntimeError('INVALID_STORE_MANIFEST')
+          expected=json.loads(old_manifest_raw)
+          old_bytes={}
+          new_bytes={}
+          for name,id in zip(files,names):
+              previous=old_git(before,name)
+              approved=pathlib.Path(name).read_bytes()
+              a=json.loads(previous)
+              b=json.loads(approved)
+              if a.get('questionId')!=id or b.get('questionId')!=id or a.get('status')!='draft' or b.get('status')!='draft':
+                  raise RuntimeError('WRONG_BANK_OR_READY_STATUS:'+id)
+              if a.get('section')!='love' or b.get('section')!='love' or a.get('keyRule')!='day-month' or b.get('keyRule')!='day-month':
+                  raise RuntimeError('INVALID_BANK_SCHEMA:'+id)
+              if set(a.get('entries',{}))!=set(b.get('entries',{})) or len(b['entries'])!=36:
+                  raise RuntimeError('DATE_ENTRIES_CHANGED:'+id)
+              for date in a['entries']:
+                  if date!='1-1' and a['entries'][date]!=b['entries'][date]:
+                      raise RuntimeError('UNAPPROVED_DATE_CHANGED:'+id+':'+date)
+              probe=dict(a)
+              probe['entries']=dict(a['entries'])
+              probe['entries']['1-1']=b['entries']['1-1']
+              if probe!=b or len(b['entries']['1-1'].split('\n\n'))!=2:
+                  raise RuntimeError('OTHER_METADATA_CHANGED:'+id)
+              if sha(previous)!=old_manifest['files'].get(name):
+                  raise RuntimeError('OLD_ASSET_HASH_MISMATCH:'+id)
+              expected['files'][name]=sha(approved)
+              old_bytes[name]=previous
+              new_bytes[name]=approved
+          if expected!=new_manifest:
+              raise RuntimeError('UNRELATED_MANIFEST_CHANGE')
+          old_bytes[manifest]=old_manifest_raw
+          new_bytes[manifest]=new_manifest_raw
+          if not os.environ.get('REG_FTP_USER') or not os.environ.get('REG_FTP_PASSWORD'):
+              raise RuntimeError('REG_RU_CREDENTIALS_UNAVAILABLE')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.set_pasv(True)
+          def read(path):
+              output=io.BytesIO()
+              def receive(chunk):
+                  if output.tell()+len(chunk)>900000:
+                      raise RuntimeError('REMOTE_FILE_EXCEEDS_LIMIT')
+                  output.write(chunk)
+              ftp.retrbinary('RETR '+path,receive)
+              return output.getvalue()
+          def write(path,raw):
+              ftp.storbinary('STOR '+path,io.BytesIO(raw))
+              if read(path)!=raw:
+                  raise RuntimeError('READBACK_MISMATCH:'+path.rsplit('/',1)[-1])
+          home=ftp.pwd().rstrip('/')
+          protected=home+'/private/numi-account-20261031'
+          ftp.cwd(protected)
+          ftp.cwd(protected+'/store-content/data/redflag/love')
+          targets={path:protected+'/store-content/'+path for path in files}
+          targets[manifest]=protected+'/store-assets.json'
+          touched=[]
+          try:
+              live={name:read(targets[name]) for name in [*files,manifest]}
+              if all(live[name]==new_bytes[name] for name in live):
+                  print('LOVE_JAN1_PRIVATE_ALREADY_SYNCED_VERIFIED',flush=True)
+              elif all(live[name]==old_bytes[name] for name in live):
+                  backup_root=home+'/site-safeguard-backups'
+                  ftp.cwd(backup_root)
+                  folder=backup_root+'/redflag-love-jan1-'+os.environ.get('GITHUB_RUN_ID','manual')
+                  ftp.mkd(folder)
+                  for i,name in enumerate([*files,manifest]):
+                      write(folder+'/'+str(i).zfill(2)+'-'+name.rsplit('/',1)[-1]+'.before',live[name])
+                  print('LOVE_JAN1_BACKUPS_VERIFIED 10 existing private files',flush=True)
+                  try:
+                      for name in [*files,manifest]:
+                          if read(targets[name])!=live[name]:
+                              raise RuntimeError('CONCURRENT_SERVER_EDIT:'+name)
+                          touched.append(name)
+                          write(targets[name],new_bytes[name])
+                          print('LOVE_JAN1_PRIVATE_READBACK_VERIFIED',name,flush=True)
+                  except BaseException:
+                      for name in reversed(touched):
+                          try:
+                              write(targets[name],live[name])
+                              print('LOVE_JAN1_ROLLBACK_OK',name,flush=True)
+                          except BaseException:
+                              print('LOVE_JAN1_ROLLBACK_FAILED',name,flush=True)
+                      raise
+              else:
+                  raise RuntimeError('UNEXPECTED_SERVER_BASELINE_REFUSE_TO_OVERWRITE')
+              for name in [*files,manifest]:
+                  if read(targets[name])!=new_bytes[name]:
+                      raise RuntimeError('FINAL_PRIVATE_INTEGRITY_FAILED:'+name)
+              for id in names:
+                  url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/data/redflag/love/'+id+'.json'
+                  req=urllib.request.Request(url,method='HEAD',headers={'Cache-Control':'no-store'})
+                  try:
+                      with urllib.request.urlopen(req,timeout=18) as response:
+                          status=response.status
+                  except urllib.error.HTTPError as error:
+                      status=error.code
+                  if status not in (401,403,404):
+                      raise RuntimeError('PRIVATE_JSON_EXPOSED_OR_UNKNOWN_HTTP_STATUS:'+id+':'+str(status))
+              print('LOVE_JAN1_PRIVATE_SYNC_SUCCESS nine approved texts; statuses draft; no public files or payments changed',flush=True)
+          finally:
+              try: ftp.quit()
+              except BaseException: ftp.close()
+          PY
