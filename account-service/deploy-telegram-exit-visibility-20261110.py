@@ -1,4 +1,4 @@
-"""Publish only the VPN notice typography tweak, with guarded backup and rollback."""
+"""Safely publish concise centered wallet payment-help notice with backup and rollback."""
 import ftplib, io, os, pathlib, ssl, subprocess, time, urllib.request, urllib.parse
 
 HOST = "server172.hosting.reg.ru"
@@ -6,14 +6,14 @@ NEW = "xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
 OLD = "xn--c1adkkdfjbp1a4l.online"
 NAMES = ("account-browser.js", "index.html")
 BASE = {
- "account-browser.js": "ec0da87cb9f39e44530e30d01dad47fd8474c17f^",
- "index.html": "07199d5c04814d5f900e7af12f358bf5d32c889b^",
+ "account-browser.js": "34ba2e0cc52241d699c37a3c1475cf6339ceb076^",
+ "index.html": "f7a27906784fb07f0c872fc1ec80506bf1eefbfd^",
 }
 expected = {n: subprocess.check_output(["git","show",BASE[n]+":"+n]) for n in NAMES}
 desired = {n: pathlib.Path(n).read_bytes() for n in NAMES}
 
 def public(name):
-    req=urllib.request.Request("https://"+NEW+"/"+name+"?vpn_notice_ui="+str(time.time_ns()),
+    req=urllib.request.Request("https://"+NEW+"/"+name+"?vpn_help_centered="+str(time.time_ns()),
                                headers={"Cache-Control":"no-cache"})
     with urllib.request.urlopen(req,timeout=30) as r:
         if r.status!=200 or urllib.parse.urlsplit(r.geturl()).hostname!=NEW:
@@ -63,12 +63,12 @@ def main():
             raise RuntimeError("PAID_ACCESS_GUARD_MISSING")
         to_write=[n for n in NAMES if live[n]!=desired[n]]
         if not to_write:
-            print("VPN_NOTICE_ALREADY_LIVE",flush=True)
+            print("VPN_HELP_ALREADY_LIVE",flush=True)
             return
         backup_root=root+"/site-safeguard-backups"
         try:ftp.mkd(backup_root)
         except ftplib.error_perm:ftp.cwd(backup_root)
-        backup=backup_root+"/vpn-notice-style-"+str(os.environ.get("GITHUB_RUN_ID",time.time_ns()))
+        backup=backup_root+"/vpn-help-centered-"+str(os.environ.get("GITHUB_RUN_ID",time.time_ns()))
         ftp.mkd(backup)
         for n in to_write:
             write(backup+"/"+n+".bak",live[n])
@@ -84,7 +84,7 @@ def main():
                     raise RuntimeError("PUBLIC_VERIFY_FAILED:"+n)
             if read(site+"/.htaccess")!=guard:
                 raise RuntimeError("GUARD_CHANGED")
-            print("VPN_NOTICE_LIVE_VERIFIED",NEW,flush=True)
+            print("VPN_HELP_CENTERED_LIVE_VERIFIED",NEW,flush=True)
         except BaseException:
             for n in reversed(changed):
                 try:
