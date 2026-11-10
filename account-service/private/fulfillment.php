@@ -88,7 +88,8 @@ function naMaterialBuild(string $code,string $resource,?string $root=null): arra
         $title='Полный разбор '.$year.' года · '.$date;
     } elseif($code==='redflag_question'&&preg_match('/^redflag:([a-z-]+):([a-z0-9-]+):(\d{4}-\d{2}-\d{2})$/D',$resource,$m)){
         if(!naCatalogDate($m[3]))throw new RuntimeException('MATERIAL_NOT_READY');
-        $data=naMaterialJson('data/redflag/'.$m[1].'/'.$m[2].'.json',$root);
+        $bankFile=($m[1]==='money'&&$m[2]==='comic-verdict-money')?'comic-verdict':$m[2];
+        $data=naMaterialJson('data/redflag/'.$m[1].'/'.$bankFile.'.json',$root);
         [, $month,$day]=array_map('intval',explode('-',$m[3]));$text=$data['entries'][$day.'-'.$month]??null;
         // Both editorial approvals mean a validated, paid-ready bank. A draft
         // ('in-progress') is still blocked, regardless of how many keys exist.
