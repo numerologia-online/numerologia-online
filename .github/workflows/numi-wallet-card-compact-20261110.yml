@@ -1,4 +1,4 @@
-name: Publish compact wallet card on REG.RU
+name: Publish one-line wallet notices on REG.RU
 on:
   push:
     paths:
@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish compact balance card on REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish one-line wallet notices on REG.RU'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -23,17 +23,17 @@ jobs:
           node --check account-browser.js
           python3 - <<'PY'
           import pathlib,subprocess
-          old=subprocess.check_output(["git","show","fba7c25d3599811b156756ddb30a6926065e0512^:account-browser.js"])
+          old=subprocess.check_output(["git","show","9e7c69dc189c98ff7c357b1716d889903a58d729^:account-browser.js"])
           new=pathlib.Path("account-browser.js").read_bytes()
           b=b'const walletStyle=document.createElement("style");'
           e=b'dialog.append(walletStyle);'
           assert old.count(b)==new.count(b)==1 and old.count(e)==new.count(e)==1
           assert old.split(b,1)[0]==new.split(b,1)[0] and old.split(e,1)[1]==new.split(e,1)[1]
-          assert b'padding:9px 16px' in new and b'color:#ed1c24;text-align:center' in new
-          assert b'flex-direction:column;gap:2px;align-items:center;text-align:center' in new
-          oi=subprocess.check_output(["git","show","adc2ed21fc362a46a776f151b19a44596d1d9b05^:index.html"])
+          assert b'padding:9px 16px' in new and b'-webkit-text-stroke:.45px #164536' in new and b'white-space:nowrap' in new
+          assert b'.numi-club-status > span{display:block;max-width:100%;white-space:nowrap' in new
+          oi=subprocess.check_output(["git","show","2b91a3ba0ca0d65a74e3f7aec71b56ef46f88bb0^:index.html"])
           ni=pathlib.Path("index.html").read_bytes()
-          assert ni==oi.replace(b'account-browser.js?v=wallet-same-tab-vpn-20261109',b'account-browser.js?v=wallet-card-compact-20261110')
+          assert ni==oi.replace(b'account-browser.js?v=wallet-card-compact-20261110',b'account-browser.js?v=wallet-card-singleline-20261110')
           print("CSS_AND_CACHE_TAG_ONLY",flush=True)
           PY
       - name: Back up, publish and verify exactly two frontend files
@@ -47,8 +47,8 @@ jobs:
           NEW="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
           OLD="xn--c1adkkdfjbp1a4l.online"
           NAMES=("account-browser.js","index.html")
-          BASE={"account-browser.js":"fba7c25d3599811b156756ddb30a6926065e0512^",
-                "index.html":"adc2ed21fc362a46a776f151b19a44596d1d9b05^"}
+          BASE={"account-browser.js":"9e7c69dc189c98ff7c357b1716d889903a58d729^",
+                "index.html":"2b91a3ba0ca0d65a74e3f7aec71b56ef46f88bb0^"}
           original_git={n:subprocess.check_output(["git","show",BASE[n]+":"+n]) for n in NAMES}
           desired={n:pathlib.Path(n).read_bytes() for n in NAMES}
           def http(name):
@@ -101,7 +101,7 @@ jobs:
               root=home+"/site-safeguard-backups"
               try:ftps.mkd(root)
               except ftplib.error_perm:ftps.cwd(root)
-              folder=root+"/wallet-card-"+str(os.environ.get("GITHUB_RUN_ID",time.time_ns()))
+              folder=root+"/wallet-card-one-line-"+str(os.environ.get("GITHUB_RUN_ID",time.time_ns()))
               ftps.mkd(folder)
               for n in changes:
                 put(folder+"/"+n+".bak",live[n])
@@ -114,7 +114,7 @@ jobs:
                 for n in NAMES:
                   if http(n)!=desired[n]:raise RuntimeError("HTTPS_VERIFICATION_FAILED:"+n)
                 if read(site+"/.htaccess")!=guard:raise RuntimeError("GUARD_MODIFIED")
-                print("REG_RU_COMPACT_BALANCE_LIVE_VERIFIED",NEW,flush=True)
+                print("REG_RU_WALLET_ONE_LINE_LIVE_VERIFIED",NEW,flush=True)
               except BaseException:
                 for n in reversed(written):
                   try:
