@@ -1005,7 +1005,7 @@
     // Once the user is signed in by email, the identity card above is enough.
     // Do not repeat the email/Telegram onboarding box on every visit.
     root.style.display=(!resetToken && !tg && !!current)?"none":"";
-    for(const exit of logoutControls) exit.hidden=!(tg||current);
+    for(const exit of logoutControls) exit.hidden=(tg||!current);
     tgBox.hidden=!tg||!current;
     if (!tg) {
       if (current) {
