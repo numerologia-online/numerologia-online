@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - .github/workflows/numi-redflag-approved-json-20261110.yml
+      - 'data/redflag/love/*.json'
+      - account-service/private/store-assets.json
 permissions:
   contents: read
 concurrency:
@@ -206,4 +208,144 @@ jobs:
           finally:
               try: ftp.quit()
               except BaseException: ftp.close()
+          PY
+
+  sync_approved_love_date:
+    if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'Sync approved Love date ')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Validate date-only JSON changes; back up and sync REG.RU private bank
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib, hashlib, io, json, os, pathlib, re, ssl, subprocess
+          names=['romance','relationship-or-comfort','adult-partner',
+                 'near-him','hard-moment','relationship-format','family-or-triangle',
+                 'honest-or-disappear','love-or-attention']
+          files=['data/redflag/love/'+n+'.json' for n in names]
+          manifest_path='account-service/private/store-assets.json'
+          workflow_path='.github/workflows/numi-redflag-approved-json-20261110.yml'
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          def git(*args):
+              return subprocess.check_output(['git',*args],timeout=35)
+          message=git('log','-1','--pretty=%s').decode().strip()
+          match=re.fullmatch(r'Sync approved Love date ([1-9]|[12][0-9]|3[01])-([1-9]|1[0-2]) to REG.RU private bank',message)
+          if not match:raise RuntimeError('UNAPPROVED_RELEASE_MESSAGE')
+          date_key=match[1]+'-'+match[2]
+          actual_changes=set(git('diff','--name-only','HEAD^','HEAD').decode().splitlines())
+          allowed=set(files)|{manifest_path}
+          if actual_changes not in (allowed,allowed|{workflow_path}):
+              raise RuntimeError('RELEASE_CONTAINS_UNRELATED_CHANGES')
+          def old(name):return git('show','HEAD^:'+name)
+          previous_manifest_raw=old(manifest_path)
+          current_manifest_raw=pathlib.Path(manifest_path).read_bytes()
+          previous_manifest=json.loads(previous_manifest_raw)
+          current_manifest=json.loads(current_manifest_raw)
+          if previous_manifest.get('version')!=2 or current_manifest.get('version')!=2:
+              raise RuntimeError('STORE_ASSET_MANIFEST_VERSION')
+          expected=json.loads(previous_manifest_raw)
+          originals={}
+          replacements={}
+          for name,id in zip(files,names):
+              before=old(name)
+              after=pathlib.Path(name).read_bytes()
+              original=json.loads(before)
+              approved=json.loads(after)
+              if original.get('section')!='love' or approved.get('section')!='love':
+                  raise RuntimeError('WRONG_SECTION:'+id)
+              if original.get('questionId')!=id or approved.get('questionId')!=id:
+                  raise RuntimeError('WRONG_QUESTION:'+id)
+              if original.get('status')!='draft' or approved.get('status')!='draft':
+                  raise RuntimeError('APPROVAL_STATUS_MUST_STAY_DRAFT:'+id)
+              if original.get('keyRule')!='day-month' or approved.get('keyRule')!='day-month':
+                  raise RuntimeError('WRONG_KEY_RULE:'+id)
+              if len(original.get('entries',{}))!=36 or set(original['entries'])!=set(approved.get('entries',{})):
+                  raise RuntimeError('DATES_IN_BANK_CHANGED:'+id)
+              for other in original['entries']:
+                  if other!=date_key and original['entries'][other]!=approved['entries'][other]:
+                      raise RuntimeError('UNAPPROVED_DATE_CHANGED:'+id+':'+other)
+              probe=dict(original)
+              probe['entries']=dict(original['entries'])
+              probe['entries'][date_key]=approved['entries'].get(date_key)
+              answer=approved['entries'].get(date_key)
+              if (probe!=approved or not isinstance(answer,str) or
+                  len(answer.split('\n\n'))!=2 or len(answer)<700 or '—' in answer or
+                  original['entries'][date_key]==answer):
+                  raise RuntimeError('INVALID_APPROVED_DATE_ONLY_EDIT:'+id)
+              if previous_manifest['files'].get(name)!=sha(before):
+                  raise RuntimeError('PREVIOUS_MANIFEST_MISMATCH:'+id)
+              expected['files'][name]=sha(after)
+              originals[name]=before
+              replacements[name]=after
+          if current_manifest!=expected:
+              raise RuntimeError('UNRELATED_MANIFEST_CHANGE')
+          originals[manifest_path]=previous_manifest_raw
+          replacements[manifest_path]=current_manifest_raw
+          if not (os.environ.get('REG_FTP_USER') and os.environ.get('REG_FTP_PASSWORD')):
+              raise RuntimeError('REG_RU_SECRETS_MISSING')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.set_pasv(True)
+          def read(remote):
+              buf=io.BytesIO()
+              def collect(chunk):
+                  if buf.tell()+len(chunk)>900000:
+                      raise RuntimeError('UNEXPECTEDLY_LARGE_REMOTE_FILE')
+                  buf.write(chunk)
+              ftp.retrbinary('RETR '+remote,collect)
+              return buf.getvalue()
+          def write(remote,value):
+              ftp.storbinary('STOR '+remote,io.BytesIO(value))
+              if read(remote)!=value:raise RuntimeError('REMOTE_READBACK_MISMATCH')
+          home=ftp.pwd().rstrip('/')
+          protected=home+'/private/numi-account-20261031'
+          targets={name:protected+'/store-content/'+name for name in files}
+          targets[manifest_path]=protected+'/store-assets.json'
+          ftp.cwd(protected+'/store-content/data/redflag/love')
+          changed=[]
+          try:
+              live={name:read(targets[name]) for name in [*files,manifest_path]}
+              if all(live[n]==replacements[n] for n in live):
+                  print('LOVE_PRIVATE_DATE_ALREADY_SYNCED_VERIFIED',date_key,flush=True)
+              elif all(live[n]==originals[n] for n in live):
+                  backup_root=home+'/site-safeguard-backups'
+                  ftp.cwd(backup_root)
+                  backup=backup_root+'/redflag-love-'+date_key+'-'+os.environ['GITHUB_RUN_ID']
+                  ftp.mkd(backup)
+                  for i,name in enumerate([*files,manifest_path]):
+                      write(backup+'/'+str(i).zfill(2)+'-'+name.rsplit('/',1)[-1]+'.before',live[name])
+                  print('LOVE_PRIVATE_DATE_BACKUPS_VERIFIED',date_key,'10 files',flush=True)
+                  try:
+                      for name in [*files,manifest_path]:
+                          if read(targets[name])!=live[name]:
+                              raise RuntimeError('SERVER_CHANGED_DURING_UPLOAD')
+                          changed.append(name)
+                          write(targets[name],replacements[name])
+                          print('LOVE_PRIVATE_DATE_FILE_READBACK_VERIFIED',name,flush=True)
+                  except BaseException:
+                      for name in reversed(changed):
+                          try:
+                              write(targets[name],live[name])
+                              print('LOVE_PRIVATE_DATE_ROLLBACK_OK',name,flush=True)
+                          except BaseException:
+                              print('LOVE_PRIVATE_DATE_ROLLBACK_FAILED',name,flush=True)
+                      raise
+              else:
+                  raise RuntimeError('SERVER_BASELINE_MISMATCH_NO_OVERWRITE')
+              for name in [*files,manifest_path]:
+                  if read(targets[name])!=replacements[name]:
+                      raise RuntimeError('FINAL_PRIVATE_READBACK_MISMATCH')
+              print('LOVE_PRIVATE_DATE_SYNC_SUCCESS',date_key,'9 approved JSON answers; status draft; no public files, prices or payments changed',flush=True)
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
           PY
