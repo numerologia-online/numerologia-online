@@ -1,15 +1,19 @@
-"""Protected REG.RU upload for an approved batch of Red Flag JSON answers.
+"""Guarded release of the existing 366-date paid Red Flag question on REG.RU.
 
-Strict two-file transaction: one private JSON bank and its checksum manifest.
-Verifies the GitHub diff, encrypted FTPS baselines, private backups, live
-private readback and unauthenticated denial. Never changes publication status.
+Changes only reviewed existing files. Never creates products or database tables.
+Verifies the exact source diff, backs up each live file outside webroot, deploys
+private material before enabling the public question, checks HTTPS and rolls
+back every touched file if any verification fails. No payment is executed.
 """
+import calendar
+import copy
 import ftplib
 import hashlib
 import io
 import json
 import os
 from pathlib import Path
+import re
 import ssl
 import subprocess
 import time
@@ -20,104 +24,159 @@ import urllib.request
 HOST = "server172.hosting.reg.ru"
 NEW_DOMAIN = "xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
 OLD_DOMAIN = "xn--c1adkkdfjbp1a4l.online"
+BASE_REF = "ed0e492039a3c51046ce92ae0fe6de8917296142"
 BANK = "data/redflag/money/comic-verdict.json"
 MANIFEST = "account-service/private/store-assets.json"
-BANK_BASE = "a9227f0388cca41daa7b4b188af029e288d455f2"
-MANIFEST_BASE = "a9227f0388cca41daa7b4b188af029e288d455f2"
-OLD_SHA = "e0e5e8416f345b45f8b0042c96b8c3419b4b6ab279519c5657185366980facee"
-NEW_SHA = "a914e1965c9a3d332859389704ed1453c35f87113d0e2a2a7b1b688d08dad524"
+PRIVATE_CATALOG = "account-service/private/redflag-catalog.json"
+PUBLIC_CATALOG = "redflag-public-catalog.js"
+TAG_OLD = "redflag-catalog-refresh-20261109b"
+TAG_NEW = "redflag-comic-ready-366-20261110"
+OLD_SHA = "a914e1965c9a3d332859389704ed1453c35f87113d0e2a2a7b1b688d08dad524"
+NEW_SHA = "31455bdb58687784b2887ebd1be98f3d5cd33966991777c396ed6ef04fd5050f"
+PUBLIC = [
+    PUBLIC_CATALOG, "redflag-text-bank.js", "redflag-categories.js",
+    "redflag-feature.js", "app.js", "index.html",
+]
+FILES = [BANK, MANIFEST, PRIVATE_CATALOG, *PUBLIC]
 LIMIT = 950_000
-ADDED_DATES = {f"{d}-12" for d in range(18, 32)}
 
 
-def git_base(ref, name):
-    return subprocess.check_output(["git", "show", f"{ref}:{name}"], timeout=30)
+def git_base(path):
+    return subprocess.check_output(
+        ["git", "show", BASE_REF + ":" + path], timeout=40
+    )
 
 
 def sha(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
+def replace_once(raw, old, new, name):
+    if raw.count(old) != 1:
+        raise RuntimeError("UNEXPECTED_SOURCE_BASELINE:" + name)
+    return raw.replace(old, new, 1)
+
+
 def validate():
-    prev = git_base(BANK_BASE, BANK)
-    desired = Path(BANK).read_bytes()
-    old_m = git_base(MANIFEST_BASE, MANIFEST)
-    new_m = Path(MANIFEST).read_bytes()
-    if sha(prev) != OLD_SHA or sha(desired) != NEW_SHA:
-        raise RuntimeError("GITHUB_SOURCE_HASH_MISMATCH")
-    before = json.loads(prev)
-    after = json.loads(desired)
-    if before.get("questionId") != "comic-verdict-money" or after.get("questionId") != "comic-verdict-money":
-        raise RuntimeError("WRONG_BANK_ID")
-    if before.get("keyRule") != "day-month" or after.get("keyRule") != "day-month":
-        raise RuntimeError("WRONG_DATE_KEY_RULE")
-    if {k: v for k, v in before.items() if k != "entries"} != {k: v for k, v in after.items() if k != "entries"}:
-        raise RuntimeError("BANK_METADATA_CHANGED")
-    old_entries = before["entries"]
-    new_entries = after["entries"]
-    if len(old_entries) != 352 or len(new_entries) != 366:
-        raise RuntimeError("UNEXPECTED_ANSWER_COUNTS")
-    import calendar
-    all_expected = {f"{day}-{month}" for month in range(1, 13)
-                    for day in range(1, calendar.monthrange(2024, month)[1] + 1)}
-    if set(new_entries) != all_expected:
-        raise RuntimeError("INCOMPLETE_OR_INVALID_366_DAY_COVERAGE")
-    if set(new_entries) - set(old_entries) != ADDED_DATES or set(old_entries) - set(new_entries):
-        raise RuntimeError("UNEXPECTED_DATES_CHANGED")
-    if any(new_entries[k] != v for k, v in old_entries.items()):
-        raise RuntimeError("PREVIOUS_352_ANSWERS_CHANGED")
-    if any(not isinstance(new_entries[k], str) or len(new_entries[k].strip()) < 450
-           or "\n\n" not in new_entries[k] or "—" in new_entries[k] or "–" in new_entries[k]
-           for k in ADDED_DATES):
-        raise RuntimeError("EMPTY_OR_SHORT_NEW_ANSWER")
-    old_meta, new_meta = json.loads(old_m), json.loads(new_m)
-    if old_meta["files"].get(BANK) != OLD_SHA or new_meta["files"].get(BANK) != NEW_SHA:
-        raise RuntimeError("INCORRECT_MANIFEST_HASH")
-    old_meta["files"][BANK] = NEW_SHA
-    if old_meta != new_meta:
-        raise RuntimeError("UNRELATED_MANIFEST_CHANGE")
-    if len(prev) > LIMIT or len(desired) > LIMIT or len(old_m) > LIMIT or len(new_m) > LIMIT:
-        raise RuntimeError("SOURCE_TOO_LARGE")
-    print("APPROVED_BATCH_VERIFIED final 14 unique December dates; previous 352 unchanged; full 366 coverage", flush=True)
-    return prev, desired, old_m, new_m
+    old = {name: git_base(name) for name in FILES}
+    new = {name: Path(name).read_bytes() for name in FILES}
+    for name in FILES:
+        if not old[name] or not new[name] or max(len(old[name]), len(new[name])) > LIMIT:
+            raise RuntimeError("INVALID_SOURCE:" + name)
+    before, after = json.loads(old[BANK]), json.loads(new[BANK])
+    date_keys = {f"{d}-{m}" for m in range(1, 13)
+                 for d in range(1, calendar.monthrange(2024, m)[1] + 1)}
+    if (len(date_keys) != 366 or set(before["entries"]) != date_keys
+            or before["entries"] != after["entries"]
+            or len(set(after["entries"].values())) != 366
+            or any(not isinstance(s, str) or len(s.strip()) <= 200
+                   for s in after["entries"].values())):
+        raise RuntimeError("APPROVED_366_ANSWERS_CHANGED_OR_INVALID")
+    expected = dict(before)
+    expected["section"] = "money"
+    expected["question"] = "😂 Шуточный вердикт"
+    expected["status"] = "ready"
+    if before.get("status") is not None or after != expected:
+        raise RuntimeError("UNEXPECTED_BANK_METADATA_EDIT")
+    index = json.loads(Path("data/redflag/banks/money-questions.json").read_bytes())
+    question = [q for q in index["questions"] if q["id"] == "comic-verdict-money"]
+    if (len(question) != 1 or question[0]["title"] != expected["question"]
+            or question[0]["priceRub"] != 49
+            or question[0]["textFile"].split("?")[0] != "money/comic-verdict.json"):
+        raise RuntimeError("EXISTING_PRICE_OR_QUESTION_INDEX_CHANGED")
+    registry = json.loads(Path("store-catalog.json").read_bytes())
+    if sum(q["id"] == "comic-verdict-money" and q["category"] == "money"
+           for q in registry["redflag"]) != 1:
+        raise RuntimeError("EXISTING_PRODUCT_NOT_REGISTERED")
+    if sha(old[BANK]) != OLD_SHA or sha(new[BANK]) != NEW_SHA:
+        raise RuntimeError("BANK_HASH_MISMATCH")
 
+    old_manifest = json.loads(old[MANIFEST])
+    new_manifest = json.loads(new[MANIFEST])
+    if old_manifest["files"].get(BANK) != OLD_SHA or new_manifest["files"].get(BANK) != NEW_SHA:
+        raise RuntimeError("BANK_MANIFEST_VERSION_MISMATCH")
+    compare = copy.deepcopy(old_manifest)
+    compare["files"][BANK] = NEW_SHA
+    if compare != new_manifest:
+        raise RuntimeError("UNRELATED_STORE_ASSET_CHANGED")
 
-def public_index():
-    request = urllib.request.Request(
-        f"https://{NEW_DOMAIN}/index.html?redflag_private_sync={time.time_ns()}",
-        headers={"Cache-Control": "no-cache"},
+    old_private = json.loads(old[PRIVATE_CATALOG])
+    new_private = json.loads(new[PRIVATE_CATALOG])
+    compare = copy.deepcopy(old_private)
+    meta = compare["questions"]["money"]["comic-verdict-money"]
+    if meta != {"tier": 49, "free": False, "ready": False}:
+        raise RuntimeError("UNEXPECTED_PRIVATE_CATALOG_BASELINE")
+    meta["ready"] = True
+    if compare != new_private:
+        raise RuntimeError("UNRELATED_PRIVATE_CATALOG_CHANGE")
+
+    segment = ('"id": "comic-verdict-money",\n'
+               '      "title": "😂 Шуточный вердикт",\n'
+               '      "priceRub": 49,\n'
+               '      "status": "soon"').encode("utf-8")
+    public_expected = replace_once(
+        old[PUBLIC_CATALOG], segment,
+        segment.replace(b'"status": "soon"', b'"status": "ready"'),
+        PUBLIC_CATALOG,
     )
-    with urllib.request.urlopen(request, timeout=35) as r:
-        if r.status != 200 or urllib.parse.urlsplit(r.geturl()).hostname != NEW_DOMAIN:
-            raise RuntimeError("ACTIVE_PUBLIC_DOMAIN_MISMATCH")
-        b = r.read(LIMIT + 1)
-        if len(b) > LIMIT:
-            raise RuntimeError("PUBLIC_INDEX_TOO_LARGE")
-        return b
+    if new[PUBLIC_CATALOG] != public_expected or b'"entries":' in new[PUBLIC_CATALOG]:
+        raise RuntimeError("PUBLIC_CATALOG_UNEXPECTED_OR_PAID_TEXT_EXPOSED")
+
+    for name in PUBLIC[1:]:
+        original = replace_once(
+            old[name], TAG_OLD.encode(), TAG_NEW.encode(), name
+        )
+        if name == "redflag-feature.js":
+            needle = b"const paragraphs=(material.sections||[]).flatMap(section=>section.paragraphs||[]);"
+            split = (
+                b"const paragraphs=(material.sections||[]).flatMap(section=>(section.paragraphs||[])\n"
+                b"          .flatMap(text=>String(text).split(/\\n\\s*\\n/).map(part=>part.trim()).filter(Boolean)));"
+            )
+            original = replace_once(original, needle, split, name + ":paragraphs")
+        if new[name] != original:
+            raise RuntimeError("UNRELATED_PUBLIC_FILE_CHANGE:" + name)
+    print(
+        "SOURCE_APPROVAL_VERIFIED 366 unique dates; 79 RUB regular, 39 RUB club;"
+        " prior answers unchanged; no new product or DB files", flush=True
+    )
+    return old, new
+
+
+def public_get(name):
+    url = ("https://" + NEW_DOMAIN + "/" + name +
+           "?comic_ready_check=" + str(time.time_ns()))
+    request = urllib.request.Request(url, headers={"Cache-Control": "no-cache"})
+    with urllib.request.urlopen(request, timeout=35) as response:
+        if response.status != 200 or urllib.parse.urlsplit(response.geturl()).hostname != NEW_DOMAIN:
+            raise RuntimeError("WRONG_LIVE_DOMAIN:" + name)
+        data = response.read(LIMIT + 1)
+        if len(data) > LIMIT:
+            raise RuntimeError("PUBLIC_FILE_TOO_LARGE:" + name)
+        return data
 
 
 def anonymous_denied():
-    # The protected answer file must NEVER become a public static asset.
-    request = urllib.request.Request(
-        f"https://{NEW_DOMAIN}/{BANK}?private_check={time.time_ns()}",
-        headers={"Cache-Control": "no-store"},
-    )
+    url = ("https://" + NEW_DOMAIN + "/" + BANK +
+           "?paid_check=" + str(time.time_ns()))
     try:
-        with urllib.request.urlopen(request, timeout=25) as resp:
-            if resp.status == 200:
+        with urllib.request.urlopen(
+            urllib.request.Request(url, headers={"Cache-Control": "no-store"}),
+            timeout=25,
+        ) as response:
+            if response.status == 200:
                 raise RuntimeError("PAID_JSON_PUBLICLY_ACCESSIBLE")
-            return
-    except urllib.error.HTTPError as e:
-        if e.code not in (401, 403, 404):
-            raise RuntimeError(f"UNEXPECTED_PUBLIC_RESPONSE:{e.code}") from e
+            raise RuntimeError("UNEXPECTED_PUBLIC_RESPONSE:" + str(response.status))
+    except urllib.error.HTTPError as error:
+        if error.code not in (401, 403, 404):
+            raise RuntimeError("UNEXPECTED_PUBLIC_RESPONSE:" + str(error.code)) from error
     print("PAID_JSON_NOT_PUBLICLY_ACCESSIBLE", flush=True)
 
 
 def main():
-    prev, desired, old_m, new_m = validate()
+    old, new = validate()
     if not os.environ.get("REG_FTP_USER") or not os.environ.get("REG_FTP_PASSWORD"):
         raise RuntimeError("REG_RU_FTPS_SECRETS_UNAVAILABLE")
-    index = public_index()
+    old_live_index = public_get("index.html")
     anonymous_denied()
     ftp = ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=35)
     ftp.connect(HOST, 21)
@@ -137,76 +196,96 @@ def main():
     def put(path, data):
         ftp.storbinary("STOR " + path, io.BytesIO(data))
         if read(path) != data:
-            raise RuntimeError("FTPS_READBACK_MISMATCH")
+            raise RuntimeError("FTPS_READBACK_MISMATCH:" + path.rsplit("/", 1)[-1])
 
     changed = []
     try:
-        root = ftp.pwd().rstrip("/")
+        home = ftp.pwd().rstrip("/")
         site = None
         for domain in (NEW_DOMAIN, OLD_DOMAIN):
-            candidate = root + "/www/" + domain
+            candidate = home + "/www/" + domain
             try:
-                actual = read(candidate + "/index.html")
+                current = read(candidate + "/index.html")
             except ftplib.error_perm:
                 continue
-            if actual == index:
+            if current == old_live_index:
                 site = candidate
                 break
         if not site:
-            raise RuntimeError("CANNOT_IDENTIFY_ACTIVE_SITE_ROOT")
+            raise RuntimeError("CANNOT_IDENTIFY_ACTIVE_LIVE_WEBROOT")
         guard = read(site + "/.htaccess")
         if b"NUMI PAID STATIC ACCESS GUARD BEGIN 2026-10-31" not in guard:
             raise RuntimeError("PAID_STATIC_ACCESS_GUARD_MISSING")
-        protected = root + "/private/numi-account-20261031"
+        protected = home + "/private/numi-account-20261031"
         ftp.cwd(protected)
         ftp.cwd(protected + "/store-content/data/redflag/money")
-        target_bank = protected + "/store-content/" + BANK
-        target_manifest = protected + "/store-assets.json"
-        actual_bank = read(target_bank)
-        actual_manifest = read(target_manifest)
-        if actual_bank not in (prev, desired):
-            raise RuntimeError("UNREVIEWED_SERVER_JSON_BASELINE")
-        if actual_manifest not in (old_m, new_m):
-            raise RuntimeError("UNREVIEWED_SERVER_MANIFEST_BASELINE")
-        if actual_bank == desired and actual_manifest == new_m:
+        targets = {
+            BANK: protected + "/store-content/" + BANK,
+            MANIFEST: protected + "/store-assets.json",
+            PRIVATE_CATALOG: protected + "/redflag-catalog.json",
+        }
+        targets.update({p: site + "/" + p for p in PUBLIC})
+        if len(targets) != len(FILES):
+            raise RuntimeError("DUPLICATE_DEPLOYMENT_PATH")
+        remote = {p: read(targets[p]) for p in FILES}
+        for p, content in remote.items():
+            if content not in (old[p], new[p]):
+                raise RuntimeError("UNKNOWN_SERVER_BASELINE:" + p)
+        if all(remote[p] == new[p] for p in FILES):
+            if any(public_get(p) != new[p] for p in PUBLIC):
+                raise RuntimeError("ALREADY_LIVE_HTTP_MISMATCH")
             anonymous_denied()
-            print("REDFLAG_COMIC_DEC_31_ALREADY_LIVE_VERIFIED", flush=True)
+            print("REDFLAG_COMIC_366_READY_ALREADY_LIVE_VERIFIED", flush=True)
             return
-        if actual_bank != prev or actual_manifest != old_m:
-            raise RuntimeError("SERVER_JSON_MANIFEST_OUT_OF_SYNC")
-        backup_root = root + "/site-safeguard-backups"
+        if any(remote[p] != old[p] for p in FILES):
+            raise RuntimeError("PARTIALLY_UPDATED_SERVER_REQUIRES_REVIEW")
+        if sha(remote[BANK]) != OLD_SHA:
+            raise RuntimeError("REMOTE_PROTECTED_BANK_HASH_MISMATCH")
+        if json.loads(remote[MANIFEST])["files"].get(BANK) != OLD_SHA:
+            raise RuntimeError("REMOTE_MANIFEST_BASELINE_MISMATCH")
+        # A completed snapshot is required before any file on the live site is changed.
+        backup_root = home + "/site-safeguard-backups"
         try:
             ftp.mkd(backup_root)
         except ftplib.error_perm:
             ftp.cwd(backup_root)
-        backup = backup_root + "/redflag-comic-dec-31-" + os.environ.get("GITHUB_RUN_ID", str(time.time_ns()))
+        backup = backup_root + "/redflag-comic-live-ready-" + os.environ.get("GITHUB_RUN_ID", str(time.time_ns()))
         ftp.mkd(backup)
-        put(backup + "/comic-verdict.json.before", actual_bank)
-        put(backup + "/store-assets.json.before", actual_manifest)
-        print("BACKUP_VERIFIED comic-verdict.json", flush=True)
-        print("BACKUP_VERIFIED store-assets.json", flush=True)
+        for p in FILES:
+            filename = ("private-" if p not in PUBLIC else "public-") + p.rsplit("/", 1)[-1] + ".before"
+            put(backup + "/" + filename, remote[p])
+        print("BACKUPS_VERIFIED", len(FILES), "existing files", flush=True)
         try:
-            if read(target_bank) != actual_bank or read(target_manifest) != actual_manifest:
-                raise RuntimeError("CONCURRENT_EDIT_BEFORE_UPDATE")
-            changed.append((target_bank, actual_bank))
-            put(target_bank, desired)
-            changed.append((target_manifest, actual_manifest))
-            put(target_manifest, new_m)
-            if read(target_bank) != desired or read(target_manifest) != new_m:
-                raise RuntimeError("POST_PUBLICATION_FTPS_MISMATCH")
-            if sha(read(target_bank)) != json.loads(read(target_manifest))["files"][BANK]:
-                raise RuntimeError("ACTIVE_PROTECTED_HASH_MISMATCH")
-            if read(site + "/.htaccess") != guard or read(site + "/index.html") != index:
-                raise RuntimeError("PUBLIC_FILES_CHANGED")
+            for p in FILES:
+                if read(targets[p]) != remote[p]:
+                    raise RuntimeError("CONCURRENT_EDIT_BEFORE_WRITE:" + p)
+                if new[p] != remote[p]:
+                    changed.append(p)
+                    put(targets[p], new[p])
+                if p in PUBLIC and public_get(p) != new[p]:
+                    raise RuntimeError("LIVE_PUBLIC_HTTP_MISMATCH:" + p)
+                print("LIVE_READBACK_VERIFIED", p, flush=True)
+            if sha(read(targets[BANK])) != NEW_SHA:
+                raise RuntimeError("PROTECTED_BANK_NEW_HASH_MISMATCH")
+            if json.loads(read(targets[MANIFEST]))["files"][BANK] != NEW_SHA:
+                raise RuntimeError("PROTECTED_MANIFEST_NEW_HASH_MISMATCH")
+            state = json.loads(read(targets[PRIVATE_CATALOG]))
+            if state["questions"]["money"]["comic-verdict-money"] != {
+                "tier": 49, "free": False, "ready": True
+            }:
+                raise RuntimeError("LIVE_PRIVATE_CATALOG_NOT_READY")
+            if read(site + "/.htaccess") != guard:
+                raise RuntimeError("PUBLIC_SECURITY_GUARD_CHANGED")
             anonymous_denied()
-            print("REDFLAG_COMIC_DEC_31_PRIVATE_LIVE_VERIFIED", NEW_DOMAIN, flush=True)
+            print("REDFLAG_COMIC_366_READY_LIVE_VERIFIED", NEW_DOMAIN,
+                  "price_regular=79", "price_club=39", flush=True)
         except BaseException:
-            for target, original in reversed(changed):
+            for p in reversed(changed):
                 try:
-                    put(target, original)
-                    print("ROLLBACK_VERIFIED", target.rsplit("/", 1)[-1], flush=True)
+                    put(targets[p], remote[p])
+                    print("ROLLBACK_VERIFIED", p, flush=True)
                 except BaseException:
-                    print("ROLLBACK_FAILED", target.rsplit("/", 1)[-1], flush=True)
+                    print("ROLLBACK_FAILED", p, flush=True)
             raise
     finally:
         try:
