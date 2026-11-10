@@ -205,7 +205,7 @@
     "#numi-wallet-account-badge .numi-wallet-main{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}",
     "#numi-wallet-account-badge .numi-wallet-total{display:block;font-size:24px;font-weight:750;line-height:1.2}",
     "#numi-wallet-account-badge .numi-wallet-caption{display:block;font-size:12px;color:#69716d}",
-    "#numi-wallet-account-badge .numi-wallet-vpn-warning{display:block;margin:3px 0 0;color:#ed1c24;-webkit-text-stroke:.45px #164536;paint-order:stroke fill;text-shadow:0 0 .3px #164536;text-align:center;white-space:nowrap;letter-spacing:-.15px;font:800 clamp(10px,3vw,12.5px)/1.24 system-ui}",
+    "#numi-wallet-account-badge .numi-wallet-vpn-warning{display:block;margin:3px 0 0;color:#252d29;-webkit-text-stroke:0;text-shadow:none;text-align:center;white-space:nowrap;letter-spacing:.055em;transform:scaleX(.88);transform-origin:center;font:300 clamp(12px,3.6vw,16px)/1.22 \"Helvetica Neue\",Arial,sans-serif}",
     "#numi-wallet-account-badge button.numi-wallet-main-button{border:0;border-radius:10px;background:#343b39;color:white;padding:10px 15px;font:600 13px system-ui;cursor:pointer}",
     "#numi-wallet-account-badge .numi-wallet-links{display:flex;gap:12px;align-items:center;margin-top:6px;flex-wrap:wrap}",
     "#numi-wallet-account-badge button.numi-wallet-small{border:0;padding:3px 0;background:transparent;color:#606963;text-decoration:underline;font:12px system-ui;cursor:pointer}",
