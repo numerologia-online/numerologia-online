@@ -279,7 +279,8 @@ const ensureAnswer = (question, state) => {
     const task=import("./wallet-client.js?v=redflag-question-stable-20261109").then(({showInlinePurchase})=>
       showInlinePurchase(item,target,(material)=>{
         if(activeProfile!==profile)return;
-        const paragraphs=(material.sections||[]).flatMap(section=>section.paragraphs||[]);
+        const paragraphs=(material.sections||[]).flatMap(section=>(section.paragraphs||[])
+          .flatMap(text=>String(text).split(/\n\s*\n/).map(part=>part.trim()).filter(Boolean)));
         if(!paragraphs.length){state.answerErrors.set(id,"Материал пока недоступен.");return;}
         state.answers.set(id,{answer:paragraphs.join("\n"),paragraphs});
         renderCategories({type:"question",id});
