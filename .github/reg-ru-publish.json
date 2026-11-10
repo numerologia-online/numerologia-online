@@ -1,5 +1,7 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "Final approved 64 personal-day readings published to REG.RU; all 11 files backed up and verified in run 42689301282. Approved texts synced to existing gh-pages. Read-only standby."
+  "mode": "publish",
+  "files": [
+    "data/day/general/general-day-11.json"
+  ],
+  "note": "Owner-requested Nov 11 Telegram source check: one added gentle sentence to personal-day energy 11 position 19. Backup and publish only this JSON file; verify upload."
 }
