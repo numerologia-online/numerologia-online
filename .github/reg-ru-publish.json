@@ -1,7 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "data/day/general/general-day-11.json"
-  ],
-  "note": "Owner-requested Nov 11 Telegram source check: one added gentle sentence to personal-day energy 11 position 19. Backup and publish only this JSON file; verify upload."
+  "mode": "check",
+  "files": [],
+  "note": "Owner-requested Nov 11 personal-day Telegram source-check sentence published and verified on REG.RU run 42772010615, and pushed to gh-pages. Read-only standby."
 }
