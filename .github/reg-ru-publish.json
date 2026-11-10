@@ -1,10 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "data/day/practical/practical-day-06.json",
-    "data/day/practical/practical-day-07.json",
-    "data/day/practical/practical-day-08.json",
-    "data/day/practical/practical-day-09.json"
-  ],
-  "note": "Owner approved 100 practical-day additions; energy 6=16,7=30,8=31,9=23. Every existing recommendation remains an exact prefix. Publish only these 4 JSON files with backups and verification."
+  "mode": "check",
+  "files": [],
+  "note": "Owner-approved 100 practical-day blocks (energy 6:16,7:30,8:31,9:23) backed up and uploaded/verified on REG.RU in run 42781145864. Same blocks synced to existing gh-pages. Read-only standby."
 }
