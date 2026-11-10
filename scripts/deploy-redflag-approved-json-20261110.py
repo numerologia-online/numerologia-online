@@ -28,6 +28,7 @@ BASE_REF = "ed0e492039a3c51046ce92ae0fe6de8917296142"
 BANK = "data/redflag/money/comic-verdict.json"
 MANIFEST = "account-service/private/store-assets.json"
 PRIVATE_CATALOG = "account-service/private/redflag-catalog.json"
+BACKEND = "account-service/private/fulfillment.php"
 PUBLIC_CATALOG = "redflag-public-catalog.js"
 TAG_OLD = "redflag-catalog-refresh-20261109b"
 TAG_NEW = "redflag-comic-ready-366-20261110"
@@ -37,7 +38,7 @@ PUBLIC = [
     PUBLIC_CATALOG, "redflag-text-bank.js", "redflag-categories.js",
     "redflag-feature.js", "app.js", "index.html",
 ]
-FILES = [BANK, MANIFEST, PRIVATE_CATALOG, *PUBLIC]
+FILES = [BANK, MANIFEST, PRIVATE_CATALOG, BACKEND, *PUBLIC]
 LIMIT = 950_000
 
 
@@ -109,6 +110,11 @@ def validate():
     meta["ready"] = True
     if compare != new_private:
         raise RuntimeError("UNRELATED_PRIVATE_CATALOG_CHANGE")
+    old_read = "$data=naMaterialJson('data/redflag/'.$m[1].'/'.$m[2].'.json',$root);".encode()
+    new_read = ("$bankFile=($m[1]==='money'&&$m[2]==='comic-verdict-money')?'comic-verdict':$m[2];\n"
+                "        $data=naMaterialJson('data/redflag/'.$m[1].'/'.$bankFile.'.json',$root);").encode()
+    if new[BACKEND] != replace_once(old[BACKEND], old_read, new_read, BACKEND):
+        raise RuntimeError("UNRELATED_PHP_FULFILLMENT_CHANGE")
 
     segment = ('"id": "comic-verdict-money",\n'
                '      "title": "😂 Шуточный вердикт",\n'
@@ -223,6 +229,7 @@ def main():
             BANK: protected + "/store-content/" + BANK,
             MANIFEST: protected + "/store-assets.json",
             PRIVATE_CATALOG: protected + "/redflag-catalog.json",
+            BACKEND: protected + "/fulfillment.php",
         }
         targets.update({p: site + "/" + p for p in PUBLIC})
         if len(targets) != len(FILES):
