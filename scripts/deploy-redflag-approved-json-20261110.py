@@ -22,12 +22,12 @@ NEW_DOMAIN = "xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
 OLD_DOMAIN = "xn--c1adkkdfjbp1a4l.online"
 BANK = "data/redflag/money/comic-verdict.json"
 MANIFEST = "account-service/private/store-assets.json"
-BANK_BASE = "e3133f03fa92e0c16fe0ab22202c977193234ceb"
-MANIFEST_BASE = "e3133f03fa92e0c16fe0ab22202c977193234ceb"
-OLD_SHA = "855403bf2c8c382a68e1b90896f9cdf93e3ee0b2a223a60bf9792218ae3c17c0"
-NEW_SHA = "e0e5e8416f345b45f8b0042c96b8c3419b4b6ab279519c5657185366980facee"
+BANK_BASE = "a9227f0388cca41daa7b4b188af029e288d455f2"
+MANIFEST_BASE = "a9227f0388cca41daa7b4b188af029e288d455f2"
+OLD_SHA = "e0e5e8416f345b45f8b0042c96b8c3419b4b6ab279519c5657185366980facee"
+NEW_SHA = "a914e1965c9a3d332859389704ed1453c35f87113d0e2a2a7b1b688d08dad524"
 LIMIT = 950_000
-ADDED_DATES = {*(f"{d}-10" for d in range(29, 32)), *(f"{d}-11" for d in range(1, 31)), *(f"{d}-12" for d in range(1, 18))}
+ADDED_DATES = {f"{d}-12" for d in range(18, 32)}
 
 
 def git_base(ref, name):
@@ -55,12 +55,17 @@ def validate():
         raise RuntimeError("BANK_METADATA_CHANGED")
     old_entries = before["entries"]
     new_entries = after["entries"]
-    if len(old_entries) != 302 or len(new_entries) != 352:
+    if len(old_entries) != 352 or len(new_entries) != 366:
         raise RuntimeError("UNEXPECTED_ANSWER_COUNTS")
+    import calendar
+    all_expected = {f"{day}-{month}" for month in range(1, 13)
+                    for day in range(1, calendar.monthrange(2024, month)[1] + 1)}
+    if set(new_entries) != all_expected:
+        raise RuntimeError("INCOMPLETE_OR_INVALID_366_DAY_COVERAGE")
     if set(new_entries) - set(old_entries) != ADDED_DATES or set(old_entries) - set(new_entries):
         raise RuntimeError("UNEXPECTED_DATES_CHANGED")
     if any(new_entries[k] != v for k, v in old_entries.items()):
-        raise RuntimeError("PREVIOUS_302_ANSWERS_CHANGED")
+        raise RuntimeError("PREVIOUS_352_ANSWERS_CHANGED")
     if any(not isinstance(new_entries[k], str) or len(new_entries[k].strip()) < 450
            or "\n\n" not in new_entries[k] or "—" in new_entries[k] or "–" in new_entries[k]
            for k in ADDED_DATES):
@@ -73,7 +78,7 @@ def validate():
         raise RuntimeError("UNRELATED_MANIFEST_CHANGE")
     if len(prev) > LIMIT or len(desired) > LIMIT or len(old_m) > LIMIT or len(new_m) > LIMIT:
         raise RuntimeError("SOURCE_TOO_LARGE")
-    print("APPROVED_BATCH_VERIFIED 50 unique Oct-Dec dates; previous 302 unchanged; no long dashes", flush=True)
+    print("APPROVED_BATCH_VERIFIED final 14 unique December dates; previous 352 unchanged; full 366 coverage", flush=True)
     return prev, desired, old_m, new_m
 
 
@@ -165,7 +170,7 @@ def main():
             raise RuntimeError("UNREVIEWED_SERVER_MANIFEST_BASELINE")
         if actual_bank == desired and actual_manifest == new_m:
             anonymous_denied()
-            print("REDFLAG_COMIC_DEC_17_ALREADY_LIVE_VERIFIED", flush=True)
+            print("REDFLAG_COMIC_DEC_31_ALREADY_LIVE_VERIFIED", flush=True)
             return
         if actual_bank != prev or actual_manifest != old_m:
             raise RuntimeError("SERVER_JSON_MANIFEST_OUT_OF_SYNC")
@@ -174,7 +179,7 @@ def main():
             ftp.mkd(backup_root)
         except ftplib.error_perm:
             ftp.cwd(backup_root)
-        backup = backup_root + "/redflag-comic-dec-17-" + os.environ.get("GITHUB_RUN_ID", str(time.time_ns()))
+        backup = backup_root + "/redflag-comic-dec-31-" + os.environ.get("GITHUB_RUN_ID", str(time.time_ns()))
         ftp.mkd(backup)
         put(backup + "/comic-verdict.json.before", actual_bank)
         put(backup + "/store-assets.json.before", actual_manifest)
@@ -194,7 +199,7 @@ def main():
             if read(site + "/.htaccess") != guard or read(site + "/index.html") != index:
                 raise RuntimeError("PUBLIC_FILES_CHANGED")
             anonymous_denied()
-            print("REDFLAG_COMIC_DEC_17_PRIVATE_LIVE_VERIFIED", NEW_DOMAIN, flush=True)
+            print("REDFLAG_COMIC_DEC_31_PRIVATE_LIVE_VERIFIED", NEW_DOMAIN, flush=True)
         except BaseException:
             for target, original in reversed(changed):
                 try:
