@@ -110,7 +110,8 @@ test("Published Red Flag purchase badges reflect approved 366-day banks, never j
       // actually be served by account-service/private/fulfillment.php.
       let material = null;
       try {
-        material = JSON.parse(await source("data/redflag/" + category + "/" + question.id + ".json"));
+        const materialPath = question.textFile?.split("?")[0] ?? (category + "/" + question.id + ".json");
+        material = JSON.parse(await source("data/redflag/" + materialPath));
       } catch (error) {
         if (error.code !== "ENOENT") throw error;
       }
