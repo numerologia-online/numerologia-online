@@ -37,8 +37,8 @@ jobs:
           assert b'background:#e6f0ea' in edits[0][1]
           assert b'width:fit-content' in edits[0][1]
           assert b'color:#173e30' in edits[0][1]
-          assert b'vpnWarning.textContent="Если окно оплаты зависает, отключите VPN."' in edits[1][0]
-          assert b'vpnWarning.textContent="Зависла оплата? Отключите VPN."' in edits[1][1]
+          assert 'vpnWarning.textContent="Если окно оплаты зависает, отключите VPN."'.encode() in edits[1][0]
+          assert 'vpnWarning.textContent="Зависла оплата? Отключите VPN."'.encode() in edits[1][1]
           assert b'for(const exit of logoutControls) exit.hidden=(tg||!current);' in updated
           old_html=subprocess.check_output(["git","show","f7a27906784fb07f0c872fc1ec80506bf1eefbfd^:index.html"])
           new_html=pathlib.Path("index.html").read_bytes()
