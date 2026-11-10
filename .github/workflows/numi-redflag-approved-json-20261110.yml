@@ -1,5 +1,5 @@
 name: Activate 366-date comic verdict using existing Red Flag wallet
-# Re-run after validating the existing PHP reader against the registered comic-verdict.json file.
+# Publish the already-reviewed comic verdict using the existing guarded REG.RU release; no new products.
 on:
   push:
     branches: [main]
