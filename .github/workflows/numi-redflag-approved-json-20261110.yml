@@ -211,7 +211,7 @@ jobs:
           PY
 
   sync_approved_love_date:
-    if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'Sync approved Love date ')
+    if: github.ref == 'refs/heads/main' && (startsWith(github.event.head_commit.message, 'Sync approved Love date ') || startsWith(github.event.head_commit.message, 'Sync approved Love dates '))
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     steps:
@@ -236,9 +236,19 @@ jobs:
           def git(*args):
               return subprocess.check_output(['git',*args],timeout=35)
           message=git('log','-1','--pretty=%s').decode().strip()
-          match=re.fullmatch(r'Sync approved Love date ([1-9]|[12][0-9]|3[01])-([1-9]|1[0-2]) to REG.RU private bank',message)
-          if not match:raise RuntimeError('UNAPPROVED_RELEASE_MESSAGE')
-          date_key=match[1]+'-'+match[2]
+          pattern=r'([1-9]|[12][0-9]|3[01])-([1-9]|1[0-2])'
+          single=re.fullmatch(r'Sync approved Love date '+pattern+r' to REG.RU private bank',message)
+          batch=re.fullmatch(r'Sync approved Love dates '+pattern+r' through '+pattern+r' to REG.RU private bank',message)
+          if single:
+              date_keys={single[1]+'-'+single[2]}
+          elif batch:
+              first_day,first_month,last_day,last_month=map(int,batch.groups())
+              if first_month!=last_month or last_day-first_day!=4:
+                  raise RuntimeError('INVALID_FIVE_DATE_RANGE')
+              date_keys={str(day)+'-'+str(first_month) for day in range(first_day,last_day+1)}
+          else:
+              raise RuntimeError('UNAPPROVED_RELEASE_MESSAGE')
+          date_label='_'.join(sorted(date_keys,key=lambda s:int(s.split('-')[0])))
           actual_changes=set(git('diff','--name-only','HEAD^','HEAD').decode().splitlines())
           allowed=set(files)|{manifest_path}
           if actual_changes not in (allowed,allowed|{workflow_path}):
@@ -269,16 +279,19 @@ jobs:
               if len(original.get('entries',{}))!=36 or set(original['entries'])!=set(approved.get('entries',{})):
                   raise RuntimeError('DATES_IN_BANK_CHANGED:'+id)
               for other in original['entries']:
-                  if other!=date_key and original['entries'][other]!=approved['entries'][other]:
+                  if other not in date_keys and original['entries'][other]!=approved['entries'][other]:
                       raise RuntimeError('UNAPPROVED_DATE_CHANGED:'+id+':'+other)
               probe=dict(original)
               probe['entries']=dict(original['entries'])
-              probe['entries'][date_key]=approved['entries'].get(date_key)
-              answer=approved['entries'].get(date_key)
-              if (probe!=approved or not isinstance(answer,str) or
-                  len(answer.split('\n\n'))!=2 or len(answer)<700 or '—' in answer or
-                  original['entries'][date_key]==answer):
-                  raise RuntimeError('INVALID_APPROVED_DATE_ONLY_EDIT:'+id)
+              for date_key in date_keys:
+                  answer=approved['entries'].get(date_key)
+                  if (not isinstance(answer,str) or len(answer.split('\n\n'))!=2
+                      or len(answer)<700 or '—' in answer
+                      or original['entries'][date_key]==answer):
+                      raise RuntimeError('INVALID_APPROVED_ANSWER:'+id+':'+date_key)
+                  probe['entries'][date_key]=answer
+              if probe!=approved:
+                  raise RuntimeError('INVALID_DATE_ONLY_EDIT:'+id)
               if previous_manifest['files'].get(name)!=sha(before):
                   raise RuntimeError('PREVIOUS_MANIFEST_MISMATCH:'+id)
               expected['files'][name]=sha(after)
@@ -315,15 +328,15 @@ jobs:
           try:
               live={name:read(targets[name]) for name in [*files,manifest_path]}
               if all(live[n]==replacements[n] for n in live):
-                  print('LOVE_PRIVATE_DATE_ALREADY_SYNCED_VERIFIED',date_key,flush=True)
+                  print('LOVE_PRIVATE_DATE_ALREADY_SYNCED_VERIFIED',date_label,flush=True)
               elif all(live[n]==originals[n] for n in live):
                   backup_root=home+'/site-safeguard-backups'
                   ftp.cwd(backup_root)
-                  backup=backup_root+'/redflag-love-'+date_key+'-'+os.environ['GITHUB_RUN_ID']
+                  backup=backup_root+'/redflag-love-'+date_label+'-'+os.environ['GITHUB_RUN_ID']
                   ftp.mkd(backup)
                   for i,name in enumerate([*files,manifest_path]):
                       write(backup+'/'+str(i).zfill(2)+'-'+name.rsplit('/',1)[-1]+'.before',live[name])
-                  print('LOVE_PRIVATE_DATE_BACKUPS_VERIFIED',date_key,'10 files',flush=True)
+                  print('LOVE_PRIVATE_DATE_BACKUPS_VERIFIED',date_label,'10 files',flush=True)
                   try:
                       for name in [*files,manifest_path]:
                           if read(targets[name])!=live[name]:
@@ -344,7 +357,7 @@ jobs:
               for name in [*files,manifest_path]:
                   if read(targets[name])!=replacements[name]:
                       raise RuntimeError('FINAL_PRIVATE_READBACK_MISMATCH')
-              print('LOVE_PRIVATE_DATE_SYNC_SUCCESS',date_key,'9 approved JSON answers; status draft; no public files, prices or payments changed',flush=True)
+              print('LOVE_PRIVATE_DATE_SYNC_SUCCESS',date_label,'9 approved JSON banks; status draft; no public files, prices or payments changed',flush=True)
           finally:
               try:ftp.quit()
               except BaseException:ftp.close()
