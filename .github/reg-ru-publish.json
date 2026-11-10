@@ -1,5 +1,9 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "Owner-requested Nov 11 personal-day Telegram source-check sentence published and verified on REG.RU run 42772010615, and pushed to gh-pages. Read-only standby."
+  "mode": "publish",
+  "files": [
+    "data/day/practical/practical-day-02.json",
+    "data/day/practical/practical-day-03.json",
+    "data/day/practical/practical-day-04.json"
+  ],
+  "note": "Owner-approved 50 practical-day blocks: 6 for energy 2, 31 for energy 3, 13 for energy 4. Original six advice statements retained as prefixes; backup and verify only 3 JSON files."
 }
