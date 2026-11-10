@@ -201,11 +201,11 @@
   overview.querySelector(".account-identity")?.insertAdjacentElement("afterend",walletBadge);
   const walletStyle=document.createElement("style");
   walletStyle.textContent=[
-    "#numi-wallet-account-badge{margin:12px 0 18px;padding:14px 16px;background:#f4f1f0;border:1px solid #e1d9d4;border-radius:15px;color:#343b39;font:14px/1.5 system-ui}",
+    "#numi-wallet-account-badge{margin:12px 0 14px;padding:9px 16px;background:#f4f1f0;border:1px solid #e1d9d4;border-radius:15px;color:#343b39;font:14px/1.35 system-ui}",
     "#numi-wallet-account-badge .numi-wallet-main{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}",
     "#numi-wallet-account-badge .numi-wallet-total{display:block;font-size:24px;font-weight:750;line-height:1.2}",
     "#numi-wallet-account-badge .numi-wallet-caption{display:block;font-size:12px;color:#69716d}",
-    "#numi-wallet-account-badge .numi-wallet-vpn-warning{display:block;margin:8px 0 0;color:#365649;font:700 15px/1.35 system-ui}",
+    "#numi-wallet-account-badge .numi-wallet-vpn-warning{display:block;margin:4px 0 0;color:#ed1c24;text-align:center;font:800 15px/1.25 system-ui}",
     "#numi-wallet-account-badge button.numi-wallet-main-button{border:0;border-radius:10px;background:#343b39;color:white;padding:10px 15px;font:600 13px system-ui;cursor:pointer}",
     "#numi-wallet-account-badge .numi-wallet-links{display:flex;gap:12px;align-items:center;margin-top:6px;flex-wrap:wrap}",
     "#numi-wallet-account-badge button.numi-wallet-small{border:0;padding:3px 0;background:transparent;color:#606963;text-decoration:underline;font:12px system-ui;cursor:pointer}",
@@ -218,7 +218,9 @@
     "#numi-wallet-account-badge .numi-wallet-operations{margin:8px 0 0;padding:0;list-style:none;max-height:130px;overflow:auto;font-size:12px;color:#5c6561}",
     "#numi-wallet-account-badge .numi-wallet-operations li{padding:4px 0;border-bottom:1px solid #e3dfdd}",
     "#numi-wallet-account-badge .numi-wallet-feedback{font-size:12px;margin:8px 0 0;color:#5d6561}",
-    "#numi-wallet-account-badge .numi-club-status{margin:8px 0 0;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;color:#5b6961;font:12px/1.4 system-ui}",
+    "#numi-wallet-account-badge .numi-club-status{margin:4px 0 0;display:flex;flex-direction:column;gap:2px;align-items:center;text-align:center;color:#5b6961;font:12px/1.3 system-ui}",
+    "#numi-wallet-account-badge .numi-wallet-links .numi-wallet-caption{flex:0 0 100%;text-align:center;line-height:1.25}",
+    "#numi-wallet-account-badge .numi-club-status > .numi-wallet-small{align-self:center;text-align:center}",
     "#numi-wallet-account-badge [hidden]{display:none!important}"
   ].join("");
   dialog.append(walletStyle);
