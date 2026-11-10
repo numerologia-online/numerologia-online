@@ -1,5 +1,5 @@
 name: Activate 366-date comic verdict using existing Red Flag wallet
-# Re-run after correcting existing test lookup for the approved comic-verdict.json path.
+# Re-run after validating the existing PHP reader against the registered comic-verdict.json file.
 on:
   push:
     branches: [main]
