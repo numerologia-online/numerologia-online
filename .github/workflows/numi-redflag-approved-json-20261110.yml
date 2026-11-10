@@ -1,4 +1,4 @@
-name: Publish approved Red Flag July JSON to protected REG.RU
+name: Activate 366-date comic verdict using existing Red Flag wallet
 on:
   push:
     branches: [main]
@@ -11,15 +11,15 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish complete 366-date comic verdict JSON to REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish ready 366-date comic verdict on REG.RU'
     runs-on: ubuntu-24.04
-    timeout-minutes: 14
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Validate protected content publisher and approved JSON diff
+      - name: Verify existing 366 answers, generated catalog, prices, and PHP material
         run: |
           set -euo pipefail
           python3 -m py_compile scripts/deploy-redflag-approved-json-20261110.py
@@ -31,7 +31,30 @@ jobs:
           spec.loader.exec_module(module)
           module.validate()
           PY
-      - name: Back up and publish only protected JSON and integrity manifest
+          python3 scripts/build-store-catalog.py
+          python3 scripts/build-store-assets.py
+          git diff --exit-code -- store-catalog.json redflag-public-catalog.js account-service/private/redflag-catalog.json account-service/private/store-assets.json
+          node --test tests/redflag-calendar-coverage.test.mjs
+          for file in redflag-public-catalog.js redflag-text-bank.js redflag-categories.js redflag-feature.js app.js; do
+            node --input-type=module --check < "$file"
+          done
+          php -l account-service/private/core.php
+          php -l account-service/private/store.php
+          php -l account-service/private/fulfillment.php
+          php account-service/tests/store.php
+          php -r '
+            require "account-service/private/core.php";
+            require "account-service/private/fulfillment.php";
+            foreach (["1986-09-09", "2000-02-29"] as $date) {
+              $m=naMaterialBuild("redflag_question", "redflag:money:comic-verdict-money:".$date, getcwd());
+              if (($m["title"]??"")!=="😂 Шуточный вердикт" || count($m["sections"]??[])!==1
+                  || !str_contains($m["sections"][0]["paragraphs"][0]??"", "\n\n"))
+                throw new RuntimeException("COMIC_MATERIAL_DATE_NOT_READY:".$date);
+            }
+            echo "COMIC_MATERIAL_READY_TWO_DATES\n";
+          '
+          echo EXISTING_REDFLAG_PAYMENT_READY_NO_NEW_PRODUCT
+      - name: Back up and publish only verified existing files on REG.RU
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
