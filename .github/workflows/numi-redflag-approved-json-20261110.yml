@@ -276,7 +276,9 @@ jobs:
                   raise RuntimeError('APPROVAL_STATUS_MUST_STAY_DRAFT:'+id)
               if original.get('keyRule')!='day-month' or approved.get('keyRule')!='day-month':
                   raise RuntimeError('WRONG_KEY_RULE:'+id)
-              if len(original.get('entries',{}))!=36 or set(original['entries'])!=set(approved.get('entries',{})):
+              if (not isinstance(original.get('entries'),dict) or len(original['entries'])<36
+                  or not isinstance(approved.get('entries'),dict)
+                  or set(approved['entries']) != (set(original['entries']) | date_keys)):
                   raise RuntimeError('DATES_IN_BANK_CHANGED:'+id)
               for other in original['entries']:
                   if other not in date_keys and original['entries'][other]!=approved['entries'][other]:
@@ -287,7 +289,7 @@ jobs:
                   answer=approved['entries'].get(date_key)
                   if (not isinstance(answer,str) or len(answer.split('\n\n'))!=2
                       or len(answer)<700 or '—' in answer
-                      or original['entries'][date_key]==answer):
+                      or original['entries'].get(date_key)==answer):
                       raise RuntimeError('INVALID_APPROVED_ANSWER:'+id+':'+date_key)
                   probe['entries'][date_key]=answer
               if probe!=approved:
