@@ -1,5 +1,12 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "Third owner-approved batch of 100 practical-day blocks backed up, published and verified on REG.RU run 42783295676 (energy 9:8,10:31,11:20,12:11,13:7,14:18,16:5); synchronized to existing gh-pages. Standby."
+  "mode": "publish",
+  "files": [
+    "data/day/practical/practical-day-16.json",
+    "data/day/practical/practical-day-17.json",
+    "data/day/practical/practical-day-18.json",
+    "data/day/practical/practical-day-20.json",
+    "data/day/practical/practical-day-21.json",
+    "data/day/practical/practical-day-22.json"
+  ],
+  "note": "Owner approved 44 updated practical-day blocks, each of six original recommendations preserved and expanded; publish only six files with existing backup, compare and verification protocol."
 }
