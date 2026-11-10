@@ -205,7 +205,7 @@
     "#numi-wallet-account-badge .numi-wallet-main{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}",
     "#numi-wallet-account-badge .numi-wallet-total{display:block;font-size:24px;font-weight:750;line-height:1.2}",
     "#numi-wallet-account-badge .numi-wallet-caption{display:block;font-size:12px;color:#69716d}",
-    "#numi-wallet-account-badge .numi-wallet-vpn-warning{display:block;margin:4px 0 0;color:#ed1c24;text-align:center;font:800 15px/1.25 system-ui}",
+    "#numi-wallet-account-badge .numi-wallet-vpn-warning{display:block;margin:3px 0 0;color:#ed1c24;-webkit-text-stroke:.45px #164536;paint-order:stroke fill;text-shadow:0 0 .3px #164536;text-align:center;white-space:nowrap;letter-spacing:-.15px;font:800 clamp(10px,3vw,12.5px)/1.24 system-ui}",
     "#numi-wallet-account-badge button.numi-wallet-main-button{border:0;border-radius:10px;background:#343b39;color:white;padding:10px 15px;font:600 13px system-ui;cursor:pointer}",
     "#numi-wallet-account-badge .numi-wallet-links{display:flex;gap:12px;align-items:center;margin-top:6px;flex-wrap:wrap}",
     "#numi-wallet-account-badge button.numi-wallet-small{border:0;padding:3px 0;background:transparent;color:#606963;text-decoration:underline;font:12px system-ui;cursor:pointer}",
@@ -220,6 +220,7 @@
     "#numi-wallet-account-badge .numi-wallet-feedback{font-size:12px;margin:8px 0 0;color:#5d6561}",
     "#numi-wallet-account-badge .numi-club-status{margin:4px 0 0;display:flex;flex-direction:column;gap:2px;align-items:center;text-align:center;color:#5b6961;font:12px/1.3 system-ui}",
     "#numi-wallet-account-badge .numi-wallet-links .numi-wallet-caption{flex:0 0 100%;text-align:center;line-height:1.25}",
+    "#numi-wallet-account-badge .numi-club-status > span{display:block;max-width:100%;white-space:nowrap;letter-spacing:-.15px;font-size:clamp(9px,2.55vw,11px)}",
     "#numi-wallet-account-badge .numi-club-status > .numi-wallet-small{align-self:center;text-align:center}",
     "#numi-wallet-account-badge [hidden]{display:none!important}"
   ].join("");
