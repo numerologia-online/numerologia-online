@@ -127,7 +127,7 @@ test("Published Red Flag purchase badges reflect approved 366-day banks, never j
 });
 
 
-test("Nine paid Money questions derive readiness from their ONLY author-approved bank", async () => {
+test("Ten paid Money questions derive readiness from their ONLY author-approved bank", async () => {
   const list = JSON.parse(await source("data/redflag/banks/money-questions.json")).questions;
   const publicModule = await source("redflag-public-catalog.js");
   const publicBank = JSON.parse(publicModule.split("export const PUBLIC_QUESTIONS = ")[1].trim().slice(0, -1)).money;
@@ -143,7 +143,7 @@ test("Nine paid Money questions derive readiness from their ONLY author-approved
     const hash = createHash("sha256").update(raw).digest("hex");
     assert.equal(assets[bankName], hash, "Protected vault hash must match: " + question.id);
     assert.equal(material.questionId, question.id);
-    if (index < 10) {
+    if (index < 11) {
       assert.ok(["ready", "complete"].includes(material.status));
       assert.equal(material.question, question.title, "Paid headline differs from catalogue");
       assert.equal(material.keyRule, "day-month");
@@ -157,5 +157,5 @@ test("Nine paid Money questions derive readiness from their ONLY author-approved
       assert.equal(protectedBank[question.id].ready, false);
     }
   }
-  assert.equal(complete, 10);
+  assert.equal(complete, 11);
 });

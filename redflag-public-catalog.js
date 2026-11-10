@@ -125,7 +125,7 @@ export const PUBLIC_QUESTIONS = {
       "id": "comic-verdict-money",
       "title": "😂 Шуточный вердикт",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     }
   ],
   "love": [

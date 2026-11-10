@@ -55,7 +55,7 @@
       "comic-verdict-money": {
         "tier": 49,
         "free": false,
-        "ready": false
+        "ready": true
       }
     },
     "love": {
