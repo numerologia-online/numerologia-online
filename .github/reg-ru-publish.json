@@ -8,5 +8,5 @@
     "data/day/practical/practical-day-21.json",
     "data/day/practical/practical-day-22.json"
   ],
-  "note": "Owner approved 44 updated practical-day blocks, each of six original recommendations preserved and expanded; publish only six files with existing backup, compare and verification protocol."
+  "note": "Publish owner-approved final 44 practical-day blocks with all six recommendations expanded; exact six JSON files only. Repeat previous 100-block guarded FTPS backup-and-verify workflow. Approval confirmed 2026-11-10."
 }
