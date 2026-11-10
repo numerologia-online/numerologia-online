@@ -1,4 +1,4 @@
-"""Publish only the Telegram exit-button visibility fix, with a guarded rollback."""
+"""Publish only the VPN notice typography tweak, with guarded backup and rollback."""
 import ftplib, io, os, pathlib, ssl, subprocess, time, urllib.request, urllib.parse
 
 HOST = "server172.hosting.reg.ru"
@@ -6,14 +6,14 @@ NEW = "xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
 OLD = "xn--c1adkkdfjbp1a4l.online"
 NAMES = ("account-browser.js", "index.html")
 BASE = {
- "account-browser.js": "1fe10e979e2d2577454c337ccb1a578e70fd684c^",
- "index.html": "816c2f592c6ff2f558a75939e1221197441e9b3^",
+ "account-browser.js": "ec0da87cb9f39e44530e30d01dad47fd8474c17f^",
+ "index.html": "07199d5c04814d5f900e7af12f358bf5d32c889b^",
 }
 expected = {n: subprocess.check_output(["git","show",BASE[n]+":"+n]) for n in NAMES}
 desired = {n: pathlib.Path(n).read_bytes() for n in NAMES}
 
 def public(name):
-    req=urllib.request.Request("https://"+NEW+"/"+name+"?exit_ui="+str(time.time_ns()),
+    req=urllib.request.Request("https://"+NEW+"/"+name+"?vpn_notice_ui="+str(time.time_ns()),
                                headers={"Cache-Control":"no-cache"})
     with urllib.request.urlopen(req,timeout=30) as r:
         if r.status!=200 or urllib.parse.urlsplit(r.geturl()).hostname!=NEW:
@@ -63,12 +63,12 @@ def main():
             raise RuntimeError("PAID_ACCESS_GUARD_MISSING")
         to_write=[n for n in NAMES if live[n]!=desired[n]]
         if not to_write:
-            print("TELEGRAM_EXIT_UI_ALREADY_LIVE",flush=True)
+            print("VPN_NOTICE_ALREADY_LIVE",flush=True)
             return
         backup_root=root+"/site-safeguard-backups"
         try:ftp.mkd(backup_root)
         except ftplib.error_perm:ftp.cwd(backup_root)
-        backup=backup_root+"/telegram-exit-"+str(os.environ.get("GITHUB_RUN_ID",time.time_ns()))
+        backup=backup_root+"/vpn-notice-style-"+str(os.environ.get("GITHUB_RUN_ID",time.time_ns()))
         ftp.mkd(backup)
         for n in to_write:
             write(backup+"/"+n+".bak",live[n])
@@ -84,7 +84,7 @@ def main():
                     raise RuntimeError("PUBLIC_VERIFY_FAILED:"+n)
             if read(site+"/.htaccess")!=guard:
                 raise RuntimeError("GUARD_CHANGED")
-            print("TELEGRAM_EXIT_UI_LIVE_VERIFIED",NEW,flush=True)
+            print("VPN_NOTICE_LIVE_VERIFIED",NEW,flush=True)
         except BaseException:
             for n in reversed(changed):
                 try:
