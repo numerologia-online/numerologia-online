@@ -1,4 +1,4 @@
-name: Publish dark VPN warning typography to REG.RU
+name: Publish clear centered VPN notice to REG.RU
 on:
   push:
     paths:
@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   release:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish dark VPN notice on REG.RU'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish centered VPN notice on REG.RU'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -18,33 +18,34 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Check only wallet warning typography has changed
+      - name: Verify only the warning text and CSS changed
         run: |
           set -euo pipefail
           node --check account-browser.js
           python3 -m py_compile account-service/deploy-telegram-exit-visibility-20261110.py
           python3 - <<'PY'
           import subprocess, pathlib
-          old=subprocess.check_output(["git","show","ec0da87cb9f39e44530e30d01dad47fd8474c17f^:account-browser.js"])
-          new=pathlib.Path("account-browser.js").read_bytes()
-          oldlines=old.splitlines()
-          newlines=new.splitlines()
-          assert len(oldlines)==len(newlines)
-          changed=[i for i,(a,b) in enumerate(zip(oldlines,newlines)) if a!=b]
-          assert len(changed)==1
-          before=oldlines[changed[0]]
-          after=newlines[changed[0]]
-          assert b'.numi-wallet-vpn-warning{' in before and b'.numi-wallet-vpn-warning{' in after
-          assert b'color:#ed1c24' in before and b'color:#252d29' in after
-          assert b'font:300' in after and b'letter-spacing:.055em' in after
-          assert b'-webkit-text-stroke:0' in after and b'white-space:nowrap' in after
-          assert b'for(const exit of logoutControls) exit.hidden=(tg||!current);' in new
-          orig_page=subprocess.check_output(["git","show","07199d5c04814d5f900e7af12f358bf5d32c889b^:index.html"])
-          fresh_page=pathlib.Path("index.html").read_bytes()
-          assert fresh_page==orig_page.replace(b'account-browser.js?v=telegram-logout-hidden-20261110',b'account-browser.js?v=vpn-soft-dark-20261110')
-          print("EXACT_WARNING_TYPOGRAPHY_ONLY",flush=True)
+          original=subprocess.check_output(["git","show","34ba2e0cc52241d699c37a3c1475cf6339ceb076^:account-browser.js"])
+          updated=pathlib.Path("account-browser.js").read_bytes()
+          a=original.splitlines()
+          b=updated.splitlines()
+          assert len(a)==len(b)
+          edits=[(x,y) for x,y in zip(a,b) if x!=y]
+          assert len(edits)==2
+          assert b'.numi-wallet-vpn-warning{' in edits[0][0]
+          assert b'.numi-wallet-vpn-warning{' in edits[0][1]
+          assert b'background:#e6f0ea' in edits[0][1]
+          assert b'width:fit-content' in edits[0][1]
+          assert b'color:#173e30' in edits[0][1]
+          assert b'vpnWarning.textContent="Если окно оплаты зависает, отключите VPN."' in edits[1][0]
+          assert b'vpnWarning.textContent="Зависла оплата? Отключите VPN."' in edits[1][1]
+          assert b'for(const exit of logoutControls) exit.hidden=(tg||!current);' in updated
+          old_html=subprocess.check_output(["git","show","f7a27906784fb07f0c872fc1ec80506bf1eefbfd^:index.html"])
+          new_html=pathlib.Path("index.html").read_bytes()
+          assert new_html==old_html.replace(b'account-browser.js?v=vpn-soft-dark-20261110',b'account-browser.js?v=vpn-centered-notice-20261110')
+          print("CENTERED_WALLET_NOTICE_ONLY",flush=True)
           PY
-      - name: Publish warning style with guarded backup and HTTPS check
+      - name: Deploy verified notice with guarded backup and HTTPS check
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
