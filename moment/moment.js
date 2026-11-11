@@ -69,12 +69,14 @@
   }
   async function checkAccess(){
     const request=++accessRequest;
+    $("moment-ask-intro").hidden=true;
     for(const id of ["moment-subscription-required","moment-member-not-ready","moment-access-error"])$(id).hidden=true;
     $("moment-access-loading").hidden=false;
     try{
       const activeClub=await clubStatus();
       if(request!==accessRequest||!dialog.open)return;
       $("moment-access-loading").hidden=true;
+      $("question-title").hidden=!activeClub;
       $(activeClub?"moment-member-not-ready":"moment-subscription-required").hidden=false;
     }catch(_){
       if(request!==accessRequest||!dialog.open)return;
@@ -83,15 +85,20 @@
     }
   }
   function openQuestion(question){
+    accessRequest++;
     $("question-title").textContent=question.title;
+    $("question-title").hidden=false;
+    $("moment-ask-intro").hidden=false;
+    $("moment-access-loading").hidden=true;
+    for(const id of ["moment-subscription-required","moment-member-not-ready","moment-access-error"])$(id).hidden=true;
     const category=catalog.categories.find(c=>c.id===question.category);
     $("question-topic").textContent=category?category.title:"НУМЕРОЛОГИЯ МОМЕНТА";
     dialog.showModal();document.body.style.overflow="hidden";
-    void checkAccess();
   }
   $("close-dialog").addEventListener("click",()=>dialog.close());
   dialog.addEventListener("close",()=>{accessRequest++;document.body.style.overflow="";});
   dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.close();});
+  $("moment-ask-now").addEventListener("click",()=>{void checkAccess();});
   $("moment-access-retry").addEventListener("click",()=>{void checkAccess();});
   function backToTopics(){active=null;visibleCount=12;search.value="";$("questions-panel").hidden=true;$("category-grid").hidden=false;document.querySelector(".explore .section-heading").hidden=false;renderCategories();$("category-grid").scrollIntoView({behavior:"auto",block:"start"});}
   $("show-all").addEventListener("click",backToTopics);
