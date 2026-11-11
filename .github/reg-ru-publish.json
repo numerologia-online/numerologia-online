@@ -1,5 +1,10 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "After successful 2026-11-11 reviewed homepage rotating reviews demo compact redesign and founder hero image preload (index.html only), restore read-only mode. Preview remains gated by ?reviews_demo=1."
+  "mode": "publish",
+  "files": [
+    "index.html"
+  ],
+  "expected_sha256": {
+    "index.html": "5cb9399ab65061c52069cb661587b142ccd15ea273d5fbdec1eeaccf55b5eea7"
+  },
+  "note": "Owner-approved removal of exactly one redundant homepage hero-copy paragraph on 2026-11-11. No changes to demo visitor counter, reviews, image, or any other site element."
 }
