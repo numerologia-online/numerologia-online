@@ -1,94 +1,157 @@
-"""Guarded, atomic-in-purpose yes/no daily access publication.
-Never touches Telegram, daily mailing, payment tables, or answer JSON.
-If live files have changed independently, stop without publishing.
+"""One-time guarded REG.RU publication of the Club-only Yes/No backend.
+Only three existing PHP files: account catalog, wallet gate and Yes/No answer API.
+No orders, ledger, subscriptions, data tables or answer JSON are modified.
 """
-import ftplib, hashlib, io, json, os, pathlib, ssl, subprocess, time, urllib.error, urllib.request
+import ftplib
+import hashlib
+import io
+import ipaddress
+import json
+import os
+from pathlib import Path
+import re
+import socket
+import ssl
+import subprocess
+import time
+import urllib.error
+import urllib.request
 
-BASE=pathlib.Path(__file__).resolve().parents[2]
-SITE="https://xn--c1adkkdfjbp1a4l.online"
-BASELINE="913bd878d9bff059ab9751c4478b12fc6484fdc6"
-TARGETS={
-  "api/numi-yesno-answer.php":"yesno-service/public/numi-yesno-answer.php",
-  "moment/yes-no/yes-no.js":"moment/yes-no/yes-no.js",
-  "moment/yes-no/index.html":"moment/yes-no/index.html",
-}
+ROOT = Path(__file__).resolve().parents[2]
+BASELINE = "1f496bde450d4e2d8b006adcdd5df602bb9a5bc9"
+DOMAIN = "xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+ORIGIN = "https://" + DOMAIN
+TARGETS = [
+    ("account-service/private/core.php", "private/numi-account-20261031/core.php"),
+    ("account-service/private/wallet.php", "private/numi-account-20261031/wallet.php"),
+    ("yesno-service/public/numi-yesno-answer.php", "www/" + DOMAIN + "/api/numi-yesno-answer.php"),
+]
 
-def old_source(path):
-    return subprocess.run(["git","show",BASELINE+":"+path],cwd=BASE,check=True,
-                          capture_output=True).stdout
+def old_bytes(path):
+    return subprocess.run(
+        ["git", "show", BASELINE + ":" + path],
+        cwd=ROOT, check=True, capture_output=True,
+    ).stdout
 
-def http(path, data=None, method=None):
-    h={"Cache-Control":"no-cache","User-Agent":"numi-daily-free-release"}
-    if data is not None:
-        h["Content-Type"]="application/json"
-        h["Origin"]=SITE
-    req=urllib.request.Request(SITE+path,data=json.dumps(data).encode() if data is not None else None,
-                               headers=h,method=method)
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+def api(path, body=None):
+    headers = {"Origin": ORIGIN, "Cache-Control": "no-cache", "User-Agent": "numi-yesno-club-only-verifier"}
+    payload = None
+    if body is not None:
+        payload = json.dumps(body).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+    request = urllib.request.Request(ORIGIN + path, data=payload, headers=headers)
     try:
-        with urllib.request.urlopen(req,timeout=25) as r:
-            return r.status,json.loads(r.read(30000))
-    except urllib.error.HTTPError as exc:
-        return exc.code,json.loads(exc.read(30000))
+        with urllib.request.urlopen(request, timeout=25) as response:
+            return response.status, json.loads(response.read(30000))
+    except urllib.error.HTTPError as err:
+        try:
+            content = json.loads(err.read(30000))
+        except ValueError:
+            content = {}
+        return err.code, content
 
 def run():
-    ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
-    ftp.connect("server172.hosting.reg.ru",21)
-    ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+    host = os.environ["REG_FTP_HOST"].strip()
+    user = os.environ["REG_FTP_USER"]
+    password = os.environ["REG_FTP_PASSWORD"]
+    ipaddress.ip_address(host)
+    ptr = socket.gethostbyaddr(host)[0].rstrip(".").lower()
+    if not re.fullmatch(r"[a-z0-9.-]+\.hosting\.reg\.ru", ptr):
+        raise RuntimeError("Hosting reverse DNS rejected")
+    resolved = {item[4][0] for item in socket.getaddrinfo(ptr, 21, type=socket.SOCK_STREAM)}
+    if host not in resolved:
+        raise RuntimeError("Hosting DNS mismatch")
+    fresh = {name: (ROOT / name).read_bytes() for name, _ in TARGETS}
+    previous = {name: old_bytes(name) for name, _ in TARGETS}
+    php = fresh["yesno-service/public/numi-yesno-answer.php"]
+    core = fresh["account-service/private/core.php"]
+    wallet = fresh["account-service/private/wallet.php"]
+    if (b"$paidAnswer=" in php or b"if (!$member)" not in php
+        or b"INSERT IGNORE INTO numi_yesno_daily_uses" not in php
+        or b"naCatalogHasAccess($db,['id'=>$accountId],'club_month','club')" not in php
+        or b"$price=$club?0:1900" in core
+        or b"$price=0;" not in core or b"'CLUB_REQUIRED'" not in core
+        or b"YESNO_CLUB_ONLY" not in wallet):
+        raise RuntimeError("Club-only access source verification failed")
+    ftp = ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=40)
+    ftp.connect(host, 21)
+    ftp.login(user, password)
     ftp.prot_p()
-    base=ftp.pwd().rstrip("/")+"/www/xn--c1adkkdfjbp1a4l.online/"
-    def get(p):
-        buf=io.BytesIO()
-        ftp.retrbinary("RETR "+base+p,buf.write)
-        return buf.getvalue()
-    def write(p,b):
-        ftp.storbinary("STOR "+p,io.BytesIO(b))
-        result=io.BytesIO()
-        ftp.retrbinary("RETR "+p,result.write)
-        if result.getvalue()!=b:raise RuntimeError("FTP readback mismatch")
+    ftp.set_pasv(True)
     try:
-        # Strict preflight: all three production targets must match the previous
-        # approved repo revision. No replacing drifted files with older code.
-        fresh={p:(BASE/local).read_bytes() for p,local in TARGETS.items()}
-        before={p:get(p) for p in TARGETS}
-        for p,local in TARGETS.items():
-            if before[p] not in (old_source(local),fresh[p]):
-                raise RuntimeError("Production drift detected: "+p)
-        if all(before[p]==fresh[p] for p in TARGETS):
-            print("YESNO_DAILY_FREE_ALREADY_CURRENT",flush=True)
-            return
-        home=base.split("/www/",1)[0]
-        backup=home+"/site-safeguard-backups/yesno-daily-free-"+time.strftime("%Y%m%dT%H%M%SZ",time.gmtime())+"-"+os.environ.get("GITHUB_RUN_ID","local")
-        ftp.mkd(backup)
-        for i,p in enumerate(TARGETS):
-            write(backup+"/"+str(i)+".bak",before[p])
-        touched=[]
-        try:
-            # Publish the gate before the new UI and activate last via HTML.
-            for p in TARGETS:
-                if before[p]!=fresh[p]:
-                    touched.append(p)
-                    write(base+p,fresh[p])
-            for p in TARGETS:
-                if get(p)!=fresh[p]:raise RuntimeError("Production readback mismatch: "+p)
-            code,status=http("/api/numi-yesno-answer.php?status=1")
-            if code!=200 or status.get("authenticated") is not False or status.get("remaining")!=0:
-                raise RuntimeError("Anonymous status check failed")
-            code,answer=http("/api/numi-yesno-answer.php",{"question":"yn-man-001","time":"12:34"},method="POST")
-            if code!=401 or answer.get("error")!="LOGIN_REQUIRED":
-                raise RuntimeError("Anonymous paid-answer protection failed")
-            code,_=http("/api/numi-yesno-answer.php?question=yn-man-001&time=12:34")
-            if code!=405:raise RuntimeError("Legacy GET answer still available")
-            print("YESNO_DAILY_FREE_RELEASE "+json.dumps({
-                "success":True,"files":list(TARGETS),"anonymous_protection":True,
-                "old_get_blocked":True,"backup":backup.rsplit("/",1)[-1]
-            }),flush=True)
-        except BaseException:
-            for p in reversed(touched):
-                write(base+p,before[p])
-            raise
+        home = ftp.pwd().rstrip("/")
+        def remote(relative):
+            return home + "/" + relative
+        def read(target):
+            buf = io.BytesIO()
+            ftp.retrbinary("RETR " + target, buf.write)
+            return buf.getvalue()
+        def write(target, value):
+            ftp.storbinary("STOR " + target, io.BytesIO(value))
+            if digest(read(target)) != digest(value):
+                raise RuntimeError("Readback mismatch")
+        website = remote("www/" + DOMAIN + "/index.html")
+        home_page = read(website)
+        if b"numi-account" not in home_page or b"account-browser.js" not in home_page:
+            raise RuntimeError("Website root identity not confirmed")
+        paths = {name: remote(dest) for name, dest in TARGETS}
+        current = {name: read(paths[name]) for name, _ in TARGETS}
+        # All source versions must be known BEFORE any modification.
+        for name, _ in TARGETS:
+            if current[name] not in (previous[name], fresh[name]):
+                print("DRIFT_BLOCKED " + name + " sha256=" + digest(current[name]), flush=True)
+                raise RuntimeError("Unreviewed production code; no files touched")
+        changed = [name for name, _ in TARGETS if current[name] != fresh[name]]
+        if changed:
+            backup = remote("site-safeguard-backups/yesno-club-only-" +
+                            time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()) + "-" +
+                            os.environ.get("GITHUB_RUN_ID", "manual"))
+            ftp.mkd(backup)
+            for i, name in enumerate(changed):
+                write(backup + "/" + str(i) + ".bak", current[name])
+            uploaded = []
+            try:
+                for name in changed:
+                    uploaded.append(name)
+                    write(paths[name], fresh[name])
+                for name, _ in TARGETS:
+                    if digest(read(paths[name])) != digest(fresh[name]):
+                        raise RuntimeError("Production PHP verification failed")
+                status, session = api("/api/numi-yesno-answer.php?status=1")
+                if status != 200 or session.get("authenticated") is not False or session.get("remaining") != 0:
+                    raise RuntimeError("Anonymous Yes/No status regression")
+                status, denied = api("/api/numi-yesno-answer.php", {"question":"yn-man-001","time":"12:34"})
+                if status != 401 or denied.get("error") != "LOGIN_REQUIRED":
+                    raise RuntimeError("Anonymous answer not protected")
+                status, quote = api("/api/numi-account.php", {
+                    "action":"product_quote","product_code":"yesno_question",
+                    "question_id":"yn-man-001","question_time":"12:34"
+                })
+                if (status != 200 or quote.get("ok") is not True
+                    or quote.get("price_kopeks") != 0
+                    or quote.get("availability") != "CLUB_REQUIRED"
+                    or quote.get("member_included") is not False
+                    or quote.get("checkout_enabled") is not False):
+                    raise RuntimeError("Public Yes/No purchase was not disabled")
+                print("YESNO_CLUB_ONLY_VERIFIED " + json.dumps({
+                    "changed":changed,"backup":backup.rsplit("/",1)[-1],
+                    "guest_daily_free":1,"individual_price_kopeks":0,
+                    "subscription_only_after_free":True,"anonymous_protected":True,
+                }),flush=True)
+            except BaseException:
+                for name in reversed(uploaded):
+                    write(paths[name], current[name])
+                raise
+        else:
+            print("YESNO_CLUB_ONLY_ALREADY_CURRENT",flush=True)
     finally:
-        try:ftp.quit()
-        except Exception:ftp.close()
+        try:
+            ftp.quit()
+        except Exception:
+            ftp.close()
 
-if __name__=="__main__":
+if __name__ == "__main__":
     run()
