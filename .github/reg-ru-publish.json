@@ -1,5 +1,10 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-11 verified 6-file REG.RU publication: clarified Yes/No (100 included without per-answer payment by Club 490 RUB/month, 1 daily free without Club, then 19 RUB) and repaired wallet top-up CTA via authenticated account deep link. All original files backed up and readback verified. No backend/payment changes. Restored read-only mode."
+  "mode": "publish",
+  "files": [
+    "account-browser.js"
+  ],
+  "expected_sha256": {
+    "account-browser.js": "731a22a5021262d141edbc46c5f6732f717497989e1773757595534559b7c689"
+  },
+  "note": "After Yes/No wallet deep link owner approval, ensure verified account opens its existing topup dialog even if Telegram identification temporarily disables the account button. One-file guarded incremental safety fix; preserves existing purchase and session checks."
 }
