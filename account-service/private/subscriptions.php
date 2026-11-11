@@ -172,7 +172,8 @@ function naLiveSubscriptionCheckoutData(PDO $db,string $checkoutId,string $accou
 }
 /** Explicitly consented *initial* purchase, not a wallet top-up. */
 function naLiveSubscriptionStart(
-    PDO $db,array $account,array $config,string $code,string $email,string $requestKey
+    PDO $db,array $account,array $config,string $code,string $email,string $requestKey,
+    ?callable $testTransport=null
 ): array {
     if(!naLiveRecurringAllowed($config))throw new RuntimeException('REAL_RECURRING_NOT_APPROVED');
     $item=naLiveSubscriptionItem($code);
@@ -230,7 +231,7 @@ function naLiveSubscriptionStart(
     if(isset($saved) && $saved['order_status']==='paid')
         return ['checkout_id'=>$id,'status'=>'succeeded','confirmation_url'=>null,
             'reused'=>true];
-    return naLiveSubscriptionCreatePayment($db,$config,$id,$account['id'],null);
+    return naLiveSubscriptionCreatePayment($db,$config,$id,$account['id'],null,$testTransport);
 }
 /**
  * Runs under the account lock, including the provider POST: a cancellation
@@ -238,7 +239,8 @@ function naLiveSubscriptionStart(
  * same provider idempotency key; ambiguous requests are never replayed after 23h.
  */
 function naLiveSubscriptionCreatePayment(
-    PDO $db,array $config,string $checkoutId,string $accountId,?string $renewMethod
+    PDO $db,array $config,string $checkoutId,string $accountId,?string $renewMethod,
+    ?callable $testTransport=null
 ): array {
     if(!naLiveRecurringAllowed($config))throw new RuntimeException('REAL_RECURRING_NOT_APPROVED');
     $db->beginTransaction();
@@ -303,7 +305,7 @@ function naLiveSubscriptionCreatePayment(
             $payload['save_payment_method']=false;
         }
         $key=hash('sha256','numi-live-sub-v1:'.$checkoutId);
-        $payment=naRealPaymentTransport($config,$key,$payload);
+        $payment=naRealPaymentTransport($config,$key,$payload,$testTransport);
         naLiveSubscriptionPaymentCheck($payment,$checkout,$order);
         $url=$initial?naRealPaymentConfirmationUrl($payment):null;
         if($initial && ($payment['status']??null)==='pending' && $url===null)
@@ -324,12 +326,13 @@ function naLiveSubscriptionCreatePayment(
 
 
 /** Reconcile only a persisted live provider payment; never trust browser status. */
-function naLiveSubscriptionSync(PDO $db,array $config,string $checkoutId,string $accountId): array {
+function naLiveSubscriptionSync(PDO $db,array $config,string $checkoutId,string $accountId,?callable $testReader=null): array {
     naRealWalletRequireLive($config);
     $checkout=naLiveSubscriptionCheckoutData($db,$checkoutId,$accountId);
     if(!$checkout['provider_payment_id'])
         return ['checkout_id'=>$checkoutId,'status'=>'pending'];
-    $payment=naRealWalletFetchPayment($config,$checkout['provider_payment_id']);
+    $payment=$testReader!==null?$testReader($checkout['provider_payment_id'])
+        :naRealWalletFetchPayment($config,$checkout['provider_payment_id']);
     if(($payment['id']??null)!==$checkout['provider_payment_id'])
         throw new RuntimeException('REAL_SUBSCRIPTION_PAYMENT_REFERENCE_MISMATCH');
     naLiveSubscriptionPaymentCheck($payment,$checkout,[
@@ -510,7 +513,7 @@ function naLiveSubscriptionRenewIntent(PDO $db,array $config,string $accountId,s
     }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
 }
 /** Invoked only by the existing authenticated worker, never a customer API. */
-function naLiveSubscriptionTick(PDO $db,array $config): array {
+function naLiveSubscriptionTick(PDO $db,array $config,?callable $testTransport=null,?callable $testReader=null): array {
     if(!naLiveRecurringAllowed($config))return ['enabled'=>false,'processed'=>0];
     $result=['enabled'=>true,'reconciled'=>0,'started'=>0,'review'=>0];
     // Reconcile pending payment/receipt first, even when user has disabled renewal.
@@ -521,7 +524,7 @@ function naLiveSubscriptionTick(PDO $db,array $config): array {
         AND c.provider_payment_id IS NOT NULL ORDER BY c.created_at LIMIT 30");
     foreach($pending->fetchAll(PDO::FETCH_ASSOC) as $row){
         try{
-            naLiveSubscriptionSync($db,$config,$row['id'],$row['account_id']);
+            naLiveSubscriptionSync($db,$config,$row['id'],$row['account_id'],$testReader);
             $result['reconciled']++;
         }catch(Throwable $e){
             $result['review']++;
@@ -538,10 +541,10 @@ function naLiveSubscriptionTick(PDO $db,array $config): array {
             $renew=naLiveSubscriptionRenewIntent($db,$config,$item['account_id'],$item['product_code']);
             if($renew===null)continue;
             if($renew['has_payment']){
-                naLiveSubscriptionSync($db,$config,$renew['checkout_id'],$item['account_id']);
+                naLiveSubscriptionSync($db,$config,$renew['checkout_id'],$item['account_id'],$testReader);
             }else{
                 naLiveSubscriptionCreatePayment($db,$config,$renew['checkout_id'],
-                    $item['account_id'],$renew['payment_method_id']);
+                    $item['account_id'],$renew['payment_method_id'],$testTransport);
             }
             $result['started']++;
         }catch(Throwable $e){
