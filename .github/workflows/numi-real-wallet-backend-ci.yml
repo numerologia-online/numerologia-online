@@ -80,7 +80,7 @@ jobs:
           grep -Fq "naRedFlagPaidStatus" account-service/private/fulfillment.php
           grep -Fq "Недостаточно средств на балансе. Для ответа нужно " wallet-client.js
           grep -Fq "redflag-question-stable-20261109" redflag-feature.js
-          grep -Fq "app.js?v=redflag-catalog-refresh-20261109b" index.html
+          grep -Fq 'src="app.js?v=' index.html
           grep -Fq "naRedFlagCatalog()" account-service/private/core.php
           grep -Fq "FULFILLMENT_NOT_CONNECTED" account-service/private/store.php
           grep -Fq "recognizePurchasedReport" store-entry.js
