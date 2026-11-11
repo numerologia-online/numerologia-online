@@ -45,16 +45,20 @@ function explain(container,err){
 function clubOffer(container,quote,item,onMaterial){
   const regular=Number(quote.regular_price_kopeks);
   const club=Number(quote.club_price_kopeks);
+  const yesNoIncluded=item?.product_code==="yesno_question"&&club===0;
   if(quote.club_active===true||quote.kind==="subscription"
-    ||!Number.isSafeInteger(regular)||!Number.isSafeInteger(club)||club<=0||regular<=club)return;
+    ||!Number.isSafeInteger(regular)||!Number.isSafeInteger(club)||club<0
+    ||regular<=club||(club===0&&!yesNoIncluded))return;
   const subscription=Number(quote.club_subscription_price_kopeks);
-  const message="С клубом этот материал стоит "+rub(club)+
-    (Number.isSafeInteger(subscription)&&subscription>0
-      ? ". Клуб — "+rub(subscription)+"/мес.":".");
+  const priceNote=Number.isSafeInteger(subscription)&&subscription>0
+    ? " Клуб — "+rub(subscription)+"/мес.": "";
+  const message=yesNoIncluded
+    ? "С Клубом все 100 вопросов «Да или нет» без дополнительной оплаты."+priceNote
+    : "С клубом этот материал стоит "+rub(club)+(priceNote?"."+priceNote:".");
   const hint=el("p",message);
   hint.style.cssText="margin:7px 0 3px;font:13px/1.5 system-ui;color:#5e6963";
   container.append(hint);
-  const join=action(container,"Вступить в клуб",async()=>{
+  const join=action(container,yesNoIncluded?"Подключить Клуб":"Вступить в клуб",async()=>{
     join.disabled=true;
     try{
       const {openStore}=await import("/store-entry.js?v=subscription-controls-20261108");
