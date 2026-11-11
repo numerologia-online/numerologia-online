@@ -90,7 +90,12 @@
   function openRequestedWalletTopup(){
     if(params.get("wallet_add")!=="1"||walletDeepLinkOpened||!current)return;
     walletDeepLinkOpened=true;
-    if(!dialog.open)ownerButton.click();
+    if(!dialog.open){
+      ownerButton.click();
+      // Telegram may still be verifying identity and temporarily disable the button.
+      // The wallet is opened only after the account API verified current above.
+      if(!dialog.open)dialog.showModal();
+    }
     showTopupPage();
   }
   const resetToken = params.get("reset_token");
