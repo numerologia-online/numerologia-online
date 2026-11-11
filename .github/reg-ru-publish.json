@@ -1,10 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "account-browser.js"
-  ],
-  "expected_sha256": {
-    "account-browser.js": "731a22a5021262d141edbc46c5f6732f717497989e1773757595534559b7c689"
-  },
-  "note": "After Yes/No wallet deep link owner approval, ensure verified account opens its existing topup dialog even if Telegram identification temporarily disables the account button. One-file guarded incremental safety fix; preserves existing purchase and session checks."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-11 verified Yes/No Club access information, direct authenticated wallet top-up navigation, and Telegram-disabled-button fallback. REG.RU FTPS backed up/readback all files in 6-file release and subsequent 1-file safe adjustment. Return publisher to read-only."
 }
