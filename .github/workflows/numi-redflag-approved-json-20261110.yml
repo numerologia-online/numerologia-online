@@ -226,6 +226,7 @@ jobs:
         run: |
           python3 -u - <<'PY'
           import ftplib, hashlib, io, json, os, pathlib, re, ssl, subprocess
+          from datetime import date, timedelta
           names=['romance','relationship-or-comfort','adult-partner',
                  'near-him','hard-moment','relationship-format','family-or-triangle',
                  'honest-or-disappear','love-or-attention']
@@ -243,9 +244,14 @@ jobs:
               date_keys={single[1]+'-'+single[2]}
           elif batch:
               first_day,first_month,last_day,last_month=map(int,batch.groups())
-              if first_month!=last_month or last_day-first_day!=4:
+              try:
+                  start=date(2024,first_month,first_day)
+                  end=date(2024+int(last_month<first_month),last_month,last_day)
+              except ValueError:
                   raise RuntimeError('INVALID_FIVE_DATE_RANGE')
-              date_keys={str(day)+'-'+str(first_month) for day in range(first_day,last_day+1)}
+              if (end-start).days!=4:
+                  raise RuntimeError('INVALID_FIVE_DATE_RANGE')
+              date_keys={f'{(start+timedelta(days=i)).day}-{(start+timedelta(days=i)).month}' for i in range(5)}
           else:
               raise RuntimeError('UNAPPROVED_RELEASE_MESSAGE')
           date_label='_'.join(sorted(date_keys,key=lambda s:int(s.split('-')[0])))
