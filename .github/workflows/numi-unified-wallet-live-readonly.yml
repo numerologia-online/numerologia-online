@@ -44,6 +44,22 @@ jobs:
               if str(e).startswith("550"):return None
               raise
             return out.getvalue()
+          # Read ONLY selected boolean flags for live subscriptions; never emit secrets.
+          live_cfg=read(home+"/private/numi-wallet-live/config.local.php",12000)
+          import re
+          names=("wallet_mode","real_wallet_enabled","fiscalization_verified",
+                 "refunds_verified","advance_offset_receipts_verified",
+                 "offset_receipt_worker_verified","launch_approved","provider_test_mode",
+                 "offset_receipt_reviewed","recurring_merchant_approved",
+                 "subscription_receipts_verified","live_recurring_enabled")
+          def flag(n):
+            if live_cfg is None:return "missing_config"
+            pattern=r"['\\\"]"+re.escape(n)+r"['\\\"]\\s*=>\\s*(true|false|['\\\"][a-z]+['\\\"])"
+            match=re.search(pattern,live_cfg.decode("utf-8","replace"),re.I)
+            if not match:return "unset"
+            val=match.group(1).lower().strip("'\\\"")
+            return val if val in ("true","false","live","disabled") else "other"
+          print("LIVE_RECURRING_SAFE_FLAGS",json.dumps({n:flag(n) for n in names},sort_keys=True),flush=True)
           try:
             page=read(pub+"/index.html")
             if page is None:raise RuntimeError("WEBROOT_NOT_FOUND")
