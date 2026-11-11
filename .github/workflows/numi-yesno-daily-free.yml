@@ -55,3 +55,4 @@ jobs:
         run: python3 -u yesno-service/daily-free/deploy.py
 
 # Retry the same protected release after TLS hostname correction; never connect by raw IP.
+# REG.RU current Cyrillic domain is served from its original verified .online document root.
