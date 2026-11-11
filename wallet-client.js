@@ -76,6 +76,12 @@ function clubOffer(container,quote,item,onMaterial){
 function keyFor(item){return JSON.stringify(item);}
 export async function showInlinePurchase(item,container,onMaterial){
   if(!container||typeof onMaterial!=="function")throw new Error("INVALID_PURCHASE_TARGET");
+  // Compatibility guard for cached clients: Yes/No has NO individual sales.
+  if(item?.product_code==="yesno_question"){
+    note(container,"Один ответ в день бесплатно. Все остальные доступны только в Клубе, без доплаты.");
+    action(container,"Подключить Клуб · 490 ₽/мес.",()=>location.assign("/?account=1&club_offer=1"));
+    return;
+  }
   note(container,"Проверяем доступ и баланс…");
   let quote;
   try{quote=await walletRequest("wallet_quote",{item});}catch(e){explain(container,e);return;}
