@@ -1,20 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "moment/yes-no/index.html",
-    "moment/yes-no/yes-no.css",
-    "moment/yes-no/yes-no.js",
-    "wallet-client.js",
-    "account-browser.js",
-    "index.html"
-  ],
-  "expected_sha256": {
-    "moment/yes-no/index.html": "a46c1f98b48a3a6ceba853273df1bed193397a454129d0de037c9f4fa5e8c24c",
-    "moment/yes-no/yes-no.css": "8a1d8defd340dae8e51636333cf44395bac4f3a9bb2423e24a675a21720b2e3d",
-    "moment/yes-no/yes-no.js": "55211f81f438385f6b0cedc14c9e1574981d441286cbd7e67ab932e306b85c01",
-    "wallet-client.js": "bbe329b9cbd4925bb7cea76d4ccf0d0b078fb98d9380496630c6f99f2acfca25",
-    "account-browser.js": "fbe16cf51da23e12de282fde961dc76f0847613ff244d447404a7416718ebe35",
-    "index.html": "891151e28ea05192168aedfb3819c939e07269544a3499b24c6ac0075a561cfc"
-  },
-  "note": "Owner 2026-11-11 requested Yes/No clarify all 100 questions included free of per-answer charge with Club 490 RUB/month, free account gets 1 answer/day and paid 19 RUB each thereafter. Replace broken insufficient-balance CTA (goes home) with deep link to verified account wallet top-up, no new payment engine, no backend change. Six guarded existing files only, each backed up/readback verified. Preserve disabled reviews."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-11 verified 6-file REG.RU publication: clarified Yes/No (100 included without per-answer payment by Club 490 RUB/month, 1 daily free without Club, then 19 RUB) and repaired wallet top-up CTA via authenticated account deep link. All original files backed up and readback verified. No backend/payment changes. Restored read-only mode."
 }
