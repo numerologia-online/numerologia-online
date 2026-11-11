@@ -77,7 +77,8 @@ def run():
         or b"YESNO_CLUB_ONLY" not in wallet):
         raise RuntimeError("Club-only access source verification failed")
     ftp = ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=40)
-    ftp.connect(host, 21)
+    # TLS certificate is issued to the verified REG.RU hostname, not its IP.
+    ftp.connect(ptr, 21)
     ftp.login(user, password)
     ftp.prot_p()
     ftp.set_pasv(True)
