@@ -37,6 +37,7 @@ $db->exec("CREATE TABLE numi_orders(
     amount_kopeks INT UNSIGNED NOT NULL,
     currency CHAR(3) NOT NULL DEFAULT 'RUB',
     provider VARCHAR(50) NULL,
+    provider_payment_id VARCHAR(191) NULL,
     status ENUM('pending','paid','refunded','cancelled') NOT NULL DEFAULT 'pending',
     verified_at DATETIME NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
