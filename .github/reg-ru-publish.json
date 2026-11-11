@@ -1,5 +1,10 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-11 verified removal of redundant home hero subtitle from live REG.RU. Restore safe read-only mode. Existing reviews demo remains gated by ?reviews_demo=1."
+  "mode": "publish",
+  "files": [
+    "index.html"
+  ],
+  "expected_sha256": {
+    "index.html": "55f423261a1f13030fd98826e552055f6f795b70971d1edcc1f9807b8e0f5535"
+  },
+  "note": "Owner 2026-11-11 reviewed one isolated change: remove demo live-person counter and let the rotating review fill the compact full-width strip. Keep the opt-in demo gate ?reviews_demo=1, no change to review text data or payments. Back up exact original before FTPS publish."
 }
