@@ -22,6 +22,7 @@ function action(container,label,callback){
 }
 function note(container,message){container.replaceChildren(el("p",message));}
 function openAccount(){const button=document.querySelector('[data-account-open="profile"]');if(button)button.click();else location.assign("/?account=1");}
+function openWalletTopup(){location.assign("/?account=1&wallet_add=1");}
 function explain(container,err){
   const error=String(err?.message||"");
   if(error==="LOGIN_REQUIRED"){
@@ -30,7 +31,7 @@ function explain(container,err){
   }
   if(error==="INSUFFICIENT_BALANCE"||error==="REAL_INSUFFICIENT_BALANCE"){
     note(container,"Недостаточно средств на балансе. Пополните баланс, чтобы открыть ответ.");
-    action(container,"Пополнить баланс",openAccount);return;
+    action(container,"Пополнить баланс",openWalletTopup);return;
   }
   if(error==="ITEM_ALREADY_OWNED"||error==="REAL_ALREADY_PURCHASED"){
     note(container,"Ответ уже куплен. Нажмите на вопрос ещё раз.");return;
@@ -88,7 +89,7 @@ export async function showInlinePurchase(item,container,onMaterial){
   if(!Number.isSafeInteger(amount)||amount<=0){note(container,"Не удалось проверить стоимость.");return;}
   if(Number(quote.balance_kopeks)<amount){
     note(container,"Недостаточно средств на балансе. Для ответа нужно "+rub(amount)+", сейчас на балансе "+rub(quote.balance_kopeks)+".");
-    action(container,"Пополнить баланс",openAccount);
+    action(container,"Пополнить баланс",openWalletTopup);
     clubOffer(container,quote,item,onMaterial);
     return;
   }
