@@ -93,6 +93,11 @@ jobs:
         run: |
           set -euo pipefail
           php account-service/tests/real-wallet.php
+      - name: Existing catalog and subscriptions remain valid
+        run: |
+          set -euo pipefail
+          php account-service/tests/store.php
+          php account-service/tests/subscriptions.php
       - name: Verify generated Red Flag catalog matches the one editorial source
         run: |
           set -euo pipefail
@@ -100,11 +105,6 @@ jobs:
           python3 scripts/build-store-assets.py
           git diff --exit-code -- account-service/private/redflag-catalog.json redflag-public-catalog.js store-catalog.json account-service/private/store-assets.json
           node --test tests/redflag-calendar-coverage.test.mjs
-      - name: Existing catalog and subscriptions remain valid
-        run: |
-          set -euo pipefail
-          php account-service/tests/store.php
-          php account-service/tests/subscriptions.php
 
   publish-reviewed-redflag:
     # Exact release-message gate and required passing wallet regressions.
