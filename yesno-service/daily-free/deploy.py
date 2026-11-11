@@ -20,11 +20,13 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[2]
 BASELINE = "1f496bde450d4e2d8b006adcdd5df602bb9a5bc9"
 DOMAIN = "xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+# REG.RU serves the current .рф domain from this existing website directory.
+SITE_DIR = "www/xn--c1adkkdfjbp1a4l.online"
 ORIGIN = "https://" + DOMAIN
 TARGETS = [
     ("account-service/private/core.php", "private/numi-account-20261031/core.php"),
     ("account-service/private/wallet.php", "private/numi-account-20261031/wallet.php"),
-    ("yesno-service/public/numi-yesno-answer.php", "www/" + DOMAIN + "/api/numi-yesno-answer.php"),
+    ("yesno-service/public/numi-yesno-answer.php", SITE_DIR + "/api/numi-yesno-answer.php"),
 ]
 
 def old_bytes(path):
@@ -94,7 +96,7 @@ def run():
             ftp.storbinary("STOR " + target, io.BytesIO(value))
             if digest(read(target)) != digest(value):
                 raise RuntimeError("Readback mismatch")
-        website = remote("www/" + DOMAIN + "/index.html")
+        website = remote(SITE_DIR + "/index.html")
         home_page = read(website)
         if b"numi-account" not in home_page or b"account-browser.js" not in home_page:
             raise RuntimeError("Website root identity not confirmed")
