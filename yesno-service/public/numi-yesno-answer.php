@@ -23,17 +23,9 @@ function ynCreateQuotaTable(PDO $db): void {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 }
 function ynClubMember(PDO $db, string $accountId): bool {
-    // Real, verified paid club entitlements only. Owner tests and demo orders do not count.
-    $sql = "SELECT 1 FROM numi_entitlements e
-      JOIN numi_orders o ON o.id=e.order_id
-      WHERE e.account_id=? AND e.status='active'
-      AND e.product_code IN ('club_month','club','club_monthly','club-monthly','club_subscription','numi_club')
-      AND e.expires_at IS NOT NULL AND e.expires_at > UTC_TIMESTAMP()
-      AND o.status='paid' AND o.verified_at IS NOT NULL
-      LIMIT 1";
-    $query=$db->prepare($sql);
-    $query->execute([$accountId]);
-    return (bool)$query->fetchColumn();
+    // Use the account service's canonical, provider-verified Club entitlement.
+    // In live mode sandbox subscriptions cannot unlock answers.
+    return naCatalogHasAccess($db,['id'=>$accountId],'club_month','club');
 }
 function ynUsed(PDO $db, string $accountId, string $day): ?array {
     $stmt=$db->prepare('SELECT question_id,question_time FROM numi_yesno_daily_uses WHERE account_id=? AND use_day=? LIMIT 1');
@@ -90,9 +82,9 @@ try {
         ||($data['calculation_version']??'')!=='time-digit-sum-v1'
         ||!is_string($data['answers'][(string)$sum]??null))
         ynReply(503,['ok'=>false,'error'=>'ANSWER_UNAVAILABLE']);
-    // Atomic database claim: concurrent tabs cannot obtain two distinct free answers.
-    $paidAnswer=naCatalogHasAccess($db,$account,'yesno_question','yesno:'.$q.':'.$clock);
-    if (!$member && !$paidAnswer) {
+    // One free answer per Moscow day outside the Club. Separate purchases
+    // no longer exist and cannot bypass this atomic server-side limit.
+    if (!$member) {
         $stmt=$db->prepare('INSERT IGNORE INTO numi_yesno_daily_uses(account_id,use_day,question_id,question_time) VALUES(?,?,?,?)');
         $stmt->execute([$id,$day,$q,$clock]);
         if ($stmt->rowCount()!==1) {
