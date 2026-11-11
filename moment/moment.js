@@ -3,12 +3,9 @@
   const $=id=>document.getElementById(id);
   const grid=$("category-grid"),list=$("question-list"),search=$("question-search"),clear=$("clear-search");
   const resultsTitle=$("results-title"),resultsMsg=$("results-message"),showMore=$("show-more"),showAll=$("show-all");
-  const dialog=$("question-dialog"),form=$("moment-form"),partnerField=$("partner-field"),eventField=$("event-field");
-  const customWrap=$("custom-question-wrap"),customModeField=$("custom-mode-field"),error=$("form-error");
-  let catalog=null,active=null,visibleCount=12,selected=null,custom=false,mode="self";
+  const dialog=$("question-dialog");
+  let catalog=null,active=null,visibleCount=12,accessRequest=0;
   const norm=t=>String(t||"").toLocaleLowerCase("ru-RU").replace(/ё/g,"е").replace(/[^а-яa-z0-9 ]/gi," ").replace(/\s+/g," ").trim();
-  const safeDate=(v)=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;const [y,m,d]=v.split("-").map(Number);const date=new Date(Date.UTC(y,m-1,d));return y>=1900&&y<=2100&&date.getUTCFullYear()===y&&date.getUTCMonth()+1===m&&date.getUTCDate()===d;};
-  const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");};
   const html=(tag,cls,txt)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(txt!==undefined)el.textContent=txt;return el;};
   function renderCategories(){
     grid.replaceChildren();
@@ -43,55 +40,65 @@
     });
     showMore.hidden=visibleCount>=found.length;
   }
-  function updateModeFields(){
-    partnerField.hidden=mode!=="partner";eventField.hidden=mode!=="event";
-    $("birth-two").required=mode==="partner";$("event-date").required=mode==="event";
-    if(mode!=="partner")$("birth-two").value="";
-    if(mode!=="event")$("event-date").value="";
+  const postAccount=async body=>{
+    const response=await fetch("/api/numi-account.php",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json"},body:JSON.stringify(body)
+    });
+    const data=await response.json();
+    if(!response.ok||data?.ok!==true)throw new Error("ACCOUNT_UNAVAILABLE");
+    return data;
+  };
+  const telegramInitData=()=>{
+    const fromSdk=window.Telegram?.WebApp?.initData;
+    if(typeof fromSdk==="string"&&fromSdk)return fromSdk;
+    try{return new URLSearchParams(location.hash.replace(/^#/,"")).get("tgWebAppData")||"";}catch(_){return "";}
+  };
+  async function clubStatus(){
+    // Only a real server-verified paid Club entitlement grants access.
+    let result=await postAccount({action:"product_quote",product_code:"club_month"});
+    if(result.authenticated===false){
+      const signed=telegramInitData();
+      if(signed){
+        await postAccount({action:"telegram",init_data:signed});
+        result=await postAccount({action:"product_quote",product_code:"club_month"});
+      }
+    }
+    if(typeof result.club_active!=="boolean")throw new Error("UNVERIFIED_SUBSCRIPTION");
+    return result.club_active;
+  }
+  async function checkAccess(){
+    const request=++accessRequest;
+    for(const id of ["moment-subscription-required","moment-member-not-ready","moment-access-error"])$(id).hidden=true;
+    $("moment-access-loading").hidden=false;
+    try{
+      const activeClub=await clubStatus();
+      if(request!==accessRequest||!dialog.open)return;
+      $("moment-access-loading").hidden=true;
+      $(activeClub?"moment-member-not-ready":"moment-subscription-required").hidden=false;
+    }catch(_){
+      if(request!==accessRequest||!dialog.open)return;
+      $("moment-access-loading").hidden=true;
+      $("moment-access-error").hidden=false;
+    }
   }
   function openQuestion(question){
-    selected=question||null;custom=!question;mode=custom?"self":question.mode;
-    form.reset();$("form-error").hidden=true;$("moment-confirmation").hidden=true;form.hidden=false;
-    $("question-title").textContent=custom?"Задайте свой вопрос":question.title;
-    const category=question?catalog.categories.find(c=>c.id===question.category):null;
-    $("question-topic").textContent=category?category.title:"ВАШ ЛИЧНЫЙ ВОПРОС";
-    customWrap.hidden=!custom;customModeField.hidden=!custom;updateModeFields();
-    $("moment-clock-label").textContent="Дата и время зафиксируются при подтверждении.";
+    $("question-title").textContent=question.title;
+    const category=catalog.categories.find(c=>c.id===question.category);
+    $("question-topic").textContent=category?category.title:"НУМЕРОЛОГИЯ МОМЕНТА";
     dialog.showModal();document.body.style.overflow="hidden";
-    (custom?$("custom-question"):$("birth-one")).focus({preventScroll:true});
+    void checkAccess();
   }
   $("close-dialog").addEventListener("click",()=>dialog.close());
-  dialog.addEventListener("close",()=>{document.body.style.overflow="";});
+  dialog.addEventListener("close",()=>{accessRequest++;document.body.style.overflow="";});
   dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.close();});
-  $("ask-own").addEventListener("click",()=>openQuestion(null));
+  $("moment-access-retry").addEventListener("click",()=>{void checkAccess();});
   function backToTopics(){active=null;visibleCount=12;search.value="";$("questions-panel").hidden=true;$("category-grid").hidden=false;document.querySelector(".explore .section-heading").hidden=false;renderCategories();$("category-grid").scrollIntoView({behavior:"auto",block:"start"});}
   $("show-all").addEventListener("click",backToTopics);
   document.querySelector(".moment-back-button").addEventListener("click",e=>{if(active){e.preventDefault();backToTopics();}});
   $("show-more").addEventListener("click",()=>{visibleCount+=12;renderQuestions();});
   search.addEventListener("input",()=>{visibleCount=12;renderQuestions();});
   clear.addEventListener("click",()=>{search.value="";visibleCount=12;renderQuestions();search.focus();});
-  customModeField.addEventListener("change",e=>{if(e.target.name==="custom-mode"){mode=e.target.value;updateModeFields();}});
-  form.addEventListener("submit",e=>{
-    e.preventDefault();const q=custom?$("custom-question").value.trim():selected.title;
-    const birth=$("birth-one").value;
-    let message="";
-    if(!q||q.length<8)message="Сформулируйте вопрос хотя бы в нескольких словах.";
-    else if(!safeDate(birth)||birth>today())message="Укажите корректную дату своего рождения.";
-    else if(mode==="partner"&&(!safeDate($("birth-two").value)||$("birth-two").value>today()))message="Укажите корректную дату рождения второго человека.";
-    else if(mode==="event"&&!safeDate($("event-date").value))message="Укажите дату планируемого события.";
-    if(message){error.textContent=message;error.hidden=false;return;}
-    error.hidden=true;
-    // Capture the specific instant on confirmation, not at initial page load.
-    const instant=new Date();
-    const timezone=Intl.DateTimeFormat().resolvedOptions().timeZone||"Часовой пояс устройства";
-    const time=Intl.DateTimeFormat("ru-RU",{dateStyle:"full",timeStyle:"long"}).format(instant);
-    // No client-side purchase, speculative predictions, server submission, or sensitive local storage.
-    $("confirmed-question").textContent=q;
-    $("confirmed-time").textContent="Момент вопроса: "+time+" · "+timezone;
-    $("moment-clock-label").textContent=time;
-    form.hidden=true;$("moment-confirmation").hidden=false;$("moment-confirmation").focus({preventScroll:true});
-  });
-  $("ask-another").addEventListener("click",()=>{dialog.close();$("questions-panel").scrollIntoView({behavior:"smooth",block:"start"});});
   async function start(){
     resultsMsg.textContent="Загружаем библиотеку вопросов…";
     try{
