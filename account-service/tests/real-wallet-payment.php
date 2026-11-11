@@ -454,3 +454,189 @@ naRealWalletInvariant($db,$clubBuyerId);
 echo "REAL_CLUB_DISCOUNT_REPORT_SURVIVES_SUBSCRIPTION_EXPIRY_PASS\n";
 
 echo "REAL_CARD_SBP_MOCK_PAYMENT_IDEMPOTENCY_RECEIPTS_PASS\n";
+
+
+/**
+ * Full LIVE subscription path with real MySQL transactions and in-memory
+ * YooKassa responses. No network, credentials, real wallet or charges.
+ */
+$subConfig=array_merge($good,[
+    'recurring_merchant_approved'=>true,
+    'subscription_receipts_verified'=>true,
+    'live_recurring_enabled'=>true,
+    'offset_receipt_reviewed'=>true,
+    'offset_receipt_vat_code'=>1,
+]);
+assertReal(naLiveRecurringAllowed($subConfig),'approved config permits reviewed card subscriptions');
+foreach(['recurring_merchant_approved','subscription_receipts_verified','live_recurring_enabled'] as $gate){
+    $disabled=$subConfig;$disabled[$gate]=false;
+    assertReal(!naLiveRecurringAllowed($disabled),'missing '.$gate.' prevents recurring charges');
+}
+$providerPayments=[];
+$providerRequests=[];
+$simulatedSend=static function(array $body,string $key)use(&$providerPayments,&$providerRequests):array{
+    $id='mock-sub-'.(count($providerRequests)+1);
+    $result=[
+        'id'=>$id,'test'=>false,'status'=>'pending','paid'=>false,
+        'amount'=>$body['amount'],'metadata'=>$body['metadata'],
+    ];
+    if(isset($body['confirmation'])){
+        $result['confirmation']=['type'=>'redirect',
+            'confirmation_url'=>'https://yookassa.ru/mock/checkout'];
+    }
+    $providerRequests[]=['body'=>$body,'key'=>$key,'id'=>$id];
+    $providerPayments[$id]=$result;
+    return $result;
+};
+$simulatedRead=static function(string $id)use(&$providerPayments):array{
+    if(!isset($providerPayments[$id]))throw new RuntimeException('MOCK_PAYMENT_MISSING');
+    return $providerPayments[$id];
+};
+$subAccountId='00000000-0000-4000-8000-000000000107';
+$subAccount=['id'=>$subAccountId];
+$db->prepare('INSERT INTO numi_accounts(id,email,email_verified_at) VALUES(?,?,UTC_TIMESTAMP())')
+    ->execute([$subAccountId,'recurring@example.test']);
+$initial=naLiveSubscriptionStart($db,$subAccount,$subConfig,'club_month',
+    'recurring@example.test','recurring-club-start-001',$simulatedSend);
+assertReal($initial['status']==='pending' && count($providerRequests)===1,
+    'initial card checkout creates one simulated provider request');
+$body=$providerRequests[0]['body'];
+assertReal(($body['save_payment_method']??null)===true
+    && ($body['payment_method_data']['type']??null)==='bank_card'
+    && !isset($body['payment_method_id'])
+    && ($body['amount']['value']??null)==='490.00'
+    && ($body['receipt']['items'][0]['payment_mode']??null)==='full_payment'
+    && ($body['receipt']['items'][0]['payment_subject']??null)==='service'
+    && ($body['receipt']['items'][0]['vat_code']??null)===1
+    && ($body['receipt']['customer']['email']??null)==='recurring@example.test',
+    'initial payment saves bank card and attaches correct itemized full-payment receipt');
+$initPay=$initial['payment_id'];
+$retry=naLiveSubscriptionStart($db,$subAccount,$subConfig,'club_month',
+    'recurring@example.test','recurring-club-start-001',$simulatedSend);
+assertReal($retry['payment_id']===$initPay && count($providerRequests)===1,
+    'same initial request cannot issue a duplicate charge');
+assertReal(naLiveSubscriptionSync($db,$subConfig,$initial['checkout_id'],$subAccountId,$simulatedRead)['status']==='pending',
+    'pending payment grants no access');
+assertReal(!naRealWalletHasAccess($db,$subAccount,'club_month','club'),
+    'unconfirmed payment cannot create paid membership');
+$providerPayments[$initPay]['status']='succeeded';
+$providerPayments[$initPay]['paid']=true;
+$providerPayments[$initPay]['receipt_registration']='pending';
+$providerPayments[$initPay]['payment_method']=[
+    'type'=>'bank_card','saved'=>true,'id'=>'mock-card-abc123'];
+assertReal(naLiveSubscriptionSync($db,$subConfig,$initial['checkout_id'],$subAccountId,$simulatedRead)['status']==='pending_receipt',
+    'payment waits until receipt registration is confirmed');
+assertReal(!naRealWalletHasAccess($db,$subAccount,'club_month','club'),
+    'pending receipt cannot activate access');
+$providerPayments[$initPay]['receipt_registration']='succeeded';
+$settled=naLiveSubscriptionSync($db,$subConfig,$initial['checkout_id'],$subAccountId,$simulatedRead);
+assertReal($settled['status']==='paid' && $settled['auto_renew']===true
+    && naRealWalletHasAccess($db,$subAccount,'club_month','club'),
+    'verified payment and receipt grant membership and enable saved-card renewal');
+$rows=$db->prepare("SELECT auto_renew,payment_method_id,source_order_id FROM numi_subscription_settings
+    WHERE account_id=? AND product_code='club_month'");
+$rows->execute([$subAccountId]);$clubPrefs=$rows->fetch(PDO::FETCH_ASSOC);
+assertReal((int)$clubPrefs['auto_renew']===1
+    && $clubPrefs['payment_method_id']==='mock-card-abc123',
+    'only an opaque provider payment method identifier is stored');
+naLiveSubscriptionSync($db,$subConfig,$initial['checkout_id'],$subAccountId,$simulatedRead);
+$count=$db->prepare("SELECT COUNT(*) FROM numi_entitlements
+    WHERE account_id=? AND product_code='club_month'");
+$count->execute([$subAccountId]);
+assertReal((int)$count->fetchColumn()===1,'reconciliation never grants duplicate access');
+assertReal(naLiveSubscriptionRenewIntent($db,$subConfig,$subAccountId,'club_month')===null,
+    'an active paid period cannot be charged early');
+$db->prepare("UPDATE numi_entitlements
+    SET expires_at=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 SECOND)
+    WHERE account_id=? AND product_code='club_month'")->execute([$subAccountId]);
+$renew=naLiveSubscriptionRenewIntent($db,$subConfig,$subAccountId,'club_month');
+assertReal(is_array($renew)&&$renew['has_payment']===false,
+    'expired verified club membership produces one renewal intent');
+$renewRetry=naLiveSubscriptionRenewIntent($db,$subConfig,$subAccountId,'club_month');
+assertReal($renewRetry['checkout_id']===$renew['checkout_id'],
+    'retry uses same renewal intent');
+$renewCharge=naLiveSubscriptionCreatePayment($db,$subConfig,$renew['checkout_id'],
+    $subAccountId,$renew['payment_method_id'],$simulatedSend);
+$renewBody=$providerRequests[1]['body'];
+assertReal(($renewBody['payment_method_id']??null)==='mock-card-abc123'
+    && ($renewBody['save_payment_method']??null)===false
+    && !isset($renewBody['confirmation'])
+    && ($renewBody['receipt']['items'][0]['amount']['value']??null)==='490.00',
+    'renewal uses existing card without redirect, with fresh receipt');
+$renewAgain=naLiveSubscriptionCreatePayment($db,$subConfig,$renew['checkout_id'],
+    $subAccountId,$renew['payment_method_id'],$simulatedSend);
+assertReal($renewAgain['payment_id']===$renewCharge['payment_id'] && count($providerRequests)===2,
+    'retry cannot create a second renewal charge');
+$renewPay=$renewCharge['payment_id'];
+$providerPayments[$renewPay]['status']='succeeded';
+$providerPayments[$renewPay]['paid']=true;
+$providerPayments[$renewPay]['receipt_registration']='succeeded';
+$renewalPaid=naLiveSubscriptionSync($db,$subConfig,$renew['checkout_id'],$subAccountId,$simulatedRead);
+assertReal($renewalPaid['status']==='paid'&&$renewalPaid['auto_renew']===true
+    &&naRealWalletHasAccess($db,$subAccount,'club_month','club'),
+    'confirmed renewal restores paid access automatically');
+naLiveSubscriptionSync($db,$subConfig,$renew['checkout_id'],$subAccountId,$simulatedRead);
+$count->execute([$subAccountId]);
+assertReal((int)$count->fetchColumn()===2,
+    'initial membership plus single renewal yields exactly two entitlements');
+
+$school=naLiveSubscriptionStart($db,$subAccount,$subConfig,'school_week',
+    'school@example.test','recurring-school-start-001',$simulatedSend);
+$schoolPay=$school['payment_id'];
+$providerPayments[$schoolPay]['status']='succeeded';
+$providerPayments[$schoolPay]['paid']=true;
+$providerPayments[$schoolPay]['receipt_registration']='succeeded';
+$providerPayments[$schoolPay]['payment_method']=[
+    'type'=>'bank_card','saved'=>true,'id'=>'mock-school-card'];
+$schoolPaid=naLiveSubscriptionSync($db,$subConfig,$school['checkout_id'],$subAccountId,$simulatedRead);
+assertReal($schoolPaid['status']==='paid'&&$schoolPaid['auto_renew']===true
+    &&($providerRequests[2]['body']['amount']['value']??null)==='149.00',
+    'independent school subscription has weekly price and its own card');
+naRealWalletCancelSubscription($db,$subAccount,'school_week');
+$schoolAfter=$db->prepare("SELECT auto_renew,payment_method_id,cancelled_at
+    FROM numi_subscription_settings WHERE account_id=? AND product_code='school_week'");
+$schoolAfter->execute([$subAccountId]);$schoolPrefs=$schoolAfter->fetch(PDO::FETCH_ASSOC);
+$rows->execute([$subAccountId]);$clubAfter=$rows->fetch(PDO::FETCH_ASSOC);
+assertReal((int)$schoolPrefs['auto_renew']===0
+    &&$schoolPrefs['payment_method_id']===null
+    &&$schoolPrefs['cancelled_at']!==null
+    &&(int)$clubAfter['auto_renew']===1
+    &&naRealWalletHasAccess($db,$subAccount,'school_week','school'),
+    'cancel school unlinks its card but keeps paid access and independent club renewal');
+assertReal(naLiveSubscriptionRenewIntent($db,$subConfig,$subAccountId,'school_week')===null,
+    'canceled school never initiates a future charge');
+
+// Detect starvation: 20 valid future subscribers must not hide the 21st
+// already-expired subscriber from a bounded scheduled worker.
+for($n=1;$n<=21;$n++){
+    $id=sprintf('11111111-1111-4111-8111-%012d',$n);
+    $orderId=naUuid();
+    $db->prepare('INSERT INTO numi_accounts(id,email,email_verified_at) VALUES(?,?,UTC_TIMESTAMP())')
+        ->execute([$id,'subscriber'.$n.'@example.test']);
+    $db->prepare("INSERT INTO numi_orders
+        (id,account_id,product_code,resource_id,amount_kopeks,provider,status,verified_at)
+        VALUES(?,?,'club_month','club',49000,'real_subscription','paid',UTC_TIMESTAMP())")
+        ->execute([$orderId,$id]);
+    $expiration=$n<21?'DATE_ADD(UTC_TIMESTAMP(),INTERVAL 20 DAY)':
+        'DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 MINUTE)';
+    $db->prepare("INSERT INTO numi_entitlements
+        (id,account_id,order_id,product_code,resource_id,status,expires_at)
+        VALUES(?,?,?,'club_month','club','active',".$expiration.")")
+        ->execute([naUuid(),$id,$orderId]);
+    $db->prepare("INSERT INTO numi_subscription_settings
+        (account_id,product_code,auto_renew,payment_method_id,receipt_email,source_order_id)
+        VALUES(?,'club_month',1,'mock-batch-card',?,?)")
+        ->execute([$id,'subscriber'.$n.'@example.test',$orderId]);
+}
+$before=count($providerRequests);
+$tick=naLiveSubscriptionTick($db,$subConfig,$simulatedSend,$simulatedRead);
+$dueId='11111111-1111-4111-8111-000000000021';
+$due=$db->prepare("SELECT COUNT(*) FROM numi_checkouts c
+    JOIN numi_checkout_items i ON i.checkout_id=c.id
+    JOIN numi_orders o ON o.id=i.order_id
+    WHERE o.account_id=? AND o.provider='real_subscription' AND o.status='pending'
+      AND c.provider_payment_id IS NOT NULL");
+$due->execute([$dueId]);
+assertReal((int)$due->fetchColumn()===1 &&count($providerRequests)===$before+1,
+    '21st expired subscription renews even with 20 earlier active subscribers');
+echo "REAL_LIVE_SUBSCRIPTIONS_MOCK_END_TO_END_PASS\n";
