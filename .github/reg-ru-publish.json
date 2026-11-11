@@ -1,5 +1,12 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-11 smoother opacity-only homepage review preview and no visible DEMO word verified published on REG.RU. Restored safe read-only mode. Review content unchanged; preview still gated by ?reviews_demo=1."
+  "mode": "publish",
+  "files": [
+    "data/home-reviews.json",
+    "index.html"
+  ],
+  "expected_sha256": {
+    "data/home-reviews.json": "18680b6f7f33bd431bd6426650b572fe837a3fa087603457dfa185b4fe308558",
+    "index.html": "0301496ab07cb2cd56bfc7df22e8852d3c6c92c08508d8fffce22e05154f5c40"
+  },
+  "note": "2026-11-11 user-approved editorial update: replace 50 prior preview snippets with exactly 30 approved short texts and refresh only JSON cache tag. The homepage strip remains visible only with reviews_demo=1, demo material is not published as verified actual customer feedback. Preserve other site behavior."
 }
