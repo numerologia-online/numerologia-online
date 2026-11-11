@@ -1,5 +1,10 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "Verified 2026-11-11 protected REG.RU publication of the 30 approved demo review texts and index cache tag. Preview remains gated by ?reviews_demo=1. Release publisher returned to read-only mode."
+  "mode": "publish",
+  "files": [
+    "index.html"
+  ],
+  "expected_sha256": {
+    "index.html": "6a0848f99c400e7327c7ee3f516d2a044ebfd94d18f0c59344388e9579b06a3c"
+  },
+  "note": "Owner paused homepage review preview entirely, including ?reviews_demo=1. Preserve all HTML/CSS, review rotation code, JSON with 30 approved draft examples. Only add disabled UI gate for safe later reactivation."
 }
