@@ -55,7 +55,7 @@
         const offer=document.createElement("div");timeResult.append(offer);
         const item={product_code:"yesno_question",question_id:selectedQuestion.id,question_time:value};
         try{
-          const {showInlinePurchase,renderInlineMaterial}=await import("/wallet-client.js?v=topup-link-20261111");
+          const {showInlinePurchase,renderInlineMaterial}=await import("/wallet-client.js?v=club-free-100-20261111");
           if(id===answerRequest)await showInlinePurchase(item,offer,(material)=>{
             if(id!==answerRequest)return;
             renderInlineMaterial(timeResult,material);
