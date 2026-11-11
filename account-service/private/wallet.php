@@ -369,6 +369,10 @@ function naWalletBuy(PDO $db,array $account,array $body): never {
 function naWalletServe(PDO $db,string $action,array $body): never {
     $account=naCurrent($db);$config=naStoreConfig();
     if (!$account) naReply(401,['ok'=>false,'error'=>'LOGIN_REQUIRED']);
+    // Fail closed in both real and test wallet modes, before any debit or top-up lookup.
+    // Yes/No has no individual purchase, regardless of a legacy cached client.
+    if ($action==='wallet_buy' && ($body['item']['product_code']??null)==='yesno_question')
+        naReply(409,['ok'=>false,'error'=>'YESNO_CLUB_ONLY']);
     // The private production mode is an EXPLICIT switch, not inferred from
     // the existence of a key. Existing REG.RU config has wallet_mode=disabled.
     // Never fall back to sandbox balances after live mode has been selected.
