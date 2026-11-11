@@ -170,9 +170,9 @@ def run():
         if old_prices.count(before)==0 and old_prices.count(after)==1:
             print("YESNO_PUBLIC_PRICES_ALREADY_CORRECT",flush=True)
         elif old_prices.count(before)!=1 or old_prices.count(after)!=0:
-            needle=b'/moment/yes-no/'
+            needle="Да или нет".encode("utf-8")
             start=old_prices.find(needle)
-            excerpt=old_prices[max(0,start-140):start+330].decode("utf-8",errors="replace") if start>=0 else "NO_ROW"
+            excerpt=old_prices[max(0,start-330):start+440].decode("utf-8",errors="replace") if start>=0 else "NO_ROW"
             body=old_prices.decode("utf-8",errors="replace")
             markers=["Да или нет","да или нет","yesno","yes-no","19 ₽","Вопрос","вопрос","Цена"]
             positions={key:body.find(key) for key in markers}
