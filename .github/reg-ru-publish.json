@@ -1,10 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "index.html"
-  ],
-  "expected_sha256": {
-    "index.html": "0dd3ad71c344291ceff61920803d42d730912911be1c86ad2315eb7a51e2be84"
-  },
-  "note": "Owner-approved 2026-11-11 isolated reviews preview refinement: hide DEMO label and use a 600ms opacity-only transition, retaining the 7 second interval and opt-in query flag. No review text data or other site code changed."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-11 smoother opacity-only homepage review preview and no visible DEMO word verified published on REG.RU. Restored safe read-only mode. Review content unchanged; preview still gated by ?reviews_demo=1."
 }
