@@ -258,4 +258,8 @@ body.yn-question-page{background:#fbf9f4}
 .yn-club-access-note{box-sizing:border-box;margin:0 auto 20px;max-width:650px;padding:11px 14px;border:1px solid #dcd0b8;border-radius:13px;background:#f7f5ec;color:#4d6657;text-align:center;font:500 13px/1.5 system-ui,-apple-system,sans-serif}
 .yn-club-access-note strong{color:#174633;font-weight:750}
 .yn-club-access-note a{display:inline-block;color:#176042;font-weight:750;text-underline-offset:3px}
-#yn-dialog .yn-club-access-question{margin:16px auto 6px;padding:13px 14px;font-size:13px;line-height:1.5}
+#yn-dialog .yn-club-access-question{margin:13px auto 18px;padding:14px 14px 12px;border-color:#d0ac74;background:#faf1dd;font-size:14px;line-height:1.45}
+#yn-dialog .yn-club-access-question strong{display:block;font-size:16px;line-height:1.3;color:#164a35;margin-bottom:4px}
+#yn-dialog .yn-club-access-question span{display:block;font-weight:700;color:#8d6b36}
+#yn-dialog .yn-club-access-question small{display:block;margin:6px 0;font-size:12px;line-height:1.4;color:#526b5b}
+#yn-dialog .yn-club-access-question a{display:inline-block;margin-top:4px;font-size:14px}
