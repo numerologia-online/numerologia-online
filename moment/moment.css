@@ -55,3 +55,9 @@
 .moment-access-status .moment-access-link{display:flex;width:100%;max-width:330px;margin:0 auto;text-decoration:none;text-align:center;min-height:52px}
 .moment-access-status .secondary-button{max-width:330px;margin:0 auto}
 #moment-access-loading{min-height:90px;display:grid;place-items:center;font-size:15px}
+
+/* Ask-first Club offer in the existing Moment dialog. */
+.moment-access-status h3{font:500 clamp(27px,6.2vw,34px)/1.18 Georgia,serif;color:#153f31;margin:0 0 15px}
+.moment-access-status p.moment-club-price{font:700 22px/1.25 'DM Sans',system-ui,sans-serif;color:#9d7a42;margin:0 auto 22px}
+.moment-access-status .moment-ask-button{display:flex;width:100%;max-width:330px;min-height:52px;margin:0 auto;cursor:pointer}
+.moment-access-status .moment-access-link{font-size:15px}
