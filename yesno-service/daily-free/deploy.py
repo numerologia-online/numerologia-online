@@ -157,16 +157,18 @@ def run():
         old_prices=read(price_path)
         if len(old_prices)>200000:
             raise RuntimeError("Public prices file unexpectedly large")
-        before=('<div class="item"><div class="name"><a href="/moment/yes-no/">'
-                'Вопрос «Да или нет?»</a><span class="desc">Один ответ на выбранный вопрос'
-                '</span></div><div class="price">19 ₽</div><div class="member">'
+        # Exact line observed on the live .рф website; it deliberately has no link.
+        # Never restore the link or replace unrelated public prices.
+        before=('<div class="item"><div class="name">Вопрос «Да или нет?»'
+                '<span class="desc">Один ответ на выбранный вопрос</span></div>'
+                '<div class="price">19 ₽</div><div class="member">'
                 'Бесплатно<small>В составе клуба</small></div></div>').encode("utf-8")
-        after=('<div class="item"><div class="name"><a href="/moment/yes-no/">'
-               'Вопросы «Да или нет?»</a><span class="desc">Без подписки один бесплатный '
-               'ответ в день, дополнительные ответы только в Клубе</span></div>'
+        after=('<div class="item"><div class="name">Вопросы «Да или нет?»'
+               '<span class="desc">Без подписки один бесплатный ответ в день, '
+               'остальные только участникам Клуба</span></div>'
                '<div class="price">1 в день бесплатно</div>'
                '<div class="member">Все 100 без доплаты'
-               '<small>С подпиской Клуба 490 ₽/мес.</small></div></div>').encode("utf-8")
+               '<small>Клуб 490 ₽/мес.</small></div></div>').encode("utf-8")
         if old_prices.count(before)==0 and old_prices.count(after)==1:
             print("YESNO_PUBLIC_PRICES_ALREADY_CORRECT",flush=True)
         elif old_prices.count(before)!=1 or old_prices.count(after)!=0:
