@@ -531,11 +531,23 @@ function naLiveSubscriptionTick(PDO $db,array $config,?callable $testTransport=n
             error_log('NUMI_LIVE_SUBSCRIPTION_RECONCILE '.get_class($e));
         }
     }
-    $q=$db->query("SELECT account_id,product_code FROM numi_subscription_settings
-        WHERE auto_renew=1 AND cancelled_at IS NULL AND payment_method_id IS NOT NULL
-          AND receipt_email IS NOT NULL
-          AND product_code IN ('club_month','school_week')
-        ORDER BY account_id LIMIT 20");
+    // Select subscriptions whose verified paid period actually expired.
+    // Without the due-date filter, twenty active subscribers can permanently
+    // hide the twenty-first customer who needs renewal.
+    $q=$db->query("SELECT s.account_id,s.product_code FROM numi_subscription_settings s
+        JOIN (
+            SELECT e.account_id,e.product_code,MAX(e.expires_at) AS paid_until
+            FROM numi_entitlements e
+            JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
+            WHERE e.status='active' AND o.status='paid' AND o.verified_at IS NOT NULL
+              AND o.provider IN ('real_wallet','real_subscription')
+              AND e.product_code IN ('club_month','school_week')
+            GROUP BY e.account_id,e.product_code
+        ) period ON period.account_id=s.account_id AND period.product_code=s.product_code
+        WHERE s.auto_renew=1 AND s.cancelled_at IS NULL
+          AND s.payment_method_id IS NOT NULL AND s.receipt_email IS NOT NULL
+          AND period.paid_until IS NOT NULL AND period.paid_until<=UTC_TIMESTAMP()
+        ORDER BY period.paid_until,s.account_id LIMIT 20");
     foreach($q->fetchAll(PDO::FETCH_ASSOC) as $item){
         try{
             $renew=naLiveSubscriptionRenewIntent($db,$config,$item['account_id'],$item['product_code']);
