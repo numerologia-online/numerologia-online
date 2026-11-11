@@ -714,9 +714,9 @@ document.addEventListener("DOMContentLoaded",()=>{
         display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
         overflow:hidden;margin:0;min-height:2.4em;
         color:#294b3b;font:500 13px/1.2 system-ui,-apple-system,"Segoe UI",sans-serif;
-        transition:opacity .28s ease,transform .28s ease;opacity:1;transform:translateY(0)
+        transition:opacity .6s ease-in-out;opacity:1
       }
-      #numi-reviews-preview .numi-reviews-text.is-changing{opacity:0;transform:translateY(3px)}
+      #numi-reviews-preview .numi-reviews-text.is-changing{opacity:0}
       @media(max-width:390px){#numi-reviews-preview{padding:8px 12px}#numi-reviews-preview .numi-reviews-text{font-size:12.5px}}
       @media(prefers-reduced-motion:reduce){#numi-reviews-preview .numi-reviews-text{transition:none}}
     </style>
@@ -755,7 +755,7 @@ document.addEventListener("DOMContentLoaded",()=>{
         <!-- Trial preview only: visible at /?reviews_demo=1, no effect on live visitors. -->
         <section id="numi-reviews-preview" class="numi-reviews-preview" aria-label="Предпросмотр сменяющихся отзывов" hidden>
           <div class="numi-reviews-window">
-            <span class="numi-reviews-caption">✦ ОТЗЫВЫ · ДЕМО</span>
+            <span class="numi-reviews-caption">✦ ОТЗЫВЫ</span>
             <p id="numi-reviews-text" class="numi-reviews-text">Подбираем отзыв…</p>
           </div>
         </section>
@@ -1318,7 +1318,7 @@ document.addEventListener("DOMContentLoaded",()=>{
           };
           if(reduce){render();return;}
           line.classList.add("is-changing");
-          setTimeout(render,280);
+          setTimeout(render,600);
         }
         next();
         setInterval(()=>{if(!document.hidden)next()},7000);
