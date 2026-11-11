@@ -8,6 +8,7 @@ on:
       - 'account-service/private/wallet-real.php'
       - 'account-service/private/wallet-real-worker.php'
       - 'account-service/private/wallet-real-payment.php'
+      - 'account-service/private/subscriptions.php'
       - 'account-service/tests/real-wallet-payment.php'
       - 'account-service/private/store.php'
       - 'account-service/public/numi-real-worker.php'
