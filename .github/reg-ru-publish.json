@@ -1,10 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "index.html"
-  ],
-  "expected_sha256": {
-    "index.html": "6a0848f99c400e7327c7ee3f516d2a044ebfd94d18f0c59344388e9579b06a3c"
-  },
-  "note": "Owner paused homepage review preview entirely, including ?reviews_demo=1. Preserve all HTML/CSS, review rotation code, JSON with 30 approved draft examples. Only add disabled UI gate for safe later reactivation."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-11 owner paused rotating reviews strip on all homepage views including review demo. REG.RU verified hidden via owner-approved JS gate; retained full draft block and 30 texts for future. Safe read-only publish mode restored."
 }
