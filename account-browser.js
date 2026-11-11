@@ -1225,6 +1225,10 @@
   }
   if(new URLSearchParams(location.search).get("account")==="1"){
     ownerButton.click();
+    // A club offer may open the existing tariff panel directly, without creating a new checkout.
+    if(params.get("club_offer")==="1"){
+      overview.querySelector('[data-account-panel="prices"]')?.click();
+    }
   }else if(resetToken) {
     choose("password");
     ownerButton.click();
