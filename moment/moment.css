@@ -48,3 +48,10 @@
   .explore .category-count{font-size:12px}
   .explore .category::after{font-size:21px}
 }
+
+/* Membership-only Moment question access: no placeholder calculation or purchase. */
+.moment-access-status{padding:22px 15px 12px;text-align:center;color:#315747}
+.moment-access-status p{font:500 16px/1.55 'DM Sans',system-ui,sans-serif;color:#315747;margin:0 auto 20px;max-width:440px}
+.moment-access-status .moment-access-link{display:flex;width:100%;max-width:330px;margin:0 auto;text-decoration:none;text-align:center;min-height:52px}
+.moment-access-status .secondary-button{max-width:330px;margin:0 auto}
+#moment-access-loading{min-height:90px;display:grid;place-items:center;font-size:15px}
