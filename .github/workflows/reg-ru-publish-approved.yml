@@ -188,7 +188,8 @@ jobs:
                       try:
                           originals[name] = read_remote(ftp, name)
                       except ftplib.error_perm as error:
-                          allowed_new = ((name == "contacts.html" and manifest.get("create_contacts_page") is True)
+                          allowed_new = ((name == "data/home-reviews.json" and manifest.get("create_home_reviews_demo") is True)
+                                         or (name == "contacts.html" and manifest.get("create_contacts_page") is True)
                                          or (name == "assets/telegram-web-app-20261102.js" and manifest.get("create_startup_sdk") is True)
                                          or (name == "pro/schools/angel/index.html" and manifest.get("create_angel_course") is True)
                                          or (manifest.get("create_matrix_learning") is True and name in {
