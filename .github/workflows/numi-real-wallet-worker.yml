@@ -103,6 +103,105 @@ jobs:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: python3 -u scripts/deploy-real-wallet-worker-20261108.py
+  enable-recurring:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Activate YooKassa existing recurring flags with receipt validation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check live receipt construction and set three existing private flags with backup
+        shell: bash
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib,io,os,ssl,re,tempfile,subprocess
+          names=['recurring_merchant_approved','subscription_receipts_verified','live_recurring_enabled']
+          required=['real_wallet_enabled','fiscalization_verified','refunds_verified',
+                    'advance_offset_receipts_verified','offset_receipt_worker_verified',
+                    'launch_approved','offset_receipt_reviewed']
+          def php_check(raw):
+              f=tempfile.NamedTemporaryFile(suffix='.php',delete=False)
+              try:
+                  f.write(raw);f.close()
+                  env=dict(os.environ,NUMI_RECURRING_CONFIG=f.name)
+                  php=r"""
+                  require_once 'account-service/private/core.php';
+                  require_once 'account-service/private/wallet-real-payment.php';
+                  $c=require getenv('NUMI_RECURRING_CONFIG');
+                  if(!is_array($c)||!naLiveRecurringAllowed($c)||
+                     (string)($c['shop_id']??'')!=='1515851')exit(4);
+                  foreach(['club_month'=>49000,'school_week'=>14900] as $code=>$price){
+                      if(naCatalogResolve(['product_code'=>$code],false)['price_kopeks']!==$price)exit(5);
+                      $rec=naLiveSubscriptionReceipt($c,$code,$price,'audit@example.com');
+                      $item=$rec['items'][0]??[];
+                      if(($item['vat_code']??null)!==($c['offset_receipt_vat_code']??null)||
+                         ($item['payment_mode']??null)!=='full_payment'||
+                         ($item['payment_subject']??null)!=='service'||
+                         ($item['amount']['value']??null)!==naStoreAmount($price))exit(6);
+                  }
+                  """
+                  subprocess.run(['php','-l',f.name],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+                  subprocess.run(['php','-r',php],env=env,check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+              finally:
+                  f.close();os.unlink(f.name)
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          path=ftp.pwd().rstrip('/')+'/private/numi-wallet-live/config.local.php'
+          def read(filename):
+              buff=io.BytesIO()
+              def add(block):
+                  if buff.tell()+len(block)>16000:raise RuntimeError('OVERSIZE')
+                  buff.write(block)
+              ftp.retrbinary('RETR '+filename,add)
+              return buff.getvalue()
+          try:
+              previous=read(path);s=previous.decode('utf-8')
+              for n in required:
+                  if not re.search(r"""['"]"""+re.escape(n)+r"""['"]\s*=>\s*true\b""",s):
+                      raise RuntimeError('UNVERIFIED_REQUIRED_FLAG_'+n)
+              if not re.search(r"""['"]wallet_mode['"]\s*=>\s*['"]live['"]""",s):
+                  raise RuntimeError('LIVE_MODE_REQUIRED')
+              if not re.search(r"""['"]provider_test_mode['"]\s*=>\s*false\b""",s):
+                  raise RuntimeError('PRODUCTION_MODE_REQUIRED')
+              if not re.search(r"""['"]shop_id['"]\s*=>\s*['"]?1515851['"]?""",s):
+                  raise RuntimeError('SHOP_ID_NOT_APPROVED')
+              add=[]
+              for n in names:
+                  reg=r"""(['"]"""+re.escape(n)+r"""['"]\s*=>\s*)(true|false)\b"""
+                  if len(re.findall(reg,s))>1:raise RuntimeError('DUPLICATE_FLAG_'+n)
+                  if re.search(reg,s):s=re.sub(reg,lambda m:m.group(1)+'true',s,count=1)
+                  else:add.append(n)
+              endings=list(re.finditer(r'(?m)^[ \t]*\];[ \t]*$',s))
+              if len(endings)!=1:raise RuntimeError('UNKNOWN_CONFIG_LAYOUT')
+              if add:
+                  i=endings[0].start()
+                  s=s[:i]+''.join("    '"+n+"' => true,\n" for n in add)+s[i:]
+              current=s.encode('utf-8')
+              php_check(current)
+              if current==previous:print('RECURRING_ALREADY_ENABLED_VERIFIED',flush=True)
+              else:
+                  if read(path)!=previous:raise RuntimeError('CONCURRENT_CHANGE')
+                  backup=path+'.before-recurring-'+os.environ['GITHUB_RUN_ID']
+                  ftp.storbinary('STOR '+backup,io.BytesIO(previous))
+                  if read(backup)!=previous:raise RuntimeError('BACKUP_CHECK_FAILED')
+                  try:
+                      ftp.storbinary('STOR '+path,io.BytesIO(current))
+                      if read(path)!=current:raise RuntimeError('SAVE_CHECK_FAILED')
+                  except BaseException:
+                      if read(path)!=previous:ftp.storbinary('STOR '+path,io.BytesIO(previous))
+                      raise
+                  print('RECURRING_ALL_THREE_FLAGS_ENABLED_AND_VERIFIED',flush=True)
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
   reconcile:
     if: github.event_name != 'push'
     runs-on: ubuntu-24.04
