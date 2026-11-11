@@ -23,7 +23,10 @@ foreach([['generosity',2000,1000],['words-or-deeds',3900,1900],['solve-or-create
  foreach([false,true] as $club){$q=naCatalogResolve(['product_code'=>'redflag_question','birth_date'=>'1986-09-09','category'=>'money','question_id'=>$id],$club);check($q['price_kopeks']===($club?$member:$regular),'redflag tiers');}
 }
 foreach([false,true] as $club){
- check(naCatalogResolve(['product_code'=>'yesno_question','question_id'=>'yn-man-001','question_time'=>'00:00'],$club)['price_kopeks']===($club?0:1900),'yesno');
+ $yesno=naCatalogResolve(['product_code'=>'yesno_question','question_id'=>'yn-man-001','question_time'=>'00:00'],$club);
+ check($yesno['price_kopeks']===0,'yesno never independently priced');
+ check($yesno['member_included']===$club && $yesno['kind']==='club_included','yesno only included by Club');
+ check($yesno['availability']===($club?'CLUB_ACTIVE':'CLUB_REQUIRED'),'yesno Club access state');
  $moment=naCatalogResolve(['product_code'=>'moment_question','question_id'=>'love-001','question_time'=>'23:59'],$club);
  check($moment['price_kopeks']===($club?2500:5000)&&$moment['availability']==='NOT_LAUNCHED','moment closed');
 }
@@ -32,6 +35,10 @@ invalid(fn()=>naCatalogResolve(['product_code'=>'yesno_question','question_id'=>
 invalid(fn()=>naCatalogResolve(['product_code'=>'yesno_question','question_id'=>'yn-man-001','question_time'=>'24:00'],false),'invalid time');
 invalid(fn()=>naCatalogResolve(['product_code'=>'hacked','price_kopeks'=>1],false),'unknown product');
 $owns=fn()=>false;
+foreach([false,true] as $club) {
+ $freeOnly=naCartResolve([['product_code'=>'yesno_question','question_id'=>'yn-man-001','question_time'=>'12:34']],$club,$owns);
+ check($freeOnly['total_kopeks']===0 && !$freeOnly['fulfillment_ready'],'Yes/No never chargeable in cart');
+}
 $cart=naCartResolve([$subjects[0],['product_code'=>'club_month']],false,$owns);
 check($cart['total_kopeks']===148000 && $cart['club_activation_required'],'no speculative club discount');
 check(!$cart['fulfillment_ready'],'unconnected fulfillment blocked');
