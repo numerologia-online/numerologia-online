@@ -1290,7 +1290,8 @@ document.addEventListener("DOMContentLoaded",()=>{
   <script id="numi-reviews-preview-script">
   (()=>{"use strict";
     // Test-only display. Remove this gate after real feedback is supplied and approved.
-    if(new URLSearchParams(location.search).get("reviews_demo")!=="1")return;
+    const reviewsEnabled=false; // Temporarily hidden at owner request; preserve preview for later.
+    if(!reviewsEnabled||new URLSearchParams(location.search).get("reviews_demo")!=="1")return;
     const box=document.getElementById("numi-reviews-preview");
     const line=document.getElementById("numi-reviews-text");
 
