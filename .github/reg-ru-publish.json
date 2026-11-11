@@ -1,5 +1,20 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-11 verified REG.RU publication of Club offer clearly above Yes/No question time field, plus correct member-inclusive (0 RUB) Club offer alongside insufficient wallet balance. Four files backed up and readback confirmed, no backend/charges/quota changes. Restore read-only mode."
+  "mode": "publish",
+  "files": [
+    "moment/yes-no/index.html",
+    "moment/yes-no/yes-no.js",
+    "moment/yes-no/yes-no.css",
+    "wallet-client.js",
+    "index.html",
+    "prices.html"
+  ],
+  "expected_sha256": {
+    "moment/yes-no/index.html": "eb0a1ecffd8f59d330a2cbf49b898cfb1122316d8a459b638ad5bcd834a276b0",
+    "moment/yes-no/yes-no.js": "8c8bc25907d25ddd31efc9cc5609e1753d32e26d2bc822f72e90e5defe12e10d",
+    "moment/yes-no/yes-no.css": "edb93e3d006181d458b91b3a5d217600132934fd9d26969bf5424b52010b116c",
+    "wallet-client.js": "798ce71501e4d1b8a589617d16e3c993854839a88706a598055a1c8684554ad2",
+    "index.html": "9d3fc3e1f8cb01a3dc69744f98b6724525699d4de06fb31f5e90ed481e1280f6",
+    "prices.html": "bdd4396c8852702f1045089293641b1e12bc0afa9b783d6a51bc195ca421afcb"
+  },
+  "note": "Owner-approved 2026-11-11 corrected Yes/No model: all 100 answers are included in active Club 490 RUB/mo; guests may access exactly one free response/day, NO individual 19-RUB sales. Server core, wallet and answer API already published with back up and verified live API. Publish updated Yes/No UI, cabinet tariff, public prices and legacy wallet client guard. Six existing files only; no changes to Red Flag price 19."
 }
