@@ -692,10 +692,12 @@ function naCatalogResolve(array $input,bool $club): array {
           || !is_string($clock)||!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/D',$clock))
           throw new InvalidArgumentException('INVALID_QUESTION_SUBJECT');
         $resource='yesno:'.$question.':'.$clock;
-        $price=$club?0:1900;
+        // No individual Yes/No sales: one answer/day outside the Club,
+        // all 100 included in an active, server-verified Club membership.
+        $price=0;
         $memberIncluded=$club;
-        $kind='question';
-        $availability='PAID_ANSWER_NOT_CONFIRMED';
+        $kind='club_included';
+        $availability=$club?'CLUB_ACTIVE':'CLUB_REQUIRED';
     } elseif ($code==='moment_question') {
         $question=$input['question_id']??null;
         $clock=$input['question_time']??null;
