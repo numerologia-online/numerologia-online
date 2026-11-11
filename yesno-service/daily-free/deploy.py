@@ -150,6 +150,48 @@ def run():
                 raise
         else:
             print("YESNO_CLUB_ONLY_ALREADY_CURRENT",flush=True)
+
+        # A live independent edit makes the complete GitHub prices.html unsafe to
+        # overwrite. Change ONLY the exact obsolete Yes/No row in-place.
+        price_path=remote(SITE_DIR + "/prices.html")
+        old_prices=read(price_path)
+        if len(old_prices)>200000:
+            raise RuntimeError("Public prices file unexpectedly large")
+        before=('<div class="item"><div class="name"><a href="/moment/yes-no/">'
+                'Вопрос «Да или нет?»</a><span class="desc">Один ответ на выбранный вопрос'
+                '</span></div><div class="price">19 ₽</div><div class="member">'
+                'Бесплатно<small>В составе клуба</small></div></div>').encode("utf-8")
+        after=('<div class="item"><div class="name"><a href="/moment/yes-no/">'
+               'Вопросы «Да или нет?»</a><span class="desc">Без подписки один бесплатный '
+               'ответ в день, дополнительные ответы только в Клубе</span></div>'
+               '<div class="price">1 в день бесплатно</div>'
+               '<div class="member">Все 100 без доплаты'
+               '<small>С подпиской Клуба 490 ₽/мес.</small></div></div>').encode("utf-8")
+        if old_prices.count(before)==0 and old_prices.count(after)==1:
+            print("YESNO_PUBLIC_PRICES_ALREADY_CORRECT",flush=True)
+        elif old_prices.count(before)!=1 or old_prices.count(after)!=0:
+            needle=b'/moment/yes-no/'
+            start=old_prices.find(needle)
+            excerpt=old_prices[max(0,start-140):start+330].decode("utf-8",errors="replace") if start>=0 else "NO_ROW"
+            print("UNKNOWN_PUBLIC_YESNO_PRICE_ROW " + excerpt[:470],flush=True)
+            raise RuntimeError("Price row changed independently; refused unsafe replacement")
+        else:
+            price_backup=remote("site-safeguard-backups/yesno-price-only-" +
+                                time.strftime("%Y%m%dT%H%M%SZ",time.gmtime()) + "-" +
+                                os.environ.get("GITHUB_RUN_ID","manual"))
+            ftp.mkd(price_backup)
+            write(price_backup+"/prices.html.bak",old_prices)
+            try:
+                revised=old_prices.replace(before,after)
+                write(price_path,revised)
+                if read(price_path)!=revised:
+                    raise RuntimeError("Exact price-row patch not verified")
+                print("YESNO_PUBLIC_PRICES_PATCHED_VERIFIED " +
+                      json.dumps({"backup":price_backup.rsplit("/",1)[-1],
+                                  "changed_rows":1,"unrelated_bytes_preserved":True}),flush=True)
+            except BaseException:
+                write(price_path,old_prices)
+                raise
     finally:
         try:
             ftp.quit()
