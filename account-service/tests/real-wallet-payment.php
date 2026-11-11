@@ -639,4 +639,93 @@ $due=$db->prepare("SELECT COUNT(*) FROM numi_checkouts c
 $due->execute([$dueId]);
 assertReal((int)$due->fetchColumn()===1 &&count($providerRequests)===$before+1,
     '21st expired subscription renews even with 20 earlier active subscribers');
+
+// Additional failure and consent-revocation paths, all using simulated provider data.
+function subscriptionMockAccount(PDO $db,string $id,string $email): array {
+    $db->prepare('INSERT INTO numi_accounts(id,email,email_verified_at) VALUES(?,?,UTC_TIMESTAMP())')
+        ->execute([$id,$email]);
+    return ['id'=>$id];
+}
+$cancelling=subscriptionMockAccount($db,'00000000-0000-4000-8000-000000000108','cancel@example.test');
+$pendingCancel=naLiveSubscriptionStart($db,$cancelling,$subConfig,'school_week',
+    'cancel@example.test','cancel-during-first-payment',$simulatedSend);
+naRealWalletCancelSubscription($db,$cancelling,'school_week');
+$providerPayments[$pendingCancel['payment_id']]['status']='succeeded';
+$providerPayments[$pendingCancel['payment_id']]['paid']=true;
+$providerPayments[$pendingCancel['payment_id']]['receipt_registration']='succeeded';
+$providerPayments[$pendingCancel['payment_id']]['payment_method']=[
+    'type'=>'bank_card','saved'=>true,'id'=>'cancelled-card-id'];
+$cancelSettled=naLiveSubscriptionSync($db,$subConfig,$pendingCancel['checkout_id'],
+    $cancelling['id'],$simulatedRead);
+assertReal($cancelSettled['status']==='paid'&&$cancelSettled['auto_renew']===false
+    &&naRealWalletHasAccess($db,$cancelling,'school_week','school')
+    &&naLiveSubscriptionRenewIntent($db,$subConfig,$cancelling['id'],'school_week')===null,
+    'cancel during pending first payment keeps paid access but cannot reactivate renewal');
+$cancelPref=$db->prepare("SELECT payment_method_id FROM numi_subscription_settings
+    WHERE account_id=? AND product_code='school_week'");
+$cancelPref->execute([$cancelling['id']]);
+assertReal($cancelPref->fetchColumn()===null,
+    'a cancellation during payment wins over later provider saved-card response');
+
+$failed=subscriptionMockAccount($db,'00000000-0000-4000-8000-000000000109','failure@example.test');
+$failedPay=naLiveSubscriptionStart($db,$failed,$subConfig,'club_month',
+    'failure@example.test','initial-payment-failure-case',$simulatedSend);
+$providerPayments[$failedPay['payment_id']]['status']='canceled';
+$cancelledPayment=naLiveSubscriptionSync($db,$subConfig,$failedPay['checkout_id'],
+    $failed['id'],$simulatedRead);
+assertReal($cancelledPayment['status']==='cancelled'
+    &&!naRealWalletHasAccess($db,$failed,'club_month','club')
+    &&naLiveSubscriptionRenewIntent($db,$subConfig,$failed['id'],'club_month')===null,
+    'canceled initial payment never grants membership or future charges');
+
+$noSavedCard=subscriptionMockAccount($db,'00000000-0000-4000-8000-000000000110','nosave@example.test');
+$noSave=naLiveSubscriptionStart($db,$noSavedCard,$subConfig,'school_week',
+    'nosave@example.test','card-not-saved-case-001',$simulatedSend);
+$providerPayments[$noSave['payment_id']]['status']='succeeded';
+$providerPayments[$noSave['payment_id']]['paid']=true;
+$providerPayments[$noSave['payment_id']]['receipt_registration']='succeeded';
+$providerPayments[$noSave['payment_id']]['payment_method']=[
+    'type'=>'bank_card','saved'=>false,'id'=>'provider-unsaved-card'];
+$noSaveResult=naLiveSubscriptionSync($db,$subConfig,$noSave['checkout_id'],
+    $noSavedCard['id'],$simulatedRead);
+assertReal($noSaveResult['status']==='paid'&&$noSaveResult['auto_renew']===false
+    &&naRealWalletHasAccess($db,$noSavedCard,'school_week','school'),
+    'no saved provider card means paid access but no future renewal consent');
+
+$badProvider=subscriptionMockAccount($db,'00000000-0000-4000-8000-000000000111','badpay@example.test');
+$bad=naLiveSubscriptionStart($db,$badProvider,$subConfig,'club_month',
+    'badpay@example.test','bad-provider-response-case',$simulatedSend);
+$providerPayments[$bad['payment_id']]['status']='succeeded';
+$providerPayments[$bad['payment_id']]['paid']=true;
+$providerPayments[$bad['payment_id']]['receipt_registration']='succeeded';
+$providerPayments[$bad['payment_id']]['amount']['value']='1.00';
+expectReal(fn()=>naLiveSubscriptionSync($db,$subConfig,$bad['checkout_id'],
+    $badProvider['id'],$simulatedRead),'REAL_SUBSCRIPTION_PAYMENT_VERIFICATION_FAILED');
+assertReal(!naRealWalletHasAccess($db,$badProvider,'club_month','club'),
+    'provider payment amount mismatch cannot grant or renew membership');
+$providerPayments[$bad['payment_id']]['amount']['value']='490.00';
+$providerPayments[$bad['payment_id']]['payment_method']=[
+    'type'=>'bank_card','saved'=>true,'id'=>'valid-later-card'];
+assertReal(naLiveSubscriptionSync($db,$subConfig,$bad['checkout_id'],
+    $badProvider['id'],$simulatedRead)['status']==='paid',
+    'a corrected verified provider response may settle exactly once');
+
+// Pending automated renewal is reconciled, not submitted a second time.
+$pendingCount=count($providerRequests);
+naLiveSubscriptionTick($db,$subConfig,$simulatedSend,$simulatedRead);
+assertReal(count($providerRequests)===$pendingCount,
+    'scheduled retry never submits a second payment while a renewal is pending');
+$duePaymentId=end($providerRequests)['id'];
+$providerPayments[$duePaymentId]['status']='succeeded';
+$providerPayments[$duePaymentId]['paid']=true;
+$providerPayments[$duePaymentId]['receipt_registration']='succeeded';
+naLiveSubscriptionTick($db,$subConfig,$simulatedSend,$simulatedRead);
+$dueCount=$db->prepare("SELECT COUNT(*) FROM numi_entitlements
+    WHERE account_id=? AND product_code='club_month'");
+$dueCount->execute([$dueId]);
+assertReal((int)$dueCount->fetchColumn()===2
+    &&count($providerRequests)===$pendingCount,
+    'scheduled reconciliation extends access once after confirmed renewal without charging twice');
+echo "REAL_LIVE_SUBSCRIPTIONS_NEGATIVE_PATHS_PASS\n";
+
 echo "REAL_LIVE_SUBSCRIPTIONS_MOCK_END_TO_END_PASS\n";
