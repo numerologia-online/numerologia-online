@@ -699,25 +699,25 @@ document.addEventListener("DOMContentLoaded",()=>{
     <style id="numi-reviews-preview-style">
       #numi-reviews-preview[hidden]{display:none!important}
       #numi-reviews-preview{
-        box-sizing:border-box;display:grid;grid-template-columns:minmax(112px,.43fr) minmax(0,1fr);
-        gap:9px;align-items:center;min-height:54px;margin:9px 0 10px;padding:7px 11px;
-        border:1px solid #d9c49f;border-radius:15px;background:linear-gradient(125deg,#fffdfa,#f7f1e6);
+        box-sizing:border-box;display:flex;align-items:center;min-height:60px;
+        margin:9px 0 10px;padding:9px 15px;
+        border:1px solid #d9c49f;border-radius:15px;
+        background:linear-gradient(125deg,#fffdfa,#f7f1e6);
         box-shadow:0 3px 10px rgba(64,48,28,.045);color:#204a39;
       }
-      #numi-reviews-preview .numi-reviews-activity{display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:0}
-      #numi-reviews-preview .numi-reviews-activity-label{font:650 10px/1.2 system-ui,-apple-system,"Segoe UI",sans-serif;color:#857451;white-space:nowrap}
-      #numi-reviews-preview .numi-reviews-activity-label span{color:#3d9367;font-size:8px;margin-right:3px}
-      #numi-reviews-preview #numi-reviews-online{font:750 18px/1.1 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:0;color:#1c4b39;white-space:nowrap;font-variant-numeric:tabular-nums}
-      #numi-reviews-preview .numi-reviews-window{min-width:0;padding-left:9px;border-left:1px solid #deceb4}
-      #numi-reviews-preview .numi-reviews-caption{display:block;color:#9d8154;font:700 9px/1.2 system-ui,sans-serif;letter-spacing:.045em;margin-bottom:3px}
-      #numi-reviews-preview .numi-reviews-text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin:0;min-height:2.4em;color:#294b3b;font:500 12px/1.2 system-ui,-apple-system,"Segoe UI",sans-serif;transition:opacity .28s ease,transform .28s ease;opacity:1;transform:translateY(0)}
-      #numi-reviews-preview .numi-reviews-text.is-changing{opacity:0;transform:translateY(3px)}
-      @media(max-width:390px){
-        #numi-reviews-preview{grid-template-columns:minmax(104px,.42fr) minmax(0,1fr);gap:7px;padding:7px 9px}
-        #numi-reviews-preview .numi-reviews-window{padding-left:8px}
-        #numi-reviews-preview .numi-reviews-activity-label{font-size:9px}
-        #numi-reviews-preview .numi-reviews-text{font-size:11.5px}
+      #numi-reviews-preview .numi-reviews-window{width:100%;min-width:0}
+      #numi-reviews-preview .numi-reviews-caption{
+        display:block;margin:0 0 4px;color:#9d8154;
+        font:700 9px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:.045em
       }
+      #numi-reviews-preview .numi-reviews-text{
+        display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+        overflow:hidden;margin:0;min-height:2.4em;
+        color:#294b3b;font:500 13px/1.2 system-ui,-apple-system,"Segoe UI",sans-serif;
+        transition:opacity .28s ease,transform .28s ease;opacity:1;transform:translateY(0)
+      }
+      #numi-reviews-preview .numi-reviews-text.is-changing{opacity:0;transform:translateY(3px)}
+      @media(max-width:390px){#numi-reviews-preview{padding:8px 12px}#numi-reviews-preview .numi-reviews-text{font-size:12.5px}}
       @media(prefers-reduced-motion:reduce){#numi-reviews-preview .numi-reviews-text{transition:none}}
     </style>
 </head>
@@ -753,11 +753,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
         
         <!-- Trial preview only: visible at /?reviews_demo=1, no effect on live visitors. -->
-        <section id="numi-reviews-preview" class="numi-reviews-preview" aria-label="Предпросмотр строки активности и отзывов" hidden>
-          <div class="numi-reviews-activity">
-            <span class="numi-reviews-activity-label"><span aria-hidden="true">●</span> Сейчас на сайте</span>
-            <strong id="numi-reviews-online">—</strong>
-          </div>
+        <section id="numi-reviews-preview" class="numi-reviews-preview" aria-label="Предпросмотр сменяющихся отзывов" hidden>
           <div class="numi-reviews-window">
             <span class="numi-reviews-caption">✦ ОТЗЫВЫ · ДЕМО</span>
             <p id="numi-reviews-text" class="numi-reviews-text">Подбираем отзыв…</p>
@@ -1296,21 +1292,10 @@ document.addEventListener("DOMContentLoaded",()=>{
     // Test-only display. Remove this gate after real feedback is supplied and approved.
     if(new URLSearchParams(location.search).get("reviews_demo")!=="1")return;
     const box=document.getElementById("numi-reviews-preview");
-    const online=document.getElementById("numi-reviews-online");
     const line=document.getElementById("numi-reviews-text");
 
-    if(!box||!online||!line)return;
+    if(!box||!line)return;
     box.hidden=false;
-    const anchors=[34,30,25,21,18,19,28,49,76,101,126,150,166,180,189,193,201,216,232,225,209,183,143,87,34];
-    function showActivity(){
-      // Deterministic demo curve; no visitor tracking or server polling.
-      const parts=new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Samara",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date());
-      const h=Number(parts.find(p=>p.type==="hour")?.value||0),m=Number(parts.find(p=>p.type==="minute")?.value||0);
-      const v=anchors[h]+(anchors[h+1]-anchors[h])*(m/60)+3*Math.sin((h*60+m)/17);
-      online.textContent=Math.max(1,Math.round(v)).toLocaleString("ru-RU");
-    }
-    showActivity();
-    setInterval(()=>{if(!document.hidden)showActivity()},60000);
     const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
     function shuffle(n){
       const arr=Array.from({length:n},(_,i)=>i);
