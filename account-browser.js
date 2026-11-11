@@ -86,6 +86,13 @@
   let selected = "login";
   let initialized = false;
   const params = new URLSearchParams(location.search);
+  let walletDeepLinkOpened=false;
+  function openRequestedWalletTopup(){
+    if(params.get("wallet_add")!=="1"||walletDeepLinkOpened||!current)return;
+    walletDeepLinkOpened=true;
+    if(!dialog.open)ownerButton.click();
+    showTopupPage();
+  }
   const resetToken = params.get("reset_token");
   const accountVerified = params.get("account_verified");
   if (resetToken || accountVerified) {
@@ -225,6 +232,8 @@
   dialog.append(walletStyle);
   const topupStyle=document.createElement("style");
   topupStyle.textContent="#account-dialog .numi-wallet-topup-page[hidden]{display:none!important}\n#account-dialog .numi-wallet-topup-page{width:100%;box-sizing:border-box;padding:8px 0 28px;color:#234839;font:15px/1.5 system-ui}\n#account-dialog .numi-wallet-topup-back{border:1px solid #dcc8a0;border-radius:13px;background:#fff8eb;color:#8b672f;padding:10px 14px;min-height:46px;font:650 14px/1.3 system-ui;cursor:pointer;margin-bottom:23px}\n#account-dialog .numi-wallet-topup-page h3{margin:0 0 8px;color:#1a4937;font:normal clamp(29px,7vw,38px)/1.15 Georgia,serif}\n#account-dialog .numi-wallet-topup-intro{margin:0 0 22px;color:#607368;font-size:14px}\n#account-dialog .numi-wallet-vpn-banner{display:block;padding:17px 16px;margin:0 0 20px;border:2px solid #b68c46;border-radius:15px;background:#fff8e8;color:#593d16;text-align:center;font:750 clamp(17px,4.6vw,21px)/1.35 system-ui}\n#account-dialog .numi-wallet-topup-current{margin:0 0 24px;border:1px solid #dae2d9;background:#f0f5ee;border-radius:18px;padding:16px 18px}\n#account-dialog .numi-wallet-topup-current small{display:block;color:#697b70;font-size:12px}\n#account-dialog .numi-wallet-topup-current strong{font-size:25px;line-height:1.2;color:#204635}\n#account-dialog .numi-wallet-topup-form{display:grid;gap:20px;margin:0}\n#account-dialog .numi-wallet-topup-form>label{display:block;font-weight:650;font-size:15px;color:#274b3b}\n#account-dialog .numi-wallet-topup-form input[type=number]{display:block;width:100%;min-height:54px;box-sizing:border-box;margin-top:8px;padding:11px 14px;border:1px solid #b9c8b7;border-radius:14px;background:#fff;color:#253c32;font:18px system-ui}\n#account-dialog .numi-wallet-topup-form input[type=email]{display:block;box-sizing:border-box;width:100%;min-height:49px;margin:9px 0 0;padding:10px 12px;border:1px solid #bca274;border-radius:12px;background:#fff;color:#234839;font:16px system-ui;text-align:center}\n#account-dialog .numi-wallet-payment-methods{display:flex;gap:18px;flex-wrap:wrap;margin:0;padding:0;border:0}\n#account-dialog .numi-wallet-payment-methods label{display:flex;align-items:center;gap:7px;font-size:15px;color:#274b3b}\n#account-dialog .numi-wallet-payment-methods input{accent-color:#245c46;width:18px;height:18px}\n#account-dialog .numi-wallet-topup-form button.numi-wallet-main-button{display:block;width:100%;min-height:52px;border:0;border-radius:14px;background:#224e3c;color:white;font:700 16px system-ui;cursor:pointer}\n#account-dialog .numi-wallet-topup-form button:disabled{opacity:.6;cursor:wait}\n#account-dialog .numi-wallet-topup-feedback{margin:16px 0 0;color:#4b6256;font:14px/1.5 system-ui}\n@media(max-width:700px){#account-dialog.numi-wallet-topup-active{height:calc(100dvh - 22px)!important;max-height:calc(100dvh - 22px)!important;min-height:0!important;margin:auto!important;overflow-y:auto!important;box-sizing:border-box}}\n/* Compact mobile top-up inside the existing account dialog. */\n@media(max-width:700px){\n#account-dialog.numi-wallet-topup-active{padding:14px 17px 16px!important;}\n#account-dialog.numi-wallet-topup-active .account-header{margin-bottom:9px;gap:9px;}\n#account-dialog.numi-wallet-topup-active .account-kicker{margin-bottom:3px;font-size:9px;line-height:1.15;}\n#account-dialog.numi-wallet-topup-active .account-header h2{font-size:clamp(25px,6.6vw,29px);line-height:1.08;}\n#account-dialog.numi-wallet-topup-active .account-close{width:36px;height:36px;font-size:23px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-page{padding:0 0 8px;line-height:1.35;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-back{min-height:40px;margin:0 0 11px;padding:8px 12px;font-size:13px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-page h3{margin:0 0 4px;font-size:clamp(27px,7vw,32px);line-height:1.09;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-intro{margin:0 0 10px;font-size:13px;line-height:1.3;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-vpn-banner{margin:0 0 10px;padding:9px 11px;border-radius:12px;font-size:clamp(14px,4vw,16px);line-height:1.25;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-current{margin:0 0 11px;padding:9px 13px;border-radius:14px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-current small{font-size:12px;line-height:1.2;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-current strong{font-size:23px;line-height:1.1;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form{gap:11px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form>label{font-size:14px;line-height:1.25;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form input[type=number]{min-height:46px;margin-top:5px;padding:8px 12px;border-radius:11px;font-size:16px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form input[type=email]{min-height:44px;margin-top:5px;padding:8px 11px;border-radius:11px;font-size:16px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form>label small{margin-top:3px!important;font-size:11px!important;line-height:1.3;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-payment-methods{gap:19px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-payment-methods label{font-size:14px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form button.numi-wallet-main-button{min-height:46px;border-radius:12px;font-size:15px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-feedback{margin:8px 0 0;}\n}";
+  // Keep the dashboard hidden if Telegram identification completes after top-up opens.
+  topupStyle.textContent+="\n#account-dialog.numi-wallet-topup-active #account-overview{display:none!important}";
   dialog.append(topupStyle);
   const walletMain=document.createElement("div");walletMain.className="numi-wallet-main";
   const walletText=document.createElement("div");
@@ -990,7 +999,11 @@
       current=session.authenticated?session.account:null;
       render();
       window.dispatchEvent(new Event("numi:account-session-changed"));
-      if (current) {await updatePurchases();await refreshWalletBadge();} else walletBadge.hidden=true;
+      if (current) {
+        await updatePurchases();
+        await refreshWalletBadge();
+        openRequestedWalletTopup();
+      } else walletBadge.hidden=true;
       return current;
     } catch (err) {
       current=null;walletBadge.hidden=true;render();window.dispatchEvent(new Event("numi:account-session-changed"));return null;
@@ -1034,7 +1047,12 @@
       clearMessage();
       if(result?.authenticated){
         current=result.account;
-        render();await updatePurchases();
+        render();
+        await updatePurchases();
+        if(params.get("wallet_add")==="1"){
+          await refreshWalletBadge();
+          openRequestedWalletTopup();
+        }
       }else if(success){
         alertMessage(success,true);
       }
@@ -1215,7 +1233,7 @@
       render();
       window.dispatchEvent(new Event("numi:account-session-changed"));
       void updatePurchases();
-      void refreshWalletBadge();
+      void refreshWalletBadge().then(openRequestedWalletTopup);
     }).catch(()=>{
       current=null;
       render();
