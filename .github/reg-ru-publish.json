@@ -1,14 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "moment/index.html",
-    "moment/moment.js",
-    "moment/moment.css"
-  ],
-  "expected_sha256": {
-    "moment/index.html": "173dbf982113bad720f5931f2014f1ab803c64ff1d021919face88e19fbf3c8d",
-    "moment/moment.js": "b50b5d14af8f8e71415d1611bf8f8812cbda2f79d76b30117600aa001ddc367a",
-    "moment/moment.css": "604d23f95bbe461129cf21e6584534733145bc7a29133c8238d6308ad4ace1d1"
-  },
-  "note": "Owner 2026-11-11 fix: the 300-question Moment preview must not show demo 'your moment recorded' to logged-in guests. Introduce read-only Club entitlement verification against canonical account API, display subscription-only message without Club, no fake computation for anyone, preserve dedicated working 100 yes/no section and purchase logic. Publish only 3 guarded files with backups."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-11 guarded REG.RU release verified: no fake Moment confirmation; 300-question catalog now checks active, paid Club membership in canonical account API before opening any question UI. Subscriber unanswered content does not claim availability. Separate 100 Yes/No section unchanged. Revert publisher to read-only."
 }
