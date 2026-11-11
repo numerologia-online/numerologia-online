@@ -1,5 +1,13 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "After verified compact Telegram top-up publication on 2026-11-11, park the existing selective publisher in read-only mode. Previous approved 6-file release is preserved in git history. No additional uploads."
+  "mode": "publish",
+  "files": [
+    "index.html",
+    "data/home-reviews.json"
+  ],
+  "expected_sha256": {
+    "index.html": "74b9ac141a566d658baabf1072ba39d4815e92cbf066af87314991716780a8d2",
+    "data/home-reviews.json": null
+  },
+  "create_home_reviews_demo": true,
+  "note": "Owner requested a safe trial preview on 2026-11-11. Publish only home HTML and new demo review JSON. Strip is opt-in via ?reviews_demo=1; not visible to visitors without the flag. FTPS backup and hash-check of existing site HTML required."
 }
