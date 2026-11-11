@@ -694,7 +694,36 @@ document.addEventListener("DOMContentLoaded",()=>{
  }
 },{once:true});
 </script>
-<style id="numi-editorial-links">.hero-founder-links{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-top:20px}.hero-founder-links a{display:inline-flex;gap:8px;align-items:center;min-height:44px;color:#204d3e;text-decoration:none;font:400 16px/1.3 Georgia,serif;border-bottom:1px solid #b9a47b;padding:3px 0}.hero-founder-links a span{font-family:Arial,sans-serif;font-size:17px}.hero-founder-links a:focus-visible,.founder-journal-link:focus-visible{outline:2px solid #a58a58;outline-offset:5px}.founder-story-body a.founder-journal-link{display:inline-block;color:#254d3e;font:400 19px/1.5 Georgia,serif;text-decoration:none;border-bottom:1px solid #af9974;padding:5px 0;margin-top:12px}@media(max-width:400px){.hero-founder-links{gap:17px;margin-top:12px}.hero-founder-links a{font-size:15px}}</style></head>
+<style id="numi-editorial-links">.hero-founder-links{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-top:20px}.hero-founder-links a{display:inline-flex;gap:8px;align-items:center;min-height:44px;color:#204d3e;text-decoration:none;font:400 16px/1.3 Georgia,serif;border-bottom:1px solid #b9a47b;padding:3px 0}.hero-founder-links a span{font-family:Arial,sans-serif;font-size:17px}.hero-founder-links a:focus-visible,.founder-journal-link:focus-visible{outline:2px solid #a58a58;outline-offset:5px}.founder-story-body a.founder-journal-link{display:inline-block;color:#254d3e;font:400 19px/1.5 Georgia,serif;text-decoration:none;border-bottom:1px solid #af9974;padding:5px 0;margin-top:12px}@media(max-width:400px){.hero-founder-links{gap:17px;margin-top:12px}.hero-founder-links a{font-size:15px}}</style>
+    <style id="numi-reviews-preview-style">
+      /* Isolated homepage preview: no layout/animation until query flag is present. */
+      #numi-reviews-preview[hidden]{display:none!important}
+      #numi-reviews-preview{
+        box-sizing:border-box;display:grid;grid-template-columns:minmax(114px,.43fr) minmax(0,1fr);
+        gap:12px;align-items:center;min-height:86px;margin:12px 0 15px;padding:11px 13px;
+        border:1px solid #d9c49f;border-radius:17px;background:linear-gradient(125deg,#fffdfa,#f7f1e6);
+        box-shadow:0 4px 14px rgba(64,48,28,.06);color:#204a39;
+      }
+      #numi-reviews-preview .numi-reviews-activity{display:flex;flex-direction:column;justify-content:center;gap:5px;min-width:0}
+      #numi-reviews-preview .numi-reviews-activity-label{font:700 10px/1.25 system-ui,-apple-system,sans-serif;color:#8c784f;white-space:nowrap}
+      #numi-reviews-preview .numi-reviews-activity-label span{color:#3d9367;font-size:9px;margin-right:3px}
+      #numi-reviews-preview #numi-reviews-online{font:600 clamp(18px,4.8vw,24px)/1.1 Georgia,serif;letter-spacing:-.02em;color:#1c4b39;white-space:nowrap;font-variant-numeric:tabular-nums}
+      #numi-reviews-preview .numi-reviews-window{position:relative;min-width:0;padding-left:13px;border-left:1px solid #deceb4}
+      #numi-reviews-preview .numi-reviews-caption{display:block;color:#a38047;font:750 9px/1.35 system-ui,sans-serif;letter-spacing:.09em;margin-bottom:5px}
+      #numi-reviews-preview .numi-reviews-text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;margin:0;min-height:3.75em;color:#2b493b;font:italic 13px/1.25 Georgia,"Times New Roman",serif;transition:opacity .28s ease,transform .28s ease;opacity:1;transform:translateY(0)}
+      #numi-reviews-preview .numi-reviews-text.is-changing{opacity:0;transform:translateY(4px)}
+      #numi-reviews-preview .numi-reviews-dots{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:2px}
+      #numi-reviews-preview .numi-reviews-dots i{display:block;width:4px;height:4px;border-radius:50%;background:#d9cdb8}
+      #numi-reviews-preview .numi-reviews-dots i.is-current{background:#a77a37;width:5px;height:5px}
+      @media(max-width:390px){
+        #numi-reviews-preview{grid-template-columns:minmax(103px,.42fr) minmax(0,1fr);gap:8px;padding:10px}
+        #numi-reviews-preview .numi-reviews-window{padding-left:9px}
+        #numi-reviews-preview .numi-reviews-activity-label{font-size:9px}
+        #numi-reviews-preview .numi-reviews-text{font-size:12px}
+      }
+      @media(prefers-reduced-motion:reduce){#numi-reviews-preview .numi-reviews-text{transition:none}}
+    </style>
+</head>
   <body>
     <main class="app-shell">
       <section id="home" class="screen is-active" aria-labelledby="home-title">
@@ -727,6 +756,19 @@ document.addEventListener("DOMContentLoaded",()=>{
         </div>
 
         
+        <!-- Trial preview only: visible at /?reviews_demo=1, no effect on live visitors. -->
+        <section id="numi-reviews-preview" class="numi-reviews-preview" aria-label="Предпросмотр строки активности и отзывов" hidden>
+          <div class="numi-reviews-activity">
+            <span class="numi-reviews-activity-label"><span aria-hidden="true">●</span> Сейчас на сайте</span>
+            <strong id="numi-reviews-online">—</strong>
+          </div>
+          <div class="numi-reviews-window">
+            <span class="numi-reviews-caption">✦ ОТЗЫВЫ · ДЕМО</span>
+            <p id="numi-reviews-text" class="numi-reviews-text">Подбираем отзыв…</p>
+            <span class="numi-reviews-dots" aria-hidden="true"><i class="is-current"></i><i></i><i></i></span>
+          </div>
+        </section>
+
         <section class="products" aria-label="Направления расчётов">
           <button class="product-card day" type="button" data-open-personal-day data-artwork="assets/day.webp"><span class="product-title">Личный день</span><span class="product-subtitle">Каждый день - твой личный расчёт. Подсказки и предупреждения.</span><span class="product-arrow" aria-hidden="true">→</span></button>
           <button class="product-card year-card" type="button" data-open-year data-artwork="assets/year.webp"><span class="product-title">Разбор года</span><span class="product-subtitle">12 месяцев любви, денег, опасных поворотов и важных решений</span><span class="product-arrow" aria-hidden="true">→</span></button>
@@ -1253,6 +1295,59 @@ document.addEventListener("DOMContentLoaded",()=>{
 </script>
 
 <script defer src="/assets/numi-partner-referral.js?v=1"></script>
+
+  <script id="numi-reviews-preview-script">
+  (()=>{"use strict";
+    // Test-only display. Remove this gate after real feedback is supplied and approved.
+    if(new URLSearchParams(location.search).get("reviews_demo")!=="1")return;
+    const box=document.getElementById("numi-reviews-preview");
+    const online=document.getElementById("numi-reviews-online");
+    const line=document.getElementById("numi-reviews-text");
+    const dots=[...box.querySelectorAll(".numi-reviews-dots i")];
+    if(!box||!online||!line)return;
+    box.hidden=false;
+    const anchors=[34,30,25,21,18,19,28,49,76,101,126,150,166,180,189,193,201,216,232,225,209,183,143,87,34];
+    function showActivity(){
+      // Deterministic demo curve; no visitor tracking or server polling.
+      const parts=new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Samara",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date());
+      const h=Number(parts.find(p=>p.type==="hour")?.value||0),m=Number(parts.find(p=>p.type==="minute")?.value||0);
+      const v=anchors[h]+(anchors[h+1]-anchors[h])*(m/60)+3*Math.sin((h*60+m)/17);
+      online.textContent=Math.max(1,Math.round(v)).toLocaleString("ru-RU");
+    }
+    showActivity();
+    setInterval(()=>{if(!document.hidden)showActivity()},60000);
+    const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function shuffle(n){
+      const arr=Array.from({length:n},(_,i)=>i);
+      for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}
+      return arr;
+    }
+    fetch("data/home-reviews.json?v=demo-20261111",{cache:"force-cache"})
+      .then(r=>{if(!r.ok)throw new Error("reviews unavailable");return r.json()})
+      .then(data=>{
+        if(data?.type!=="demo"||!Array.isArray(data.reviews))throw new Error("wrong demo format");
+        const texts=data.reviews.filter(t=>typeof t==="string"&&t.length>=10&&t.length<=150);
+        if(!texts.length)throw new Error("empty demo");
+        let order=shuffle(texts.length),at=0,last=-1,rot=0;
+        function next(){
+          if(at>=order.length){order=shuffle(texts.length);at=0;if(order.length>1&&order[0]===last){[order[0],order[1]]=[order[1],order[0]]}}
+          last=order[at++];
+          const render=()=>{
+            line.textContent="«"+texts[last]+"»";
+            dots.forEach((dot,i)=>dot.classList.toggle("is-current",i===rot%3));
+            rot++;
+            line.classList.remove("is-changing");
+          };
+          if(reduce){render();return;}
+          line.classList.add("is-changing");
+          setTimeout(render,280);
+        }
+        next();
+        setInterval(()=>{if(!document.hidden)next()},7000);
+      })
+      .catch(()=>{line.textContent="Отзывы временно недоступны";});
+  })();
+  </script>
 </body>
 </html>
 
