@@ -263,3 +263,12 @@ body.yn-question-page{background:#fbf9f4}
 #yn-dialog .yn-club-access-question span{display:block;font-weight:700;color:#8d6b36}
 #yn-dialog .yn-club-access-question small{display:block;margin:6px 0;font-size:12px;line-height:1.4;color:#526b5b}
 #yn-dialog .yn-club-access-question a{display:inline-block;margin-top:4px;font-size:14px}
+
+/* Club-only action following the one free daily Yes/No answer. */
+#yn-dialog .yn-subscription-link{
+ display:block;box-sizing:border-box;width:fit-content;max-width:100%;
+ margin:16px auto 2px;padding:12px 18px;border-radius:13px;
+ background:#21543f;color:white;font:750 15px/1.35 system-ui,-apple-system,sans-serif;
+ text-align:center;text-decoration:none;
+}
+#yn-dialog .yn-subscription-link:focus-visible{outline:3px solid #bc985a;outline-offset:3px}
