@@ -173,7 +173,14 @@ def run():
             needle=b'/moment/yes-no/'
             start=old_prices.find(needle)
             excerpt=old_prices[max(0,start-140):start+330].decode("utf-8",errors="replace") if start>=0 else "NO_ROW"
-            print("UNKNOWN_PUBLIC_YESNO_PRICE_ROW " + excerpt[:470],flush=True)
+            body=old_prices.decode("utf-8",errors="replace")
+            markers=["Да или нет","да или нет","yesno","yes-no","19 ₽","Вопрос","вопрос","Цена"]
+            positions={key:body.find(key) for key in markers}
+            print("PUBLIC_PRICES_READONLY_DIAGNOSTIC " + json.dumps({
+                "bytes":len(old_prices),"sha256":digest(old_prices),
+                "heading":body[:850],"positions":positions,
+                "match":excerpt[:470]
+            },ensure_ascii=False),flush=True)
             raise RuntimeError("Price row changed independently; refused unsafe replacement")
         else:
             price_backup=remote("site-safeguard-backups/yesno-price-only-" +
