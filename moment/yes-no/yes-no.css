@@ -253,3 +253,9 @@ body.yn-question-page{background:#fbf9f4}
 #yn-dialog .yn-telegram-actions button:disabled{opacity:.65;cursor:default}
 #yn-dialog .yn-telegram-status{margin:1px 0 0;text-align:center;font:13px/1.4 system-ui,sans-serif;color:#385849}
 #yn-dialog .yn-telegram-status[hidden]{display:none}
+
+/* Clear access terms for 100 Yes/No questions (category and question views). */
+.yn-club-access-note{box-sizing:border-box;margin:0 auto 20px;max-width:650px;padding:11px 14px;border:1px solid #dcd0b8;border-radius:13px;background:#f7f5ec;color:#4d6657;text-align:center;font:500 13px/1.5 system-ui,-apple-system,sans-serif}
+.yn-club-access-note strong{color:#174633;font-weight:750}
+.yn-club-access-note a{display:inline-block;color:#176042;font-weight:750;text-underline-offset:3px}
+#yn-dialog .yn-club-access-question{margin:16px auto 6px;padding:13px 14px;font-size:13px;line-height:1.5}
