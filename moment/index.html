@@ -6,8 +6,9 @@
   <meta name="theme-color" content="#143c30">
   <meta name="description" content="Нумерология момента — 300 вопросов о любви, работе, деньгах и жизненных решениях. Каталог и подбор вопроса.">
   <title>300 вопросов обо всём — Нумерология онлайн</title>
-  <link rel="stylesheet" href="./moment.css?v=4">
-  <script defer src="./moment.js?v=2"></script>
+  <link rel="stylesheet" href="./moment.css?v=club-access-20261111">
+  <script defer src="../assets/telegram-web-app-20261102.js"></script>
+  <script defer src="./moment.js?v=club-access-20261111"></script>
 <link rel="canonical" href="https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/">
 <script type="application/ld+json" id="numi-site-entities">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#organization","name":"Нумерология онлайн","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/"},{"@type":"WebSite","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#website","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/","name":"Нумерология онлайн","inLanguage":"ru","publisher":{"@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#organization"}},{"@type":"WebPage","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/#webpage","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/","name":"300 вопросов обо всём — Нумерология онлайн","inLanguage":"ru","isPartOf":{"@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#website"}}]}</script>
 </head>
@@ -47,17 +48,8 @@
         <div id="question-list" class="question-list"></div>
         <button id="show-more" type="button" class="show-more" hidden>Показать ещё вопросы ↓</button>
       </div>
-      <section class="own-question" aria-labelledby="own-question-title">
-        <div class="own-symbol" aria-hidden="true">✧</div>
-        <div><p class="overline">ВАШ ВОПРОС</p><h2 id="own-question-title">Не нашли нужную формулировку?</h2><p>Напишите свой вопрос. Мы сохраним его и нужные данные для будущего расчёта, но пока не будем выдавать неподготовленные трактовки.</p></div>
-        <button type="button" id="ask-own" class="primary-button">Сформулировать свой вопрос <span aria-hidden="true">→</span></button>
-      </section>
+
     </section>
-    <section class="how-it-works"><div class="shell">
-      <p class="overline">КАК ЭТО РАБОТАЕТ</p><h2>Момент имеет значение</h2>
-      <div class="steps"><div><span>01</span><strong>Выберите вопрос</strong><p>Из каталога или придумайте свой.</p></div><div><span>02</span><strong>Укажите даты</strong><p>Вашу, а для отношений — ещё и второго человека.</p></div><div><span>03</span><strong>Зафиксируйте момент</strong><p>Время подтверждения вопроса станет частью будущего расчёта.</p></div></div>
-      <p class="availability">Раздел готовится к запуску. Каталог работает в режиме предварительного просмотра: платных расчётов, списаний и автоматических ответов пока нет.</p>
-    </div></section>
   </main>
   <footer class="site-footer"><div class="shell"><span>НУМЕРОЛОГИЯ ОНЛАЙН · 9966</span><a href="../">Вернуться на сайт ↗</a></div></footer>
   <dialog id="question-dialog" aria-labelledby="question-title">
@@ -65,18 +57,20 @@
       <div class="dialog-top"><span class="overline">ВАШ МОМЕНТ · 9966</span><button id="close-dialog" type="button" aria-label="Закрыть">×</button></div>
       <p id="question-topic" class="dialog-topic">НУМЕРОЛОГИЯ МОМЕНТА</p>
       <h2 id="question-title">Ваш вопрос</h2>
-      <p class="dialog-intro">Подготовим исходные данные для индивидуального расчёта.</p>
-      <form id="moment-form" novalidate>
-        <div id="custom-question-wrap" class="field" hidden><label for="custom-question">Ваш вопрос</label><textarea id="custom-question" rows="3" maxlength="240" placeholder="Например, стоит ли начинать новое дело?"></textarea><span class="field-hint">Пока это предварительный просмотр — ответ не рассчитывается.</span></div>
-        <div class="field"><label for="birth-one">Ваша дата рождения</label><input id="birth-one" type="date" required min="1900-01-01" max="2100-12-31"></div>
-        <div class="field" id="partner-field" hidden><label for="birth-two">Дата рождения другого человека</label><input id="birth-two" type="date" min="1900-01-01" max="2100-12-31"><span class="field-hint">Для вопросов о чувствах, отношениях и совместимости.</span></div>
-        <div class="field" id="event-field" hidden><label for="event-date">Дата планируемого события</label><input id="event-date" type="date" min="1900-01-01" max="2100-12-31"></div>
-        <fieldset id="custom-mode-field" class="mode-field" hidden><legend>О ком ваш вопрос?</legend><label><input type="radio" name="custom-mode" value="self" checked> Обо мне или о ситуации</label><label><input type="radio" name="custom-mode" value="partner"> О двух людях</label><label><input type="radio" name="custom-mode" value="event"> О выбранной дате</label></fieldset>
-        <div class="moment-clock"><span class="clock-icon" aria-hidden="true">◷</span><div><strong>Момент вопроса</strong><p id="moment-clock-label">Дата и время зафиксируются при подтверждении.</p></div></div>
-        <p id="form-error" role="alert" hidden></p>
-        <button class="primary-button submit-question" type="submit">Зафиксировать мой вопрос <span aria-hidden="true">→</span></button>
-      </form>
-      <div id="moment-confirmation" class="confirmation" hidden tabindex="-1"><span class="confirmed-icon" aria-hidden="true">✓</span><h3>Ваш момент зафиксирован</h3><p id="confirmed-question"></p><p id="confirmed-time"></p><div class="waiting-note"><strong>Следующий шаг — подключение расчётов</strong><p>Это демонстрация подготовки вопроса, а не готовый нумерологический ответ. Данные не передаются на сервер и не создают покупку.</p></div><button id="ask-another" type="button" class="secondary-button">Выбрать другой вопрос</button></div>
+      <div id="moment-access-loading" class="moment-access-status" role="status">
+        Проверяем вашу подписку…
+      </div>
+      <div id="moment-subscription-required" class="moment-access-status" hidden>
+        <p>Ответы на вопросы Нумерологии момента доступны только с действующей подпиской на Клуб.</p>
+        <a href="../?account=1" class="primary-button moment-access-link">Перейти к подписке →</a>
+      </div>
+      <div id="moment-member-not-ready" class="moment-access-status" hidden>
+        <p>Ваша подписка на Клуб активна. Ответ на этот вопрос пока недоступен.</p>
+      </div>
+      <div id="moment-access-error" class="moment-access-status" hidden>
+        <p>Не удалось проверить подписку. Попробуйте ещё раз.</p>
+        <button id="moment-access-retry" class="secondary-button" type="button">Повторить проверку</button>
+      </div>
     </div>
   </dialog>
 <!-- Numi Insights v2: independent background collector -->
