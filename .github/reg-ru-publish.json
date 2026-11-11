@@ -1,12 +1,12 @@
 {
   "mode": "publish",
   "files": [
-    "data/day/practical/practical-day-16.json",
-    "data/day/practical/practical-day-17.json",
-    "data/day/practical/practical-day-18.json",
-    "data/day/practical/practical-day-20.json",
-    "data/day/practical/practical-day-21.json",
-    "data/day/practical/practical-day-22.json"
+    "account-browser.js",
+    "index.html"
   ],
-  "note": "Publish owner-approved final 44 practical-day blocks with all six recommendations expanded; exact six JSON files only. Repeat previous 100-block guarded FTPS backup-and-verify workflow. Approval confirmed 2026-11-10."
+  "expected_sha256": {
+    "account-browser.js": "fa197350f0ccb1e9f35bc0cfe81345044e7f6c19772c62863be0de200238cf6c",
+    "index.html": "abc91497655c5a5069e528fc4729244036be440de8104d93f70d8bed7ce868fa"
+  },
+  "note": "Owner-approved 2026-11-11. Publish only the reviewed mobile top-up spacing CSS and changed account script cache tag. No payment logic, account data, backend or other files."
 }
