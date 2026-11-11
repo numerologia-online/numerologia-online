@@ -59,3 +59,4 @@ jobs:
 # One-row in-place price correction preserves independently changed live HTML, with backup and readback.
 # Read-only diagnostic: actual live public prices file is independently edited.
 # Diagnose the specific live Yes/No public price row before a narrow correction.
+# Correct only the exact known unlinked Yes/No live price row; preserve all independent edits.
