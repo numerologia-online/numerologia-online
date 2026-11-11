@@ -1,5 +1,18 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-11 guarded REG.RU release verified: no fake Moment confirmation; 300-question catalog now checks active, paid Club membership in canonical account API before opening any question UI. Subscriber unanswered content does not claim availability. Separate 100 Yes/No section unchanged. Revert publisher to read-only."
+  "mode": "publish",
+  "files": [
+    "moment/index.html",
+    "moment/moment.js",
+    "moment/moment.css",
+    "account-browser.js",
+    "index.html"
+  ],
+  "expected_sha256": {
+    "moment/index.html": "77e597fefbdb7bcfdbb11f35efd43ad2a8607ac576685ad89586183dcccf191e",
+    "moment/moment.js": "0826a1950cc91e5384858d38cead3495cb978888efa66194678f38470e53249e",
+    "moment/moment.css": "8b5851f0cb98cda291310d89bcdf839fe52fb9b483f6507c4386573d8a9146ae",
+    "account-browser.js": "60c7e702b4fa462385f18343fdeacefba032fd9506d14add8b645cb16f2b6d04",
+    "index.html": "9b92673d19f91277e60b037e0aed76d24bf55c7f26231a101141984e6c6f4a72"
+  },
+  "note": "Owner 2026-11-11: all 300 general Moment questions browseable by anyone; subscription check only on Ask Now; without Club show subscription offer 490 RUB/month and route directly to existing account tariff panel. General-catalog label clarifies 300 while separate Yes/No has 100 data entries. Protected write of five narrowly scoped existing files, no payment or other content changes."
 }
