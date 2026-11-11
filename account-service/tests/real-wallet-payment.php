@@ -715,7 +715,14 @@ $pendingCount=count($providerRequests);
 naLiveSubscriptionTick($db,$subConfig,$simulatedSend,$simulatedRead);
 assertReal(count($providerRequests)===$pendingCount,
     'scheduled retry never submits a second payment while a renewal is pending');
-$duePaymentId=end($providerRequests)['id'];
+$duePayment=$db->prepare("SELECT c.provider_payment_id FROM numi_checkouts c
+    JOIN numi_checkout_items i ON i.checkout_id=c.id
+    JOIN numi_orders o ON o.id=i.order_id
+    WHERE o.account_id=? AND o.provider='real_subscription' AND o.status='pending'
+    ORDER BY c.created_at DESC LIMIT 1");
+$duePayment->execute([$dueId]);$duePaymentId=$duePayment->fetchColumn();
+assertReal(is_string($duePaymentId)&&isset($providerPayments[$duePaymentId]),
+    'simulated due-renewal provider payment is registered in checkout');
 $providerPayments[$duePaymentId]['status']='succeeded';
 $providerPayments[$duePaymentId]['paid']=true;
 $providerPayments[$duePaymentId]['receipt_registration']='succeeded';
