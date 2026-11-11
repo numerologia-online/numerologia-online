@@ -1,12 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "account-browser.js",
-    "index.html"
-  ],
-  "expected_sha256": {
-    "account-browser.js": "fa197350f0ccb1e9f35bc0cfe81345044e7f6c19772c62863be0de200238cf6c",
-    "index.html": "abc91497655c5a5069e528fc4729244036be440de8104d93f70d8bed7ce868fa"
-  },
-  "note": "Owner-approved 2026-11-11. Publish only the reviewed mobile top-up spacing CSS and changed account script cache tag. No payment logic, account data, backend or other files."
+  "mode": "check",
+  "files": [],
+  "note": "After verified compact Telegram top-up publication on 2026-11-11, park the existing selective publisher in read-only mode. Previous approved 6-file release is preserved in git history. No additional uploads."
 }
