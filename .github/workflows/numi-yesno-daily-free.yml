@@ -58,3 +58,4 @@ jobs:
 # REG.RU current Cyrillic domain is served from its original verified .online document root.
 # One-row in-place price correction preserves independently changed live HTML, with backup and readback.
 # Read-only diagnostic: actual live public prices file is independently edited.
+# Diagnose the specific live Yes/No public price row before a narrow correction.
