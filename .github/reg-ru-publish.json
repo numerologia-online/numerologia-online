@@ -1,5 +1,10 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-11 rotating reviews demo published and verified (index.html plus data/home-reviews.json). Safe read-only release state; demo remains available only at ?reviews_demo=1."
+  "mode": "publish",
+  "files": [
+    "index.html"
+  ],
+  "expected_sha256": {
+    "index.html": "c42e3515776a93951f3b0e72f3b0ce24450617659d40aad7e4d6973062fc3c26"
+  },
+  "note": "Owner-approved 2026-11-11 demo refinements: reduce rotating testimonial strip height, sans-serif counter and reviews, remove quotes and dots; preload founder hero photo. HTML only; no other files changed."
 }
