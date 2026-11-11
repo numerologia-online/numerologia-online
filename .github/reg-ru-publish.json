@@ -1,10 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "moment/index.html"
-  ],
-  "expected_sha256": {
-    "moment/index.html": "d5dea8843c6e3c1969f09e498ce82b245984057cd32c0238a0a98c79fd489413"
-  },
-  "note": "Owner 2026-11-11 corrected the Yes/No card label from confusing 300 general catalogue questions to its actual 100 questions. General 300 question listing remains publicly viewable with Ask Now flow intact. Strict one-file publication."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-11 live REG.RU confirmed Yes/No card now states 100 questions (correct separate question set). The general 300-question catalog stays public with Ask Now and subscription gate after click. Backup verified. Publisher restored to read-only."
 }
