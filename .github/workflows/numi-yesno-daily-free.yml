@@ -1,4 +1,4 @@
-name: Publish yes-no daily free question to REG.RU
+name: Release reviewed Club-only Yes/No backend to REG.RU
 on:
   push:
     branches: [main]
@@ -8,39 +8,48 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: numi-yesno-daily-free-production
+  group: reg-ru-manual-publication
   cancel-in-progress: false
 jobs:
   release:
-    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish yes-no daily free limit to REG.RU'
-    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish Club-only Yes/No backend to REG.RU')
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Validate new server and client sources
+          persist-credentials: false
+      - name: Lint PHP, test catalog and verify no individual Yes/No sale
         run: |
-          php -l yesno-service/public/numi-yesno-answer.php
+          set -euo pipefail
+          for file in account-service/private/{core,wallet,store}.php yesno-service/public/numi-yesno-answer.php; do php -l "$file"; done
           node --check moment/yes-no/yes-no.js
+          node --input-type=module --check < wallet-client.js
           python3 -m py_compile yesno-service/daily-free/deploy.py
+          php account-service/tests/store.php
+          php account-service/tests/subscriptions.php
           python3 - <<'PY'
           from pathlib import Path
-          js=Path('moment/yes-no/yes-no.js').read_text()
-          php=Path('yesno-service/public/numi-yesno-answer.php').read_text()
+          core=Path('account-service/private/core.php').read_text()
+          wallet=Path('account-service/private/wallet.php').read_text()
+          answer=Path('yesno-service/public/numi-yesno-answer.php').read_text()
+          ui=Path('moment/yes-no/yes-no.js').read_text()
           html=Path('moment/yes-no/index.html').read_text()
-          assert 'CREATE TABLE IF NOT EXISTS numi_yesno_daily_uses' in php
-          assert 'INSERT IGNORE INTO numi_yesno_daily_uses' in php
-          assert "'POST'" in php and "POST" in js
-          assert 'button.disabled = locked' in js
-          assert 'yes-no.js?v=14' in html
-          assert 'yn-access-status' in html
-          assert 'numi_entitlements e' in php
-          assert 'OWNER_MAILING_HANDLER' not in js
-          print('YESNO_DAILY_FREE_PRECHECK_OK')
+          assert "$price=$club?0:1900;" not in core
+          assert "$price=0;" in core and "CLUB_REQUIRED" in core
+          assert "YESNO_CLUB_ONLY" in wallet
+          assert "$paidAnswer" not in answer
+          assert "INSERT IGNORE INTO numi_yesno_daily_uses" in answer
+          assert "DAILY_LIMIT_REACHED" in answer
+          assert "naCatalogHasAccess($db,['id'=>$accountId],'club_month','club')" in answer
+          assert "showInlinePurchase" not in ui
+          assert "19 ₽" not in html
+          print("YESNO_CLUB_ONLY_SOURCE_AND_REGRESSION_TESTS_OK")
           PY
-      - name: Back up live targets, enforce server quota, and verify anonymous lockout
+      - name: Guard remote originals, backup, publish only three PHP files, verify live API
         env:
+          REG_FTP_HOST: ${{ secrets.REG_FTP_HOST }}
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: python3 -u yesno-service/daily-free/deploy.py
