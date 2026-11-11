@@ -38,7 +38,6 @@ if (!in_array($mode, ['--run', '--check', '--status'], true)) {
 }
 
 $bankOrigins = [
-    'https://atelier-8k2m7q.vercel.app/',
     'https://numerologia-online.github.io/numerologia-online/',
 ];
 

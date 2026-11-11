@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - .github/workflows/numi-telegram-email-note-release.yml
+      - server/telegram-daily/numerologia-daily-08-msk-21-10-2026.php
 permissions:
   contents: read
 concurrency:
@@ -26,3 +27,105 @@ jobs:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: python3 -u account-service/deploy-telegram-email-note.py
+
+  sync_daily_source:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Switch daily Telegram forecast source to verified GitHub Pages on REG.RU'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify GitHub Pages, back up live REG.RU daily cron and patch ONLY its forecast source
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,hashlib,io,json,os,pathlib,ssl,subprocess,tempfile,urllib.request
+          source='server/telegram-daily/numerologia-daily-08-msk-21-10-2026.php'
+          workflow='.github/workflows/numi-telegram-email-note-release.yml'
+          readme='server/telegram-daily/README.md'
+          old=b"$bankOrigins = [\n    'https://atelier-8k2m7q.vercel.app/',\n    'https://numerologia-online.github.io/numerologia-online/',\n];"
+          new=b"$bankOrigins = [\n    'https://numerologia-online.github.io/numerologia-online/',\n];"
+          def git(*args):return subprocess.check_output(['git',*args],timeout=25)
+          changes=set(git('diff','--name-only','HEAD^','HEAD').decode().splitlines())
+          if changes!={source,workflow,readme}:raise RuntimeError('UNRELATED_COMMIT_CHANGES')
+          previous=git('show','HEAD^:'+source)
+          current=pathlib.Path(source).read_bytes()
+          if previous.count(old)!=1 or current!=previous.replace(old,new,1):raise RuntimeError('SOURCE_NOT_A_SINGLE_ORIGIN_EDIT')
+          subprocess.run(['php','-l',source],check=True,stdout=subprocess.DEVNULL)
+          origin='https://numerologia-online.github.io/numerologia-online/'
+          for path in ('data/day/general/general-day-11.json','data/day/practical/practical-day-11.json'):
+              req=urllib.request.Request(origin+path+'?verify=20261111',headers={'Cache-Control':'no-cache','User-Agent':'NUMI-Daily-Verification/1.0'})
+              with urllib.request.urlopen(req,timeout=25) as response:
+                  if response.status!=200:raise RuntimeError('PAGES_NOT_OK')
+                  body=response.read(1000000)
+              if hashlib.sha256(body).digest()!=hashlib.sha256(pathlib.Path(path).read_bytes()).digest():
+                  raise RuntimeError('PAGES_NOT_LATEST:'+path)
+              j=json.loads(body)
+              if '19' not in j.get('entries',{}):raise RuntimeError('PAGES_MISSING_DATE_ENTRY:'+path)
+              if '/general/' in path and 'Позвольте себе хотя бы один час удовольствия' not in j['entries']['19']['text']:raise RuntimeError('PAGES_MISSING_TEST_SENTENCE')
+              if '/practical/' in path and (not j['entries']['19'].get('todayNeed') or not j['entries']['19'].get('todayAvoid')):raise RuntimeError('PAGES_MISSING_ADVICE')
+          print('DAILY_PAGES_GENERAL_AND_PRACTICAL_VERIFIED',flush=True)
+          u,p=os.getenv('REG_FTP_USER'),os.getenv('REG_FTP_PASSWORD')
+          if not u or not p:raise RuntimeError('REG_RU_CREDENTIALS_MISSING')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(u,p);ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')
+          target=root+'/private/numerologia-daily-08-msk-21-10-2026.php'
+          temp=target+'.verify-'+os.environ['GITHUB_RUN_ID']+'.tmp'
+          def read(name):
+              b=io.BytesIO()
+              def add(data):
+                  if b.tell()+len(data)>200000:raise RuntimeError('REMOTE_TOO_LARGE')
+                  b.write(data)
+              ftp.retrbinary('RETR '+name,add)
+              return b.getvalue()
+          def put(name,content):
+              ftp.storbinary('STOR '+name,io.BytesIO(content))
+              if read(name)!=content:raise RuntimeError('REMOTE_READBACK_FAILED')
+          before=None
+          replaced=False
+          try:
+              before=read(target)
+              if not before.startswith(b'<?php') or b'EXPECTED_BOT_ID' not in before or b'function forecastBank(' not in before:raise RuntimeError('UNEXPECTED_LIVE_SCRIPT')
+              if before.count(new)==1 and before.count(old)==0:
+                  print('DAILY_SOURCE_ALREADY_SWITCHED_AND_VERIFIED',flush=True)
+              else:
+                  if before.count(old)!=1 or before.count(new)!=0:raise RuntimeError('LIVE_ORIGINS_DIFFER_NO_OVERWRITE')
+                  after=before.replace(old,new,1)
+                  with tempfile.NamedTemporaryFile(suffix='.php') as f:
+                      f.write(after);f.flush()
+                      subprocess.run(['php','-l',f.name],check=True,stdout=subprocess.DEVNULL)
+                  backupdir=root+'/site-safeguard-backups'
+                  ftp.cwd(backupdir)
+                  backup=backupdir+'/daily-before-github-pages-'+os.environ['GITHUB_RUN_ID']+'.php.bak'
+                  put(backup,before)
+                  print('DAILY_SOURCE_BACKUP_VERIFIED',flush=True)
+                  if read(target)!=before:raise RuntimeError('LIVE_CHANGED_BEFORE_SWITCH')
+                  put(temp,after)
+                  ftp.rename(temp,target)
+                  replaced=True
+                  if read(target)!=after:raise RuntimeError('POST_SWITCH_INTEGRITY_FAILED')
+                  print('DAILY_SOURCE_SWITCH_READBACK_VERIFIED',flush=True)
+              final=read(target)
+              if final.count(new)!=1 or final.count(old)!=0:raise RuntimeError('INVALID_FINAL_SOURCE')
+              print('DAILY_SOURCE_SUCCESS_GITHUB_PAGES_ONLY_NO_CRON_OR_SUBSCRIBERS_CHANGED',flush=True)
+          except BaseException:
+              if replaced and before is not None:
+                  try:
+                      put(temp,before)
+                      ftp.rename(temp,target)
+                      if read(target)==before:print('DAILY_SOURCE_ROLLBACK_VERIFIED',flush=True)
+                      else:print('DAILY_SOURCE_ROLLBACK_MISMATCH',flush=True)
+                  except BaseException:print('DAILY_SOURCE_ROLLBACK_FAILED',flush=True)
+              raise
+          finally:
+              try:ftp.delete(temp)
+              except Exception:pass
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
