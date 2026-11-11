@@ -26,11 +26,13 @@ $db->exec("CREATE TABLE numi_sessions(session_hash TEXT PRIMARY KEY,account_id T
 $token=str_repeat('a',43);$db->prepare("INSERT INTO numi_sessions VALUES(?,?,'2099-01-01 00:00:00')")->execute([hash('sha256',$token),'alice']);
 $_COOKIE[NUMI_ACCOUNT_COOKIE]=$token;ok(naCurrent($db)['id']==='alice','repeat login resolves same account');
 $_COOKIE[NUMI_ACCOUNT_COOKIE]=str_repeat('b',43);ok(naCurrent($db)===null,'forged session denied');
-$items=[naCatalogResolve(['product_code'=>'life_full','birth_date'=>'1986-09-09'],false),naCatalogResolve(['product_code'=>'yesno_question','question_id'=>'yn-man-001','question_time'=>'12:34'],false)];
-$basket=naStorePrepareCheckout($db,$alice,['request_key'=>'multi-item-order-0003'],['items'=>$items,'total_kopeks'=>100900]);
-$countBefore=(int)$db->query('SELECT COUNT(*) FROM numi_entitlements')->fetchColumn();$basket['provider_payment_id']='multi-payment';$paid=$payment;$paid['id']='multi-payment';$paid['amount']['value']='1009.00';$paid['metadata']['numi_checkout']=$basket['id'];unset($paid['payment_method']);
+// Keep the historic multi-item refund test, but use a currently sellable item.
+// Yes/No is Club-only and must never be added to a paid checkout.
+$items=[naCatalogResolve(['product_code'=>'life_full','birth_date'=>'1986-09-09'],false),naCatalogResolve(['product_code'=>'redflag_question','birth_date'=>'1986-09-09','category'=>'money','question_id'=>'generosity'],false)];
+$basket=naStorePrepareCheckout($db,$alice,['request_key'=>'multi-item-order-0003'],['items'=>$items,'total_kopeks'=>101000]);
+$countBefore=(int)$db->query('SELECT COUNT(*) FROM numi_entitlements')->fetchColumn();$basket['provider_payment_id']='multi-payment';$paid=$payment;$paid['id']='multi-payment';$paid['amount']['value']='1010.00';$paid['metadata']['numi_checkout']=$basket['id'];unset($paid['payment_method']);
 $pending=$paid;$pending['status']='pending';$pending['paid']=false;naStoreApply($db,$basket,$pending);ok((int)$db->query('SELECT COUNT(*) FROM numi_entitlements')->fetchColumn()===$countBefore,'basket pending grants nothing');
 naStoreApply($db,$basket,$paid);naStoreApply($db,$basket,$paid);ok((int)$db->query('SELECT COUNT(*) FROM numi_entitlements')->fetchColumn()===$countBefore+2,'basket grants both items once');
-$paid['refunded_amount']=['value'=>'1009.00','currency'=>'RUB'];naStoreApply($db,$basket,$paid);$rights=$db->query("SELECT e.status FROM numi_entitlements e JOIN numi_checkout_items i ON i.order_id=e.order_id WHERE i.checkout_id='".$basket['id']."'")->fetchAll();ok(count($rights)===2&&count(array_filter($rights,fn($r)=>$r['status']==='revoked'))===2,'basket refund revokes both items');
+$paid['refunded_amount']=['value'=>'1010.00','currency'=>'RUB'];naStoreApply($db,$basket,$paid);$rights=$db->query("SELECT e.status FROM numi_entitlements e JOIN numi_checkout_items i ON i.order_id=e.order_id WHERE i.checkout_id='".$basket['id']."'")->fetchAll();ok(count($rights)===2&&count(array_filter($rights,fn($r)=>$r['status']==='revoked'))===2,'basket refund revokes both items');
 try{naSubscriptionTick($db,[]);throw new LogicException('Recurring unexpectedly enabled');}catch(RuntimeException $e){ok($e->getMessage()==='RECURRING_DISABLED','worker refuses disabled billing');}
 echo "PASS $n subscription, retry and account-isolation checks (SQLite)\n";
