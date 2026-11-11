@@ -1,5 +1,16 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-11 verified Yes/No Club access information, direct authenticated wallet top-up navigation, and Telegram-disabled-button fallback. REG.RU FTPS backed up/readback all files in 6-file release and subsequent 1-file safe adjustment. Return publisher to read-only."
+  "mode": "publish",
+  "files": [
+    "moment/yes-no/index.html",
+    "moment/yes-no/yes-no.css",
+    "moment/yes-no/yes-no.js",
+    "wallet-client.js"
+  ],
+  "expected_sha256": {
+    "moment/yes-no/index.html": "74063217fcd6f9ac5be27336de2b61a2c8ba3f9096a8a78e8fd651eb2282c224",
+    "moment/yes-no/yes-no.css": "2bb0e955d5f249b4176c26081c209131fca939d1036de0daad73508e2be1a2a0",
+    "moment/yes-no/yes-no.js": "05d3bd090a82be1d92915eb5e55b0027dc742792a60b1f1988d4748d661c98b5",
+    "wallet-client.js": "8f00b5bb0e828cdf58aeb09ba377222c1c97cd8bd8023730e06e9c08624ec763"
+  },
+  "note": "Owner 2026-11-11 reports Club terms invisible in the Yes/No question. Relocate Club 490 RUB monthly / 100 questions included notice above time input instead of below result, improve visibility, and fix Club offer UI suppression for 0-RUB member-included Yes/No quotes on insufficient-balance prompt. Four existing files only, with hash guard and backups. No backend, charging, or quota changes."
 }
