@@ -1434,3 +1434,104 @@ jobs:
               try:ftp.quit()
               except BaseException:ftp.close()
           PY
+
+  sync_love_apr17_21:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Sync reviewed Love April 17-21 answers to REG.RU private bank'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Validate exactly 45 reviewed texts, back up and sync private REG.RU files
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib, hashlib, io, json, os, pathlib, ssl, subprocess, time
+          BASE='ed631e620c50585a26c0532ee5e658303074427e'
+          names=['romance','relationship-or-comfort','adult-partner','near-him',
+                 'hard-moment','relationship-format','family-or-triangle',
+                 'honest-or-disappear','love-or-attention']
+          dates=[str(day)+'-4' for day in range(17,22)]
+          paths=['data/redflag/love/'+n+'.json' for n in names]
+          manifest='account-service/private/store-assets.json'
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          previous=lambda p:subprocess.check_output(['git','show',BASE+':'+p],timeout=35)
+          assert subprocess.check_output(['git','rev-parse','HEAD^'],text=True).strip()==BASE, 'Unexpected parent'
+          before={p:previous(p) for p in paths+[manifest]}
+          after={p:pathlib.Path(p).read_bytes() for p in paths+[manifest]}
+          old_manifest=json.loads(before[manifest])
+          new_manifest=json.loads(after[manifest])
+          for name,path in zip(names,paths):
+              old=json.loads(before[path]);new=json.loads(after[path])
+              assert old['questionId']==new['questionId']==name, 'Wrong question'
+              assert old['status']==new['status']=='draft', 'Changed sale status'
+              assert len(old['entries'])==106 and len(new['entries'])==111, 'Unexpected bank size'
+              assert set(new['entries'])==set(old['entries'])|set(dates), 'Changed date keys'
+              assert all(new['entries'][k]==v for k,v in old['entries'].items()), 'Existing date overwritten'
+              assert all(isinstance(new['entries'][d],str) and
+                         new['entries'][d].count(chr(10)*2)==1 and
+                         len(new['entries'][d])>550 for d in dates), 'Invalid new text'
+              assert {k:v for k,v in old.items() if k!='entries'}=={k:v for k,v in new.items() if k!='entries'}, 'Bank metadata altered'
+              assert old_manifest['files'][path]==sha(before[path]), 'Old manifest mismatch'
+              assert new_manifest['files'][path]==sha(after[path]), 'New manifest mismatch'
+          expected=json.loads(before[manifest])
+          for path in paths:expected['files'][path]=sha(after[path])
+          assert expected==new_manifest, 'Unrelated assets changed'
+          assert os.environ.get('REG_FTP_USER') and os.environ.get('REG_FTP_PASSWORD'), 'REG.RU credentials unavailable'
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          protected=home+'/private/numi-account-20261031'
+          targets={p:protected+'/store-content/'+p for p in paths}
+          targets[manifest]=protected+'/store-assets.json'
+          def read(path):
+              output=io.BytesIO()
+              def append(chunk):
+                  if output.tell()+len(chunk)>1800000:raise RuntimeError('Remote file too large')
+                  output.write(chunk)
+              ftp.retrbinary('RETR '+path,append)
+              return output.getvalue()
+          def put(path,raw):
+              ftp.storbinary('STOR '+path,io.BytesIO(raw))
+              if read(path)!=raw:raise RuntimeError('Readback mismatch: '+path)
+          touched=[]
+          try:
+              remote={p:read(targets[p]) for p in paths+[manifest]}
+              if all(remote[p]==after[p] for p in remote):
+                  print('REG_RU_APR17_21_ALREADY_SYNCED',flush=True)
+              else:
+                  for p in paths+[manifest]:
+                      if remote[p]!=before[p]:
+                          raise RuntimeError('REG_RU_PRIVATE_BASELINE_DRIFT_REFUSE:'+p)
+                  backup=home+'/site-safeguard-backups/love-apr17-21-'+str(int(time.time()))
+                  ftp.mkd(backup)
+                  for i,p in enumerate(paths+[manifest]):
+                      put(backup+'/'+str(i)+'-'+p.rsplit('/',1)[-1]+'.bak',remote[p])
+                  print('REG_RU_BACKUP_ALL_TEN_VERIFIED',flush=True)
+                  try:
+                      for p in paths+[manifest]:
+                          if read(targets[p])!=before[p]:
+                              raise RuntimeError('Concurrent edit: '+p)
+                          touched.append(p)
+                          put(targets[p],after[p])
+                          print('REG_RU_PRIVATE_READBACK_OK',p,flush=True)
+                  except BaseException:
+                      for p in reversed(touched):
+                          try:put(targets[p],remote[p]);print('ROLLBACK_OK',p,flush=True)
+                          except BaseException:print('ROLLBACK_FAILED',p,flush=True)
+                      raise
+              for p in paths+[manifest]:
+                  if read(targets[p])!=after[p]:
+                      raise RuntimeError('FINAL_PRIVATE_VERIFICATION_FAILED:'+p)
+              print('REG_RU_APR17_21_45_PAID_ANSWERS_PROTECTED_SYNC_SUCCESS',flush=True)
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
