@@ -676,3 +676,118 @@ jobs:
               try:ftp.quit()
               except BaseException:ftp.close()
           PY
+
+  sync_reviewed_march_21_25:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish reviewed March 21-25 Love private content on REG.RU'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Back up and sync five approved dates without overwriting existing answers
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,hashlib,io,json,os,pathlib,ssl,subprocess
+          names=['romance','relationship-or-comfort','adult-partner','near-him','hard-moment','relationship-format','family-or-triangle','honest-or-disappear','love-or-attention']
+          paths=['data/redflag/love/'+name+'.json' for name in names]
+          manifest='account-service/private/store-assets.json'
+          BASE='d4f406557067d51b5c744732877b27f1d3e62902'
+          days={f'{day}-3' for day in range(21,26)}
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          git=lambda *args:subprocess.check_output(['git',*args],timeout=35)
+          permitted=set([*paths,manifest,'.github/workflows/numi-redflag-approved-json-20261110.yml'])
+          changed=set(git('diff','--name-only',BASE,'HEAD').decode().splitlines())
+          if changed!=permitted:raise RuntimeError('UNEXPECTED_RELEASE_FILE_CHANGE')
+          base=lambda p:git('show',BASE+':'+p)
+          previous_meta=json.loads(base(manifest))
+          desired_raw={p:pathlib.Path(p).read_bytes() for p in [*paths,manifest]}
+          desired_meta=json.loads(desired_raw[manifest])
+          expected=json.loads(base(manifest))
+          if previous_meta.get('version')!=2 or desired_meta.get('version')!=2:raise RuntimeError('BAD_MANIFEST')
+          for p,id in zip(paths,names):
+              old=json.loads(base(p))
+              new=json.loads(desired_raw[p])
+              if old.get('section')!='love' or new.get('section')!='love' or old.get('questionId')!=id or new.get('questionId')!=id or old.get('status')!='draft' or new.get('status')!='draft' or old.get('keyRule')!='day-month' or new.get('keyRule')!='day-month':
+                  raise RuntimeError('METADATA_CHANGED_'+id)
+              if len(old['entries'])!=80 or len(new['entries'])!=85 or set(new['entries'])-set(old['entries'])!=days:
+                  raise RuntimeError('UNEXPECTED_DATE_KEYS_'+id)
+              if any(new['entries'].get(k)!=v for k,v in old['entries'].items()):
+                  raise RuntimeError('OLD_TEXT_CHANGED_'+id)
+              if any(not isinstance(new['entries'][day],str) or new['entries'][day].count('\n\n')!=1 or len(new['entries'][day])<600 or '—' in new['entries'][day] for day in days):
+                  raise RuntimeError('INVALID_NEW_TEXT_'+id)
+              if previous_meta['files'].get(p)!=sha(base(p)):raise RuntimeError('OLD_MANIFEST_HASH_MISMATCH_'+id)
+              expected['files'][p]=sha(desired_raw[p])
+          if expected!=desired_meta:raise RuntimeError('UNRELATED_MANIFEST_CHANGE')
+          if not os.environ.get('REG_FTP_USER') or not os.environ.get('REG_FTP_PASSWORD'):raise RuntimeError('FTP_SECRET_MISSING')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/private/numi-account-20261031'
+          target={p:root+'/store-content/'+p for p in paths}
+          target[manifest]=root+'/store-assets.json'
+          def read(path):
+              out=io.BytesIO()
+              def collect(chunk):
+                  if out.tell()+len(chunk)>950000:raise RuntimeError('REMOTE_FILE_TOO_LARGE')
+                  out.write(chunk)
+              ftp.retrbinary('RETR '+path,collect)
+              return out.getvalue()
+          def write(path,blob):
+              ftp.storbinary('STOR '+path,io.BytesIO(blob))
+              if read(path)!=blob:raise RuntimeError('SERVER_READBACK_MISMATCH')
+          try:
+              ftp.cwd(root+'/store-content/data/redflag/love')
+              current={p:read(target[p]) for p in [*paths,manifest]}
+              if all(current[p]==desired_raw[p] for p in current):
+                  print('MARCH_21_25_ALREADY_LIVE_VERIFIED',flush=True)
+              else:
+                  actual_meta=json.loads(current[manifest])
+                  if actual_meta.get('version')!=2 or set(actual_meta['files'])!=set(desired_meta['files']):
+                      raise RuntimeError('SERVER_MANIFEST_SHAPE_CHANGED')
+                  if {k for k in actual_meta['files'] if actual_meta['files'].get(k)!=desired_meta['files'].get(k)}!=set(paths):
+                      raise RuntimeError('SERVER_UNRELATED_MANIFEST_DIFFERENCES')
+                  for p,id in zip(paths,names):
+                      old=json.loads(current[p])
+                      desired=json.loads(desired_raw[p])
+                      if {k:v for k,v in old.items() if k!='entries'}!={k:v for k,v in desired.items() if k!='entries'}:
+                          raise RuntimeError('SERVER_METADATA_DIFF_'+id)
+                      if len(old['entries'])!=80 or set(desired['entries'])-set(old['entries'])!=days:
+                          raise RuntimeError('SERVER_DATES_DIFF_'+id)
+                      if any(desired['entries'].get(k)!=v for k,v in old['entries'].items()):
+                          raise RuntimeError('SERVER_EXISTING_TEXT_DIFF_'+id)
+                      if actual_meta['files'].get(p)!=sha(current[p]):
+                          raise RuntimeError('SERVER_EXISTING_HASH_DIFF_'+id)
+                      print('OLD_BANK_80_READINGS_VERIFIED',id,flush=True)
+                  backup_root=home+'/site-safeguard-backups'
+                  ftp.cwd(backup_root)
+                  backup=backup_root+'/love-march-21-25-'+os.environ['GITHUB_RUN_ID']
+                  ftp.mkd(backup)
+                  for i,p in enumerate([*paths,manifest]):
+                      write(backup+'/'+str(i).zfill(2)+'-'+p.rsplit('/',1)[-1]+'.before',current[p])
+                  print('TEN_BACKUPS_SAVED_VERIFIED',flush=True)
+                  done=[]
+                  try:
+                      for p in [*paths,manifest]:
+                          if read(target[p])!=current[p]:raise RuntimeError('REMOTE_CHANGED_DURING_SYNC')
+                          done.append(p)
+                          write(target[p],desired_raw[p])
+                          print('PRIVATE_UPLOAD_READBACK_OK',p.rsplit('/',1)[-1],flush=True)
+                  except BaseException:
+                      for p in reversed(done):
+                          try:write(target[p],current[p])
+                          except BaseException:print('ROLLBACK_FAILED',p,flush=True)
+                      raise
+              for p in [*paths,manifest]:
+                  if read(target[p])!=desired_raw[p]:raise RuntimeError('FINAL_READBACK_FAILED_'+p)
+              print('LOVE_MARCH_21_25_PRIVATE_SYNC_SUCCESS_45_ANSWERS',flush=True)
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
