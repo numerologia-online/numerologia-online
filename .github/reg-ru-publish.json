@@ -1,12 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "moment/yes-no/yes-no.js",
-    "moment/yes-no/index.html"
-  ],
-  "expected_sha256": {
-    "moment/yes-no/yes-no.js": "994ae270a12f711158dcea5e0d2699975ea84b23e0c2fae37f925d9fa12087e2",
-    "moment/yes-no/index.html": "ad90aaf57ef377a9e9cf4ed354f7a87b7b1aa76a5da1e754f4e3a9d2d74df7fd"
-  },
-  "note": "Owner 2026-11-12: ONLY explicit Yes/No Ask Now click smooth-scrolls to the rendered answer, Club offer or error; no scroll while typing or opening question. Minimal JS and HTML cache tag update. Two public files only; do not touch backend, prices, member access, other sections. Back up originals; SHA256 guard."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-12 REG.RU verified backed-up two-file publication: smooth center scroll after explicit Yes/No Ask Now action to rendered result, including Club invitation if daily free answer already used. No scroll during time edits or opening a question. Restored safe read-only mode."
 }
