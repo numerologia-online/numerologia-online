@@ -490,3 +490,73 @@ jobs:
               try:ftp.quit()
               except BaseException:ftp.close()
           PY
+
+  diagnose_march_16_20:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Diagnose REG.RU March 16-20 protected baseline read only'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Read-only compare existing private server bank hashes and date coverage
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,io,ssl,os,json,hashlib,subprocess,pathlib
+          names=['romance','relationship-or-comfort','adult-partner','near-him','hard-moment','relationship-format','family-or-triangle','honest-or-disappear','love-or-attention']
+          paths=['data/redflag/love/'+n+'.json' for n in names]
+          manifest='account-service/private/store-assets.json'
+          BASE='1c970c9c743e9d41866492b2de3e894b495335ea'
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          old=lambda p:subprocess.check_output(['git','show',BASE+':'+p],timeout=30)
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/private/numi-account-20261031'
+          def read(p):
+              o=io.BytesIO()
+              def collect(chunk):
+                  if o.tell()+len(chunk)>950000:raise RuntimeError('FILE_TOO_LARGE')
+                  o.write(chunk)
+              ftp.retrbinary('RETR '+p,collect)
+              return o.getvalue()
+          try:
+              remote_manifest=read(root+'/store-assets.json')
+              old_manifest=old(manifest)
+              local_manifest=pathlib.Path(manifest).read_bytes()
+              print('MANIFEST_REMOTE_EQUALS_BASE',remote_manifest==old_manifest,flush=True)
+              print('MANIFEST_REMOTE_EQUALS_NEW',remote_manifest==local_manifest,flush=True)
+              rm=json.loads(remote_manifest);bm=json.loads(old_manifest);nm=json.loads(local_manifest)
+              print('MANIFEST_VERSION',rm.get('version'),'KEYS',len(rm.get('files',{})),flush=True)
+              extra_keys=set(rm.get('files',{}))-set(bm.get('files',{}))
+              differing_keys={k for k in rm.get('files',{}) if rm['files'].get(k)!=bm.get('files',{}).get(k)}
+              print('MANIFEST_CHANGED_KEYS_COUNT',len(differing_keys),'EXTRA_KEYS_COUNT',len(extra_keys),flush=True)
+              print('MANIFEST_ONLY_DIFFERENCES_IN_REVIEWED_BANKS',differing_keys<=set(paths),flush=True)
+              for path in paths:
+                  remote=read(root+'/store-content/'+path)
+                  base=old(path)
+                  current=pathlib.Path(path).read_bytes()
+                  server=json.loads(remote);original=json.loads(base);desired=json.loads(current)
+                  changed={k for k in server.get('entries',{}) if server['entries'].get(k)!=original.get('entries',{}).get(k)}
+                  other_new=set(server.get('entries',{}))-set(original.get('entries',{}))
+                  review_keys={f'{d}-3' for d in range(16,21)}
+                  print('BANK',path.rsplit('/',1)[-1],
+                        'REMOTE_EQ_BASE',remote==base,'REMOTE_EQ_NEW',remote==current,
+                        'REMOTE_KEYS',len(server.get('entries',{})),
+                        'MARCH_16_20_PRESENT',sorted(review_keys & set(server.get('entries',{}))),
+                        'EXTRA_DATE_COUNT',len(other_new),
+                        'OLD_ENTRY_DIFF_COUNT',len(changed),
+                        'SERVER_STATUS',server.get('status'),
+                        'REMOTE_HASH_MATCHES_MANIFEST',sha(remote)==rm.get('files',{}).get(path),
+                        flush=True)
+              print('READ_ONLY_DIAGNOSTIC_COMPLETE',flush=True)
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
