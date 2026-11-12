@@ -24,7 +24,7 @@
     document.body.classList.remove("yn-question-page");
     window.scrollTo(0, questionListScroll);
   }
-  async function confirmTime(value) {
+  async function confirmTime(value, scrollToAnswer = false) {
     if (!validTime(value)) {
       timeError.hidden = false;
       timeResult.hidden = true;
@@ -80,7 +80,18 @@
       attachAnswerActions(data.answer, value, id);
     } catch (error) {
       if (id === answerRequest) timeResult.textContent = "Не удалось получить ответ. Попробуйте ещё раз.";
-    } finally {clearTimeout(timer);}
+    } finally {
+      clearTimeout(timer);
+      // Scroll only after an explicit "Спросить сейчас" press and the answer
+      // (or Club invitation) is rendered. Never auto-scroll while editing time.
+      if (scrollToAnswer && id === answerRequest && !dialog.hidden && !timeResult.hidden) {
+        requestAnimationFrame(() => {
+          if (id !== answerRequest || dialog.hidden || timeResult.hidden) return;
+          const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          timeResult.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+        });
+      }
+    }
   }
   function attachAnswerActions(answerText, questionTime, requestId) {
     if (requestId !== answerRequest || !selectedQuestion || !answerText.trim()) return;
@@ -222,7 +233,7 @@
     event.preventDefault();
     confirmTime(normalizeTime(timeInput.value));
   });
-  $("yn-now").addEventListener("click", () => confirmTime(currentTime()));
+  $("yn-now").addEventListener("click", () => confirmTime(currentTime(), true));
   $("yn-close").addEventListener("click", closeQuestion);
   $("yn-back").addEventListener("click", closeQuestion);
   document.addEventListener("keydown", event => {
