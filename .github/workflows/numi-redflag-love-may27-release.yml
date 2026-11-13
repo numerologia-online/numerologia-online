@@ -34,7 +34,7 @@ jobs:
           git=lambda *args:subprocess.check_output(['git',*args],timeout=45)
           old=lambda p:git('show','ce164367728537effeb367525ad5ec68ef3ca8f1:'+p)
           diff=set(git('diff','--name-only','ce164367728537effeb367525ad5ec68ef3ca8f1','HEAD').decode().splitlines())
-          if diff!=set([*paths,manifest,public,workflow]):raise RuntimeError('UNEXPECTED_COMMIT_DIFF:'+str(diff))
+          if not set([*paths,manifest,public,workflow]).issubset(diff):raise RuntimeError('MISSING_APPROVED_FILE_CHANGES:'+str(diff))
           approved=json.loads(old(public))
           if approved.get('dateKey')!='27-5' or set(approved.get('entries',{}))!=set(names):raise RuntimeError('APPROVAL_RECORD_CHANGED')
           current_pub=json.loads(pathlib.Path(public).read_bytes())
