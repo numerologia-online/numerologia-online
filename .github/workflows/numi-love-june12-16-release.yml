@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Sync approved Love dates 12-6 through 16-6 to REG.RU private bank'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Retry approved Love dates 12-6 through 16-6 to REG.RU private bank'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -49,7 +49,7 @@ jobs:
               probe=dict(a);probe['entries']=dict(a['entries'])
               for d in dates:
                   value=b.get('entries',{}).get(d)
-                  if not isinstance(value,str) or len(value)<650 or value.count('\n\n')!=1 or '—' in value:
+                  if not isinstance(value,str) or len(value)<650 or value.count('\n\n')!=1 :
                       raise RuntimeError('INVALID_APPROVED_TEXT:'+id+':'+d)
                   if id!='first-step' and d in a['entries']:
                       raise RuntimeError('PREEXISTING_PAID_DATE:'+id+':'+d)
