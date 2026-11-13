@@ -142,7 +142,9 @@ jobs:
 
       - name: Verify iOS WebKit Moment rendering
         run: |
-          cd /tmp/numi-moment-browser
+          mkdir -p /tmp/numi-moment-browser && cd /tmp/numi-moment-browser
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund --no-save playwright@1.56.1 >/dev/null
           npx playwright install --with-deps webkit >/dev/null
           node - <<'JS'
           const {webkit}=require('playwright');
