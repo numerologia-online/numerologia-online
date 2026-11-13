@@ -193,3 +193,86 @@ jobs:
             await browser.close();
           })().catch(e=>{console.error('BROWSER_FATAL',e.message);process.exit(1)});
           JS
+
+  publish-catalog-fallback:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish Moment fallback for 300 questions to REG.RU'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Back up and publish only Moment index and JS, verify 300 questions and preserve Yes/No
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,ftplib,ssl,io,time,hashlib,subprocess,urllib.request
+          from pathlib import Path
+          OLD_COMMIT_INDEX="7d2b3d03bb5039c94e96245d3397e7fb50cf179e"
+          OLD_COMMIT_JS="9b64ac33760fa40061773aa2f38f15385756071b"
+          base="xn--c1adkkdfjbp1a4l.online"
+          primary="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+          names=["moment/moment.js","moment/index.html"]
+          baseline={
+            "moment/index.html":subprocess.check_output(["git","show",OLD_COMMIT_INDEX+"^:moment/index.html"]),
+            "moment/moment.js":subprocess.check_output(["git","show",OLD_COMMIT_JS+"^:moment/moment.js"])
+          }
+          desired={x:Path(x).read_bytes() for x in names}
+          def sha(x):return hashlib.sha256(x).hexdigest()
+          html=desired["moment/index.html"].decode("utf-8")
+          js=desired["moment/moment.js"].decode("utf-8")
+          if html.count('class="moment-static-topic"')!=12 or html.count("<li>")!=300 or html.count('id="moment-catalog-retry"')!=1:raise RuntimeError("INVALID_STATIC_FALLBACK")
+          if html.count("moment.js?v=catalog-fallback-20261113")!=1:raise RuntimeError("INVALID_SCRIPT_VERSION")
+          if 'if(catalogStatus)catalogStatus.hidden=false;' not in js or 'grid.replaceChildren();' not in js:raise RuntimeError("INVALID_JS_FALLBACK")
+          subprocess.run(["node","--check","moment/moment.js"],check=True,timeout=15)
+          print("LOCAL_FALLBACK_300_VALID",flush=True)
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect("server172.hosting.reg.ru",21);ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip("/");folder=home+"/www/"+base
+          def read(n):
+            out=io.BytesIO();ftp.retrbinary("RETR "+folder+"/"+n,out.write)
+            if out.tell()>200000:raise RuntimeError("SIZE_LIMIT")
+            return out.getvalue()
+          def write(n,b):
+            ftp.storbinary("STOR "+folder+"/"+n,io.BytesIO(b))
+            if read(n)!=b:raise RuntimeError("READBACK_DIFF:"+n)
+          def online(n):
+            req=urllib.request.Request("https://"+primary+"/"+n+"?moment_fallback_check="+str(time.time_ns()),headers={"Cache-Control":"no-cache"})
+            with urllib.request.urlopen(req,timeout=22) as r:
+              if r.status!=200:raise RuntimeError("HTTP_STATUS_FAIL:"+n)
+              return r.read(200000)
+          try:
+            original={n:read(n) for n in names}
+            if original["moment/index.html"]==desired["moment/index.html"] and original["moment/moment.js"]==desired["moment/moment.js"]:
+              print("MOMENT_FALLBACK_ALREADY_DEPLOYED");raise SystemExit(0)
+            for n in names:
+              if sha(original[n])!=sha(baseline[n]):raise RuntimeError("LIVE_BASELINE_DIFF:"+n)
+            backup=home+"/site-safeguard-backups/moment-fallback-"+time.strftime("%Y%m%dT%H%M%SZ",time.gmtime())
+            ftp.mkd(backup)
+            for n in names:
+              path=backup+"/"+n.replace("/","__")+".bak"
+              ftp.storbinary("STOR "+path,io.BytesIO(original[n]))
+              b=io.BytesIO();ftp.retrbinary("RETR "+path,b.write)
+              if b.getvalue()!=original[n]:raise RuntimeError("BACKUP_READBACK_FAILED")
+            print("BACKUP_VERIFIED",flush=True)
+            touched=[]
+            try:
+              for n in names:
+                if read(n)!=original[n]:raise RuntimeError("CONCURRENT_MODIFICATION:"+n)
+                touched.append(n);write(n,desired[n])
+              for n in names:
+                if online(n)!=desired[n]:raise RuntimeError("LIVE_HTTP_READBACK_FAIL:"+n)
+              if online("moment/questions.json").count(b'"title"')<300:raise RuntimeError("CATALOG_HEALTH_FAILED")
+              if online("moment/yes-no/index.html").count(b'yn-categories')<1:raise RuntimeError("YESNO_CHECK_FAILED")
+              print("MOMENT_FALLBACK_300_RELEASE_SUCCESS",flush=True)
+            except BaseException:
+              for n in reversed(touched):write(n,original[n])
+              print("MOMENT_FALLBACK_ROLLBACK_VERIFIED",flush=True)
+              raise
+          finally:
+            try:ftp.quit()
+            except Exception:ftp.close()
+          PY
