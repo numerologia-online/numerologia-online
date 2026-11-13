@@ -84,7 +84,31 @@ jobs:
           try:
               ftp.cwd(private+'/store-content/data/redflag/love')
               actual={p:read(targets[p]) for p in [*paths,manifest]}
-              if any(actual[p] not in (old_bytes[p],new_bytes[p]) for p in actual):raise RuntimeError('PRIVATE_SERVER_BASELINE_DRIFT_NO_OVERWRITE:'+','.join(p.rsplit('/',1)[-1] for p in actual if actual[p] not in (old_bytes[p],new_bytes[p])))
+              # The free-first bank has independent live changes; preserve every
+              # existing date and edit ONLY the approved 27 May entry.
+              free_path=paths[0]
+              remote_free=json.loads(actual[free_path])
+              if (remote_free.get('section')!='love' or remote_free.get('questionId')!='first-step'
+                  or remote_free.get('keyRule')!='day-month' or remote_free.get('status')!='active'
+                  or not isinstance(remote_free.get('entries'),dict) or len(remote_free['entries'])!=366):
+                  raise RuntimeError('LIVE_FREE_BANK_UNEXPECTED_STRUCTURE')
+              untouched=dict(remote_free['entries'])
+              remote_free['entries']['27-5']=approved['entries']['first-step']
+              if any(remote_free['entries'][k]!=v for k,v in untouched.items() if k!='27-5'):
+                  raise RuntimeError('OTHER_FREE_DATES_CHANGED')
+              old_bytes[free_path]=actual[free_path]
+              new_bytes[free_path]=(json.dumps(remote_free,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
+              # Keep the current live private manifest as the base, changing only
+              # hashes for the nine exact answer banks being published.
+              if actual[manifest] not in (old_bytes[manifest],new_bytes[manifest]):
+                  raise RuntimeError('LIVE_MANIFEST_UNEXPECTED_DRIFT')
+              live_manifest=json.loads(actual[manifest])
+              for p in paths:
+                  live_manifest['files'][p]=hashlib.sha256(new_bytes[p]).hexdigest()
+              old_bytes[manifest]=actual[manifest]
+              new_bytes[manifest]=(json.dumps(live_manifest,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
+              if any(actual[p] not in (old_bytes[p],new_bytes[p]) for p in actual):
+                  raise RuntimeError('OTHER_PRIVATE_BANK_DRIFT_NO_OVERWRITE:'+','.join(p.rsplit('/',1)[-1] for p in actual if actual[p] not in (old_bytes[p],new_bytes[p])))
               backup_root=home+'/site-safeguard-backups'
               ftp.cwd(backup_root)
               backup=backup_root+'/love-27-5-'+os.environ['GITHUB_RUN_ID']
