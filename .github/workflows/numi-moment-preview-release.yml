@@ -369,3 +369,71 @@ jobs:
            try:ftp.quit()
            except Exception:ftp.close()
           PY
+
+  publish-moment-price-49:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish 49 RUB Moment tariff on REG.RU'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    concurrency:
+      group: reg-ru-manual-publication
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update only the outdated Moment price row with FTP backup and HTTP verification
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,urllib.request,time
+          from pathlib import Path
+          old='<div class="item"><div class="name"><a href="/moment/">«Нумерология момента»</a><span class="desc">Один персональный ответ. Раздел готовится к запуску.</span></div><div class="price">50 ₽</div><div class="member">25 ₽</div></div>'.encode()
+          new='<div class="item"><div class="name"><a href="/moment/">«Нумерология момента» — 300 вопросов</a><span class="desc">49 ₽ за один вопрос. Все 300 вопросов пока в разработке, покупка недоступна.</span></div><div class="price">49 ₽<small>Скоро</small></div><div class="member">Подписка не требуется</div></div>'.encode()
+          target=Path("prices.html").read_bytes()
+          if target.count(new)!=1 or old in target:raise RuntimeError("REPOSITORY_PRICE_NOT_VALIDATED")
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect("server172.hosting.reg.ru",21);ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip("/")
+          path=home+"/www/xn--c1adkkdfjbp1a4l.online/prices.html"
+          def read():
+           b=io.BytesIO();ftp.retrbinary("RETR "+path,b.write)
+           if b.tell()>200000:raise RuntimeError("PRICE_FILE_SIZE")
+           return b.getvalue()
+          def write(blob):
+           ftp.storbinary("STOR "+path,io.BytesIO(blob))
+           if read()!=blob:raise RuntimeError("PRICE_READBACK_FAILED")
+          def http(name):
+           req=urllib.request.Request("https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/"+name+"?price_check="+str(time.time_ns()),headers={"Cache-Control":"no-cache"})
+           with urllib.request.urlopen(req,timeout=25) as r:
+            if r.status!=200:raise RuntimeError("HTTP_NOT_200:"+name)
+            return r.read(200000)
+          try:
+           original=read()
+           if original.count(new)==1 and original.count(old)==0:
+            print("MOMENT_PRICE_49_ALREADY_LIVE");raise SystemExit(0)
+           if original.count(old)!=1 or new in original:raise RuntimeError("UNEXPECTED_LIVE_PRICE_BASELINE")
+           changed=original.replace(old,new,1)
+           if changed.count(old)!=0 or changed.count(new)!=1:raise RuntimeError("PRICE_REPLACEMENT_FAILED")
+           if old not in http("prices.html"):raise RuntimeError("LIVE_HTTP_PRICE_BASELINE_MISSING")
+           if b'49' not in http("moment/index.html"):raise RuntimeError("MOMENT_UNAVAILABLE")
+           backup=home+"/site-safeguard-backups/moment-price-49-"+time.strftime("%Y%m%dT%H%M%SZ",time.gmtime())+".bak"
+           ftp.storbinary("STOR "+backup,io.BytesIO(original))
+           stored=io.BytesIO();ftp.retrbinary("RETR "+backup,stored.write)
+           if stored.getvalue()!=original:raise RuntimeError("PRICE_BACKUP_FAILED")
+           print("PRICE_BACKUP_VERIFIED",flush=True)
+           try:
+            if read()!=original:raise RuntimeError("PRICE_CONCURRENT_CHANGE")
+            write(changed)
+            public=http("prices.html")
+            if public!=changed:raise RuntimeError("PRICE_LIVE_HTTP_READBACK_DIFF")
+            if new not in public or old in public:raise RuntimeError("PRICE_LIVE_VALUE_WRONG")
+            print("MOMENT_PRICE_49_PUBLISHED_NO_SUBSCRIPTION",flush=True)
+           except BaseException:
+            write(original)
+            print("PRICE_ROLLBACK_VERIFIED",flush=True)
+            raise
+          finally:
+           try:ftp.quit()
+           except Exception:ftp.close()
+          PY
