@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Sync approved Love dates 28-5 through 1-6 to REG.RU private bank'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Retry approved Love dates 28-5 through 1-6 to REG.RU private bank'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -96,9 +96,14 @@ jobs:
                   raise RuntimeError('OTHER_FREE_DATES_CHANGED')
               old_bytes[free]=actual[free]
               new_bytes[free]=(json.dumps(live_free,ensure_ascii=False,indent=2)+'\n').encode()
-              if actual[manifest] not in (old_bytes[manifest],new_bytes[manifest]):
-                  raise RuntimeError('LIVE_PRIVATE_MANIFEST_DRIFT')
               live_manifest=json.loads(actual[manifest])
+              if live_manifest.get('version')!=2 or not isinstance(live_manifest.get('files'),dict):
+                  raise RuntimeError('LIVE_MANIFEST_SCHEMA_MISMATCH')
+              if set(live_manifest)-set(json.loads(old_bytes[manifest])):
+                  raise RuntimeError('LIVE_MANIFEST_UNKNOWN_FIELDS')
+              for p in paths[1:]:
+                  if live_manifest['files'].get(p)!=hashlib.sha256(actual[p]).hexdigest():
+                      raise RuntimeError('LIVE_MANIFEST_PAID_FILE_MISMATCH:'+p)
               for p in paths:live_manifest['files'][p]=hashlib.sha256(new_bytes[p]).hexdigest()
               old_bytes[manifest]=actual[manifest]
               new_bytes[manifest]=(json.dumps(live_manifest,ensure_ascii=False,indent=2)+'\n').encode()
