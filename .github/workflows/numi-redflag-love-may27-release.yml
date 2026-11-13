@@ -84,7 +84,7 @@ jobs:
           try:
               ftp.cwd(private+'/store-content/data/redflag/love')
               actual={p:read(targets[p]) for p in [*paths,manifest]}
-              if any(actual[p] not in (old_bytes[p],new_bytes[p]) for p in actual):raise RuntimeError('PRIVATE_SERVER_BASELINE_DRIFT_NO_OVERWRITE')
+              if any(actual[p] not in (old_bytes[p],new_bytes[p]) for p in actual):raise RuntimeError('PRIVATE_SERVER_BASELINE_DRIFT_NO_OVERWRITE:'+','.join(p.rsplit('/',1)[-1] for p in actual if actual[p] not in (old_bytes[p],new_bytes[p])))
               backup_root=home+'/site-safeguard-backups'
               ftp.cwd(backup_root)
               backup=backup_root+'/love-27-5-'+os.environ['GITHUB_RUN_ID']
