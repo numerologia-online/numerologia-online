@@ -276,3 +276,96 @@ jobs:
             try:ftp.quit()
             except Exception:ftp.close()
           PY
+
+  publish-moment-coming-soon-49:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish 49 RUB Moment coming soon to REG.RU'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    concurrency:
+      group: reg-ru-manual-publication
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guarded publish of Moment page and JS with full readback, backup, and rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,io,os,time,hashlib,subprocess,urllib.request,json
+          from pathlib import Path
+          repo_commit_index="95a912f0ef03a0e8e47f155f363f7e4baf72af06"
+          repo_commit_js="1be10b97836db621c6bfcd0b558934e3f1f5011c"
+          base="xn--c1adkkdfjbp1a4l.online"
+          primary="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+          files=["moment/moment.js","moment/index.html"]
+          baseline={
+           "moment/index.html":subprocess.check_output(["git","show",repo_commit_index+"^:moment/index.html"],timeout=20),
+           "moment/moment.js":subprocess.check_output(["git","show",repo_commit_js+"^:moment/moment.js"],timeout=20)}
+          desired={p:Path(p).read_bytes() for p in files}
+          def sha(b):return hashlib.sha256(b).hexdigest()
+          h=desired["moment/index.html"].decode("utf-8")
+          j=desired["moment/moment.js"].decode("utf-8")
+          assert h.count('class="moment-static-topic"')==12 and h.count("<li>")==300
+          assert h.count("moment.js?v=coming-soon-49-20261113")==1
+          assert h.count("49 ₽ за вопрос")==1 and h.count('href="./yes-no/"')==1
+          assert 'id="question-dialog"' not in h and "Доступно по подписке" not in h
+          assert j.count('b.disabled=true;')==1 and "49 ₽ · Скоро" in j
+          assert 'clubStatus' not in j and 'question-dialog' not in j
+          subprocess.run(["node","--check","moment/moment.js"],check=True,timeout=18)
+          q=json.loads(Path("moment/questions.json").read_text())
+          assert len(q["categories"])==12 and len(q["questions"])==300
+          print("MOMENT_COMING_SOON_LOCAL_VALID",flush=True)
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect("server172.hosting.reg.ru",21);ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"]);ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip("/")
+          root=home+"/www/"+base
+          def read(p):
+           out=io.BytesIO();ftp.retrbinary("RETR "+root+"/"+p,out.write)
+           if out.tell()>200000:raise RuntimeError("FILE_SIZE_LIMIT")
+           return out.getvalue()
+          def write(p,blob):
+           ftp.storbinary("STOR "+root+"/"+p,io.BytesIO(blob))
+           if read(p)!=blob:raise RuntimeError("FTP_READBACK_FAILED "+p)
+          def http(p):
+           req=urllib.request.Request("https://"+primary+"/"+p+"?coming_soon_check="+str(time.time_ns()),headers={"Cache-Control":"no-cache"})
+           with urllib.request.urlopen(req,timeout=28) as response:
+            if response.status!=200:raise RuntimeError("PUBLIC_HTTP_NOT_200 "+p)
+            return response.read(200000)
+          try:
+           original={p:read(p) for p in files}
+           if all(original[p]==desired[p] for p in files):
+            print("MOMENT_COMING_SOON_ALREADY_LIVE");raise SystemExit(0)
+           for p in files:
+            if sha(original[p])!=sha(baseline[p]):
+             raise RuntimeError("LIVE_CHANGED_REFUSE_OVERWRITE "+p)
+           yesno_before=sha(http("moment/yes-no/index.html"))
+           backup=home+"/site-safeguard-backups/moment-soon-49-"+time.strftime("%Y%m%dT%H%M%SZ",time.gmtime())
+           ftp.mkd(backup)
+           for p in files:
+            save=backup+"/"+p.replace("/","__")+".bak"
+            ftp.storbinary("STOR "+save,io.BytesIO(original[p]))
+            b=io.BytesIO();ftp.retrbinary("RETR "+save,b.write)
+            if b.getvalue()!=original[p]:raise RuntimeError("BACKUP_FAILED")
+           print("MOMENT_COMING_SOON_BACKUP_VERIFIED",flush=True)
+           touched=[]
+           try:
+            for p in files:
+             if read(p)!=original[p]:raise RuntimeError("CONCURRENT_MODIFICATION "+p)
+             touched.append(p);write(p,desired[p])
+            for p in files:
+             if http(p)!=desired[p]:raise RuntimeError("PUBLIC_READBACK_FAILED "+p)
+            liveq=json.loads(http("moment/questions.json"))
+            if len(liveq.get("categories",[]))!=12 or len(liveq.get("questions",[]))!=300:raise RuntimeError("CATALOG_CHANGED")
+            if sha(http("moment/yes-no/index.html"))!=yesno_before:raise RuntimeError("YESNO_CHANGED")
+            print("MOMENT_COMING_SOON_49_RELEASE_SUCCESS 300_DISABLED yesno_unchanged=True",flush=True)
+           except BaseException:
+            for p in reversed(touched):write(p,original[p])
+            print("MOMENT_COMING_SOON_ROLLBACK_VERIFIED",flush=True)
+            raise
+          finally:
+           try:ftp.quit()
+           except Exception:ftp.close()
+          PY
