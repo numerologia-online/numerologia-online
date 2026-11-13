@@ -1,0 +1,136 @@
+name: Sync approved Red Flag Love June 7-11 to REG.RU private bank
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/numi-love-june07-11-release.yml'
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Sync approved Love dates 7-6 through 11-6 to REG.RU private bank'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify only approved dates, backup and synchronize protected REG.RU banks
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,hashlib,io,json,os,pathlib,ssl,subprocess
+          dates=['7-6','8-6','9-6','10-6','11-6']
+          ids=['first-step','romance','relationship-or-comfort','adult-partner','near-him','hard-moment','relationship-format','family-or-triangle','honest-or-disappear']
+          paths=['data/redflag/love/'+x+'.json' for x in ids]
+          manifest='account-service/private/store-assets.json'
+          baseline='9836474295e5317f9639002505574900c7dc9f35'
+          git=lambda *args:subprocess.check_output(['git',*args],timeout=45)
+          old=lambda p:git('show',baseline+':'+p)
+          changes=set(git('diff','--name-only',baseline,'HEAD').decode().splitlines())
+          required=set([*paths,manifest,'.github/workflows/numi-love-june07-11-release.yml'])
+          if not required.issubset(changes):raise RuntimeError('MISSING_APPROVED_RELEASE_FILES:'+str(required-changes))
+          before_manifest=json.loads(old(manifest))
+          after_manifest=json.loads(pathlib.Path(manifest).read_bytes())
+          expected=json.loads(old(manifest))
+          old_bytes={};new_bytes={}
+          for id,path in zip(ids,paths):
+              before=old(path)
+              after=pathlib.Path(path).read_bytes()
+              a=json.loads(before);b=json.loads(after)
+              if a.get('section')!='love' or b.get('section')!='love' or a.get('questionId')!=id or b.get('questionId')!=id or a.get('keyRule')!='day-month' or b.get('keyRule')!='day-month' or a.get('status')!=b.get('status'):
+                  raise RuntimeError('QUESTION_METADATA_CHANGED:'+id)
+              probe=dict(a);probe['entries']=dict(a['entries'])
+              for d in dates:
+                  value=b.get('entries',{}).get(d)
+                  if not isinstance(value,str) or len(value)<650 or value.count('\n\n')!=1 or '—' in value:
+                      raise RuntimeError('INVALID_APPROVED_TEXT:'+id+':'+d)
+                  if id!='first-step' and d in a['entries']:
+                      raise RuntimeError('PREEXISTING_PAID_DATE:'+id+':'+d)
+                  probe['entries'][d]=value
+              if probe!=b:raise RuntimeError('UNRELATED_BANK_CHANGE:'+id)
+              # Historical free bank manifest has known drift, as in the verified May 27 release.
+              if id!='first-step' and before_manifest['files'].get(path)!=hashlib.sha256(before).hexdigest():
+                  raise RuntimeError('PREVIOUS_HASH_MISMATCH:'+id)
+              expected['files'][path]=hashlib.sha256(after).hexdigest()
+              old_bytes[path]=before;new_bytes[path]=after
+          if expected!=after_manifest:raise RuntimeError('UNRELATED_MANIFEST_CHANGE')
+          old_bytes[manifest]=old(manifest);new_bytes[manifest]=pathlib.Path(manifest).read_bytes()
+          if not os.environ.get('REG_FTP_USER') or not os.environ.get('REG_FTP_PASSWORD'):
+              raise RuntimeError('REG_RU_SECRETS_MISSING')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          private=home+'/private/numi-account-20261031'
+          remote={p:private+'/store-content/'+p for p in paths}
+          remote[manifest]=private+'/store-assets.json'
+          def read(p):
+              obj=io.BytesIO()
+              def collect(b):
+                  if obj.tell()+len(b)>1500000:raise RuntimeError('OVERSIZED_SERVER_FILE')
+                  obj.write(b)
+              ftp.retrbinary('RETR '+p,collect)
+              return obj.getvalue()
+          def write(p,b):
+              ftp.storbinary('STOR '+p,io.BytesIO(b))
+              if read(p)!=b:raise RuntimeError('REMOTE_WRITE_VERIFICATION_FAILED:'+p)
+          touched=[]
+          try:
+              ftp.cwd(private+'/store-content/data/redflag/love')
+              actual={p:read(remote[p]) for p in [*paths,manifest]}
+              free=paths[0]
+              live_free=json.loads(actual[free])
+              if live_free.get('questionId')!='first-step' or live_free.get('status')!='active' or len(live_free.get('entries',{}))!=366:
+                  raise RuntimeError('LIVE_FREE_BANK_CHANGED_UNEXPECTEDLY')
+              original_free=dict(live_free['entries'])
+              for d in dates:live_free['entries'][d]=json.loads(new_bytes[free])['entries'][d]
+              if any(live_free['entries'][d]!=v for d,v in original_free.items() if d not in dates):
+                  raise RuntimeError('OTHER_FREE_DATES_CHANGED')
+              old_bytes[free]=actual[free]
+              new_bytes[free]=(json.dumps(live_free,ensure_ascii=False,indent=2)+'\n').encode()
+              live_manifest=json.loads(actual[manifest])
+              if live_manifest.get('version')!=2 or not isinstance(live_manifest.get('files'),dict):
+                  raise RuntimeError('LIVE_MANIFEST_SCHEMA_MISMATCH')
+              if set(live_manifest)-set(json.loads(old_bytes[manifest])):
+                  raise RuntimeError('LIVE_MANIFEST_UNKNOWN_FIELDS')
+              for p in paths[1:]:
+                  if live_manifest['files'].get(p)!=hashlib.sha256(actual[p]).hexdigest():
+                      raise RuntimeError('LIVE_MANIFEST_PAID_FILE_MISMATCH:'+p)
+              for p in paths:live_manifest['files'][p]=hashlib.sha256(new_bytes[p]).hexdigest()
+              old_bytes[manifest]=actual[manifest]
+              new_bytes[manifest]=(json.dumps(live_manifest,ensure_ascii=False,indent=2)+'\n').encode()
+              bad=[p for p in paths[1:] if actual[p] not in (old_bytes[p],new_bytes[p])]
+              if bad:raise RuntimeError('LIVE_PAID_BANK_DRIFT_NO_OVERWRITE:'+str(bad))
+              backup_root=home+'/site-safeguard-backups'
+              ftp.cwd(backup_root)
+              backup=backup_root+'/redflag-love-five-'+os.environ['GITHUB_RUN_ID']
+              ftp.mkd(backup)
+              for i,p in enumerate([*paths,manifest]):
+                  write(backup+'/'+str(i).zfill(2)+'-'+p.rsplit('/',1)[-1]+'.before',actual[p])
+              print('FIVE_DATES_BACKUP_VERIFIED',flush=True)
+              try:
+                  for p in [*paths,manifest]:
+                      if read(remote[p])!=actual[p]:raise RuntimeError('CONCURRENT_SERVER_CHANGE')
+                      if actual[p]!=new_bytes[p]:
+                          touched.append((remote[p],actual[p]))
+                          write(remote[p],new_bytes[p])
+                  for p in [*paths,manifest]:
+                      if read(remote[p])!=new_bytes[p]:raise RuntimeError('FINAL_PRIVATE_READBACK_FAILED:'+p)
+                  print('LOVE_FIVE_DATES_REG_RU_VERIFIED_45_ANSWERS',flush=True)
+              except BaseException:
+                  for path,original in reversed(touched):
+                      try:write(path,original);print('ROLLBACK_OK',flush=True)
+                      except BaseException:print('ROLLBACK_FAILED',flush=True)
+                  raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
