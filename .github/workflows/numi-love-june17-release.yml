@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
       - name: Integrate approved 17 June answers into main
         run: |
           python3 - <<'PY'
@@ -33,13 +33,13 @@ jobs:
               data=json.loads(p.read_text())
               assert data['section']=='love' and data['questionId']==id and data['keyRule']=='day-month'
               text=payload['texts'][id]
-              assert len(text)>650 and text.count('\\n\\n')==1 and '—' not in text
+              assert len(text)>650 and text.count('\n\n')==1 and '—' not in text
               if id!='first-step': assert '17-6' not in data['entries']
               data['entries']['17-6']=text
-              out=(json.dumps(data,ensure_ascii=False,indent=2)+'\\n').encode()
+              out=(json.dumps(data,ensure_ascii=False,indent=2)+'\n').encode()
               p.write_bytes(out)
               manifest['files'][str(p)]=hashlib.sha256(out).hexdigest()
-          manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\\n')
+          manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
