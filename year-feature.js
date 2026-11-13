@@ -374,9 +374,13 @@ form.addEventListener("submit", async (event) => {
     monthContainer.append(item);
   }
 
+  const canDownloadPdf = hasVerifiedYearAccess();
+  const pdfLabel = canDownloadPdf ? "Скачать полный PDF" : "🔒 Скачать полный PDF";
+  pdfButton.textContent = pdfLabel;
+  pdfButtonTop.textContent = pdfLabel;
   showCalculatedReport();
   void refreshPurchasedYear();
-  if (hasVerifiedYearAccess()) warmPdfInBackground();
+  if (canDownloadPdf) warmPdfInBackground();
 });
 
 const pdfButton = document.querySelector("#pdf-button");
@@ -780,8 +784,8 @@ const downloadPdf = async () => {
   }
 };
 
-pdfButton.addEventListener("click", showYearPaywall);
-pdfButtonTop.addEventListener("click", showYearPaywall);
+pdfButton.addEventListener("click", openPdfPreview);
+pdfButtonTop.addEventListener("click", openPdfPreview);
 pdfPreviewClose.addEventListener("click", () => pdfPreviewDialog.close());
 pdfDownloadButton.addEventListener("click", downloadPdf);
 pdfPreviewDialog.addEventListener("close", () => {

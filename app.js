@@ -24,7 +24,7 @@ const loadStylesheet = (href) => new Promise((resolve, reject) => {
 });
 
 const getYearFeature = () => {
-    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=report-annual-20261109");
+    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=owner-pdf-20261113");
   return yearFeatureLoading;
 };
 
