@@ -106,3 +106,36 @@ jobs:
           req=urllib.request.Request(endpoint,data=body,method='POST',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'})
           with urllib.request.urlopen(req,timeout=20) as response:print(response.status)
           PY
+
+  inspect-catalog-live:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Inspect missing Moment 300 questions on REG.RU'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Read-only compare live catalog, UI and JS responses
+        run: |
+          python3 - <<'PY'
+          import urllib.request, urllib.error, json, hashlib, pathlib, re
+          base="https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+          paths=["/moment/","/moment/moment.js?v=club-ask-20261111","/moment/questions.json?v=1","/moment/moment.css?v=club-ask-20261111","/moment/yes-no/"]
+          for path in paths:
+              req=urllib.request.Request(base+path,headers={"User-Agent":"NumiCatalogReadOnly/20261113","Cache-Control":"no-cache"})
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as res:
+                      status=res.status;content=res.read(400000);typ=res.headers.get("Content-Type","");url=res.url
+              except urllib.error.HTTPError as e:
+                  status=e.code;content=e.read(1000);typ=e.headers.get("Content-Type","");url=e.url
+              info={"path":path,"status":status,"type":typ,"bytes":len(content),"final_url":url,"sha256":hashlib.sha256(content).hexdigest()[:20]}
+              if path.startswith("/moment/questions"):
+                  try:
+                      d=json.loads(content)
+                      info.update(categories=len(d["categories"]),questions=len(d["questions"]),valid_count=len(d["categories"])==12 and len(d["questions"])==300)
+                  except Exception as e: info["json_error"]=str(e)[:100];info["first_bytes"]=content[:100].decode("utf-8","replace")
+              if path=="/moment/":
+                  src=content.decode("utf-8","replace")
+                  info.update(grid=src.count('id="category-grid"'),scripts=re.findall(r'src="([^"]*moment.js[^"]*)"',src),questions_panel=src.count('id="questions-panel"'))
+              if path.startswith("/moment/moment.js"):
+                  src=content.decode("utf-8","replace")
+                  info.update(js_has_render_categories="function renderCategories()" in src,js_has_valid_check="data.questions.length!==300" in src,js_has_fetch="./questions.json?v=1" in src)
+              print("CATALOG_LIVE",json.dumps(info,ensure_ascii=False),flush=True)
+          PY
