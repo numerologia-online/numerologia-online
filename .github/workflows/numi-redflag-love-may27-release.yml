@@ -1,0 +1,124 @@
+name: Sync approved Love May 27 to REG.RU protected store
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/numi-redflag-love-may27-release.yml'
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Sync approved Love date 27-5 to REG.RU private bank'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Validate exact approved answers, back up and deploy with readback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,hashlib,io,json,os,pathlib,ssl,subprocess
+          names=['first-step','romance','relationship-or-comfort','adult-partner','near-him','hard-moment','relationship-format','family-or-triangle','honest-or-disappear']
+          paths=['data/redflag/love/'+n+'.json' for n in names]
+          manifest='account-service/private/store-assets.json'
+          public='data/redflag/love/published/27-5.json'
+          workflow='.github/workflows/numi-redflag-love-may27-release.yml'
+          git=lambda *args:subprocess.check_output(['git',*args],timeout=45)
+          old=lambda p:git('show','HEAD^:'+p)
+          diff=set(git('diff','--name-only','HEAD^','HEAD').decode().splitlines())
+          if diff!=set([*paths,manifest,public,workflow]):raise RuntimeError('UNEXPECTED_COMMIT_DIFF:'+str(diff))
+          approved=json.loads(old(public))
+          if approved.get('dateKey')!='27-5' or set(approved.get('entries',{}))!=set(names):raise RuntimeError('APPROVAL_RECORD_CHANGED')
+          current_pub=json.loads(pathlib.Path(public).read_bytes())
+          if current_pub!={'schemaVersion':1,'dateKey':'27-5','entries':{'first-step':approved['entries']['first-step']}}:raise RuntimeError('PUBLIC_FILE_MUST_HAVE_ONLY_FREE_ANSWER')
+          before_manifest=json.loads(old(manifest))
+          after_manifest=json.loads(pathlib.Path(manifest).read_bytes())
+          expected=json.loads(old(manifest))
+          old_bytes={};new_bytes={}
+          for n,p in zip(names,paths):
+              a=json.loads(old(p));b=json.loads(pathlib.Path(p).read_bytes())
+              if a.get('questionId')!=n or b.get('questionId')!=n or a.get('section')!='love' or b.get('section')!='love' or a.get('keyRule')!='day-month' or b.get('keyRule')!='day-month':raise RuntimeError('QUESTION_METADATA_MISMATCH:'+n)
+              if a.get('status')!=('active' if n=='first-step' else 'draft') or a.get('status')!=b.get('status'):raise RuntimeError('QUESTION_STATUS_CHANGED:'+n)
+              new_text=approved['entries'][n]
+              if not isinstance(new_text,str) or len(new_text)<700 or new_text.count('\n\n')!=1:raise RuntimeError('BAD_APPROVED_TEXT:'+n)
+              test=dict(a);test['entries']=dict(a['entries']);test['entries']['27-5']=new_text
+              if test!=b:raise RuntimeError('UNRELATED_TEXT_CHANGE:'+n)
+              before=old(p);after=pathlib.Path(p).read_bytes()
+              if before_manifest['files'].get(p)!=hashlib.sha256(before).hexdigest():raise RuntimeError('OLD_MANIFEST_MISMATCH:'+n)
+              expected['files'][p]=hashlib.sha256(after).hexdigest()
+              old_bytes[p]=before;new_bytes[p]=after
+          if expected!=after_manifest:raise RuntimeError('MANIFEST_EXTRA_CHANGE')
+          old_bytes[manifest]=old(manifest);new_bytes[manifest]=pathlib.Path(manifest).read_bytes()
+          if not (os.environ.get('REG_FTP_USER') and os.environ.get('REG_FTP_PASSWORD')):raise RuntimeError('MISSING_REG_FTP_SECRETS')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          private=home+'/private/numi-account-20261031'
+          targets={p:private+'/store-content/'+p for p in paths}
+          targets[manifest]=private+'/store-assets.json'
+          public_target=home+'/www/xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'+public
+          def read(path,optional=False):
+              result=io.BytesIO()
+              try:ftp.retrbinary('RETR '+path,result.write)
+              except ftplib.error_perm as e:
+                  if optional and str(e).startswith('550'):return None
+                  raise
+              if result.tell()>1500000:raise RuntimeError('UNEXPECTED_REMOTE_SIZE')
+              return result.getvalue()
+          def write(path,raw):
+              ftp.storbinary('STOR '+path,io.BytesIO(raw))
+              if read(path)!=raw:raise RuntimeError('REMOTE_READBACK_FAILED:'+path)
+          changed=[]
+          try:
+              ftp.cwd(private+'/store-content/data/redflag/love')
+              ftp.cwd(home+'/www/xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/data/redflag/love/published')
+              actual={p:read(targets[p]) for p in [*paths,manifest]}
+              if any(actual[p] not in (old_bytes[p],new_bytes[p]) for p in actual):raise RuntimeError('PRIVATE_SERVER_BASELINE_DRIFT_NO_OVERWRITE')
+              pub_old=read(public_target,True)
+              if pub_old is not None:
+                  o=json.loads(pub_old)
+                  if o.get('dateKey')!='27-5' or set(o.get('entries',{}))!={'first-step'}:raise RuntimeError('UNEXPECTED_PUBLIC_DATE_CONTENT')
+              backup_root=home+'/site-safeguard-backups'
+              ftp.cwd(backup_root)
+              backup=backup_root+'/love-27-5-'+os.environ['GITHUB_RUN_ID']
+              ftp.mkd(backup)
+              for i,p in enumerate([*paths,manifest]):
+                  write(backup+'/'+str(i).zfill(2)+'-'+p.rsplit('/',1)[-1]+'.before',actual[p])
+              if pub_old is not None:write(backup+'/public-27-5.before',pub_old)
+              print('BACKUPS_VERIFIED',flush=True)
+              try:
+                  for p in [*paths,manifest]:
+                      if read(targets[p])!=actual[p]:raise RuntimeError('CONCURRENT_SERVER_UPDATE')
+                      if actual[p]!=new_bytes[p]:
+                          changed.append((targets[p],actual[p]))
+                          write(targets[p],new_bytes[p])
+                  expected_public=pathlib.Path(public).read_bytes()
+                  if pub_old!=expected_public:
+                      changed.append((public_target,pub_old))
+                      write(public_target,expected_public)
+                  for p in [*paths,manifest]:
+                      if read(targets[p])!=new_bytes[p]:raise RuntimeError('PRIVATE_FINAL_MISMATCH:'+p)
+                  if read(public_target)!=expected_public:raise RuntimeError('PUBLIC_FINAL_MISMATCH')
+                  print('REG_RU_LOVE_27_MAY_SUCCESS_9_ANSWERS_PROTECTED_AND_PUBLIC_FREE_ONLY',flush=True)
+              except BaseException:
+                  for target,previous in reversed(changed):
+                      try:
+                          if previous is None:ftp.delete(target)
+                          else:write(target,previous)
+                          print('ROLLBACK_OK',target.rsplit('/',1)[-1],flush=True)
+                      except BaseException:print('ROLLBACK_FAILED',target.rsplit('/',1)[-1],flush=True)
+                  raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
