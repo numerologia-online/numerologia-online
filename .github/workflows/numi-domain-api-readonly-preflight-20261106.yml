@@ -46,8 +46,6 @@ jobs:
           OLD="xn--c1adkkdfjbp1a4l.online"
           MARKER="# BEGIN NUMI 20261113 PRIMARY HOST WWW CANONICAL"
           BLOCK=("\n"+MARKER+"\nRewriteEngine On\n"
-              +"RewriteCond %{HTTP_HOST} ^(www\\.)?"+NEW.replace(".","\\.")+"$ [NC]\n"
-              +"RewriteCond %{HTTPS} !=on [OR]\n"
               +"RewriteCond %{HTTP_HOST} ^www\\."+NEW.replace(".","\\.")+"$ [NC]\n"
               +"RewriteRule ^ https://"+NEW+"%{REQUEST_URI} [R=301,L,NE]\n"
               +"# END NUMI 20261113 PRIMARY HOST WWW CANONICAL\n\n").encode()
