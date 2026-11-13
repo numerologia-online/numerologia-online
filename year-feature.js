@@ -113,6 +113,8 @@ const loadYearForGuest = async (birthDate, reportYearValue) => {
 let reportRevealTimer;
 
 const showCalculationLoading = () => {
+  if (currentPdfReport?.url) URL.revokeObjectURL(currentPdfReport.url);
+  currentPdfReport = null;
   purchasedYear=null;
   purchasedYearRegion.hidden=true;
   purchasedYearRegion.dataset.numiReportKey="";
@@ -229,7 +231,8 @@ yearMonths?.addEventListener("toggle", (event) => {
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const birthDate = parseBirthDate(birthInput.value);
+  const birthLabel = birthInput.value;
+  const birthDate = parseBirthDate(birthLabel);
   const reportYearValue = Number(yearInput.value);
   if (!birthDate) {
     birthInput.setCustomValidity("Введите настоящую дату в формате ДД.ММ.ГГГГ");
@@ -288,7 +291,7 @@ form.addEventListener("submit", async (event) => {
 
   document.querySelector("#report-period").textContent = `Переход личного года · ${formatDate(birthdayInReportYear)}`;
   document.querySelector("#report-title").textContent = `Ваш ${reportYearValue} год`;
-  document.querySelector("#report-meta").textContent = `Дата рождения: ${birthInput.value} · Год разбора: ${reportYearValue}`;
+  document.querySelector("#report-meta").textContent = `Дата рождения: ${birthLabel} · Год разбора: ${reportYearValue}`;
   document.querySelector("#report-copy").textContent = "Год состоит из двух периодов, которые соединяются в один личный цикл.";
   const sensitivePeriodStart = new Date(Date.UTC(reportYearValue, birthDate.getUTCMonth(), birthDate.getUTCDate() - 30));
   document.querySelector("#year-transition").innerHTML = storyBeforeBirthday && storyAfterBirthday ? `
@@ -378,9 +381,12 @@ form.addEventListener("submit", async (event) => {
   const pdfLabel = canDownloadPdf ? "Скачать полный PDF" : "🔒 Скачать полный PDF";
   pdfButton.textContent = pdfLabel;
   pdfButtonTop.textContent = pdfLabel;
+  if (canDownloadPdf) {
+    currentPdfReport = { birthDate, birthLabel, reportYearValue, file: null, url: null, loading: null };
+    warmPdfInBackground(currentPdfReport);
+  }
   showCalculatedReport();
   void refreshPurchasedYear();
-  if (canDownloadPdf) warmPdfInBackground();
 });
 
 const pdfButton = document.querySelector("#pdf-button");
@@ -389,34 +395,10 @@ const pdfPreviewDialog = document.querySelector("#pdf-preview");
 const pdfPreviewPages = document.querySelector("#pdf-preview-pages");
 const pdfPreviewClose = document.querySelector("#pdf-preview-close");
 const pdfDownloadButton = document.querySelector("#pdf-download-button");
+const pdfShareButton = document.querySelector("#pdf-share-button");
 let pdfMakeLoading;
-let currentPdfUrl = null;
-let currentPdfFilename = null;
-let pdfBuildLoading = null;
-let preparedPdfKey = null;
+let currentPdfReport = null;
 let calculatedPdfMonths = [];
-
-const reduceNumber = (number) => {
-  let result = Math.abs(Number(number) || 0);
-  while (result > 9) result = String(result).split("").reduce((sum, digit) => sum + Number(digit), 0);
-  return result;
-};
-
-const getPersonalLifeCode = (birthDate) => {
-  if (!birthDate) return [];
-  const day = birthDate.getUTCDate();
-  const month = birthDate.getUTCMonth() + 1;
-  const year = birthDate.getUTCFullYear();
-  const lifeNumber = String(day).padStart(2, "0") + String(month).padStart(2, "0") + String(year);
-  return [
-    reduceNumber(day),
-    reduceNumber(month),
-    reduceNumber(year),
-    reduceNumber([...lifeNumber].reduce((sum, digit) => sum + Number(digit), 0))
-  ];
-};
-
-const getPdfKey = () => [birthInput.value, yearInput.value, document.querySelector("#months")?.innerText || ""].join("|");
 
 const loadExternalScript = (source) => new Promise((resolve, reject) => {
   const script = document.createElement("script");
@@ -428,11 +410,17 @@ const loadExternalScript = (source) => new Promise((resolve, reject) => {
 });
 
 const getPdfMake = () => {
-  if (window.pdfMake) return Promise.resolve(window.pdfMake);
   if (!pdfMakeLoading) {
-    pdfMakeLoading = loadExternalScript("https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/pdfmake.min.js")
+    const loadLibrary = window.pdfMake
+      ? Promise.resolve()
+      : loadExternalScript("https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/pdfmake.min.js");
+    pdfMakeLoading = loadLibrary
       .then(() => loadExternalScript("https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/vfs_fonts.js"))
-      .then(() => window.pdfMake);
+      .then(() => window.pdfMake)
+      .catch((error) => {
+        pdfMakeLoading = null;
+        throw error;
+      });
   }
   return pdfMakeLoading;
 };
@@ -488,9 +476,6 @@ const imageAsDataUrl = async (source) => {
     reader.readAsDataURL(blob);
   });
 };
-
-let pdfTemplatesLoading;
-const getPdfTemplates = () => Promise.resolve({});
 
 const yearReportFrame = () => ({ svg: `<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842">
   <defs>
@@ -586,14 +571,11 @@ const yearReportCover = ({ year, birthDate, age }) => {
   };
 };
 
-const buildPdfDocument = (templates) => {
+const buildPdfDocument = ({ birthDate, birthLabel, reportYearValue }) => {
   const reportTitle = document.querySelector("#report-title").textContent;
   const reportPeriod = document.querySelector("#report-period").textContent;
   const reportCopy = document.querySelector("#report-copy").textContent;
-  const birthDate = parseBirthDate(birthInput.value);
-  const reportYearValue = Number(yearInput.value);
-  const age = birthDate ? reportYearValue - birthDate.getUTCFullYear() : "";
-  const personalCode = getPersonalLifeCode(birthDate).join("   ");
+  const age = reportYearValue - birthDate.getUTCFullYear();
   const phases = [...document.querySelectorAll("#year-transition .year-cycle-story")].flatMap((phase) => {
     const parts = [];
     phase.querySelectorAll(".phase-kicker").forEach((label, index) => {
@@ -645,7 +627,7 @@ const buildPdfDocument = (templates) => {
   });
 
   return {
-    info: { title: `${reportTitle} - ${birthInput.value}` },
+    info: { title: `${reportTitle} - ${birthLabel}` },
     pageSize: "A4",
     // Wide inner margins keep large type safely inside the decorative frame.
     pageMargins: [68, 88, 68, 104],
@@ -670,7 +652,7 @@ const buildPdfDocument = (templates) => {
       monthTitle: { fontSize: 40, bold: true, color: "#142F49", alignment: "center", margin: [0, 12, 0, 9] }
     },
     content: [
-      { ...yearReportCover({ year: reportYearValue, birthDate: birthInput.value, age }), pageBreak: "after" },
+      { ...yearReportCover({ year: reportYearValue, birthDate: birthLabel, age }), pageBreak: "after" },
       { text: reportPeriod, style: "innerKicker" },
       { text: reportCopy, style: "subtitle" },
       ...phases,
@@ -681,29 +663,31 @@ const buildPdfDocument = (templates) => {
   };
 };
 
-const preparePdf = () => {
-  if (!hasVerifiedYearAccess()) return Promise.reject(new Error("PDF закрыт до покупки."));
-  const pdfKey = getPdfKey();
-  if (currentPdfUrl && preparedPdfKey === pdfKey) return Promise.resolve({ url: currentPdfUrl, filename: currentPdfFilename });
-  if (pdfBuildLoading) return pdfBuildLoading;
+const preparePdf = async (pdfReport) => {
+  if (!hasVerifiedYearAccess() || !pdfReport || pdfReport !== currentPdfReport) {
+    throw new Error("Полный PDF недоступен для этого расчёта.");
+  }
+  if (pdfReport.file) return pdfReport.file;
 
-  pdfBuildLoading = (async () => {
-    const [pdfMake, templates] = await Promise.all([getPdfMake(), getPdfTemplates()]);
-    const blob = await new Promise((resolve) => pdfMake.createPdf(appendPublicPdfOutro(buildPdfDocument(templates))).getBlob(resolve));
-    if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
-    currentPdfUrl = URL.createObjectURL(blob);
-    currentPdfFilename = `${birthInput.value} ${yearInput.value} год.pdf`;
-    preparedPdfKey = pdfKey;
-    return { url: currentPdfUrl, filename: currentPdfFilename };
-  })().finally(() => {
-    pdfBuildLoading = null;
-  });
-
-  return pdfBuildLoading;
+  if (!pdfReport.loading) {
+    pdfReport.loading = (async () => {
+      const pdfMake = await getPdfMake();
+      if (pdfReport !== currentPdfReport) throw new Error("Расчёт изменился.");
+      const definition = appendPublicPdfOutro(buildPdfDocument(pdfReport));
+      const blob = await new Promise((resolve) => pdfMake.createPdf(definition).getBlob(resolve));
+      if (pdfReport !== currentPdfReport) throw new Error("Расчёт изменился.");
+      const filename = `${pdfReport.birthLabel} ${pdfReport.reportYearValue} год.pdf`;
+      pdfReport.file = new File([blob], filename, { type: "application/pdf" });
+      return pdfReport.file;
+    })().finally(() => {
+      pdfReport.loading = null;
+    });
+  }
+  return pdfReport.loading;
 };
 
-const warmPdfInBackground = () => {
-  const warm = () => preparePdf().catch(() => {});
+const warmPdfInBackground = (pdfReport) => {
+  const warm = () => preparePdf(pdfReport).catch(() => {});
   if ("requestIdleCallback" in window) {
     window.requestIdleCallback(warm, { timeout: 1200 });
   } else {
@@ -740,54 +724,74 @@ const renderMobilePdfPreview = () => {
   pdfPreviewPages.replaceChildren(preview);
 };
 
-const openPdfPreview = async () => {
-  if (!hasVerifiedYearAccess()) return showYearPaywall();
-  pdfPreviewDialog.showModal();
-  renderMobilePdfPreview();
+const preparePdfActions = async (pdfReport) => {
+  if (pdfShareButton) {
+    pdfShareButton.hidden = true;
+    pdfShareButton.disabled = true;
+  }
   pdfDownloadButton.disabled = true;
-  pdfDownloadButton.textContent = "Готовлю PDF...";
+  pdfDownloadButton.textContent = "Готовлю PDF…";
   try {
-    await preparePdf();
-  } catch (error) {
-    // Предпросмотр остаётся доступен на сайте, даже если браузер не смог собрать файл.
+    const file = await preparePdf(pdfReport);
+    if (pdfReport !== currentPdfReport || !pdfPreviewDialog.open) return;
+    const canShare = Boolean(pdfShareButton) && typeof navigator.share === "function" &&
+      typeof navigator.canShare === "function" && navigator.canShare({ files: [file] });
+    if (canShare) {
+      pdfShareButton.hidden = false;
+      pdfShareButton.disabled = false;
+    }
+    pdfDownloadButton.textContent = canShare ? "Открыть PDF" : "Скачать PDF";
+  } catch (_) {
+    if (pdfReport === currentPdfReport && pdfPreviewDialog.open) {
+      pdfDownloadButton.textContent = "Повторить подготовку PDF";
+    }
   } finally {
-    pdfDownloadButton.disabled = false;
-    pdfDownloadButton.innerHTML = "Скачать PDF <span>↓</span>";
+    if (pdfReport === currentPdfReport && pdfPreviewDialog.open) pdfDownloadButton.disabled = false;
   }
 };
 
-const downloadPdf = async () => {
+const openPdfPreview = () => {
+  if (!hasVerifiedYearAccess() || !currentPdfReport) return showYearPaywall();
+  pdfPreviewDialog.showModal();
+  renderMobilePdfPreview();
+  return preparePdfActions(currentPdfReport);
+};
+
+const sharePdf = async () => {
   if (!hasVerifiedYearAccess()) return showYearPaywall();
-  const originalDownloadLabel = pdfDownloadButton.innerHTML;
-  pdfDownloadButton.disabled = true;
-  pdfDownloadButton.textContent = currentPdfUrl ? "Скачиваю PDF..." : "Готовлю PDF...";
+  const file = currentPdfReport?.file;
+  if (!file || pdfShareButton.disabled) return;
+  pdfShareButton.disabled = true;
   try {
-    const { url, filename } = await preparePdf();
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    // iOS Safari may ignore `download` for a Blob URL and replace the current
-    // tab with the PDF. Open it separately so closing the PDF returns to the
-    // already calculated report and its date/year form.
-    link.target = "_blank";
-    link.rel = "noopener";
-    document.body.append(link);
-    link.click();
-    link.remove();
+    // The File is ready before the tap so the iOS share sheet receives a user gesture.
+    await navigator.share({ files: [file] });
   } catch (error) {
-    alert("PDF пока не удалось подготовить. Проверьте подключение к интернету и попробуйте ещё раз.");
+    if (error.name !== "AbortError") alert("Не удалось открыть меню отправки. Попробуйте ещё раз или нажмите «Открыть PDF».");
   } finally {
-    window.setTimeout(() => {
-      pdfDownloadButton.disabled = false;
-      pdfDownloadButton.innerHTML = originalDownloadLabel;
-    }, 900);
+    pdfShareButton.disabled = false;
   }
+};
+
+const downloadPdf = () => {
+  if (!hasVerifiedYearAccess() || !currentPdfReport) return showYearPaywall();
+  const pdfReport = currentPdfReport;
+  if (!pdfReport.file) return preparePdfActions(pdfReport);
+  pdfReport.url ??= URL.createObjectURL(pdfReport.file);
+  const link = document.createElement("a");
+  link.href = pdfReport.url;
+  if (!pdfShareButton || pdfShareButton.hidden) link.download = pdfReport.file.name;
+  link.target = "_blank";
+  link.rel = "noopener";
+  document.body.append(link);
+  link.click();
+  link.remove();
 };
 
 pdfButton.addEventListener("click", openPdfPreview);
 pdfButtonTop.addEventListener("click", openPdfPreview);
 pdfPreviewClose.addEventListener("click", () => pdfPreviewDialog.close());
 pdfDownloadButton.addEventListener("click", downloadPdf);
+pdfShareButton?.addEventListener("click", sharePdf);
 pdfPreviewDialog.addEventListener("close", () => {
   pdfPreviewPages.innerHTML = "";
 });

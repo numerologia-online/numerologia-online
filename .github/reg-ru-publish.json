@@ -1,5 +1,18 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-13 REG.RU published and verified the annual PDF button fix for the Telegram owner. Publisher returned to its normal check mode."
+  "mode": "publish",
+  "files": [
+    "year-feature.js",
+    "year-polish.css",
+    "app.js",
+    "year/index.html",
+    "index.html"
+  ],
+  "expected_sha256": {
+    "year-feature.js": "638a45f9869a35e17703db82b5ca7a8b374b1670f489446fe7f7252bb3ec13c8",
+    "year-polish.css": "a61eb0edda4c4043caf0d226b30b92dc983c5d33c8254d0a15861a5ece0fdd18",
+    "app.js": "aa3605c2bd2eec607cd77ae55187d930627301056d961e8b67b2e1a2521ff87d",
+    "year/index.html": "b220c93681cde2e2a8b39f1e9b37e5b707c6bd22057acc0b37718276943dc1da",
+    "index.html": "17db98e98022204f90ffe05851ebac8b3fefa80de02f96f99a51f90b1157adcd"
+  },
+  "note": "Restore annual PDF sharing and saving for the server-verified Telegram owner using the prepared PDF file. Update the standalone page and main app cache versions."
 }

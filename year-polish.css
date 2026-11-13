@@ -236,8 +236,14 @@
 
 .pdf-preview-dialog::backdrop { background: rgba(20, 31, 47, 0.62); backdrop-filter: blur(5px); }
 
+.pdf-preview-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
 .pdf-preview-topbar {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   min-height: 62px;
@@ -249,7 +255,8 @@
 .pdf-preview-topbar p { margin: 0; color: #486682; font-size: 11px; font-weight: 800; letter-spacing: 0.13em; }
 .pdf-preview-topbar button { width: 40px; height: 40px; border: 0; border-radius: 50%; background: #edf2f6; color: #294b70; font-size: 30px; font-weight: 300; line-height: 1; }
 .pdf-preview-pages {
-  height: calc(100% - 132px);
+  flex: 1;
+  min-height: 0;
   padding: 14px;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -313,7 +320,6 @@
   }
 
   .pdf-preview-pages {
-    height: calc(100% - 124px);
     padding: 10px;
   }
 
@@ -371,6 +377,27 @@
 .pdf-month-copy .link-sections h4 { margin: 0 0 0.2em; color: #1e405f; font-size: 0.96em; }
 .pdf-month-copy .link-sections section:last-child { border: 0; padding: 0.5em 0; background: transparent; }
 .pdf-download-button { width: calc(100% - 32px); min-height: 52px; margin: 9px 16px; border: 0; border-radius: 15px; background: #294d76; color: #fff; font-size: 16px; font-weight: 700; }
+
+.pdf-preview-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  padding: 9px 16px max(9px, env(safe-area-inset-bottom));
+}
+
+.pdf-preview-actions .pdf-download-button {
+  flex: 1;
+  width: auto;
+  margin: 0;
+  padding: 8px;
+}
+
+.pdf-preview-actions .pdf-download-button[hidden] { display: none; }
+.pdf-preview-actions .pdf-download-button:disabled { opacity: .65; }
+.pdf-preview-actions #pdf-share-button:not([hidden]) + #pdf-download-button {
+  background: #e2e9f0;
+  color: #294d76;
+}
 
 @media (min-width: 700px) {
   .year-paper { padding: 28px 34px 38px; }
