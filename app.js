@@ -24,14 +24,14 @@ const loadStylesheet = (href) => new Promise((resolve, reject) => {
 });
 
 const getYearFeature = () => {
-    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=year-pdf-share-20261113");
+    if (!yearFeatureLoading) yearFeatureLoading = import("./year-feature.js?v=year-pdf-view-20261113");
   return yearFeatureLoading;
 };
 
 const openYearFeature = async () => {
   const [feature] = await Promise.all([
     getYearFeature(),
-    yearStylesLoading ??= loadStylesheet("year-polish.css?v=year-pdf-share-20261113")
+    yearStylesLoading ??= loadStylesheet("year-polish.css?v=year-pdf-view-20261113")
   ]);
   feature.openYear();
 };

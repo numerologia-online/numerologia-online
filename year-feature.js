@@ -397,6 +397,8 @@ const pdfPreviewClose = document.querySelector("#pdf-preview-close");
 const pdfDownloadButton = document.querySelector("#pdf-download-button");
 const pdfShareButton = document.querySelector("#pdf-share-button");
 let pdfMakeLoading;
+let pdfViewerLoading;
+let activePdfPreview;
 let currentPdfReport = null;
 let calculatedPdfMonths = [];
 
@@ -695,66 +697,173 @@ const warmPdfInBackground = (pdfReport) => {
   }
 };
 
-const setPdfPreviewLoading = (message) => {
-  pdfPreviewPages.innerHTML = `<div class="pdf-preview-loading"><strong>${message}</strong><span>Подготавливаю точный макет для скачивания.</span></div>`;
+const setPdfPreviewMessage = (message) => {
+  const status = document.createElement("p");
+  status.className = "pdf-preview-loading";
+  status.setAttribute("role", "status");
+  status.textContent = message;
+  pdfPreviewPages.replaceChildren(status);
 };
 
-const renderMobilePdfPreview = () => {
-  const report = document.querySelector("#report");
-  if (!report) return setPdfPreviewLoading("Сначала создайте расчёт");
+const getPdfViewer = () => {
+  if (!pdfViewerLoading) {
+    const build = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/legacy/build/";
+    pdfViewerLoading = import(build + "pdf.min.mjs").then((viewer) => {
+      viewer.GlobalWorkerOptions.workerSrc = build + "pdf.worker.min.mjs";
+      return viewer;
+    }).catch((error) => {
+      pdfViewerLoading = null;
+      throw error;
+    });
+  }
+  return pdfViewerLoading;
+};
 
-  const preview = report.cloneNode(true);
-  preview.removeAttribute("id");
-  preview.classList.add("pdf-mobile-preview");
-  preview.querySelectorAll("details").forEach((month) => { month.open = true; });
-  preview.querySelectorAll(".month-kicker").forEach((label) => {
-    const clientLabel = clientPdfLabel(label.textContent);
-    if (clientLabel) label.textContent = clientLabel;
-    else label.remove();
-  });
-  // The preview should show the same client-facing headings as the downloaded PDF.
-  preview.querySelectorAll(".month-card summary strong").forEach((number) => number.remove());
-  preview.querySelectorAll(".month-content p").forEach((paragraph) => {
-    if (paragraph.textContent.includes("Авторская карточка этой связки ещё готовится.")) {
-      paragraph.textContent = paragraph.textContent.replace("этой связки", "этого месяца");
+const closePdfPreview = () => {
+  const preview = activePdfPreview;
+  activePdfPreview = null;
+  if (preview) {
+    preview.observer?.disconnect();
+    preview.visible.clear();
+    preview.canvasTask?.cancel();
+    preview.loadingTask?.destroy().catch(() => {});
+  }
+  pdfPreviewPages.replaceChildren();
+};
+
+const renderPdfPage = async (preview, container) => {
+  const number = Number(container.dataset.page);
+  const page = await preview.document.getPage(number);
+  if (preview !== activePdfPreview || !preview.visible.has(container)) {
+    page.cleanup();
+    return;
+  }
+  const base = page.getViewport({ scale: 1 });
+  const scale = Math.min(container.clientWidth * Math.min(window.devicePixelRatio || 1, 2), 1200) / base.width;
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(viewport.width);
+  canvas.height = Math.ceil(viewport.height);
+  canvas.setAttribute("role", "img");
+  canvas.setAttribute("aria-label", `Страница ${number} из ${preview.document.numPages}`);
+  const task = page.render({ canvas, viewport });
+  preview.canvasTask = task;
+  try {
+    await task.promise;
+    if (preview === activePdfPreview && preview.visible.has(container)) {
+      container.replaceChildren(canvas);
+      preview.rendered.add(container);
     }
-  });
-  preview.querySelectorAll(".draft-note").forEach((note) => note.remove());
-  preview.querySelectorAll("#pdf-button, #pdf-button-top").forEach((button) => button.remove());
-  pdfPreviewPages.replaceChildren(preview);
+  } finally {
+    preview.canvasTask = null;
+    page.cleanup();
+  }
 };
 
-const preparePdfActions = async (pdfReport) => {
+const renderVisiblePdfPages = async (preview) => {
+  if (preview.rendering) return;
+  preview.rendering = true;
+  try {
+    while (preview === activePdfPreview) {
+      const next = [...preview.visible].find((page) => !preview.rendered.has(page));
+      if (!next) break;
+      try {
+        await renderPdfPage(preview, next);
+      } catch (error) {
+        if (preview !== activePdfPreview) return;
+        console.error("Не удалось показать страницу PDF:", error);
+        next.textContent = "Не удалось показать страницу.";
+        preview.rendered.add(next);
+      }
+    }
+  } finally {
+    preview.rendering = false;
+  }
+};
+
+const renderPdfPreview = async (preview, file, viewer) => {
+  const data = new Uint8Array(await file.arrayBuffer());
+  if (preview !== activePdfPreview) return;
+  preview.loadingTask = viewer.getDocument({
+    data,
+    isEvalSupported: false,
+    useWorkerFetch: false,
+    enableXfa: false
+  });
+  preview.document = await preview.loadingTask.promise;
+  if (preview !== activePdfPreview) return;
+  const firstPage = await preview.document.getPage(1);
+  if (preview !== activePdfPreview) return;
+  const size = firstPage.getViewport({ scale: 1 });
+  const pages = Array.from({ length: preview.document.numPages }, (_, index) => {
+    const element = document.createElement("div");
+    element.className = "pdf-preview-sheet";
+    element.dataset.page = index + 1;
+    element.style.aspectRatio = `${size.width} / ${size.height}`;
+    return element;
+  });
+  pdfPreviewPages.replaceChildren(...pages);
+  pdfPreviewPages.scrollTop = 0;
+  preview.observer = new IntersectionObserver((entries) => {
+    if (preview !== activePdfPreview) return;
+    for (const entry of entries) {
+      const page = entry.target;
+      if (entry.isIntersecting) {
+        preview.visible.add(page);
+      } else {
+        preview.visible.delete(page);
+        if (preview.rendered.delete(page)) page.replaceChildren();
+      }
+    }
+    void renderVisiblePdfPages(preview);
+  }, { root: pdfPreviewPages, rootMargin: "240px 0px" });
+  pages.forEach((page) => preview.observer.observe(page));
+};
+
+const openPdfPreview = async () => {
+  if (!hasVerifiedYearAccess() || !currentPdfReport) return showYearPaywall();
+  if (pdfPreviewDialog.open) return;
+  closePdfPreview();
+  const preview = { visible: new Set(), rendered: new Set() };
+  activePdfPreview = preview;
+  const pdfReport = currentPdfReport;
+  pdfPreviewDialog.showModal();
+  setPdfPreviewMessage("Готовлю PDF…");
   if (pdfShareButton) {
     pdfShareButton.hidden = true;
     pdfShareButton.disabled = true;
   }
   pdfDownloadButton.disabled = true;
-  pdfDownloadButton.textContent = "Готовлю PDF…";
+  pdfDownloadButton.hidden = false;
+  pdfDownloadButton.textContent = "Скачать PDF";
+  const viewerReady = getPdfViewer().catch(() => null);
   try {
     const file = await preparePdf(pdfReport);
-    if (pdfReport !== currentPdfReport || !pdfPreviewDialog.open) return;
+    if (preview !== activePdfPreview || !pdfPreviewDialog.open) return;
     const canShare = Boolean(pdfShareButton) && typeof navigator.share === "function" &&
       typeof navigator.canShare === "function" && navigator.canShare({ files: [file] });
     if (canShare) {
       pdfShareButton.hidden = false;
       pdfShareButton.disabled = false;
     }
-    pdfDownloadButton.textContent = canShare ? "Открыть PDF" : "Скачать PDF";
-  } catch (_) {
-    if (pdfReport === currentPdfReport && pdfPreviewDialog.open) {
-      pdfDownloadButton.textContent = "Повторить подготовку PDF";
+    pdfDownloadButton.hidden = canShare && Boolean(signedYearInitData());
+    pdfDownloadButton.disabled = false;
+    setPdfPreviewMessage("Открываю страницы PDF…");
+    const viewer = await viewerReady;
+    if (preview !== activePdfPreview || !pdfPreviewDialog.open) return;
+    if (!viewer) throw new Error("Модуль просмотра PDF недоступен.");
+    await renderPdfPreview(preview, file, viewer);
+  } catch (error) {
+    if (preview !== activePdfPreview || !pdfPreviewDialog.open) return;
+    console.error("Не удалось открыть PDF:", error);
+    if (pdfReport.file) {
+      setPdfPreviewMessage("Не удалось показать страницы. Готовый PDF можно сохранить или отправить кнопкой внизу.");
+    } else {
+      setPdfPreviewMessage("Не удалось подготовить PDF. Попробуйте ещё раз.");
+      pdfDownloadButton.textContent = "Повторить";
+      pdfDownloadButton.disabled = false;
     }
-  } finally {
-    if (pdfReport === currentPdfReport && pdfPreviewDialog.open) pdfDownloadButton.disabled = false;
   }
-};
-
-const openPdfPreview = () => {
-  if (!hasVerifiedYearAccess() || !currentPdfReport) return showYearPaywall();
-  pdfPreviewDialog.showModal();
-  renderMobilePdfPreview();
-  return preparePdfActions(currentPdfReport);
 };
 
 const sharePdf = async () => {
@@ -766,7 +875,10 @@ const sharePdf = async () => {
     // The File is ready before the tap so the iOS share sheet receives a user gesture.
     await navigator.share({ files: [file] });
   } catch (error) {
-    if (error.name !== "AbortError") alert("Не удалось открыть меню отправки. Попробуйте ещё раз или нажмите «Открыть PDF».");
+    if (error.name !== "AbortError") {
+      pdfDownloadButton.hidden = false;
+      alert("Не удалось открыть меню отправки. Можно нажать «Скачать PDF».");
+    }
   } finally {
     pdfShareButton.disabled = false;
   }
@@ -775,13 +887,14 @@ const sharePdf = async () => {
 const downloadPdf = () => {
   if (!hasVerifiedYearAccess() || !currentPdfReport) return showYearPaywall();
   const pdfReport = currentPdfReport;
-  if (!pdfReport.file) return preparePdfActions(pdfReport);
+  if (!pdfReport.file) {
+    pdfPreviewDialog.close();
+    return openPdfPreview();
+  }
   pdfReport.url ??= URL.createObjectURL(pdfReport.file);
   const link = document.createElement("a");
   link.href = pdfReport.url;
-  if (!pdfShareButton || pdfShareButton.hidden) link.download = pdfReport.file.name;
-  link.target = "_blank";
-  link.rel = "noopener";
+  link.download = pdfReport.file.name;
   document.body.append(link);
   link.click();
   link.remove();
@@ -793,5 +906,5 @@ pdfPreviewClose.addEventListener("click", () => pdfPreviewDialog.close());
 pdfDownloadButton.addEventListener("click", downloadPdf);
 pdfShareButton?.addEventListener("click", sharePdf);
 pdfPreviewDialog.addEventListener("close", () => {
-  pdfPreviewPages.innerHTML = "";
+  if (!pdfPreviewDialog.open) closePdfPreview();
 });

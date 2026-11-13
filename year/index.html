@@ -15,7 +15,7 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="styles.css?v=209">
   <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="year-polish.css?v=year-pdf-share-20261113">
+  <link rel="stylesheet" href="year-polish.css?v=year-pdf-view-20261113">
   <link rel="stylesheet" href="year-paywall.css?v=2">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
   <script src="telegram-scroll-guard.js?v=1" defer></script>
@@ -86,7 +86,7 @@
         <p>ВАШ PDF-РАЗБОР</p>
         <button id="pdf-preview-close" type="button" aria-label="Вернуться к разбору" title="Вернуться к разбору">←</button>
       </div>
-      <div id="pdf-preview-pages" class="pdf-preview-pages" aria-label="Предпросмотр вашего разбора"></div>
+      <div id="pdf-preview-pages" class="pdf-preview-pages" role="region" tabindex="0" aria-label="Страницы PDF"></div>
       <div class="pdf-preview-actions">
         <button id="pdf-share-button" class="pdf-download-button" type="button" hidden>Поделиться PDF</button>
         <button id="pdf-download-button" class="pdf-download-button" type="button">Скачать PDF</button>
@@ -97,7 +97,7 @@
   </p>
   <noscript>Для расчёта года необходимо разрешить JavaScript в браузере.</noscript>
   <script type="module">
-    import(new URL("../year-feature.js?v=year-pdf-share-20261113", window.location.href).href).catch((error) => {
+    import(new URL("../year-feature.js?v=year-pdf-view-20261113", window.location.href).href).catch((error) => {
       console.error("Не удалось загрузить годовой разбор", error);
       document.querySelector("#standalone-year-error").hidden = false;
     });

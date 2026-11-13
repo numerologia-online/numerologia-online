@@ -1,5 +1,18 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-13 REG.RU published and verified the annual PDF saving and sharing controls. Publisher returned to its normal check mode."
+  "mode": "publish",
+  "files": [
+    "year-feature.js",
+    "year-polish.css",
+    "app.js",
+    "year/index.html",
+    "index.html"
+  ],
+  "expected_sha256": {
+    "year-feature.js": "1b9f6e02a142a1453e4734732f4dea4d14ac90755778920bfea655162759256f",
+    "year-polish.css": "cbc2352d05c17e8986bd74f44ea1923b38aca722639fa03edbcf20587d9965ca",
+    "app.js": "e6fdd3b390cc8e760b55fe975722b1978da0eeadce439cbe75528aa94a38b466",
+    "year/index.html": "028c99b70a96d5d8a0c63ab28c9c8d1331e293d168b44bb3629efb454c24e8bb",
+    "index.html": "de47fed5ca54276f7b00d3c93c92a4b2e6dc9d1622a6f29462b230cda147e01d"
+  },
+  "note": "Show the generated annual PDF inside the mini app and share the same file. Keep the existing verified owner access."
 }
