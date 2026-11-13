@@ -29,3 +29,85 @@ jobs:
               lines=[line.strip()[:190] for line in source.splitlines() if any(t in line for t in terms)]
               print('LIVE_REFERENCE',json.dumps({'path':path,'sha256':hashlib.sha256(blob).hexdigest(),'matches':lines[:10]},ensure_ascii=False),flush=True)
           PY
+
+  new-domain-www-canonical:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Finalize www primary domain redirect without touching APIs'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Back up and test only the new-domain HTTPS and www canonical redirect
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,io,os,ssl,time,urllib.request,urllib.error
+          NEW="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+          OLD="xn--c1adkkdfjbp1a4l.online"
+          MARKER="# BEGIN NUMI 20261113 PRIMARY HOST WWW CANONICAL"
+          BLOCK=("\n"+MARKER+"\nRewriteEngine On\n"
+              +"RewriteCond %{HTTP_HOST} ^(www\\.)?"+NEW.replace(".","\\.")+"$ [NC]\n"
+              +"RewriteCond %{HTTPS} !=on [OR]\n"
+              +"RewriteCond %{HTTP_HOST} ^www\\."+NEW.replace(".","\\.")+"$ [NC]\n"
+              +"RewriteRule ^ https://"+NEW+"%{REQUEST_URI} [R=301,L,NE]\n"
+              +"# END NUMI 20261113 PRIMARY HOST WWW CANONICAL\n\n").encode()
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,req,fp,code,msg,headers,url):return None
+          opener=urllib.request.build_opener(NoRedirect())
+          def status(url):
+              req=urllib.request.Request(url,headers={"Cache-Control":"no-cache","User-Agent":"Numi-Canonical-Verification/1"})
+              try:res=opener.open(req,timeout=25)
+              except urllib.error.HTTPError as e:res=e
+              with res:return res.status,res.headers.get("Location") or ""
+          initial_old=status("https://"+OLD+"/")
+          initial_new=status("https://"+NEW+"/")
+          initial_www=status("https://www."+NEW+"/")
+          print("PREFLIGHT_OLD_NEW_WWW",initial_old,initial_new,initial_www,flush=True)
+          if initial_old!=(301,"https://"+NEW+"/") or initial_new[0]!=200 or initial_www[0] not in (200,301):
+              raise RuntimeError("DOMAIN_PREFLIGHT_UNEXPECTED")
+          if initial_www==(301,"https://"+NEW+"/"):
+              print("NEW_WWW_ALREADY_CANONICAL");raise SystemExit(0)
+          if initial_www[0]!=200:raise RuntimeError("WWW_BASELINE_UNEXPECTED")
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect("server172.hosting.reg.ru",21)
+          ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip("/")
+          target=home+"/www/"+OLD+"/.htaccess"
+          def read(path):
+              result=io.BytesIO();ftp.retrbinary("RETR "+path,result.write)
+              if result.tell()>300000:raise RuntimeError("HTACCESS_TOO_LARGE")
+              return result.getvalue()
+          def write(path,blob):
+              ftp.storbinary("STOR "+path,io.BytesIO(blob))
+              if read(path)!=blob:raise RuntimeError("READBACK_FAILED")
+          try:
+              before=read(target)
+              if BLOCK in before or MARKER.encode() in before:raise RuntimeError("ALREADY_PATCHED")
+              if before.count(b"RewriteEngine On")<1 or before.count(b"https://"+NEW.encode()+b"%{REQUEST_URI}")<1:
+                  raise RuntimeError("HTACCESS_OLD_REDIRECT_MISSING")
+              desired=BLOCK+before
+              if read(target)!=before:raise RuntimeError("CONCURRENT_CHANGE")
+              backup=home+"/site-safeguard-backups/new-www-canonical-"+time.strftime("%Y%m%dT%H%M%SZ",time.gmtime())+".bak"
+              write(backup,before)
+              print("HTACCESS_ONE_FILE_BACKUP_VERIFIED",flush=True)
+              try:
+                  if read(target)!=before:raise RuntimeError("CONCURRENT_CHANGE")
+                  write(target,desired)
+                  new=status("https://"+NEW+"/")
+                  old=status("https://"+OLD+"/")
+                  www=status("https://www."+NEW+"/")
+                  http=status("http://"+NEW+"/")
+                  print("LIVE_CANONICAL_RESULTS",new,old,www,http,flush=True)
+                  if new[0]!=200 or old!=(301,"https://"+NEW+"/") or www!=(301,"https://"+NEW+"/"):
+                      raise RuntimeError("CANONICAL_HTTP_VERIFICATION_FAILED")
+                  print("NEW_DOMAIN_WWW_CANONICAL_SUCCESS",flush=True)
+              except BaseException:
+                  write(target,before)
+                  if status("https://"+NEW+"/")[0]!=200:raise RuntimeError("ROLLBACK_NEW_ROOT_UNVERIFIED")
+                  print("HTACCESS_CANONICAL_ROLLBACK_VERIFIED",flush=True)
+                  raise
+          finally:
+              try:ftp.quit()
+              except Exception:ftp.close()
+          PY
