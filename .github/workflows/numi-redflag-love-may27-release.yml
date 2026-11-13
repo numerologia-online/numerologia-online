@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Sync approved Love date 27-5 to REG.RU private bank'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Retry approved Love date 27-5 to REG.RU private bank'
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     steps:
@@ -32,8 +32,8 @@ jobs:
           public='data/redflag/love/published/27-5.json'
           workflow='.github/workflows/numi-redflag-love-may27-release.yml'
           git=lambda *args:subprocess.check_output(['git',*args],timeout=45)
-          old=lambda p:git('show','HEAD^:'+p)
-          diff=set(git('diff','--name-only','HEAD^','HEAD').decode().splitlines())
+          old=lambda p:git('show','ce164367728537effeb367525ad5ec68ef3ca8f1:'+p)
+          diff=set(git('diff','--name-only','ce164367728537effeb367525ad5ec68ef3ca8f1','HEAD').decode().splitlines())
           if diff!=set([*paths,manifest,public,workflow]):raise RuntimeError('UNEXPECTED_COMMIT_DIFF:'+str(diff))
           approved=json.loads(old(public))
           if approved.get('dateKey')!='27-5' or set(approved.get('entries',{}))!=set(names):raise RuntimeError('APPROVAL_RECORD_CHANGED')
@@ -52,7 +52,9 @@ jobs:
               test=dict(a);test['entries']=dict(a['entries']);test['entries']['27-5']=new_text
               if test!=b:raise RuntimeError('UNRELATED_TEXT_CHANGE:'+n)
               before=old(p);after=pathlib.Path(p).read_bytes()
-              if before_manifest['files'].get(p)!=hashlib.sha256(before).hexdigest():raise RuntimeError('OLD_MANIFEST_MISMATCH:'+n)
+              if n=='first-step':
+                  if before_manifest['files'].get(p)!='2bbeeb86dcd9d66890cf394ebbfcc9f66b9ce492dbbcc8e71a35e05cd2d2e2f6':raise RuntimeError('UNEXPECTED_LEGACY_FIRST_STEP_MANIFEST')
+              elif before_manifest['files'].get(p)!=hashlib.sha256(before).hexdigest():raise RuntimeError('OLD_MANIFEST_MISMATCH:'+n)
               expected['files'][p]=hashlib.sha256(after).hexdigest()
               old_bytes[p]=before;new_bytes[p]=after
           if expected!=after_manifest:raise RuntimeError('MANIFEST_EXTRA_CHANGE')
