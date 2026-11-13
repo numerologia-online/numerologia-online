@@ -139,3 +139,38 @@ jobs:
                   info.update(js_has_render_categories="function renderCategories()" in src,js_has_valid_check="data.questions.length!==300" in src,js_has_fetch="./questions.json?v=1" in src)
               print("CATALOG_LIVE",json.dumps(info,ensure_ascii=False),flush=True)
           PY
+
+      - name: Verify live Moment catalog in mobile browser
+        run: |
+          mkdir -p /tmp/numi-moment-browser && cd /tmp/numi-moment-browser
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund --no-save playwright@1.56.1 >/dev/null
+          node - <<'JS'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/google-chrome',args:['--no-sandbox']});
+            for(const setup of [
+              {label:'ordinary_mobile',context:{viewport:{width:390,height:844},isMobile:true,hasTouch:true,serviceWorkers:'block'}},
+              {label:'telegram_user_agent',context:{viewport:{width:390,height:844},isMobile:true,hasTouch:true,serviceWorkers:'block',userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Telegram-iOS/11.0'}}
+            ]){
+              const page=await browser.newPage(setup.context);
+              const errs=[],fail=[];
+              page.on('pageerror',e=>errs.push(e.message.slice(0,250)));
+              page.on('requestfailed',r=>fail.push({url:r.url().slice(0,140),error:r.failure()?.errorText}));
+              page.on('console',msg=>{if(msg.type()==='error')errs.push('console:'+msg.text().slice(0,250));});
+              const response=await page.goto('https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/',{waitUntil:'domcontentloaded',timeout:30000});
+              await page.waitForTimeout(1500);
+              const info=await page.evaluate(async()=>({
+                categoryCount:document.querySelectorAll('#category-grid>.category').length,
+                gridText:document.querySelector('#category-grid')?.innerText.slice(0,180),
+                gridStyle:getComputedStyle(document.querySelector('#category-grid')).display,
+                scriptTags:[...document.scripts].map(s=>s.src).filter(Boolean).slice(0,8),
+                hidden:document.querySelector('#category-grid')?.hidden,
+                jsonCheck:await fetch('./questions.json?v=1').then(r=>r.json()).then(d=>[d.categories?.length,d.questions?.length]).catch(e=>String(e))
+              }));
+              console.log('MOMENT_BROWSER',JSON.stringify({label:setup.label,htmlStatus:response.status(),...info,errors:errs.slice(0,6),failedRequests:fail.slice(0,6)}));
+              await page.close();
+            }
+            await browser.close();
+          })().catch(e=>{console.error('BROWSER_FATAL',e.message);process.exit(1)});
+          JS
