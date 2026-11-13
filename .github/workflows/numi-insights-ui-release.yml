@@ -50,6 +50,7 @@ jobs:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
+          python3 - <<'PY'
           import ftplib, ssl, os, io, json, time, subprocess, tempfile, urllib.request, urllib.error
           OLD="xn--c1adkkdfjbp1a4l.online"
           NEW="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
@@ -132,3 +133,4 @@ jobs:
           finally:
               try:ftp.quit()
               except Exception:ftp.close()
+          PY
