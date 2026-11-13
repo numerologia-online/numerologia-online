@@ -140,6 +140,23 @@ jobs:
               print("CATALOG_LIVE",json.dumps(info,ensure_ascii=False),flush=True)
           PY
 
+      - name: Verify iOS WebKit Moment rendering
+        run: |
+          cd /tmp/numi-moment-browser
+          npx playwright install --with-deps webkit >/dev/null
+          node - <<'JS'
+          const {webkit}=require('playwright');
+          (async()=>{
+            const browser=await webkit.launch({headless:true});
+            const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.7 Mobile/15E148 Safari/604.1'});
+            const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>errors.push('REQ '+r.url()+' '+r.failure()?.errorText));
+            const response=await page.goto('https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/',{waitUntil:'domcontentloaded',timeout:30000});
+            await page.waitForTimeout(1800);
+            console.log('IOS_WEBKIT_MOMENT',JSON.stringify({htmlStatus:response.status(),categories:await page.locator('#category-grid>.category').count(),gridVisible:await page.locator('#category-grid').isVisible(),errors:errors.slice(0,5)}));
+            await browser.close();
+          })().catch(e=>{console.error('WEBKIT_FATAL',e.message);process.exit(1);});
+          JS
+
       - name: Verify live Moment catalog in mobile browser
         run: |
           mkdir -p /tmp/numi-moment-browser && cd /tmp/numi-moment-browser
