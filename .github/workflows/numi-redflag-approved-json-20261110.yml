@@ -413,6 +413,28 @@ jobs:
           payload=$(printf '{"state":"%s","description":"%s","context":"REG.RU / Red Flag May 14-15"}' "$state" "$description")
           curl --fail --silent --show-error --retry 2 -X POST             -H "Accept: application/vnd.github+json"             -H "Authorization: Bearer $GH_TOKEN"             -H "X-GitHub-Api-Version: 2022-11-28"             -d "$payload" "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA"
 
+      - name: Report verified REG.RU May 16 deployment status
+        if: always() && github.event.head_commit.message == 'Sync approved Love date 16-5 to REG.RU private bank'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SYNC_RESULT: ${{ job.status }}
+        run: |
+          set -euo pipefail
+          if [ "$SYNC_RESULT" = "success" ]; then
+            state=success
+            description='Nine approved May 16 answers verified on REG.RU'
+          else
+            state=failure
+            description='May 16 REG.RU sync not verified; inspect workflow'
+          fi
+          payload=$(printf '{"state":"%s","description":"%s","context":"REG.RU / Red Flag May 16"}' "$state" "$description")
+          curl --fail --silent --show-error --retry 2 -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -d "$payload" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA"
+
   sync_reviewed_march_16_20:
     if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish reviewed March 16-20 Love private content on REG.RU'
     runs-on: ubuntu-24.04
