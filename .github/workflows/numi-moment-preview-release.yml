@@ -387,7 +387,7 @@ jobs:
           python3 - <<'PY'
           import ftplib,ssl,os,io,urllib.request,time
           from pathlib import Path
-          old='<div class="item"><div class="name"><a href="/moment/">«Нумерология момента»</a><span class="desc">Один персональный ответ. Раздел готовится к запуску.</span></div><div class="price">50 ₽</div><div class="member">25 ₽</div></div>'.encode()
+          old='<div class="item"><div class="name">«Нумерология момента»<span class="desc">Один персональный ответ. Раздел готовится к запуску.</span></div><div class="price">50 ₽</div><div class="member">25 ₽</div></div>'.encode()
           new='<div class="item"><div class="name"><a href="/moment/">«Нумерология момента» — 300 вопросов</a><span class="desc">49 ₽ за один вопрос. Все 300 вопросов пока в разработке, покупка недоступна.</span></div><div class="price">49 ₽<small>Скоро</small></div><div class="member">Подписка не требуется</div></div>'.encode()
           target=Path("prices.html").read_bytes()
           if target.count(new)!=1 or old in target:raise RuntimeError("REPOSITORY_PRICE_NOT_VALIDATED")
