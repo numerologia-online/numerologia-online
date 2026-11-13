@@ -8,7 +8,7 @@
   <title>300 вопросов обо всём — Нумерология онлайн</title>
   <link rel="stylesheet" href="./moment.css?v=club-ask-20261111">
   <script defer src="../assets/telegram-web-app-20261102.js"></script>
-  <script defer src="./moment.js?v=catalog-fallback-20261113"></script>
+  <script defer src="./moment.js?v=coming-soon-49-20261113"></script>
 <link rel="canonical" href="https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/">
 <script type="application/ld+json" id="numi-site-entities">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#organization","name":"Нумерология онлайн","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/"},{"@type":"WebSite","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#website","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/","name":"Нумерология онлайн","inLanguage":"ru","publisher":{"@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#organization"}},{"@type":"WebPage","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/#webpage","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/","name":"300 вопросов обо всём — Нумерология онлайн","inLanguage":"ru","isPartOf":{"@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#website"}}]}</script>
 <style id="moment-static-catalog-style">
@@ -27,6 +27,18 @@
 .moment-catalog-status p{margin:0 0 11px;font-size:14px;line-height:1.5}
 .moment-catalog-status button{border:0;border-radius:10px;background:#143d30;color:#fff;padding:11px 17px;font-weight:700}
 @media(max-width:650px){.moment-static-topic summary{grid-template-columns:27px minmax(0,1fr) 68px 17px;padding:10px 12px;gap:8px}.moment-static-topic strong{font-size:14px}.moment-static-topic small{font-size:11px}.moment-static-topic ol{padding-left:34px}.moment-static-topic li{font-size:13px}}
+</style>
+<style id="moment-coming-soon-styles">
+.explore .section-heading{display:flex;flex-direction:column;align-items:center;gap:6px}
+.moment-launch-price{font-weight:750;font-size:16px;color:#b08849;margin:0;text-align:center}
+.moment-launch-price span{font-weight:650;color:#657b6c}
+.explore .category-count{color:#967344}
+.question-entry:disabled{cursor:not-allowed;opacity:1;color:#183f31}
+.question-entry:disabled:hover .question-name{text-decoration:none}
+.question-entry .moment-question-status{font-size:12px;color:#997644;font-weight:700;margin-left:auto;white-space:nowrap}
+.question-entry .moment-question-status span{color:#708474;font-weight:600}
+.moment-static-topic li::after{content:"49 ₽ · Скоро";display:inline-block;margin-left:10px;color:#997644;font-size:12px;font-weight:750;white-space:nowrap}
+@media(max-width:650px){.question-entry{flex-wrap:wrap;column-gap:9px}.question-entry .question-name{flex-basis:calc(100% - 50px)}.question-entry .moment-question-status{width:100%;text-align:right;padding-right:3px}.moment-launch-price{font-size:14px}}
 </style>
 </head>
 <body>
@@ -54,6 +66,7 @@
     <section class="explore shell" aria-label="Каталог вопросов">
       <div class="section-heading">
         <h2>Выберите, что сейчас важно</h2>
+        <p class="moment-launch-price">49 ₽ за вопрос <span>· В разработке</span></p>
       </div>
       <div id="moment-catalog-status" class="moment-catalog-status" role="status" aria-live="polite" hidden><p>Не удалось обновить каталог. Темы и названия всех 300 вопросов доступны ниже.</p><button type="button" id="moment-catalog-retry">Повторить загрузку</button></div>
       <div id="category-grid" class="category-grid" aria-label="Темы">
@@ -85,33 +98,7 @@
     </section>
   </main>
   <footer class="site-footer"><div class="shell"><span>НУМЕРОЛОГИЯ ОНЛАЙН · 9966</span><a href="../">Вернуться на сайт ↗</a></div></footer>
-  <dialog id="question-dialog" aria-labelledby="question-title">
-    <div class="dialog-content">
-      <div class="dialog-top"><span class="overline">ВАШ МОМЕНТ · 9966</span><button id="close-dialog" type="button" aria-label="Закрыть">×</button></div>
-      <p id="question-topic" class="dialog-topic">НУМЕРОЛОГИЯ МОМЕНТА</p>
-      <h2 id="question-title">Ваш вопрос</h2>
-      <div id="moment-ask-intro" class="moment-access-status">
-        <button id="moment-ask-now" type="button" class="primary-button moment-ask-button">Спросить сейчас →</button>
-      </div>
-      <div id="moment-access-loading" class="moment-access-status" role="status" hidden>
-        Проверяем вашу подписку…
-      </div>
-      <div id="moment-subscription-required" class="moment-access-status" hidden>
-        <h3>Доступно по подписке</h3>
-        <p>Ответы Нумерологии момента доступны участникам Клуба.</p>
-        <p class="moment-club-price">490 ₽ в месяц</p>
-        <a href="../?account=1&club_offer=1" class="primary-button moment-access-link">Оформить подписку →</a>
-      </div>
-      <div id="moment-member-not-ready" class="moment-access-status" hidden>
-        <p>У вас есть действующая подписка на Клуб. Ответ на этот вопрос пока не подключён.</p>
-      </div>
-      <div id="moment-access-error" class="moment-access-status" hidden>
-        <p>Не удалось проверить подписку. Попробуйте ещё раз.</p>
-        <button id="moment-access-retry" class="secondary-button" type="button">Повторить проверку</button>
-      </div>
-    </div>
-  </dialog>
-<!-- Numi Insights v2: independent background collector -->
+  <!-- Numi Insights v2: independent background collector -->
 <script>
 (()=>{const start=()=>{try{const s=document.createElement('script');s.src='/assets/numi-insights-v2.js?v=2.1.0';s.async=true;document.head.append(s);}catch(_){}};const schedule=()=>{if('requestIdleCallback'in window)requestIdleCallback(start,{timeout:1500});else setTimeout(start,0);};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule,{once:true});else schedule();})();
 </script>
