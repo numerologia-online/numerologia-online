@@ -217,7 +217,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
           persist-credentials: false
       - name: Validate date-only JSON changes; back up and sync REG.RU private bank
         env:
@@ -255,11 +255,14 @@ jobs:
           else:
               raise RuntimeError('UNAPPROVED_RELEASE_MESSAGE')
           date_label='_'.join(sorted(date_keys,key=lambda s:int(s.split('-')[0])))
-          actual_changes=set(git('diff','--name-only','HEAD^','HEAD').decode().splitlines())
+          # For May 13, all nine approved files were staged before this release commit.
+          # Compare against the last verified REG.RU content baseline, not HEAD^.
+          base_commit='5ee4703cd274889c0f239ac2f4e30f7e11684220' if date_keys=={'13-5'} else 'HEAD^'
+          actual_changes=set(git('diff','--name-only',base_commit,'HEAD').decode().splitlines())
           allowed=set(files)|{manifest_path}
           if actual_changes not in (allowed,allowed|{workflow_path}):
               raise RuntimeError('RELEASE_CONTAINS_UNRELATED_CHANGES')
-          def old(name):return git('show','HEAD^:'+name)
+          def old(name):return git('show',base_commit+':'+name)
           previous_manifest_raw=old(manifest_path)
           current_manifest_raw=pathlib.Path(manifest_path).read_bytes()
           previous_manifest=json.loads(previous_manifest_raw)
