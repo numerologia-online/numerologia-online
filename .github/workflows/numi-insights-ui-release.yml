@@ -38,3 +38,97 @@ jobs:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: python3 -u insights/deploy-ui.py
+
+  primary-origin-fix:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Fix insights new-domain origin on REG.RU'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch only the verified analytics Origin allowlist; back up and roll back on failure
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          import ftplib, ssl, os, io, json, time, subprocess, tempfile, urllib.request, urllib.error
+          OLD="xn--c1adkkdfjbp1a4l.online"
+          NEW="xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+          OLD_CONDITION="return in_array($host,['"+OLD+"','www."+OLD+"'],true)"
+          NEW_CONDITION="return in_array($host,['"+OLD+"','www."+OLD+"','"+NEW+"','www."+NEW+"'],true)"
+          def post(host):
+              req=urllib.request.Request("https://"+host+"/api/numi-insights.php",
+                  headers={"Origin":"https://"+host,"Content-Type":"application/json","Cache-Control":"no-cache"},
+                  data=b'{"events":[]}')
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as r:
+                      status=r.status;body=r.read(1500)
+              except urllib.error.HTTPError as e:
+                  status=e.code;body=e.read(1500)
+              try:error=json.loads(body).get("error")
+              except Exception:error=None
+              return status,error
+          def health():
+              req=urllib.request.Request("https://"+NEW+"/api/numi-insights.php?action=health",
+                  headers={"Cache-Control":"no-cache"})
+              with urllib.request.urlopen(req,timeout=25) as r:return r.status,json.load(r)
+          def syntax(blob):
+              with tempfile.NamedTemporaryFile(suffix=".php") as f:
+                  f.write(blob);f.flush()
+                  p=subprocess.run(["php","-l",f.name],capture_output=True,timeout=20)
+                  if p.returncode:raise RuntimeError("PHP_SYNTAX_REJECTED")
+          source=open("insights/public/numi-insights.php","rb").read().decode("utf-8")
+          if source.count(NEW_CONDITION)!=1 or OLD_CONDITION in source:
+              raise RuntimeError("GITHUB_PATCH_INVALID")
+          before=post(NEW)
+          if before==(400,"BAD_BATCH"):
+              print("ANALYTICS_PRIMARY_ORIGIN_ALREADY_WORKS")
+              raise SystemExit(0)
+          if before!=(403,"ORIGIN_DENIED"):
+              raise RuntimeError("UNEXPECTED_PRIMARY_ORIGIN_BASELINE:"+str(before))
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect("server172.hosting.reg.ru",21)
+          ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip("/")
+          target=home+"/www/"+OLD+"/api/numi-insights.php"
+          def read(path):
+              out=io.BytesIO();ftp.retrbinary("RETR "+path,out.write)
+              if out.tell()>250000:raise RuntimeError("FILE_TOO_LARGE")
+              return out.getvalue()
+          def write(path,blob):
+              ftp.storbinary("STOR "+path,io.BytesIO(blob))
+              if read(path)!=blob:raise RuntimeError("READBACK_FAILED")
+          try:
+              original=read(target)
+              decoded=original.decode("utf-8")
+              if decoded.count(OLD_CONDITION)!=1 or NEW_CONDITION in decoded:
+                  raise RuntimeError("LIVE_ORIGIN_BASELINE_UNEXPECTED")
+              if "NI_VERSION='2.1.0'" not in decoded or "function niOrigin(): bool" not in decoded:
+                  raise RuntimeError("LIVE_COLLECTOR_VERSION_UNEXPECTED")
+              desired=decoded.replace(OLD_CONDITION,NEW_CONDITION,1).encode("utf-8")
+              if len(desired)-len(original)!=len(NEW_CONDITION)-len(OLD_CONDITION):
+                  raise RuntimeError("UNEXPECTED_DIFF")
+              syntax(original);syntax(desired)
+              if read(target)!=original:raise RuntimeError("CONCURRENT_CHANGE")
+              backup=home+"/site-safeguard-backups/analytics-primary-origin-"+time.strftime("%Y%m%dT%H%M%SZ",time.gmtime())+".bak"
+              write(backup,original)
+              print("ONE_FILE_BACKUP_VERIFIED")
+              try:
+                  if read(target)!=original:raise RuntimeError("CONCURRENT_CHANGE")
+                  write(target,desired)
+                  after=post(NEW)
+                  oldafter=post(OLD)
+                  if after!=(400,"BAD_BATCH") or oldafter!=(400,"BAD_BATCH"):
+                      raise RuntimeError("PUBLIC_ORIGIN_CHECK_FAILED:"+str((after,oldafter)))
+                  hstatus,hdata=health()
+                  if hstatus!=200 or not hdata.get("ok") or not hdata.get("database"):
+                      raise RuntimeError("ANALYTICS_HEALTH_FAILED")
+                  print("ANALYTICS_PRIMARY_ORIGIN_RELEASE_SUCCESS new=400_BAD_BATCH old=400_BAD_BATCH health=200")
+              except BaseException:
+                  write(target,original)
+                  if post(NEW)!=(403,"ORIGIN_DENIED"):raise RuntimeError("ROLLBACK_HTTP_UNVERIFIED")
+                  print("ANALYTICS_PRIMARY_ORIGIN_ROLLBACK_VERIFIED")
+                  raise
+          finally:
+              try:ftp.quit()
+              except Exception:ftp.close()
