@@ -83,20 +83,14 @@ jobs:
           changed=[]
           try:
               ftp.cwd(private+'/store-content/data/redflag/love')
-              ftp.cwd(home+'/www/xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/data/redflag/love/published')
               actual={p:read(targets[p]) for p in [*paths,manifest]}
               if any(actual[p] not in (old_bytes[p],new_bytes[p]) for p in actual):raise RuntimeError('PRIVATE_SERVER_BASELINE_DRIFT_NO_OVERWRITE')
-              pub_old=read(public_target,True)
-              if pub_old is not None:
-                  o=json.loads(pub_old)
-                  if o.get('dateKey')!='27-5' or set(o.get('entries',{}))!={'first-step'}:raise RuntimeError('UNEXPECTED_PUBLIC_DATE_CONTENT')
               backup_root=home+'/site-safeguard-backups'
               ftp.cwd(backup_root)
               backup=backup_root+'/love-27-5-'+os.environ['GITHUB_RUN_ID']
               ftp.mkd(backup)
               for i,p in enumerate([*paths,manifest]):
                   write(backup+'/'+str(i).zfill(2)+'-'+p.rsplit('/',1)[-1]+'.before',actual[p])
-              if pub_old is not None:write(backup+'/public-27-5.before',pub_old)
               print('BACKUPS_VERIFIED',flush=True)
               try:
                   for p in [*paths,manifest]:
@@ -104,14 +98,9 @@ jobs:
                       if actual[p]!=new_bytes[p]:
                           changed.append((targets[p],actual[p]))
                           write(targets[p],new_bytes[p])
-                  expected_public=pathlib.Path(public).read_bytes()
-                  if pub_old!=expected_public:
-                      changed.append((public_target,pub_old))
-                      write(public_target,expected_public)
                   for p in [*paths,manifest]:
                       if read(targets[p])!=new_bytes[p]:raise RuntimeError('PRIVATE_FINAL_MISMATCH:'+p)
-                  if read(public_target)!=expected_public:raise RuntimeError('PUBLIC_FINAL_MISMATCH')
-                  print('REG_RU_LOVE_27_MAY_SUCCESS_9_ANSWERS_PROTECTED_AND_PUBLIC_FREE_ONLY',flush=True)
+                  print('REG_RU_LOVE_27_MAY_SUCCESS_9_ANSWERS_PROTECTED',flush=True)
               except BaseException:
                   for target,previous in reversed(changed):
                       try:
