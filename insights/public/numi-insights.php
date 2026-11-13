@@ -12,7 +12,7 @@ function niReply(int $status,array $data): never {
 function niOrigin(): bool {
     $origin=$_SERVER['HTTP_ORIGIN']??'';
     $host=$_SERVER['HTTP_HOST']??'';
-    return in_array($host,['xn--c1adkkdfjbp1a4l.online','www.xn--c1adkkdfjbp1a4l.online'],true)
+    return in_array($host,['xn--c1adkkdfjbp1a4l.online','www.xn--c1adkkdfjbp1a4l.online','xn----8sbhhqijddjgdebdz2c2o.xn--p1ai','www.xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'],true)
         && $origin==='https://'.$host;
 }
 function niSchema(PDO $db): void {
