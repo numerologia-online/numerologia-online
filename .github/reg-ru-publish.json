@@ -1,16 +1,5 @@
 {
-  "mode": "publish",
-  "files": [
-    "year-feature.js",
-    "app.js",
-    "year/index.html",
-    "index.html"
-  ],
-  "expected_sha256": {
-    "year-feature.js": "f9143c896ca19710637493d78eb1abeee2a52e81171c20ce6bc7f0423483b76c",
-    "app.js": "fb6640c3640caa6269ae4f22e5c462bad17ed19897934b9153b23d94d0588896",
-    "year/index.html": "32b9e73e7f34eb86cef7089bed8b4b0e470587980b0a639dca6143e4ee5813e5",
-    "index.html": "7577e39c421d7b1138d132ac2216a512d347d1b4f13b186f862520434270ce71"
-  },
-  "note": "Owner approved: restore both annual PDF buttons for the server-verified Telegram owner; keep the customer purchase flow. Bump cache versions in both entry points."
+  "mode": "check",
+  "files": [],
+  "note": "2026-11-13 REG.RU published and verified the annual PDF button fix for the Telegram owner. Publisher returned to its normal check mode."
 }
