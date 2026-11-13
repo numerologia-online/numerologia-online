@@ -11,13 +11,13 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Retry approved Love date 27-5 to REG.RU private bank'
+    if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'Retry approved Love date 27-5 to REG.RU private bank')
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
           persist-credentials: false
       - name: Validate exact approved answers, back up and deploy with readback
         env:
