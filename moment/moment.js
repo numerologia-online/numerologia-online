@@ -3,7 +3,7 @@
   const $=id=>document.getElementById(id);
   const grid=$("category-grid"),list=$("question-list"),search=$("question-search"),clear=$("clear-search");
   const resultsTitle=$("results-title"),resultsMsg=$("results-message"),showMore=$("show-more"),showAll=$("show-all");
-  const dialog=$("question-dialog");
+  const dialog=$("question-dialog"), catalogStatus=$("moment-catalog-status"), catalogRetry=$("moment-catalog-retry");
   let catalog=null,active=null,visibleCount=12,accessRequest=0;
   const norm=t=>String(t||"").toLocaleLowerCase("ru-RU").replace(/ё/g,"е").replace(/[^а-яa-z0-9 ]/gi," ").replace(/\s+/g," ").trim();
   const html=(tag,cls,txt)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(txt!==undefined)el.textContent=txt;return el;};
@@ -115,15 +115,18 @@
       if(!Array.isArray(data.categories)||data.categories.length!==12||!Array.isArray(data.questions)||data.questions.length!==300)throw Error("catalog incomplete");
       const seen=new Set();
       for(const q of data.questions){if(!q.id||seen.has(q.id)||!["self","partner","event"].includes(q.mode)||!data.categories.some(c=>c.id===q.category))throw Error("catalog validation");seen.add(q.id);}
-      catalog=data;renderCategories();
+      catalog=data;renderCategories();if(catalogStatus)catalogStatus.hidden=true;
       const params=new URLSearchParams(location.search),topic=params.get("category");
       if(topic&&data.categories.some(c=>c.id===topic)){active=topic;renderCategories();$("category-grid").hidden=true;document.querySelector(".explore .section-heading").hidden=true;$("questions-panel").hidden=false;renderQuestions();}
     }catch(err){
       resultsTitle.textContent="Каталог временно недоступен";
       resultsMsg.textContent="Не удалось загрузить вопросы. Попробуйте обновить страницу.";
-      showMore.hidden=true;grid.replaceChildren();
+      showMore.hidden=true;
+      // Keep the server-rendered 300-question fallback visible on load failure.
+      if(catalogStatus)catalogStatus.hidden=false;
       console.error("NUMI_MOMENT_CATALOG",err);
     }
   }
+  if(catalogRetry)catalogRetry.addEventListener("click",()=>{catalogStatus.hidden=true;void start();});
   start();
 })();
