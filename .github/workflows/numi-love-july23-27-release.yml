@@ -1,0 +1,124 @@
+name: Publish approved Red Flag Love July 23-27 to main and REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/redflag/love/approved-july23-27-20261114.json'
+permissions:
+  contents: write
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Stage approved Love July 23-27 payload for publication'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Verify payload and synchronize protected banks with backup and rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,hashlib,io,json,os,pathlib,ssl,subprocess
+          dates=[f'{d}-7' for d in range(23,28)]
+          ids=['first-step','romance','relationship-or-comfort','adult-partner','near-him','hard-moment','relationship-format','family-or-triangle','honest-or-disappear']
+          paths=[f'data/redflag/love/{id}.json' for id in ids]
+          manifest_path='account-service/private/store-assets.json'
+          payload=json.loads(pathlib.Path('data/redflag/love/approved-july23-27-20261114.json').read_text())
+          assert payload['dates']==dates and len(payload['texts'])==5
+          original={p:pathlib.Path(p).read_bytes() for p in paths}
+          updated={}
+          for id,path in zip(ids,paths):
+              bank=json.loads(original[path])
+              assert bank['section']=='love' and bank['questionId']==id and bank['keyRule']=='day-month'
+              for date in dates:
+                  txt=payload['texts'][date][id]
+                  assert isinstance(txt,str) and len(txt)>650 and txt.count('\\n\\n')==1 and '—' not in txt,(date,id)
+                  if id!='first-step': assert date not in bank['entries'],(date,id)
+                  bank['entries'][date]=txt
+              updated[path]=(json.dumps(bank,ensure_ascii=False,indent=2)+'\\n').encode()
+          manifest_before=pathlib.Path(manifest_path).read_bytes()
+          manifest=json.loads(manifest_before)
+          for p in paths: manifest['files'][p]=hashlib.sha256(updated[p]).hexdigest()
+          updated[manifest_path]=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\\n').encode()
+          if not os.environ.get('REG_FTP_USER') or not os.environ.get('REG_FTP_PASSWORD'): raise RuntimeError('REG_RU_SECRETS_MISSING')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p(); ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          private=home+'/private/numi-account-20261031'
+          remote={p:private+'/store-content/'+p for p in paths}
+          remote[manifest_path]=private+'/store-assets.json'
+          def read(path):
+              mem=io.BytesIO()
+              def collect(chunk):
+                  if mem.tell()+len(chunk)>1500000: raise RuntimeError('OVERSIZED_SERVER_FILE')
+                  mem.write(chunk)
+              ftp.retrbinary('RETR '+path,collect)
+              return mem.getvalue()
+          def write(path,contents):
+              ftp.storbinary('STOR '+path,io.BytesIO(contents))
+              if read(path)!=contents: raise RuntimeError('REMOTE_READBACK_FAILED:'+path)
+          try:
+              actual={p:read(remote[p]) for p in [*paths,manifest_path]}
+              free=paths[0]
+              live_free=json.loads(actual[free])
+              assert live_free['questionId']=='first-step' and live_free['status']=='active' and len(live_free['entries'])==366
+              old_entries=dict(live_free['entries'])
+              for d in dates:live_free['entries'][d]=json.loads(updated[free])['entries'][d]
+              assert all(live_free['entries'][d]==v for d,v in old_entries.items() if d not in dates)
+              updated[free]=(json.dumps(live_free,ensure_ascii=False,indent=2)+'\\n').encode()
+              live_manifest=json.loads(actual[manifest_path])
+              assert live_manifest['version']==2 and isinstance(live_manifest['files'],dict)
+              for p in paths[1:]:
+                  if actual[p]!=original[p]:raise RuntimeError('LIVE_BANK_NOT_EQUAL_GITHUB_BASELINE:'+p)
+                  if live_manifest['files'].get(p)!=hashlib.sha256(actual[p]).hexdigest():raise RuntimeError('LIVE_MANIFEST_MISMATCH:'+p)
+              for p in paths:live_manifest['files'][p]=hashlib.sha256(updated[p]).hexdigest()
+              updated[manifest_path]=(json.dumps(live_manifest,ensure_ascii=False,indent=2)+'\\n').encode()
+              backup_root=home+'/site-safeguard-backups'
+              ftp.cwd(backup_root)
+              backup=backup_root+'/redflag-love-july23-27-'+os.environ['GITHUB_RUN_ID']
+              ftp.mkd(backup)
+              for i,p in enumerate([*paths,manifest_path]):write(backup+'/'+str(i).zfill(2)+'-'+p.rsplit('/',1)[-1]+'.before',actual[p])
+              print('REG_BACKUP_VERIFIED',flush=True)
+              touched=[]
+              try:
+                  for p in [*paths,manifest_path]:
+                      if read(remote[p])!=actual[p]:raise RuntimeError('CONCURRENT_SERVER_CHANGE:'+p)
+                      if updated[p]!=actual[p]:
+                          touched.append(p);write(remote[p],updated[p])
+                  for p in [*paths,manifest_path]:
+                      if read(remote[p])!=updated[p]:raise RuntimeError('FINAL_READBACK_FAILED:'+p)
+                  print('LOVE_JULY23_27_REG_RU_VERIFIED_45_ANSWERS',flush=True)
+              except BaseException:
+                  for p in reversed(touched):
+                      try:write(remote[p],actual[p]);print('ROLLBACK_OK:'+p,flush=True)
+                      except BaseException:print('ROLLBACK_FAILED:'+p,flush=True)
+                  raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          for p in paths:
+              # Preserve server-specific free bank: GitHub free bank stays based on its own baseline.
+              if p==paths[0]:
+                  bank=json.loads(original[p])
+                  for d in dates: bank['entries'][d]=payload['texts'][d]['first-step']
+                  pathlib.Path(p).write_text(json.dumps(bank,ensure_ascii=False,indent=2)+'\\n')
+              else:pathlib.Path(p).write_bytes(updated[p])
+          local_manifest=json.loads(manifest_before)
+          for p in paths:local_manifest['files'][p]=hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+          pathlib.Path(manifest_path).write_text(json.dumps(local_manifest,ensure_ascii=False,indent=2)+'\\n')
+          subprocess.check_call(['git','config','user.name','github-actions[bot]'])
+          subprocess.check_call(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'])
+          subprocess.check_call(['git','add',*paths,manifest_path])
+          subprocess.check_call(['git','commit','-m','Publish approved Love July 23-27 answers and checksums'])
+          subprocess.check_call(['git','push','origin','HEAD:main'])
+          print('MAIN_AND_REG_RU_JULY23_27_COMPLETE',flush=True)
+          PY
