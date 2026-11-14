@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
     paths:
+      - '.github/workflows/numi-love-july23-27-release.yml'
       - 'data/redflag/love/approved-july23-27-20261114.json'
 permissions:
   contents: write
@@ -11,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Stage approved Love July 23-27 payload for publication'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Repair and run approved Love July 23-27 release' || github.event.head_commit.message == 'Stage approved Love July 23-27 payload for publication'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
