@@ -1,0 +1,31 @@
+name: Publish revised Red Flag Love answers for July 13–17 on REG.RU
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/numi-love-july13-17-revision.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Publish revised July 13-17 Love answers on REG.RU')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify sources, back up, publish and read back the 45 private answers
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: exec python3 -u scripts/deploy-redflag-love-july13-17.py
