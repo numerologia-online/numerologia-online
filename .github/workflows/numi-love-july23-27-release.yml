@@ -39,14 +39,14 @@ jobs:
               assert bank['section']=='love' and bank['questionId']==id and bank['keyRule']=='day-month'
               for date in dates:
                   txt=payload['texts'][date][id]
-                  assert isinstance(txt,str) and len(txt)>650 and txt.count('\\n\\n')==1 and '—' not in txt,(date,id)
+                  assert isinstance(txt,str) and len(txt)>650 and txt.count('\n\n')==1 and '—' not in txt,(date,id)
                   if id!='first-step': assert date not in bank['entries'],(date,id)
                   bank['entries'][date]=txt
-              updated[path]=(json.dumps(bank,ensure_ascii=False,indent=2)+'\\n').encode()
+              updated[path]=(json.dumps(bank,ensure_ascii=False,indent=2)+'\n').encode()
           manifest_before=pathlib.Path(manifest_path).read_bytes()
           manifest=json.loads(manifest_before)
           for p in paths: manifest['files'][p]=hashlib.sha256(updated[p]).hexdigest()
-          updated[manifest_path]=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\\n').encode()
+          updated[manifest_path]=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n').encode()
           if not os.environ.get('REG_FTP_USER') or not os.environ.get('REG_FTP_PASSWORD'): raise RuntimeError('REG_RU_SECRETS_MISSING')
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
           ftp.connect('server172.hosting.reg.ru',21)
@@ -74,14 +74,14 @@ jobs:
               old_entries=dict(live_free['entries'])
               for d in dates:live_free['entries'][d]=json.loads(updated[free])['entries'][d]
               assert all(live_free['entries'][d]==v for d,v in old_entries.items() if d not in dates)
-              updated[free]=(json.dumps(live_free,ensure_ascii=False,indent=2)+'\\n').encode()
+              updated[free]=(json.dumps(live_free,ensure_ascii=False,indent=2)+'\n').encode()
               live_manifest=json.loads(actual[manifest_path])
               assert live_manifest['version']==2 and isinstance(live_manifest['files'],dict)
               for p in paths[1:]:
                   if actual[p]!=original[p]:raise RuntimeError('LIVE_BANK_NOT_EQUAL_GITHUB_BASELINE:'+p)
                   if live_manifest['files'].get(p)!=hashlib.sha256(actual[p]).hexdigest():raise RuntimeError('LIVE_MANIFEST_MISMATCH:'+p)
               for p in paths:live_manifest['files'][p]=hashlib.sha256(updated[p]).hexdigest()
-              updated[manifest_path]=(json.dumps(live_manifest,ensure_ascii=False,indent=2)+'\\n').encode()
+              updated[manifest_path]=(json.dumps(live_manifest,ensure_ascii=False,indent=2)+'\n').encode()
               backup_root=home+'/site-safeguard-backups'
               ftp.cwd(backup_root)
               backup=backup_root+'/redflag-love-july23-27-'+os.environ['GITHUB_RUN_ID']
@@ -110,11 +110,11 @@ jobs:
               if p==paths[0]:
                   bank=json.loads(original[p])
                   for d in dates: bank['entries'][d]=payload['texts'][d]['first-step']
-                  pathlib.Path(p).write_text(json.dumps(bank,ensure_ascii=False,indent=2)+'\\n')
+                  pathlib.Path(p).write_text(json.dumps(bank,ensure_ascii=False,indent=2)+'\n')
               else:pathlib.Path(p).write_bytes(updated[p])
           local_manifest=json.loads(manifest_before)
           for p in paths:local_manifest['files'][p]=hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
-          pathlib.Path(manifest_path).write_text(json.dumps(local_manifest,ensure_ascii=False,indent=2)+'\\n')
+          pathlib.Path(manifest_path).write_text(json.dumps(local_manifest,ensure_ascii=False,indent=2)+'\n')
           subprocess.check_call(['git','config','user.name','github-actions[bot]'])
           subprocess.check_call(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'])
           subprocess.check_call(['git','add',*paths,manifest_path])
