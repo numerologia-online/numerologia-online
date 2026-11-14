@@ -33,7 +33,7 @@ jobs:
               assert data['section']=='love' and data['questionId']==id and data['keyRule']=='day-month'
               for date in dates:
                   if date=='23-6':
-                      payload=json.loads(pathlib.Path('data/redflag/love/approved-june23-27-20261114-part1.json').read_text())
+                      payload=json.loads(pathlib.Path('data/redflag/love/approved-june23-20261114.json').read_text())
                       text=payload['texts'][id]
                   else:
                       payload=json.loads(pathlib.Path('data/redflag/love/approved-june'+date.split('-')[0]+'-20261114.json').read_text())
