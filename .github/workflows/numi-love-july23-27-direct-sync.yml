@@ -31,7 +31,7 @@ jobs:
           for p in files:
            for date in dates:
             value=local[p]['entries'].get(date)
-            assert isinstance(value,str) and len(value)>650 and value.count('\\n\\n')==1,(p,date)
+            assert isinstance(value,str) and len(value)>650 and value.count('\n\n')==1,(p,date)
           if not os.environ.get('REG_FTP_USER') or not os.environ.get('REG_FTP_PASSWORD'):raise RuntimeError('REG_RU_SECRETS_MISSING')
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
           ftp.connect('server172.hosting.reg.ru',21)
@@ -61,11 +61,11 @@ jobs:
             if p==files[0] and len(bank['entries'])!=366:raise RuntimeError('FREE_COUNT_CHANGED')
             for day in dates:
              bank['entries'][day]=reference['entries'][day]
-            updated[p]=(json.dumps(bank,ensure_ascii=False,indent=2)+'\\n').encode()
+            updated[p]=(json.dumps(bank,ensure_ascii=False,indent=2)+'\n').encode()
            m=json.loads(current[manifest])
            if m.get('version')!=2:raise RuntimeError('MANIFEST_VERSION_CHANGED')
            for p in files:m['files'][p]=hashlib.sha256(updated[p]).hexdigest()
-           updated[manifest]=(json.dumps(m,ensure_ascii=False,indent=2)+'\\n').encode()
+           updated[manifest]=(json.dumps(m,ensure_ascii=False,indent=2)+'\n').encode()
            backup_root=home+'/site-safeguard-backups'
            ftp.cwd(backup_root)
            backup=backup_root+'/love-july23-27-direct-sync-'+os.environ['GITHUB_RUN_ID']
