@@ -28,7 +28,9 @@ jobs:
              'openrouter'=>'https://openrouter.ai/api/v1/models',
              'huggingface'=>'https://router.huggingface.co/v1/models',
              'google'=>'https://generativelanguage.googleapis.com/v1beta/models',
-             'groq'=>'https://api.groq.com/openai/v1/models'
+             'groq'=>'https://api.groq.com/openai/v1/models',
+             'cerebras'=>'https://api.cerebras.ai/v1/models',
+             'nvidia'=>'https://integrate.api.nvidia.com/v1/models'
           ];
           $result=[];
           foreach($hosts as $name=>$url){
@@ -40,6 +42,7 @@ jobs:
                'ctype'=>substr(strval(curl_getinfo($ch,CURLINFO_CONTENT_TYPE)),0,70),
                'curl_errno'=>curl_errno($ch),
                'json'=>is_string($body)&&is_array(json_decode($body,true))];
+             if(is_string($body)){$json=json_decode($body,true);$result[$name]['error_message']=substr(preg_replace('/[^a-zA-Z0-9 .:_-]/','',strval($json['error']['message']??$json['message']??'')),0,140);}
              curl_close($ch);
           }
           echo json_encode($result,JSON_UNESCAPED_SLASHES);
