@@ -1,0 +1,125 @@
+name: Publish approved Red Flag Love August 25 to REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/numi-love-august25-verified.yml'
+permissions:
+  contents: write
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish approved Love August 25 to REG.RU'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Back up, publish and verify exactly nine approved answers
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib, hashlib, io, json, os, pathlib, ssl, subprocess
+          day='25-8'
+          ids=['first-step','romance','relationship-or-comfort','adult-partner','near-him','hard-moment','relationship-format','family-or-triangle','honest-or-disappear']
+          paths=['data/redflag/love/'+id+'.json' for id in ids]
+          mp=pathlib.Path('account-service/private/store-assets.json')
+          local={}
+          for id,p in zip(ids,paths):
+              data=json.loads(pathlib.Path(p).read_bytes())
+              value=data.get('entries',{}).get(day)
+              if data.get('section')!='love' or data.get('questionId')!=id or data.get('keyRule')!='day-month':
+                  raise RuntimeError('BAD_BANK_METADATA:'+id)
+              if not isinstance(value,str) or len(value)<350 or value.count('\n\n')!=1:
+                  raise RuntimeError('INVALID_APPROVED_TEXT:'+id)
+              local[p]=value
+          if not os.getenv('REG_FTP_USER') or not os.getenv('REG_FTP_PASSWORD'):
+              raise RuntimeError('MISSING_FTP_SECRETS')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          private=home+'/private/numi-account-20261031'
+          remote={p:private+'/store-content/'+p for p in paths}
+          remote[str(mp)]=private+'/store-assets.json'
+          def read(path):
+              b=io.BytesIO()
+              def gather(chunk):
+                  if b.tell()+len(chunk)>1500000:raise RuntimeError('OVERSIZE:'+path)
+                  b.write(chunk)
+              ftp.retrbinary('RETR '+path,gather)
+              return b.getvalue()
+          def write(path,content):
+              ftp.storbinary('STOR '+path,io.BytesIO(content))
+              if read(path)!=content:raise RuntimeError('READBACK_MISMATCH:'+path)
+          old={}
+          new={}
+          touched=[]
+          try:
+              for p in [*paths,str(mp)]:
+                  old[p]=read(remote[p])
+              for id,p in zip(ids,paths):
+                  obj=json.loads(old[p])
+                  if obj.get('section')!='love' or obj.get('questionId')!=id or obj.get('keyRule')!='day-month':
+                      raise RuntimeError('REMOTE_METADATA_MISMATCH:'+id)
+                  if id=='first-step' and len(obj.get('entries',{}))!=366:
+                      raise RuntimeError('FREE_BANK_SIZE_MISMATCH')
+                  if not isinstance(obj.get('entries'),dict):
+                      raise RuntimeError('INVALID_REMOTE_ENTRIES:'+id)
+                  obj['entries'][day]=local[p]
+                  new[p]=(json.dumps(obj,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
+              live_manifest=json.loads(old[str(mp)])
+              if live_manifest.get('version')!=2 or not isinstance(live_manifest.get('files'),dict):
+                  raise RuntimeError('REMOTE_MANIFEST_BAD')
+              for p in paths[1:]:
+                  if live_manifest['files'].get(p)!=hashlib.sha256(old[p]).hexdigest():
+                      raise RuntimeError('PREEXISTING_REMOTE_CHECKSUM_MISMATCH:'+p)
+              for p in paths:
+                  live_manifest['files'][p]=hashlib.sha256(new[p]).hexdigest()
+              new[str(mp)]=(json.dumps(live_manifest,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
+              backup_root=home+'/site-safeguard-backups'
+              ftp.cwd(backup_root)
+              backup=backup_root+'/redflag-love-august25-'+os.environ['GITHUB_RUN_ID']
+              ftp.mkd(backup)
+              for n,p in enumerate([*paths,str(mp)]):
+                  write(backup+'/'+str(n).zfill(2)+'-'+p.rsplit('/',1)[-1]+'.before',old[p])
+              print('BACKUP_VERIFIED',flush=True)
+              try:
+                  for p in [*paths,str(mp)]:
+                      if read(remote[p])!=old[p]:
+                          raise RuntimeError('CONCURRENT_REMOTE_CHANGE:'+p)
+                      if new[p]!=old[p]:
+                          touched.append(p)
+                          write(remote[p],new[p])
+                  for p in [*paths,str(mp)]:
+                      if read(remote[p])!=new[p]:raise RuntimeError('FINAL_VERIFICATION_FAILED:'+p)
+                  print('LOVE_AUGUST25_REG_RU_VERIFIED_9_ANSWERS',flush=True)
+              except BaseException:
+                  for p in reversed(touched):
+                      try:write(remote[p],old[p]);print('ROLLBACK_OK:'+p,flush=True)
+                      except BaseException:print('ROLLBACK_FAILED:'+p,flush=True)
+                  raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          manifest=json.loads(mp.read_bytes())
+          for p in paths:
+              data=pathlib.Path(p).read_bytes()
+              manifest['files'][p]=hashlib.sha256(data).hexdigest()
+          mp.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+          subprocess.run(['git','config','user.name','github-actions[bot]'],check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          subprocess.run(['git','add',str(mp)],check=True)
+          result=subprocess.run(['git','diff','--cached','--quiet'])
+          if result.returncode:
+              subprocess.run(['git','commit','-m','Refresh manifest for approved Love August 25'],check=True)
+              subprocess.run(['git','push','origin','HEAD:main'],check=True)
+          PY
