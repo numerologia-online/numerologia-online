@@ -1,0 +1,63 @@
+name: Read-only check alternate AI API reachability from REG.RU for Moment 300
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-moment-alternative-connection-check.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Test public API endpoints from transient PHP probe; remove it
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,io,os,secrets,urllib.request,urllib.error,json
+          php=r'''<?php
+          header('Content-Type: application/json; charset=utf-8');
+          header('Cache-Control: no-store');
+          $hosts=[
+             'openrouter'=>'https://openrouter.ai/api/v1/models',
+             'huggingface'=>'https://router.huggingface.co/v1/models',
+             'google'=>'https://generativelanguage.googleapis.com/v1beta/models',
+             'groq'=>'https://api.groq.com/openai/v1/models'
+          ];
+          $result=[];
+          foreach($hosts as $name=>$url){
+             $ch=curl_init($url);
+             curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_CONNECTTIMEOUT=>5,CURLOPT_TIMEOUT=>12,
+              CURLOPT_HTTPHEADER=>['Accept: application/json','User-Agent: NumiMomentIntegrationTest/1.0']]);
+             $body=curl_exec($ch);
+             $result[$name]=['status'=>(int)curl_getinfo($ch,CURLINFO_RESPONSE_CODE),
+               'ctype'=>substr(strval(curl_getinfo($ch,CURLINFO_CONTENT_TYPE)),0,70),
+               'curl_errno'=>curl_errno($ch),
+               'json'=>is_string($body)&&is_array(json_decode($body,true))];
+             curl_close($ch);
+          }
+          echo json_encode($result,JSON_UNESCAPED_SLASHES);
+          '''
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          ftp.connect('server172.hosting.reg.ru',21);ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          name='moment/.ai-connect-probe-'+secrets.token_hex(22)+'.php'
+          path=home+'/www/xn--c1adkkdfjbp1a4l.online/'+name
+          try:
+            ftp.storbinary('STOR '+path,io.BytesIO(php.encode('utf8')))
+            req=urllib.request.Request('https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'+name,headers={'User-Agent':'NumiProbe/1.0'})
+            with urllib.request.urlopen(req,timeout=65) as res:result=json.loads(res.read(3000))
+            print('MOMENT_AI_API_REGRU_CONNECTIVITY '+json.dumps(result,ensure_ascii=False),flush=True)
+          finally:
+            try:ftp.delete(path);print('MOMENT_AI_API_PROBE_REMOVED',flush=True)
+            finally:
+              try:ftp.quit()
+              except Exception:ftp.close()
+          PY
