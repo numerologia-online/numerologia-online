@@ -1,0 +1,100 @@
+name: Moment 300 visual-only raised buttons publish to REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-moment-buttons-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guarded publish ONLY /moment/index.html and /moment/moment.css
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,io,ftplib,ssl,hashlib,time,json,subprocess,urllib.request,urllib.error
+          from pathlib import Path
+          from urllib.parse import quote
+          paths=['moment/moment.css','moment/index.html']
+          references={
+            'moment/moment.css':'a03c518eba099e94de548902817a15a97cfdf6ac^:moment/moment.css',
+            'moment/index.html':'67b6e7b8fbb3005ae48304361dbf24325a37d719^:moment/index.html'
+          }
+          new={p:Path(p).read_bytes() for p in paths}
+          before={p:subprocess.check_output(['git','show',references[p]]) for p in paths}
+          css=new['moment/moment.css'].decode('utf8')
+          html=new['moment/index.html'].decode('utf8')
+          assert '2026-11-15: visual affordance for Moment-only' in css
+          assert 'moment.css?v=buttons-20261115' in html
+          assert html.count('class="moment-static-topic"')==12
+          assert html.count('<li>')==300
+          assert css.count('{')==css.count('}')
+          def sha(x):return hashlib.sha256(x).hexdigest()
+          host='server172.hosting.reg.ru'
+          dir_name='xn--c1adkkdfjbp1a4l.online'
+          primary='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
+          def live(path):
+            url='https://'+primary+'/'+path+'?buttons_verify='+str(time.time_ns())
+            req=urllib.request.Request(url,headers={'User-Agent':'NumiMomentButtons/1.0','Cache-Control':'no-cache'})
+            try:
+              with urllib.request.urlopen(req,timeout=30) as r:return r.status,r.read(300000)
+            except urllib.error.HTTPError as e:return e.code,e.read(5000)
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          f.connect(host,21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          f.prot_p();f.set_pasv(True)
+          root=f.pwd().rstrip('/')
+          base=root+'/www/'+dir_name+'/'
+          def read(p):
+            b=io.BytesIO();f.retrbinary('RETR '+base+p,b.write);return b.getvalue()
+          def put(p,blob):
+            f.storbinary('STOR '+base+p,io.BytesIO(blob))
+            if sha(read(p))!=sha(blob):raise RuntimeError('FTP_READBACK_FAILED_'+p)
+          touched=[]
+          try:
+            current={p:read(p) for p in paths}
+            for p in paths:
+              if current[p] not in (before[p],new[p]):raise RuntimeError('UNEXPECTED_LIVE_FILE_REFUSE_OVERWRITE_'+p)
+            ynstatus,ynbefore=live('moment/yes-no/')
+            if ynstatus!=200:raise RuntimeError('YESNO_BASELINE_UNAVAILABLE')
+            backup=root+'/site-safeguard-backups/moment-buttons-'+time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+            f.mkd(backup)
+            for p in paths:
+              item=backup+'/'+p.replace('/','__')+'.bak'
+              f.storbinary('STOR '+item,io.BytesIO(current[p]))
+              buf=io.BytesIO();f.retrbinary('RETR '+item,buf.write)
+              if buf.getvalue()!=current[p]:raise RuntimeError('BACKUP_READBACK_FAILED')
+            for p in paths:
+              if read(p)!=current[p]:raise RuntimeError('CONCURRENT_LIVE_EDIT')
+              if current[p]!=new[p]:
+                touched.append(p)
+                put(p,new[p])
+            for p in paths:
+              status,body=live(p)
+              if status!=200 or sha(body)!=sha(new[p]):raise RuntimeError('PUBLIC_READBACK_FAILED_'+p)
+            status_q,q=live('moment/questions.json')
+            if status_q!=200 or len(json.loads(q)['questions'])!=300:raise RuntimeError('300_QUESTIONS_CHANGED')
+            ynstatus,ynafter=live('moment/yes-no/')
+            if ynstatus!=200 or sha(ynbefore)!=sha(ynafter):raise RuntimeError('YESNO_CHANGED')
+            status_owner,raw_owner=live('moment/owner-ai.php')
+            if status_owner!=403:raise RuntimeError('OWNER_GATE_NOT_403')
+            print('MOMENT_300_BUTTONS_PUBLISHED_OK files='+str(paths)+' yesno_unchanged=True owner_gate_403=True payments_untouched=True')
+          except BaseException:
+            for p in reversed(touched):
+              try:put(p,current[p])
+              except Exception:print('MOMENT_BUTTONS_ROLLBACK_ERROR',p)
+            raise
+          finally:
+            try:f.quit()
+            except Exception:f.close()
+          PY
