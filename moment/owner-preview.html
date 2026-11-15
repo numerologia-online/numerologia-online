@@ -31,7 +31,67 @@ button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pr
 'use strict';
 const $=id=>document.getElementById(id);let catalog;
 async function getJson(url,options={}){const r=await fetch(url,{credentials:'same-origin',cache:'no-store',...options});let d={};try{d=await r.json()}catch{}return {status:r.status,...d};}
-// Plain text fields on iOS: no native calendar, no auto-mask that moves the cursor.
+// Auto-insert separators while keeping the caret at the edited digit on iOS.
+function formatNumericDate(raw, withTime=false){
+  const digits=String(raw||'').replace(/\D/g,'').slice(0,withTime?12:8);
+  let result=digits.slice(0,2);
+  if(digits.length>=2)result+='.';
+  result+=digits.slice(2,4);
+  if(digits.length>=4)result+='.';
+  result+=digits.slice(4,8);
+  if(withTime&&digits.length>=8){
+    result+=' '+digits.slice(8,10);
+    if(digits.length>=10)result+=':';
+    result+=digits.slice(10,12);
+  }
+  return result;
+}
+function numericCaret(text, digitCount){
+  if(digitCount<=0)return 0;
+  let pos=0, seen=0;
+  while(pos<text.length&&seen<digitCount){
+    if(/\d/.test(text[pos]))seen++;
+    pos++;
+  }
+  // If the caret ends a complete date group, move over the inserted separator.
+  if(pos<text.length&&/[. :]/.test(text[pos]))pos++;
+  return pos;
+}
+function bindNumericDateInput(id,withTime=false){
+  const input=$(id);
+  function handleBackspace(event){
+    if(event.defaultPrevented||!event.cancelable)return;
+    if(event.type==='beforeinput'&&event.inputType!=='deleteContentBackward')return;
+    if(event.type==='keydown'&&event.key!=='Backspace')return;
+    const pos=input.selectionStart,end=input.selectionEnd;
+    if(pos===null||pos!==end||pos<=0)return;
+    const old=input.value;
+    if(!/[. :]/.test(old[pos-1]||''))return;
+    let index=pos-1;
+    while(index>0&&!/\d/.test(old[index-1]))index--;
+    if(index===0)return;
+    event.preventDefault();
+    const wantedDigitCount=(old.slice(0,index-1).match(/\d/g)||[]).length;
+    const changed=old.slice(0,index-1)+old.slice(pos);
+    input.value=formatNumericDate(changed,withTime);
+    const caret=numericCaret(input.value,wantedDigitCount);
+    input.setSelectionRange(caret,caret);
+  }
+  input.addEventListener('keydown',handleBackspace);
+  input.addEventListener('beforeinput',handleBackspace);
+  input.addEventListener('input',()=>{
+    const raw=input.value;
+    const selected=input.selectionStart===null?raw.length:input.selectionStart;
+    const digitsBefore=(raw.slice(0,selected).match(/\d/g)||[]).length;
+    const formatted=formatNumericDate(raw,withTime);
+    if(raw!==formatted)input.value=formatted;
+    const caret=numericCaret(formatted,digitsBefore);
+    input.setSelectionRange(caret,caret);
+  });
+}
+bindNumericDateInput('birth');
+bindNumericDateInput('other');
+bindNumericDateInput('moment',true);
 function toIsoDate(raw){
   const m=String(raw||'').trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
   if(!m)return null;
