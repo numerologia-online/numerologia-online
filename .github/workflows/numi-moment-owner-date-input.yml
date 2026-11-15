@@ -79,7 +79,7 @@ jobs:
           if(v(new Date(2026,10,15,20,7))!=='15.11.2026 20:07')throw Error('Moment time wrong');
           if(v(new Date(2027,0,1,0,0))!=='01.01.2027 00:00')throw Error('Midnight rollover wrong');
           console.log('MOMENT_LOCAL_NOW_VALIDATED with_manual_override=true');
-          if(!s.includes('id="generation-feedback"'))throw Error('Missing inline feedback');
+          if(!fs.readFileSync('moment/owner-preview.html','utf8').includes('id="generation-feedback"'))throw Error('Missing inline feedback');
           if(!s.includes('Groq отклонил запрос с хостинга REG.RU.'))throw Error('Missing actionable model error');
           if(!s.includes("feedback.scrollIntoView({behavior:'smooth',block:'center'});"))throw Error('Error feedback not brought into view');
           console.log('MOMENT_DATE_ENTRY_VALIDATED no_calendar=true digits_editable=true');
