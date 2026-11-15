@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 9
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Isolated queue and editor preflight
         run: |
           php -l moment/owner-queue.php
