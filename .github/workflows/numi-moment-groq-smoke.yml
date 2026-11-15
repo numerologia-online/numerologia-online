@@ -51,7 +51,7 @@ jobs:
           req=urllib.request.Request(
               'https://api.groq.com/openai/v1/chat/completions',
               data=json.dumps(payload,ensure_ascii=False).encode('utf-8'),
-              headers={'Authorization':'Bearer '+key,'Content-Type':'application/json'},
+              headers={'Authorization':'Bearer '+key,'Content-Type':'application/json','User-Agent':'numi-moment-groq-test/1.0','Accept':'application/json'},
               method='POST'
           )
           try:
@@ -69,7 +69,10 @@ jobs:
                   clean=lambda s: re.sub('[^a-zA-Z0-9_-]','',s)[:70]
                   raise SystemExit('GROQ_HTTP_'+str(e.code)+'_TYPE_'+clean(etype)+'_CODE_'+clean(code))
               except (ValueError,UnicodeError):
-                  raise SystemExit('GROQ_HTTP_'+str(e.code)+'_NON_JSON_ERROR')
+                  import re
+                  server=re.sub('[^a-zA-Z0-9_-]','',str(e.headers.get('Server','unknown')))[:35]
+                  mitigated=re.sub('[^a-zA-Z0-9_-]','',str(e.headers.get('cf-mitigated','none')))[:35]
+                  raise SystemExit('GROQ_HTTP_'+str(e.code)+'_NON_JSON_ERROR_SERVER_'+server+'_MITIGATED_'+mitigated)
           except Exception as e:
               raise SystemExit('GROQ_API_CONNECTION_FAILURE_'+type(e).__name__)
           answer=data.get('choices',[{}])[0].get('message',{}).get('content','')
