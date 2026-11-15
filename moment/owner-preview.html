@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Редактор 300 вопросов · Только владелец</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#183d31;background:#f8f5ef}
+*{box-sizing:border-box}body{margin:0}main{max-width:750px;margin:0 auto;padding:22px 17px 60px}
+a{color:#235c48}h1{font:600 clamp(27px,7vw,38px)/1.15 Georgia,serif;margin:18px 0 10px}
+.note{color:#64756a;font-size:14px;line-height:1.5;margin:10px 0 20px}
+.paper{border:1px solid #ddcbaa;background:#fffefa;border-radius:18px;padding:20px;margin:18px 0;box-shadow:0 7px 26px #183d310e}
+label{display:block;margin:15px 0 5px;font-size:14px;font-weight:650}
+input,select{width:100%;border:1px solid #b8c6ba;border-radius:11px;padding:12px;font:16px system-ui;background:white;color:#183d31;min-height:47px}
+button{margin-top:20px;background:#173f33;color:white;border:0;border-radius:12px;padding:13px 19px;min-height:48px;font-size:16px;font-weight:700;width:100%}
+button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pre-line;font-size:16px;line-height:1.6;color:#293c32}
+#status{line-height:1.5}#work[hidden],#result[hidden],#partner-fields[hidden]{display:none}.back{display:inline-block;margin:5px 0 10px}
+</style></head><body><main>
+<a class="back" href="./">← Назад к 300 вопросам</a>
+<h1>Редактор: 300 вопросов о жизни</h1>
+<p class="note">Только для владельца. Бесплатный тест нейросети. Ответы пока не публикуются и никому не продаются. Остальные разделы сайта не затронуты.</p>
+<div class="paper" id="status" role="status">Проверяю доступ владельца…</div>
+<section class="paper" id="work" hidden>
+<h2>Проверяем по одному вопросу</h2>
+<label for="category">Тема</label><select id="category"></select>
+<label for="question">Вопрос</label><select id="question"></select>
+<label for="birth">Дата рождения спрашивающего</label><input id="birth" type="date" required>
+<div id="partner-fields"><label for="other">Дата рождения второго человека</label><input id="other" type="date"></div>
+<label for="moment">Дата и время вопроса (по желанию)</label><input id="moment" type="datetime-local">
+<button id="generate" type="button">Сгенерировать тестовый ответ</button>
+<p class="note">Если ответ не понравится, изменим инструкцию нейросети. Никаких списаний с баланса нет.</p></section>
+<section class="paper" id="result" hidden><h2 id="result-heading">Ответ</h2><div class="answer" id="answer"></div></section>
+</main><script>
+'use strict';
+const $=id=>document.getElementById(id);let catalog;
+async function getJson(url,options={}){const r=await fetch(url,{credentials:'same-origin',cache:'no-store',...options});let d={};try{d=await r.json()}catch{}return {status:r.status,...d};}
+function showQuestions(){const cat=$('category').value;const found=catalog.questions.filter(q=>q.category===cat);$('question').replaceChildren(...found.map(q=>new Option(q.title,q.id)));updateMode();}
+function updateMode(){const q=catalog.questions.find(x=>x.id===$('question').value);$('partner-fields').hidden=q?.mode!=='partner';}
+$('category').addEventListener('change',showQuestions);$('question').addEventListener('change',updateMode);
+async function init(){try{const access=await getJson('./owner-ai.php');if(!access.ok||!access.owner){$('status').textContent='Войди на главной странице под подтверждённой почтой владельца и снова открой редактор. Для остальных посетителей доступ закрыт.';return;}const r=await fetch('./questions.json',{cache:'no-store'});catalog=await r.json();if(!Array.isArray(catalog.questions)||catalog.questions.length!==300)throw Error('Каталог неполный');$('category').replaceChildren(...catalog.categories.map(c=>new Option(c.title+' ('+c.count+')',c.id)));$('category').value='love';showQuestions();$('status').textContent='✓ Режим владельца открыт. Все 300 вопросов доступны для бесплатных тестов.';$('work').hidden=false;}catch(e){$('status').textContent='Не получилось проверить доступ. Попробуй обновить страницу.';}}
+$('generate').addEventListener('click',async()=>{const btn=$('generate');if(!$('birth').value){$('status').textContent='Укажи дату рождения спрашивающего.';return;}if(!$('partner-fields').hidden&&!$('other').value){$('status').textContent='Для этого вопроса нужна дата рождения второго человека.';return;}btn.disabled=true;btn.textContent='Получаю ответ…';$('result').hidden=true;$('status').textContent='Генерирую тестовый ответ. Денег не списываю.';try{const d=await getJson('./owner-ai.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question_id:$('question').value,birth_date:$('birth').value,other_date:$('partner-fields').hidden?null:$('other').value,moment:$('moment').value||null})});if(!d.ok)throw Error(d.error||'Ошибка');$('result-heading').textContent=d.question;$('answer').textContent=d.answer;$('result').hidden=false;$('status').textContent='✓ Ответ получен. Это только предпросмотр, не публикация.';$('result').scrollIntoView({behavior:'smooth'});}catch(e){$('status').textContent='Ответ не получен: '+e.message+'. Баланс не затронут.';}finally{btn.disabled=false;btn.textContent='Сгенерировать ещё раз';}});
+init();
+</script></body></html>
