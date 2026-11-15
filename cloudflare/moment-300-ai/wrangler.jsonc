@@ -1,0 +1,9 @@
+{
+  "name": "numerologia-300-ai",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-15",
+  "workers_dev": true,
+  "ai": {
+    "binding": "AI"
+  }
+}
