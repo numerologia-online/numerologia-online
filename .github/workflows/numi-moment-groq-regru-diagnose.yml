@@ -39,7 +39,7 @@ jobs:
             curl_setopt_array($ch,[CURLOPT_POST=>true,CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>7,
               CURLOPT_TIMEOUT=>26,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_HTTPHEADER=>[
               'Authorization: Bearer '.$key,'Content-Type: application/json','Accept: application/json',
-              'User-Agent: numi-moment-owner-preview/1.0'],
+              'User-Agent: numi-moment-groq-test/1.0'],
               CURLOPT_POSTFIELDS=>json_encode($data,JSON_UNESCAPED_UNICODE)]);
             $start=microtime(true);
             $raw=curl_exec($ch);
@@ -53,7 +53,7 @@ jobs:
                 $result['error_code']=preg_replace('/[^a-zA-Z0-9_-]/','',strval($parsed['error']['code']??$parsed['error']['type']??''))?:null;
                 $result['has_answer']=isset($parsed['choices'][0]['message']['content']);
                 $result['finish_reason']=$parsed['choices'][0]['finish_reason']??null;
-              }else{$result['provider_non_json']=true;}
+              }else{$result['provider_non_json']=true;$result['body_hint']=preg_match('/<title[^>]*>([^<]{1,80})<\\/title>/i',$raw,$m)?substr(trim($m[1]),0,80):'none';}
             }
             curl_close($ch);
           }catch(Throwable $e){$result['failure_class']=get_class($e);$result['failure_reason']=preg_replace('/[^A-Z_]/','',strval($e->getMessage()));}
