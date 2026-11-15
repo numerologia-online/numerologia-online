@@ -53,13 +53,13 @@ const loadPersonalDay = async (birth, date = new Date()) => {
   const { energy, personalNumber } = personalDay(birth, date);
   const calendarDay = date.getDate();
   try {
-    const response = await fetch(`./data/day/general/general-day-${String(energy).padStart(2, "0")}.json?v=8`);
+    const response = await fetch(`https://numerologia-online.github.io/numerologia-online/data/day/general/general-day-${String(energy).padStart(2, "0")}.json`, { cache: "no-store" });
     if (!response.ok) throw new Error("personal day bank unavailable");
     const bank = await response.json();
     const entry = findDayEntry(bank.entries, energy, personalNumber);
     let practical = null;
     try {
-      const practicalResponse = await fetch(`./data/day/practical/practical-day-${String(energy).padStart(2, "0")}.json?v=4`);
+      const practicalResponse = await fetch(`https://numerologia-online.github.io/numerologia-online/data/day/practical/practical-day-${String(energy).padStart(2, "0")}.json`, { cache: "no-store" });
       if (practicalResponse.ok) practical = await practicalResponse.json();
     } catch {}
     const advice = findDayEntry(practical?.entries, energy, personalNumber) || {};
