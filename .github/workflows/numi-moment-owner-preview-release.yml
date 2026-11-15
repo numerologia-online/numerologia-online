@@ -1,0 +1,42 @@
+name: Install isolated owner-only Groq preview for 300 Moment questions
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-moment-owner-preview-release.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Isolated Moment owner-only preflight
+        run: |
+          set -euo pipefail
+          php -l moment/owner-ai.php
+          python3 -m py_compile moment/deploy-owner-preview.py
+          python3 - <<'PY'
+          import json,pathlib
+          d=json.loads(pathlib.Path('moment/questions.json').read_text(encoding='utf-8'))
+          assert len(d['categories'])==12 and len(d['questions'])==300
+          assert d['questions'][0]['id']=='love-001'
+          html=pathlib.Path('moment/owner-preview.html').read_text(encoding='utf-8')
+          php=pathlib.Path('moment/owner-ai.php').read_text(encoding='utf-8')
+          assert 'id="generate"' in html and './owner-ai.php' in html
+          assert "naTestOwner($account)" in php and "'question_count'=>300" in php
+          assert "'openai/gpt-oss-120b'" in php
+          assert 'numi_real_wallet' not in php and 'numi_orders' not in php
+          print('OWNER_PREVIEW_PREFLIGHT_OK; payment code untouched')
+          PY
+      - name: Publish ONLY new owner-preview files and private Groq config to REG.RU
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: python3 -u moment/deploy-owner-preview.py
