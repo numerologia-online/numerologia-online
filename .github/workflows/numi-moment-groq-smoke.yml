@@ -59,7 +59,17 @@ jobs:
                   status=response.status
                   data=json.load(response)
           except urllib.error.HTTPError as e:
-              raise SystemExit('GROQ_API_HTTP_STATUS_'+str(e.code))
+              try:
+                  err=json.loads(e.read(8000).decode('utf-8'))
+                  info=err.get('error',{}) if isinstance(err,dict) else {}
+                  code=str(info.get('code','unspecified'))
+                  etype=str(info.get('type','unspecified'))
+                  # Only print constrained error identifiers; never echo credentials or raw bodies.
+                  import re
+                  clean=lambda s: re.sub('[^a-zA-Z0-9_-]','',s)[:70]
+                  raise SystemExit('GROQ_HTTP_'+str(e.code)+'_TYPE_'+clean(etype)+'_CODE_'+clean(code))
+              except (ValueError,UnicodeError):
+                  raise SystemExit('GROQ_HTTP_'+str(e.code)+'_NON_JSON_ERROR')
           except Exception as e:
               raise SystemExit('GROQ_API_CONNECTION_FAILURE_'+type(e).__name__)
           answer=data.get('choices',[{}])[0].get('message',{}).get('content','')
