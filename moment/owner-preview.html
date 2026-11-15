@@ -11,6 +11,7 @@ label{display:block;margin:15px 0 5px;font-size:14px;font-weight:650}
 input,select{width:100%;border:1px solid #b8c6ba;border-radius:11px;padding:12px;font:16px system-ui;background:white;color:#183d31;min-height:47px}
 button{margin-top:20px;background:#173f33;color:white;border:0;border-radius:12px;padding:13px 19px;min-height:48px;font-size:16px;font-weight:700;width:100%}
 button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pre-line;font-size:16px;line-height:1.6;color:#293c32}
+#moment-now{display:inline-flex;align-items:center;justify-content:center;width:auto;min-width:122px;min-height:42px;margin:9px 0 0;padding:8px 16px;border:1px solid #b18a4c;border-radius:12px;background:#f0e7d6;color:#173f33;font-size:15px;font-weight:750}.moment-time-help{font-size:13px;color:#66766b;margin:6px 0 0;line-height:1.4} 
 #status{line-height:1.5}#work[hidden],#result[hidden],#partner-fields[hidden]{display:none}.back{display:inline-block;margin:5px 0 10px}
 </style></head><body><main>
 <a class="back" href="./">← Назад к 300 вопросам</a>
@@ -23,7 +24,7 @@ button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pr
 <label for="question">Вопрос</label><select id="question"></select>
 <label for="birth">Дата рождения спрашивающего</label><input id="birth" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false" required>
 <div id="partner-fields"><label for="other">Дата рождения второго человека</label><input id="other" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false"></div>
-<label for="moment">Дата и время вопроса (по желанию)</label><input id="moment" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" maxlength="16" spellcheck="false">
+<label for="moment">Дата и время вопроса</label><input id="moment" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" maxlength="16" spellcheck="false"><button id="moment-now" type="button">Сейчас</button><p class="moment-time-help">Время телефона подставляется автоматически перед ответом. Можно изменить вручную.</p>
 <button id="generate" type="button">Сгенерировать тестовый ответ</button>
 <p class="note">Если ответ не понравится, изменим инструкцию нейросети. Никаких списаний с баланса нет.</p></section>
 <section class="paper" id="result" hidden><h2 id="result-heading">Ответ</h2><div class="answer" id="answer"></div></section>
@@ -92,6 +93,18 @@ function bindNumericDateInput(id,withTime=false){
 bindNumericDateInput('birth');
 bindNumericDateInput('other');
 bindNumericDateInput('moment',true);
+// Use the device's LOCAL civil time, not UTC, for the exact question moment.
+function localMomentString(date){
+  const pad=n=>String(n).padStart(2,'0');
+  return pad(date.getDate())+'.'+pad(date.getMonth()+1)+'.'+date.getFullYear()+' '+pad(date.getHours())+':'+pad(date.getMinutes());
+}
+let momentEditedByOwner=false;
+function setMomentNow(){
+  $('moment').value=localMomentString(new Date());
+  momentEditedByOwner=false;
+}
+$('moment').addEventListener('input',()=>{momentEditedByOwner=true;});
+$('moment-now').addEventListener('click',setMomentNow);
 function toIsoDate(raw){
   const m=String(raw||'').trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
   if(!m)return null;
@@ -112,7 +125,7 @@ function toIsoMoment(raw){
 function showQuestions(){const cat=$('category').value;const found=catalog.questions.filter(q=>q.category===cat);$('question').replaceChildren(...found.map(q=>new Option(q.title,q.id)));updateMode();}
 function updateMode(){const q=catalog.questions.find(x=>x.id===$('question').value);$('partner-fields').hidden=q?.mode!=='partner';}
 $('category').addEventListener('change',showQuestions);$('question').addEventListener('change',updateMode);
-async function init(){try{const access=await getJson('./owner-ai.php');if(!access.ok||!access.owner){$('status').textContent='Войди на главной странице под подтверждённой почтой владельца и снова открой редактор. Для остальных посетителей доступ закрыт.';return;}const r=await fetch('./questions.json',{cache:'no-store'});catalog=await r.json();if(!Array.isArray(catalog.questions)||catalog.questions.length!==300)throw Error('Каталог неполный');$('category').replaceChildren(...catalog.categories.map(c=>new Option(c.title+' ('+c.count+')',c.id)));const requestedId=new URLSearchParams(location.search).get('question');const requested=catalog.questions.find(q=>q.id===requestedId);$('category').value=requested?.category||'love';showQuestions();if(requested){$('question').value=requested.id;updateMode();}$('status').textContent='✓ Режим владельца открыт. Все 300 вопросов доступны для бесплатных тестов.';$('work').hidden=false;}catch(e){$('status').textContent='Не получилось проверить доступ. Попробуй обновить страницу.';}}
+async function init(){try{const access=await getJson('./owner-ai.php');if(!access.ok||!access.owner){$('status').textContent='Войди на главной странице под подтверждённой почтой владельца и снова открой редактор. Для остальных посетителей доступ закрыт.';return;}const r=await fetch('./questions.json',{cache:'no-store'});catalog=await r.json();if(!Array.isArray(catalog.questions)||catalog.questions.length!==300)throw Error('Каталог неполный');$('category').replaceChildren(...catalog.categories.map(c=>new Option(c.title+' ('+c.count+')',c.id)));const requestedId=new URLSearchParams(location.search).get('question');const requested=catalog.questions.find(q=>q.id===requestedId);$('category').value=requested?.category||'love';showQuestions();if(requested){$('question').value=requested.id;updateMode();}setMomentNow();$('status').textContent='✓ Режим владельца открыт. Все 300 вопросов доступны для бесплатных тестов.';$('work').hidden=false;}catch(e){$('status').textContent='Не получилось проверить доступ. Попробуй обновить страницу.';}}
 $('generate').addEventListener('click',async()=>{
   const btn=$('generate');
   const birth=toIsoDate($('birth').value);
@@ -120,6 +133,7 @@ $('generate').addEventListener('click',async()=>{
   const needsPartner=!$('partner-fields').hidden;
   const other=needsPartner?toIsoDate($('other').value):null;
   if(needsPartner&&!other){$('status').textContent='Укажи дату рождения второго человека в формате ДД.ММ.ГГГГ.';$('other').focus();return;}
+  if(!momentEditedByOwner)setMomentNow();
   const momentText=$('moment').value.trim();
   const moment=momentText?toIsoMoment(momentText):null;
   if(momentText&&!moment){$('status').textContent='Дата и время вопроса: ДД.ММ.ГГГГ ЧЧ:ММ, например 15.11.2026 19:56. Или оставь поле пустым.';$('moment').focus();return;}
