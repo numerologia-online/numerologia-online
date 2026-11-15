@@ -1,0 +1,25 @@
+name: Unify live day website with Telegram daily forecast source
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/numi-unify-personal-day-20261115.yml'
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.event.head_commit.message == 'Publish unified personal day website source to REG.RU'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Safely synchronize live day website to same source as Telegram
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -m py_compile scripts/deploy-personal-day-source-20261115.py
+          python3 -u scripts/deploy-personal-day-source-20261115.py
