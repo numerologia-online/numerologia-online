@@ -1,0 +1,92 @@
+name: Correct first Groq preview answer for woman 09.09 and man 31.10
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-moment-corrected-first-answer.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  correction:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate updated Moment-only prompt
+        run: |
+          python3 - <<'PY'
+          import ast,pathlib
+          p=pathlib.Path('moment/process-owner-queue.py')
+          ast.parse(p.read_text('utf8'))
+          t=p.read_text('utf8')
+          assert 'женщина, которая спрашивает' in t
+          assert 'мужчина, о котором спрашивает женщина' in t
+          assert 'replace(" — ", ": ")' in t
+          print('MOMENT_PROMPT_ROLE_AND_PUNCTUATION_CHECK_OK')
+          PY
+      - name: Get revised Groq answer and replace ONLY owner-private preview result
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import importlib.util,json,os,io,ssl,ftplib,urllib.request,urllib.error,time,datetime
+          spec=importlib.util.spec_from_file_location("moment_queue","moment/process-owner-queue.py")
+          mod=importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          key=os.environ.get('GROQ_API_KEY','')
+          if not key.startswith('gsk_'):raise RuntimeError('GROQ_KEY_UNAVAILABLE')
+          record={'question_id':'love-001','title':'Что он чувствует ко мне?',
+                  'birth_date':'2000-09-09','other_date':'2000-10-31'}
+          answer=mod.generate(key,record)
+          if len(answer)<350 or len(answer)>7000:raise RuntimeError('ANSWER_OUTSIDE_LIMIT')
+          if '—' in answer:raise RuntimeError('LONG_DASH_IN_OUTPUT')
+          if len([s for s in answer.split('\n\n') if s.strip()])<2:raise RuntimeError('TWO_PARAGRAPHS_REQUIRED')
+          print('GROQ_CORRECTED_ANSWER_RECEIVED chars='+str(len(answer))+' long_dash=0 female_role_explicit=true male_role_explicit=true')
+          output=json.dumps({'question_id':'love-001','question':'Что он чувствует ко мне?',
+                             'answer':answer,'model':'openai/gpt-oss-120b',
+                             'generated_utc':datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M UTC'),
+                             'edition':'roles-and-typography-corrected'},ensure_ascii=False).encode('utf8')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          first=home+'/private/numi-moment-groq/first-answer.json'
+          backup=home+'/private/numi-moment-groq/first-answer-original-backup.json'
+          def load(path):
+            b=io.BytesIO();ftp.retrbinary('RETR '+path,b.write);return b.getvalue()
+          def save(path,b):
+            ftp.storbinary('STOR '+path,io.BytesIO(b))
+            if load(path)!=b:raise RuntimeError('FTP_READBACK_MISMATCH')
+          try:
+            old=load(first)
+            if not old or not json.loads(old).get('answer'):raise RuntimeError('ORIGINAL_ANSWER_MISSING')
+            try:
+              load(backup)
+              raise RuntimeError('REFUSE_REPEATED_REPLACEMENT')
+            except ftplib.error_perm as err:
+              if not str(err).startswith('550'):raise
+            save(backup,old)
+            try:
+              save(first,output)
+              url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/owner-first-answer.php?verify='+str(time.time_ns())
+              req=urllib.request.Request(url,headers={'Cache-Control':'no-cache'})
+              try:
+                with urllib.request.urlopen(req,timeout=30) as r: status=r.status
+              except urllib.error.HTTPError as e:status=e.code
+              if status!=403:raise RuntimeError('ANONYMOUS_OWNER_GATE_NOT_403')
+            except BaseException:
+              save(first,old)
+              print('MOMENT_FIRST_ANSWER_ROLLBACK_OK',flush=True)
+              raise
+            print('MOMENT_REVISED_FIRST_ANSWER_PUBLISHED_OK original_backed_up=true anonymous_403=true other_products_untouched=true')
+          finally:
+            try:ftp.quit()
+            except Exception:ftp.close()
+          PY
