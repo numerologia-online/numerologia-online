@@ -1,0 +1,161 @@
+name: Publish approved Red Flag Love August 26-30 to REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/numi-love-august26-30-verified.yml'
+permissions:
+  contents: write
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Publish approved Love August 26-30 to REG.RU'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Merge only the 45 approved answers and commit checksum manifest
+        run: |
+          python3 -u - <<'PY'
+          import hashlib,json,pathlib,subprocess
+          days=['26','27','28','29','30']
+          ids=['first-step','romance','relationship-or-comfort','adult-partner','near-him','hard-moment','relationship-format','family-or-triangle','honest-or-disappear']
+          payloads={}
+          for d in days:
+              file=pathlib.Path(f'data/redflag/love/approved-august{d}-20261115.json')
+              value=json.loads(file.read_text(encoding='utf-8'))
+              assert value.get('section')=='love' and value.get('date')==f'{d}-8',file
+              assert set(value['texts'])==set(ids),file
+              for q,text in value['texts'].items():
+                  assert isinstance(text,str) and len(text)>=650 and text.count('\n\n')==1,(file,q)
+              payloads[d]=value['texts']
+          manifest_path=pathlib.Path('account-service/private/store-assets.json')
+          manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
+          assert manifest['version']==2 and isinstance(manifest['files'],dict)
+          for id in ids:
+              path=pathlib.Path(f'data/redflag/love/{id}.json')
+              bank=json.loads(path.read_text(encoding='utf-8'))
+              assert bank['section']=='love' and bank['questionId']==id and bank['keyRule']=='day-month'
+              assert isinstance(bank['entries'],dict)
+              if id=='first-step':
+                  assert len(bank['entries'])==366,'FREE_BANK_NOT_COMPLETE'
+              for d in days:
+                  key=f'{d}-8'
+                  if id!='first-step' and key in bank['entries'] and bank['entries'][key]!=payloads[d][id]:
+                      raise RuntimeError('PAID_ENTRY_ALREADY_EXISTS_WITH_DIFFERENT_TEXT:'+id+':'+key)
+                  bank['entries'][key]=payloads[d][id]
+              encoded=(json.dumps(bank,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
+              path.write_bytes(encoded)
+              manifest['files'][str(path)]=hashlib.sha256(encoded).hexdigest()
+          manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          subprocess.run(['git','config','user.name','github-actions[bot]'],check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          subprocess.run(['git','add','data/redflag/love','account-service/private/store-assets.json'],check=True)
+          subprocess.run(['git','commit','-m','Apply approved Love August 26-30 and refresh manifest'],check=True)
+          subprocess.run(['git','push','origin','HEAD:main'],check=True)
+          print('GITHUB_APPROVED_AUGUST26_30_45_ANSWERS_COMMITTED',flush=True)
+          PY
+      - name: Backup and publish exactly five August days to REG.RU then verify readback
+        env:
+          REG_FTP_USER: \${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: \${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,hashlib,io,json,os,pathlib,ssl
+          days=[f'{d}-8' for d in range(26,31)]
+          ids=['first-step','romance','relationship-or-comfort','adult-partner','near-him','hard-moment','relationship-format','family-or-triangle','honest-or-disappear']
+          paths=[f'data/redflag/love/{id}.json' for id in ids]
+          manifest_path='account-service/private/store-assets.json'
+          payloads={}
+          for d in range(26,31):
+              obj=json.loads(pathlib.Path(f'data/redflag/love/approved-august{d}-20261115.json').read_bytes())
+              assert obj['date']==f'{d}-8' and obj['section']=='love' and set(obj['texts'])==set(ids)
+              payloads[f'{d}-8']=obj['texts']
+          for id,p in zip(ids,paths):
+              bank=json.loads(pathlib.Path(p).read_bytes())
+              for day in days:
+                  if bank['entries'][day]!=payloads[day][id]:
+                      raise RuntimeError('CHECKED_OUT_BANK_APPROVAL_MISMATCH:'+id+':'+day)
+          if not os.getenv('REG_FTP_USER') or not os.getenv('REG_FTP_PASSWORD'):
+              raise RuntimeError('REG_RU_FTP_CREDENTIALS_NOT_CONFIGURED')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          private=home+'/private/numi-account-20261031'
+          remote={p:private+'/store-content/'+p for p in paths}
+          remote[manifest_path]=private+'/store-assets.json'
+          def read(path):
+              dest=io.BytesIO()
+              def collect(block):
+                  if dest.tell()+len(block)>1500000:raise RuntimeError('REMOTE_FILE_TOO_LARGE:'+path)
+                  dest.write(block)
+              ftp.retrbinary('RETR '+path,collect)
+              return dest.getvalue()
+          def write(path,content):
+              ftp.storbinary('STOR '+path,io.BytesIO(content))
+              if read(path)!=content:raise RuntimeError('REMOTE_READBACK_MISMATCH:'+path)
+          old={};new={};touched=[]
+          try:
+              for p in [*paths,manifest_path]:
+                  old[p]=read(remote[p])
+              manifest=json.loads(old[manifest_path])
+              if manifest.get('version')!=2 or not isinstance(manifest.get('files'),dict):
+                  raise RuntimeError('REMOTE_MANIFEST_UNEXPECTED_SCHEMA')
+              for id,p in zip(ids,paths):
+                  bank=json.loads(old[p])
+                  if bank.get('section')!='love' or bank.get('questionId')!=id or bank.get('keyRule')!='day-month':
+                      raise RuntimeError('REMOTE_BANK_ID_OR_SCHEMA_MISMATCH:'+id)
+                  if not isinstance(bank.get('entries'),dict):
+                      raise RuntimeError('REMOTE_ENTRIES_INVALID:'+id)
+                  if id=='first-step':
+                      if bank.get('status')!='active' or len(bank['entries'])!=366:
+                          raise RuntimeError('REMOTE_FREE_BANK_UNEXPECTED_STATUS_OR_SIZE')
+                  else:
+                      if manifest['files'].get(p)!=hashlib.sha256(old[p]).hexdigest():
+                          raise RuntimeError('REMOTE_PAID_BANK_PREEXISTING_HASH_MISMATCH:'+id)
+                      for day in days:
+                          if day in bank['entries'] and bank['entries'][day]!=payloads[day][id]:
+                              raise RuntimeError('REMOTE_PAID_ENTRY_ALREADY_EXISTS_WITH_DIFFERENT_TEXT:'+id+':'+day)
+                  for day in days:
+                      bank['entries'][day]=payloads[day][id]
+                  new[p]=(json.dumps(bank,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
+                  manifest['files'][p]=hashlib.sha256(new[p]).hexdigest()
+              new[manifest_path]=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
+              backup_root=home+'/site-safeguard-backups'
+              ftp.cwd(backup_root)
+              backup=backup_root+'/redflag-love-august26-30-'+os.environ['GITHUB_RUN_ID']
+              ftp.mkd(backup)
+              for i,p in enumerate([*paths,manifest_path]):
+                  write(backup+'/'+str(i).zfill(2)+'-'+p.rsplit('/',1)[-1]+'.before',old[p])
+              print('AUG26_30_ALL_TEN_BACKUPS_VERIFIED',flush=True)
+              try:
+                  for p in [*paths,manifest_path]:
+                      if read(remote[p])!=old[p]:
+                          raise RuntimeError('CONCURRENT_REMOTE_FILE_CHANGE:'+p)
+                      if old[p]!=new[p]:
+                          touched.append(p)
+                          write(remote[p],new[p])
+                  for p in [*paths,manifest_path]:
+                      if read(remote[p])!=new[p]:
+                          raise RuntimeError('FINAL_REG_RU_READBACK_FAILED:'+p)
+                  print('LOVE_AUGUST26_30_REG_RU_VERIFIED_45_APPROVED_ANSWERS',flush=True)
+              except BaseException:
+                  for p in reversed(touched):
+                      try:
+                          write(remote[p],old[p])
+                          print('ROLLBACK_VERIFIED:'+p,flush=True)
+                      except BaseException:
+                          print('ROLLBACK_FAILED:'+p,flush=True)
+                  raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
