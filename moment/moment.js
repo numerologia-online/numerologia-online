@@ -8,7 +8,7 @@
   const resultsTitle=$("results-title"), resultsMsg=$("results-message");
   const showMore=$("show-more"), showAll=$("show-all");
   const catalogStatus=$("moment-catalog-status"), catalogRetry=$("moment-catalog-retry");
-  let catalog=null, active=null, visibleCount=12;
+  let catalog=null, active=null, visibleCount=12, ownerMode=false;
   const norm=t=>String(t||"").toLocaleLowerCase("ru-RU").replace(/ё/g,"е").replace(/[^а-яa-z0-9 ]/gi," ").replace(/\s+/g," ").trim();
   const elem=(tag,cls,value)=>{
     const el=document.createElement(tag);
@@ -54,13 +54,54 @@
     found.slice(0,visibleCount).forEach((q,i)=>{
       const b=elem("button","question-entry moment-soon-question");
       b.type="button";
-      b.disabled=true;
-      b.setAttribute("aria-label",q.title+". Скоро. Стоимость после запуска 49 рублей.");
-      const meta=elem("span","moment-question-status","49 ₽ · Скоро");
+      // Still no public purchase or paid answer. A verified site owner may review
+      // the chosen item in the separate protected editor; everyone else sees
+      // a clear "Скоро" explanation rather than a dead disabled button.
+      b.setAttribute("aria-label",q.title+(ownerMode?". Бесплатный тест для владельца.":". Скоро, покупка недоступна."));
+      const meta=elem("span","moment-question-status",ownerMode?"Тестировать бесплатно":"49 ₽ · Скоро");
       b.append(elem("span","question-index",String(i+1).padStart(2,"0")),elem("span","question-name",q.title),meta);
+      b.addEventListener("click",()=>{
+        if(ownerMode){
+          location.assign("./owner-preview.html?question="+encodeURIComponent(q.id));
+          return;
+        }
+        showComingSoon(q.title);
+      });
       list.append(b);
     });
     showMore.hidden=visibleCount>=found.length;
+  }
+  function showComingSoon(questionTitle){
+    let dialog=$("moment-question-coming-soon");
+    if(!dialog){
+      dialog=elem("dialog","moment-question-info");
+      dialog.id="moment-question-coming-soon";
+      const heading=elem("h3","","Вопрос готовится к запуску");
+      const question=elem("p","moment-question-modal-title");
+      question.id="moment-question-modal-title";
+      const description=elem("p","","Ответ пока недоступен. После запуска вопрос будет стоить 49 ₽. Сейчас деньги не списываются.");
+      const close=elem("button","moment-question-modal-close","Понятно");
+      close.type="button";
+      close.addEventListener("click",()=>dialog.close());
+      dialog.append(heading,question,description,close);
+      document.body.append(dialog);
+    }
+    $("moment-question-modal-title").textContent=questionTitle;
+    if(typeof dialog.showModal==="function")dialog.showModal();
+    else alert("Вопрос в разработке. Покупка пока недоступна.");
+  }
+  async function verifyOwner(){
+    try{
+      const response=await fetch("./owner-ai.php",{credentials:"same-origin",cache:"no-store",headers:{"Accept":"application/json"}});
+      if(!response.ok)return;
+      const result=await response.json();
+      if(result?.ok===true&&result?.owner===true&&result?.question_count===300){
+        ownerMode=true;
+        if(catalog&&!$("questions-panel").hidden)renderQuestions();
+      }
+    }catch(_){
+      // The public catalogue remains viewable; never grant owner access on errors.
+    }
   }
   function backToTopics(){
     active=null;visibleCount=12;search.value="";
@@ -90,6 +131,7 @@
       }
       catalog=data;
       renderCategories();
+      void verifyOwner();
       if(catalogStatus)catalogStatus.hidden=true;
       const topic=new URLSearchParams(location.search).get("category");
       if(topic&&data.categories.some(c=>c.id===topic)){
