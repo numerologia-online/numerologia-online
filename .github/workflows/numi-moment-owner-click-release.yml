@@ -1,0 +1,115 @@
+name: Moment 300 clickable buttons and owner-only review routing
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-moment-owner-click-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate and install ONLY 4 Moment UI files with backups and live verification
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check moment/moment.js
+          php -l moment/owner-ai.php
+          python3 - <<'PY'
+          import os,io,ftplib,ssl,hashlib,time,json,subprocess,urllib.request,urllib.error
+          from pathlib import Path
+          files=['moment/moment.js','moment/moment.css','moment/index.html','moment/owner-preview.html']
+          base_refs={
+              'moment/moment.js':'09288dc5319a404211b64bf2945e922472302ed2^:moment/moment.js',
+              'moment/moment.css':'e58bbf1b2c643bdf15c14557ddbc849096318214^:moment/moment.css',
+              'moment/index.html':'6b3988cfe96c2d7ebb7ef9914102ad1d33a3c0c7^:moment/index.html',
+              'moment/owner-preview.html':'2d496652d5e70f08ce2b0aad8c993af5a4f58b02^:moment/owner-preview.html',
+          }
+          wanted={p:Path(p).read_bytes() for p in files}
+          expected={p:subprocess.check_output(['git','show',base_refs[p]]) for p in files}
+          js=wanted['moment/moment.js'].decode('utf8')
+          css=wanted['moment/moment.css'].decode('utf8')
+          html=wanted['moment/index.html'].decode('utf8')
+          owner=wanted['moment/owner-preview.html'].decode('utf8')
+          assert 'b.disabled=true' not in js
+          assert 'showComingSoon(q.title)' in js
+          assert 'void verifyOwner();' in js
+          assert 'ownerMode' in js
+          assert './owner-preview.html?question=' in js
+          assert "moment.js?v=owner-taps-20261115" in html
+          assert "moment.css?v=moment-taps-20261115" in html
+          assert 'requestedId=new URLSearchParams(location.search)' in owner
+          assert html.count('class="moment-static-topic"')==12 and html.count('<li>')==300
+          assert css.count('{')==css.count('}')
+          def sha(b):return hashlib.sha256(b).hexdigest()
+          domain='xn--c1adkkdfjbp1a4l.online'
+          primary='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
+          def online(p):
+              req=urllib.request.Request('https://'+primary+'/'+p+'?moment_taps_check='+str(time.time_ns()),headers={'User-Agent':'NumiMomentOwnerTaps/1.0','Cache-Control':'no-cache'})
+              try:
+                  with urllib.request.urlopen(req,timeout=35) as response:return response.status,response.read(300000)
+              except urllib.error.HTTPError as e:return e.code,e.read(5000)
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          f.connect('server172.hosting.reg.ru',21)
+          f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          f.prot_p();f.set_pasv(True)
+          root=f.pwd().rstrip('/')
+          folder=root+'/www/'+domain+'/'
+          def read(p):
+              data=io.BytesIO();f.retrbinary('RETR '+folder+p,data.write)
+              if data.tell()>400000:raise RuntimeError('UNEXPECTED_FILE_SIZE')
+              return data.getvalue()
+          def put(p,b):
+              f.storbinary('STOR '+folder+p,io.BytesIO(b))
+              if sha(read(p))!=sha(b):raise RuntimeError('FTP_READBACK_DIFF_'+p)
+          touched=[]
+          try:
+              old={p:read(p) for p in files}
+              for p in files:
+                  if old[p] not in (expected[p],wanted[p]):raise RuntimeError('LIVE_BASELINE_CHANGED_'+p)
+              yesno_status,yesno_before=online('moment/yes-no/')
+              if yesno_status!=200:raise RuntimeError('YESNO_UNAVAILABLE')
+              api_status,api_body=online('moment/owner-ai.php')
+              if api_status!=403 or json.loads(api_body).get('error')!='OWNER_LOGIN_REQUIRED':raise RuntimeError('OWNER_GATE_BASELINE_INVALID')
+              backup=root+'/site-safeguard-backups/moment-owner-taps-'+time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              f.mkd(backup)
+              for p in files:
+                  path=backup+'/'+p.replace('/','__')+'.bak'
+                  f.storbinary('STOR '+path,io.BytesIO(old[p]))
+                  b=io.BytesIO();f.retrbinary('RETR '+path,b.write)
+                  if b.getvalue()!=old[p]:raise RuntimeError('BACKUP_VERIFICATION_FAILED')
+              for p in files:
+                  if read(p)!=old[p]:raise RuntimeError('CONCURRENT_CHANGE_'+p)
+                  if old[p]!=wanted[p]:
+                      touched.append(p);put(p,wanted[p])
+              for p in files:
+                  status,raw=online(p)
+                  if status!=200 or sha(raw)!=sha(wanted[p]):raise RuntimeError('PUBLIC_FILE_MISMATCH_'+p)
+              status,q=online('moment/questions.json')
+              if status!=200 or len(json.loads(q).get('questions',[]))!=300:raise RuntimeError('300_CATALOG_FAILED')
+              status_after,yesno_after=online('moment/yes-no/')
+              if status_after!=200 or sha(yesno_before)!=sha(yesno_after):raise RuntimeError('YESNO_MODIFIED')
+              api_status,api_body=online('moment/owner-ai.php')
+              if api_status!=403:raise RuntimeError('OWNER_GATE_BROKEN')
+              print('MOMENT_OWNER_TAPS_RELEASE_SUCCESS public_tap_shows_soon=True owner_route_only_when_verified=True 300_catalog_unchanged=True yesno_unchanged=True payment_untouched=True',flush=True)
+          except BaseException:
+              for p in reversed(touched):
+                  try:put(p,old[p])
+                  except BaseException:print('ROLLBACK_PROBLEM '+p,flush=True)
+              print('MOMENT_OWNER_TAPS_ROLLBACK_ATTEMPTED',flush=True)
+              raise
+          finally:
+              try:f.quit()
+              except BaseException:f.close()
+          PY
