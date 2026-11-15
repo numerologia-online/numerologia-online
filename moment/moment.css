@@ -61,3 +61,179 @@
 .moment-access-status p.moment-club-price{font:700 22px/1.25 'DM Sans',system-ui,sans-serif;color:#9d7a42;margin:0 auto 22px}
 .moment-access-status .moment-ask-button{display:flex;width:100%;max-width:330px;min-height:52px;margin:0 auto;cursor:pointer}
 .moment-access-status .moment-access-link{font-size:15px}
+
+
+/* 2026-11-15: visual affordance for Moment-only topic and question tiles.
+   No changes to the payment/owner gates or disabled "Скоро" state. */
+.explore .category-grid{
+  gap:12px;
+  max-width:800px;
+}
+.explore button.category{
+  grid-template-columns:48px minmax(0,1fr) 40px;
+  gap:3px 13px;
+  min-height:79px;
+  padding:13px 16px;
+  border:1px solid #c6cec9;
+  border-bottom:3px solid #afbcb3;
+  border-radius:17px;
+  background:linear-gradient(180deg,#fcfdfb 0%,#f0f3f0 100%);
+  box-shadow:0 5px 12px rgba(17,56,43,.09);
+  color:#173e31;
+  transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.explore button.category:hover,
+.explore button.category:focus-visible{
+  background:linear-gradient(180deg,#ffffff 0%,#edf3ed 100%);
+  border-color:#b6a27f;
+  border-bottom-color:#b6a27f;
+  box-shadow:0 8px 18px rgba(17,56,43,.13);
+  transform:translateY(-1px);
+}
+.explore button.category:active{
+  transform:translateY(1px);
+  box-shadow:0 2px 8px rgba(17,56,43,.09);
+}
+.explore button.category .category-icon{
+  display:grid;
+  place-items:center;
+  width:44px;
+  height:44px;
+  border:1px solid #d7ddda;
+  background:#e9eeeb;
+  border-radius:12px;
+  font-size:25px;
+  color:#a78148;
+}
+.explore button.category .category-title{
+  font-size:17px;
+  font-weight:750;
+  letter-spacing:-.01em;
+}
+.explore button.category .category-count{
+  margin-top:3px;
+  color:#6d7b72;
+  font-weight:600;
+  font-size:12px;
+}
+.explore button.category::after{
+  content:"›";
+  grid-column:3;
+  grid-row:1/span 2;
+  display:grid;
+  place-items:center;
+  justify-self:end;
+  align-self:center;
+  width:36px;
+  height:36px;
+  border-radius:11px;
+  background:#173e31;
+  color:#fff;
+  font:700 29px/1 Georgia,serif;
+  padding-bottom:3px;
+}
+.explore .question-list{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:11px;
+}
+.explore .question-entry.moment-soon-question{
+  display:grid;
+  grid-template-columns:30px minmax(0,1fr);
+  align-items:center;
+  gap:4px 11px;
+  width:100%;
+  min-height:83px;
+  padding:14px;
+  text-align:left;
+  border:1px solid #ced6d0;
+  border-bottom:3px solid #bbc8bd;
+  border-radius:14px;
+  background:#f9fbf8;
+  box-shadow:0 3px 10px rgba(19,61,47,.07);
+  opacity:1;
+  cursor:not-allowed;
+  color:#193f31;
+}
+.explore .question-entry.moment-soon-question .question-index{
+  grid-column:1;
+  grid-row:1;
+  min-width:0;
+  align-self:start;
+  padding-top:1px;
+  color:#a68b5f;
+  font:600 14px/1.35 Georgia,serif;
+}
+.explore .question-entry.moment-soon-question .question-name{
+  grid-column:2;
+  grid-row:1;
+  align-self:start;
+  font-size:15px;
+  font-weight:650;
+  line-height:1.4;
+}
+.explore .question-entry.moment-soon-question .moment-question-status{
+  grid-column:2;
+  grid-row:2;
+  justify-self:start;
+  margin:4px 0 0;
+  padding:4px 9px;
+  border:1px solid #dbd1bd;
+  border-radius:20px;
+  background:#f1f0eb;
+  color:#84704d;
+  font-size:11px;
+  letter-spacing:.01em;
+  white-space:nowrap;
+  font-weight:700;
+}
+.explore .question-entry.moment-soon-question:hover .question-name{
+  text-decoration:none;
+}
+/* Static, non-JS catalogue must also read as a clearly defined set of tiles. */
+.explore .moment-static-topic{
+  border:1px solid #c6cec9;
+  border-bottom:3px solid #afbcb3;
+  border-radius:17px;
+  background:linear-gradient(180deg,#fcfdfb,#f0f3f0);
+  box-shadow:0 5px 12px rgba(17,56,43,.09);
+}
+.explore .moment-static-topic summary{
+  min-height:76px;
+  padding:14px 16px;
+}
+.explore .moment-static-topic .moment-static-icon{
+  display:grid;
+  place-items:center;
+  width:37px;
+  height:37px;
+  border-radius:11px;
+  background:#e9eeeb;
+}
+.explore .moment-static-topic .moment-static-arrow{
+  display:grid;
+  place-items:center;
+  width:32px;
+  height:32px;
+  border-radius:10px;
+  background:#173e31;
+  color:white;
+  font-size:20px;
+}
+@media(max-width:650px){
+  .explore .category-grid{gap:11px}
+  .explore button.category{
+    grid-template-columns:43px minmax(0,1fr) 36px;
+    min-height:73px;
+    padding:11px 12px;
+    column-gap:10px;
+    border-radius:15px;
+  }
+  .explore button.category .category-icon{width:40px;height:40px;font-size:23px}
+  .explore button.category .category-title{font-size:15.5px;line-height:1.3}
+  .explore button.category .category-count{font-size:11.5px}
+  .explore button.category::after{width:33px;height:33px;font-size:26px}
+  .explore .question-list{grid-template-columns:1fr;gap:9px}
+  .explore .question-entry.moment-soon-question{min-height:75px;padding:12px}
+  .explore .moment-static-topic summary{min-height:71px;padding:11px 12px}
+}
