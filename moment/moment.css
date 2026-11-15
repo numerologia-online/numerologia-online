@@ -237,3 +237,54 @@
   .explore .question-entry.moment-soon-question{min-height:75px;padding:12px}
   .explore .moment-static-topic summary{min-height:71px;padding:11px 12px}
 }
+
+
+/* Moment 300: every item gives feedback, but only verified owner may test.
+   Neither "coming soon" nor this presentation code grants payment access. */
+.explore .question-entry.moment-soon-question{
+  cursor:pointer;
+  -webkit-tap-highlight-color:rgba(184,145,77,.12);
+  transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease,transform .15s ease;
+}
+.explore .question-entry.moment-soon-question:hover,
+.explore .question-entry.moment-soon-question:focus-visible{
+  background:#ffffff;
+  border-color:#bfa271;
+  box-shadow:0 7px 16px rgba(19,61,47,.12);
+  outline-offset:2px;
+}
+.explore .question-entry.moment-soon-question:active{
+  transform:translateY(1px);
+  box-shadow:0 2px 8px rgba(19,61,47,.08);
+}
+.moment-question-info{
+  width:min(440px,calc(100vw - 28px));
+  padding:25px 21px;
+  border:1px solid #cba976;
+  border-radius:21px;
+  background:#fffdfa;
+  color:#173e31;
+  box-shadow:0 18px 55px #152d2670;
+  text-align:center;
+  font:15px/1.5 'DM Sans',system-ui,sans-serif;
+}
+.moment-question-info::backdrop{background:rgba(13,38,28,.65)}
+.moment-question-info h3{
+  margin:0 0 12px;
+  font:500 27px/1.2 'Playfair Display',Georgia,serif;
+}
+.moment-question-info p{margin:10px auto;max-width:360px}
+.moment-question-info .moment-question-modal-title{font-weight:750}
+.moment-question-info .moment-question-modal-close{
+  display:block;
+  width:100%;
+  max-width:280px;
+  min-height:49px;
+  margin:20px auto 0;
+  border:0;
+  border-radius:13px;
+  background:#173e31;
+  color:#fff;
+  font-size:15px;
+  font-weight:750;
+}
