@@ -21,9 +21,9 @@ button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pr
 <h2>Проверяем по одному вопросу</h2>
 <label for="category">Тема</label><select id="category"></select>
 <label for="question">Вопрос</label><select id="question"></select>
-<label for="birth">Дата рождения спрашивающего</label><input id="birth" type="date" required>
-<div id="partner-fields"><label for="other">Дата рождения второго человека</label><input id="other" type="date"></div>
-<label for="moment">Дата и время вопроса (по желанию)</label><input id="moment" type="datetime-local">
+<label for="birth">Дата рождения спрашивающего</label><input id="birth" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false" required>
+<div id="partner-fields"><label for="other">Дата рождения второго человека</label><input id="other" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false"></div>
+<label for="moment">Дата и время вопроса (по желанию)</label><input id="moment" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" maxlength="16" spellcheck="false">
 <button id="generate" type="button">Сгенерировать тестовый ответ</button>
 <p class="note">Если ответ не понравится, изменим инструкцию нейросети. Никаких списаний с баланса нет.</p></section>
 <section class="paper" id="result" hidden><h2 id="result-heading">Ответ</h2><div class="answer" id="answer"></div></section>
@@ -31,10 +31,52 @@ button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pr
 'use strict';
 const $=id=>document.getElementById(id);let catalog;
 async function getJson(url,options={}){const r=await fetch(url,{credentials:'same-origin',cache:'no-store',...options});let d={};try{d=await r.json()}catch{}return {status:r.status,...d};}
+// Plain text fields on iOS: no native calendar, no auto-mask that moves the cursor.
+function toIsoDate(raw){
+  const m=String(raw||'').trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if(!m)return null;
+  const day=Number(m[1]),month=Number(m[2]),year=Number(m[3]);
+  const leap=year%4===0&&(year%100!==0||year%400===0);
+  const days=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31];
+  if(year<1900||year>2099||month<1||month>12||day<1||day>days[month-1])return null;
+  return m[3]+'-'+m[2]+'-'+m[1];
+}
+function toIsoMoment(raw){
+  const value=String(raw||'').trim();
+  if(!value)return null;
+  const m=value.match(/^(\d{2}\.\d{2}\.\d{4})\s+([01]\d|2[0-3]):([0-5]\d)$/);
+  if(!m)return null;
+  const date=toIsoDate(m[1]);
+  return date?date+'T'+m[2]+':'+m[3]:null;
+}
 function showQuestions(){const cat=$('category').value;const found=catalog.questions.filter(q=>q.category===cat);$('question').replaceChildren(...found.map(q=>new Option(q.title,q.id)));updateMode();}
 function updateMode(){const q=catalog.questions.find(x=>x.id===$('question').value);$('partner-fields').hidden=q?.mode!=='partner';}
 $('category').addEventListener('change',showQuestions);$('question').addEventListener('change',updateMode);
 async function init(){try{const access=await getJson('./owner-ai.php');if(!access.ok||!access.owner){$('status').textContent='Войди на главной странице под подтверждённой почтой владельца и снова открой редактор. Для остальных посетителей доступ закрыт.';return;}const r=await fetch('./questions.json',{cache:'no-store'});catalog=await r.json();if(!Array.isArray(catalog.questions)||catalog.questions.length!==300)throw Error('Каталог неполный');$('category').replaceChildren(...catalog.categories.map(c=>new Option(c.title+' ('+c.count+')',c.id)));const requestedId=new URLSearchParams(location.search).get('question');const requested=catalog.questions.find(q=>q.id===requestedId);$('category').value=requested?.category||'love';showQuestions();if(requested){$('question').value=requested.id;updateMode();}$('status').textContent='✓ Режим владельца открыт. Все 300 вопросов доступны для бесплатных тестов.';$('work').hidden=false;}catch(e){$('status').textContent='Не получилось проверить доступ. Попробуй обновить страницу.';}}
-$('generate').addEventListener('click',async()=>{const btn=$('generate');if(!$('birth').value){$('status').textContent='Укажи дату рождения спрашивающего.';return;}if(!$('partner-fields').hidden&&!$('other').value){$('status').textContent='Для этого вопроса нужна дата рождения второго человека.';return;}btn.disabled=true;btn.textContent='Получаю ответ…';$('result').hidden=true;$('status').textContent='Генерирую тестовый ответ. Денег не списываю.';try{const d=await getJson('./owner-ai.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question_id:$('question').value,birth_date:$('birth').value,other_date:$('partner-fields').hidden?null:$('other').value,moment:$('moment').value||null})});if(!d.ok)throw Error(d.error||'Ошибка');$('result-heading').textContent=d.question;$('answer').textContent=d.answer;$('result').hidden=false;$('status').textContent='✓ Ответ получен. Это только предпросмотр, не публикация.';$('result').scrollIntoView({behavior:'smooth'});}catch(e){$('status').textContent='Ответ не получен: '+e.message+'. Баланс не затронут.';}finally{btn.disabled=false;btn.textContent='Сгенерировать ещё раз';}});
+$('generate').addEventListener('click',async()=>{
+  const btn=$('generate');
+  const birth=toIsoDate($('birth').value);
+  if(!birth){$('status').textContent='Введи дату рождения в формате ДД.ММ.ГГГГ, например 09.09.1986.';$('birth').focus();return;}
+  const needsPartner=!$('partner-fields').hidden;
+  const other=needsPartner?toIsoDate($('other').value):null;
+  if(needsPartner&&!other){$('status').textContent='Укажи дату рождения второго человека в формате ДД.ММ.ГГГГ.';$('other').focus();return;}
+  const momentText=$('moment').value.trim();
+  const moment=momentText?toIsoMoment(momentText):null;
+  if(momentText&&!moment){$('status').textContent='Дата и время вопроса: ДД.ММ.ГГГГ ЧЧ:ММ, например 15.11.2026 19:56. Или оставь поле пустым.';$('moment').focus();return;}
+  btn.disabled=true;btn.textContent='Получаю ответ…';$('result').hidden=true;
+  $('status').textContent='Генерирую тестовый ответ. Денег не списываю.';
+  try{
+    const d=await getJson('./owner-ai.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      question_id:$('question').value,birth_date:birth,other_date:other,moment:moment
+    })});
+    if(!d.ok)throw Error(d.error||'Ошибка');
+    $('result-heading').textContent=d.question;
+    $('answer').textContent=d.answer;
+    $('result').hidden=false;
+    $('status').textContent='✓ Ответ получен. Это только предпросмотр, не публикация.';
+    $('result').scrollIntoView({behavior:'smooth'});
+  }catch(e){$('status').textContent='Ответ не получен: '+e.message+'. Баланс не затронут.';}
+  finally{btn.disabled=false;btn.textContent='Сгенерировать ещё раз';}
+});
 init();
 </script></body></html>
