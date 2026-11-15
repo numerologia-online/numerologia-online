@@ -1,4 +1,4 @@
-name: Publish approved Red Flag Love August 13 to REG.RU
+name: Publish and verify approved Red Flag Love August 13 to REG.RU
 on:
   push:
     branches: [main]
