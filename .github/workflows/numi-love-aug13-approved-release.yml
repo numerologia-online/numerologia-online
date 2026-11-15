@@ -120,4 +120,7 @@ jobs:
              raise
             finally:
              ftp.quit()
+            subprocess.run(['git','commit','--allow-empty','-m','REG.RU verified August 13 nine approved Red Flag answers'],check=True)
+            subprocess.run(['git','push','origin','HEAD:main'],check=True)
+            print('AUG13_PUBLICATION_COMPLETED_AND_MARKED',flush=True)
             PY
