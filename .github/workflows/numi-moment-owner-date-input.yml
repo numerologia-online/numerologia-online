@@ -68,6 +68,17 @@ jobs:
           if(m.numericCaret('09.09.1986',5)!==7)throw Error('Year caret');
           if(m.numericCaret('15.11.2026 19:56',8)!==11)throw Error('Moment caret');
           console.log('MOMENT_DATE_MASK_VALIDATED');
+          if(!s.includes('if(!momentEditedByOwner)setMomentNow();'))throw Error('Auto-refresh before generation missing');
+          if(!s.includes("$('moment-now').addEventListener('click',setMomentNow);"))throw Error('Now button wiring missing');
+          if(!s.includes("$('moment').addEventListener('input',()=>{momentEditedByOwner=true;});"))throw Error('Manual edit preservation missing');
+          const timeStart=s.indexOf('function localMomentString(date){');
+          const timeEnd=s.indexOf('let momentEditedByOwner=false;');
+          if(timeStart<0||timeEnd<=timeStart)throw Error('Local moment function missing');
+          const clockCtx={};vm.runInNewContext(s.slice(timeStart,timeEnd)+';timeFormat=localMomentString;',clockCtx);
+          const v=clockCtx.timeFormat;
+          if(v(new Date(2026,10,15,20,7))!=='15.11.2026 20:07')throw Error('Moment time wrong');
+          if(v(new Date(2027,0,1,0,0))!=='01.01.2027 00:00')throw Error('Midnight rollover wrong');
+          console.log('MOMENT_LOCAL_NOW_VALIDATED with_manual_override=true');
           console.log('MOMENT_DATE_ENTRY_VALIDATED no_calendar=true digits_editable=true');
           JS
       - name: Replace ONLY current /moment/owner-preview.html with backup and verification
@@ -80,7 +91,7 @@ jobs:
           from pathlib import Path
           p='moment/owner-preview.html'
           wanted=Path(p).read_bytes()
-          before=subprocess.check_output(['git','show','1ee384923ba31c42b9b2e852d30ad0afa243cbba^:'+p])
+          before=subprocess.check_output(['git','show','8686f45190e0bce2b9c627b08dc4919fb6577552^:'+p])
           def sha(x):return hashlib.sha256(x).hexdigest()
           primary='xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
           def online(name):
@@ -118,7 +129,7 @@ jobs:
             if status!=200 or sha(live)!=sha(wanted):raise RuntimeError('PUBLIC_EDITOR_CHECK_FAILED')
             status,api=online('moment/owner-ai.php')
             if status!=403:raise RuntimeError('OWNER_GATE_CHANGED')
-            print('MOMENT_OWNER_DATE_MASK_PUBLISHED_OK only_file=moment/owner-preview.html owner_403=True purchase_untouched=True',flush=True)
+            print('MOMENT_OWNER_LIVE_NOW_PUBLISHED_OK only_file=moment/owner-preview.html owner_403=True purchase_untouched=True',flush=True)
           except BaseException:
             if touched:
               try:write(current);print('MOMENT_OWNER_DATE_INPUT_ROLLBACK_OK',flush=True)
