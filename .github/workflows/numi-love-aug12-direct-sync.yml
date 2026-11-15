@@ -1,0 +1,93 @@
+name: Safely synchronize Love August 12 main banks with REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/numi-love-aug12-direct-sync.yml'
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  sync:
+    if: github.event.head_commit.message == 'Run verified August 12 REG.RU direct synchronization'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Safeguarded FTPS publish to REG.RU
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,io,json,os,pathlib,hashlib,ssl
+          ids=['first-step','romance','relationship-or-comfort','adult-partner','near-him','hard-moment','relationship-format','family-or-triangle','honest-or-disappear']
+          dates=[f'{i}-8' for i in [12]]
+          files=[f'data/redflag/love/{i}.json' for i in ids]
+          manifest='account-service/private/store-assets.json'
+          local={p:json.loads(pathlib.Path(p).read_text()) for p in files}
+          for p in files:
+           for date in dates:
+            value=local[p]['entries'].get(date)
+            assert isinstance(value,str) and len(value)>650 and value.count('\n\n')==1,(p,date)
+          if not os.environ.get('REG_FTP_USER') or not os.environ.get('REG_FTP_PASSWORD'):raise RuntimeError('REG_RU_SECRETS_MISSING')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          private=home+'/private/numi-account-20261031'
+          dest={p:private+'/store-content/'+p for p in files}
+          dest[manifest]=private+'/store-assets.json'
+          def read(p):
+           mem=io.BytesIO()
+           def receive(data):
+            if mem.tell()+len(data)>1500000:raise RuntimeError('FILE_TOO_LARGE')
+            mem.write(data)
+           ftp.retrbinary('RETR '+p,receive)
+           return mem.getvalue()
+          def write(p,b):
+           ftp.storbinary('STOR '+p,io.BytesIO(b))
+           assert read(p)==b,('VERIFY_FAILED',p)
+          try:
+           current={p:read(dest[p]) for p in [*files,manifest]}
+           updated={}
+           for p in files:
+            bank=json.loads(current[p]);reference=local[p]
+            for field in ['section','questionId','keyRule','status']:
+             if bank[field]!=reference[field]:raise RuntimeError('METADATA_MISMATCH:'+p+':'+field)
+            if p==files[0] and len(bank['entries'])!=366:raise RuntimeError('FREE_COUNT_CHANGED')
+            for day in dates:
+             bank['entries'][day]=reference['entries'][day]
+            updated[p]=(json.dumps(bank,ensure_ascii=False,indent=2)+'\n').encode()
+           m=json.loads(current[manifest])
+           if m.get('version')!=2:raise RuntimeError('MANIFEST_VERSION_CHANGED')
+           for p in files:m['files'][p]=hashlib.sha256(updated[p]).hexdigest()
+           updated[manifest]=(json.dumps(m,ensure_ascii=False,indent=2)+'\n').encode()
+           backup_root=home+'/site-safeguard-backups'
+           ftp.cwd(backup_root)
+           backup=backup_root+'/love-aug12-direct-sync-'+os.environ['GITHUB_RUN_ID']
+           ftp.mkd(backup)
+           for i,p in enumerate([*files,manifest]):
+            write(backup+'/'+str(i).zfill(2)+'-'+p.rsplit('/',1)[-1]+'.before',current[p])
+           print('BACKUP_VERIFIED',flush=True)
+           changed=[]
+           try:
+            for p in [*files,manifest]:
+             if read(dest[p])!=current[p]:raise RuntimeError('CONCURRENT_CHANGE:'+p)
+             if updated[p]!=current[p]:
+              changed.append(p);write(dest[p],updated[p])
+            for p in [*files,manifest]:
+             assert read(dest[p])==updated[p],('FINAL_VERIFY_FAILED',p)
+            print('REG_RU_AUG12_45_ANSWERS_VERIFIED',flush=True)
+           except BaseException:
+            for p in reversed(changed):
+             try:write(dest[p],current[p]);print('ROLLBACK_OK',p,flush=True)
+             except BaseException:print('ROLLBACK_FAILED',p,flush=True)
+            raise
+          finally:
+           try:ftp.quit()
+           except BaseException:ftp.close()
+          PY
