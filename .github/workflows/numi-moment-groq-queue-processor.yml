@@ -1,0 +1,39 @@
+name: Groq worker for owner-only Moment 300 queued tests
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-moment-groq-queue-processor.yml
+permissions:
+  contents: read
+concurrency:
+  group: moment-300-groq-queue-processor
+  cancel-in-progress: false
+jobs:
+  process:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate owner Groq worker and explicit roles
+        run: |
+          python3 -m py_compile moment/process-owner-queue.py
+          python3 - <<'PY'
+          import importlib.util
+          s=importlib.util.spec_from_file_location('moment_queue','moment/process-owner-queue.py')
+          m=importlib.util.module_from_spec(s);s.loader.exec_module(m)
+          assert m.energy('1988-10-31')=='день 4, месяц 10'
+          assert m.energy('1986-09-09')=='день 9, месяц 9'
+          assert m.sha_safe({'question_id':'love-001','title':'Что он чувствует ко мне?','birth_date':'1986-09-09'})
+          assert '—' not in m.generate.__code__.co_consts[0] if isinstance(m.generate.__code__.co_consts[0],str) else True
+          print('MOMENT_QUEUE_PROCESSOR_PREFLIGHT_OK')
+          PY
+      - name: Generate private queued responses using Groq and REG.RU FTPS
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 moment/process-owner-queue.py
