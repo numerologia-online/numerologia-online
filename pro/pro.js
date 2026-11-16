@@ -153,13 +153,20 @@ purchasedProRegion.setAttribute("aria-label","Оплаченный полный 
 results.prepend(purchasedProRegion);
 let purchasedPro=null;
 async function refreshPurchasedPro(){
-  if(schoolClientMode)return;
+  // The verified owner uses the original interactive report, not the
+  // separately rendered purchased-material view.
+  if(schoolClientMode || verifiedOwner){
+    purchasedPro=null;
+    purchasedProRegion.hidden=true;
+    purchasedProRegion.replaceChildren();
+    return;
+  }
   const chosen=input.value.trim();
   const match=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(chosen);
   if(!match)return;
   const {recognizePurchasedReport}=await import("../store-entry.js?v=owner-access-20261116");
   const granted=await recognizePurchasedReport(
-    {product_code:"life_full",birth_date:match[3]+"-"+match[2]+"-"+match[1]},purchasedProRegion);
+    {product_code:"life_full",birth_date:match[3]+"-"+match[2]+"-"+match[1]},purchasedProRegion,{ownerPreview:false});
   if(chosen===input.value.trim()){
     purchasedPro=granted;
     if(granted&&paywallBanner)paywallBanner.hidden=true;
