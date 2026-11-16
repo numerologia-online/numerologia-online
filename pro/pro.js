@@ -235,6 +235,13 @@ function makePaywallLock() {
   panel.append(button);
   return panel;
 }
+function makePreparingPdfButton(message="Скачать PDF · подготовка документа") {
+  const button=element("button",message,"pro-pdf-button pro-pdf-button--top");
+  button.type="button";
+  button.disabled=true;
+  button.setAttribute("aria-label",message);
+  return button;
+}
 function makeLockedPdfButton() {
   const button = element("button", "🔒 Скачать PDF · после оплаты", "pro-pdf-button pro-pdf-button--top");
   button.type = "button";
@@ -1500,15 +1507,13 @@ form.addEventListener("submit", async(event)=>{
     verifiedPurchaseDate="";
     ++purchaseCheckSerial;
   }
-  pdfControls.hidden = true;
-  pdfButtons.replaceChildren();
-  // Full-report PDF stays in its original document block, after the
-  // 14 collapsible questions. Paid answers may no longer push it off-screen.
+  // The original PDF panel is always present once a date has been chosen.
+  // Its real download action appears as soon as the report data are ready.
+  pdfButtons.replaceChildren(
+    hasPaidAccess() ? makePreparingPdfButton() : makeLockedPdfButton()
+  );
+  pdfControls.hidden=false;
   syncPaywallUi();
-  if (!hasPaidAccess()) {
-    pdfButtons.replaceChildren(makeLockedPdfButton());
-    pdfControls.hidden = false;
-  }
   const formattedDate = input.value;
   const id=++requestId;
   hidePointPreview();
@@ -1561,7 +1566,14 @@ form.addEventListener("submit", async(event)=>{
       pdfButtons.replaceChildren(hasPaidAccess() ? createFullReportPdfButton("top") : makeLockedPdfButton());
       pdfControls.hidden = false;
     })
-      .catch(()=>{if(current?.id===id)karmic.replaceChildren(paragraph("Не получилось загрузить кармические программы. Попробуйте обновить страницу.","pro-muted"));});
+      .catch(()=>{
+        if(current?.id!==id)return;
+        karmic.replaceChildren(paragraph("Не получилось загрузить кармические программы. Попробуйте обновить страницу.","pro-muted"));
+        pdfButtons.replaceChildren(hasPaidAccess()
+          ? makePreparingPdfButton("PDF пока недоступен · обновите разбор")
+          : makeLockedPdfButton());
+        pdfControls.hidden=false;
+      });
   }catch(err){
     error.textContent="Не удалось загрузить расчёт. Обновите страницу и попробуйте снова.";
     error.hidden=false;
