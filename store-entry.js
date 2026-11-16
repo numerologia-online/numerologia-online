@@ -1,5 +1,5 @@
 /* Legacy links now open ONE selected material directly; no cart is loaded. */
-import {showInlinePurchase,renderInlineMaterial,walletRequest,walletMaterial} from "./wallet-client.js?v=redflag-status-fix-20261109";
+import {showInlinePurchase,renderInlineMaterial,walletRequest,walletMaterial,walletOwnerMaterial} from "./wallet-client.js?v=owner-material-20261116";
 export function storeDate(value){
   if(typeof value!=="string")return undefined;
   if(/^\d{4}-\d{2}-\d{2}$/.test(value))return value;
@@ -36,6 +36,7 @@ export async function openStore(item,plan="once"){
       if(target.product_code==="club_month")window.dispatchEvent(new Event("numi:club-activated"));
       return;
     }
+    if(!id){renderInlineMaterial(host,material);return;}
     try{
       const {openMaterial}=await import("/store-material.js?v=2");
       await openMaterial(host,id);
@@ -54,6 +55,19 @@ export async function recognizePurchasedReport(item,region){
   region.hidden=true;
   region.replaceChildren();
   try{
+    const ownerDoc=await walletOwnerMaterial(item);
+    if(region.dataset.numiReportKey!==key)return null;
+    if(ownerDoc && ownerDoc.sections?.length){
+      region.hidden=false;
+      const note=document.createElement("p");
+      note.style.cssText="margin:15px 0;padding:12px;border:1px solid #c4af7b;border-radius:12px;background:#f6f1e6;color:#274735;font:700 14px/1.5 system-ui";
+      note.textContent="✓ Доступ владельца. Проверка материала без оплаты.";
+      const content=document.createElement("section");
+      content.style.cssText="margin:12px 0 24px;max-width:100%;overflow-wrap:anywhere";
+      renderInlineMaterial(content,ownerDoc);
+      region.replaceChildren(note,content);
+      return {owner_preview:true,entitlement_id:null,expires_at:null,material:ownerDoc};
+    }
     const quote=await walletRequest("wallet_quote",{item});
     if(region.dataset.numiReportKey!==key)return null;
     if(quote.owned!==true || quote.product_code!==item.product_code ||
