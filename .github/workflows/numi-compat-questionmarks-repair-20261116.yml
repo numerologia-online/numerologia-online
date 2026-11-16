@@ -1,0 +1,163 @@
+name: Repair 12 corrupted compatibility text endings only
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-compat-questionmarks-repair-20261116.yml
+permissions:
+  contents: write
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  repair:
+    if: github.event.head_commit.message == 'Run protected compatibility question-mark repair'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Backup, repair, verify and synchronize only 12 damaged answers
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,io,json,re,os,hashlib,pathlib,subprocess,time,copy
+          numbers=(3,4,8)
+          affected={3:("pairEssence","realLife","money","honestFinal"),4:("pairEssence","realLife","money","honestFinal"),8:("pairEssence","realLife","money","actions")}
+          paths=[f"data/compatibility/deep/energy-{n}.json" for n in numbers]
+          manifest_rel="account-service/private/store-assets.json"
+          def digest(b):return hashlib.sha256(b).hexdigest()
+          def encode(obj):return (json.dumps(obj,ensure_ascii=False,indent=2)+"\n").encode("utf-8")
+          def trim(value,where):
+              if not isinstance(value,str):raise RuntimeError("NOT_STRING "+where)
+              matches=list(re.finditer(r"\?{3,}",value))
+              if len(matches)<12:raise RuntimeError("NO_CORRUPTION_SIGNATURE "+where)
+              pos=matches[0].start()
+              if pos<1150 or pos>2200 or not 180<=len(value)-pos<=700:
+                  raise RuntimeError("TRUNCATION_GUARD "+where+" pos="+str(pos))
+              prefix=value[:pos].rstrip()
+              if not prefix.endswith((".","!","?")):raise RuntimeError("SENTENCE_END_GUARD "+where)
+              if re.search(r"\?{3,}",prefix):raise RuntimeError("QUESTION_MARKS_REMAIN "+where)
+              return prefix
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect("server172.hosting.reg.ru",21)
+          ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip("/")
+          private=root+"/private/numi-account-20261031/"
+          public=root+"/www/xn--c1adkkdfjbp1a4l.online/"
+          backup=root+"/site-safeguard-backups/"
+          def read(target):
+              b=io.BytesIO()
+              def collect(chunk):
+                  if b.tell()+len(chunk)>1500000:raise RuntimeError("REMOTE_TOO_LARGE "+target)
+                  b.write(chunk)
+              ftp.retrbinary("RETR "+target,collect)
+              return b.getvalue()
+          def write(target,value):
+              ftp.storbinary("STOR "+target,io.BytesIO(value))
+              if read(target)!=value:raise RuntimeError("READBACK_FAILED "+target)
+          targets={}
+          source_changes={}
+          manifest_public_path=pathlib.Path(manifest_rel)
+          git_manifest=json.loads(manifest_public_path.read_bytes())
+          manifest_loc=private+"store-assets.json"
+          live_manifest_raw=read(manifest_loc)
+          live_manifest=json.loads(live_manifest_raw)
+          if live_manifest.get("version")!=2 or git_manifest.get("version")!=2:raise RuntimeError("BAD_MANIFEST")
+          new_manifest=copy.deepcopy(live_manifest)
+          for n,rel in zip(numbers,paths):
+              public_loc=public+rel
+              private_loc=private+"store-content/"+rel
+              github_raw=pathlib.Path(rel).read_bytes()
+              server_public_raw=read(public_loc)
+              server_private_raw=read(private_loc)
+              if github_raw!=server_public_raw:raise RuntimeError("PUBLIC_GITHUB_DRIFT_ABORT "+rel)
+              if live_manifest["files"].get(rel)!=digest(server_private_raw):
+                  raise RuntimeError("PRIVATE_HASH_MISMATCH_ABORT "+rel)
+              if git_manifest["files"].get(rel)!=digest(server_private_raw):
+                  raise RuntimeError("GITHUB_HASH_DRIFT_ABORT "+rel)
+              pub=json.loads(github_raw)
+              pri=json.loads(server_private_raw)
+              if set(pub.get("blocks",{}))!={"pairEssence"} or len(pri.get("blocks",{}))!=13:
+                  raise RuntimeError("UNEXPECTED_BANK_SHAPE "+rel)
+              if pub["blocks"]["pairEssence"]!=pri["blocks"]["pairEssence"]:
+                  raise RuntimeError("PUBLIC_PRIVATE_FIRST_CHAPTER_DRIFT "+rel)
+              corrupted=[]
+              for key,block in pri["blocks"].items():
+                  text=block.get("text")
+                  if not isinstance(text,str):raise RuntimeError("INVALID_TEXT "+rel+" "+key)
+                  has_bad=bool(re.search(r"\?{3,}",text))
+                  if has_bad!=(key in affected[n]):
+                      raise RuntimeError("UNEXPECTED_AFFECTED_KEYS "+rel+" "+key)
+                  if has_bad:
+                      edited=trim(text,rel+" "+key)
+                      block["text"]=edited
+                      corrupted.append(key)
+                      if key=="pairEssence":pub["blocks"][key]["text"]=edited
+              if tuple(corrupted)!=affected[n]:raise RuntimeError("BANK_CORRUPTION_COUNT "+rel)
+              pub_new=encode(pub)
+              pri_new=encode(pri)
+              if not pub_new or not pri_new:raise RuntimeError("EMPTY_DATA")
+              if any(re.search(r"\?{3,}",v["text"]) for v in pri["blocks"].values()):
+                  raise RuntimeError("CORRUPTION_REMAINS "+rel)
+              targets[public_loc]=(server_public_raw,pub_new)
+              targets[private_loc]=(server_private_raw,pri_new)
+              source_changes[rel]=(github_raw,pub_new)
+              new_manifest["files"][rel]=digest(pri_new)
+              print("PREPARED "+rel+" chapters="+",".join(corrupted)+" bytes_removed="+str(sum(len(json.loads(server_private_raw)["blocks"][k]["text"])-len(pri["blocks"][k]["text"]) for k in corrupted)),flush=True)
+          for rel,value in live_manifest["files"].items():
+              if rel not in paths and new_manifest["files"].get(rel)!=value:
+                  raise RuntimeError("UNRELATED_HASH_CHANGED "+rel)
+          for k,v in live_manifest.items():
+              if k!="files" and new_manifest[k]!=v:raise RuntimeError("UNRELATED_MANIFEST_CHANGED")
+          live_manifest_new=encode(new_manifest)
+          targets[manifest_loc]=(live_manifest_raw,live_manifest_new)
+          git_manifest_new=copy.deepcopy(git_manifest)
+          for rel in paths:git_manifest_new["files"][rel]=new_manifest["files"][rel]
+          source_changes[manifest_rel]=(manifest_public_path.read_bytes(),encode(git_manifest_new))
+          if set(source_changes)!={*paths,manifest_rel} or len(targets)!=7:raise RuntimeError("SCOPE_GUARD")
+          print("ALL_PREFLIGHTS_PASSED 12_texts 3_public_banks 3_private_banks 1_private_manifest",flush=True)
+          changed=[]
+          try:
+              prefix=backup+"compat-questionmarks-"+os.environ["GITHUB_RUN_ID"]+"-"
+              for i,(target,(before,after)) in enumerate(targets.items()):
+                  backup_target=prefix+str(i)+"-"+target.removeprefix(root).strip("/").replace("/","-")+".bak"
+                  write(backup_target,before)
+                  print("BACKUP_OK "+str(i),flush=True)
+              for target,(before,after) in targets.items():
+                  write(target,after)
+                  changed.append(target)
+              if not all(read(p)==after for p,(before,after) in targets.items()):
+                  raise RuntimeError("INCOMPLETE_REMOTE_READBACK")
+              print("REG_RU_TEXT_ONLY_REPAIR_VERIFIED 12_texts no_ui_changes no_purchase_changes",flush=True)
+              for rel,(before,after) in source_changes.items():
+                  current=pathlib.Path(rel).read_bytes()
+                  if current!=before:raise RuntimeError("GIT_SOURCE_CHANGED "+rel)
+                  pathlib.Path(rel).write_bytes(after)
+              subprocess.run(["git","config","user.name","github-actions[bot]"],check=True)
+              subprocess.run(["git","config","user.email","41898282+github-actions[bot]@users.noreply.github.com"],check=True)
+              subprocess.run(["git","add",*paths,manifest_rel],check=True)
+              files=subprocess.check_output(["git","diff","--cached","--name-only"],text=True).splitlines()
+              if set(files)!={*paths,manifest_rel}:raise RuntimeError("GIT_CHANGES_OUTSIDE_SCOPE "+str(files))
+              subprocess.run(["git","commit","-m","Fix 12 corrupted compatibility text endings and protected checksums"],check=True)
+              subprocess.run(["git","pull","--rebase","origin","main"],check=True)
+              subprocess.run(["git","push","origin","HEAD:main"],check=True)
+              print("GITHUB_AND_REG_RU_COMPATIBILITY_REPAIR_SUCCESS source_published=true private_readback=true",flush=True)
+          except BaseException:
+              print("ERROR_STARTING_ROLLBACK",flush=True)
+              for target in reversed(changed):
+                  try:
+                      write(target,targets[target][0])
+                      print("ROLLBACK_OK "+target.removeprefix(root),flush=True)
+                  except Exception as ex:
+                      print("ROLLBACK_FAILED "+target.removeprefix(root)+" "+repr(ex),flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except Exception:ftp.close()
+          PY
