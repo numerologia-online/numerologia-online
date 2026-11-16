@@ -24,5 +24,17 @@ jobs:
           expected={name for name,_,_,_ in meta['updates']}
           if expected:expected.add('account-service/private/store-assets.json')
           assert paths==expected,('UNEXPECTED_EDIT_SCOPE',paths^expected)
+          import re
+          flagged=[]
+          pattern=re.compile(r'\b(?:женщин\w*|мужчин\w*|девушк\w*|женск\w*|мужск\w*|вы\s+(?:\w+\s+){0,5}(?:сильной|красивой|готовой|умной|должна|обязана|сама|одна)|я\s+(?:сама|готова|сильная|красивая|должна|обязана))\b',re.I)
+          for n in range(1,23):
+            doc=json.loads(pathlib.Path(f'knowledge/full-report/sections/energy-{n}.json').read_text('utf8').lstrip('\ufeff'))
+            for section,body in doc['sections'].items():
+              for i,p in enumerate(body.get('paragraphs',[])):
+                hits=[m.group() for m in pattern.finditer(p)]
+                if hits:
+                  flagged.append((n,section,i,','.join(hits),p[:260].replace('\n',' ')))
+          print('BROAD_GENDER_REVIEW_TOTAL',len(flagged))
+          for item in flagged:print('BROAD_GENDER_REVIEW',*item)
           print('GENDER_NEUTRAL_AUDIT_OK',len(meta['updates']))
           PY
