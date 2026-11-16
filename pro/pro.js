@@ -108,15 +108,10 @@ const OWNER_TICKET_KEY = "numerologia-owner-oidc-ticket-v1";
 let verifiedOwner = false;
 let ownerSeeFree = false;
 let ownerToolbar = null;
-let verifiedPurchaseId = null;
-let verifiedPurchaseDate = "";
-let purchaseCheckSerial = 0;
-// Independent server-verified access: owner preview or a real active purchase.
-// Never unlock based on a client flag, query parameter, or guessed price.
+// School PDF never trusts a URL parameter: only the separate REG.RU owner gate unlocks it.
 const hasPaidAccess = () => schoolClientMode
   ? verifiedSchoolClientOwner
-  : (verifiedOwner && !ownerSeeFree) ||
-    (verifiedPurchaseId !== null && verifiedPurchaseDate === input.value.trim());
+  : verifiedOwner && !ownerSeeFree;
 
 // The one free chapter is the left major point (birth day / outer image).
 // Never fetch the complete 14-chapter paid bank in this public preview.
@@ -152,32 +147,22 @@ function loadFreeImpression(energy) {
 }
 const paywallBanner = document.querySelector("#pro-paywall-banner");
 const paywallDialog = document.querySelector("#pro-paywall-dialog");
-// A paid customer's own report uses the SAME 14 interactive questions and PDF
-// as the owner, never a separate plain-text material renderer.
+const purchasedProRegion=document.createElement("section");
+purchasedProRegion.hidden=true;
+purchasedProRegion.setAttribute("aria-label","Оплаченный полный разбор жизни");
+results.prepend(purchasedProRegion);
+let purchasedPro=null;
 async function refreshPurchasedPro(){
-  if(schoolClientMode || verifiedOwner) return;
+  if(schoolClientMode || verifiedOwner)return;
   const chosen=input.value.trim();
-  const dateMatch=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(chosen);
-  if(!dateMatch)return;
-  const serial=++purchaseCheckSerial;
-  try{
-    const {walletRequest}=await import("../wallet-client.js?v=owner-material-20261116");
-    const item={product_code:"life_full",birth_date:dateMatch[3]+"-"+dateMatch[2]+"-"+dateMatch[1]};
-    const quote=await walletRequest("wallet_quote",{item});
-    if(serial!==purchaseCheckSerial||chosen!==input.value.trim()||verifiedOwner)return;
-    const purchased=quote.owned===true && quote.product_code==="life_full" &&
-      /^[a-f0-9-]{36}$/i.test(String(quote.entitlement_id||""));
-    const newlyUnlocked=purchased && !(verifiedPurchaseId && verifiedPurchaseDate===chosen);
-    verifiedPurchaseId=purchased?quote.entitlement_id:null;
-    verifiedPurchaseDate=purchased?chosen:"";
-    syncPaywallUi();
-    if(newlyUnlocked && current && !results.hidden){
-      // Native sections were initially created in free mode. Recalculate
-      // them with the verified purchase, preserving the original layout.
-      form.requestSubmit();
-    }
-  }catch(_){
-    // Network or login errors never authorize a paid report.
+  const match=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(chosen);
+  if(!match)return;
+  const {recognizePurchasedReport}=await import("../store-entry.js?v=report-annual-20261109");
+  const granted=await recognizePurchasedReport(
+    {product_code:"life_full",birth_date:match[3]+"-"+match[2]+"-"+match[1]},purchasedProRegion);
+  if(chosen===input.value.trim() && !verifiedOwner){
+    purchasedPro=granted;
+    if(granted&&paywallBanner)paywallBanner.hidden=true;
   }
 }
 window.addEventListener("numi:wallet-updated",()=>{if(!results.hidden)void refreshPurchasedPro();});
@@ -197,7 +182,10 @@ if (startBrowserLogin) {
   location.assign(AUTH_SERVER + "/api/start?return_to=pro");
 }
 function showPaymentInfo() {
-  if (schoolClientMode || !paywallDialog || hasPaidAccess()) return;
+  if(purchasedPro&&!purchasedProRegion.hidden){
+    purchasedProRegion.scrollIntoView({behavior:"smooth",block:"start"});return;
+  }
+  if (schoolClientMode || !paywallDialog) return;
   const note = paywallDialog.querySelector("#pro-paywall-checkout-note");
   if (note) {
     note.textContent = "";
@@ -211,7 +199,7 @@ function showPaymentInfo() {
 }
 async function previewCheckout(choice) {
   try {
-    const {openStore,storeDate}=await import("../store-entry.js?v=owner-native-ui-20261116");
+    const {openStore,storeDate}=await import("../store-entry.js?v=report-annual-20261109");
     await openStore({product_code:"life_full",birth_date:storeDate(input.value)},choice==="club"?"club":"once");
   } catch (_) {
     const note=paywallDialog?.querySelector("#pro-paywall-checkout-note");
@@ -234,13 +222,6 @@ function makePaywallLock() {
   button.addEventListener("click", showPaymentInfo);
   panel.append(button);
   return panel;
-}
-function makePreparingPdfButton(message="Скачать PDF · подготовка документа") {
-  const button=element("button",message,"pro-pdf-button pro-pdf-button--top");
-  button.type="button";
-  button.disabled=true;
-  button.setAttribute("aria-label",message);
-  return button;
 }
 function makeLockedPdfButton() {
   const button = element("button", "🔒 Скачать PDF · после оплаты", "pro-pdf-button pro-pdf-button--top");
@@ -298,46 +279,45 @@ function readSignedMiniAppData() {
   try { return new URLSearchParams(fragment).get("tgWebAppData") || ""; }
   catch (_) { return ""; }
 }
-// The first-party REG.RU account is the common owner identity across the site.
-// In Telegram, establish the same signed session used by the normal cabinet
-// when the current tab does not yet have its login cookie.
-async function verifyRegRuOwner() {
-  const check = async () => {
-    const response = await fetch("/api/numi-owner-access.php", {
-      method:"GET", credentials:"same-origin", cache:"no-store",
-      headers:{"Accept":"application/json"}
-    });
-    if (!response.ok) throw Error("REG_OWNER_CHECK_FAILED");
-    const data=await response.json();
-    if (data?.ok!==true) throw Error("REG_OWNER_CHECK_UNAVAILABLE");
-    return data;
-  };
-  let status=await check();
-  if (!status.owner && !status.authenticated) {
-    const signed=readSignedMiniAppData();
-    if (signed && signed.length<12000) {
-      const login=await fetch("/api/numi-account.php",{
-        method:"POST", credentials:"same-origin", cache:"no-store",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({action:"telegram",init_data:signed})
-      });
-      if (login.ok) status=await check();
-    }
-  }
-  if (status.owner!==true) return false;
-  verifiedOwner=true;
-  ownerSeeFree=false;
-  showOwnerControls();
-  if (current && input.value) form.requestSubmit();
-  return true;
-}
 async function verifyOwnerAccess() {
   if (schoolClientMode) return;
+  // Only the authenticated REG.RU owner gets the original interactive report.
   try {
-    if (await verifyRegRuOwner()) return;
-  } catch (err) {
-    console.warn("Проверка владельца REG.RU недоступна, пробуем прежний способ",err);
+    const checkOwner = async () => {
+      const response = await fetch("/api/numi-owner-access.php", {
+        method:"GET",credentials:"same-origin",cache:"no-store",
+        headers:{"Accept":"application/json"}
+      });
+      if (!response.ok) return false;
+      const result=await response.json();
+      return result?.ok===true && result?.owner===true;
+    };
+    let owner=await checkOwner();
+    if (!owner) {
+      const signed=readSignedMiniAppData();
+      if (signed && signed.length<12000) {
+        const login=await fetch("/api/numi-account.php",{
+          method:"POST",credentials:"same-origin",cache:"no-store",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({action:"telegram",init_data:signed})
+        });
+        if (login.ok) owner=await checkOwner();
+      }
+    }
+    if (owner) {
+      verifiedOwner=true;
+      ownerSeeFree=false;
+      purchasedPro=null;
+      purchasedProRegion.hidden=true;
+      purchasedProRegion.replaceChildren();
+      showOwnerControls();
+      if (current && input.value) form.requestSubmit();
+      return;
+    }
+  } catch (error) {
+    console.warn("Проверка владельца REG.RU пока недоступна",error);
   }
+  // Keep the original, previously supported owner sign-in fallback.
   try {
     const initData = readSignedMiniAppData();
     let response;
@@ -1501,19 +1481,16 @@ form.addEventListener("submit", async(event)=>{
   error.hidden=true;
   closeKarmicInline();
   invalidateFullPdf();
-  // A purchase is valid only for its exact, server-checked birth date.
-  if (verifiedPurchaseDate!==input.value.trim()){
-    verifiedPurchaseId=null;
-    verifiedPurchaseDate="";
-    ++purchaseCheckSerial;
-  }
-  // The original PDF panel is always present once a date has been chosen.
-  // Its real download action appears as soon as the report data are ready.
-  pdfButtons.replaceChildren(
-    hasPaidAccess() ? makePreparingPdfButton() : makeLockedPdfButton()
-  );
-  pdfControls.hidden=false;
+  purchasedPro=null;
+  purchasedProRegion.hidden=true;
+  purchasedProRegion.dataset.numiReportKey="";
+  pdfControls.hidden = true;
+  pdfButtons.replaceChildren();
   syncPaywallUi();
+  if (!hasPaidAccess()) {
+    pdfButtons.replaceChildren(makeLockedPdfButton());
+    pdfControls.hidden = false;
+  }
   const formattedDate = input.value;
   const id=++requestId;
   hidePointPreview();
@@ -1566,14 +1543,7 @@ form.addEventListener("submit", async(event)=>{
       pdfButtons.replaceChildren(hasPaidAccess() ? createFullReportPdfButton("top") : makeLockedPdfButton());
       pdfControls.hidden = false;
     })
-      .catch(()=>{
-        if(current?.id!==id)return;
-        karmic.replaceChildren(paragraph("Не получилось загрузить кармические программы. Попробуйте обновить страницу.","pro-muted"));
-        pdfButtons.replaceChildren(hasPaidAccess()
-          ? makePreparingPdfButton("PDF пока недоступен · обновите разбор")
-          : makeLockedPdfButton());
-        pdfControls.hidden=false;
-      });
+      .catch(()=>{if(current?.id===id)karmic.replaceChildren(paragraph("Не получилось загрузить кармические программы. Попробуйте обновить страницу.","pro-muted"));});
   }catch(err){
     error.textContent="Не удалось загрузить расчёт. Обновите страницу и попробуйте снова.";
     error.hidden=false;
