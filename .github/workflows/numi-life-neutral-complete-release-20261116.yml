@@ -1,0 +1,64 @@
+name: Publish carefully reviewed full-life gender-neutral texts to REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-life-neutral-complete-release-20261116.yml
+permissions:
+  contents: write
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout current main and full audit history
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Prepare exactly reviewed gender-neutral life-report corrections
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/neutralize-life-gender-20261116.py
+          python3 -m py_compile scripts/deploy-life-neutral-20261116.py
+          python3 scripts/neutralize-life-gender-20261116.py prepare
+          git diff --check
+          python3 - <<'PY'
+          import json,subprocess,pathlib
+          item=json.loads(pathlib.Path('/tmp/numi-life-gender-release.json').read_text('utf8'))
+          wanted={entry[0] for entry in item['updates']}
+          assert 18<=len(wanted)<=22,('SCOPE_TOO_SMALL_OR_LARGE',len(wanted))
+          expected=wanted|{'account-service/private/store-assets.json'}
+          changed=set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())
+          assert expected==changed,('UNRELATED_FILE_MODIFIED',changed^expected)
+          for name in wanted:
+              before=json.loads(subprocess.check_output(['git','show','HEAD:'+name]).decode('utf-8-sig'))
+              after=json.loads(pathlib.Path(name).read_text('utf8').lstrip('\ufeff'))
+              assert list(before['sections'])==list(after['sections'])
+              for key in before['sections']:
+                  assert before['sections'][key].get('title')==after['sections'][key].get('title')
+                  assert list(before['sections'][key])==list(after['sections'][key])
+                  x=before['sections'][key]
+                  y=after['sections'][key]
+                  if 'content' in x and 'paragraphs' in x and x['content']=='\n\n'.join(x['paragraphs']):
+                      assert y['content']=='\n\n'.join(y['paragraphs'])
+          print('LIFE_NEUTRAL_RELEASE_SOURCE_APPROVED',len(wanted),'text_banks, original_order=true original_titles=true pdf_sync=true no_site_code_changed=true',flush=True)
+          PY
+      - name: Save original prior versions and approved edits in GitHub before touching website
+        run: |
+          git config user.name "numi-neutral-life-editor"
+          git config user.email "numi-neutral-life-editor@users.noreply.github.com"
+          git add -- knowledge/full-report/sections/energy-*.json account-service/private/store-assets.json
+          git commit -m "Full life: carefully neutralize gender assumptions in all 22 energy banks"
+          git push origin HEAD:refs/heads/main
+          echo 'LIFE_NEUTRAL_GITHUB_COMMITTED'
+      - name: Back up, deploy and verify only full-life text bank copies and paid manifest
+        env:
+          REG_FTP_USER: \${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: \${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 scripts/deploy-life-neutral-20261116.py
