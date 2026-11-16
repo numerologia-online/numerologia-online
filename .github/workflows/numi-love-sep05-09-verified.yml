@@ -139,21 +139,42 @@ jobs:
                   write(backup+'/'+str(i).zfill(2)+'-'+p.rsplit('/',1)[-1]+'.before',old[p])
               print('SEP05_09_ALL_TEN_BACKUPS_VERIFIED',flush=True)
               try:
-                  for p in [*paths,manifest_path]:
+                  for p in paths:
                       if read(remote[p])!=old[p]:
-                          raise RuntimeError('CONCURRENT_REMOTE_FILE_CHANGE:'+p)
+                          raise RuntimeError('CONCURRENT_REMOTE_BANK_CHANGE:'+p)
                       if old[p]!=new[p]:
                           touched.append(p)
                           write(remote[p],new[p])
-                  for p in [*paths,manifest_path]:
+                  for p in paths:
                       if read(remote[p])!=new[p]:
-                          raise RuntimeError('FINAL_REG_RU_READBACK_FAILED:'+p)
+                          raise RuntimeError('FINAL_BANK_READBACK_FAILED:'+p)
+                  # Other site releases may update unrelated manifest keys while banks upload.
+                  # Merge our nine hashes into the latest manifest; never revert unrelated changes.
+                  latest_manifest_bytes=read(remote[manifest_path])
+                  latest_manifest=json.loads(latest_manifest_bytes)
+                  if latest_manifest.get('version')!=2 or not isinstance(latest_manifest.get('files'),dict):
+                      raise RuntimeError('LATEST_MANIFEST_UNEXPECTED_SCHEMA')
+                  before_manifest=json.loads(old[manifest_path])
+                  for p in paths:
+                      if latest_manifest['files'].get(p)!=before_manifest['files'].get(p):
+                          raise RuntimeError('CONCURRENT_MANIFEST_CHANGE_TO_LOVE_BANK:'+p)
+                      latest_manifest['files'][p]=hashlib.sha256(new[p]).hexdigest()
+                  new[manifest_path]=(json.dumps(latest_manifest,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
+                  old[manifest_path]=latest_manifest_bytes
+                  if read(remote[manifest_path])!=latest_manifest_bytes:
+                      raise RuntimeError('CONCURRENT_MANIFEST_CHANGE_DURING_MERGE')
+                  if new[manifest_path]!=old[manifest_path]:
+                      touched.append(manifest_path)
+                      write(remote[manifest_path],new[manifest_path])
                   print('LOVE_SEP05_09_REG_RU_VERIFIED_45_APPROVED_ANSWERS',flush=True)
               except BaseException:
                   for p in reversed(touched):
                       try:
-                          write(remote[p],old[p])
-                          print('ROLLBACK_VERIFIED:'+p,flush=True)
+                          if read(remote[p])!=new[p]:
+                              print('ROLLBACK_SKIPPED_EXTERNAL_CHANGE:'+p,flush=True)
+                          else:
+                              write(remote[p],old[p])
+                              print('ROLLBACK_VERIFIED:'+p,flush=True)
                       except BaseException:
                           print('ROLLBACK_FAILED:'+p,flush=True)
                   raise
