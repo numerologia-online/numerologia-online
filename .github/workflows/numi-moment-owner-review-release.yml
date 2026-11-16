@@ -1,0 +1,114 @@
+name: Publish owner-only review system for 300 questions to REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-moment-owner-review-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify independent owner review has no store access
+        run: |
+          php -l moment/owner-review.php
+          php -l moment/owner-ai.php
+          python3 - <<'PY'
+          import pathlib,json
+          review=pathlib.Path('moment/owner-review.php').read_text('utf8')
+          page=pathlib.Path('moment/owner-preview.html').read_text('utf8')
+          q=json.loads(pathlib.Path('moment/questions.json').read_text('utf8'))
+          assert len(q['questions'])==300
+          assert len({x['id'] for x in q['questions']})==300
+          assert 'naTestOwner($owner)' in review
+          assert 'naAllowedOrigins()' in review
+          assert 'numi-moment-editorial-review' in review
+          assert "'approved'" in review
+          for forbidden in ('balance','wallet','yookassa','telegram-bot','account-balance','order-paid'):
+            assert forbidden not in review.lower(),forbidden
+          assert 'review-approve' in page and 'review-revision' in page
+          assert 'owner-review.php' in page
+          assert 'generate-cloudflare' in page
+          pathlib.Path('/tmp/moment-owner-review.js').write_text(page.split('<script>',1)[1].split('</script>',1)[0],'utf8')
+          print('MOMENT_OWNER_REVIEW_PREFLIGHT_OK questions=300 no_checkout=true')
+          PY
+          node --check /tmp/moment-owner-review.js
+      - name: Backup live editor and publish only review PHP and review editor
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,subprocess,ssl,ftplib,io,pathlib,hashlib,urllib.request,urllib.error,time
+          preview=pathlib.Path('moment/owner-preview.html').read_bytes()
+          review=pathlib.Path('moment/owner-review.php').read_bytes()
+          expected=subprocess.check_output(['git','show','e8aeeb92a6ae64d568bcb4dd5e1c238b8d014cc6^:moment/owner-preview.html'])
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          site=home+'/www/xn--c1adkkdfjbp1a4l.online/moment/'
+          oldpage=site+'owner-preview.html'
+          newapi=site+'owner-review.php'
+          def read(path):
+            output=io.BytesIO()
+            try:ftp.retrbinary('RETR '+path,output.write)
+            except ftplib.error_perm as err:
+              if str(err).startswith('550'):return None
+              raise
+            return output.getvalue()
+          def write(path,data):
+            ftp.storbinary('STOR '+path,io.BytesIO(data))
+            if read(path)!=data:raise RuntimeError('REVIEW_FTP_READBACK_FAILED')
+          changed=[]
+          try:
+            old=read(oldpage)
+            prior=read(newapi)
+            if old not in (expected,preview):raise RuntimeError('LIVE_EDITOR_CHANGED_ABORT')
+            if prior not in (None,review):raise RuntimeError('REVIEW_ENDPOINT_ALREADY_CHANGED_ABORT')
+            protected=read(home+'/private/numi-account-20261031/core.php')
+            if not protected or b'function naTestOwner' not in protected:
+              raise RuntimeError('OWNER_GATE_MISSING')
+            if old!=preview:
+              backup=home+'/site-safeguard-backups/moment-owner-before-review-'+time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'.bak'
+              write(backup,old)
+            if prior!=review:
+              write(newapi,review);changed.append((newapi,prior))
+            if old!=preview:
+              write(oldpage,preview);changed.append((oldpage,old))
+            public='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/'
+            req=urllib.request.Request(public+'owner-preview.html?verify='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
+            with urllib.request.urlopen(req,timeout=28) as res:
+              status=res.status
+              served=res.read(160000)
+            if status!=200 or hashlib.sha256(served).digest()!=hashlib.sha256(preview).digest():
+              raise RuntimeError('REVIEW_EDITOR_LIVE_MISMATCH')
+            for name in ('owner-review.php','owner-ai.php','owner-queue.php'):
+              request=urllib.request.Request(public+name+'?anon='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
+              try:
+                with urllib.request.urlopen(request,timeout=24) as res:status=res.status
+              except urllib.error.HTTPError as err:status=err.code
+              if status!=403:raise RuntimeError('OWNER_ONLY_GATE_FAILED '+name)
+            print('MOMENT_OWNER_REVIEW_PUBLISHED_OK questions=300 private_storage=true owner_403=true no_purchase_changes=true')
+          except BaseException:
+            for path,previous in reversed(changed):
+              try:
+                if previous is None:ftp.delete(path)
+                else:write(path,previous)
+                print('MOMENT_REVIEW_ROLLBACK_OK file='+path.split('/')[-1])
+              except Exception:
+                print('MOMENT_REVIEW_ROLLBACK_FAILED file='+path.split('/')[-1])
+            raise
+          finally:
+            try:ftp.quit()
+            except Exception:ftp.close()
+          PY
