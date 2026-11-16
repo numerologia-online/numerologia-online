@@ -1,0 +1,43 @@
+name: Neutralize ONLY explicit reader gender on isolated editorial branch
+on:
+  push:
+    branches: [editorial/neutral-address-20261116]
+    paths:
+      - .github/workflows/numi-neutral-address-editor.yml
+permissions:
+  contents: write
+jobs:
+  editorial:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: editorial/neutral-address-20261116
+          persist-credentials: true
+      - name: Apply conservative grammar-only changes to original text on the editorial branch
+        run: |
+          python3 scripts/neutralize-full-report-address.py --apply --report neutral-address-report.json
+          python3 - <<'PY'
+          import json,subprocess,pathlib,re
+          summary=json.loads(pathlib.Path('neutral-address-report.json').read_text('utf8'))
+          assert summary['published'] is False
+          assert summary['files_checked']>=65
+          assert 1<=summary['substitutions']<=450
+          assert len(summary['files_changed'])<=70
+          allowed=re.compile(r'^(knowledge/full-report/(?:sections/energy-\d+\.json|free/impression/energy-\d+\.json)|pro/(?:purpose/[^/]+\.json|guidance/energy-\d+\.json|karmic-[^/]+\.json)|karmic-(?:tails|programs)\.md)$')
+          changed=subprocess.check_output(['git','diff','--name-only'],text=True).splitlines()
+          assert changed
+          assert all(allowed.fullmatch(name) for name in changed), changed
+          assert all(name in changed for name in [f['path'] for f in summary['files_changed']])
+          print('NEUTRAL_EDITORIAL_VALIDATED files='+str(len(changed))+' substitutions='+str(summary['substitutions'])+' original_site_unchanged=true')
+          PY
+          git diff --check
+      - name: Commit isolated editable draft; never update production branch or REG.RU
+        run: |
+          git config user.name "numi-editorial-check"
+          git config user.email "numi-editorial-check@users.noreply.github.com"
+          git add knowledge/full-report/sections knowledge/full-report/free/impression pro/purpose pro/guidance pro/karmic-*.json karmic-tails.md karmic-programs.md neutral-address-report.json
+          git commit -m "Editorial draft: neutralize only unambiguous second-person feminine predicates"
+          git push origin HEAD:refs/heads/editorial/neutral-address-20261116
+          echo 'NEUTRAL_EDITORIAL_DRAFT_SAVED only_editorial_branch=true no_website_deploy=true'
