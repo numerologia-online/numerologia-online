@@ -333,3 +333,16 @@
   .explore .question-entry.moment-soon-question .moment-question-chevron{font-size:24px}
   .explore .questions-top h3{font-size:30px}
 }
+
+/* Remember birthdates only within this tab for successive relationship questions. */
+.moment-pair-dates{padding:17px 18px 15px;margin:4px 0 17px;border:1px solid #e2d5be;border-radius:16px;background:#f8f5ed}
+.moment-pair-dates[hidden]{display:none!important}
+.moment-pair-intro{display:flex;flex-direction:column;gap:4px;margin-bottom:13px}
+.moment-pair-intro strong{font:600 22px/1.2 Georgia,serif;color:#153d2f}
+.moment-pair-intro span{color:#788477;font-size:12px;line-height:1.5}
+.moment-pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.moment-pair-grid label{display:flex;flex-direction:column;gap:7px;color:#315445;font-size:13px;font-weight:700}
+.moment-pair-grid input{min-width:0;width:100%;background:#fff;border:1px solid #c9cdbf;border-radius:11px;min-height:49px;padding:11px;color:#163e30;font:16px system-ui,sans-serif}
+.moment-pair-error{font-size:12px;color:#a14334;margin:12px 0 0}
+.moment-pair-change{margin-top:11px;border:0;background:transparent;color:#896d43;text-decoration:underline;text-underline-offset:3px;padding:2px 0;font-size:13px;font-weight:650}
+@media(max-width:550px){.moment-pair-grid{grid-template-columns:1fr;gap:11px}.moment-pair-dates{padding:15px 14px}.moment-pair-intro strong{font-size:21px}}
