@@ -1,4 +1,5 @@
 import { buildFullReportSections } from "../full-report-library.js?v=4";
+import { openFullReportPdfPanel } from "./full-report-pdf-panel.js?v=life-pdf-toolbar-20261116";
 import {loadProtectedFullReportSection} from "./secure-reader.js?v=life-content-20261116";
 import { appendPublicPdfOutro } from "../pdf-public-outro.js?v=2";
 import { findKarmicPrograms, findKarmicTail } from "./karmic-programs-secure.js?v=life-content-20261116";
@@ -332,7 +333,9 @@ const buildFullReportPdf = async () => {
   const schoolFile = typeof customizeDocument === "function"
     ? await customizeDocument(documentDefinition) : null;
   const blob = await new Promise((resolve) => pdfMake.createPdf(documentDefinition).getBlob(resolve));
-  return { url: URL.createObjectURL(blob), filename: schoolFile?.filename || `Полный разбор ${formattedDate}.pdf` };
+  const filename = schoolFile?.filename || `Полный разбор ${formattedDate}.pdf`;
+  const file = new File([blob], filename, {type:"application/pdf"});
+  return { url: URL.createObjectURL(blob), filename, file };
 };
 
 const getFullPdfKey = () => getReport() ? `${getReport().formattedDate}|full-pdf-9966-v1` : "";
@@ -416,16 +419,9 @@ const createFullReportPdfButton = (position = "bottom") => {
       button.dataset.downloading = "1";
       button.textContent = "Готовлю PDF…";
       // Await the same preparation as the background task; never build twice.
-      const { url, filename } = await prepareFullReportPdf();
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      link.target = "_blank";
-      link.rel = "noopener";
-      document.body.append(link);
-      link.click();
-      link.remove();
-      // The URL remains alive for a second download; it is revoked on a new calculation.
+const fileInfo = await prepareFullReportPdf();
+      openFullReportPdfPanel(fileInfo);
+      // Bottom save and share controls remain available inside Telegram.
     } catch (error) {
       console.error(error);
       alert("PDF пока не удалось подготовить. Проверьте подключение к интернету и попробуйте ещё раз.");
