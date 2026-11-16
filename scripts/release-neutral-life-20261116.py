@@ -114,8 +114,8 @@ def deploy():
         targets[public+path]=(oldbytes,newbytes)
         if path.startswith("knowledge/full-report/sections/"):
             targets[private+"store-content/"+path]=(oldbytes,newbytes)
-    targets[private+"store-assets.json"]=(old(MANIFEST),pathlib.Path(MANIFEST).read_bytes())
-    assert len(targets)==29
+    # Private checksum manifest may contain newer hashes for unrelated products.
+    # Never overwrite it wholesale; patch only these 12 verified full-life entries.
     def read(path):
         output=io.BytesIO()
         try:ftp.retrbinary("RETR "+path,output.write)
@@ -126,6 +126,41 @@ def deploy():
     def put(path,value):
         ftp.storbinary("STOR "+path,io.BytesIO(value))
         if read(path)!=value:raise RuntimeError("FTP_UPLOAD_VERIFY_FAILED "+path)
+    manifest_location=private+"store-assets.json"
+    live_manifest_bytes=read(manifest_location)
+    if not live_manifest_bytes:
+        raise RuntimeError("PRODUCTION_MANIFEST_MISSING_ABORT")
+    live_manifest=json.loads(live_manifest_bytes)
+    original_manifest=json.loads(old(MANIFEST))
+    edited_manifest=json.loads(pathlib.Path(MANIFEST).read_bytes())
+    assert live_manifest.get("version")==original_manifest.get("version")==edited_manifest.get("version")==2
+    updated_text=live_manifest_bytes.decode("utf-8")
+    affected=[]
+    for name in TEXT_PATHS:
+        if not name.startswith("knowledge/full-report/sections/"):continue
+        baseline_hash=original_manifest["files"][name]
+        target_hash=edited_manifest["files"][name]
+        assert baseline_hash!=target_hash and len(baseline_hash)==len(target_hash)==64
+        stored=live_manifest["files"].get(name)
+        if stored not in (baseline_hash,target_hash):
+            raise RuntimeError("FULL_LIFE_HASH_CONFLICT_ABORT "+name)
+        if stored==baseline_hash:
+            match=re.compile('("'+re.escape(name)+r'"\s*:\s*")'+re.escape(baseline_hash)+'(")')
+            if len(match.findall(updated_text))!=1:
+                raise RuntimeError("MANIFEST_KEY_NOT_UNIQUE_ABORT "+name)
+            updated_text=match.sub(lambda m:m.group(1)+target_hash+m.group(2),updated_text)
+        affected.append(name)
+    assert len(affected)==12
+    patched_manifest=json.loads(updated_text)
+    for key,value in live_manifest.items():
+        if key!="files" and patched_manifest[key]!=value:
+            raise RuntimeError("UNRELATED_MANIFEST_METADATA_CHANGED_ABORT")
+    for key,value in live_manifest["files"].items():
+        if key not in affected and patched_manifest["files"][key]!=value:
+            raise RuntimeError("UNRELATED_PRODUCT_HASH_CHANGED_ABORT "+key)
+    targets[manifest_location]=(live_manifest_bytes,updated_text.encode("utf-8"))
+    assert len(targets)==29
+    print("NEUTRAL_LIFE_MANIFEST_GUARD_OK private_sha_only=12 unrelated_live_values_preserved=true",flush=True)
     edited=[]
     try:
         # Abort without changing production if any bank differs from the saved baseline.
