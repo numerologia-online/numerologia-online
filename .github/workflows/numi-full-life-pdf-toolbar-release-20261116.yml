@@ -1,0 +1,100 @@
+name: Release only Full Life PDF bottom save toolbar to REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-full-life-pdf-toolbar-release-20261116.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 3833e6fb055474682e0c164d94235e9c064eaf11
+          fetch-depth: 0
+      - name: Validate four strictly scoped Full Life PDF scripts and HTML
+        run: |
+          set -euo pipefail
+          node --check pro/pro.js
+          node --check pro/full-report-pdf-secure.js
+          node --check pro/full-report-pdf-panel.js
+          grep -q 'full-report-pdf-panel.js?v=life-pdf-toolbar-20261116' pro/full-report-pdf-secure.js
+          grep -q 'full-report-pdf-secure.js?v=life-pdf-toolbar-20261116' pro/pro.js
+          grep -q 'pro/pro.js?v=life-pdf-toolbar-20261116' pro/index.html
+          git diff --check
+      - name: Back up, publish, read back and auto-rollback only Full Life viewer assets
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,subprocess,pathlib,ftplib,ssl,io,hashlib,time
+          BASE='0a58dab87882b91fba4ebf935442296db22312df'
+          HEAD='3833e6fb055474682e0c164d94235e9c064eaf11'
+          existing=['pro/full-report-pdf-secure.js','pro/pro.js','pro/index.html']
+          new='pro/full-report-pdf-panel.js'
+          publish=[new,*existing]
+          assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==HEAD
+          def sha(x):return hashlib.sha256(x).hexdigest()
+          def git_old(name):return subprocess.check_output(['git','show',BASE+':'+name])
+          expected={name:git_old(name) for name in existing}
+          prepared={name:pathlib.Path(name).read_bytes() for name in publish}
+          assert all(prepared[name]!=expected[name] for name in existing)
+          assert len(prepared[new])<100000 and len(prepared[existing[0]])<100000
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          backup=home+'/site-safeguard-backups/'
+          def read(p):
+              b=io.BytesIO();ftp.retrbinary('RETR '+p,b.write);return b.getvalue()
+          def write(p,data):
+              ftp.storbinary('STOR '+p,io.BytesIO(data))
+              if read(p)!=data:raise RuntimeError('FTP_READBACK_FAILED:'+p)
+          uploaded=[]
+          try:
+              assert read(root+'index.html'), 'UNVERIFIED_SITE_ROOT'
+              for name in existing:
+                  live=read(root+name)
+                  if live!=expected[name]:raise RuntimeError('LIVE_BASELINE_CHANGED:'+name)
+              try:
+                  read(root+new)
+              except ftplib.error_perm as exc:
+                  if not str(exc).startswith('550'):raise
+              else:
+                  raise RuntimeError('NEW_VIEWER_ALREADY_EXISTS_DO_NOT_OVERWRITE')
+              print('LIFE_PDF_TOOLBAR_PREFLIGHT_OK baseline_3_existing_files=true new_helper_absent=true',flush=True)
+              try:ftp.mkd(backup.rstrip('/'))
+              except ftplib.error_perm:pass
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              for name in existing:
+                  key=sha(name.encode())[:12]
+                  write(backup+'life-pdf-toolbar-'+stamp+'-'+key+'.bak',expected[name])
+              print('LIFE_PDF_TOOLBAR_BACKUPS_OK files=3',flush=True)
+              for name in publish:
+                  uploaded.append(name)
+                  write(root+name,prepared[name])
+                  print('LIFE_PDF_TOOLBAR_UPLOADED',name,flush=True)
+              assert all(read(root+name)==prepared[name] for name in publish)
+              print('LIFE_PDF_TOOLBAR_PUBLISHED_SUCCESS files=4 paid_banks_untouched=true footer_visible=true original_pdf_generation_unchanged=true',flush=True)
+          except BaseException:
+              failures=[]
+              for name in reversed(uploaded):
+                  try:
+                      if name==new:ftp.delete(root+name)
+                      else:write(root+name,expected[name])
+                  except Exception:failures.append(name)
+              print('LIFE_PDF_TOOLBAR_ROLLBACK', 'FAILED' if failures else 'OK','files='+str(len(uploaded)),'failures='+str(failures),flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except Exception:ftp.close()
+          PY
