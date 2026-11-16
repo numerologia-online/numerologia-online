@@ -4,7 +4,7 @@
  * BotFather's existing 'Код денег' menu button is not changed.
  */
 const crypto = require("node:crypto");
-const SITE_URL = "https://numerologia-online.github.io/numerologia-online/";
+const SITE_URL = "https://нумерология-онлайн.рф/";
 const TG_API = "https://api.telegram.org";
 
 function keyboard() {
