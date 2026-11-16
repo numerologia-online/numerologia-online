@@ -75,11 +75,9 @@ export function openFullReportPdfPanel({file, url, filename}) {
   pages.setAttribute("aria-label", "Страницы PDF");
 
   const actions = node("div", "numi-life-pdf-preview-actions");
-  const shareButton = node("button", "", "Поделиться PDF");
+  const shareButton = node("button", "", "Скачать PDF");
   shareButton.type = "button";
-  const downloadButton = node("button", "", "Скачать PDF");
-  downloadButton.type = "button";
-  actions.append(shareButton, downloadButton);
+  actions.append(shareButton);
   dialog.append(topbar, pages, actions);
   document.body.append(dialog);
 
@@ -109,37 +107,32 @@ export function openFullReportPdfPanel({file, url, filename}) {
   closeButton.addEventListener("click",close);
   dialog.addEventListener("close",cleanup,{once:true});
 
-  // The annual report does this exact operation. Keep the PDF File ready
-  // before the user's tap so the iOS native share sheet gets a user gesture.
+  // Preserve the working native iOS share/download behavior in one button.
+  // Fall back to a normal file download only in browsers without file sharing.
   const canShare = typeof navigator.share === "function" &&
     typeof navigator.canShare === "function" &&
     navigator.canShare({files:[file]});
-  shareButton.hidden=!canShare;
-  if (canShare) {
-    shareButton.addEventListener("click",async()=>{
-      if (shareButton.disabled) return;
-      shareButton.disabled=true;
-      try {
-        await navigator.share({files:[file]});
-      } catch (error) {
-        if (error.name!=="AbortError") {
-          downloadButton.hidden=false;
-          alert("Не удалось открыть меню отправки. Можно нажать «Скачать PDF».");
-        }
-      } finally {
-        shareButton.disabled=false;
+  shareButton.addEventListener("click",async()=>{
+    if (shareButton.disabled) return;
+    if (!canShare) {
+      const link=document.createElement("a");
+      link.href=url;
+      link.download=filename;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      return;
+    }
+    shareButton.disabled=true;
+    try {
+      await navigator.share({files:[file]});
+    } catch (error) {
+      if (error.name!=="AbortError") {
+        alert("Не удалось открыть меню сохранения PDF.");
       }
-    });
-  }
-
-  // Identical to the annual report's fallback for Safari/Telegram browsers.
-  downloadButton.addEventListener("click",()=>{
-    const link=document.createElement("a");
-    link.href=url;
-    link.download=filename;
-    document.body.append(link);
-    link.click();
-    link.remove();
+    } finally {
+      shareButton.disabled=false;
+    }
   });
 
   dialog.showModal();
