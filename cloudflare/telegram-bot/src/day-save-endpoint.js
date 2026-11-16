@@ -10,7 +10,7 @@ const WEBSITE_ORIGINS = new Set([
   'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai',
 ]);
 const TRUSTED_SITE_LINKS = [
-  'https://numerologia-online.github.io/numerologia-online/',
+  'https://нумерология-онлайн.рф/',
   'https://xn--c1adkkdfjbp1a4l.online/?view=redflag',
   'https://xn--c1adkkdfjbp1a4l.online/?view=day',
   'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?view=redflag',
