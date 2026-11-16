@@ -1,0 +1,61 @@
+{
+  "operation": "GRAMMATICAL_GENDER_ONLY",
+  "published": false,
+  "files_checked": 72,
+  "files_changed": [
+    {
+      "path": "knowledge/full-report/free/impression/energy-14.json",
+      "replacements": 2
+    },
+    {
+      "path": "knowledge/full-report/free/impression/energy-7.json",
+      "replacements": 2
+    },
+    {
+      "path": "knowledge/full-report/free/impression/energy-9.json",
+      "replacements": 4
+    },
+    {
+      "path": "knowledge/full-report/sections/energy-1.json",
+      "replacements": 1
+    },
+    {
+      "path": "knowledge/full-report/sections/energy-11.json",
+      "replacements": 2
+    },
+    {
+      "path": "knowledge/full-report/sections/energy-13.json",
+      "replacements": 2
+    },
+    {
+      "path": "knowledge/full-report/sections/energy-14.json",
+      "replacements": 6
+    },
+    {
+      "path": "knowledge/full-report/sections/energy-19.json",
+      "replacements": 2
+    },
+    {
+      "path": "knowledge/full-report/sections/energy-2.json",
+      "replacements": 3
+    },
+    {
+      "path": "knowledge/full-report/sections/energy-22.json",
+      "replacements": 1
+    },
+    {
+      "path": "knowledge/full-report/sections/energy-7.json",
+      "replacements": 2
+    },
+    {
+      "path": "knowledge/full-report/sections/energy-8.json",
+      "replacements": 8
+    },
+    {
+      "path": "knowledge/full-report/sections/energy-9.json",
+      "replacements": 4
+    }
+  ],
+  "substitutions": 39,
+  "ambiguous_references_left_unchanged": 163
+}
