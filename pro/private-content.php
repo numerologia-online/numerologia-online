@@ -43,7 +43,8 @@ try {
             naReply(400,['ok'=>false,'error'=>'INVALID_ENERGY']);
         $path='pro/guidance/energy-'.$number.'.json';
     }elseif($kind==='karmic_programs'){
-        $path='pro/karmic-programs.json';
+        // Preserve the exact approved GitHub bank in a non-public server folder.
+        $path=null;
     }elseif($kind==='karmic_tails'){
         $format='text';
     }elseif($kind==='karmic_deepening'){
@@ -57,6 +58,8 @@ try {
 
     if($kind==='karmic_tails'){
         $file=dirname(__DIR__,3).'/private/numi-pro-karmic-source/karmic-tails.md';
+    }elseif($kind==='karmic_programs'){
+        $file=dirname(__DIR__,3).'/private/numi-pro-karmic-source/karmic-programs.json';
     }elseif($privateBank){
         require_once dirname(__DIR__,3).'/private/numi-account-20261031/fulfillment.php';
         $raw=naMaterialRead($path);
