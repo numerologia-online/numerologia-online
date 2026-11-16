@@ -1,5 +1,5 @@
 import { buildFullReportSections } from "../full-report-library.js?v=4";
-import { openFullReportPdfPanel } from "./full-report-pdf-panel.js?v=life-pdf-toolbar-20261116";
+import { openFullReportPdfPanel } from "./full-report-pdf-panel.js?v=life-pdf-year-parity-20261116-r2";
 import {loadProtectedFullReportSection} from "./secure-reader.js?v=life-content-20261116";
 import { appendPublicPdfOutro } from "../pdf-public-outro.js?v=2";
 import { findKarmicPrograms, findKarmicTail } from "./karmic-programs-secure.js?v=life-content-20261116";
