@@ -1,157 +1,234 @@
-// Full life PDF preview: safe bottom Save/Share controls inside Telegram's WebView.
-// PDF content is created by the original controller; no upload or entitlement changes.
-export function openFullReportPdfPanel({file,url,filename}) {
-  const panel = document.createElement("section");
-  panel.setAttribute("role","dialog");
-  panel.setAttribute("aria-modal","true");
-  panel.setAttribute("aria-label","Полный разбор жизни, просмотр PDF");
-  panel.style.cssText="position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;background:#f8f5ed;color:#1c394d;font-family:system-ui,-apple-system,sans-serif";
-  const top=document.createElement("header");
-  top.style.cssText="flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(12px + env(safe-area-inset-top,0px)) 14px 12px;background:white;border-bottom:1px solid #e1d7c8";
-  const title=document.createElement("strong");
-  title.textContent="Полный разбор жизни · PDF";
-  title.style.fontSize="15px";
-  const closeButton=document.createElement("button");
-  closeButton.type="button";
-  closeButton.textContent="Закрыть ✕";
-  closeButton.style.cssText="border:1px solid #d8cdb9;border-radius:10px;background:white;padding:10px 12px;color:#1c394d;font:600 14px system-ui";
-  top.append(title,closeButton);
-  const pages=document.createElement("main");
-  pages.style.cssText="flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px";
-  const status=document.createElement("p");
-  status.textContent="Открываю страницы PDF…";
-  status.setAttribute("role","status");
-  status.style.cssText="padding:40px 10px;color:#536a77;text-align:center;font-size:15px";
-  pages.append(status);
-  const bottom=document.createElement("footer");
-  bottom.style.cssText="flex:none;display:flex;gap:10px;padding:12px 12px calc(14px + env(safe-area-inset-bottom,0px));background:white;border-top:1px solid #dbcdb8;box-shadow:0 -4px 16px #00000012";
-  const share=document.createElement("button");
-  share.type="button";
-  share.textContent="Сохранить / отправить";
-  share.style.cssText="flex:2;min-height:52px;border:0;border-radius:11px;background:#19394f;color:white;font:700 15px system-ui";
-  const download=document.createElement("button");
-  download.type="button";
-  download.textContent="Скачать";
-  download.style.cssText="flex:1;min-height:52px;border:1px solid #baa783;border-radius:11px;background:#f9f5eb;color:#19394f;font:700 14px system-ui";
-  bottom.append(share,download);
-  panel.append(top,pages,bottom);
-  const previousOverflow=document.documentElement.style.overflow;
-  document.documentElement.style.overflow="hidden";
-  document.body.append(panel);
-  let closed=false, observer=null, loadingTask=null, task=null;
-  const visible=new Set(), rendered=new Set();
-  const close=()=>{
-    if(closed)return;
-    closed=true;
-    observer?.disconnect();
-    task?.cancel();
-    loadingTask?.destroy().catch(()=>{});
-    panel.remove();
-    document.documentElement.style.overflow=previousOverflow;
+// Matched to the working "Разбор года" iPhone PDF flow:
+// on-page <dialog>, lazy PDF.js preview, native iOS file sharing and download.
+// The existing protected Full Life PDF engine generates the identical PDF bytes.
+let activeLifePdfPreview = null;
+let pdfViewerPromise = null;
+
+const getLifePdfViewer = () => {
+  if (!pdfViewerPromise) {
+    const build = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/legacy/build/";
+    pdfViewerPromise = import(build + "pdf.min.mjs").then((viewer) => {
+      viewer.GlobalWorkerOptions.workerSrc = build + "pdf.worker.min.mjs";
+      return viewer;
+    }).catch((error) => {
+      pdfViewerPromise = null;
+      throw error;
+    });
+  }
+  return pdfViewerPromise;
+};
+
+const ensureLifePdfPreviewStyle = () => {
+  if (document.getElementById("numi-life-pdf-preview-style-20261116")) return;
+  const style = document.createElement("style");
+  style.id = "numi-life-pdf-preview-style-20261116";
+  // These classes mirror the already-working year/pdf-preview CSS and do
+  // not change any other part of the site.
+  style.textContent = [
+    ".numi-life-pdf-preview {width:min(720px,100vw);height:min(920px,100dvh);margin:auto;padding:0;overflow:hidden;border:0;border-radius:24px;background:#eef1f4;box-shadow:0 28px 80px rgba(22,37,58,.34);color:#294b70;font-family:system-ui,-apple-system,sans-serif;z-index:2147483000}",
+    ".numi-life-pdf-preview::backdrop {background:rgba(20,31,47,.62);backdrop-filter:blur(5px)}",
+    ".numi-life-pdf-preview[open] {display:flex;flex-direction:column}",
+    ".numi-life-pdf-preview-topbar {display:flex;flex-shrink:0;align-items:center;justify-content:space-between;min-height:62px;padding:0 17px 0 22px;border-bottom:1px solid rgba(130,107,62,.2);background:#fcfaf4}",
+    ".numi-life-pdf-preview-topbar p {margin:0;color:#486682;font-size:11px;font-weight:800;letter-spacing:.13em}",
+    ".numi-life-pdf-preview-topbar button {width:42px;height:42px;border:0;border-radius:50%;background:#edf2f6;color:#294b70;font:400 29px system-ui}",
+    ".numi-life-pdf-preview-pages {flex:1;min-height:0;padding:14px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#e7edf3}",
+    ".numi-life-pdf-preview-sheet {display:grid;place-items:center;max-width:595px;margin:0 auto 12px;background:#fffdf8;color:#486682;box-shadow:0 2px 10px rgba(22,37,58,.15)}",
+    ".numi-life-pdf-preview-sheet canvas {display:block;width:100%;height:auto}",
+    ".numi-life-pdf-preview-loading {display:grid;place-content:center;gap:10px;height:100%;padding:32px;color:#294b70;text-align:center}",
+    ".numi-life-pdf-preview-actions {display:flex;flex-shrink:0;gap:12px;align-items:center;justify-content:center;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid #d8d1c4;background:#fcfaf4}",
+    ".numi-life-pdf-preview-actions button {flex:1;min-height:52px;padding:10px 14px;border:1px solid #a98b5b;border-radius:12px;background:#234a63;color:white;font:700 15px/1.25 system-ui}",
+    ".numi-life-pdf-preview-actions button[hidden] {display:none}",
+    ".numi-life-pdf-preview-actions button:disabled {opacity:.55}",
+    "@media(max-width:699px){.numi-life-pdf-preview {width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border-radius:0}.numi-life-pdf-preview-topbar {min-height:58px;padding:0 14px 0 16px}.numi-life-pdf-preview-pages {padding:10px}}"
+  ].join("\n");
+  document.head.append(style);
+};
+
+const node = (tag, className, contents = "") => {
+  const element = document.createElement(tag);
+  element.className = className;
+  if (contents) element.textContent = contents;
+  return element;
+};
+
+export function openFullReportPdfPanel({file, url, filename}) {
+  // Keep permissions and PDF generation in the parent full-report controller.
+  // Never make another entitlement request or generate an alternative PDF here.
+  if (!(file instanceof File) || file.type !== "application/pdf" || !url || !filename) {
+    throw new Error("Подготовленный PDF не найден");
+  }
+  activeLifePdfPreview?.close();
+  ensureLifePdfPreviewStyle();
+
+  const dialog = node("dialog", "numi-life-pdf-preview");
+  dialog.setAttribute("aria-label", "Просмотр и сохранение полного разбора жизни");
+  const topbar = node("div", "numi-life-pdf-preview-topbar");
+  const title = node("p", "", "ВАШ PDF-РАЗБОР");
+  const closeButton = node("button", "", "←");
+  closeButton.type = "button";
+  closeButton.setAttribute("aria-label", "Вернуться к разбору");
+  topbar.append(title, closeButton);
+
+  const pages = node("div", "numi-life-pdf-preview-pages");
+  pages.setAttribute("role", "region");
+  pages.setAttribute("tabindex", "0");
+  pages.setAttribute("aria-label", "Страницы PDF");
+
+  const actions = node("div", "numi-life-pdf-preview-actions");
+  const shareButton = node("button", "", "Поделиться PDF");
+  shareButton.type = "button";
+  const downloadButton = node("button", "", "Скачать PDF");
+  downloadButton.type = "button";
+  actions.append(shareButton, downloadButton);
+  dialog.append(topbar, pages, actions);
+  document.body.append(dialog);
+
+  const preview = {dialog, pages, visible:new Set(), rendered:new Set(), observer:null, canvasTask:null, loadingTask:null, document:null, rendering:false, closed:false};
+  const setMessage = (message) => {
+    const status = node("p", "numi-life-pdf-preview-loading", message);
+    status.setAttribute("role", "status");
+    pages.replaceChildren(status);
   };
+  const cleanup = () => {
+    if (preview.closed) return;
+    preview.closed = true;
+    preview.observer?.disconnect();
+    preview.visible.clear();
+    preview.canvasTask?.cancel();
+    preview.loadingTask?.destroy().catch(()=>{});
+    pages.replaceChildren();
+    dialog.remove();
+    if (activeLifePdfPreview===preview) activeLifePdfPreview=null;
+  };
+  const close = () => {
+    if (dialog.open) dialog.close();
+    else cleanup();
+  };
+  preview.close = close;
+  activeLifePdfPreview=preview;
   closeButton.addEventListener("click",close);
-  const saveFile=()=>{
-    const a=document.createElement("a");
-    a.href=url;
-    a.download=filename;
-    a.rel="noopener";
-    document.body.append(a);
-    a.click();
-    a.remove();
-  };
-  download.addEventListener("click",saveFile);
-  share.addEventListener("click",async()=>{
-    if(share.disabled)return;
-    share.disabled=true;
-    try{
-      if(typeof navigator.share==="function" &&
-         typeof navigator.canShare==="function" &&
-         navigator.canShare({files:[file]})){
-        // Native iOS menu contains "Save to Files" and messaging apps.
+  dialog.addEventListener("close",cleanup,{once:true});
+
+  // The annual report does this exact operation. Keep the PDF File ready
+  // before the user's tap so the iOS native share sheet gets a user gesture.
+  const canShare = typeof navigator.share === "function" &&
+    typeof navigator.canShare === "function" &&
+    navigator.canShare({files:[file]});
+  shareButton.hidden=!canShare;
+  if (canShare) {
+    shareButton.addEventListener("click",async()=>{
+      if (shareButton.disabled) return;
+      shareButton.disabled=true;
+      try {
         await navigator.share({files:[file]});
-      }else{
-        saveFile();
-        alert("Системное меню сохранения недоступно в этом браузере. Используйте «Скачать».");
+      } catch (error) {
+        if (error.name!=="AbortError") {
+          downloadButton.hidden=false;
+          alert("Не удалось открыть меню отправки. Можно нажать «Скачать PDF».");
+        }
+      } finally {
+        shareButton.disabled=false;
       }
-    }catch(error){
-      if(error?.name!=="AbortError"){
-        console.error("PDF share error:",error);
-        alert("Не удалось открыть меню сохранения. Попробуйте «Скачать».");
-      }
-    }finally{share.disabled=false;}
+    });
+  }
+
+  // Identical to the annual report's fallback for Safari/Telegram browsers.
+  downloadButton.addEventListener("click",()=>{
+    const link=document.createElement("a");
+    link.href=url;
+    link.download=filename;
+    document.body.append(link);
+    link.click();
+    link.remove();
   });
 
-  // Draw pages progressively: a 125-page PDF must not allocate 125 canvases.
+  dialog.showModal();
+  setMessage("Открываю страницы PDF…");
+
+  // The download controls work even if preview rendering cannot load.
+  const renderPage = async (container) => {
+    const page=await preview.document.getPage(Number(container.dataset.page));
+    if (preview.closed || !preview.visible.has(container)) {
+      page.cleanup();
+      return;
+    }
+    const base=page.getViewport({scale:1});
+    const scale=Math.min(container.clientWidth*Math.min(window.devicePixelRatio||1,2),1200)/base.width;
+    const viewport=page.getViewport({scale});
+    const canvas=document.createElement("canvas");
+    canvas.width=Math.ceil(viewport.width);
+    canvas.height=Math.ceil(viewport.height);
+    canvas.setAttribute("role","img");
+    canvas.setAttribute("aria-label","Страница "+container.dataset.page+" из "+preview.document.numPages);
+    const task=page.render({canvas,viewport});
+    preview.canvasTask=task;
+    try {
+      await task.promise;
+      if (!preview.closed && preview.visible.has(container)) {
+        container.replaceChildren(canvas);
+        preview.rendered.add(container);
+      }
+    } finally {
+      preview.canvasTask=null;
+      page.cleanup();
+    }
+  };
+  const renderVisiblePages=async()=>{
+    if (preview.rendering || preview.closed) return;
+    preview.rendering=true;
+    try {
+      while (!preview.closed) {
+        const next=[...preview.visible].find(sheet=>!preview.rendered.has(sheet));
+        if (!next) break;
+        try {
+          await renderPage(next);
+        } catch(error) {
+          if (preview.closed) return;
+          console.error("Не удалось показать страницу PDF:",error);
+          next.textContent="Не удалось показать страницу.";
+          preview.rendered.add(next);
+        }
+      }
+    } finally {
+      preview.rendering=false;
+    }
+  };
   void (async()=>{
-    const base="https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/legacy/build/";
-    const pdfjs=await import(base+"pdf.min.mjs");
-    pdfjs.GlobalWorkerOptions.workerSrc=base+"pdf.worker.min.mjs";
-    if(closed)return;
-    loadingTask=pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer()),isEvalSupported:false,useWorkerFetch:false,enableXfa:false});
-    const doc=await loadingTask.promise;
-    if(closed)return;
-    const first=await doc.getPage(1), size=first.getViewport({scale:1});
+    const viewer=await getLifePdfViewer();
+    if (preview.closed) return;
+    const data=new Uint8Array(await file.arrayBuffer());
+    if (preview.closed) return;
+    preview.loadingTask=viewer.getDocument({data,isEvalSupported:false,useWorkerFetch:false,enableXfa:false});
+    preview.document=await preview.loadingTask.promise;
+    if (preview.closed) return;
+    const first=await preview.document.getPage(1);
+    if (preview.closed) return;
+    const size=first.getViewport({scale:1});
     first.cleanup();
-    if(closed)return;
-    const sheets=Array.from({length:doc.numPages},(_,i)=>{
-      const sheet=document.createElement("article");
+    const sheets=Array.from({length:preview.document.numPages},(_,i)=>{
+      const sheet=node("div","numi-life-pdf-preview-sheet");
       sheet.dataset.page=String(i+1);
-      sheet.style.cssText="width:100%;max-width:720px;margin:0 auto 14px;background:white;box-shadow:0 1px 7px #0002;overflow:hidden";
       sheet.style.aspectRatio=size.width+" / "+size.height;
-      sheet.setAttribute("aria-label","Страница "+(i+1)+" из "+doc.numPages);
       return sheet;
     });
     pages.replaceChildren(...sheets);
-    let drawing=false;
-    const render=async()=>{
-      if(drawing||closed)return;
-      drawing=true;
-      try{
-        while(!closed){
-          const sheet=[...visible].find(s=>!rendered.has(s));
-          if(!sheet)break;
-          const page=await doc.getPage(Number(sheet.dataset.page));
-          if(closed){page.cleanup();break;}
-          const baseViewport=page.getViewport({scale:1});
-          const scale=Math.min((sheet.clientWidth*Math.min(window.devicePixelRatio||1,2))/baseViewport.width,2);
-          const viewport=page.getViewport({scale:Math.max(scale,0.2)});
-          const canvas=document.createElement("canvas");
-          canvas.width=Math.ceil(viewport.width);
-          canvas.height=Math.ceil(viewport.height);
-          canvas.style.cssText="display:block;width:100%;height:auto";
-          try{
-            task=page.render({canvasContext:canvas.getContext("2d"),viewport});
-            await task.promise;
-            if(!closed&&visible.has(sheet)){
-              sheet.replaceChildren(canvas);
-              rendered.add(sheet);
-            }
-          }catch(error){
-            if(!closed&&error?.name!=="RenderingCancelledException"){
-              sheet.textContent="Не удалось показать страницу.";
-              rendered.add(sheet);
-            }
-          }finally{task=null;page.cleanup();}
-        }
-      }finally{drawing=false;}
-    };
-    observer=new IntersectionObserver(entries=>{
-      if(closed)return;
-      for(const entry of entries){
+    pages.scrollTop=0;
+    preview.observer=new IntersectionObserver(entries=>{
+      if (preview.closed) return;
+      for (const entry of entries) {
         const sheet=entry.target;
-        if(entry.isIntersecting)visible.add(sheet);
-        else{
-          visible.delete(sheet);
-          if(rendered.delete(sheet))sheet.replaceChildren();
+        if (entry.isIntersecting) preview.visible.add(sheet);
+        else {
+          preview.visible.delete(sheet);
+          if (preview.rendered.delete(sheet)) sheet.replaceChildren();
         }
       }
-      void render();
+      void renderVisiblePages();
     },{root:pages,rootMargin:"240px 0px"});
-    sheets.forEach(sheet=>observer.observe(sheet));
-  })().catch(error=>{
-    if(closed)return;
-    console.warn("PDF preview unavailable:",error);
-    status.textContent="Страницы не удалось показать внутри Telegram. Готовый PDF можно сохранить или отправить кнопками внизу.";
-    pages.replaceChildren(status);
+    sheets.forEach(sheet=>preview.observer.observe(sheet));
+  })().catch((error)=>{
+    if (preview.closed) return;
+    console.error("Не удалось отобразить страницы PDF:",error);
+    setMessage("Не удалось показать страницы. Готовый PDF можно сохранить или отправить кнопками внизу.");
   });
 }
