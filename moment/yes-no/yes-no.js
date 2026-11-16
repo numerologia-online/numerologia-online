@@ -241,7 +241,7 @@
   });
   back.addEventListener("click", () => {
     if (active) showCategories();
-    else window.location.assign("../");
+    else window.location.assign("../../");
   });
   (async () => {
     try {
