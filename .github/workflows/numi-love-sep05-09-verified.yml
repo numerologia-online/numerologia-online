@@ -7,7 +7,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: reg-ru-manual-publication
+  group: reg-ru-sep05-09-one-time-publication
   cancel-in-progress: false
 jobs:
   publish:
@@ -61,7 +61,7 @@ jobs:
               subprocess.run(['git','push','origin','HEAD:main'],check=True)
           print('GITHUB_APPROVED_SEP05_09_45_ANSWERS_COMMITTED_OR_MATCHED',flush=True)
           PY
-      - name: Backup and publish exactly five September dates to REG.RU then verify readback
+      - name: Back up, publish and verify September 5-9 on REG.RU
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
