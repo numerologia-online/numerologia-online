@@ -1,5 +1,12 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-13 REG.RU published and verified the owner annual PDF page viewer and sharing. Publisher returned to its normal check mode."
+  "mode": "publish",
+  "files": [
+    "pro/pro.js",
+    "pro/index.html"
+  ],
+  "expected_sha256": {
+    "pro/pro.js": "626ab232d4916122cf0368255fdee9cb2b9c5b0040f390d6acaebb22a8ad79f8",
+    "pro/index.html": "81fbcb6f3e8a9984c98e2500d32442f080b24867117cac0b7f528a7ce6ec38d8"
+  },
+  "note": "Remove the two marked notes from the Full Life karmic cards."
 }

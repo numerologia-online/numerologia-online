@@ -1191,14 +1191,11 @@ function compactKarmicList(tailCount = 1) {
   const original = Array.from(karmic.children);
   const codeText = karmic.querySelector(".pro-karmic-current-code");
   const tailCode = codeText?.textContent.replace(/^Кармический хвост\s*/, "").trim() || "";
-  const tailInfo = codeText?.nextElementSibling;
   const tailCard = original.find(node =>
     node.matches?.("details.pro-karma-card") &&
     node.querySelector(":scope > summary > .pro-karma-tail-label")
   );
   if (tailCard) {
-    const summary = tailCard.querySelector(":scope > summary");
-    if (tailInfo?.matches("p.pro-muted")) summary.after(tailInfo);
     codeText?.remove();
   } else if (codeText) {
     // Unrecognised tails also get a single collapsed row.
@@ -1206,7 +1203,6 @@ function compactKarmicList(tailCount = 1) {
     const missingSummary = element("summary");
     formatTailSummary(missingSummary, "", tailCode, tailCount);
     missing.append(missingSummary);
-    if (tailInfo?.matches("p.pro-muted")) missing.append(tailInfo);
     const noDescription = Array.from(karmic.children).find(node => node.matches?.("p.pro-muted") && node.textContent.includes("Для этого хвоста подробный текст"));
     if (noDescription) missing.append(noDescription);
     codeText.replaceWith(missing);
@@ -1256,14 +1252,12 @@ function renderKarmic(matrix, {programs: programsBank, tails: tailsBank, deepeni
   const tailKey = karmicTripleKey(tailValues);
   const tailPlaces = getMatrixTriples(matrix).filter(item => karmicTripleKey(item.values) === tailKey);
   karmic.append(paragraph("Кармический хвост " + code, "pro-karmic-current-code"));
-  karmic.append(paragraph("Первая энергия показывает вход в сценарий. Вторая показывает его развитие. Третья связана с главным уроком. Порядок чисел сохраняется.", "pro-muted"));
 
   function card(title, source, guidance, locations = [], isTail = false) {
     const details = element("details", null, "pro-karma-card");
     const summary = element("summary", title);
     details.append(summary);
     if (locations.length) {
-      details.append(paragraph("Где обнаружена программа. " + locations.map(item => item.label).join(". ") + ".", "pro-karmic-locations"));
       const jump = element("button", "Показать точки на матрице", "pro-karmic-jump");
       jump.type = "button";
       jump.addEventListener("click", () => markKarmicNodes(locations));
@@ -1300,7 +1294,6 @@ function renderKarmic(matrix, {programs: programsBank, tails: tailsBank, deepeni
 
   if (tail) {
     const tailMatches = [{
-      label: "Нижний луч матрицы",
       nodes: ["tailFirst", "tailSecond", "bottom"]
     }, ...tailPlaces.filter(item => item.id !== "tail")];
     // Prefer the new complete five-part reading for this code, if one exists.
