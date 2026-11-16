@@ -1,5 +1,5 @@
 import { buildFullReportSections, loadFullReportSection } from "./full-report-library.js?v=4";
-import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=1";
+import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=2";
 import { findKarmicPrograms, findKarmicTail } from "./karmic-programs.js?v=3";
 
 // Отдельный модуль PDF: документ, фон, скачивание и кэширование.
