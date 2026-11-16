@@ -1,0 +1,43 @@
+name: Retry protected REG.RU sync of already-reviewed full-life partner wording
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-universal-life-partner-retry-ftp-20261116.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  guarded_publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact approved and saved partner text revision
+        uses: actions/checkout@v4
+        with:
+          ref: 3ebcb31a59ab88f75047a3cd43ed1f43b77faef7
+          fetch-depth: 0
+      - name: Preflight exact content revision and protected bank manifest
+        run: |
+          test "$(git rev-parse HEAD)" = "3ebcb31a59ab88f75047a3cd43ed1f43b77faef7"
+          python3 -m py_compile scripts/release-universal-life-partner-20261116.py
+          python3 - <<'PY'
+          import hashlib,json,pathlib,subprocess
+          files=subprocess.check_output(['git','diff','--name-only','HEAD^','HEAD'],text=True).splitlines()
+          banks=[x for x in files if x.startswith('knowledge/full-report/sections/energy-') and x.endswith('.json')]
+          assert len(banks)==18 and set(files)==set(banks+['account-service/private/store-assets.json'])
+          manifest=json.loads(pathlib.Path('account-service/private/store-assets.json').read_text('utf8'))
+          for p in banks:
+            raw=pathlib.Path(p).read_bytes()
+            assert manifest['files'][p]==hashlib.sha256(raw).hexdigest()
+            obj=json.loads(raw.decode('utf-8-sig'))
+            assert obj['sections']['partner']
+          print('UNIVERSAL_PARTNER_RETRY_PREFLIGHT_OK banks=18 no_new_edits=true')
+          PY
+      - name: One guarded FTP publication attempt (full backups, rollback on failure)
+        env:
+          REG_FTP_USER: \${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: \${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 scripts/release-universal-life-partner-20261116.py deploy
