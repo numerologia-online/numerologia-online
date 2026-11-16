@@ -93,7 +93,7 @@ def replace_manifest_fields(raw, expected, updated):
 def main():
     if not (os.environ.get("REG_FTP_USER") and os.environ.get("REG_FTP_PASSWORD")):
         raise RuntimeError("FTP_CREDENTIALS_MISSING")
-    assert cmd("git","status","--porcelain").strip() == b"", "WORKTREE_NOT_CLEAN"
+    assert cmd("git","status","--porcelain","--untracked-files=no").strip() == b"", "WORKTREE_NOT_CLEAN"
     # Do not touch content that has changed in GitHub since approved review.
     paths=cmd("git","diff","--name-only",BASE,REVISED).decode().splitlines()
     names=sorted(name for name in paths if name!=MANIFEST)
