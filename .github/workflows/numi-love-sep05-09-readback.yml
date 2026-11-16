@@ -19,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
-      - name: Fetch REG.RU banks and prove all 45 answers match
+      - name: Independently compare all September 5-9 bank entries with approved answers
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
