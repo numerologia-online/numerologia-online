@@ -355,6 +355,9 @@ async function verifyOwnerAccess() {
     if (answer?.owner !== true || !answer?.user?.id) return;
     verifiedOwner = true;
     ownerSeeFree = false;
+    purchasedPro=null;
+    purchasedProRegion.hidden=true;
+    purchasedProRegion.replaceChildren();
     showOwnerControls();
     if (current && input.value) form.requestSubmit();
   } catch (err) {
