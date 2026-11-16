@@ -1,0 +1,119 @@
+name: Release only full-life energy 14 gender-neutral partner text to REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-life-partner14-neutral-release-20261116.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Verify source, private manifest and exact edit scope
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,hashlib,subprocess
+          p='knowledge/full-report/sections/energy-14.json'
+          b=Path(p).read_bytes()
+          j=json.loads(b.decode('utf-8-sig'))
+          t=j['sections']['partner']
+          assert t['content']=='\n\n'.join(t['paragraphs'])
+          assert 'мужчин' not in t['content'].lower()
+          before=subprocess.check_output(['git','show','HEAD^:'+p])
+          original=json.loads(before.decode('utf-8-sig'))
+          for key in original['sections']:
+            if key!='partner': assert original['sections'][key]==j['sections'][key]
+          assert hashlib.sha256(before).hexdigest()=='7f9ebffeb71588666d4603c2747a9ce6557f9b888761dfc16545e705bb2780a8'
+          assert hashlib.sha256(b).hexdigest()=='82c56733c712fa3996be04bfc8e71b5d1b3179cb19e14a72244310b838b924d3'
+          manifest=json.loads(Path('account-service/private/store-assets.json').read_text('utf8'))
+          assert manifest['files'][p]=='82c56733c712fa3996be04bfc8e71b5d1b3179cb19e14a72244310b838b924d3'
+          print('PARTNER14_PREFLIGHT_OK exact_one_section=true pdf_paragraphs_synced=true')
+          PY
+      - name: Back up and publish only 2 copies and 1 private manifest entry with rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,hashlib,json,re,subprocess,time,pathlib
+          path='knowledge/full-report/sections/energy-14.json'
+          oldhash='7f9ebffeb71588666d4603c2747a9ce6557f9b888761dfc16545e705bb2780a8'
+          newhash='82c56733c712fa3996be04bfc8e71b5d1b3179cb19e14a72244310b838b924d3'
+          desired=pathlib.Path(path).read_bytes()
+          original=subprocess.check_output(['git','show','HEAD^:'+path])
+          if hashlib.sha256(original).hexdigest()!=oldhash or hashlib.sha256(desired).hexdigest()!=newhash:
+            raise RuntimeError('PARTNER14_WRONG_RELEASE_BASE')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          public=home+'/www/xn--c1adkkdfjbp1a4l.online/'+path
+          private=home+'/private/numi-account-20261031/store-content/'+path
+          manifest=home+'/private/numi-account-20261031/store-assets.json'
+          backup=home+'/site-safeguard-backups/'
+          def read(dest):
+            buffer=io.BytesIO()
+            ftp.retrbinary('RETR '+dest,buffer.write)
+            return buffer.getvalue()
+          def put(dest,data):
+            ftp.storbinary('STOR '+dest,io.BytesIO(data))
+            if read(dest)!=data: raise RuntimeError('PARTNER14_FTP_READBACK_FAILED '+dest)
+          targets=[public,private]
+          existing={}
+          updated=[]
+          try:
+            for dest in targets:
+              value=read(dest)
+              if value not in (original,desired): raise RuntimeError('PARTNER14_LIVE_BANK_CONFLICT_ABORT '+dest)
+              existing[dest]=value
+            live_manifest_bytes=read(manifest)
+            live_manifest=json.loads(live_manifest_bytes)
+            value=live_manifest['files'].get(path)
+            if value not in (oldhash,newhash): raise RuntimeError('PARTNER14_LIVE_HASH_CONFLICT_ABORT')
+            if value==oldhash:
+              match=re.compile('("'+re.escape(path)+r'"\s*:\s*")'+oldhash+'(")')
+              before=live_manifest_bytes.decode('utf-8')
+              if len(match.findall(before))!=1: raise RuntimeError('PARTNER14_MANIFEST_FORMAT_ABORT')
+              patched=match.sub(lambda m:m.group(1)+newhash+m.group(2),before).encode('utf8')
+            else:
+              patched=live_manifest_bytes
+            validated=json.loads(patched)
+            for key,v in live_manifest['files'].items():
+              if key!=path and validated['files'][key]!=v: raise RuntimeError('PARTNER14_OTHER_HASH_CHANGED')
+            existing[manifest]=live_manifest_bytes
+            targets.append(manifest)
+            stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+            for i,dest in enumerate(targets):
+              destbytes=desired if dest!=manifest else patched
+              if existing[dest]==destbytes:continue
+              put(backup+'partner14-'+stamp+'-'+str(i)+'.bak',existing[dest])
+            for dest in targets:
+              newbytes=desired if dest!=manifest else patched
+              if existing[dest]==newbytes:continue
+              updated.append(dest)
+              put(dest,newbytes)
+            for dest in targets:
+              newbytes=desired if dest!=manifest else patched
+              if read(dest)!=newbytes:raise RuntimeError('PARTNER14_FINAL_VERIFY_FAILED')
+            print('PARTNER14_REG_RU_PUBLISHED_OK public_bank=true protected_bank=true private_manifest=true unrelated_files_untouched=true')
+          except BaseException:
+            for dest in reversed(updated):
+              try:
+                put(dest,existing[dest])
+                print('PARTNER14_ROLLBACK_OK '+dest)
+              except Exception: print('PARTNER14_ROLLBACK_FAILED '+dest)
+            raise
+          finally:
+            try: ftp.quit()
+            except Exception: ftp.close()
+          PY
