@@ -44,7 +44,7 @@ jobs:
               anomalies=[]
               for key,value in bank.get("blocks",{}).items():
                   payload=json.dumps(value,ensure_ascii=False)
-                  runs=re.findall(r"\\?{3,}",payload)
+                  runs=re.findall(r"\?{3,}",payload)
                   bad_char=payload.count("�")
                   if runs or bad_char:
                       anomalies.append((key,len(runs),max([len(s) for s in runs],default=0),bad_char))
