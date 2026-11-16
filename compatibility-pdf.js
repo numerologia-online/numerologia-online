@@ -1,4 +1,4 @@
-import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=1";
+import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=2";
 
 /**
  * PDF совместимости: только оформление и скачивание, без авторских текстов.
