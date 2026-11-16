@@ -7,7 +7,7 @@
 - `TG_CLIENT_SECRET` - секрет Telegram Login из BotFather.
 - `TG_SESSION_SECRET` - случайный криптографически стойкий ключ, не меньше 32 символов.
 - `AUTH_BASE_URL` - публичный HTTPS-адрес будущего сервера входа, без конечного слеша.
-- `SITE_RETURN_URL` - `https://numerologia-online.github.io/numerologia-online/`.
+- `SITE_RETURN_URL` - `https://нумерология-онлайн.рф/`.
 
 В BotFather > Login Widget > Redirect URIs добавить **точно**: `<AUTH_BASE_URL>/api/callback`.
 
