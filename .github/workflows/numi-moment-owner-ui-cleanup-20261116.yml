@@ -1,4 +1,4 @@
-name: Publish isolated Moment question screen with discreet answer button
+name: Publish selected event question date fields to REG.RU
 on:
   push:
     branches: [main]
@@ -31,7 +31,11 @@ jobs:
           wanted=Path(filename).read_bytes()
           assert b'#review-progress{display:none!important}' in wanted
           assert b'<div hidden><label for="category">' in wanted
-          assert 'Получить ответ ИИ'.encode() in wanted
+          assert 'Получить ответ</button>'.encode() in wanted
+          assert b'id="event-date-fields"' in wanted
+          assert b'id="moment-question-fields"' in wanted
+          assert b'function selectedEventMoment()' in wanted
+          subprocess.run(['node','--check','/dev/stdin'],input=wanted.split(b'<script>')[-1].split(b'</script>')[0],check=True)
           def digest(value):return hashlib.sha256(value).hexdigest()
           refs=subprocess.check_output(['git','log','--format=%H','-n','60','--',filename],text=True).splitlines()
           trusted={digest(subprocess.check_output(['git','show',ref+':'+filename])) for ref in refs}
