@@ -26,7 +26,9 @@ button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pr
 <label for="birth">Дата рождения спрашивающего</label><input id="birth" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false" required>
 <div id="partner-fields"><label for="other">Дата рождения второго человека</label><input id="other" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false"></div>
 <label for="moment">Дата и время вопроса</label><input id="moment" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" maxlength="16" spellcheck="false"><button id="moment-now" type="button">Сейчас</button><p class="moment-time-help">Время телефона подставляется автоматически перед ответом. Можно изменить вручную.</p>
-<button id="generate" type="button">Сгенерировать тестовый ответ</button>
+<button id="generate-cloudflare" type="button" style="background:#285e4a">Проверить быстрый ответ Cloudflare</button>
+<p class="note">Новый прямой способ. Пока проверяем только для владельца, без оплаты.</p>
+<button id="generate" type="button">Резервный способ: Groq через GitHub</button>
 <p class="note">Бесплатный Groq через GitHub. Обработка по очереди, обычно несколько минут. Баланс не списывается.</p>
 <p class="note"><a href="./owner-first-answer.php">Прочитать готовый пример ответа ИИ</a></p>
 <p id="generation-feedback" class="generation-feedback" role="status" aria-live="polite" hidden></p>
@@ -206,6 +208,47 @@ $('generate').addEventListener('click',async()=>{
     feedback.classList.add('is-error');feedback.textContent=explanation;
     $('status').textContent=explanation;
     btn.disabled=false;btn.textContent='Сгенерировать тестовый ответ';
+  }
+});
+$('generate-cloudflare').addEventListener('click',async()=>{
+  const button=$('generate-cloudflare');
+  const birth=toIsoDate($('birth').value);
+  if(!birth){$('status').textContent='Введи дату рождения в формате ДД.ММ.ГГГГ.';$('birth').focus();return;}
+  const needsPartner=!$('partner-fields').hidden;
+  const other=needsPartner?toIsoDate($('other').value):null;
+  if(needsPartner&&!other){$('status').textContent='Введи дату рождения второго человека.';$('other').focus();return;}
+  if(!momentEditedByOwner)setMomentNow();
+  const textMoment=$('moment').value.trim();
+  const moment=textMoment?toIsoMoment(textMoment):null;
+  if(textMoment&&!moment){$('status').textContent='Проверь дату и время вопроса.';$('moment').focus();return;}
+  const feedback=$('generation-feedback');
+  button.disabled=true;button.textContent='Получаю ответ Cloudflare…';
+  feedback.hidden=false;feedback.classList.remove('is-error');
+  feedback.textContent='Проверяю прямое подключение Cloudflare Workers AI. Деньги не списываются.';
+  $('status').textContent='Тестируем прямой ответ Cloudflare для владельца.';
+  $('result').hidden=true;
+  try{
+    const result=await getJson('./owner-ai.php',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({question_id:$('question').value,birth_date:birth,other_date:other,moment})
+    });
+    if(!result.ok || typeof result.answer!=='string')throw Error(result.error||'WORKER_MODEL_UNAVAILABLE');
+    $('result-heading').textContent=result.question;
+    $('answer').textContent=result.answer;
+    $('result').hidden=false;
+    feedback.textContent='✓ Прямое подключение Cloudflare работает, ответ получен.';
+    $('status').textContent='✓ Тестовый ответ Cloudflare готов.';
+    $('result').scrollIntoView({behavior:'smooth'});
+  }catch(error){
+    const code=String(error?.message||'');
+    const message=code==='WORKER_MODEL_UNAVAILABLE'
+      ?'Cloudflare пока не вернул полноценный ответ. Прямое подключение ещё проверяется.'
+      :'Ошибка теста Cloudflare: '+code+'.';
+    feedback.classList.add('is-error');feedback.textContent=message;
+    $('status').textContent=message;
+  }finally{
+    button.disabled=false;button.textContent='Проверить быстрый ответ Cloudflare';
   }
 });
 init();
