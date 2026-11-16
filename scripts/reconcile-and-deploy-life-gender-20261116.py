@@ -110,7 +110,7 @@ def neutralize_newer_partner(n, partner):
         amended["content"]=content
     if re.search(r"(?<!\w)(?:женщин|мужчин|девушк)\w*", "\n\n".join(texts), re.I):
         raise RuntimeError("PARTNER_HAS_REMAINING_GENDER_TERMS energy-"+str(n))
-    if "content" in amended and amended["content"]!="\n\n".join(texts):
+    if "content" in amended and partner.get("content")=="\n\n".join(partner.get("paragraphs",[])) and amended["content"]!="\n\n".join(texts):
         raise RuntimeError("LIVE_PARTNER_PDF_PARAGRAPHS_DIVERGED energy-"+str(n))
     return amended
 
@@ -212,7 +212,7 @@ def main():
             if merged_doc["sections"]["partner"].get("content") is not None and merged_doc["sections"]["partner"].get("paragraphs") is not None:
                 live_partner=merged_doc["sections"]["partner"]
                 old_partner=base_doc["sections"]["partner"]
-                if old_partner.get("content")=="\n\n".join(old_partner.get("paragraphs",[])):
+                if live_doc["sections"]["partner"].get("content")=="\n\n".join(live_doc["sections"]["partner"].get("paragraphs",[])):
                     if live_partner["content"]!="\n\n".join(live_partner["paragraphs"]):
                         raise RuntimeError("PARTNER_PDF_CONTENT_MISMATCH "+name)
             bank_updates[name]=merged
