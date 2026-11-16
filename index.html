@@ -656,9 +656,53 @@
           line-height:1.22;
         }
       }
-      .products > a.product-card.yesno-standalone{background:linear-gradient(112deg,#eef3e9,#d5e5d6 62%,#f6ecd9);color:#164536;min-height:115px;text-decoration:none}
-      .products > a.product-card.yesno-standalone .product-title{font-family:Georgia,serif;font-weight:700;letter-spacing:-.035em}
-      .products > a.product-card.yesno-standalone .product-arrow{background:#fffdf6;color:#164536}
+      /* Separate subscription card: matches other homepage tiles, with subtle numeral artwork. */
+      .products[aria-label="Направления расчётов"] > a.product-card.yesno-standalone{
+        box-sizing:border-box;
+        min-height:128px;
+        padding:20px 78px 20px 28px;
+        background-color:#f6f3eb;
+        background-image:url("assets/yesno-standalone-card.svg");
+        background-position:center;
+        background-size:cover;
+        color:#164536;
+        text-decoration:none;
+        border:1px solid rgba(39,89,62,.2);
+        border-radius:24px;
+      }
+      .products[aria-label="Направления расчётов"] > a.product-card.yesno-standalone .product-title{
+        font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+        font-size:24px;
+        font-weight:800;
+        line-height:1.08;
+        letter-spacing:-.055em;
+        max-width:100%;
+      }
+      .products[aria-label="Направления расчётов"] > a.product-card.yesno-standalone .product-subtitle{
+        max-width:100%;
+        color:#285744;
+        opacity:1;
+      }
+      .products[aria-label="Направления расчётов"] > a.product-card.yesno-standalone .product-arrow{
+        background:rgba(255,255,252,.89);
+        color:#164536;
+      }
+      @media(max-width:699px){
+        .products[aria-label="Направления расчётов"] > a.product-card.yesno-standalone{
+          min-height:84px;
+          padding:10px 68px 10px 18px;
+          border-radius:21px;
+        }
+        .products[aria-label="Направления расчётов"] > a.product-card.yesno-standalone .product-title{
+          font-size:clamp(18px,5.1vw,23px);
+          max-width:100%;
+        }
+        .products[aria-label="Направления расчётов"] > a.product-card.yesno-standalone .product-subtitle{
+          max-width:100%;
+          font-size:11.5px;
+          line-height:1.22;
+        }
+      }
     </style>
   <link rel="canonical" href="https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/">
 <script type="application/ld+json" id="numi-site-entities">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#organization","name":"Нумерология онлайн","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/"},{"@type":"WebSite","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#website","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/","name":"Нумерология онлайн","inLanguage":"ru","publisher":{"@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#organization"}},{"@type":"WebPage","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#webpage","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/","name":"Нумерология по дате рождения онлайн | Нумерология.online","inLanguage":"ru","isPartOf":{"@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#website"}},{"@type":"Person","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/author.html#person","name":"Татьяна","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/author.html","jobTitle":"Нумеролог, основатель проекта «Нумерология онлайн»"}]}</script>
