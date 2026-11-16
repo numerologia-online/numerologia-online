@@ -279,8 +279,46 @@ function readSignedMiniAppData() {
   try { return new URLSearchParams(fragment).get("tgWebAppData") || ""; }
   catch (_) { return ""; }
 }
+// The first-party REG.RU account is the common owner identity across the site.
+// In Telegram, establish the same signed session used by the normal cabinet
+// when the current tab does not yet have its login cookie.
+async function verifyRegRuOwner() {
+  const check = async () => {
+    const response = await fetch("/api/numi-owner-access.php", {
+      method:"GET", credentials:"same-origin", cache:"no-store",
+      headers:{"Accept":"application/json"}
+    });
+    if (!response.ok) throw Error("REG_OWNER_CHECK_FAILED");
+    const data=await response.json();
+    if (data?.ok!==true) throw Error("REG_OWNER_CHECK_UNAVAILABLE");
+    return data;
+  };
+  let status=await check();
+  if (!status.owner && !status.authenticated) {
+    const signed=readSignedMiniAppData();
+    if (signed && signed.length<12000) {
+      const login=await fetch("/api/numi-account.php",{
+        method:"POST", credentials:"same-origin", cache:"no-store",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({action:"telegram",init_data:signed})
+      });
+      if (login.ok) status=await check();
+    }
+  }
+  if (status.owner!==true) return false;
+  verifiedOwner=true;
+  ownerSeeFree=false;
+  showOwnerControls();
+  if (current && input.value) form.requestSubmit();
+  return true;
+}
 async function verifyOwnerAccess() {
   if (schoolClientMode) return;
+  try {
+    if (await verifyRegRuOwner()) return;
+  } catch (err) {
+    console.warn("Проверка владельца REG.RU недоступна, пробуем прежний способ",err);
+  }
   try {
     const initData = readSignedMiniAppData();
     let response;
