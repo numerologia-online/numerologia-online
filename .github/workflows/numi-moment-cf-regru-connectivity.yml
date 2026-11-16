@@ -1,0 +1,49 @@
+name: REG.RU to new Cloudflare AI Worker connection probe (temporary)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-moment-cf-regru-connectivity.yml
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Temporarily check REG.RU outbound HTTPS to dedicated Worker and remove probe
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,ftplib,ssl,io,json,urllib.request,urllib.error,pathlib
+          source=pathlib.Path('moment/worker-health-connection-probe.php').read_bytes()
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          dest=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/moment/worker-health-connection-probe.php'
+          try:
+            ftp.storbinary('STOR '+dest,io.BytesIO(source))
+            b=io.BytesIO()
+            ftp.retrbinary('RETR '+dest,b.write)
+            if b.getvalue()!=source:raise RuntimeError('TEMP_PROBE_READBACK_FAILED')
+            req=urllib.request.Request(
+              'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/worker-health-connection-probe.php',
+              headers={'Cache-Control':'no-cache'}
+            )
+            with urllib.request.urlopen(req,timeout=28) as r:payload=json.load(r)
+            print('MOMENT_REG_TO_CF_STATUS='+str(payload.get('http_status'))+
+                  ' ai_bound='+str(payload.get('ai_bound'))+
+                  ' service_ok='+str(payload.get('service_ok'))+
+                  ' network_error='+str(payload.get('network_error')))
+            if payload.get('http_status')!=200 or payload.get('ai_bound') is not True:
+              raise RuntimeError('REG_TO_CLOUDFLARE_WORKER_CONNECTION_FAILED')
+          finally:
+            try:ftp.delete(dest)
+            except ftplib.all_errors:print('MOMENT_TEMP_PROBE_DELETE_FAILED')
+            try:ftp.quit()
+            except Exception:ftp.close()
+          PY
