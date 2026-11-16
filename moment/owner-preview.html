@@ -13,12 +13,23 @@ button{margin-top:20px;background:#173f33;color:white;border:0;border-radius:12p
 button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pre-line;font-size:16px;line-height:1.6;color:#293c32}
 #moment-now{display:inline-flex;align-items:center;justify-content:center;width:auto;min-width:122px;min-height:42px;margin:9px 0 0;padding:8px 16px;border:1px solid #b18a4c;border-radius:12px;background:#f0e7d6;color:#173f33;font-size:15px;font-weight:750}.moment-time-help{font-size:13px;color:#66766b;margin:6px 0 0;line-height:1.4} 
 #generation-feedback{margin:14px 0 10px;padding:13px 14px;border-radius:12px;border:1px solid #c9d7cd;background:#f0f5f0;color:#174b38;font:600 14px/1.5 system-ui;white-space:pre-line}#generation-feedback.is-error{background:#fff1eb;border-color:#dab2a5;color:#7c3029}
-#status{line-height:1.5}#work[hidden],#result[hidden],#partner-fields[hidden]{display:none}.back{display:inline-block;margin:5px 0 10px}
+#status{line-height:1.5}#work[hidden],#result[hidden],#partner-fields[hidden],#review-controls[hidden],#review-progress[hidden]{display:none}.back{display:inline-block;margin:5px 0 10px}
+#review-answer,#review-note{display:block;width:100%;border:1px solid #b8c6ba;border-radius:11px;padding:13px;font:16px/1.6 system-ui;background:white;color:#183d31;resize:vertical}#review-answer{min-height:230px}#review-note{min-height:80px}
+.review-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.review-actions button{margin:0;font-size:14px;padding:10px 7px}.review-actions button:last-child{grid-column:1/-1}
+#review-status{font-size:14px;color:#365849;font-weight:650;line-height:1.5}.review-approved{color:#195c35!important}
+#review-progress{border-left:4px solid #af965e}#review-progress button{width:auto;margin-top:10px;background:#f1e8d9;color:#234532;border:1px solid #c0a77c}
+#review-feedback{font-size:14px;line-height:1.5;color:#365849}.review-muted{font-size:13px;color:#68796f;line-height:1.5}
+
 </style></head><body><main>
 <a class="back" href="./">← Назад к 300 вопросам</a>
 <h1>Редактор: 300 вопросов о жизни</h1>
 <p class="note">Только для владельца. Бесплатный тест нейросети. Ответы пока не публикуются и никому не продаются. Остальные разделы сайта не затронуты.</p>
 <div class="paper" id="status" role="status">Проверяю доступ владельца…</div>
+<section class="paper" id="review-progress" hidden>
+<h2>Проверка 300 вопросов</h2><p id="review-progress-text">Загружаю результаты проверки…</p>
+<button id="review-next" type="button">Следующий непроверенный вопрос</button>
+<p class="review-muted">Отмечаем качество каждого вопроса на выбранных датах. Одобрение образца не открывает вопрос покупателям.</p>
+</section>
 <section class="paper" id="work" hidden>
 <h2>Проверяем по одному вопросу</h2>
 <label for="category">Тема</label><select id="category"></select>
@@ -33,7 +44,22 @@ button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pr
 <p class="note"><a href="./owner-first-answer.php">Прочитать готовый пример ответа ИИ</a></p>
 <p id="generation-feedback" class="generation-feedback" role="status" aria-live="polite" hidden></p>
 <p class="note">Если ответ не понравится, изменим инструкцию нейросети. Никаких списаний с баланса нет.</p></section>
-<section class="paper" id="result" hidden><h2 id="result-heading">Ответ</h2><div class="answer" id="answer"></div></section>
+<section class="paper" id="result" hidden><h2 id="result-heading">Ответ</h2><div class="answer" id="answer"></div><div id="review-controls" hidden>
+<hr style="border:0;border-top:1px solid #e4d7c0;margin:23px 0 18px">
+<h2>Редакционная проверка</h2>
+<p id="review-status" role="status">Не проверено</p>
+<label for="review-answer">Текст ответа. Здесь можно исправить вручную.</label>
+<textarea id="review-answer" maxlength="8000" placeholder="Текст ответа для проверки"></textarea>
+<label for="review-note">Замечания и что улучшить</label>
+<textarea id="review-note" maxlength="1200" placeholder="Например: мало конкретики, убрать канцеляризмы"></textarea>
+<div class="review-actions">
+<button id="review-save" type="button" style="background:#567465">Сохранить черновик</button>
+<button id="review-revision" type="button" style="background:#aa7148">На доработку</button>
+<button id="review-approve" type="button" style="background:#195a39">✓ Утвердить образец</button>
+</div>
+<p id="review-feedback" role="status"></p>
+<p class="review-muted">Всё сохраняется в закрытом хранилище REG.RU. Утверждение не включает оплату и не публикует текст.</p>
+</div></section>
 </main><script>
 'use strict';
 const $=id=>document.getElementById(id);let catalog;
@@ -128,10 +154,22 @@ function toIsoMoment(raw){
   const date=toIsoDate(m[1]);
   return date?date+'T'+m[2]+':'+m[3]:null;
 }
-function showQuestions(){const cat=$('category').value;const found=catalog.questions.filter(q=>q.category===cat);$('question').replaceChildren(...found.map(q=>new Option(q.title,q.id)));updateMode();}
+let reviewStatuses={};
+const reviewLabels={new:'Не проверено',draft:'Черновик',revision:'На доработку',approved:'Утверждено'};
+let reviewCurrentQuestion='';
+let reviewRequestSequence=0;
+function showQuestions(){
+ const cat=$('category').value;
+ const found=catalog.questions.filter(q=>q.category===cat);
+ const label=q=>(reviewStatuses[q.id]==='approved'?'✓ ':reviewStatuses[q.id]==='revision'?'↻ ':reviewStatuses[q.id]==='draft'?'• ':'')+q.title;
+ $('question').replaceChildren(...found.map(q=>new Option(label(q),q.id)));
+ updateMode();
+ if(reviewStatuses && $('work').hidden===false)void loadReviewForQuestion();
+}
 function updateMode(){const q=catalog.questions.find(x=>x.id===$('question').value);$('partner-fields').hidden=q?.mode!=='partner';}
-$('category').addEventListener('change',showQuestions);$('question').addEventListener('change',updateMode);
-async function init(){try{const access=await getJson('./owner-ai.php');if(!access.ok||!access.owner){$('status').textContent='Войди на главной странице под подтверждённой почтой владельца и снова открой редактор. Для остальных посетителей доступ закрыт.';return;}const r=await fetch('./questions.json',{cache:'no-store'});catalog=await r.json();if(!Array.isArray(catalog.questions)||catalog.questions.length!==300)throw Error('Каталог неполный');$('category').replaceChildren(...catalog.categories.map(c=>new Option(c.title+' ('+c.count+')',c.id)));const requestedId=new URLSearchParams(location.search).get('question');const requested=catalog.questions.find(q=>q.id===requestedId);$('category').value=requested?.category||'love';showQuestions();if(requested){$('question').value=requested.id;updateMode();}setMomentNow();$('status').textContent='✓ Режим владельца открыт. Все 300 вопросов доступны для бесплатных тестов.';try{const prev=JSON.parse(sessionStorage.getItem(ownerQueueJobKey)||'null');if(prev&&/^[a-f0-9]{32}$/.test(prev.job))void pollOwnerJob(prev.job,prev.title||'Тестовый ответ');}catch(_){};$('work').hidden=false;}catch(e){$('status').textContent='Не получилось проверить доступ. Попробуй обновить страницу.';}}
+$('category').addEventListener('change',showQuestions);
+$('question').addEventListener('change',()=>{updateMode();void loadReviewForQuestion();});
+async function init(){try{const access=await getJson('./owner-ai.php');if(!access.ok||!access.owner){$('status').textContent='Войди на главной странице под подтверждённой почтой владельца и снова открой редактор. Для остальных посетителей доступ закрыт.';return;}const r=await fetch('./questions.json',{cache:'no-store'});catalog=await r.json();if(!Array.isArray(catalog.questions)||catalog.questions.length!==300)throw Error('Каталог неполный');$('category').replaceChildren(...catalog.categories.map(c=>new Option(c.title+' ('+c.count+')',c.id)));const requestedId=new URLSearchParams(location.search).get('question');const requested=catalog.questions.find(q=>q.id===requestedId);$('category').value=requested?.category||'love';showQuestions();if(requested){$('question').value=requested.id;updateMode();}setMomentNow();$('status').textContent='✓ Режим владельца открыт. Все 300 вопросов доступны для бесплатных тестов.';await loadReviewOverview();await loadReviewForQuestion();try{const prev=JSON.parse(sessionStorage.getItem(ownerQueueJobKey)||'null');if(prev&&/^[a-f0-9]{32}$/.test(prev.job))void pollOwnerJob(prev.job,prev.title||'Тестовый ответ');}catch(_){};$('work').hidden=false;}catch(e){$('status').textContent='Не получилось проверить доступ. Попробуй обновить страницу.';}}
 
 const ownerQueueJobKey='numi-moment-groq-current-job';
 let queueChecking=false;
@@ -150,6 +188,8 @@ async function pollOwnerJob(job,title){
         $('result-heading').textContent=title;
         $('answer').textContent=res.answer;
         $('result').hidden=false;
+        showReviewCandidate(res.answer);
+        await saveReview('save_draft',true);
         feedback.textContent='✓ Настоящий тестовый ответ Groq получен через GitHub.';
         $('status').textContent='✓ Ответ готов. Публикации и списаний не было.';
         try{sessionStorage.removeItem(ownerQueueJobKey)}catch(_){}
@@ -237,6 +277,8 @@ $('generate-cloudflare').addEventListener('click',async()=>{
     $('result-heading').textContent=result.question;
     $('answer').textContent=result.answer;
     $('result').hidden=false;
+    showReviewCandidate(result.answer);
+    await saveReview('save_draft',true);
     feedback.textContent='✓ Прямое подключение Cloudflare работает, ответ получен.';
     $('status').textContent='✓ Тестовый ответ Cloudflare готов.';
     $('result').scrollIntoView({behavior:'smooth'});
@@ -251,5 +293,122 @@ $('generate-cloudflare').addEventListener('click',async()=>{
     button.disabled=false;button.textContent='Проверить быстрый ответ Cloudflare';
   }
 });
+
+async function loadReviewOverview(){
+  try{
+    const result=await getJson('./owner-review.php');
+    if(!result.ok||result.total!==300)throw Error('REVIEW_OVERVIEW_FAILED');
+    reviewStatuses=result.statuses||{};
+    const c=result.counts||{};
+    $('review-progress-text').textContent=
+      'Утверждено: '+(c.approved||0)+' / 300. На доработку: '+(c.revision||0)+
+      '. Черновики: '+(c.draft||0)+'. Ещё не проверены: '+(c.new||0)+'.';
+    $('review-progress').hidden=false;
+    const selected=$('question').value;
+    showQuestions();
+    if(selected && catalog.questions.some(q=>q.id===selected&&q.category===$('category').value))
+      $('question').value=selected;
+    updateMode();
+  }catch(e){
+    $('review-progress').hidden=false;
+    $('review-progress-text').textContent='Пока не удалось загрузить статусы проверки. Можно сгенерировать ответ, но сначала проверь соединение с редакционным хранилищем.';
+  }
+}
+function showReviewCandidate(answer,note=''){
+  reviewCurrentQuestion=$('question').value;
+  $('review-controls').hidden=false;
+  $('review-answer').value=answer||'';
+  $('review-note').value=note||'';
+  $('review-status').textContent='Текущий статус: '+(reviewLabels[reviewStatuses[reviewCurrentQuestion]||'new']);
+  $('review-status').classList.toggle('review-approved',reviewStatuses[reviewCurrentQuestion]==='approved');
+  $('review-feedback').textContent='Можно изменить текст, сохранить черновик, отправить на доработку или утвердить.';
+}
+async function loadReviewForQuestion(){
+  if(!catalog)return;
+  const id=$('question').value;
+  if(!id)return;
+  const sequence=++reviewRequestSequence;
+  $('review-controls').hidden=true;
+  $('result').hidden=true;
+  try{
+    const response=await getJson('./owner-review.php?question='+encodeURIComponent(id));
+    if(sequence!==reviewRequestSequence||id!==$('question').value)return;
+    if(!response.ok)throw Error(response.error||'REVIEW_LOAD_FAILED');
+    if(response.record&&typeof response.record.answer==='string'){
+      $('result-heading').textContent=response.record.question||$('question').selectedOptions[0]?.textContent||'Сохранённый образец';
+      $('answer').textContent=response.record.answer;
+      $('result').hidden=false;
+      showReviewCandidate(response.record.answer,response.record.note||'');
+      $('review-feedback').textContent='Загружен сохранённый образец. Его можно исправить или изменить статус.';
+    }
+  }catch(e){
+    if(sequence===reviewRequestSequence)
+      $('status').textContent='Не удалось загрузить сохранённый образец. Попробуй обновить страницу.';
+  }
+}
+function reviewParams(action){
+  const birth=toIsoDate($('birth').value)||'';
+  const other=toIsoDate($('other').value)||'';
+  const moment=toIsoMoment($('moment').value)||'';
+  return {
+    action,question_id:reviewCurrentQuestion,
+    answer:$('review-answer').value.trim(),
+    note:$('review-note').value.trim(),
+    birth_date:birth,other_date:other,moment
+  };
+}
+let reviewSaving=false;
+async function saveReview(action,silent=false){
+  if(reviewSaving)return false;
+  const id=reviewCurrentQuestion;
+  if(!id || id!==$('question').value)return false;
+  if(!$('review-answer').value.trim())return false;
+  reviewSaving=true;
+  const buttons=['review-save','review-revision','review-approve'].map($);
+  buttons.forEach(button=>button.disabled=true);
+  $('review-feedback').textContent='Сохраняю результат проверки…';
+  try{
+    const result=await getJson('./owner-review.php',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(reviewParams(action))
+    });
+    if(!result.ok)throw Error(result.error||'REVIEW_SAVE_FAILED');
+    reviewStatuses[id]=result.status;
+    $('answer').textContent=$('review-answer').value.trim();
+    $('review-status').textContent='Текущий статус: '+reviewLabels[result.status];
+    $('review-status').classList.toggle('review-approved',result.status==='approved');
+    $('review-feedback').textContent=
+      result.status==='approved'?'✓ Образец утверждён и сохранён. Для покупателей ничего не опубликовано.':
+      result.status==='revision'?'Замечания сохранены, вопрос отмечен «На доработку».':
+      'Черновик сохранён в закрытом редакторе.';
+    await loadReviewOverview();
+    return true;
+  }catch(error){
+    const reason=String(error?.message||'');
+    $('review-feedback').textContent=reason==='ALREADY_APPROVED_USE_EXPLICIT_REVISION'
+      ?'Этот вопрос уже утверждён. Новый черновик не заменил утверждённый. Чтобы пересмотреть, нажми «На доработку».'
+      :'Не получилось сохранить: '+reason+'. Ответ пока виден на экране, но не сохранён.';
+    return false;
+  }finally{
+    reviewSaving=false;
+    buttons.forEach(button=>button.disabled=false);
+  }
+}
+$('review-save').addEventListener('click',()=>void saveReview('save_draft'));
+$('review-revision').addEventListener('click',()=>void saveReview('request_revision'));
+$('review-approve').addEventListener('click',()=>void saveReview('approve'));
+$('review-next').addEventListener('click',()=>{
+  const item=catalog.questions.find(q=>(reviewStatuses[q.id]||'new')==='new')||
+    catalog.questions.find(q=>reviewStatuses[q.id]==='revision')||
+    catalog.questions.find(q=>reviewStatuses[q.id]==='draft');
+  if(!item){$('review-progress-text').textContent='Все 300 вопросов утверждены!';return;}
+  $('category').value=item.category;
+  showQuestions();
+  $('question').value=item.id;
+  updateMode();
+  void loadReviewForQuestion();
+  $('work').scrollIntoView({behavior:'smooth'});
+});
+
 init();
 </script></body></html>
