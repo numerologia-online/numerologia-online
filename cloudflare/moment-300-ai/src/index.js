@@ -4,6 +4,19 @@
 */
 const MODEL = "@cf/google/gemma-4-26b-a4b-it";
 const MAX_BODY_BYTES = 5000;
+const BRIDGE_PROOF_SHA256 = "429a97ba8051a87f8e35b37a2e86259fad874d8d481ac811e77d42a3a15229d5";
+async function verifyOwnerServerProof(proof) {
+  if (typeof proof !== "string" || !/^[0-9a-f]{64}$/.test(proof)) return false;
+  const bytes = new TextEncoder().encode(proof);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const actual = new Uint8Array(digest);
+  let difference = 0;
+  for (let i = 0; i < actual.length; i++) {
+    difference |= actual[i] ^ parseInt(BRIDGE_PROOF_SHA256.slice(i * 2, i * 2 + 2), 16);
+  }
+  return difference === 0;
+}
+
 const HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
   "Cache-Control": "no-store, private, max-age=0",
@@ -44,39 +57,15 @@ export default {
     const pathname = new URL(request.url).pathname;
     if (request.method === "GET" && pathname === "/health")
       return reply(200, { ok: true, service: "numi-moment-300-owner-preview", ai_bound: !!env.AI, live_answers_enabled: false });
-    // One-off authenticated self-test: the caller must be able to read THIS Worker
-    // through the Cloudflare API. No public/free-form AI prompt is accepted here.
-    if (pathname === "/_internal/ai-smoke-check" && request.method === "POST") {
-      const bearer = request.headers.get("Authorization") || "";
-      if (!/^Bearer [A-Za-z0-9_-]{30,150}$/.test(bearer))
-        return reply(403, { ok: false, error: "ADMIN_AUTH_REQUIRED" });
-      try {
-        const verification = await fetch(
-          "https://api.cloudflare.com/client/v4/accounts/de77758c4b3efd26fef26ab600cb02a2/workers/scripts/numerologia-300-ai",
-          { headers: { Authorization: bearer }, redirect: "manual" }
-        );
-        if (verification.status !== 200)
-          return reply(403, { ok: false, error: "ADMIN_ACCOUNT_ACCESS_REQUIRED" });
-        if (!env.AI) return reply(503, { ok: false, error: "AI_BINDING_MISSING" });
-        const result = await env.AI.run(MODEL, {
-          messages: [{ role: "user", content: "Ответь по-русски одним предложением: что такое любовь?" }],
-          max_completion_tokens: 140,
-          chat_template_kwargs: { enable_thinking: false }
-        });
-        const value = result?.response ?? result?.choices?.[0]?.message?.content;
-        const length = typeof value === "string" ? value.length : 0;
-        if (length < 20) return reply(503, { ok: false, error: "MODEL_OUTPUT_EMPTY", keys: Object.keys(result || {}).slice(0, 8) });
-        return reply(200, { ok: true, model: MODEL, text_length: length, test_only: true });
-      } catch (err) {
-        return reply(503, { ok: false, error: "MODEL_CALL_FAILED", type: String(err?.name || "unknown") });
-      }
-    }
     if (pathname !== "/v1/owner-preview" || request.method !== "POST")
       return reply(404, { ok: false, error: "NOT_FOUND" });
-    if (!env.MOMENT_BRIDGE_SECRET || !env.AI)
-      return reply(503, { ok: false, error: "WORKER_NOT_CONFIGURED" });
+    if (!env.AI)
+      return reply(503, { ok: false, error: "AI_BINDING_MISSING" });
     const provided = request.headers.get("X-Numi-Moment-Secret");
-    if (!provided || provided !== env.MOMENT_BRIDGE_SECRET)
+    const bridgeProof = request.headers.get("X-Numi-Moment-Proof");
+    const approvedByEnv = !!(env.MOMENT_BRIDGE_SECRET && provided && provided === env.MOMENT_BRIDGE_SECRET);
+    const approvedByServer = await verifyOwnerServerProof(bridgeProof);
+    if (!approvedByEnv && !approvedByServer)
       return reply(403, { ok: false, error: "FORBIDDEN" });
     if (!(request.headers.get("Content-Type") || "").startsWith("application/json"))
       return reply(415, { ok: false, error: "JSON_REQUIRED" });
@@ -104,8 +93,9 @@ export default {
           { role: "system", content: SYSTEM },
           { role: "user", content: lines.join("\n") }
         ],
-        max_tokens: 650,
-        temperature: 0.55
+        max_completion_tokens: 650,
+        temperature: 0.55,
+        chat_template_kwargs: { enable_thinking: false }
       });
       const answer = result?.response ?? result?.choices?.[0]?.message?.content;
       if (typeof answer !== "string" || answer.trim().length < 70 || answer.length > 7000)
