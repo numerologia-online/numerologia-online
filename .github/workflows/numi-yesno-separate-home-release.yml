@@ -1,0 +1,113 @@
+name: Separate subscription Yes-No button from 300 Moment questions on REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-yesno-separate-home-release.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify standalone subscription button and original catalog integrity
+        run: |
+          python3 - <<'PY'
+          import json,pathlib
+          home=pathlib.Path('index.html').read_text('utf8')
+          moment=pathlib.Path('moment/index.html').read_text('utf8')
+          yn=pathlib.Path('moment/yes-no/index.html').read_text('utf8')
+          script=pathlib.Path('moment/yes-no/yes-no.js').read_text('utf8')
+          cat=json.loads(pathlib.Path('moment/questions.json').read_text('utf8'))
+          yncat=json.loads(pathlib.Path('moment/yes-no/questions.json').read_text('utf8'))
+          assert home.count('id="yesno-section"')==1
+          assert home.count('href="./moment/yes-no/"')==1
+          assert home.count('id="horary-section"')==1
+          assert 'aria-label="Да или нет" style=' not in moment
+          assert '<strong>Повседневные решения</strong><small>25 вопросов</small>' in moment
+          assert len(cat['questions'])==300 and len(cat['categories'])==12
+          assert {q['id'] for q in cat['questions']}=={q['id'] for q in json.loads(__import__('subprocess').check_output(['git','show','c4e73c30fd25c42ac2adfac10e3f1a4bf4b42354:moment/questions.json']))['questions']}
+          assert len(yncat['questions'])==100
+          assert '← На главную' in yn and 'href="../../"' in yn
+          assert 'else window.location.assign("../../");' in script
+          assert '1 в день бесплатно' in home and 'по подписке Клуба' in home
+          print('NUMI_YESNO_STANDALONE_PREFLIGHT_OK home_button=true moment_catalog_300=true yesno_100=true')
+          PY
+          node --check moment/yes-no/yes-no.js
+      - name: Backup and deploy only five presentation/catalog files, verify actual REG.RU
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,io,ftplib,ssl,hashlib,subprocess,pathlib,urllib.request,urllib.error,time,json
+          names=[
+            'moment/yes-no/yes-no.js',
+            'moment/yes-no/index.html',
+            'moment/questions.json',
+            'moment/index.html',
+            'index.html'
+          ]
+          baseline='c4e73c30fd25c42ac2adfac10e3f1a4bf4b42354'
+          before={name:subprocess.check_output(['git','show',baseline+':'+name]) for name in names}
+          after={name:pathlib.Path(name).read_bytes() for name in names}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')
+          webroot=root+'/www/xn--c1adkkdfjbp1a4l.online/'
+          backups=root+'/site-safeguard-backups/'
+          def read(path):
+            b=io.BytesIO()
+            ftp.retrbinary('RETR '+path,b.write)
+            return b.getvalue()
+          def put(path,value):
+            ftp.storbinary('STOR '+path,io.BytesIO(value))
+            if read(path)!=value:raise RuntimeError('FTP_READBACK_MISMATCH')
+          changed=[]
+          originals={}
+          try:
+            for name in names:
+              live=read(webroot+name)
+              if live not in (before[name],after[name]):
+                raise RuntimeError('LIVE_FILE_CHANGED_REFUSE_OVERWRITE '+name)
+              originals[name]=live
+            for name in names:
+              if originals[name]!=after[name]:
+                stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+                put(backups+'yesno-separation-'+name.replace('/','-')+'-'+stamp+'.bak',originals[name])
+            for name in names:
+              if originals[name]!=after[name]:
+                put(webroot+name,after[name])
+                changed.append(name)
+            urlbase='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+            for name in names:
+              url=urlbase+name+'?yesno_separated='+str(time.time_ns())
+              request=urllib.request.Request(url,headers={'Cache-Control':'no-cache'})
+              with urllib.request.urlopen(request,timeout=28) as response:
+                status=response.status
+                served=response.read(300000)
+              if status!=200 or hashlib.sha256(served).digest()!=hashlib.sha256(after[name]).digest():
+                raise RuntimeError('PUBLIC_SITE_SHA_MISMATCH '+name)
+            print('NUMI_YESNO_STANDALONE_LIVE_OK home_button=true yesno_100=true moment_300=true member_rules_untouched=true private_review_untouched=true')
+          except BaseException:
+            for name in reversed(changed):
+              try:
+                put(webroot+name,originals[name])
+                print('NUMI_YESNO_ROLLBACK_OK '+name)
+              except Exception:
+                print('NUMI_YESNO_ROLLBACK_FAILED '+name)
+            raise
+          finally:
+            try:ftp.quit()
+            except Exception:ftp.close()
+          PY
