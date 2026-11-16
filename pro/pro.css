@@ -782,33 +782,3 @@ h3{font-size:24px;margin:0 0 12px;font-weight:400}
   }
   .pro-zone-picker .pro-compact-questions .pro-question-item > button small{font-size:9.4px}
 }
-
-/* Keep each full-life answer inside the same compact accordion window.
-   The free introductory card stays exactly as before. Long purchased/owner
-   readings are scrollable *inside* the selected card, so other questions and
-   the existing PDF section do not disappear below a wall of paragraphs. */
-.pro-zone-picker .pro-compact-questions
-.pro-question-item:not(.pro-question-free).expanded > .pro-answer{
-  max-height:min(56dvh,470px);
-  overflow-y:auto;
-  overscroll-behavior:contain;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:thin;
-  scrollbar-color:#aebfb8 #f8f8f2;
-  touch-action:pan-y;
-}
-.pro-zone-picker .pro-compact-questions
-.pro-question-item:not(.pro-question-free).expanded > .pro-answer::-webkit-scrollbar{
-  width:5px;
-}
-.pro-zone-picker .pro-compact-questions
-.pro-question-item:not(.pro-question-free).expanded > .pro-answer::-webkit-scrollbar-thumb{
-  border-radius:8px;
-  background:#b9c6be;
-}
-@media(max-width:520px){
- .pro-zone-picker .pro-compact-questions
- .pro-question-item:not(.pro-question-free).expanded > .pro-answer{
-   max-height: min(47dvh,400px);
- }
-}
