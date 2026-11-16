@@ -2,6 +2,8 @@
 import { parseBirthDate } from "./numerology-core.js?v=1";
 import { calculateCompatibility } from "./compatibility-engine.js?v=1";
 import { openSharedOffer } from "./shared-offer.js?v=report-annual-20261109";
+import { createCompatibilityPdfController } from "./compatibility-pdf.js?v=compatibility-cards-20261116";
+import { walletRequest, walletOwnerMaterial, walletMaterial } from "./wallet-client.js?v=owner-material-20261116";
 
 const home = document.querySelector("#home");
 const page = document.querySelector("#compatibility");
@@ -14,38 +16,66 @@ const topicsRoot = document.querySelector("#compatibility-topics");
 const result = document.querySelector("#compatibility-result");
 const back = document.querySelector("#back-compatibility-home");
 const pdfButtons = [...document.querySelectorAll("#compatibility .compatibility-pdf-button")];
-const purchasedCompatibilityRegion=document.createElement("section");
-purchasedCompatibilityRegion.hidden=true;
-purchasedCompatibilityRegion.setAttribute("aria-label","Оплаченная совместимость");
-topicsRoot.before(purchasedCompatibilityRegion);
-let purchasedCompatibility=null;
-let calculatedCompatibilityTopics=[];
-async function refreshPurchasedCompatibility(){
-  const first=aField.value.trim(),second=bField.value.trim();
-  const date=/^(\d{2})\.(\d{2})\.(\d{4})$/;
-  const a=date.exec(first),b=date.exec(second);
-  if(!a||!b)return;
-  const {recognizePurchasedReport}=await import("./store-entry.js?v=owner-access-20261116");
-  const granted=await recognizePurchasedReport({
-    product_code:"compatibility_full",
-    birth_date:a[3]+"-"+a[2]+"-"+a[1],
-    partner_birth_date:b[3]+"-"+b[2]+"-"+b[1]
-  },purchasedCompatibilityRegion);
-  if(first!==aField.value.trim()||second!==bField.value.trim())return;
-  purchasedCompatibility=granted;
-  if(granted){
-    const cards=[...topicsRoot.querySelectorAll(".compatibility-topic")];
-    cards.forEach((card,index)=>{
-      if(index===0)return;
-      const toggle=card.querySelector(".compatibility-topic-toggle");
-      card.classList.remove("is-locked");
-      card.classList.add("is-purchased");
-      toggle.querySelector(".compatibility-topic-icon").textContent="+";
-      toggle.setAttribute("aria-label","Открыть оплаченный ответ: "+calculatedCompatibilityTopics[index]?.title);
-    });
+let currentReport = null;
+const pdf = createCompatibilityPdfController({
+  buttons: pdfButtons,
+  getBank: (_energy, report) => report.readings
+});
+
+async function recognizePurchasedReport({item, topics}) {
+  let material = await walletOwnerMaterial(item).catch(() => null);
+  if (!material) {
+    const quote = await walletRequest("wallet_quote", {item});
+    const resource = "pair:" + item.birth_date + ":" + item.partner_birth_date;
+    if (quote.owned !== true || quote.product_code !== item.product_code || quote.resource_id !== resource ||
+        !/^[a-f0-9-]{36}$/i.test(String(quote.entitlement_id || ""))) return null;
+    material = await walletMaterial(quote.entitlement_id);
   }
+  if (material.sections?.length !== topics.length) return null;
+  return Object.fromEntries(topics.map((topic, index) => {
+    const {title, paragraphs} = material.sections[index];
+    if ((title !== topic.title && title !== topic.key) || !Array.isArray(paragraphs) ||
+        paragraphs.length < 2 || paragraphs.some(text => typeof text !== "string" || !text.trim())) {
+      throw new Error("Ответы не соответствуют вашему расчёту");
+    }
+    const [lead, ...body] = paragraphs;
+    return [topic.key, {lead, text: body.join("\n\n")}];
+  }));
 }
-window.addEventListener("numi:wallet-updated",()=>{if(!result.hidden)void refreshPurchasedCompatibility();});
+
+function setReadings(report, readings) {
+  if (!readings && report.readings) clearSelection();
+  report.readings = readings;
+  pdf.setReport(readings ? report : null);
+  topicsRoot.querySelectorAll(".compatibility-topic").forEach((card, index) => {
+    const {title, key} = report.topics[index];
+    const unlocked = Boolean(readings?.[key]);
+    const button = card.querySelector(".compatibility-topic-toggle");
+    card.classList.toggle("is-locked", index !== 0 && !unlocked);
+    card.classList.toggle("is-purchased", index !== 0 && unlocked);
+    button.querySelector(".compatibility-topic-icon").textContent = index === 0 || unlocked ? "+" : "🔒";
+    const label = index === 0 ? "Открыть бесплатный ответ: " : unlocked ? "Открыть ответ: " : "Открыть варианты покупки: ";
+    button.setAttribute("aria-label", label + title);
+  });
+}
+
+function refreshPurchasedCompatibility() {
+  const report = currentReport;
+  if (!report) return;
+  const check = recognizePurchasedReport(report).catch(() => null).then(readings => {
+    if (currentReport === report && report.accessCheck === check) {
+      report.accessCheck = null;
+      setReadings(report, readings);
+    }
+  });
+  report.accessCheck = check;
+}
+window.addEventListener("numi:wallet-updated", () => refreshPurchasedCompatibility());
+window.addEventListener("numi:account-logged-out", () => {
+  if (!currentReport) return;
+  currentReport.accessCheck = null;
+  setReadings(currentReport, null);
+});
 
 const cache = new Map();
 const getBank = (energy) => {
@@ -72,18 +102,21 @@ const offer = Object.freeze({
   memberPrice: 490,
   clubMonthly: 490
 });
-const showOffer = () => {
-  if(purchasedCompatibility&&!purchasedCompatibilityRegion.hidden){
-    purchasedCompatibilityRegion.scrollIntoView({behavior:"smooth",block:"start"});return;
-  }
-  openSharedOffer({...offer,subject:{product_code:"compatibility_full",birth_date:aField.value.split(".").reverse().join("-"),partner_birth_date:bField.value.split(".").reverse().join("-")}}).catch(error => {
+const showOffer = ({item}) => {
+  openSharedOffer({...offer, subject: item}).catch(error => {
     console.error("Окно покупки:", error);
     alert("Не удалось открыть варианты доступа. Проверьте интернет и попробуйте снова.");
   });
 };
 pdfButtons.forEach(button => {
-  button.textContent = "Открыть полностью и скачать в PDF";
-  button.addEventListener("click", showOffer);
+  button.addEventListener("click", async () => {
+    const report = currentReport;
+    if (!report) return;
+    await report.accessCheck;
+    if (report !== currentReport) return;
+    if (report.readings) await pdf.download();
+    else showOffer(report);
+  });
 });
 
 const formatInput = (input) => {
@@ -115,12 +148,14 @@ const addParagraphs = (target, content) => {
   }
 };
 
-const showTopic = async (topic, article, isFree) => {
-  // Paid answers are read from the verified account entitlement, never a
-  // client-side flag or an unprotected guest content bank.
-  const selectedIndex=calculatedCompatibilityTopics.findIndex(t=>t.key===topic.key);
-  const purchasedPart=!isFree && purchasedCompatibility?.material?.sections?.[selectedIndex];
-  if(!isFree && !purchasedPart){showOffer();return;}
+const showTopic = async (report, topic, article, isFree) => {
+  if (!isFree) await report.accessCheck;
+  if (report !== currentReport) return;
+  const paidCopy = report.readings?.[topic.key];
+  if (!isFree && !paidCopy) {
+    showOffer(report);
+    return;
+  }
   const body = article.querySelector(".compatibility-topic-body");
   const button = article.querySelector(".compatibility-topic-toggle");
   if (selected === topic.key) { clearSelection(); return; }
@@ -132,17 +167,8 @@ const showTopic = async (topic, article, isFree) => {
   body.textContent = "Открываю ваш разбор…";
   const token = ++requestNumber;
   try {
-    if(purchasedPart){
-      body.replaceChildren();
-      if(purchasedPart.title){const h=document.createElement("h3");h.textContent=purchasedPart.title;body.append(h);}
-      for(const line of purchasedPart.paragraphs||[]){
-        const p=document.createElement("p");p.textContent=line;body.append(p);
-      }
-      return;
-    }
-    const blocks = await getBank(topic.energy);
+    const copy = paidCopy ?? (await getBank(topic.energy))[topic.key];
     if (token !== requestNumber || selected !== topic.key) return;
-    const copy = blocks[topic.key];
     if (!copy?.text || !copy?.lead) throw new Error("Нет полного текста для вопроса");
     body.replaceChildren();
     const lead = document.createElement("p");
@@ -158,11 +184,11 @@ const showTopic = async (topic, article, isFree) => {
   }
 };
 
-const renderTopics = (topics) => {
+const renderTopics = (report) => {
   requestNumber++;
   selected = null;
   const list = document.createDocumentFragment();
-  for (const [index, topic] of topics.entries()) {
+  for (const [index, topic] of report.topics.entries()) {
     const card = document.createElement("article");
     card.className = "compatibility-topic " + (index === 0 ? "is-free" : "is-locked");
     const button = document.createElement("button");
@@ -176,7 +202,7 @@ const renderTopics = (topics) => {
     const body = document.createElement("div");
     body.className = "compatibility-topic-body";
     body.hidden = true;
-    button.addEventListener("click", () => showTopic(topic, card, index === 0));
+    button.addEventListener("click", () => showTopic(report, topic, card, index === 0));
     card.append(button, body);
     list.append(card);
   }
@@ -192,13 +218,21 @@ form.addEventListener("submit", (event) => {
     error.hidden = false;
     return;
   }
-  const topics = calculateCompatibility(first, second);
-  purchasedCompatibility=null;
-  purchasedCompatibilityRegion.hidden=true;
-  purchasedCompatibilityRegion.dataset.numiReportKey="";
-  calculatedCompatibilityTopics=topics;
-  renderTopics(topics);
-  summary.textContent = `Расчёт для ${aField.value} и ${bField.value} готов. Выбирайте любой вопрос, чтобы прочитать свой разбор.`;
+  currentReport = {
+    topics: calculateCompatibility(first, second),
+    dateA: aField.value,
+    dateB: bField.value,
+    item: {
+      product_code: "compatibility_full",
+      birth_date: aField.value.split(".").reverse().join("-"),
+      partner_birth_date: bField.value.split(".").reverse().join("-")
+    },
+    readings: null,
+    accessCheck: null
+  };
+  renderTopics(currentReport);
+  pdf.setReport(null);
+  summary.textContent = `Расчёт для ${currentReport.dateA} и ${currentReport.dateB} готов. Выбирайте любой вопрос, чтобы прочитать свой разбор.`;
   result.hidden = false;
   error.hidden = true;
   void refreshPurchasedCompatibility();

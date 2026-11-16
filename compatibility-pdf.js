@@ -127,7 +127,7 @@ export const createCompatibilityPdfController = ({ buttons, getBank }) => {
     prepared = null;
     inProgress = null;
     report = next;
-    updateButtons("Скачать PDF ↓");
+    updateButtons(next ? "Скачать PDF ↓" : "Открыть полностью и скачать в PDF");
   };
 
   const prepare = () => {
@@ -141,7 +141,7 @@ export const createCompatibilityPdfController = ({ buttons, getBank }) => {
       const [pdfMake, readings] = await Promise.all([
         getPdfMake(),
         Promise.all(current.topics.map(async topic => {
-          const bank = await getBank(topic.energy);
+          const bank = await getBank(topic.energy, current);
           const block = bank[topic.key];
           if (!block?.lead || !block?.text) throw new Error(`Отсутствует разбор: ${topic.title}`);
           return block;
@@ -165,10 +165,12 @@ export const createCompatibilityPdfController = ({ buttons, getBank }) => {
   };
 
   const download = async () => {
-    if (!report) return;
+    if (!report || inProgress) return;
+    const token = generation;
     updateButtons("Готовлю PDF…", true);
     try {
       const { url, filename } = await prepare();
+      if (generation !== token) return;
       const anchor = document.createElement("a");
       anchor.href = url;
       anchor.download = filename;
@@ -179,13 +181,13 @@ export const createCompatibilityPdfController = ({ buttons, getBank }) => {
       anchor.click();
       anchor.remove();
     } catch (error) {
+      if (generation !== token) return;
       console.error("PDF совместимости:", error);
       alert("Не удалось подготовить PDF. Проверьте интернет и попробуйте ещё раз.");
     } finally {
-      updateButtons("Скачать PDF ↓");
+      if (generation === token) updateButtons("Скачать PDF ↓");
     }
   };
 
-  buttons.forEach(button => button.addEventListener("click", download));
-  return { setReport };
+  return { setReport, download };
 };

@@ -1,5 +1,16 @@
 {
-  "mode": "check",
-  "files": [],
-  "note": "2026-11-13 REG.RU published and verified the owner annual PDF page viewer and sharing. Publisher returned to its normal check mode."
+  "mode": "publish",
+  "files": [
+    "compatibility-pdf.js",
+    "compatibility-feature.js",
+    "app.js",
+    "index.html"
+  ],
+  "expected_sha256": {
+    "compatibility-pdf.js": "623597fcdaf8ee7799d4be461f03de575646f13784e941d2460864d9b25a7031",
+    "compatibility-feature.js": "06681f539ee0e3cef446707474ebbb1d665525b7d613daa4d106f4b8f9fbff76",
+    "app.js": "321b4618ff3c83e5a3a2b3c624a2ed68a9dff146b52d0fc3c2d32195e8b1c9f0",
+    "index.html": "758c77bc8be0d2b183faf9011f947ec556e0b52776af4cf959d25dc87d988d4e"
+  },
+  "note": "Restore the native Compatibility questions and PDF for the verified owner and purchasers."
 }
