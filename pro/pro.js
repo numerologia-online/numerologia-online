@@ -108,10 +108,15 @@ const OWNER_TICKET_KEY = "numerologia-owner-oidc-ticket-v1";
 let verifiedOwner = false;
 let ownerSeeFree = false;
 let ownerToolbar = null;
-// School PDF never trusts a URL parameter: only the separate REG.RU owner gate unlocks it.
+let verifiedPurchaseId = null;
+let verifiedPurchaseDate = "";
+let purchaseCheckSerial = 0;
+// Independent server-verified access: owner preview or a real active purchase.
+// Never unlock based on a client flag, query parameter, or guessed price.
 const hasPaidAccess = () => schoolClientMode
   ? verifiedSchoolClientOwner
-  : verifiedOwner && !ownerSeeFree;
+  : (verifiedOwner && !ownerSeeFree) ||
+    (verifiedPurchaseId !== null && verifiedPurchaseDate === input.value.trim());
 
 // The one free chapter is the left major point (birth day / outer image).
 // Never fetch the complete 14-chapter paid bank in this public preview.
@@ -147,29 +152,32 @@ function loadFreeImpression(energy) {
 }
 const paywallBanner = document.querySelector("#pro-paywall-banner");
 const paywallDialog = document.querySelector("#pro-paywall-dialog");
-const purchasedProRegion=document.createElement("section");
-purchasedProRegion.hidden=true;
-purchasedProRegion.setAttribute("aria-label","Оплаченный полный разбор жизни");
-results.prepend(purchasedProRegion);
-let purchasedPro=null;
+// A paid customer's own report uses the SAME 14 interactive questions and PDF
+// as the owner, never a separate plain-text material renderer.
 async function refreshPurchasedPro(){
-  // The verified owner uses the original interactive report, not the
-  // separately rendered purchased-material view.
-  if(schoolClientMode || verifiedOwner){
-    purchasedPro=null;
-    purchasedProRegion.hidden=true;
-    purchasedProRegion.replaceChildren();
-    return;
-  }
+  if(schoolClientMode || verifiedOwner) return;
   const chosen=input.value.trim();
-  const match=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(chosen);
-  if(!match)return;
-  const {recognizePurchasedReport}=await import("../store-entry.js?v=owner-native-ui-20261116");
-  const granted=await recognizePurchasedReport(
-    {product_code:"life_full",birth_date:match[3]+"-"+match[2]+"-"+match[1]},purchasedProRegion,{ownerPreview:false});
-  if(chosen===input.value.trim()){
-    purchasedPro=granted;
-    if(granted&&paywallBanner)paywallBanner.hidden=true;
+  const dateMatch=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(chosen);
+  if(!dateMatch)return;
+  const serial=++purchaseCheckSerial;
+  try{
+    const {walletRequest}=await import("../wallet-client.js?v=owner-material-20261116");
+    const item={product_code:"life_full",birth_date:dateMatch[3]+"-"+dateMatch[2]+"-"+dateMatch[1]};
+    const quote=await walletRequest("wallet_quote",{item});
+    if(serial!==purchaseCheckSerial||chosen!==input.value.trim()||verifiedOwner)return;
+    const purchased=quote.owned===true && quote.product_code==="life_full" &&
+      /^[a-f0-9-]{36}$/i.test(String(quote.entitlement_id||""));
+    const newlyUnlocked=purchased && !(verifiedPurchaseId && verifiedPurchaseDate===chosen);
+    verifiedPurchaseId=purchased?quote.entitlement_id:null;
+    verifiedPurchaseDate=purchased?chosen:"";
+    syncPaywallUi();
+    if(newlyUnlocked && current && !results.hidden){
+      // Native sections were initially created in free mode. Recalculate
+      // them with the verified purchase, preserving the original layout.
+      form.requestSubmit();
+    }
+  }catch(_){
+    // Network or login errors never authorize a paid report.
   }
 }
 window.addEventListener("numi:wallet-updated",()=>{if(!results.hidden)void refreshPurchasedPro();});
@@ -189,10 +197,7 @@ if (startBrowserLogin) {
   location.assign(AUTH_SERVER + "/api/start?return_to=pro");
 }
 function showPaymentInfo() {
-  if(purchasedPro&&!purchasedProRegion.hidden){
-    purchasedProRegion.scrollIntoView({behavior:"smooth",block:"start"});return;
-  }
-  if (schoolClientMode || !paywallDialog) return;
+  if (schoolClientMode || !paywallDialog || hasPaidAccess()) return;
   const note = paywallDialog.querySelector("#pro-paywall-checkout-note");
   if (note) {
     note.textContent = "";
@@ -1489,11 +1494,16 @@ form.addEventListener("submit", async(event)=>{
   error.hidden=true;
   closeKarmicInline();
   invalidateFullPdf();
-  purchasedPro=null;
-  purchasedProRegion.hidden=true;
-  purchasedProRegion.dataset.numiReportKey="";
+  // A purchase is valid only for its exact, server-checked birth date.
+  if (verifiedPurchaseDate!==input.value.trim()){
+    verifiedPurchaseId=null;
+    verifiedPurchaseDate="";
+    ++purchaseCheckSerial;
+  }
   pdfControls.hidden = true;
   pdfButtons.replaceChildren();
+  // Full-report PDF stays in its original document block, after the
+  // 14 collapsible questions. Paid answers may no longer push it off-screen.
   syncPaywallUi();
   if (!hasPaidAccess()) {
     pdfButtons.replaceChildren(makeLockedPdfButton());
