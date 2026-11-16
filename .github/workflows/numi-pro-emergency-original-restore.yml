@@ -1,0 +1,114 @@
+name: Emergency restore ONLY original full life report on REG.RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-pro-emergency-original-restore.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  restore:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify original report and scoped owner permission
+        run: |
+          node --check pro/pro.js
+          python3 - <<'PY'
+          import subprocess,pathlib
+          js=pathlib.Path('pro/pro.js').read_text('utf8')
+          css=pathlib.Path('pro/pro.css').read_bytes()
+          html=pathlib.Path('pro/index.html').read_text('utf8')
+          oldjs=subprocess.check_output(['git','show','12735bb3f009:pro/pro.js']).decode('utf8')
+          oldcss=subprocess.check_output(['git','show','94c0ffba6329:pro/pro.css'])
+          oldhtml=subprocess.check_output(['git','show','a6adaf2ff517:pro/index.html']).decode('utf8')
+          assert css==oldcss,'CSS_NOT_ORIGINAL'
+          expected_html=oldhtml.replace('pro/pro.css?v=65','pro/pro.css?v=original-recovered-20261116').replace('pro/pro.js?v=report-annual-20261109','pro/pro.js?v=original-recovered-20261116')
+          assert html==expected_html,'HTML_NOT_ORIGINAL'
+          for fragment in ('renderDiagram(points);','renderZones(zones);','renderQuestions(definitions);','createFullReportPdfButton("top")','getPurposeReading','pro-question-item','fetch("/api/numi-owner-access.php"'):
+            assert fragment in js,fragment
+          assert 'results.prepend(purchasedProRegion);' in js,'ORIGINAL_REPORT_STRUCTURE_CHANGED'
+          assert 'purchasedProRegion.replaceChildren();' in js,'OWNER_VISUAL_NOT_RESTORED'
+          assert 'verifiedOwner && !ownerSeeFree' in js
+          assert 'makePreparingPdfButton' not in js
+          assert 'verifiedPurchaseId' not in js
+          assert 'max-height:min(56dvh,470px)' not in css.decode('utf8')
+          # The only expected JS modifications from the pre-change revision are
+          # the REG.RU owner auth gate and blocking the owner flat-purchase view.
+          assert abs(len(js)-len(oldjs))<2600
+          print('PRO_ORIGINAL_RESTORATION_PREFLIGHT_OK original_css_exact=true original_html_exact_except_cache=true old_reader_and_pdf_restored=true')
+          PY
+      - name: Backup and restore ONLY three pro files, verify live site bytes
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,io,ftplib,ssl,subprocess,hashlib,pathlib,urllib.request,urllib.error,time,json
+          paths=['pro/pro.css','pro/pro.js','pro/index.html']
+          refs={
+            'pro/pro.js':'4846ec352891',
+            'pro/pro.css':'a412c2cfbfc3',
+            'pro/index.html':'a84d221efcd1'
+          }
+          expected={p:subprocess.check_output(['git','show',ref+':'+p]) for p,ref in refs.items()}
+          restored={p:pathlib.Path(p).read_bytes() for p in paths}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          site=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          backups=home+'/site-safeguard-backups/'
+          def read(p):
+            buffer=io.BytesIO()
+            ftp.retrbinary('RETR '+p,buffer.write)
+            return buffer.getvalue()
+          def put(p,value):
+            ftp.storbinary('STOR '+p,io.BytesIO(value))
+            if read(p)!=value:raise RuntimeError('PRO_RESTORE_FTP_MISMATCH')
+          before={};changed=[]
+          try:
+            for p in paths:
+              current=read(site+p)
+              if current not in (expected[p],restored[p]):
+                raise RuntimeError('PRO_RESTORE_LIVE_CONFLICT_REFUSE_OVERWRITE '+p)
+              before[p]=current
+            stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+            for p in paths:
+              if before[p]!=restored[p]:
+                put(backups+'pro-original-restore-'+p.replace('/','-')+'-'+stamp+'.bak',before[p])
+            for p in paths:
+              if before[p]!=restored[p]:
+                put(site+p,restored[p]);changed.append(p)
+            host='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+            for p in paths:
+              req=urllib.request.Request(host+p+'?original_restore='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
+              with urllib.request.urlopen(req,timeout=28) as response:
+                payload=response.read(140000)
+                status=response.status
+              if status!=200 or hashlib.sha256(payload).digest()!=hashlib.sha256(restored[p]).digest():
+                raise RuntimeError('PRO_RESTORE_PUBLIC_MISMATCH '+p)
+            req=urllib.request.Request(host+'api/numi-owner-access.php?anon='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
+            with urllib.request.urlopen(req,timeout=20) as response:
+              state=json.load(response)
+            if state.get('owner') is not False:
+              raise RuntimeError('PRO_RESTORE_OWNER_GATE_NOT_PRIVATE')
+            print('PRO_WORKING_NOV9_RESTORED_LIVE_OK only_pro_3_files=true original_css=true original_windows=true original_pdf=true owner_free_by_server=true anonymous_locked=true other_site_untouched=true')
+          except BaseException:
+            for p in reversed(changed):
+              try:
+                put(site+p,before[p])
+                print('PRO_RESTORE_ROLLBACK_OK '+p)
+              except Exception:print('PRO_RESTORE_ROLLBACK_FAILED '+p)
+            raise
+          finally:
+            try:ftp.quit()
+            except Exception:ftp.close()
+          PY
