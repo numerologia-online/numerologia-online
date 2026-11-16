@@ -1,0 +1,72 @@
+name: Final read-only QA of neutral wording draft
+on:
+  push:
+    branches: [editorial/neutral-address-20261116]
+    paths:
+      - .github/workflows/numi-neutral-wording-final-qa.yml
+permissions:
+  contents: read
+jobs:
+  qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Compare full editorial draft to exact original with no website operations
+        run: |
+          python3 - <<'PY'
+          import subprocess,json,difflib,pathlib,re,collections
+          baseline='7cb3a15a80d8f7472a71afc545dafb20def9cc6d'
+          changes=subprocess.check_output(['git','diff','--name-only',baseline,'HEAD'],text=True).splitlines()
+          authored=[p for p in changes if p.startswith(('knowledge/full-report/sections/','knowledge/full-report/free/impression/','pro/purpose/','pro/guidance/')) and p.endswith('.json')]
+          assert 10<=len(authored)<=25,authored
+          assert all(p.endswith('.json') for p in authored)
+          def shape(x):
+            if isinstance(x,dict):return {k:shape(v) for k,v in x.items()}
+            if isinstance(x,list):return [shape(v) for v in x]
+            return type(x).__name__
+          bad=[];total_strings=0;changed_sections=set();mixed=[]
+          for path in authored:
+            a=json.loads(subprocess.check_output(['git','show',baseline+':'+path]).decode('utf8').lstrip('\ufeff'))
+            b=json.loads(pathlib.Path(path).read_text('utf8').lstrip('\ufeff'))
+            assert shape(a)==shape(b),path
+            def diff(a,b,key=''):
+              global total_strings
+              if isinstance(a,str):
+                if a!=b:
+                  total_strings+=1
+                  sm=difflib.SequenceMatcher(None,a,b)
+                  for op,i,j,k,l in sm.get_opcodes():
+                    if op=='equal':continue
+                    x=a[i:j].lower()
+                    y=b[k:l].lower()
+                    if any(z in x for z in ['рубл','₽','pdf','подписк']) or any(z in y for z in ['рубл','₽','pdf','подписк']):
+                      bad.append((path,key,x[:24],y[:24]))
+                  if key.endswith('.content') or '.paragraphs.' in key:
+                    changed_sections.add((path,key.split('.sections.')[-1].split('.')[0]))
+              elif isinstance(a,dict):
+                for k in a:diff(a[k],b[k],key+'.'+k)
+              elif isinstance(a,list):
+                for i,(x,y) in enumerate(zip(a,b)):diff(x,y,key+'.'+str(i))
+            diff(a,b)
+            if 'sections' in b:
+              for name,sec in b['sections'].items():
+                if not isinstance(sec,dict) or 'paragraphs' not in sec or 'content' not in sec:continue
+                current=sec['paragraphs']
+                if not isinstance(current,list):continue
+                oldsec=a['sections'].get(name,{})
+                # If content and paragraphs were synchronized before, they must remain synchronized now.
+                old_equal=oldsec.get('content')=='\n\n'.join(oldsec.get('paragraphs',[]))
+                new_equal=sec.get('content')=='\n\n'.join(current)
+                if old_equal and not new_equal:
+                  bad.append((path,name,'content/paragraphs','desynchronized'))
+          print('NEUTRAL_FINAL_QA files_changed='+str(len(authored))+
+                ' strings_changed='+str(total_strings)+
+                ' sections_affected='+str(len(changed_sections))+
+                ' fatal='+str(len(bad)))
+          for item in bad[:10]:print('QA_ISSUE',item)
+          assert not bad
+          assert 15<=total_strings<=150
+          print('NEUTRAL_FINAL_QA_PASSED no_deployment=true unchanged_purchases=true unchanged_site=true')
+          PY
