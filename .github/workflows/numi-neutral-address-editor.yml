@@ -1,4 +1,4 @@
-name: Neutralize ONLY explicit reader gender on isolated editorial branch
+name: Neutralize ONLY explicit reader gender on isolated editorial branch · pass 2
 on:
   push:
     branches: [editorial/neutral-address-20261116]
