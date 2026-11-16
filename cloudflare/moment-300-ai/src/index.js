@@ -42,6 +42,48 @@ function numerology(dayDate) {
   while (day > 22) day = String(day).split("").reduce((sum, x) => sum + Number(x), 0);
   return "день " + day + ", месяц " + m;
 }
+
+/* Isolated question-specific numerology. Other 299 questions keep the original prompt. */
+function reduceNumber(value) {
+  let n = Math.abs(Number(value));
+  while (n > 9 && n !== 11 && n !== 22 && n !== 33)
+    n = String(n).split("").reduce((sum, digit) => sum + Number(digit), 0);
+  return n;
+}
+function dateParts(iso) {
+  const [year,month,day] = iso.slice(0,10).split("-").map(Number);
+  return {year,month,day};
+}
+function digitSum(value) {
+  return String(value).replace(/\D/g,"").split("").reduce((sum,d)=>sum+Number(d),0);
+}
+function relationNumbers(birth, other, moment) {
+  const woman=dateParts(birth), man=dateParts(other), now=dateParts(moment);
+  const activeYear = now.month > man.month || (now.month === man.month && now.day >= man.day) ? now.year : now.year-1;
+  const maleLifePath=reduceNumber(digitSum(other));
+  const womanLifePath=reduceNumber(digitSum(birth));
+  const maleYear=reduceNumber(digitSum(String(man.day))+digitSum(String(man.month))+digitSum(String(activeYear)));
+  const maleMonth=reduceNumber(maleYear+now.month);
+  const manDay=reduceNumber(man.day), manMonth=reduceNumber(man.month);
+  const womanDay=reduceNumber(woman.day), womanMonth=reduceNumber(woman.month);
+  const attraction=reduceNumber(manDay+womanDay);
+  const interaction=reduceNumber(maleLifePath+womanLifePath);
+  const tension=reduceNumber(Math.abs(manDay-womanDay)||9);
+  const momentNumber=reduceNumber(digitSum(moment.slice(0,10))+digitSum(moment.slice(11)));
+  return {manDay,manMonth,maleLifePath,womanDay,womanMonth,womanLifePath,
+    attraction,interaction,tension,maleYear,maleMonth,activeYear,momentNumber};
+}
+const LOVE001_SYSTEM = [
+  "Только для вопроса «Что он чувствует ко мне?». Напиши один цельный, выразительный абзац на русском, 130–190 слов, без заголовков, списков, второго абзаца и названий энергий.",
+  "Стиль: тёплая и наблюдательная женщина разговаривает с другой женщиной. Повествование живое и конкретное, без комплиментов ради утешения, без сладких обещаний, без шаблонных слов про судьбу и без длинных тире.",
+  "Используй ТОЛЬКО переданные вычисленные показатели; не придумывай другие результаты расчётов. Покажи четыре разные стороны: эмоциональный стиль мужчины из дня, месяца и жизненного пути; отклик именно на эту женщину из показателей сочетания; его нынешние приоритеты из личного года и месяца; тон момента вопроса как слабый уточняющий фактор.",
+  "День и месяц читаются одновременно и могут противоречить друг другу. Числа пары не означают автоматически любовь. Период не отменяет личные качества и не доказывает отсутствие чувств.",
+  "Ключ к разнообразию: извлеки конкретное противоречие из текущей комбинации чисел, а не пересказывай общий характер. Допускай отсутствие интереса, слабую вовлечённость, поверхностное притяжение, эмоциональную закрытость и неопределённость, если трактовка к этому ведёт. Нельзя всегда объяснять холодность тем, что мужчина боится чувств.",
+  "В трактовках периода: 1 начало и собственные планы; 2 сближение либо зависимость от чужого мнения; 3 общение либо поверхностность; 4 устойчивость либо загруженность; 5 перемены либо непостоянство; 6 отношения либо груз обязательств; 7 уединение либо дистанция; 8 амбиции, деньги либо контроль; 9 завершение либо освобождение от прошлого; 11/22/33 читай как усиленные и неоднозначные темы, не своди их автоматически к романтике.",
+  "Сначала ответь на вопрос осторожным вероятностным выводом, затем раскрой причины и признаки, в конце оставь один полезный ориентир на реальные поступки. Не утверждай, что знаешь мысли мужчины: нумерология символическая интерпретация, а не чтение мыслей.",
+  "Не перечисляй числа, формулы и названия энергий в клиентском тексте. Не повторяй один и тот же сюжет для разных дат."
+].join(" ");
+
 const SYSTEM = [
   "Ты составляешь ТОЛЬКО тестовый ответ для одного выбранного вопроса раздела «300 вопросов о жизни» нумерологического сайта.",
   "Нумерология является символическим языком, а не доказанным способом узнать мысли, чувства и будущее другого человека.",
@@ -87,10 +129,18 @@ export default {
     ];
     if (body.other_date) lines.push("Другой человек: " + body.other_date + " (" + numerology(body.other_date) + ")");
     if (body.moment) lines.push("Момент вопроса (локальное время): " + body.moment);
+    const special = body.question_id === "love-001" && !!body.other_date;
+    if (special) {
+      const when = body.moment || new Date().toISOString().slice(0,16);
+      const values = relationNumbers(body.birth_date,body.other_date,when);
+      lines.push("Для вопроса love-001 заранее рассчитанные показатели (не показывать числа в ответе): "+JSON.stringify(values));
+      lines.push("Показатель attraction: потенциальное притяжение; interaction: динамика пары; tension: возможные разногласия. Это разные символические углы, не факты о чувствах.");
+      lines.push("Приоритет трактовки: мужчина 40%, сочетание пары 30%, личные периоды мужчины 25%, момент 5%.");
+    }
     try {
       const result = await env.AI.run(MODEL, {
         messages: [
-          { role: "system", content: SYSTEM },
+          { role: "system", content: special ? LOVE001_SYSTEM : SYSTEM },
           { role: "user", content: lines.join("\n") }
         ],
         max_completion_tokens: 650,
