@@ -1,0 +1,108 @@
+name: Restore original full-life report layout for verified owner
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-full-life-owner-original-ui-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  restore:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate original full report structure remains intact
+        run: |
+          node --check pro/pro.js
+          node --check store-entry.js
+          python3 - <<'PY'
+          from pathlib import Path
+          js=Path('pro/pro.js').read_text('utf8')
+          store=Path('store-entry.js').read_text('utf8')
+          page=Path('pro/index.html').read_text('utf8')
+          assert 'if(schoolClientMode || verifiedOwner)' in js
+          assert '{ownerPreview:false}' in js
+          assert 'const hasPaidAccess = () => schoolClientMode' in js
+          assert 'verifiedOwner && !ownerSeeFree;' in js
+          assert 'renderDiagram(points);' in js and 'renderZones(zones);' in js
+          assert 'renderQuestions(definitions);' in js
+          assert 'pro-paywall-preview-actions' in js
+          assert 'ownerPreview?await walletOwnerMaterial(item):null' in store
+          assert 'pro/pro.js?v=owner-native-ui-20261116' in page
+          assert 'store-entry.js?v=owner-native-ui-20261116' in js
+          print('ORIGINAL_UI_PREFLIGHT_OK owner_access_remains=true original_report_navigation=true no_raw_owner_block=true')
+          PY
+      - name: Back up and restore original owner report layout on REG.RU
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,io,ftplib,ssl,subprocess,hashlib,pathlib,urllib.request,urllib.error,json,time
+          baseline='9d68ca11e77a8d806f0303517978c724f4e22a58^'
+          paths=['store-entry.js','pro/pro.js','pro/index.html']
+          desired={name:pathlib.Path(name).read_bytes() for name in paths}
+          previous={name:subprocess.check_output(['git','show',baseline+':'+name]) for name in paths}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          webroot=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          backups=home+'/site-safeguard-backups/'
+          def get(path):
+            buf=io.BytesIO()
+            try:ftp.retrbinary('RETR '+path,buf.write)
+            except ftplib.error_perm as err:
+              if str(err).startswith('550'):return None
+              raise
+            return buf.getvalue()
+          def put(path,data):
+            ftp.storbinary('STOR '+path,io.BytesIO(data))
+            if get(path)!=data:raise RuntimeError('NATIVE_UI_FTP_MISMATCH')
+          existing={}
+          changed=[]
+          try:
+            for name in paths:
+              current=get(webroot+name)
+              if current not in (previous[name],desired[name]):
+                raise RuntimeError('NATIVE_UI_LIVE_CONFLICT_REFUSE_OVERWRITE '+name)
+              existing[name]=current
+            stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+            for name in paths:
+              if existing[name]!=desired[name]:
+                put(backups+'native-owner-ui-'+name.replace('/','-')+'-'+stamp+'.bak',existing[name])
+            for name in paths:
+              if existing[name]!=desired[name]:
+                put(webroot+name,desired[name]);changed.append(name)
+            url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+            for name in paths:
+              req=urllib.request.Request(url+name+'?native_ui='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
+              with urllib.request.urlopen(req,timeout=28) as response:
+                data=response.read(160000)
+                status=response.status
+              if status!=200 or hashlib.sha256(data).digest()!=hashlib.sha256(desired[name]).digest():
+                raise RuntimeError('NATIVE_UI_PUBLIC_FILE_MISMATCH '+name)
+            req=urllib.request.Request(url+'api/numi-owner-access.php?check='+str(time.time_ns()))
+            with urllib.request.urlopen(req,timeout=25) as response:
+              status=response.status;body=json.load(response)
+            if status!=200 or body.get('owner') is not False:
+              raise RuntimeError('NATIVE_UI_OWNER_PUBLIC_CHECK_FAILED')
+            print('NATIVE_OWNER_UI_PUBLISHED_OK original_sections=true original_card_navigation=true no_extra_owner_text_block=true server_verified_free_owner=true anonymous_owner_false=true')
+          except BaseException:
+            for name in reversed(changed):
+              try:
+                put(webroot+name,existing[name])
+                print('NATIVE_OWNER_UI_ROLLBACK_OK '+name)
+              except Exception:print('NATIVE_OWNER_UI_ROLLBACK_FAILED '+name)
+            raise
+          finally:
+            try:ftp.quit()
+            except Exception:ftp.close()
+          PY
