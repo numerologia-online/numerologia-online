@@ -1,0 +1,43 @@
+name: READ ONLY inspect remaining gender terms in newer protected partner sections
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-life-review-live-partner-words-20261116.yml
+permissions:
+  contents: read
+jobs:
+  read_only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: List limited gender term context in 21 paid partner sections (NO WRITES)
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,io,os,json,re
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')+'/private/numi-account-20261031/store-content/knowledge/full-report/sections/'
+          expression=re.compile(r'(?<!\w)(?:женщин|мужчин|девушк)\w*',re.I)
+          total=0
+          for n in range(1,23):
+              if n==7: continue
+              buf=io.BytesIO()
+              ftp.retrbinary('RETR '+home+'energy-'+str(n)+'.json',buf.write)
+              doc=json.loads(buf.getvalue().decode('utf-8-sig'))
+              partner=doc['sections']['partner']
+              paragraphs=partner.get('paragraphs',[])
+              for ix,p in enumerate(paragraphs):
+                  for m in expression.finditer(p):
+                      context=p[max(0,m.start()-40):min(len(p),m.end()+55)].replace('\n',' ')
+                      print('PARTNER_GENDERED',n,ix,'word='+m.group(),'context='+repr(context),flush=True)
+                      total+=1
+          print('PARTNER_GENDERED_WORD_TOTAL',total,'ftp_writes=0',flush=True)
+          ftp.quit()
+          PY
