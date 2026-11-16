@@ -1,0 +1,55 @@
+name: Read-only compatibility text corruption audit 20261116
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-compat-questionmarks-readonly-20261116.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.event.head_commit.message == 'Read-only audit of REG.RU compatibility question marks'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Inspect protected compatibility banks without altering files
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,io,json,re,os,hashlib
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect("server172.hosting.reg.ru",21)
+          ftp.login(os.environ["REG_FTP_USER"],os.environ["REG_FTP_PASSWORD"])
+          ftp.prot_p();ftp.set_pasv(True)
+          base=ftp.pwd().rstrip("/")
+          private=base+"/private/numi-account-20261031/"
+          def read(path):
+              o=io.BytesIO()
+              def collect(chunk):
+                  if o.tell()+len(chunk)>1800000:raise RuntimeError("FILE_TOO_LARGE")
+                  o.write(chunk)
+              ftp.retrbinary("RETR "+path,collect)
+              return o.getvalue()
+          manifest=json.loads(read(private+"store-assets.json"))
+          suspect=0
+          for n in range(1,23):
+              path=f"data/compatibility/deep/energy-{n}.json"
+              raw=read(private+"store-content/"+path)
+              digest=hashlib.sha256(raw).hexdigest()
+              ok=manifest.get("files",{}).get(path)==digest
+              bank=json.loads(raw)
+              keys=list(bank.get("blocks",{}))
+              anomalies=[]
+              for key,value in bank.get("blocks",{}).items():
+                  payload=json.dumps(value,ensure_ascii=False)
+                  runs=re.findall(r"\\?{3,}",payload)
+                  bad_char=payload.count("�")
+                  if runs or bad_char:
+                      anomalies.append((key,len(runs),max([len(s) for s in runs],default=0),bad_char))
+              suspect+=len(anomalies)
+              print(f"BANK {n:02d} integrity={ok} topics={len(keys)} anomalies={anomalies}",flush=True)
+          print(f"TOTAL_AFFECTED_BLOCKS={suspect}",flush=True)
+          ftp.quit()
+          PY
