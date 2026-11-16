@@ -1,0 +1,134 @@
+name: Publish shared authenticated owner preview for all READY paid materials
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-global-owner-access-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify strict read-only owner policy and JavaScript dependencies
+        run: |
+          php -l account-service/public/numi-owner-material.php
+          php -l account-service/public/numi-owner-access.php
+          for file in wallet-client.js store-entry.js app.js pro/pro.js year-feature.js compatibility-feature.js child/child.js redflag-feature.js; do node --check "$file"; done
+          python3 - <<'PY'
+          from pathlib import Path
+          api=Path('account-service/public/numi-owner-material.php').read_text('utf8')
+          guard=Path('account-service/public/numi-owner-access.php').read_text('utf8')
+          wallet=Path('wallet-client.js').read_text('utf8')
+          store=Path('store-entry.js').read_text('utf8')
+          assert 'naTestOwner($account)' in api and 'naReadPost()' in api
+          assert 'naMaterialBuild($code' in api and 'naCatalogResolve($item,false)' in api
+          for forbidden in ['naSignIn(', 'naStoreApply(', 'naWalletBuy(', 'INSERT INTO', 'UPDATE numi_', 'DELETE FROM']:
+            assert forbidden not in api, forbidden
+          assert "'life_full','year_full','compatibility_full','child_full_v1','redflag_question','yesno_question'" in api
+          assert 'naTestOwner($account)' in guard
+          assert 'walletOwnerMaterial(item)' in wallet
+          assert 'walletOwnerMaterial(item)' in store
+          assert 'return {owner_preview:true,entitlement_id:null' in store
+          assert 'await onMaterial(ownerDoc,null)' in wallet
+          for name in ['app.js','pro/pro.js','year-feature.js','compatibility-feature.js','child/child.js','redflag-feature.js']:
+            assert 'owner-access-20261116' in Path(name).read_text('utf8')
+          assert 'owner-material-20261116' in Path('pro/index.html').read_text('utf8')
+          assert 'owner-access-20261116' in Path('index.html').read_text('utf8')
+          assert 'owner-access-20261116' in Path('child/index.html').read_text('utf8')
+          print('GLOBAL_OWNER_PREFLIGHT_OK only_verified_owner=true no_money_changes=true')
+          PY
+      - name: Back up and publish only owner material API and its shared view scripts
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,io,ftplib,ssl,subprocess,hashlib,pathlib,urllib.request,urllib.error,json,time
+          baseline='58a1c1d2a0f4070740d5e63d05501380016b1824^'
+          paths=[
+            'api/numi-owner-material.php',
+            'wallet-client.js','store-entry.js',
+            'year-feature.js','compatibility-feature.js','child/child.js','redflag-feature.js',
+            'pro/pro.js','app.js',
+            'pro/index.html','child/index.html','index.html'
+          ]
+          source=lambda name:'account-service/public/numi-owner-material.php' if name=='api/numi-owner-material.php' else name
+          after={name:pathlib.Path(source(name)).read_bytes() for name in paths}
+          old_commit={name:subprocess.check_output(['git','show',baseline+':'+name]) if not name.startswith('api/') else None for name in paths}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          webroot=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          backups=home+'/site-safeguard-backups/'
+          def read(p):
+            b=io.BytesIO()
+            try:ftp.retrbinary('RETR '+p,b.write)
+            except ftplib.error_perm as e:
+              if str(e).startswith('550'):return None
+              raise
+            return b.getvalue()
+          def write(p,data):
+            ftp.storbinary('STOR '+p,io.BytesIO(data))
+            if read(p)!=data:raise RuntimeError('GLOBAL_OWNER_FTP_READBACK_FAILED')
+          original={}
+          updated=[]
+          try:
+            for name in paths:
+              current=read(webroot+name)
+              if current not in (old_commit[name],after[name]):
+                raise RuntimeError('GLOBAL_OWNER_LIVE_FILE_CHANGED_REFUSE_OVERWRITE '+name)
+              original[name]=current
+            stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+            for name in paths:
+              if original[name] is not None and original[name]!=after[name]:
+                write(backups+'global-owner-'+name.replace('/','-')+'-'+stamp+'.bak',original[name])
+            for name in paths:
+              if original[name]!=after[name]:
+                write(webroot+name,after[name]);updated.append(name)
+            public='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+            for name in paths:
+              if name.startswith('api/'):continue
+              req=urllib.request.Request(public+name+'?owner_release='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
+              with urllib.request.urlopen(req,timeout=28) as response:
+                status=response.status
+                value=response.read(150000)
+              if status!=200 or hashlib.sha256(value).digest()!=hashlib.sha256(after[name]).digest():
+                raise RuntimeError('GLOBAL_OWNER_PUBLIC_FILE_MISMATCH '+name)
+            for name in ('api/numi-owner-access.php','api/numi-owner-material.php'):
+              req=urllib.request.Request(public+name+'?owner_anonymous_check='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
+              try:
+                with urllib.request.urlopen(req,timeout=22) as response:
+                  status=response.status
+                  data=json.load(response)
+              except urllib.error.HTTPError as err:
+                status=err.code
+                data=json.loads(err.read(3000))
+              if name.endswith('numi-owner-access.php'):
+                if status!=200 or data.get('owner') is not False or data.get('authenticated') is not False:
+                  raise RuntimeError('GLOBAL_OWNER_STATUS_LEAK')
+              else:
+                if status!=403 or data.get('error')!='OWNER_LOGIN_REQUIRED':
+                  raise RuntimeError('GLOBAL_OWNER_MATERIAL_PUBLICLY_ACCESSIBLE')
+            print('GLOBAL_OWNER_LIVE_OK verified_owner_server_only=true public_owner_material_403=true full_life_year_compat_child_redflag=true balance_and_orders_unchanged=true')
+          except BaseException:
+            for name in reversed(updated):
+              try:
+                if original[name] is None:ftp.delete(webroot+name)
+                else:write(webroot+name,original[name])
+                print('GLOBAL_OWNER_ROLLBACK_OK '+name)
+              except Exception:print('GLOBAL_OWNER_ROLLBACK_FAILED '+name)
+            raise
+          finally:
+            try:ftp.quit()
+            except Exception:ftp.close()
+          PY
