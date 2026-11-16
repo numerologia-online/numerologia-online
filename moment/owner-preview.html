@@ -37,7 +37,7 @@ body{background:#fbf8f3;color:#173e31}main{padding:19px 17px 65px;max-width:690p
 #status:empty,#status[hidden]{display:none}
 #result{border-color:#ddcbaa;line-height:1.65}
 #result-heading{font:600 26px Georgia,serif}
-#technical-owner-controls{display:none}
+#technical-owner-controls{display:none}#event-date-fields[hidden],#moment-question-fields[hidden]{display:none}
 .ask-another-question{display:block;margin:24px auto 8px;padding:15px 18px;width:100%;border:1px solid #c9b28b;border-radius:13px;background:#f5ecdc;text-align:center;text-decoration:none;color:#194531;font-weight:750;font-size:16px}
 @media(max-width:420px){main{padding:16px 14px 50px}#work{padding:19px 16px}#question-title{font-size:31px}}
 
@@ -55,7 +55,8 @@ body{background:#fbf8f3;color:#173e31}main{padding:19px 17px 65px;max-width:690p
 <label for="question">Вопрос</label><select id="question"></select></div>
 <label for="birth">Ваша дата рождения</label><input id="birth" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false" required>
 <div id="partner-fields"><label for="other">Дата рождения мужчины</label><input id="other" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false"></div>
-<label for="moment">Дата и время вопроса</label><input id="moment" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" maxlength="16" spellcheck="false"><button id="moment-now" type="button">Сейчас</button><p class="moment-time-help">Время телефона подставляется автоматически перед ответом. Можно изменить вручную.</p>
+<div id="moment-question-fields"><label for="moment">Дата и время вопроса</label><input id="moment" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" maxlength="16" spellcheck="false"><button id="moment-now" type="button">Сейчас</button><p class="moment-time-help">Время телефона подставляется автоматически перед ответом. Можно изменить вручную.</p></div>
+<div id="event-date-fields" hidden><label for="event-date">Дата события</label><input id="event-date" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false" required></div>
 <button id="generate-cloudflare" type="button" style="background:#285e4a">Получить ответ</button>
 <div id="ai-waiting" role="status" aria-live="polite" aria-atomic="true" hidden>Изучаю его характер…</div>
 <div id="technical-owner-controls">
@@ -182,6 +183,7 @@ function bindNumericDateInput(id,withTime=false){
 bindNumericDateInput('birth');
 bindNumericDateInput('other');
 bindNumericDateInput('moment',true);
+bindNumericDateInput('event-date');
 // Use the device's LOCAL civil time, not UTC, for the exact question moment.
 function localMomentString(date){
   const pad=n=>String(n).padStart(2,'0');
@@ -202,6 +204,10 @@ function toIsoDate(raw){
   const days=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31];
   if(year<1900||year>2099||month<1||month>12||day<1||day>days[month-1])return null;
   return m[3]+'-'+m[2]+'-'+m[1];
+}
+function selectedEventMoment(){
+  const value=toIsoDate($('event-date').value);
+  return value?value+'T12:00':null;
 }
 function toIsoMoment(raw){
   const value=String(raw||'').trim();
@@ -231,6 +237,8 @@ function showQuestions(){
 function updateMode(){
  const q=catalog.questions.find(x=>x.id===$('question').value);
  $('partner-fields').hidden=q?.mode!=='partner';
+ $('event-date-fields').hidden=q?.mode!=='event';
+ $('moment-question-fields').hidden=q?.mode==='event';
  if(q){
    $('question-title').textContent=q.title;
    const cat=catalog.categories.find(c=>c.id===q.category);
@@ -293,10 +301,12 @@ $('generate').addEventListener('click',async()=>{
   const needsPartner=!$('partner-fields').hidden;
   const other=needsPartner?toIsoDate($('other').value):null;
   if(needsPartner&&!other){$('status').textContent='Укажи дату рождения второго человека ДД.ММ.ГГГГ.';$('other').focus();return;}
-  if(!momentEditedByOwner)setMomentNow();
+  const eventMode=!$('event-date-fields').hidden;
+  if(!eventMode&&!momentEditedByOwner)setMomentNow();
   const momentText=$('moment').value.trim();
-  const moment=momentText?toIsoMoment(momentText):null;
-  if(momentText&&!moment){$('status').textContent='Дата и время вопроса: ДД.ММ.ГГГГ ЧЧ:ММ.';$('moment').focus();return;}
+  const moment=eventMode?selectedEventMoment():(momentText?toIsoMoment(momentText):null);
+  if(eventMode&&!moment){$('status').hidden=false;$('status').textContent='Укажите корректную дату события.';$('event-date').focus();return;}
+  if(!eventMode&&momentText&&!moment){$('status').hidden=false;$('status').textContent='Проверьте дату и время вопроса.';$('moment').focus();return;}
   btn.disabled=true;btn.textContent='Отправляю запрос…';$('result').hidden=true;
   const feedback=$('generation-feedback');
   feedback.hidden=false;feedback.classList.remove('is-error');
@@ -328,17 +338,20 @@ $('generate-cloudflare').addEventListener('click',async()=>{
   const needsPartner=!$('partner-fields').hidden;
   const other=needsPartner?toIsoDate($('other').value):null;
   if(needsPartner&&!other){$('status').textContent='Введи дату рождения второго человека.';$('other').focus();return;}
-  if(!momentEditedByOwner)setMomentNow();
+  const eventMode=!$('event-date-fields').hidden;
+  if(!eventMode&&!momentEditedByOwner)setMomentNow();
   if(needsPartner)savePairSession();
   const textMoment=$('moment').value.trim();
-  const moment=textMoment?toIsoMoment(textMoment):null;
-  if(textMoment&&!moment){$('status').textContent='Проверь дату и время вопроса.';$('moment').focus();return;}
+  const moment=eventMode?selectedEventMoment():(textMoment?toIsoMoment(textMoment):null);
+  if(eventMode&&!moment){$('status').hidden=false;$('status').textContent='Укажите корректную дату события.';$('event-date').focus();return;}
+  if(!eventMode&&textMoment&&!moment){$('status').hidden=false;$('status').textContent='Проверьте дату и время вопроса.';$('moment').focus();return;}
   const feedback=$('generation-feedback');
   button.disabled=true;button.textContent='Готовлю ваш ответ…';
   feedback.hidden=false;feedback.classList.remove('is-error');
-  feedback.textContent='Подбираю трактовку по вашим датам и моменту вопроса…';
+  feedback.textContent=eventMode?'Сопоставляю дату рождения с выбранной датой события…':'Подбираю трактовку по вашим датам и моменту вопроса…';
   $('result').hidden=true;
   startAiWaiting();
+  if(eventMode)$('ai-waiting').textContent='Анализирую дату события…';
   try{
     const initialQuestionId=$('question').value;
     const result=await getJson('./owner-ai.php',{
