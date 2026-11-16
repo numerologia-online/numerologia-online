@@ -1,28 +1,7 @@
-import {readProJson} from "./secure-reader.js?v=source-gate-20261116";
-// A separate authored interpretation bank for the four kinds of purpose.
-// Never mutate knowledge/full-report/energies.json or the approved 14 readings.
-const purposeScopes = ["personal", "social", "general", "planetary"];
-let request;
-export function loadPurposeReadings() {
-  if (!request) {
-    request = Promise.all(purposeScopes.map(async scope => {
-      const data = await readProJson("purpose",{scope});
-      if (data.schema !== "purpose-reading-v1" || data.scope !== scope) {
-        throw new Error("Неверный формат базы предназначения: " + scope);
-      }
-      const readings = data.readings || {};
-      if (Object.keys(readings).length !== 22 ||
-          Array.from({length:22}, (_, i) => i + 1).some(n => !readings[String(n)])) {
-        throw new Error("Неполная база предназначения: " + scope);
-      }
-      return [scope, readings];
-    })).then(parts => Object.fromEntries(parts)).catch(error => {
-      request = null;
-      throw error;
-    });
-  }
-  return request;
-}
+import { readProJson } from "./secure-reader.js?v=life-content-20261116";
+
+export const loadPurposeReadings = birth => readProJson("purpose", birth);
+
 export function getPurposeReading(bank, scope, number) {
   const result = bank?.[scope]?.[String(number)];
   if (typeof result !== "string" || !result.trim()) {

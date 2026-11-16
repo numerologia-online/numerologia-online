@@ -1,34 +1,57 @@
-/* Full-life only: read original protected authored files after server authentication.
-   No purchase bypass, no edited bank copy, no changes to other products. */
 const pending = new Map();
-function reportBirth(){
-  const input=document.querySelector("#pro-birth-date");
-  const match=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(input?.value?.trim()||"");
-  if(!match)throw new Error("PRO_BIRTH_REQUIRED");
-  return match[3]+"-"+match[2]+"-"+match[1];
+const ticketKey = "numerologia-owner-oidc-ticket-v1";
+
+export function readSignedMiniAppData() {
+  const direct = window.Telegram?.WebApp?.initData;
+  if (typeof direct === "string" && direct) return direct;
+  return new URLSearchParams(location.hash.slice(1)).get("tgWebAppData") || "";
 }
-async function load(kind,params={},textMode=false){
-  const birth_date=reportBirth();
-  const body={kind,birth_date,...params};
-  const key=JSON.stringify(body);
-  if(!pending.has(key)){
-    const req=fetch("pro/private-content.php",{
-      method:"POST",credentials:"same-origin",cache:"no-store",
-      headers:{"Content-Type":"application/json","Accept":textMode?"text/plain":"application/json"},
-      body:JSON.stringify(body)
-    }).then(async response=>{
-      if(!response.ok){
-        let error="";
-        try{error=(await response.json()).error||"";}catch(_){}
-        throw new Error("PRO_PROTECTED_SOURCE_"+response.status+"_"+error);
-      }
-      return textMode?response.text():response.json();
-    }).catch(error=>{pending.delete(key);throw error;});
-    pending.set(key,req);
+
+export function readBrowserOwnerTicket() {
+  let ticket = new URLSearchParams(location.hash.slice(1)).get("tg_session");
+  if (ticket !== null) {
+    history.replaceState(null, "", location.pathname + location.search);
+    try { sessionStorage.setItem(ticketKey, ticket); } catch (_) {}
+  } else {
+    try { ticket = sessionStorage.getItem(ticketKey) || ""; } catch (_) {}
+  }
+  return /^[A-Za-z0-9_.-]{16,5000}$/.test(ticket || "") ? ticket : "";
+}
+
+export function clearBrowserOwnerTicket() {
+  try { sessionStorage.removeItem(ticketKey); } catch (_) {}
+}
+
+export async function readProJson(kind, birth, params = {}) {
+  const body = {kind, ...params};
+  if (birth) {
+    const {year, month, day} = birth;
+    body.birth_date = [year, String(month).padStart(2, "0"), String(day).padStart(2, "0")].join("-");
+  }
+  const signed = readSignedMiniAppData();
+  if (kind !== "karma_preview") {
+    if (signed && signed.length < 6000) body.init_data = signed;
+    else {
+      const ticket = readBrowserOwnerTicket();
+      if (ticket) body.owner_ticket = ticket;
+    }
+  }
+  const key = JSON.stringify(body);
+  if (!pending.has(key)) {
+    const req = fetch("/api/numi-life-content.php", {
+      method: "POST",
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: {"Content-Type": "application/json", "Accept": "application/json"},
+      body: key
+    }).then(async response => {
+      if (!response.ok) throw new Error("Не удалось загрузить разбор (" + response.status + ")");
+      return response.json();
+    }).finally(() => pending.delete(key));
+    pending.set(key, req);
   }
   return pending.get(key);
 }
-export const readProJson=(kind,params={})=>load(kind,params,false);
-export const readProText=(kind,params={})=>load(kind,params,true);
-export const loadProtectedFullReportSection=energy=>
-  readProJson("section",{energy:Number(energy)});
+
+export const loadProtectedFullReportSection = (birth, definition) =>
+  readProJson("section", birth, {energy: definition.energy, chapter: definition.key});

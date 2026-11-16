@@ -1,5 +1,5 @@
-import { findKarmicPrograms, findKarmicTail } from "./karmic-programs-secure.js?v=source-gate-20261116";
-import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=source-gate-20261116";
+import { findKarmicPrograms, findKarmicTail } from "./karmic-programs-secure.js?v=life-content-20261116";
+import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=life-content-20261116";
 
 // The full PDF retains its original 14 authored readings from full-report-pdf.js.
 // Add the four EXISTING purpose interpretations and the matched karmic programs.
@@ -55,7 +55,7 @@ export async function buildProPdfChapters(report) {
 
   // Reuse the four purpose banks already loaded for the on-screen interpretation.
   // No new authored texts, calculation rules or heavy PDF dependencies.
-  const purposeReadings = await loadPurposeReadings();
+  const purposeReadings = await loadPurposeReadings(report.birth);
   chapter("Ваше предназначение",
     "Четыре направления вашего жизненного пути, рассчитанные по вашей матрице.");
   const purposeSections = [

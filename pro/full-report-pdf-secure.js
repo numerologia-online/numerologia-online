@@ -1,7 +1,7 @@
 import { buildFullReportSections } from "../full-report-library.js?v=4";
-import {loadProtectedFullReportSection} from "./secure-reader.js?v=source-gate-20261116";
+import {loadProtectedFullReportSection} from "./secure-reader.js?v=life-content-20261116";
 import { appendPublicPdfOutro } from "../pdf-public-outro.js?v=1";
-import { findKarmicPrograms, findKarmicTail } from "./karmic-programs-secure.js?v=source-gate-20261116";
+import { findKarmicPrograms, findKarmicTail } from "./karmic-programs-secure.js?v=life-content-20261116";
 
 // Отдельный модуль PDF: документ, фон, скачивание и кэширование.
 export function createFullReportPdfController({getReport, reading, extendContent = null, buttonClass = "matrix-pdf-button", beforeDownload = null, customizeDocument = null}) {
@@ -212,15 +212,16 @@ const fullReportCoverTitle = () => `
   </svg>`;
 
 const buildFullReportPdf = async () => {
-  if (!getReport()) throw new Error("Нет данных для PDF");
-  const { formattedDate, matrixData, karmicPrograms, karmicTails } = getReport();
+  const report = getReport();
+  if (!report) throw new Error("Нет данных для PDF");
+  const { birth, formattedDate, matrixData, karmicPrograms, karmicTails } = report;
   const matrixPdfSvg = buildPdfMatrixSvg(matrixData);
   const definitions = buildFullReportSections(matrixData);
   const [pdfMake, records] = await Promise.all([
     getPdfMake(),
     Promise.all(definitions.map(async (definition) => ({
       definition,
-      source: (await loadProtectedFullReportSection(definition.energy))?.sections?.[definition.key]
+      source: (await loadProtectedFullReportSection(birth, definition))?.sections?.[definition.key]
     })))
   ]);
 
@@ -296,7 +297,7 @@ const buildFullReportPdf = async () => {
 
   // Optional extra chapters from the interactive matrix. The original PDF stays unchanged.
   if (typeof extendContent === "function") {
-    const extra = await extendContent(getReport());
+    const extra = await extendContent(report);
     if (!Array.isArray(extra)) throw new Error("Дополнительные главы PDF не найдены");
     content.push(...extra);
   }

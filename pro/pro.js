@@ -1,12 +1,12 @@
 import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=5";
 import { buildFullReportSections, loadFullReportKnowledge } from "../full-report-library.js?v=4";
-import { readProJson,loadProtectedFullReportSection } from "./secure-reader.js?v=source-gate-20261116";
-import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "./karmic-programs-secure.js?v=source-gate-20261116";
+import { readProJson, loadProtectedFullReportSection, readSignedMiniAppData, clearBrowserOwnerTicket } from "./secure-reader.js?v=life-content-20261116";
+import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicReport } from "./karmic-programs-secure.js?v=life-content-20261116";
 import { nodesFor } from "./pro-points.js?v=3";
 import { createProDiagram } from "./pro-diagram.js?v=24";
-import { createFullReportPdfController } from "./full-report-pdf-secure.js?v=source-gate-20261116";
-import { buildProPdfChapters } from "./pro-pdf-content.js?v=source-gate-20261116";
-import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=source-gate-20261116";
+import { createFullReportPdfController } from "./full-report-pdf-secure.js?v=life-content-20261116";
+import { buildProPdfChapters } from "./pro-pdf-content.js?v=life-content-20261116";
+import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=life-content-20261116";
 
 const schoolClientMode = new URLSearchParams(window.location.search).get("from") === "school";
 let verifiedSchoolClientOwner = false;
@@ -105,14 +105,14 @@ const pdfButtons = document.querySelector("#pro-pdf-buttons");
 // Owner-only interface. Never grant access from the URL, local state, or school mode.
 // Only a verified response from the authentication server can activate these controls.
 const AUTH_SERVER = "https://numerologia-online-auth-server.vercel.app";
-const OWNER_TICKET_KEY = "numerologia-owner-oidc-ticket-v1";
+let current = null;
 let verifiedOwner = false;
 let ownerSeeFree = false;
 let ownerToolbar = null;
 // School PDF never trusts a URL parameter: only the separate REG.RU owner gate unlocks it.
 const hasPaidAccess = () => schoolClientMode
   ? verifiedSchoolClientOwner
-  : verifiedOwner && !ownerSeeFree;
+  : (verifiedOwner ? !ownerSeeFree : current?.purchased === true);
 
 // The one free chapter is the left major point (birth day / outer image).
 // Never fetch the complete 14-chapter paid bank in this public preview.
@@ -148,25 +148,20 @@ function loadFreeImpression(energy) {
 }
 const paywallBanner = document.querySelector("#pro-paywall-banner");
 const paywallDialog = document.querySelector("#pro-paywall-dialog");
-const purchasedProRegion=document.createElement("section");
-purchasedProRegion.hidden=true;
-purchasedProRegion.setAttribute("aria-label","Оплаченный полный разбор жизни");
-results.prepend(purchasedProRegion);
-let purchasedPro=null;
-async function refreshPurchasedPro(){
-  if(schoolClientMode || verifiedOwner)return;
-  const chosen=input.value.trim();
-  const match=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(chosen);
-  if(!match)return;
-  const {recognizePurchasedReport}=await import("../store-entry.js?v=report-annual-20261109");
-  const granted=await recognizePurchasedReport(
-    {product_code:"life_full",birth_date:match[3]+"-"+match[2]+"-"+match[1]},purchasedProRegion);
-  if(chosen===input.value.trim() && !verifiedOwner){
-    purchasedPro=granted;
-    if(granted&&paywallBanner)paywallBanner.hidden=true;
-  }
+async function refreshPurchasedPro() {
+  const report = current;
+  if (!report || schoolClientMode || verifiedOwner || results.hidden) return;
+  const access = await readProJson("access", report.birth).catch(() => null);
+  if (current === report && access && access.purchased !== report.purchased) form.requestSubmit();
 }
-window.addEventListener("numi:wallet-updated",()=>{if(!results.hidden)void refreshPurchasedPro();});
+window.addEventListener("numi:wallet-updated", () => void refreshPurchasedPro());
+window.addEventListener("numi:account-logged-out", () => {
+  clearBrowserOwnerTicket();
+  verifiedOwner = false;
+  ownerToolbar?.remove();
+  ownerToolbar = null;
+  if (current && !schoolClientMode) form.requestSubmit();
+});
 const oldPreviewParam = new URL(location.href);
 const startBrowserLogin = oldPreviewParam.searchParams.get("sign_in") === "telegram";
 let cleanedUrl = false;
@@ -183,9 +178,6 @@ if (startBrowserLogin) {
   location.assign(AUTH_SERVER + "/api/start?return_to=pro");
 }
 function showPaymentInfo() {
-  if(purchasedPro&&!purchasedProRegion.hidden){
-    purchasedProRegion.scrollIntoView({behavior:"smooth",block:"start"});return;
-  }
   if (schoolClientMode || !paywallDialog) return;
   const note = paywallDialog.querySelector("#pro-paywall-checkout-note");
   if (note) {
@@ -272,97 +264,31 @@ function showOwnerControls() {
   form.before(ownerToolbar);
   syncPaywallUi();
 }
-function readSignedMiniAppData() {
-  const direct = window.Telegram?.WebApp?.initData;
-  if (typeof direct === "string" && direct) return direct;
-  const fragment = location.hash.replace(/^#/, "");
-  if (!fragment.includes("tgWebAppData=")) return "";
-  try { return new URLSearchParams(fragment).get("tgWebAppData") || ""; }
-  catch (_) { return ""; }
-}
 async function verifyOwnerAccess() {
   if (schoolClientMode) return;
-  // Only the authenticated REG.RU owner gets the original interactive report.
   try {
-    const checkOwner = async () => {
-      const response = await fetch("/api/numi-owner-access.php", {
-        method:"GET",credentials:"same-origin",cache:"no-store",
-        headers:{"Accept":"application/json"}
-      });
-      if (!response.ok) return false;
-      const result=await response.json();
-      return result?.ok===true && result?.owner===true;
-    };
-    let owner=await checkOwner();
-    if (!owner) {
-      const signed=readSignedMiniAppData();
-      if (signed && signed.length<12000) {
-        const login=await fetch("/api/numi-account.php",{
-          method:"POST",credentials:"same-origin",cache:"no-store",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({action:"telegram",init_data:signed})
-        });
-        if (login.ok) owner=await checkOwner();
-      }
-    }
-    if (owner) {
-      verifiedOwner=true;
-      ownerSeeFree=false;
-      purchasedPro=null;
-      purchasedProRegion.hidden=true;
-      purchasedProRegion.replaceChildren();
-      showOwnerControls();
-      if (current && input.value) form.requestSubmit();
-      return;
-    }
-  } catch (error) {
-    console.warn("Проверка владельца REG.RU пока недоступна",error);
-  }
-  // Keep the original, previously supported owner sign-in fallback.
-  try {
-    const initData = readSignedMiniAppData();
-    let response;
-    if (initData) {
-      response = await fetch(AUTH_SERVER + "/api/miniapp", {
+    let access = await readProJson("access");
+    const signed = readSignedMiniAppData();
+    if (!access.owner && !access.authenticated && signed && signed.length < 6000) {
+      const login = await fetch("/api/numi-account.php", {
         method: "POST",
-        mode: "cors",
+        credentials: "same-origin",
         cache: "no-store",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({init_data: initData})
+        body: JSON.stringify({action: "telegram", init_data: signed})
       });
-    } else {
-      const fragment = location.hash.replace(/^#/, "");
-      let ticket = "";
-      if (fragment.startsWith("tg_session=")) {
-        ticket = new URLSearchParams(fragment).get("tg_session") || "";
-        history.replaceState(null, "", location.pathname + location.search);
-        try { sessionStorage.setItem(OWNER_TICKET_KEY, ticket); } catch (_) {}
-      } else {
-        try { ticket = sessionStorage.getItem(OWNER_TICKET_KEY) || ""; } catch (_) {}
-      }
-      if (!/^[A-Za-z0-9_.-]{16,5000}$/.test(ticket)) return;
-      response = await fetch(AUTH_SERVER + "/api/session", {
-        method: "GET",
-        mode: "cors",
-        cache: "no-store",
-        headers: {Authorization: "Bearer " + ticket}
-      });
-      if (!response.ok) {
-        try { sessionStorage.removeItem(OWNER_TICKET_KEY); } catch (_) {}
-      }
+      if (login.ok) access = await readProJson("access");
     }
-    if (!response?.ok) return;
-    const answer = await response.json();
-    if (answer?.owner !== true || !answer?.user?.id) return;
-    verifiedOwner = true;
-    ownerSeeFree = false;
-    purchasedPro=null;
-    purchasedProRegion.hidden=true;
-    purchasedProRegion.replaceChildren();
-    showOwnerControls();
-    if (current && input.value) form.requestSubmit();
-  } catch (err) {
-    console.warn("Проверка владельца пока недоступна", err);
+    if (access.owner) {
+      verifiedOwner = true;
+      ownerSeeFree = false;
+      showOwnerControls();
+      if (current && input.value) form.requestSubmit();
+    } else if (access.authenticated && current) {
+      void refreshPurchasedPro();
+    }
+  } catch (error) {
+    console.warn("Проверка доступа к полному разбору пока недоступна", error);
   }
 }
 async function verifySchoolClientOwner() {
@@ -409,7 +335,6 @@ zoneButtons.addEventListener("click", () => { selectedZoneFrom = "picker"; }, tr
 
 const namespace = "http://www.w3.org/2000/svg";
 
-let current = null;
 let requestId = 0;
 let answerRequestId = 0;
 
@@ -458,49 +383,9 @@ results.addEventListener("toggle", event => {
 let zoneLibraryRequest;
 let previewLibraryRequest;
 const practicalEnergies = new Set([4, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]);
-const practicalGuidanceRequests = new Map();
-
-function loadPracticalGuidance(energy) {
-  const number = Number(energy);
-  if (!practicalEnergies.has(number)) return Promise.resolve(null);
-  if (!practicalGuidanceRequests.has(number)) {
-    const request = readProJson("guidance",{energy:number})
-      .then(bank => {
-        if (bank.energy !== number || Object.keys(bank.sections || {}).length !== 14) {
-          throw new Error("Практическое дополнение неполное");
-        }
-        return bank;
-      })
-      .catch(() => {
-        practicalGuidanceRequests.delete(number);
-        return null;
-      });
-    practicalGuidanceRequests.set(number, request);
-  }
-  return practicalGuidanceRequests.get(number);
-}
-
-let karmicDeepeningRequest;
-function loadKarmicDeepening() {
-  if (!karmicDeepeningRequest) {
-    // Program supplements are already included in the shared program JSON.
-    // Only the two ordered karmic-tail supplements remain separate.
-    karmicDeepeningRequest = Promise.all([
-      readProJson("karmic_deepening",{part:"a"}),
-      readProJson("karmic_deepening",{part:"b"}),
-      loadKarmicProgramGuidance()
-    ]).then(([tailA, tailB, program]) => {
-      if (tailA.role !== "tail" || tailB.role !== "tail" ||
-          !tailA.entries || !tailB.entries) {
-        throw new Error("Неполная база дополнений кармического хвоста");
-      }
-      return { tail: { ...tailA.entries, ...tailB.entries }, program };
-    }).catch(error => {
-      karmicDeepeningRequest = null;
-      throw error;
-    });
-  }
-  return karmicDeepeningRequest;
+function loadPracticalGuidance(birth, energy, chapter) {
+  if (!practicalEnergies.has(energy)) return Promise.resolve(null);
+  return readProJson("guidance", birth, {energy, chapter}).catch(() => null);
 }
 
 function loadZoneLibrary() {
@@ -886,8 +771,8 @@ function loadInlineFullReading(target, key, pointEnergy = null, includeGuidance 
   const energy = Number.isInteger(pointEnergy) ? pointEnergy : definition.energy;
   target.replaceChildren(paragraph("Открываю полный разбор…", "pro-muted"));
   return Promise.all([
-    hasPaidAccess() ? loadProtectedFullReportSection(energy) : (key === FREE_PRO_TOPIC ? loadFreeImpression(energy) : Promise.reject(new Error("Платный раздел закрыт"))),
-    includeGuidance && hasPaidAccess() ? loadPracticalGuidance(energy) : Promise.resolve(null)
+    hasPaidAccess() ? loadProtectedFullReportSection(report.birth, {energy, key}) : (key === FREE_PRO_TOPIC ? loadFreeImpression(energy) : Promise.reject(new Error("Платный раздел закрыт"))),
+    includeGuidance && hasPaidAccess() ? loadPracticalGuidance(report.birth, energy, key) : Promise.resolve(null)
   ])
     .then(([bank, guidance]) => {
       if (!current || current.id !== id || !target.isConnected) return;
@@ -1204,8 +1089,8 @@ async function selectQuestion(key, scroll = false) {
   answer.replaceChildren(paragraph("Загружаю подробную расшифровку…", "pro-muted"));
   try {
     const [bank, practicalGuidance] = await Promise.all([
-      hasPaidAccess() ? loadProtectedFullReportSection(definition.energy) : loadFreeImpression(definition.energy),
-      hasPaidAccess() ? loadPracticalGuidance(definition.energy) : Promise.resolve(null)
+      hasPaidAccess() ? loadProtectedFullReportSection(current.birth, definition) : loadFreeImpression(definition.energy),
+      hasPaidAccess() ? loadPracticalGuidance(current.birth, definition.energy, definition.key) : Promise.resolve(null)
     ]);
     if (!current || current.id !== id || current.selected !== key || answerRequestId !== request) return;
     const source = bank?.sections?.[key];
@@ -1257,7 +1142,7 @@ async function renderPurpose(matrix) {
   }
   const id = current?.id;
   purpose.replaceChildren(paragraph("Подбираю персональные трактовки предназначения…", "pro-muted"));
-  const readings = await loadPurposeReadings();
+  const readings = await loadPurposeReadings(current.birth);
   if (!current || current.id !== id) return;
   purpose.replaceChildren();
   const headline = element("h2", "Ваше предназначение");
@@ -1356,18 +1241,18 @@ function compactKarmicList(tailCount = 1) {
   karmic.append(list);
 }
 
-function renderKarmic(matrix, programsBank, tailsBank, deepening) {
-  const tail = findKarmicTail(matrix, tailsBank);
-  const programs = findKarmicPrograms(matrix, programsBank);
+function renderKarmic(matrix, {programs: programsBank, tails: tailsBank, deepening, count}) {
   karmic.replaceChildren();
   const tailValues = [matrix.tail.first, matrix.tail.second, matrix.bottom];
   const code = tailValues.join("-");
-  if (!hasPaidAccess()) {
+  if (Number.isInteger(count)) {
     karmic.append(paragraph("Ваш кармический хвост: " + code, "pro-karmic-current-code"));
-    karmic.append(paragraph("Найдено кармических программ: " + programs.length, "pro-muted"));
+    karmic.append(paragraph("Найдено кармических программ: " + count, "pro-muted"));
     karmic.append(makePaywallLock("Подробные кармические трактовки"));
     return;
   }
+  const tail = findKarmicTail(matrix, tailsBank);
+  const programs = findKarmicPrograms(matrix, programsBank);
   const tailKey = karmicTripleKey(tailValues);
   const tailPlaces = getMatrixTriples(matrix).filter(item => karmicTripleKey(item.values) === tailKey);
   karmic.append(paragraph("Кармический хвост " + code, "pro-karmic-current-code"));
@@ -1475,16 +1360,8 @@ form.addEventListener("submit", async(event)=>{
   error.hidden=true;
   closeKarmicInline();
   invalidateFullPdf();
-  purchasedPro=null;
-  purchasedProRegion.hidden=true;
-  purchasedProRegion.dataset.numiReportKey="";
   pdfControls.hidden = true;
   pdfButtons.replaceChildren();
-  syncPaywallUi();
-  if (!hasPaidAccess()) {
-    pdfButtons.replaceChildren(makeLockedPdfButton());
-    pdfControls.hidden = false;
-  }
   const formattedDate = input.value;
   const id=++requestId;
   hidePointPreview();
@@ -1495,11 +1372,27 @@ form.addEventListener("submit", async(event)=>{
   submit.textContent="Подбираю ответы…";
   try{
     const matrix=calculateMatrix(birth);
-    const [knowledge,zones,previews]=await Promise.all([loadFullReportKnowledge(),loadZoneLibrary(),loadPreviewLibrary()]);
+    const accessCheck = schoolClientMode || verifiedOwner
+      ? Promise.resolve(null)
+      : readProJson("access", birth).catch(() => null);
+    const [knowledge, zones, previews, access] = await Promise.all([
+      loadFullReportKnowledge(), loadZoneLibrary(), loadPreviewLibrary(), accessCheck
+    ]);
     if(id!==requestId)return;
     const points=nodesFor(birth,matrix);
     const definitions=buildFullReportSections(matrix);
-    current={id,birth,matrix,knowledge,points,definitions,zones,previews,activeZone:null,selected:null};
+    current = {id, birth, matrix, knowledge, points, definitions, zones, previews,
+      activeZone: null, selected: null, purchased: access?.purchased === true};
+    if (access?.owner && !verifiedOwner) {
+      verifiedOwner = true;
+      ownerSeeFree = false;
+      showOwnerControls();
+    }
+    syncPaywallUi();
+    if (!hasPaidAccess()) {
+      pdfButtons.replaceChildren(makeLockedPdfButton());
+      pdfControls.hidden = false;
+    }
     pointDetails.hidden = true;
     pointDetails.replaceChildren();
     zoneReadingHome.before(zoneReading);
@@ -1516,28 +1409,29 @@ form.addEventListener("submit", async(event)=>{
     });
     diagram.querySelectorAll(".pro-node").forEach(node => node.classList.remove("pro-karmic-highlight"));
     results.hidden=false;
-    void refreshPurchasedPro();
     rememberCalculatedBirth(formattedDate);
     // On refresh do not force the reader away from the browser's restored scroll.
     if (!restoringRememberedBirth) {
       scrollOpenedAnswerToTop(results, () => current?.id === id && !results.hidden);
     }
     karmic.replaceChildren(paragraph("Подбираю кармические программы…","pro-muted"));
-    Promise.all([
-      loadKarmicPrograms(),
-      loadKarmicTails(),
-      loadKarmicDeepening().catch(() => ({tail: {}, program: {}}))
-    ]).then(([programs,tails,deepening])=>{
-      if(current?.id!==id)return;
-      renderKarmic(matrix,programs,tails,deepening);
+    const paid = hasPaidAccess();
+    const karmaRequest = paid ? loadKarmicReport(birth) : readProJson("karma_preview", birth);
+    karmaRequest.then(karma => {
+      if (current?.id !== id) return;
+      renderKarmic(matrix, karma);
+      if (!paid) return;
       current.pdfReport = {
-        formattedDate, matrixData: matrix, karmicPrograms: programs, karmicTails: tails,
-        points, zones, previews, knowledge, deepening
+        birth, formattedDate, matrixData: matrix, karmicPrograms: karma.programs,
+        karmicTails: karma.tails, points, zones, previews, knowledge, deepening: karma.deepening
       };
-      pdfButtons.replaceChildren(hasPaidAccess() ? createFullReportPdfButton("top") : makeLockedPdfButton());
+      pdfButtons.replaceChildren(createFullReportPdfButton("top"));
       pdfControls.hidden = false;
-    })
-      .catch(()=>{if(current?.id===id)karmic.replaceChildren(paragraph("Не получилось загрузить кармические программы. Попробуйте обновить страницу.","pro-muted"));});
+    }).catch(() => {
+      if (current?.id === id) {
+        karmic.replaceChildren(paragraph("Не получилось загрузить кармические программы. Попробуйте обновить страницу.", "pro-muted"));
+      }
+    });
   }catch(err){
     error.textContent="Не удалось загрузить расчёт. Обновите страницу и попробуйте снова.";
     error.hidden=false;
