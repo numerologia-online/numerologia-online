@@ -25,7 +25,7 @@ result.prepend(purchasedChildRegion);
 async function refreshPurchasedChild(){
   if(!birth)return;
   const key=[birth.year,String(birth.month).padStart(2,"0"),String(birth.day).padStart(2,"0")].join("-");
-  const {recognizePurchasedReport}=await import("../store-entry.js?v=report-annual-20261109");
+  const {recognizePurchasedReport}=await import("../store-entry.js?v=owner-access-20261116");
   const granted=await recognizePurchasedReport(
     {product_code:"child_full_v1",birth_date:key},purchasedChildRegion);
   if(!birth || key!==[birth.year,String(birth.month).padStart(2,"0"),String(birth.day).padStart(2,"0")].join("-"))return;
