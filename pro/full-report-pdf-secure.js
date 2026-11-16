@@ -308,6 +308,9 @@ const buildFullReportPdf = async () => {
     info: { title: `Полный разбор ${formattedDate}` },
     background: () => ({ svg: fullReportPdfFrame() }),
     content,
+    pageBreakBefore: (node, followingNodes) => node.headlineLevel === 1 && (
+      node.pageNumbers.length > 1 || !followingNodes.some(({ style }) => style === "paragraph" || style === "chapterLead")
+    ),
     defaultStyle: { font: "Roboto", fontSize: 26, color: "#314454", lineHeight: 1.34 },
     styles: {
       coverDate: { font: "Roboto", fontSize: 18, bold: true, color: "#8E6729", margin: [0, 0, 0, 0] },

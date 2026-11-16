@@ -4,8 +4,8 @@ import { readProJson, loadProtectedFullReportSection, readSignedMiniAppData, cle
 import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicReport } from "./karmic-programs-secure.js?v=life-content-20261116";
 import { nodesFor } from "./pro-points.js?v=3";
 import { createProDiagram } from "./pro-diagram.js?v=24";
-import { createFullReportPdfController } from "./full-report-pdf-secure.js?v=life-content-20261116";
-import { buildProPdfChapters } from "./pro-pdf-content.js?v=life-content-20261116";
+import { createFullReportPdfController } from "./full-report-pdf-secure.js?v=life-pdf-text-20261116";
+import { buildProPdfChapters } from "./pro-pdf-content.js?v=life-pdf-text-20261116";
 import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=life-content-20261116";
 
 const schoolClientMode = new URLSearchParams(window.location.search).get("from") === "school";

@@ -16,40 +16,23 @@ export async function buildProPdfChapters(report) {
     deepening
   } = report;
   const content = [];
-  const add = (text, options = {}) => {
+  const add = (text, style = "paragraph") => {
     if (!text || !String(text).trim()) return;
-    content.push({
-      text: String(text),
-      font: "Roboto",
-      color: "#344b5a",
-      fontSize: 17,
-      lineHeight: 1.32,
-      margin: [0, 0, 0, 12],
-      ...options
-    });
+    const item = { text: String(text), style };
+    if (style === "eyebrow" || style === "chapter" || style === "sectionTitle" || style === "subheading") {
+      item.headlineLevel = 1;
+    }
+    content.push(item);
   };
   const chapter = (title, lead) => {
-    add("НУМЕРОЛОГИЯ ОНЛАЙН · ПЕРСОНАЛЬНЫЙ РАЗБОР", {
-      fontSize: 11, color: "#9d7e49", bold: true, characterSpacing: 1.3,
-      margin: [0, 10, 0, 12]
-    });
-    add(title, {
-      fontSize: 34, bold: true, color: "#19364e", lineHeight: 1.15,
-      margin: [0, 0, 0, 17]
-    });
-    add(lead, {
-      fontSize: 18, color: "#607887", margin: [0, 0, 0, 24]
-    });
+    add("НУМЕРОЛОГИЯ ОНЛАЙН · ПЕРСОНАЛЬНЫЙ РАЗБОР", "eyebrow");
+    add(title, "chapter");
+    add(lead, "chapterLead");
   };
-  const heading = (title) => add(title, {
-    fontSize: 23, bold: true, color: "#19364e", margin: [0, 22, 0, 11]
-  });
+  const heading = (title) => add(title, "sectionTitle");
   const minor = (title, text) => {
     if (!text) return;
-    add(title, {
-      fontSize: 18, bold: true, color: "#956f37",
-      margin: [0, 13, 0, 6]
-    });
+    add(title, "subheading");
     add(text);
   };
 
@@ -100,9 +83,7 @@ export async function buildProPdfChapters(report) {
     }
   };
 
-  add("Ваш кармический хвост: " + tailCode, {
-    fontSize: 23, bold: true, color: "#19364e"
-  });
+  heading("Ваш кармический хвост: " + tailCode);
   if (tail) {
     const approvedProgramReading = deepening?.program?.[tailCode]?.approvedReading?.length === 5
       ? deepening.program[tailCode] : null;
@@ -121,8 +102,10 @@ export async function buildProPdfChapters(report) {
         deepening?.program?.[program.code] || deepening?.tail?.[program.code]);
       const places = (program.matches || []).map(match => match.label).filter(Boolean);
       if (places.length) {
-        add("Где обнаружена: " + places.join("; ") + ".", {
-          fontSize: 15, color: "#6a7680"
+        content.push({
+          text: "Где обнаружена: " + places.join("; ") + ".",
+          fontSize: 15, color: "#6a7680", lineHeight: 1.32,
+          margin: [0, 0, 0, 12]
         });
       }
     });
