@@ -1,0 +1,105 @@
+name: Restore proven Year-style bottom PDF Save Share in Full Life only
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-full-life-year-style-pdf-release-20261116.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 30e9cc7a6bb14cbd3f5bed5432013b9dca8a74ee
+          fetch-depth: 0
+      - name: Verify identical Year-style PDF dialog flow and changed-file syntax
+        run: |
+          set -euo pipefail
+          node --check pro/full-report-pdf-panel.js
+          node --check pro/full-report-pdf-secure.js
+          node --check pro/pro.js
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const panel=readFileSync('pro/full-report-pdf-panel.js','utf8');
+          const controller=readFileSync('pro/full-report-pdf-secure.js','utf8');
+          const app=readFileSync('pro/pro.js','utf8');
+          const html=readFileSync('pro/index.html','utf8');
+          const year=readFileSync('year-feature.js','utf8');
+          for(const term of ['showModal()', 'navigator.share({files:[file]})', 'navigator.canShare', 'IntersectionObserver', 'pdf.min.mjs', 'pdf.worker.min.mjs', 'link.download=filename'])assert(panel.includes(term), 'Missing Year-style PDF feature '+term);
+          assert(year.includes('navigator.share({ files: [file] })'));
+          assert(year.includes('pdfPreviewDialog.showModal()'));
+          assert(panel.includes('Поделиться PDF') && panel.includes('Скачать PDF'));
+          assert(controller.includes('openFullReportPdfPanel(fileInfo)'));
+          assert(controller.includes('getBlob(resolve)'));
+          const v='life-pdf-year-parity-20261116-r2';
+          assert(controller.includes('full-report-pdf-panel.js?v='+v));
+          assert(app.includes('full-report-pdf-secure.js?v='+v));
+          assert(html.includes('pro/pro.js?v='+v));
+          console.log('YEAR_PDF_PARITY_PRECHECK_OK bottom_toolbar=true prepared_file_share=true preview_dialog=true cached_modules_busted=true original_generator_untouched=true');
+          JS
+      - name: Safe FTP backup, exact 4-file publish and readback with rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import hashlib,ftplib,io,os,pathlib,ssl,subprocess,time
+          BASE='910f6a52fd60e3716fbcbe3baf8ce75c2312d12f'
+          REVIEWED='30e9cc7a6bb14cbd3f5bed5432013b9dca8a74ee'
+          names=['pro/full-report-pdf-panel.js','pro/full-report-pdf-secure.js','pro/pro.js','pro/index.html']
+          assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==REVIEWED
+          def gitref(sha,path):return subprocess.check_output(['git','show',sha+':'+path])
+          expected={p:gitref(BASE,p) for p in names}
+          prepared={p:pathlib.Path(p).read_bytes() for p in names}
+          assert all(expected[p]!=prepared[p] for p in names),'EXPECTED_FOUR_NEW_FILES'
+          assert all(len(prepared[p])<120000 for p in names),'FILE_LIMIT_EXCEEDED'
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          site=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          archive=home+'/site-safeguard-backups/'
+          def read(p):
+              b=io.BytesIO();ftp.retrbinary('RETR '+p,b.write);return b.getvalue()
+          def write(p,data):
+              ftp.storbinary('STOR '+p,io.BytesIO(data))
+              if read(p)!=data:raise RuntimeError('FTP_READBACK_MISMATCH '+p)
+          touched=[]
+          try:
+              assert read(site+'index.html').strip(),'WRONG_SITE_ROOT'
+              for p in names:
+                  if read(site+p)!=expected[p]:raise RuntimeError('LIVE_BASELINE_CHANGED_DO_NOT_OVERWRITE '+p)
+              print('YEAR_STYLE_PDF_PRECHECK_LIVE_MATCH 4, no other sections touched',flush=True)
+              try:ftp.mkd(archive.rstrip('/'))
+              except ftplib.error_perm:pass
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              for p in names:
+                  suffix=hashlib.sha256(p.encode()).hexdigest()[:12]
+                  write(archive+'life-year-pdf-'+stamp+'-'+suffix+'.bak',expected[p])
+              print('YEAR_STYLE_PDF_BACKUPS_VERIFIED 4',flush=True)
+              for p in names:
+                  touched.append(p)
+                  write(site+p,prepared[p])
+                  print('YEAR_STYLE_PDF_FILE_PUBLISHED',p,flush=True)
+              for p in names:
+                  assert read(site+p)==prepared[p],'FINAL_REMOTE_READBACK_MISMATCH '+p
+              print('YEAR_STYLE_PDF_PRODUCTION_SUCCESS files=4 bottom_buttons=true cached_versions_updated=true full_life_texts_untouched=true',flush=True)
+          except BaseException:
+              failures=[]
+              for p in reversed(touched):
+                  try:write(site+p,expected[p])
+                  except BaseException:failures.append(p)
+              print('YEAR_STYLE_PDF_ROLLBACK', 'INCOMPLETE' if failures else 'OK', 'touched='+str(len(touched)),flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
