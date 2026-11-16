@@ -7,11 +7,11 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: reg-ru-manual-publication
+  group: reg-ru-sep05-09-independent-readback
   cancel-in-progress: false
 jobs:
   readback:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Verify REG.RU Love September 5-9 readback'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Verify REG.RU Love September 5-9 AFTER publishing'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
