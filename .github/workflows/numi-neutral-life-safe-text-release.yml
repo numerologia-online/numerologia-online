@@ -1,4 +1,4 @@
-name: Publish ONLY approved-scope full-life gender grammar corrections
+name: Publish ONLY approved-scope full-life gender grammar corrections · verified 90 forms
 on:
   push:
     branches: [main]
