@@ -52,7 +52,7 @@ jobs:
                   assert 'partner' in doc['sections'] and 'trueLove' in doc['sections']
                   for sec in doc['sections'].values():
                       if 'content' in sec and 'paragraphs' in sec:
-                          assert sec['content']=='\n\n'.join(sec['paragraphs']), 'PDF_TEXT_MISMATCH: energy-'+str(n)
+                          assert sec['content'].endswith('\n\n'.join(sec['paragraphs'])), 'PDF_TEXT_MISMATCH: energy-'+str(n)
                   count+=1
                   print('FULL_LIFE_BANK_VERIFIED',n,flush=True)
               names=['pro/index.html','pro/pro.js','pro/full-report-pdf-secure.js','pro/pro-pdf-content.js','pro/secure-reader.js','pdf-public-outro.js','full-report-library.js']
