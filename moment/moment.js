@@ -9,6 +9,48 @@
   const showMore=$("show-more"), showAll=$("show-all");
   const catalogStatus=$("moment-catalog-status"), catalogRetry=$("moment-catalog-retry");
   let catalog=null, active=null, visibleCount=12, ownerMode=false;
+  const pairKey='numi-moment-pair-session-v1';
+  const pairWrap=$('moment-pair-dates'), pairSelf=$('moment-pair-self'), pairOther=$('moment-pair-other');
+  const pairError=$('moment-pair-error'), pairChange=$('moment-pair-change');
+  function validDate(value){
+    const match=String(value||'').match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+    if(!match)return false;
+    const d=Number(match[1]),m=Number(match[2]),y=Number(match[3]);
+    const check=new Date(Date.UTC(y,m-1,d));
+    return y>=1900&&y<=2099&&check.getUTCFullYear()===y&&check.getUTCMonth()+1===m&&check.getUTCDate()===d;
+  }
+  function formatDate(raw){
+    const v=String(raw||'').replace(/\D/g,'').slice(0,8);
+    return v.slice(0,2)+(v.length>2?'.'+v.slice(2,4):'')+(v.length>4?'.'+v.slice(4):'');
+  }
+  function readPair(){
+    try{const o=JSON.parse(sessionStorage.getItem(pairKey)||'null');return o&&validDate(o.self)&&validDate(o.other)?o:null;}catch{return null;}
+  }
+  function storePair(){
+    if(validDate(pairSelf.value)&&validDate(pairOther.value)){
+      try{sessionStorage.setItem(pairKey,JSON.stringify({self:pairSelf.value,other:pairOther.value}));}catch(_){}
+      pairError.hidden=true;pairChange.hidden=false;return true;
+    }
+    pairError.hidden=false;return false;
+  }
+  const oldPair=readPair();
+  if(oldPair){pairSelf.value=oldPair.self;pairOther.value=oldPair.other;pairChange.hidden=false;}
+  for(const el of [pairSelf,pairOther]){
+    el.addEventListener('input',()=>{
+      el.value=formatDate(el.value);
+      pairError.hidden=true;
+      try{sessionStorage.removeItem(pairKey);}catch(_){}
+      pairChange.hidden=true;
+    });
+    el.addEventListener('change',()=>{if(validDate(pairSelf.value)&&validDate(pairOther.value))storePair();});
+  }
+  pairChange.addEventListener('click',()=>{
+    pairSelf.focus();pairSelf.select();pairError.hidden=true;
+  });
+  function showPairEntry(){
+    const applicable=active&&catalog?.questions.some(q=>q.category===active&&q.mode==='partner');
+    pairWrap.hidden=!applicable;
+  }
   const norm=t=>String(t||"").toLocaleLowerCase("ru-RU").replace(/ё/g,"е").replace(/[^а-яa-z0-9 ]/gi," ").replace(/\s+/g," ").trim();
   const elem=(tag,cls,value)=>{
     const el=document.createElement(tag);
@@ -47,6 +89,7 @@
   function renderQuestions(){
     const found=filtered(),cat=catalog.categories.find(c=>c.id===active);
     resultsTitle.textContent=cat?cat.title:"Все вопросы";
+    showPairEntry();
     resultsMsg.textContent=found.length?"49 ₽ за вопрос · В разработке · "+found.length+" вопросов":"Вопросов не найдено";
     showAll.hidden=false;
     clear.hidden=!search.value;
@@ -65,6 +108,7 @@
       );
       b.addEventListener("click",()=>{
         if(ownerMode){
+          if(q.mode==='partner'&&!storePair()){pairWrap.scrollIntoView({behavior:'smooth',block:'center'});return;}
           location.assign("./owner-preview.html?question="+encodeURIComponent(q.id));
           return;
         }
