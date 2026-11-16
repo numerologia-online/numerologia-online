@@ -1,0 +1,47 @@
+name: Audit former-site links in all live source files
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-audit-legacy-links-20261116.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-link-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find former developer and old-domain links across site sources
+        run: |
+          python3 - <<'PY'
+          import pathlib,subprocess
+          tracked=subprocess.check_output(['git','ls-files','-z']).decode().split('\x00')
+          patterns={
+            'former_github_pages':'numerologia-online.github.io/numerologia-online/',
+            'old_brand_domain':'numerologia.online',
+            'preview_vercel_domain':'numerologia-online.vercel.app'
+          }
+          endings={'.js','.mjs','.html','.htm','.php','.css','.json','.md','.xml','.txt'}
+          ignores=('archive/','.github/','scripts/','tests/','diagnostics/','deploy/')
+          result={name:[] for name in patterns}
+          checked=0
+          for item in tracked:
+            if not item or item.startswith(ignores): continue
+            file=pathlib.Path(item)
+            if file.suffix.lower() not in endings: continue
+            try: content=file.read_text('utf8')
+            except (UnicodeError,OSError): continue
+            checked+=1
+            for name,needle in patterns.items():
+              for lineno,line in enumerate(content.splitlines(),1):
+                if needle.casefold() in line.casefold():
+                  result[name].append((item,lineno,line.strip()[:230]))
+          print('SOURCE_LINK_AUDIT_FILES='+str(checked))
+          for name,matches in result.items():
+            print('SOURCE_LINK_AUDIT '+name+' total='+str(len(matches)))
+            for path,line,fragment in matches[:100]:
+              print('LOCATION '+name+' '+path+':'+str(line)+' '+fragment)
+          print('SOURCE_LINK_AUDIT_COMPLETED')
+          PY
