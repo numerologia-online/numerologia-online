@@ -48,7 +48,7 @@ jobs:
                   protected=read(private+'store-content/'+p)
                   if local!=public or local!=protected or sha(local)!=manifest['files'].get(p):
                       raise RuntimeError('BANK_MISMATCH:'+str(n))
-                  doc=json.loads(local.decode('utf8-sig'))
+                  doc=json.loads(local.decode('utf-8-sig'))
                   assert 'partner' in doc['sections'] and 'trueLove' in doc['sections']
                   for sec in doc['sections'].values():
                       if 'content' in sec and 'paragraphs' in sec:
