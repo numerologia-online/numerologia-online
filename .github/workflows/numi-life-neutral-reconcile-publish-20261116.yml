@@ -20,7 +20,7 @@ jobs:
           ref: main
           fetch-depth: 0
           persist-credentials: true
-      - name: Validate reviewed reconciliation and FTP publication code (tracked-files-only preflight)
+      - name: Validate reviewed partner-language reconciliation, retaining newer REG.RU texts
         run: |
           set -euo pipefail
           python3 -m py_compile scripts/reconcile-and-deploy-life-gender-20261116.py
