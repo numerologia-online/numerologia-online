@@ -1,0 +1,102 @@
+name: Publish compact Moment question catalogue ONLY
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-moment-compact-questions-release-20261116.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate catalogue JS and new customer-facing cards
+        run: |
+          node --check moment/moment.js
+          python3 - <<'PY'
+          from pathlib import Path
+          js=Path('moment/moment.js').read_text()
+          css=Path('moment/moment.css').read_text()
+          html=Path('moment/index.html').read_text()
+          assert 'moment-question-chevron' in js
+          assert 'elem("span","moment-question-status"' not in js
+          assert 'Тестировать бесплатно' not in js
+          assert 'compact-questions-20261116' in html
+          assert '/* Compact final-style question catalogue' in css
+          assert js.count('owner-preview.html?question=')==1
+          assert 'if(ownerMode)' in js
+          print('MOMENT_COMPACT_VALIDATION_OK')
+          PY
+      - name: Backup and publish only three Moment catalogue files to REG.RU
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib,hashlib,io,os,ssl,subprocess,time,urllib.request,urllib.error
+          from pathlib import Path
+          paths=['moment/moment.js','moment/moment.css','moment/index.html']
+          wanted={p:Path(p).read_bytes() for p in paths}
+          def sha(b):return hashlib.sha256(b).hexdigest()
+          allowed={}
+          for p in paths:
+            revisions=subprocess.check_output(['git','log','--format=%H','-n','80','--',p],text=True).splitlines()
+            allowed[p]={sha(subprocess.check_output(['git','show',rev+':'+p])) for rev in revisions}
+            allowed[p].add(sha(wanted[p]))
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          def read(p):
+            data=io.BytesIO();ftp.retrbinary('RETR '+root+p,data.write)
+            return data.getvalue()
+          def write(p,b):
+            ftp.storbinary('STOR '+root+p,io.BytesIO(b))
+            if sha(read(p))!=sha(b):raise RuntimeError('FTP_READBACK_MISMATCH_'+p)
+          def public(p):
+            url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'+p+'?compact_check='+str(time.time_ns())
+            req=urllib.request.Request(url,headers={'Cache-Control':'no-cache','User-Agent':'NumiMomentCompactRelease'})
+            with urllib.request.urlopen(req,timeout=35) as response:
+              return response.read(300000)
+          changed=[]
+          try:
+            old={p:read(p) for p in paths}
+            for p in paths:
+              if sha(old[p]) not in allowed[p]:
+                raise RuntimeError('UNRECOGNIZED_LIVE_FILE_REFUSE_OVERWRITE_'+p)
+            backup=home+'/site-safeguard-backups/moment-compact-'+time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+            ftp.mkd(backup)
+            for p in paths:
+              target=backup+'/'+p.replace('/','__')+'.bak'
+              ftp.storbinary('STOR '+target,io.BytesIO(old[p]))
+              b=io.BytesIO();ftp.retrbinary('RETR '+target,b.write)
+              if b.getvalue()!=old[p]:raise RuntimeError('BACKUP_VERIFICATION_FAILED_'+p)
+            for p in paths:
+              if read(p)!=old[p]:raise RuntimeError('CONCURRENT_CHANGE_'+p)
+              if sha(old[p])!=sha(wanted[p]):
+                changed.append(p);write(p,wanted[p])
+            for p in paths:
+              if sha(public(p))!=sha(wanted[p]):
+                raise RuntimeError('PUBLIC_VERIFY_FAILED_'+p)
+            print('MOMENT_COMPACT_RELEASE_SUCCESS files='+','.join(paths)+' gate_unchanged=true',flush=True)
+          except BaseException:
+            for p in reversed(changed):
+              try:write(p,old[p])
+              except BaseException:print('MOMENT_ROLLBACK_FAILURE_'+p,flush=True)
+            print('MOMENT_COMPACT_ROLLBACK_ATTEMPTED',flush=True)
+            raise
+          finally:
+            try:ftp.quit()
+            except BaseException:ftp.close()
+          PY
