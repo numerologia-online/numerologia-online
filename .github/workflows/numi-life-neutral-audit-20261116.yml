@@ -1,0 +1,28 @@
+name: Audit full life gender neutrality without changing the website
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-life-neutral-audit-20261116.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check patch script and generate read-only editorial diff
+        run: |
+          python3 -m py_compile scripts/neutralize-life-gender-20261116.py
+          python3 scripts/neutralize-life-gender-20261116.py prepare
+          git diff --check
+          git diff --stat
+          python3 - <<'PY'
+          import json,pathlib,subprocess
+          meta=json.loads(pathlib.Path('/tmp/numi-life-gender-release.json').read_text('utf8'))
+          paths=set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())
+          expected={name for name,_,_,_ in meta['updates']}
+          if expected:expected.add('account-service/private/store-assets.json')
+          assert paths==expected,('UNEXPECTED_EDIT_SCOPE',paths^expected)
+          print('GENDER_NEUTRAL_AUDIT_OK',len(meta['updates']))
+          PY
