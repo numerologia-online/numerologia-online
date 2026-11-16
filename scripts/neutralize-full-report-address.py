@@ -56,9 +56,12 @@ def pluralize(fem):
     return result
 FORMS={x:pluralize(x) for x in WORDS}
 ADJ="(?:"+"|".join(re.escape(x) for x in WORDS)+")"
+# Handle adjective lists where an earlier safe pass neutralized only the first
+# adjective; do not leave inconsistent mixed grammatical gender in a list.
+ADJ_IN_QUAL="(?:"+"|".join(re.escape(x) for x in sorted(set(WORDS)|set(FORMS.values()),key=lambda x:-len(x)))+")"
 ADV=r"(?:очень|немного|довольно|удивительно|крайне|слишком|почти|чуть|весьма|внешне|внутренне|по-настоящему|одновременно|всё\s+ещё|все\s+еще|настолько|при\s+этом)"
-QUAL=rf"(?:(?:{ADV})\s+)*(?:{ADJ})(?:\s*,\s*(?:(?:{ADV})\s+)*(?:{ADJ}))*" \
-     +rf"(?:\s+и\s+(?:(?:{ADV})\s+)*(?:{ADJ}))?"
+QUAL=rf"(?:(?:{ADV})\s+)*(?:{ADJ_IN_QUAL})(?:\s*,\s*(?:(?:{ADV})\s+)*(?:{ADJ_IN_QUAL}))*" \
+     +rf"(?:\s+и\s+(?:(?:{ADV})\s+)*(?:{ADJ_IN_QUAL}))?"
 # Narrow syntax: adjective agrees with the SECOND-PERSON reader,
 # not with a quoted woman, partner or abstract object.
 PRED=rf"(?iu)\b(?:вы\s+(?:не\s+)?(?:(?:можете|могли|хотите|стараетесь|имеете\s+право|мечтаете|должны|обязаны)\s+)?(?:быть|стать|оставаться|казаться|выглядеть|чувствовать\s+себя|становитесь|выглядите|кажетесь|оставались|остались|чувствуете\s+себя|считаете\s+себя)|вам\s+(?:можно|важно|нужно)\s+(?:не\s+)?(?:быть|стать|оставаться))\s+(?P<qual>{QUAL})"
