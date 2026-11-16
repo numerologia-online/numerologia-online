@@ -4,42 +4,14 @@
   "files_checked": 72,
   "files_changed": [
     {
-      "path": "knowledge/full-report/free/impression/energy-7.json",
-      "replacements": 4
-    },
-    {
       "path": "knowledge/full-report/sections/energy-1.json",
       "replacements": 1
     },
     {
-      "path": "knowledge/full-report/sections/energy-13.json",
-      "replacements": 2
-    },
-    {
-      "path": "knowledge/full-report/sections/energy-14.json",
-      "replacements": 2
-    },
-    {
       "path": "knowledge/full-report/sections/energy-2.json",
-      "replacements": 1
-    },
-    {
-      "path": "knowledge/full-report/sections/energy-4.json",
-      "replacements": 1
-    },
-    {
-      "path": "knowledge/full-report/sections/energy-6.json",
-      "replacements": 2
-    },
-    {
-      "path": "knowledge/full-report/sections/energy-7.json",
-      "replacements": 4
-    },
-    {
-      "path": "pro/guidance/energy-14.json",
       "replacements": 1
     }
   ],
-  "substitutions": 18,
+  "substitutions": 2,
   "ambiguous_references_left_unchanged": 163
 }
