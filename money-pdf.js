@@ -1,4 +1,4 @@
-import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=1";
+import { appendPublicPdfOutro } from "./pdf-public-outro.js?v=2";
 
 const PDF_SCRIPT = "https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/pdfmake.min.js";
 const PDF_FONTS = "https://cdn.jsdelivr.net/npm/pdfmake@0.2/build/vfs_fonts.js";
