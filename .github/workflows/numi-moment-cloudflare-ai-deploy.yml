@@ -1,0 +1,53 @@
+name: Deploy ONLY numerologia-300-ai Worker with Cloudflare AI binding
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-moment-cloudflare-ai-deploy.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cloudflare-numerologia-300-ai
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restrict deployment to separate 300-question service only
+        run: |
+          node --check cloudflare/moment-300-ai/src/index.js
+          node - <<'JS'
+          const fs=require('fs');
+          const cfg=JSON.parse(fs.readFileSync('cloudflare/moment-300-ai/wrangler.jsonc','utf8'));
+          if(cfg.name!=='numerologia-300-ai'||cfg.main!=='src/index.js'||cfg.ai?.binding!=='AI')throw Error('WRONG_CLOUDFLARE_DEPLOY_TARGET');
+          const src=fs.readFileSync('cloudflare/moment-300-ai/src/index.js','utf8');
+          if(!src.includes('MOMENT_BRIDGE_SECRET')||!src.includes('env.AI.run('))throw Error('MOMENT_AUTH_OR_AI_MISSING');
+          console.log('MOMENT_CLOUDFLARE_TARGET_ISOLATED_OK');
+          JS
+      - name: Deploy only target Worker
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: de77758c4b3efd26fef26ab600cb02a2
+          workingDirectory: cloudflare/moment-300-ai
+          command: deploy
+      - name: Check live Workers AI binding without using any billable inference
+        run: |
+          python3 - <<'PY'
+          import json,urllib.request,time
+          url='https://numerologia-300-ai.tankraft431.workers.dev/health'
+          result=None
+          for attempt in range(5):
+            try:
+              req=urllib.request.Request(url,headers={'Cache-Control':'no-cache'})
+              with urllib.request.urlopen(req,timeout=20) as r:result=json.load(r)
+              if result.get('ai_bound') is True:break
+            except Exception:pass
+            time.sleep(3)
+          if not result or result.get('ai_bound') is not True or result.get('service')!='numi-moment-300-owner-preview':
+            raise RuntimeError('CLOUDFLARE_WORKER_AI_BINDING_UNVERIFIED')
+          print('MOMENT_CLOUDFLARE_AI_BINDING_LIVE_OK service_only=300 owner_protected=true telegram_untouched=true')
+          PY
