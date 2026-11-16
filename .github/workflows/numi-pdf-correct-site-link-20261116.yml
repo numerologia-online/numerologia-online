@@ -1,0 +1,91 @@
+name: Correct official website link in public PDF closing page
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-pdf-correct-site-link-20261116.yml
+      - pdf-public-outro.js
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  fix-link:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify single source link and preserve all other PDF content
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          content=Path('pdf-public-outro.js').read_text('utf-8')
+          assert content.count('site: "https://нумерология-онлайн.рф/"')==1
+          assert 'https://numerologia-online.github.io/numerologia-online/' not in content
+          assert content.count('PUBLIC_PDF_LINKS.site')==1
+          print('PDF_OUTRO_OFFICIAL_SITE_PREFLIGHT_OK')
+          PY
+      - name: Back up and correct exactly one file on REG.RU
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,io,os,secrets,ssl,time,urllib.request
+          old=b'https://numerologia-online.github.io/numerologia-online/'
+          new='https://нумерология-онлайн.рф/'.encode('utf-8')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          destination=home+'/www/xn--c1adkkdfjbp1a4l.online/pdf-public-outro.js'
+          backups=home+'/site-safeguard-backups/'
+          def read(path):
+            out=io.BytesIO()
+            ftp.retrbinary('RETR '+path,out.write)
+            return out.getvalue()
+          def upload(path,data):
+            ftp.storbinary('STOR '+path,io.BytesIO(data))
+            if read(path)!=data: raise RuntimeError('PDF_OUTRO_FTP_READBACK_FAILED')
+          original=None
+          changed=False
+          try:
+            original=read(destination)
+            if original.count(old)==1 and original.count(new)==0:
+              fixed=original.replace(old,new)
+            elif original.count(old)==0 and original.count(new)==1:
+              fixed=original
+            else:
+              raise RuntimeError('PDF_OUTRO_UNEXPECTED_LIVE_LINK_REFUSE_OVERWRITE')
+            if fixed!=original:
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+secrets.token_hex(4)
+              upload(backups+'pdf-site-link-'+stamp+'.bak',original)
+              upload(destination,fixed)
+              changed=True
+            assert read(destination)==fixed
+            url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/pdf-public-outro.js?pdf_link_check='+str(time.time_ns())
+            req=urllib.request.Request(url,headers={'Cache-Control':'no-cache'})
+            with urllib.request.urlopen(req,timeout=30) as response:
+              live=response.read(200000)
+              status=response.status
+            if status!=200 or live!=fixed:
+              raise RuntimeError('PDF_OUTRO_PUBLIC_BYTES_MISMATCH')
+            if old in live or live.count(new)!=1:
+              raise RuntimeError('PDF_OUTRO_PUBLIC_LINK_MISMATCH')
+            print('PDF_OUTRO_OFFICIAL_LINK_LIVE_OK deployed='+str(changed).lower()+' only_file=pdf-public-outro.js')
+          except BaseException:
+            if changed and original is not None:
+              try:
+                upload(destination,original)
+                print('PDF_OUTRO_ROLLBACK_OK')
+              except BaseException:
+                print('PDF_OUTRO_ROLLBACK_FAILED')
+            raise
+          finally:
+            try: ftp.quit()
+            except BaseException: ftp.close()
+          PY
