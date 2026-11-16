@@ -56,7 +56,7 @@ function send_error(string $message): never {
     echo '<!doctype html><html lang="ru"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ошибка входа</title>';
     echo '<body style="font:16px system-ui;max-width:500px;margin:40px auto;padding:20px"><h2>Не удалось завершить вход</h2>';
     echo '<p>' . htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>';
-    echo '<a href="https://numerologia-online.github.io/numerologia-online/">Вернуться на сайт</a></body></html>';
+    echo '<a href="https://нумерология-онлайн.рф/">Вернуться на сайт</a></body></html>';
     exit;
 }
 function https_post(string $url, array $fields, string $basic): array {
