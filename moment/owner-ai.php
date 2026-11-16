@@ -43,33 +43,43 @@ try{
     if(!is_file($configPath))omReply(503,['ok'=>false,'error'=>'GROQ_CONFIG_NOT_READY']);
     $config=require $configPath;$key=is_array($config)?($config['groq_api_key']??null):null;
     if(!is_string($key)||!str_starts_with($key,'gsk_'))omReply(503,['ok'=>false,'error'=>'GROQ_CONFIG_NOT_READY']);
-    $energy=function(string $s): string {
-        $parts=explode('-',$s);$day=(int)$parts[2];$month=(int)$parts[1];
-        while($day>22)$day=array_sum(array_map('intval',str_split((string)$day)));
-        return 'день '.$day.', месяц '.$month;
-    };
-    $data="Вопрос: ".$q['title']."; ID: ".$id."\nСпрашивающий: ".$birth." (".$energy($birth).").";
-    if(is_string($other)&&$other!=='')$data.="\nВторой человек: ".$other." (".$energy($other).").";
-    if(is_string($moment)&&$moment!=='')$data.="\nМомент вопроса: ".$moment." (локальное время).";
-    $instruction='Только тестовый нумерологический ответ для одного вопроса раздела «300 вопросов о жизни». Символическая трактовка не даёт знания чужих мыслей и фактов будущего. Отвечай на конкретный вопрос, не пиши общий портрет. Учитывай как сильные, так и теневые проявления, противоречия, практические признаки. Не льсти, не выдумывай обвинения. Если спрашивают о мыслях или чувствах другого человека, нельзя утверждать, что мы их знаем; предлагай смотреть на поступки. Пиши по-русски естественно, как нумеролог и подруга, без формул и названий энергий, без долгих вступлений, штампов и длинного тире. Два абзаца: сначала ответ по существу, потом конкретная рекомендация. 110–180 слов. Не обещай медицинских или финансовых результатов.';
-    $payload=['model'=>'openai/gpt-oss-120b','temperature'=>0.65,'max_completion_tokens'=>750,
-      'messages'=>[['role'=>'system','content'=>$instruction],['role'=>'user','content'=>$data]]];
-    $curl=curl_init('https://api.groq.com/openai/v1/chat/completions');
-    curl_setopt_array($curl,[CURLOPT_POST=>true,CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,
-      CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>50,CURLOPT_HTTPHEADER=>[
-      'Authorization: Bearer '.$key,'Content-Type: application/json','Accept: application/json',
-      'User-Agent: numi-moment-owner-preview/1.0'],
-      CURLOPT_POSTFIELDS=>json_encode($payload,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)]);
-    $response=curl_exec($curl);$status=(int)curl_getinfo($curl,CURLINFO_HTTP_CODE);curl_close($curl);
+    // Connect only the authenticated owner's 300-question test to the separate
+    // Cloudflare Worker. The original Groq key never leaves the REG.RU server.
+    $proof=hash_hmac('sha256','numi-moment-cloudflare-bridge-v1',$key);
+    $payload=[
+      'question_id'=>$id,
+      'title'=>(string)$q['title'],
+      'birth_date'=>$birth,
+      'other_date'=>(is_string($other)&&$other!=='')?$other:null,
+      'moment'=>(is_string($moment)&&$moment!=='')?$moment:null
+    ];
+    $encoded=json_encode($payload,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
+    $worker='https://numerologia-300-ai.tankraft431.workers.dev/v1/owner-preview';
+    $curl=curl_init($worker);
+    if($curl===false)omReply(503,['ok'=>false,'error'=>'WORKER_CONNECT_FAILED']);
+    curl_setopt_array($curl,[CURLOPT_POST=>true,CURLOPT_RETURNTRANSFER=>true,
+      CURLOPT_FOLLOWLOCATION=>false,CURLOPT_CONNECTTIMEOUT=>10,CURLOPT_TIMEOUT=>85,
+      CURLOPT_MAXREDIRS=>0,CURLOPT_HTTPHEADER=>[
+        'Content-Type: application/json','Accept: application/json',
+        'X-Numi-Moment-Proof: '.$proof,
+        'User-Agent: NumiMomentOwnerPreview/2.0'
+      ],CURLOPT_POSTFIELDS=>$encoded]);
+    $response=curl_exec($curl);
+    $status=(int)curl_getinfo($curl,CURLINFO_HTTP_CODE);
+    $curlError=curl_errno($curl);
+    curl_close($curl);
     if(!is_string($response)||$status!==200||strlen($response)>40000){
-        error_log('MOMENT_GROQ_STATUS:'.($status?:'network'));
-        omReply(503,['ok'=>false,'error'=>'MODEL_UNAVAILABLE']);
+      error_log('MOMENT_WORKERS_AI_STATUS:'.($status?:'network').';curl:'.$curlError);
+      omReply(503,['ok'=>false,'error'=>'WORKER_MODEL_UNAVAILABLE']);
     }
     $parsed=json_decode($response,true,20,JSON_THROW_ON_ERROR);
-    $answer=$parsed['choices'][0]['message']['content']??null;
-    if(!is_string($answer)||mb_strlen(trim($answer))<90||mb_strlen($answer)>3000)
-        omReply(503,['ok'=>false,'error'=>'MODEL_OUTPUT_NOT_READY']);
-    omReply(200,['ok'=>true,'test'=>true,'question_id'=>$id,'question'=>$q['title'],'answer'=>trim($answer)]);
+    $answer=is_array($parsed)?($parsed['answer']??null):null;
+    if(($parsed['ok']??false)!==true||!is_string($answer)||mb_strlen(trim($answer))<70||mb_strlen($answer)>5000)
+      omReply(503,['ok'=>false,'error'=>'WORKER_MODEL_OUTPUT_NOT_READY']);
+    $answer=str_replace('—',':',trim($answer));
+    header('X-Numi-Moment-AI: cloudflare');
+    omReply(200,['ok'=>true,'test'=>true,'provider'=>'cloudflare',
+      'question_id'=>$id,'question'=>$q['title'],'answer'=>$answer]);
 }catch(Throwable $e){
     error_log('MOMENT_OWNER_PREVIEW:'.get_class($e));
     omReply(503,['ok'=>false,'error'=>'TEMPORARILY_UNAVAILABLE']);
