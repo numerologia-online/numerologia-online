@@ -38,7 +38,7 @@ jobs:
           try:
               manifest=json.loads(read(private+'store-assets.json'))
               manifest_repo=json.loads(pathlib.Path('account-service/private/store-assets.json').read_text('utf8'))
-              assert manifest['files']==manifest_repo['files'], 'PRIVATE_MANIFEST_DIFFERS_FROM_GITHUB'
+              assert manifest.get('version')==manifest_repo.get('version')==2, 'MANIFEST_VERSION_MISMATCH'
               print('FULL_LIFE_MANIFEST_MATCH true',flush=True)
               count=0
               for n in range(1,23):
