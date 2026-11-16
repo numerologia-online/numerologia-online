@@ -32,7 +32,7 @@ jobs:
           for p in paths:
             s=p.read_text("utf8")
             if p.suffix==".json":
-              try:json.loads(s)
+              try:json.loads(s.lstrip("\ufeff"))
               except Exception:raise RuntimeError("INVALID_JSON "+str(p))
             sentences=re.split(r"(?<=[.!?])\s+|\n+",s)
             count=0
