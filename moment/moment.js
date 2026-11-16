@@ -57,9 +57,12 @@
       // Still no public purchase or paid answer. A verified site owner may review
       // the chosen item in the separate protected editor; everyone else sees
       // a clear "Скоро" explanation rather than a dead disabled button.
-      b.setAttribute("aria-label",q.title+(ownerMode?". Бесплатный тест для владельца.":". Скоро, покупка недоступна."));
-      const meta=elem("span","moment-question-status",ownerMode?"Тестировать бесплатно":"49 ₽ · Скоро");
-      b.append(elem("span","question-index",String(i+1).padStart(2,"0")),elem("span","question-name",q.title),meta);
+      b.setAttribute("aria-label",q.title);
+      b.append(
+        elem("span","question-index",String(i+1).padStart(2,"0")),
+        elem("span","question-name",q.title),
+        elem("span","moment-question-chevron","›")
+      );
       b.addEventListener("click",()=>{
         if(ownerMode){
           location.assign("./owner-preview.html?question="+encodeURIComponent(q.id));
