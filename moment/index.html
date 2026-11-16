@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#143c30">
   <meta name="description" content="Нумерология момента — 300 вопросов о любви, работе, деньгах и жизненных решениях. Каталог и подбор вопроса.">
   <title>300 вопросов обо всём — Нумерология онлайн</title>
-  <link rel="stylesheet" href="./moment.css?v=compact-questions-20261116">
+  <link rel="stylesheet" href="./moment.css?v=moment-pair-20261116">
   <script defer src="../assets/telegram-web-app-20261102.js"></script>
-  <script defer src="./moment.js?v=compact-questions-20261116"></script>
+  <script defer src="./moment.js?v=moment-pair-20261116"></script>
 <link rel="canonical" href="https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/">
 <script type="application/ld+json" id="numi-site-entities">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#organization","name":"Нумерология онлайн","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/"},{"@type":"WebSite","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#website","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/","name":"Нумерология онлайн","inLanguage":"ru","publisher":{"@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#organization"}},{"@type":"WebPage","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/#webpage","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/","name":"300 вопросов обо всём — Нумерология онлайн","inLanguage":"ru","isPartOf":{"@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#website"}}]}</script>
 <style id="moment-static-catalog-style">
@@ -82,6 +82,15 @@
         <button type="button" id="show-all" class="moment-topic-back" hidden>← Назад</button>
         <div class="questions-top">
           <div><span id="results-kicker" class="overline">ВОПРОСЫ</span><h3 id="results-title">Все вопросы</h3></div>
+        </div>
+        <div id="moment-pair-dates" class="moment-pair-dates" hidden>
+          <div class="moment-pair-intro"><strong>Ваши даты</strong><span>Введите один раз и задавайте несколько вопросов подряд</span></div>
+          <div class="moment-pair-grid">
+            <label>Ваша дата рождения<input id="moment-pair-self" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10"></label>
+            <label>Дата рождения мужчины<input id="moment-pair-other" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10"></label>
+          </div>
+          <p id="moment-pair-error" class="moment-pair-error" role="status" hidden>Проверьте обе даты рождения.</p>
+          <button type="button" id="moment-pair-change" class="moment-pair-change" hidden>Изменить даты</button>
         </div>
         <div id="results-message" class="results-message" role="status" aria-live="polite"></div>
         <div id="question-list" class="question-list"></div>
