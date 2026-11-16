@@ -161,13 +161,14 @@ let reviewRequestSequence=0;
 function showQuestions(){
  const cat=$('category').value;
  const found=catalog.questions.filter(q=>q.category===cat);
+ const selected=$('question').value;
  const label=q=>(reviewStatuses[q.id]==='approved'?'✓ ':reviewStatuses[q.id]==='revision'?'↻ ':reviewStatuses[q.id]==='draft'?'• ':'')+q.title;
  $('question').replaceChildren(...found.map(q=>new Option(label(q),q.id)));
+ if(found.some(q=>q.id===selected))$('question').value=selected;
  updateMode();
- if(reviewStatuses && $('work').hidden===false)void loadReviewForQuestion();
 }
 function updateMode(){const q=catalog.questions.find(x=>x.id===$('question').value);$('partner-fields').hidden=q?.mode!=='partner';}
-$('category').addEventListener('change',showQuestions);
+$('category').addEventListener('change',()=>{showQuestions();void loadReviewForQuestion();});
 $('question').addEventListener('change',()=>{updateMode();void loadReviewForQuestion();});
 async function init(){try{const access=await getJson('./owner-ai.php');if(!access.ok||!access.owner){$('status').textContent='Войди на главной странице под подтверждённой почтой владельца и снова открой редактор. Для остальных посетителей доступ закрыт.';return;}const r=await fetch('./questions.json',{cache:'no-store'});catalog=await r.json();if(!Array.isArray(catalog.questions)||catalog.questions.length!==300)throw Error('Каталог неполный');$('category').replaceChildren(...catalog.categories.map(c=>new Option(c.title+' ('+c.count+')',c.id)));const requestedId=new URLSearchParams(location.search).get('question');const requested=catalog.questions.find(q=>q.id===requestedId);$('category').value=requested?.category||'love';showQuestions();if(requested){$('question').value=requested.id;updateMode();}setMomentNow();$('status').textContent='✓ Режим владельца открыт. Все 300 вопросов доступны для бесплатных тестов.';await loadReviewOverview();await loadReviewForQuestion();try{const prev=JSON.parse(sessionStorage.getItem(ownerQueueJobKey)||'null');if(prev&&/^[a-f0-9]{32}$/.test(prev.job))void pollOwnerJob(prev.job,prev.title||'Тестовый ответ');}catch(_){};$('work').hidden=false;}catch(e){$('status').textContent='Не получилось проверить доступ. Попробуй обновить страницу.';}}
 
@@ -268,12 +269,14 @@ $('generate-cloudflare').addEventListener('click',async()=>{
   $('status').textContent='Тестируем прямой ответ Cloudflare для владельца.';
   $('result').hidden=true;
   try{
+    const initialQuestionId=$('question').value;
     const result=await getJson('./owner-ai.php',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({question_id:$('question').value,birth_date:birth,other_date:other,moment})
     });
     if(!result.ok || typeof result.answer!=='string')throw Error(result.error||'WORKER_MODEL_UNAVAILABLE');
+    if(initialQuestionId!==$('question').value)throw Error('QUESTION_CHANGED_DURING_GENERATION');
     $('result-heading').textContent=result.question;
     $('answer').textContent=result.answer;
     $('result').hidden=false;
@@ -348,7 +351,7 @@ async function loadReviewForQuestion(){
 }
 function reviewParams(action){
   const birth=toIsoDate($('birth').value)||'';
-  const other=toIsoDate($('other').value)||'';
+  const other=$('partner-fields').hidden?'':(toIsoDate($('other').value)||'');
   const moment=toIsoMoment($('moment').value)||'';
   return {
     action,question_id:reviewCurrentQuestion,
