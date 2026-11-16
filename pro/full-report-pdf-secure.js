@@ -1,6 +1,6 @@
 import { buildFullReportSections } from "../full-report-library.js?v=4";
 import {loadProtectedFullReportSection} from "./secure-reader.js?v=life-content-20261116";
-import { appendPublicPdfOutro } from "../pdf-public-outro.js?v=1";
+import { appendPublicPdfOutro } from "../pdf-public-outro.js?v=2";
 import { findKarmicPrograms, findKarmicTail } from "./karmic-programs-secure.js?v=life-content-20261116";
 
 // Отдельный модуль PDF: документ, фон, скачивание и кэширование.
