@@ -1,4 +1,4 @@
-name: Publish ONLY owner Moment editor UI and loading animation
+name: Publish isolated Moment question screen with discreet answer button
 on:
   push:
     branches: [main]
