@@ -48,14 +48,14 @@ export async function openStore(item,plan="once"){
 // (birth date / report year / both partner dates). Never cache access in the
 // browser; each recalculation and revisit verifies the still-active entitlement.
 const REPORTS=new Set(["year_full","life_full","compatibility_full","child_full_v1"]);
-export async function recognizePurchasedReport(item,region){
+export async function recognizePurchasedReport(item,region,{ownerPreview=true}={}){
   if(!region||!REPORTS.has(item?.product_code))return null;
   const key=JSON.stringify(item);
   region.dataset.numiReportKey=key;
   region.hidden=true;
   region.replaceChildren();
   try{
-    const ownerDoc=await walletOwnerMaterial(item);
+    const ownerDoc=ownerPreview?await walletOwnerMaterial(item):null;
     if(region.dataset.numiReportKey!==key)return null;
     if(ownerDoc && ownerDoc.sections?.length){
       region.hidden=false;
