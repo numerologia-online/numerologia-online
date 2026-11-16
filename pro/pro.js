@@ -1,11 +1,12 @@
 import { calculateMatrix, parseBirthDate, reduce22 } from "../numerology-core.js?v=5";
-import { buildFullReportSections, loadFullReportKnowledge, loadFullReportSection } from "../full-report-library.js?v=4";
-import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "../karmic-programs.js?v=31";
+import { buildFullReportSections, loadFullReportKnowledge } from "../full-report-library.js?v=4";
+import { readProJson,loadProtectedFullReportSection } from "./secure-reader.js?v=source-gate-20261116";
+import { findKarmicPrograms, findKarmicTail, getMatrixTriples, loadKarmicPrograms, loadKarmicProgramGuidance, loadKarmicTails } from "./karmic-programs-secure.js?v=source-gate-20261116";
 import { nodesFor } from "./pro-points.js?v=3";
 import { createProDiagram } from "./pro-diagram.js?v=24";
-import { createFullReportPdfController } from "../full-report-pdf.js?v=4";
-import { buildProPdfChapters } from "./pro-pdf-content.js?v=25";
-import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=1";
+import { createFullReportPdfController } from "./full-report-pdf-secure.js?v=source-gate-20261116";
+import { buildProPdfChapters } from "./pro-pdf-content.js?v=source-gate-20261116";
+import { loadPurposeReadings, getPurposeReading } from "./purpose-readings.js?v=source-gate-20261116";
 
 const schoolClientMode = new URLSearchParams(window.location.search).get("from") === "school";
 let verifiedSchoolClientOwner = false;
@@ -463,11 +464,7 @@ function loadPracticalGuidance(energy) {
   const number = Number(energy);
   if (!practicalEnergies.has(number)) return Promise.resolve(null);
   if (!practicalGuidanceRequests.has(number)) {
-    const request = fetch("pro/guidance/energy-" + number + ".json?v=1")
-      .then(response => {
-        if (!response.ok) throw new Error("Не удалось загрузить практическое дополнение");
-        return response.json();
-      })
+    const request = readProJson("guidance",{energy:number})
       .then(bank => {
         if (bank.energy !== number || Object.keys(bank.sections || {}).length !== 14) {
           throw new Error("Практическое дополнение неполное");
@@ -488,15 +485,9 @@ function loadKarmicDeepening() {
   if (!karmicDeepeningRequest) {
     // Program supplements are already included in the shared program JSON.
     // Only the two ordered karmic-tail supplements remain separate.
-    const paths = [
-      "pro/karmic-tail-deepening-a.json",
-      "pro/karmic-tail-deepening-b.json"
-    ];
     karmicDeepeningRequest = Promise.all([
-      ...paths.map(path => fetch(path + "?v=12").then(response => {
-        if (!response.ok) throw new Error("Не удалось загрузить дополнения кармического хвоста");
-        return response.json();
-      })),
+      readProJson("karmic_deepening",{part:"a"}),
+      readProJson("karmic_deepening",{part:"b"}),
       loadKarmicProgramGuidance()
     ]).then(([tailA, tailB, program]) => {
       if (tailA.role !== "tail" || tailB.role !== "tail" ||
@@ -895,7 +886,7 @@ function loadInlineFullReading(target, key, pointEnergy = null, includeGuidance 
   const energy = Number.isInteger(pointEnergy) ? pointEnergy : definition.energy;
   target.replaceChildren(paragraph("Открываю полный разбор…", "pro-muted"));
   return Promise.all([
-    hasPaidAccess() ? loadFullReportSection(energy) : (key === FREE_PRO_TOPIC ? loadFreeImpression(energy) : Promise.reject(new Error("Платный раздел закрыт"))),
+    hasPaidAccess() ? loadProtectedFullReportSection(energy) : (key === FREE_PRO_TOPIC ? loadFreeImpression(energy) : Promise.reject(new Error("Платный раздел закрыт"))),
     includeGuidance && hasPaidAccess() ? loadPracticalGuidance(energy) : Promise.resolve(null)
   ])
     .then(([bank, guidance]) => {
@@ -1213,7 +1204,7 @@ async function selectQuestion(key, scroll = false) {
   answer.replaceChildren(paragraph("Загружаю подробную расшифровку…", "pro-muted"));
   try {
     const [bank, practicalGuidance] = await Promise.all([
-      hasPaidAccess() ? loadFullReportSection(definition.energy) : loadFreeImpression(definition.energy),
+      hasPaidAccess() ? loadProtectedFullReportSection(definition.energy) : loadFreeImpression(definition.energy),
       hasPaidAccess() ? loadPracticalGuidance(definition.energy) : Promise.resolve(null)
     ]);
     if (!current || current.id !== id || current.selected !== key || answerRequestId !== request) return;
