@@ -1,0 +1,57 @@
+name: Editorial gender-neutral address audit (read only, no deployment)
+on:
+  push:
+    branches:
+      - editorial/neutral-address-20261116
+    paths:
+      - .github/workflows/numi-neutral-address-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan every original full life text for reader-gender grammar
+        run: |
+          python3 - <<'PY'
+          import re,json,pathlib,collections
+          paths=list(pathlib.Path("knowledge/full-report/sections").glob("energy-*.json"))
+          paths+=list(pathlib.Path("knowledge/full-report/free/impression").glob("energy-*.json"))
+          paths+=list(pathlib.Path("pro/purpose").glob("*.json"))
+          paths+=list(pathlib.Path("pro/guidance").glob("energy-*.json"))
+          paths+=list(pathlib.Path("pro").glob("karmic-*.json"))
+          paths+=[pathlib.Path("karmic-tails.md"),pathlib.Path("karmic-programs.md")]
+          paths=[p for p in paths if p.is_file()]
+          categories=collections.Counter()
+          matches=collections.Counter()
+          ctx=[]
+          fem=re.compile(r"\b(?:женщина|женщиной|женщину|девушка|девушкой|девушку|девочкой|родилась|осталась|была|стала|готова|обязана|должна|смогла|сделала|привыкла|решила|оказалась|одна|общительной|сильной|уверенной|любимой|принятой|нужной|удобной|собранной|счастливой|успешной|независимой|хорошей|настоящей|уязвимой|важной|слабой|красивой|спокойной|открытой|особенной|свободной|нежной|достойной|ценной)\b",re.I)
+          for p in paths:
+            s=p.read_text("utf8")
+            if p.suffix==".json":
+              try:json.loads(s)
+              except Exception:raise RuntimeError("INVALID_JSON "+str(p))
+            sentences=re.split(r"(?<=[.!?])\s+|\n+",s)
+            count=0
+            for st in sentences:
+              m=fem.search(st)
+              if m:
+                count+=len(fem.findall(st))
+                words=re.findall(r"[А-Яа-яЁё-]+",st)
+                if re.search(r"\b(?:вы|вам|вас|ваш|ваша|ваше|ваши|ты|тебя|тебе|твоя|себя)\b",st,re.I):
+                  matches[m.group(0).lower()]+=1
+                  if len(ctx)<140:
+                    clean=st.replace("\\n"," ").replace("\\r"," ")
+                    pos=clean.lower().find(m.group(0).lower())
+                    ctx.append((str(p),clean[max(0,pos-95):pos+120]))
+            categories[str(p.parent)]+=count
+          print("EDITORIAL_FILES_SCANNED",len(paths))
+          print("EDITORIAL_GROUP_COUNTS",dict(categories))
+          print("EDITORIAL_TOP_GENDER_WORDS",matches.most_common(80))
+          for path,text in ctx:
+            print("EDITORIAL_CONTEXT",path,repr(text))
+          print("EDITORIAL_READONLY_OK no_source_changes=true")
+          PY
