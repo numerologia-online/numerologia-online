@@ -36,5 +36,6 @@ jobs:
                   flagged.append((n,section,i,','.join(hits),p[:260].replace('\n',' ')))
           print('BROAD_GENDER_REVIEW_TOTAL',len(flagged))
           for item in flagged:print('BROAD_GENDER_REVIEW',*item)
+          assert len(flagged)<=5,('GENDER_EXPLICIT_REVIEW_TOO_MANY',len(flagged))
           print('GENDER_NEUTRAL_AUDIT_OK',len(meta['updates']))
           PY
