@@ -9,6 +9,29 @@ export async function walletRequest(action,payload={}){
   if(!response.ok||data.ok!==true)throw new Error(data.error||"SERVICE_UNAVAILABLE");
   return data;
 }
+// Reusable, server-verified owner access. Never bypasses a paywall in client code:
+// the private REG.RU endpoint checks the owner account and returns only
+// finished material. Normal visitors continue through their usual purchase.
+export async function walletOwnerMaterial(item){
+  if(!item||typeof item.product_code!=="string")return null;
+  const status=await fetch("/api/numi-owner-access.php",{
+    method:"GET",credentials:"same-origin",cache:"no-store",
+    headers:{"Accept":"application/json"}
+  });
+  if(!status.ok)return null;
+  const who=await status.json();
+  if(who?.ok!==true||who?.owner!==true)return null;
+  const response=await fetch("/api/numi-owner-material.php",{
+    method:"POST",credentials:"same-origin",cache:"no-store",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({item})
+  });
+  const data=await response.json();
+  if(!response.ok||data?.ok!==true||data?.owner_preview!==true||
+     !data.material||!Array.isArray(data.material.sections))
+    throw new Error(data?.error||"OWNER_MATERIAL_NOT_READY");
+  return data.material;
+}
 export async function walletMaterial(id){
   const data=await walletRequest("material",{entitlement_id:id});
   if(!data.material||!Array.isArray(data.material.sections))throw new Error("MATERIAL_NOT_READY");
@@ -76,6 +99,19 @@ function clubOffer(container,quote,item,onMaterial){
 function keyFor(item){return JSON.stringify(item);}
 export async function showInlinePurchase(item,container,onMaterial){
   if(!container||typeof onMaterial!=="function")throw new Error("INVALID_PURCHASE_TARGET");
+  if(item?.product_code!=="club_month" && item?.product_code!=="school_week"){
+    try{
+      const ownerDoc=await walletOwnerMaterial(item);
+      if(ownerDoc){
+        await onMaterial(ownerDoc,null);
+        return;
+      }
+    }catch(error){
+      if(!["OWNER_MATERIAL_NOT_READY","MATERIAL_NOT_READY","DRAFT_NOT_PUBLISHED"].includes(String(error?.message||"")))
+        console.warn("Проверка готового материала владельца:",error);
+      // A bank that is still under editorial review remains closed.
+    }
+  }
   // Compatibility guard for cached clients: Yes/No has NO individual sales.
   if(item?.product_code==="yesno_question"){
     note(container,"Один ответ в день бесплатно. Все остальные доступны только в Клубе, без доплаты.");
