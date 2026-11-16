@@ -27,10 +27,11 @@ jobs:
           assert len(summary['files_changed'])<=70
           allowed=re.compile(r'^(knowledge/full-report/(?:sections/energy-\d+\.json|free/impression/energy-\d+\.json)|pro/(?:purpose/[^/]+\.json|guidance/energy-\d+\.json|karmic-[^/]+\.json)|karmic-(?:tails|programs)\.md)$')
           changed=subprocess.check_output(['git','diff','--name-only'],text=True).splitlines()
-          assert changed
-          assert all(allowed.fullmatch(name) for name in changed), changed
-          assert all(name in changed for name in [f['path'] for f in summary['files_changed']])
-          print('NEUTRAL_EDITORIAL_VALIDATED files='+str(len(changed))+' substitutions='+str(summary['substitutions'])+' original_site_unchanged=true')
+          edited=[name for name in changed if name!='neutral-address-report.json']
+          assert edited
+          assert all(allowed.fullmatch(name) for name in edited), edited
+          assert all(name in edited for name in [f['path'] for f in summary['files_changed']])
+          print('NEUTRAL_EDITORIAL_VALIDATED files='+str(len(edited))+' substitutions='+str(summary['substitutions'])+' original_site_unchanged=true')
           PY
           git diff --check
       - name: Commit isolated editable draft; never update production branch or REG.RU
