@@ -116,9 +116,15 @@ function startAiWaiting(){
   let index=0;
   $('ai-waiting').textContent=waitingMessages[index];
   $('ai-waiting').hidden=false;
+  const messages=$('event-date-fields').hidden?waitingMessages:[
+    'Изучаю вашу дату рождения…','Рассчитываю дату события…',
+    'Сопоставляю числовые значения…','Подбираю рекомендации…',
+    'Составляю ваш личный ответ…'
+  ];
+  $('ai-waiting').textContent=messages[0];
   waitingTimer=setInterval(()=>{
-    index=(index+1)%waitingMessages.length;
-    $('ai-waiting').textContent=waitingMessages[index];
+    index=(index+1)%messages.length;
+    $('ai-waiting').textContent=messages[index];
   },3000);
 }
 async function getJson(url,options={}){const r=await fetch(url,{credentials:'same-origin',cache:'no-store',...options});let d={};try{d=await r.json()}catch{}return {status:r.status,...d};}
