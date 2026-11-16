@@ -129,7 +129,7 @@ export default {
       "Спрашивающий: " + body.birth_date + " (" + numerology(body.birth_date) + ")"
     ];
     if (body.other_date) lines.push("Другой человек: " + body.other_date + " (" + numerology(body.other_date) + ")");
-    const isEventQuestion = /^dates-\\d{3}$/.test(body.question_id);
+    const isEventQuestion = /^dates-\d{3}$/.test(body.question_id);
     if (body.moment) {
       if (isEventQuestion) {
         lines.push("Выбранная дата СОБЫТИЯ: " + body.moment.slice(0,10) + " (время 12:00 техническое, не учитывать).");
