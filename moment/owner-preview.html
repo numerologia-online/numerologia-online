@@ -17,7 +17,7 @@ button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pr
 #review-answer,#review-note{display:block;width:100%;border:1px solid #b8c6ba;border-radius:11px;padding:13px;font:16px/1.6 system-ui;background:white;color:#183d31;resize:vertical}#review-answer{min-height:230px}#review-note{min-height:80px}
 .review-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.review-actions button{margin:0;font-size:14px;padding:10px 7px}.review-actions button:last-child{grid-column:1/-1}
 #review-status{font-size:14px;color:#365849;font-weight:650;line-height:1.5}.review-approved{color:#195c35!important}
-#review-progress{border-left:4px solid #af965e}#review-progress button{width:auto;margin-top:10px;background:#f1e8d9;color:#234532;border:1px solid #c0a77c}
+#review-progress{display:none!important}#review-progress{border-left:4px solid #af965e}#review-progress button{width:auto;margin-top:10px;background:#f1e8d9;color:#234532;border:1px solid #c0a77c}
 #review-feedback{font-size:14px;line-height:1.5;color:#365849}.review-muted{font-size:13px;color:#68796f;line-height:1.5}
 
 </style></head><body><main>
@@ -31,13 +31,13 @@ button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pr
 <p class="review-muted">Отмечаем качество каждого вопроса на выбранных датах. Одобрение образца не открывает вопрос покупателям.</p>
 </section>
 <section class="paper" id="work" hidden>
-<h2>Проверяем по одному вопросу</h2>
-<label for="category">Тема</label><select id="category"></select>
+<h2>Выберите вопрос</h2>
+<div hidden><label for="category">Тема</label><select id="category"></select></div>
 <label for="question">Вопрос</label><select id="question"></select>
 <label for="birth">Дата рождения спрашивающего</label><input id="birth" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false" required>
 <div id="partner-fields"><label for="other">Дата рождения второго человека</label><input id="other" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false"></div>
 <label for="moment">Дата и время вопроса</label><input id="moment" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" maxlength="16" spellcheck="false"><button id="moment-now" type="button">Сейчас</button><p class="moment-time-help">Время телефона подставляется автоматически перед ответом. Можно изменить вручную.</p>
-<button id="generate-cloudflare" type="button" style="background:#285e4a">Проверить быстрый ответ Cloudflare</button>
+<button id="generate-cloudflare" type="button" style="background:#285e4a">Получить ответ ИИ</button>
 <p class="note">Новый прямой способ. Пока проверяем только для владельца, без оплаты.</p>
 <button id="generate" type="button">Резервный способ: Groq через GitHub</button>
 <p class="note">Бесплатный Groq через GitHub. Обработка по очереди, обычно несколько минут. Баланс не списывается.</p>
@@ -159,17 +159,21 @@ const reviewLabels={new:'Не проверено',draft:'Черновик',revis
 let reviewCurrentQuestion='';
 let reviewRequestSequence=0;
 function showQuestions(){
- const cat=$('category').value;
- const found=catalog.questions.filter(q=>q.category===cat);
  const selected=$('question').value;
  const label=q=>(reviewStatuses[q.id]==='approved'?'✓ ':reviewStatuses[q.id]==='revision'?'↻ ':reviewStatuses[q.id]==='draft'?'• ':'')+q.title;
- $('question').replaceChildren(...found.map(q=>new Option(label(q),q.id)));
- if(found.some(q=>q.id===selected))$('question').value=selected;
+ const groups=catalog.categories.map(c=>{
+   const group=document.createElement('optgroup');
+   group.label=c.title;
+   for(const q of catalog.questions.filter(q=>q.category===c.id))group.append(new Option(label(q),q.id));
+   return group;
+ });
+ $('question').replaceChildren(...groups);
+ if(catalog.questions.some(q=>q.id===selected))$('question').value=selected;
  updateMode();
 }
 function updateMode(){const q=catalog.questions.find(x=>x.id===$('question').value);$('partner-fields').hidden=q?.mode!=='partner';}
 $('category').addEventListener('change',()=>{showQuestions();void loadReviewForQuestion();});
-$('question').addEventListener('change',()=>{updateMode();void loadReviewForQuestion();});
+$('question').addEventListener('change',()=>{const item=catalog.questions.find(q=>q.id===$('question').value);if(item)$('category').value=item.category;updateMode();void loadReviewForQuestion();});
 async function init(){try{const access=await getJson('./owner-ai.php');if(!access.ok||!access.owner){$('status').textContent='Войди на главной странице под подтверждённой почтой владельца и снова открой редактор. Для остальных посетителей доступ закрыт.';return;}const r=await fetch('./questions.json',{cache:'no-store'});catalog=await r.json();if(!Array.isArray(catalog.questions)||catalog.questions.length!==300)throw Error('Каталог неполный');$('category').replaceChildren(...catalog.categories.map(c=>new Option(c.title+' ('+c.count+')',c.id)));const requestedId=new URLSearchParams(location.search).get('question');const requested=catalog.questions.find(q=>q.id===requestedId);$('category').value=requested?.category||'love';showQuestions();if(requested){$('question').value=requested.id;updateMode();}setMomentNow();$('status').textContent='✓ Режим владельца открыт. Все 300 вопросов доступны для бесплатных тестов.';await loadReviewOverview();await loadReviewForQuestion();try{const prev=JSON.parse(sessionStorage.getItem(ownerQueueJobKey)||'null');if(prev&&/^[a-f0-9]{32}$/.test(prev.job))void pollOwnerJob(prev.job,prev.title||'Тестовый ответ');}catch(_){};$('work').hidden=false;}catch(e){$('status').textContent='Не получилось проверить доступ. Попробуй обновить страницу.';}}
 
 const ownerQueueJobKey='numi-moment-groq-current-job';
@@ -293,7 +297,7 @@ $('generate-cloudflare').addEventListener('click',async()=>{
     feedback.classList.add('is-error');feedback.textContent=message;
     $('status').textContent=message;
   }finally{
-    button.disabled=false;button.textContent='Проверить быстрый ответ Cloudflare';
+    button.disabled=false;button.textContent='Получить ответ ИИ';
   }
 });
 
@@ -309,7 +313,7 @@ async function loadReviewOverview(){
     $('review-progress').hidden=false;
     const selected=$('question').value;
     showQuestions();
-    if(selected && catalog.questions.some(q=>q.id===selected&&q.category===$('category').value))
+    if(selected && catalog.questions.some(q=>q.id===selected))
       $('question').value=selected;
     updateMode();
   }catch(e){
