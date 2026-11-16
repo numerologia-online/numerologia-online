@@ -7,7 +7,7 @@ const getConfig = () => {
   const secret = process.env.TG_CLIENT_SECRET;
   const signing = process.env.TG_SESSION_SECRET;
   const base = process.env.AUTH_BASE_URL;
-  const site = process.env.SITE_RETURN_URL || "https://numerologia-online.github.io/numerologia-online/";
+  const site = process.env.SITE_RETURN_URL || "https://нумерология-онлайн.рф/";
   if (!secret || !signing || !base || signing.length < 32) {
     throw new Error("Telegram auth environment is not configured");
   }
@@ -43,7 +43,7 @@ const noStore = res => res.setHeader("Cache-Control", "no-store, private");
 const errorPage = (res, message) => {
   noStore(res);
   res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.status(400).end('<!doctype html><html lang="ru"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Не удалось войти</title><body style="font:16px system-ui;padding:30px;max-width:450px;margin:auto"><h1>Не удалось войти через Telegram</h1><p>' + message + '</p><a href="https://numerologia-online.github.io/numerologia-online/">Вернуться на сайт</a></body></html>');
+  res.status(400).end('<!doctype html><html lang="ru"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Не удалось войти</title><body style="font:16px system-ui;padding:30px;max-width:450px;margin:auto"><h1>Не удалось войти через Telegram</h1><p>' + message + '</p><a href="https://нумерология-онлайн.рф/">Вернуться на сайт</a></body></html>');
 };
 let jwksCache = { data: null, expires: 0 };
 const verifyTelegramToken = async (token, wantedNonce) => {
