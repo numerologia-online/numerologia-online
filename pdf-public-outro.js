@@ -1,6 +1,6 @@
 // Shared closing page for public PDF documents. Never include in school client PDFs.
 export const PUBLIC_PDF_LINKS = Object.freeze({
-  site: "https://numerologia-online.github.io/numerologia-online/",
+  site: "https://нумерология-онлайн.рф/",
   bot: "https://t.me/Numerologiaonline_bot",
   channel: "https://t.me/numerologia_online",
   instagram: "https://www.instagram.com/zapiski__woman/",
