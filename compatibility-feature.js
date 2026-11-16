@@ -25,7 +25,7 @@ async function refreshPurchasedCompatibility(){
   const date=/^(\d{2})\.(\d{2})\.(\d{4})$/;
   const a=date.exec(first),b=date.exec(second);
   if(!a||!b)return;
-  const {recognizePurchasedReport}=await import("./store-entry.js?v=report-annual-20261109");
+  const {recognizePurchasedReport}=await import("./store-entry.js?v=owner-access-20261116");
   const granted=await recognizePurchasedReport({
     product_code:"compatibility_full",
     birth_date:a[3]+"-"+a[2]+"-"+a[1],
