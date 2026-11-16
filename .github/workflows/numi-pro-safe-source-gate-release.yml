@@ -1,0 +1,197 @@
+name: Restore original protected full-life texts to owner and genuine purchasers ONLY
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-pro-safe-source-gate-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify PHP owner-or-purchase authorization and original browser/UI
+        run: |
+          php -l pro/private-content.php
+          for file in pro/pro.js pro/secure-reader.js pro/karmic-programs-secure.js pro/full-report-pdf-secure.js pro/purpose-readings.js pro/pro-pdf-content.js; do node --check "$file"; done
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,subprocess
+          pro=Path('pro/pro.js').read_text('utf8')
+          php=Path('pro/private-content.php').read_text('utf8')
+          page=Path('pro/index.html').read_text('utf8')
+          css=Path('pro/pro.css').read_bytes()
+          assert css==subprocess.check_output(['git','show','94c0ffba6329:pro/pro.css']),'ORIGINAL_CSS_CHANGED'
+          old_page=subprocess.check_output(['git','show','a6adaf2ff517:pro/index.html']).decode('utf8')
+          assert page.replace('pro/pro.js?v=protected-source-restore-20261116','pro/pro.js?v=report-annual-20261109').replace('pro/pro.css?v=original-recovered-20261116','pro/pro.css?v=65')==old_page,'HTML_LAYOUT_CHANGED'
+          assert 'naTestOwner($account)' in php
+          assert "naCatalogHasAccess($db,$account,'life_full','life:'.$birth)" in php
+          assert 'naReadPost()' in php
+          assert "naMaterialRead($path)" in php
+          assert "if($kind==='karmic_tails')" in php
+          assert "if($kind==='karmic_programs')" in php
+          assert 'loadProtectedFullReportSection(energy)' in pro
+          assert 'loadProtectedFullReportSection(definition.energy)' in pro
+          assert 'loadProtectedFullReportSection(definition.energy)' in Path('pro/full-report-pdf-secure.js').read_text('utf8')
+          assert 'createFullReportPdfButton("top")' in pro
+          assert 'renderQuestions(definitions);' in pro
+          assert 'renderDiagram(points);' in pro
+          assert 'renderZones(zones);' in pro
+          assert 'if (schoolClientMode) return;' in pro
+          assert 'pro/payments' not in php
+          assert len(json.loads(Path('knowledge/full-report/sections/energy-9.json').read_text('utf8'))['sections'])==14
+          print('PRO_SAFE_SOURCE_PREFLIGHT_OK owner_or_paid_only=true original_css_exact=true original_html_exact_except_cache=true authored_banks_unchanged=true')
+          PY
+      - name: Backup and deploy only scoped full-life reader, plus private copies of ORIGINAL karma files
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,io,json,ssl,ftplib,hashlib,secrets,time,pathlib,subprocess,urllib.request,urllib.error
+          modified={
+            'pro/pro.js':'b9bcfd24ef3dafdfdff80dbf1df32e94da68c0e8',
+            'pro/index.html':'5587e029dc6a3f98b0613547abd4c7a94969483d',
+            'pro/purpose-readings.js':'33411e06678e3449550bbfc4d8f19ab47f68fcd3^',
+            'pro/pro-pdf-content.js':'f2512d49d6203013b679494fc40909c9c5aea470^'
+          }
+          newfiles=[
+            'pro/private-content.php',
+            'pro/secure-reader.js',
+            'pro/karmic-programs-secure.js',
+            'pro/full-report-pdf-secure.js'
+          ]
+          names=list(modified)+newfiles
+          desired={name:pathlib.Path(name).read_bytes() for name in names}
+          before_commit={name:subprocess.check_output(['git','show',ref+':'+name]) for name,ref in modified.items()}
+          rootKarma={
+            'karmic-programs.json':pathlib.Path('pro/karmic-programs.json').read_bytes(),
+            'karmic-tails.md':pathlib.Path('karmic-tails.md').read_bytes()
+          }
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')
+          site=root+'/www/xn--c1adkkdfjbp1a4l.online/'
+          privateFolder=root+'/private/numi-pro-karmic-source'
+          backups=root+'/site-safeguard-backups/'
+          def read(path):
+            buff=io.BytesIO()
+            try:ftp.retrbinary('RETR '+path,buff.write)
+            except ftplib.error_perm as e:
+              if str(e).startswith('550'):return None
+              raise
+            return buff.getvalue()
+          def write(path,bytes_):
+            ftp.storbinary('STOR '+path,io.BytesIO(bytes_))
+            if read(path)!=bytes_:raise RuntimeError('PRO_SOURCE_FTP_VERIFY_FAILED '+path.split('/')[-1])
+          previous={}
+          changed=[]
+          stageCreated=[]
+          probeName='pro/_numi_private_read_probe.php'
+          nonce=secrets.token_urlsafe(32)
+          secretHash=hashlib.sha256(nonce.encode()).hexdigest()
+          try:
+            for name in names:
+              live=read(site+name)
+              permitted=(None,desired[name]) if name in newfiles else (before_commit[name],desired[name])
+              if live not in permitted:raise RuntimeError('PRO_SOURCE_LIVE_CONFLICT '+name)
+              previous[name]=live
+            try:ftp.mkd(privateFolder)
+            except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+            for name,source in rootKarma.items():
+              dest=privateFolder+'/'+name
+              existing=read(dest)
+              if existing is not None and existing!=source:
+                raise RuntimeError('PRIVATE_ORIGINAL_COPY_CONFLICT '+name)
+              if existing is None:
+                write(dest,source)
+                stageCreated.append(dest)
+                try:ftp.sendcmd('SITE CHMOD 600 '+dest)
+                except ftplib.error_perm:pass
+            stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+            for name in modified:
+              if previous[name]!=desired[name]:
+                write(backups+'pro-source-gate-'+name.replace('/','-')+'-'+stamp+'.bak',previous[name])
+            for name in names:
+              if previous[name]!=desired[name]:
+                write(site+name,desired[name]);changed.append(name)
+            # Protected live bank probe: nonce never saved to the site;
+            # only hashes, shape and a boolean are returned, no authored words.
+            script=("""
+            <?php
+            declare(strict_types=1);
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-store');
+            if(!hash_equals('NONCE_HASH',hash('sha256',$_SERVER['HTTP_X_PROBE_TOKEN']??''))){
+              http_response_code(403);echo '{"ok":false}';exit;
+            }
+            try {
+              require dirname(__DIR__,3).'/private/numi-account-20261031/core.php';
+              require dirname(__DIR__,3).'/private/numi-account-20261031/fulfillment.php';
+              $raw=naMaterialRead('knowledge/full-report/sections/energy-9.json');
+              $data=json_decode($raw,true,30,JSON_THROW_ON_ERROR);
+              $s=$data['sections']??[];
+              $a=json_decode(file_get_contents(__DIR__.'/../pro/purpose/personal.json'),true);
+              $k=json_decode(file_get_contents(dirname(__DIR__,3).'/private/numi-pro-karmic-source/karmic-programs.json'),true);
+              $tails=file_get_contents(dirname(__DIR__,3).'/private/numi-pro-karmic-source/karmic-tails.md');
+              echo json_encode(['ok'=>count($s)===14 && is_array($a) && is_array($k) && strlen($tails)>1000,
+                'section_count'=>count($s),
+                'private_karmic_entries'=>count($k['entries']??[]),
+                'tail_bytes'=>strlen($tails),
+                'private_full_bank_hash_matches'=>hash_equals(hash('sha256',$raw),hash_file('sha256',__DIR__.'/../knowledge/full-report/sections/energy-9.json'))]);
+            }catch(Throwable $e){http_response_code(503);echo '{"ok":false,"error":"PRIVATE_SOURCE_CHECK_FAILED"}';}
+            """).replace('NONCE_HASH',secretHash).encode()
+            if read(site+probeName) is not None:raise RuntimeError('PRIVATE_PROBE_PATH_EXISTS')
+            write(site+probeName,script)
+            api='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+            req=urllib.request.Request(api+probeName+'?nonce='+str(time.time_ns()),headers={'X-Probe-Token':nonce,'Cache-Control':'no-cache'})
+            with urllib.request.urlopen(req,timeout=35) as response:
+              probe=json.load(response)
+            print('PRO_PRIVATE_ORIGINALS_CHECK '+json.dumps(probe,ensure_ascii=False))
+            if not probe.get('ok') or probe.get('section_count')!=14 or probe.get('private_karmic_entries')!=72 or probe.get('private_full_bank_hash_matches') is not True:
+              raise RuntimeError('LIVE_PROTECTED_ORIGINALS_NOT_READY')
+            ftp.delete(site+probeName)
+            for name in names:
+              req=urllib.request.Request(api+name+'?source_gate='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
+              with urllib.request.urlopen(req,timeout=35) as response:
+                received=response.read(1400000)
+                code=response.status
+              if code!=200 or hashlib.sha256(received).digest()!=hashlib.sha256(desired[name]).digest():
+                raise RuntimeError('PUBLIC_PRO_SOURCE_FILE_MISMATCH '+name)
+            # Public internet must not get private banks through the new PHP endpoint.
+            body=json.dumps({'kind':'section','energy':9,'birth_date':'1986-09-09'}).encode()
+            req=urllib.request.Request(api+'pro/private-content.php',data=body,method='POST',
+              headers={'Content-Type':'application/json','Origin':'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'})
+            try:
+              with urllib.request.urlopen(req,timeout=25) as response:
+                status=response.status
+            except urllib.error.HTTPError as e:status=e.code
+            if status!=403:raise RuntimeError('PRO_PRIVATE_GATE_ANONYMOUS_OPEN')
+            print('PRO_PRIVATE_SOURCE_RELEASE_OK original_bank_14=true karma_72=true paid_source_403_public=true only_pro_files_modified=true pdf_untouched_original_design=true')
+          except BaseException:
+            for name in reversed(changed):
+              try:
+                if previous[name] is None:ftp.delete(site+name)
+                else:write(site+name,previous[name])
+                print('PRO_SOURCE_ROLLBACK_OK '+name)
+              except Exception:print('PRO_SOURCE_ROLLBACK_FAILED '+name)
+            for name in stageCreated:
+              try:ftp.delete(name)
+              except Exception:pass
+            raise
+          finally:
+            try:ftp.delete(site+probeName)
+            except Exception:pass
+            try:ftp.quit()
+            except Exception:ftp.close()
+          PY
