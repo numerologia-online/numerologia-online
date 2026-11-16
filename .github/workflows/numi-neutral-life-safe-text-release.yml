@@ -1,0 +1,43 @@
+name: Publish ONLY approved-scope full-life gender grammar corrections
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-neutral-life-safe-text-release.yml
+permissions:
+  contents: write
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  edit_and_publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - name: Checkout repository safely
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Fetch approved isolated editorial draft
+        run: git fetch origin editorial/neutral-address-20261116
+      - name: Make only grammar corrections, verify original stems and content hash manifest
+        run: |
+          python3 scripts/release-neutral-life-20261116.py prepare
+          git diff --check
+          test "$(git diff --name-only | wc -l)" -eq 17
+          echo 'NEUTRAL_LIFE_SCOPE_VERIFIED original_ui_and_code_untouched=true'
+      - name: Record exact changes in Git history before production update
+        run: |
+          git config user.name "numi-full-life-copy-editor"
+          git config user.email "numi-full-life-copy-editor@users.noreply.github.com"
+          git add -- knowledge/full-report/sections/energy-*.json knowledge/full-report/free/impression/energy-*.json pro/guidance/energy-14.json account-service/private/store-assets.json
+          git commit -m "Full life: neutral second-person grammar only; synchronize protected bank checksums"
+          git push origin HEAD:refs/heads/main
+          echo 'NEUTRAL_LIFE_GITHUB_BACKUP_OK'
+      - name: Publish only these life-report files to REG.RU and automatically roll back on failure
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 scripts/release-neutral-life-20261116.py deploy
