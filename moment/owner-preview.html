@@ -13,6 +13,10 @@ button{margin-top:20px;background:#173f33;color:white;border:0;border-radius:12p
 button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pre-line;font-size:16px;line-height:1.6;color:#293c32}
 #moment-now{display:inline-flex;align-items:center;justify-content:center;width:auto;min-width:122px;min-height:42px;margin:9px 0 0;padding:8px 16px;border:1px solid #b18a4c;border-radius:12px;background:#f0e7d6;color:#173f33;font-size:15px;font-weight:750}.moment-time-help{font-size:13px;color:#66766b;margin:6px 0 0;line-height:1.4} 
 #generation-feedback{margin:14px 0 10px;padding:13px 14px;border-radius:12px;border:1px solid #c9d7cd;background:#f0f5f0;color:#174b38;font:600 14px/1.5 system-ui;white-space:pre-line}#generation-feedback.is-error{background:#fff1eb;border-color:#dab2a5;color:#7c3029}
+#ai-waiting{margin:14px 0;padding:15px 12px;color:#245440;text-align:center;font-weight:650;font-size:15px;line-height:1.55;border:1px solid #d5dfd4;background:#f1f6f0;border-radius:13px}
+#ai-waiting[hidden]{display:none}
+#ai-waiting::before{content:"";display:inline-block;width:15px;height:15px;margin-right:10px;vertical-align:-3px;border:2px solid #c9d8cc;border-top-color:#2c7051;border-radius:50%;animation:ai-wait-spin .9s linear infinite}
+@keyframes ai-wait-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){#ai-waiting::before{animation:none}}
 #status{line-height:1.5}#work[hidden],#result[hidden],#partner-fields[hidden],#review-controls[hidden],#review-progress[hidden]{display:none}.back{display:inline-block;margin:5px 0 10px}
 #review-answer,#review-note{display:block;width:100%;border:1px solid #b8c6ba;border-radius:11px;padding:13px;font:16px/1.6 system-ui;background:white;color:#183d31;resize:vertical}#review-answer{min-height:230px}#review-note{min-height:80px}
 .review-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.review-actions button{margin:0;font-size:14px;padding:10px 7px}.review-actions button:last-child{grid-column:1/-1}
@@ -38,6 +42,7 @@ button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pr
 <div id="partner-fields"><label for="other">Дата рождения второго человека</label><input id="other" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false"></div>
 <label for="moment">Дата и время вопроса</label><input id="moment" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" maxlength="16" spellcheck="false"><button id="moment-now" type="button">Сейчас</button><p class="moment-time-help">Время телефона подставляется автоматически перед ответом. Можно изменить вручную.</p>
 <button id="generate-cloudflare" type="button" style="background:#285e4a">Получить ответ ИИ</button>
+<div id="ai-waiting" role="status" aria-live="polite" aria-atomic="true" hidden>Изучаю его характер…</div>
 <p class="note">Новый прямой способ. Пока проверяем только для владельца, без оплаты.</p>
 <button id="generate" type="button">Резервный способ: Groq через GitHub</button>
 <p class="note">Бесплатный Groq через GitHub. Обработка по очереди, обычно несколько минут. Баланс не списывается.</p>
@@ -63,6 +68,22 @@ button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pr
 </main><script>
 'use strict';
 const $=id=>document.getElementById(id);let catalog;
+const waitingMessages=['Изучаю его характер…','Рассчитываю вашу совместимость…','Определяю его личный период…','Анализирую момент вопроса…','Составляю ваш личный ответ…'];
+let waitingTimer=null;
+function stopAiWaiting(){
+  if(waitingTimer!==null){clearInterval(waitingTimer);waitingTimer=null;}
+  $('ai-waiting').hidden=true;
+}
+function startAiWaiting(){
+  stopAiWaiting();
+  let index=0;
+  $('ai-waiting').textContent=waitingMessages[index];
+  $('ai-waiting').hidden=false;
+  waitingTimer=setInterval(()=>{
+    index=(index+1)%waitingMessages.length;
+    $('ai-waiting').textContent=waitingMessages[index];
+  },3000);
+}
 async function getJson(url,options={}){const r=await fetch(url,{credentials:'same-origin',cache:'no-store',...options});let d={};try{d=await r.json()}catch{}return {status:r.status,...d};}
 // Auto-insert separators while keeping the caret at the edited digit on iOS.
 function formatNumericDate(raw, withTime=false){
@@ -272,6 +293,7 @@ $('generate-cloudflare').addEventListener('click',async()=>{
   feedback.textContent='Проверяю прямое подключение Cloudflare Workers AI. Деньги не списываются.';
   $('status').textContent='Тестируем прямой ответ Cloudflare для владельца.';
   $('result').hidden=true;
+  startAiWaiting();
   try{
     const initialQuestionId=$('question').value;
     const result=await getJson('./owner-ai.php',{
@@ -297,6 +319,7 @@ $('generate-cloudflare').addEventListener('click',async()=>{
     feedback.classList.add('is-error');feedback.textContent=message;
     $('status').textContent=message;
   }finally{
+    stopAiWaiting();
     button.disabled=false;button.textContent='Получить ответ ИИ';
   }
 });
