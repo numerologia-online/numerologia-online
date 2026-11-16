@@ -7,5 +7,5 @@ return [
     'telegram_client_secret' => 'PASTE_ONLY_IN_HOSTING_PANEL',
     'session_secret' => 'RANDOM_PRIVATE_SECRET_AT_LEAST_32_CHARACTERS',
     'auth_url' => 'https://YOUR-FREE-TECHNICAL-DOMAIN',
-    'site_url' => 'https://numerologia-online.github.io/numerologia-online/',
+    'site_url' => 'https://нумерология-онлайн.рф/',
 ];
