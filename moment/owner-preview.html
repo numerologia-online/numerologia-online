@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex,nofollow"><title>Редактор 300 вопросов · Только владелец</title>
+<meta name="robots" content="noindex,nofollow"><title>Ваш вопрос · Нумерология онлайн</title>
 <style>
 :root{font-family:system-ui,-apple-system,sans-serif;color:#183d31;background:#f8f5ef}
 *{box-sizing:border-box}body{margin:0}main{max-width:750px;margin:0 auto;padding:22px 17px 60px}
@@ -23,32 +23,46 @@ button:disabled{opacity:.6}h2{margin-top:0;font-size:20px}.answer{white-space:pr
 #review-status{font-size:14px;color:#365849;font-weight:650;line-height:1.5}.review-approved{color:#195c35!important}
 #review-progress{display:none!important}#review-progress{border-left:4px solid #af965e}#review-progress button{width:auto;margin-top:10px;background:#f1e8d9;color:#234532;border:1px solid #c0a77c}
 #review-feedback{font-size:14px;line-height:1.5;color:#365849}.review-muted{font-size:13px;color:#68796f;line-height:1.5}
+body{background:#fbf8f3;color:#173e31}main{padding:19px 17px 65px;max-width:690px}
+.back{text-decoration:none;color:#355846;font-size:15px;font-weight:650;margin:1px 0 24px}
+#question-hero{position:relative;padding:25px 0 8px;min-height:115px}
+#question-hero:before{content:"✧";position:absolute;right:5px;top:3px;color:#c69c62;font:italic 64px Georgia,serif;opacity:.32}
+#question-category{display:inline-block;border:1px solid #d6bb91;background:#f7ecdc;border-radius:28px;padding:8px 14px;color:#795b37;font-size:14px;font-weight:650}
+#question-title{font:600 clamp(29px,7.6vw,43px)/1.13 Georgia,serif;letter-spacing:-.02em;margin:22px 0 23px;color:#173e31;max-width:530px}
+#work{padding:22px 20px 28px;border:1px solid #e3d5bd;box-shadow:0 8px 24px #123b2610}
+#work label{font-weight:650;font-size:15px;margin-top:18px;margin-bottom:8px}
+#work input{border-color:#cbbda6;border-radius:12px;min-height:52px;font-size:16px}
+#work #generate-cloudflare{margin-top:27px;min-height:56px;border-radius:14px;background:#173f33!important;font-size:17px}
+#question-selector{display:none}
+#status:empty,#status[hidden]{display:none}
+#result{border-color:#ddcbaa;line-height:1.65}
+#result-heading{font:600 26px Georgia,serif}
+#technical-owner-controls{display:none}
+@media(max-width:420px){main{padding:16px 14px 50px}#work{padding:19px 16px}#question-title{font-size:31px}}
 
 </style></head><body><main>
 <a class="back" href="./">← Назад к 300 вопросам</a>
-<h1>Редактор: 300 вопросов о жизни</h1>
-<p class="note">Только для владельца. Бесплатный тест нейросети. Ответы пока не публикуются и никому не продаются. Остальные разделы сайта не затронуты.</p>
-<div class="paper" id="status" role="status">Проверяю доступ владельца…</div>
+<div id="question-hero"><span id="question-category">Ваш личный вопрос</span><h1 id="question-title">Выбранный вопрос</h1></div>
+<div class="paper" id="status" role="status" hidden>Проверяю доступ…</div>
 <section class="paper" id="review-progress" hidden>
 <h2>Проверка 300 вопросов</h2><p id="review-progress-text">Загружаю результаты проверки…</p>
 <button id="review-next" type="button">Следующий непроверенный вопрос</button>
 <p class="review-muted">Отмечаем качество каждого вопроса на выбранных датах. Одобрение образца не открывает вопрос покупателям.</p>
 </section>
 <section class="paper" id="work" hidden>
-<h2>Выберите вопрос</h2>
-<div hidden><label for="category">Тема</label><select id="category"></select></div>
-<label for="question">Вопрос</label><select id="question"></select>
-<label for="birth">Дата рождения спрашивающего</label><input id="birth" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false" required>
-<div id="partner-fields"><label for="other">Дата рождения второго человека</label><input id="other" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false"></div>
+<div id="question-selector"><div hidden><label for="category">Тема</label><select id="category"></select></div>
+<label for="question">Вопрос</label><select id="question"></select></div>
+<label for="birth">Ваша дата рождения</label><input id="birth" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false" required>
+<div id="partner-fields"><label for="other">Дата рождения мужчины</label><input id="other" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ" maxlength="10" spellcheck="false"></div>
 <label for="moment">Дата и время вопроса</label><input id="moment" type="text" inputmode="numeric" autocomplete="off" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" maxlength="16" spellcheck="false"><button id="moment-now" type="button">Сейчас</button><p class="moment-time-help">Время телефона подставляется автоматически перед ответом. Можно изменить вручную.</p>
-<button id="generate-cloudflare" type="button" style="background:#285e4a">Получить ответ ИИ</button>
+<button id="generate-cloudflare" type="button" style="background:#285e4a">Получить ответ</button>
 <div id="ai-waiting" role="status" aria-live="polite" aria-atomic="true" hidden>Изучаю его характер…</div>
-<p class="note">Новый прямой способ. Пока проверяем только для владельца, без оплаты.</p>
+<div id="technical-owner-controls">
 <button id="generate" type="button">Резервный способ: Groq через GitHub</button>
-<p class="note">Бесплатный Groq через GitHub. Обработка по очереди, обычно несколько минут. Баланс не списывается.</p>
-<p class="note"><a href="./owner-first-answer.php">Прочитать готовый пример ответа ИИ</a></p>
+<p class="note">Бесплатный резервный тест, без списаний.</p>
+<p class="note"><a href="./owner-first-answer.php">Прочитать сохранённый тестовый ответ</a></p></div>
 <p id="generation-feedback" class="generation-feedback" role="status" aria-live="polite" hidden></p>
-<p class="note">Если ответ не понравится, изменим инструкцию нейросети. Никаких списаний с баланса нет.</p></section>
+</section>
 <section class="paper" id="result" hidden><h2 id="result-heading">Ответ</h2><div class="answer" id="answer"></div><div id="review-controls" hidden>
 <hr style="border:0;border-top:1px solid #e4d7c0;margin:23px 0 18px">
 <h2>Редакционная проверка</h2>
@@ -192,10 +206,19 @@ function showQuestions(){
  if(catalog.questions.some(q=>q.id===selected))$('question').value=selected;
  updateMode();
 }
-function updateMode(){const q=catalog.questions.find(x=>x.id===$('question').value);$('partner-fields').hidden=q?.mode!=='partner';}
+function updateMode(){
+ const q=catalog.questions.find(x=>x.id===$('question').value);
+ $('partner-fields').hidden=q?.mode!=='partner';
+ if(q){
+   $('question-title').textContent=q.title;
+   const cat=catalog.categories.find(c=>c.id===q.category);
+   $('question-category').textContent=cat?.title||'Ваш личный вопрос';
+   document.title=q.title+' · Нумерология онлайн';
+ }
+}
 $('category').addEventListener('change',()=>{showQuestions();void loadReviewForQuestion();});
 $('question').addEventListener('change',()=>{const item=catalog.questions.find(q=>q.id===$('question').value);if(item)$('category').value=item.category;updateMode();void loadReviewForQuestion();});
-async function init(){try{const access=await getJson('./owner-ai.php');if(!access.ok||!access.owner){$('status').textContent='Войди на главной странице под подтверждённой почтой владельца и снова открой редактор. Для остальных посетителей доступ закрыт.';return;}const r=await fetch('./questions.json',{cache:'no-store'});catalog=await r.json();if(!Array.isArray(catalog.questions)||catalog.questions.length!==300)throw Error('Каталог неполный');$('category').replaceChildren(...catalog.categories.map(c=>new Option(c.title+' ('+c.count+')',c.id)));const requestedId=new URLSearchParams(location.search).get('question');const requested=catalog.questions.find(q=>q.id===requestedId);$('category').value=requested?.category||'love';showQuestions();if(requested){$('question').value=requested.id;updateMode();}setMomentNow();$('status').textContent='✓ Режим владельца открыт. Все 300 вопросов доступны для бесплатных тестов.';await loadReviewOverview();await loadReviewForQuestion();try{const prev=JSON.parse(sessionStorage.getItem(ownerQueueJobKey)||'null');if(prev&&/^[a-f0-9]{32}$/.test(prev.job))void pollOwnerJob(prev.job,prev.title||'Тестовый ответ');}catch(_){};$('work').hidden=false;}catch(e){$('status').textContent='Не получилось проверить доступ. Попробуй обновить страницу.';}}
+async function init(){try{const access=await getJson('./owner-ai.php');if(!access.ok||!access.owner){$('status').hidden=false;$('status').textContent='Для проверки войдите в аккаунт владельца.';return;}const r=await fetch('./questions.json',{cache:'no-store'});catalog=await r.json();if(!Array.isArray(catalog.questions)||catalog.questions.length!==300)throw Error('Каталог неполный');$('category').replaceChildren(...catalog.categories.map(c=>new Option(c.title+' ('+c.count+')',c.id)));const requestedId=new URLSearchParams(location.search).get('question');const requested=catalog.questions.find(q=>q.id===requestedId);$('category').value=requested?.category||'love';showQuestions();if(requested){$('question').value=requested.id;updateMode();}setMomentNow();$('status').hidden=true;await loadReviewOverview();await loadReviewForQuestion();try{const prev=JSON.parse(sessionStorage.getItem(ownerQueueJobKey)||'null');if(prev&&/^[a-f0-9]{32}$/.test(prev.job))void pollOwnerJob(prev.job,prev.title||'Тестовый ответ');}catch(_){};$('work').hidden=false;}catch(e){$('status').hidden=false;$('status').textContent='Не получилось загрузить вопрос. Обновите страницу.';}}
 
 const ownerQueueJobKey='numi-moment-groq-current-job';
 let queueChecking=false;
@@ -288,10 +311,9 @@ $('generate-cloudflare').addEventListener('click',async()=>{
   const moment=textMoment?toIsoMoment(textMoment):null;
   if(textMoment&&!moment){$('status').textContent='Проверь дату и время вопроса.';$('moment').focus();return;}
   const feedback=$('generation-feedback');
-  button.disabled=true;button.textContent='Получаю ответ Cloudflare…';
+  button.disabled=true;button.textContent='Готовлю ваш ответ…';
   feedback.hidden=false;feedback.classList.remove('is-error');
-  feedback.textContent='Проверяю прямое подключение Cloudflare Workers AI. Деньги не списываются.';
-  $('status').textContent='Тестируем прямой ответ Cloudflare для владельца.';
+  feedback.textContent='Подбираю трактовку по вашим датам и моменту вопроса…';
   $('result').hidden=true;
   startAiWaiting();
   try{
@@ -308,16 +330,15 @@ $('generate-cloudflare').addEventListener('click',async()=>{
     $('result').hidden=false;
     showReviewCandidate(result.answer);
     await saveReview('save_draft',true);
-    feedback.textContent='✓ Прямое подключение Cloudflare работает, ответ получен.';
-    $('status').textContent='✓ Тестовый ответ Cloudflare готов.';
+    feedback.textContent='✓ Ваш ответ готов.';
     $('result').scrollIntoView({behavior:'smooth'});
   }catch(error){
     const code=String(error?.message||'');
     const message=code==='WORKER_MODEL_UNAVAILABLE'
-      ?'Cloudflare пока не вернул полноценный ответ. Прямое подключение ещё проверяется.'
-      :'Ошибка теста Cloudflare: '+code+'.';
+      ?'Не удалось подготовить ответ. Попробуйте ещё раз.'
+      :'Не удалось подготовить ответ. Код: '+code+'.';
     feedback.classList.add('is-error');feedback.textContent=message;
-    $('status').textContent=message;
+    $('status').hidden=false;$('status').textContent=message;
   }finally{
     stopAiWaiting();
     button.disabled=false;button.textContent='Получить ответ ИИ';
