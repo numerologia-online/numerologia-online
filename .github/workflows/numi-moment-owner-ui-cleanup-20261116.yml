@@ -1,4 +1,4 @@
-name: Publish ONLY owner Moment editor UI cleanup
+name: Publish ONLY owner Moment editor UI and loading animation
 on:
   push:
     branches: [main]
