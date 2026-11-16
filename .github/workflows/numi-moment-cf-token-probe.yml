@@ -38,8 +38,15 @@ jobs:
           if len(accounts)!=1:raise RuntimeError('EXPECTED_ONE_ACCOUNT')
           aid=accounts[0]['id']
           print('MOMENT_CF_ACCOUNT_ID='+aid)
-          status,d=cf('accounts/'+aid+'/workers/scripts/numerologia-300-ai')
-          print('MOMENT_CF_TARGET_WORKER status='+str(status))
+          req=urllib.request.Request('https://api.cloudflare.com/client/v4/accounts/'+aid+'/workers/scripts/numerologia-300-ai',headers={'Authorization':'Bearer '+tok,'Accept':'application/javascript'})
+          try:
+            with urllib.request.urlopen(req,timeout=20) as response:
+              status=response.status
+              content_type=response.headers.get('Content-Type','')
+          except urllib.error.HTTPError as err:
+            status=err.code
+            content_type=''
+          print('MOMENT_CF_TARGET_WORKER status='+str(status)+' content_type='+content_type.split(';')[0])
           if status!=200:raise RuntimeError('TARGET_WORKER_NOT_FOUND_OR_ACCESS_DENIED')
           print('MOMENT_CF_TOKEN_AND_TARGET_WORKER_CONFIRMED')
           PY
