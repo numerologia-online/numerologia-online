@@ -1,6 +1,6 @@
 // Тестовый Telegram webhook. Не изменяет существующие страницы и не содержит секретов.
 const TELEGRAM_API = 'https://api.telegram.org';
-const DEFAULT_SITE = 'https://numerologia-online.github.io/numerologia-online/';
+const DEFAULT_SITE = 'https://нумерология-онлайн.рф/';
 
 function siteUrl() {
   const raw = process.env.TELEGRAM_SITE_URL || DEFAULT_SITE;
