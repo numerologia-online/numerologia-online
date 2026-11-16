@@ -288,3 +288,48 @@
   font-size:15px;
   font-weight:750;
 }
+
+/* Compact final-style question catalogue, 2026-11-16. Click action remains owner-gated. */
+.explore .questions-panel{padding:20px 22px 24px;box-shadow:none;border:1px solid #e1d7c6;border-radius:20px;background:#fffdfa}
+.explore .questions-top h3{margin:2px 0 7px;font-size:clamp(29px,5vw,39px)}
+.explore .results-message{font-size:12px;margin:0 0 17px;color:#7a897d}
+.explore .question-list{grid-template-columns:1fr;gap:7px}
+.explore .question-entry.moment-soon-question{
+  display:grid;grid-template-columns:34px minmax(0,1fr) 20px;
+  gap:10px;align-items:center;min-height:58px;
+  padding:12px 14px;border:1px solid #e1e4df;border-bottom:1px solid #d5dbd5;
+  border-radius:13px;background:#fdfdfb;box-shadow:none;
+  color:#173e31;text-align:left;cursor:pointer;
+}
+.explore .question-entry.moment-soon-question .question-index{
+  grid-column:1;grid-row:1;align-self:center;padding:0;
+  font:500 17px/1.2 Georgia,serif;color:#b39057;
+}
+.explore .question-entry.moment-soon-question .question-name{
+  grid-column:2;grid-row:1;align-self:center;
+  font-size:15.5px;line-height:1.35;font-weight:650;
+}
+.explore .question-entry.moment-soon-question .moment-question-chevron{
+  grid-column:3;grid-row:1;align-self:center;justify-self:end;
+  color:#a68856;font:400 28px/1 Georgia,serif;
+}
+.explore .question-entry.moment-soon-question .moment-question-status{display:none}
+.explore .question-entry.moment-soon-question:hover,
+.explore .question-entry.moment-soon-question:focus-visible{
+  border-color:#cbb790;background:#f8f6f0;box-shadow:none;
+}
+.explore .moment-topic-back{width:auto;min-width:0;max-width:160px;min-height:43px;padding:8px 15px;
+  margin:0 0 17px;border:1px solid #cfb58b;box-shadow:none;font-size:14px;border-radius:11px}
+@media(max-width:650px){
+  .explore{padding:14px 0 45px}
+  .explore .questions-panel{padding:16px 12px 20px;border-radius:17px}
+  .explore .question-list{gap:7px}
+  .explore .question-entry.moment-soon-question{
+    grid-template-columns:27px minmax(0,1fr) 16px;gap:9px;
+    min-height:54px;padding:11px 12px;border-radius:12px;
+  }
+  .explore .question-entry.moment-soon-question .question-index{font-size:16px}
+  .explore .question-entry.moment-soon-question .question-name{font-size:14.5px}
+  .explore .question-entry.moment-soon-question .moment-question-chevron{font-size:24px}
+  .explore .questions-top h3{font-size:30px}
+}
