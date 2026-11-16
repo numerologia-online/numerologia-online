@@ -73,7 +73,7 @@ def prepare():
         assert shape(json.loads(data.decode("utf-8-sig")))==shape(json.loads(raw.decode("utf-8-sig")))
         assert len(data.splitlines())==len(raw.splitlines())
         pathlib.Path(path).write_bytes(data)
-    assert 45<=count<=85,("TOTAL_EDIT_COUNT_UNEXPECTED",count)
+    assert 85<=count<=110,("TOTAL_EDIT_COUNT_UNEXPECTED",count)
     manifest_original=old(MANIFEST)
     assert pathlib.Path(MANIFEST).read_bytes()==manifest_original, "CHECKSUM_FILE_CHANGED"
     manifest=json.loads(manifest_original)
