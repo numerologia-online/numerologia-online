@@ -38,10 +38,11 @@ body{background:#fbf8f3;color:#173e31}main{padding:19px 17px 65px;max-width:690p
 #result{border-color:#ddcbaa;line-height:1.65}
 #result-heading{font:600 26px Georgia,serif}
 #technical-owner-controls{display:none}
+.ask-another-question{display:block;margin:24px auto 8px;padding:15px 18px;width:100%;border:1px solid #c9b28b;border-radius:13px;background:#f5ecdc;text-align:center;text-decoration:none;color:#194531;font-weight:750;font-size:16px}
 @media(max-width:420px){main{padding:16px 14px 50px}#work{padding:19px 16px}#question-title{font-size:31px}}
 
 </style></head><body><main>
-<a class="back" href="./">← Назад к 300 вопросам</a>
+<a class="back" id="back-to-questions" href="./">← К выбору вопросов</a>
 <div id="question-hero"><span id="question-category">Ваш личный вопрос</span><h1 id="question-title">Выбранный вопрос</h1></div>
 <div class="paper" id="status" role="status" hidden>Проверяю доступ…</div>
 <section class="paper" id="review-progress" hidden>
@@ -63,7 +64,7 @@ body{background:#fbf8f3;color:#173e31}main{padding:19px 17px 65px;max-width:690p
 <p class="note"><a href="./owner-first-answer.php">Прочитать сохранённый тестовый ответ</a></p></div>
 <p id="generation-feedback" class="generation-feedback" role="status" aria-live="polite" hidden></p>
 </section>
-<section class="paper" id="result" hidden><h2 id="result-heading">Ответ</h2><div class="answer" id="answer"></div><div id="review-controls" hidden>
+<section class="paper" id="result" hidden><h2 id="result-heading">Ответ</h2><div class="answer" id="answer"></div><a id="ask-another-question" href="./" class="ask-another-question">Задать ещё вопрос →</a><div id="review-controls" hidden>
 <hr style="border:0;border-top:1px solid #e4d7c0;margin:23px 0 18px">
 <h2>Редакционная проверка</h2>
 <p id="review-status" role="status">Не проверено</p>
@@ -82,6 +83,27 @@ body{background:#fbf8f3;color:#173e31}main{padding:19px 17px 65px;max-width:690p
 </main><script>
 'use strict';
 const $=id=>document.getElementById(id);let catalog;
+const pairSessionKey='numi-moment-pair-session-v1';
+function loadPairSession(){
+  try{const data=JSON.parse(sessionStorage.getItem(pairSessionKey)||'null');
+    if(data&&toIsoDate(data.self)&&toIsoDate(data.other)){
+      $('birth').value=data.self;$('other').value=data.other;
+    }
+  }catch(_){}
+}
+function savePairSession(){
+  if(toIsoDate($('birth').value)&&toIsoDate($('other').value)){
+    try{sessionStorage.setItem(pairSessionKey,JSON.stringify({self:$('birth').value,other:$('other').value}));}catch(_){}
+  }
+}
+$('birth').addEventListener('change',savePairSession);
+$('other').addEventListener('change',savePairSession);
+function updateReturnLinks(){
+  const category=catalog?.questions.find(q=>q.id===$('question').value)?.category;
+  const dest='./'+(category?'?category='+encodeURIComponent(category):'');
+  $('back-to-questions').href=dest;
+  $('ask-another-question').href=dest;
+}
 const waitingMessages=['Изучаю его характер…','Рассчитываю вашу совместимость…','Определяю его личный период…','Анализирую момент вопроса…','Составляю ваш личный ответ…'];
 let waitingTimer=null;
 function stopAiWaiting(){
@@ -218,7 +240,7 @@ function updateMode(){
 }
 $('category').addEventListener('change',()=>{showQuestions();void loadReviewForQuestion();});
 $('question').addEventListener('change',()=>{const item=catalog.questions.find(q=>q.id===$('question').value);if(item)$('category').value=item.category;updateMode();void loadReviewForQuestion();});
-async function init(){try{const access=await getJson('./owner-ai.php');if(!access.ok||!access.owner){$('status').hidden=false;$('status').textContent='Для проверки войдите в аккаунт владельца.';return;}const r=await fetch('./questions.json',{cache:'no-store'});catalog=await r.json();if(!Array.isArray(catalog.questions)||catalog.questions.length!==300)throw Error('Каталог неполный');$('category').replaceChildren(...catalog.categories.map(c=>new Option(c.title+' ('+c.count+')',c.id)));const requestedId=new URLSearchParams(location.search).get('question');const requested=catalog.questions.find(q=>q.id===requestedId);$('category').value=requested?.category||'love';showQuestions();if(requested){$('question').value=requested.id;updateMode();}setMomentNow();$('status').hidden=true;await loadReviewOverview();await loadReviewForQuestion();try{const prev=JSON.parse(sessionStorage.getItem(ownerQueueJobKey)||'null');if(prev&&/^[a-f0-9]{32}$/.test(prev.job))void pollOwnerJob(prev.job,prev.title||'Тестовый ответ');}catch(_){};$('work').hidden=false;}catch(e){$('status').hidden=false;$('status').textContent='Не получилось загрузить вопрос. Обновите страницу.';}}
+async function init(){try{const access=await getJson('./owner-ai.php');if(!access.ok||!access.owner){$('status').hidden=false;$('status').textContent='Для проверки войдите в аккаунт владельца.';return;}const r=await fetch('./questions.json',{cache:'no-store'});catalog=await r.json();if(!Array.isArray(catalog.questions)||catalog.questions.length!==300)throw Error('Каталог неполный');$('category').replaceChildren(...catalog.categories.map(c=>new Option(c.title+' ('+c.count+')',c.id)));const requestedId=new URLSearchParams(location.search).get('question');const requested=catalog.questions.find(q=>q.id===requestedId);$('category').value=requested?.category||'love';showQuestions();if(requested){$('question').value=requested.id;updateMode();}loadPairSession();updateReturnLinks();setMomentNow();$('status').hidden=true;await loadReviewOverview();await loadReviewForQuestion();try{const prev=JSON.parse(sessionStorage.getItem(ownerQueueJobKey)||'null');if(prev&&/^[a-f0-9]{32}$/.test(prev.job))void pollOwnerJob(prev.job,prev.title||'Тестовый ответ');}catch(_){};$('work').hidden=false;}catch(e){$('status').hidden=false;$('status').textContent='Не получилось загрузить вопрос. Обновите страницу.';}}
 
 const ownerQueueJobKey='numi-moment-groq-current-job';
 let queueChecking=false;
@@ -307,6 +329,7 @@ $('generate-cloudflare').addEventListener('click',async()=>{
   const other=needsPartner?toIsoDate($('other').value):null;
   if(needsPartner&&!other){$('status').textContent='Введи дату рождения второго человека.';$('other').focus();return;}
   if(!momentEditedByOwner)setMomentNow();
+  if(needsPartner)savePairSession();
   const textMoment=$('moment').value.trim();
   const moment=textMoment?toIsoMoment(textMoment):null;
   if(textMoment&&!moment){$('status').textContent='Проверь дату и время вопроса.';$('moment').focus();return;}
@@ -328,6 +351,7 @@ $('generate-cloudflare').addEventListener('click',async()=>{
     $('result-heading').textContent=result.question;
     $('answer').textContent=result.answer;
     $('result').hidden=false;
+    updateReturnLinks();
     showReviewCandidate(result.answer);
     await saveReview('save_draft',true);
     feedback.textContent='✓ Ваш ответ готов.';
