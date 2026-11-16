@@ -1,0 +1,66 @@
+name: FINAL READ ONLY verification of complete life report live REG.RU sources and PDF loader
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-full-life-final-readonly-verification-20261116.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check all 22 protected banks and active Full Life PDF files without changing site
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          node --check pro/full-report-pdf-secure.js
+          node --check pro/pro.js
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,json,hashlib,pathlib,re
+          sha=lambda b: hashlib.sha256(b).hexdigest()
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')
+          site=root+'/www/xn--c1adkkdfjbp1a4l.online/'
+          private=root+'/private/numi-account-20261031/'
+          def read(p):
+              b=io.BytesIO();ftp.retrbinary('RETR '+p,b.write);return b.getvalue()
+          try:
+              manifest=json.loads(read(private+'store-assets.json'))
+              manifest_repo=json.loads(pathlib.Path('account-service/private/store-assets.json').read_text('utf8'))
+              assert manifest['files']==manifest_repo['files'], 'PRIVATE_MANIFEST_DIFFERS_FROM_GITHUB'
+              print('FULL_LIFE_MANIFEST_MATCH true',flush=True)
+              count=0
+              for n in range(1,23):
+                  p=f'knowledge/full-report/sections/energy-{n}.json'
+                  local=pathlib.Path(p).read_bytes()
+                  public=read(site+p)
+                  protected=read(private+'store-content/'+p)
+                  if local!=public or local!=protected or sha(local)!=manifest['files'].get(p):
+                      raise RuntimeError('BANK_MISMATCH:'+str(n))
+                  doc=json.loads(local.decode('utf8-sig'))
+                  assert 'partner' in doc['sections'] and 'trueLove' in doc['sections']
+                  for sec in doc['sections'].values():
+                      if 'content' in sec and 'paragraphs' in sec:
+                          assert sec['content']=='\n\n'.join(sec['paragraphs']), 'PDF_TEXT_MISMATCH: energy-'+str(n)
+                  count+=1
+                  print('FULL_LIFE_BANK_VERIFIED',n,flush=True)
+              names=['pro/index.html','pro/pro.js','pro/full-report-pdf-secure.js','pro/pro-pdf-content.js','pro/secure-reader.js','pdf-public-outro.js','full-report-library.js']
+              for p in names:
+                  local=pathlib.Path(p).read_bytes()
+                  live=read(site+p)
+                  if local!=live:raise RuntimeError('LIVE_PDF_ASSET_DIFFERS_FROM_MAIN:'+p)
+                  print('FULL_LIFE_PDF_ASSET_VERIFIED',p,flush=True)
+              print('FULL_LIFE_READONLY_VERIFIED_SUCCESS all_22_banks=true public_private_manifest=true pdf_source_matches_main=true no_live_changes=true',flush=True)
+          finally: ftp.quit()
+          PY
