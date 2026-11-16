@@ -157,7 +157,7 @@ async function refreshPurchasedPro(){
   const chosen=input.value.trim();
   const match=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(chosen);
   if(!match)return;
-  const {recognizePurchasedReport}=await import("../store-entry.js?v=report-annual-20261109");
+  const {recognizePurchasedReport}=await import("../store-entry.js?v=owner-access-20261116");
   const granted=await recognizePurchasedReport(
     {product_code:"life_full",birth_date:match[3]+"-"+match[2]+"-"+match[1]},purchasedProRegion);
   if(chosen===input.value.trim()){
@@ -199,7 +199,7 @@ function showPaymentInfo() {
 }
 async function previewCheckout(choice) {
   try {
-    const {openStore,storeDate}=await import("../store-entry.js?v=report-annual-20261109");
+    const {openStore,storeDate}=await import("../store-entry.js?v=owner-access-20261116");
     await openStore({product_code:"life_full",birth_date:storeDate(input.value)},choice==="club"?"club":"once");
   } catch (_) {
     const note=paywallDialog?.querySelector("#pro-paywall-checkout-note");
