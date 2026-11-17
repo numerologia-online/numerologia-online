@@ -112,6 +112,44 @@ export default {
     if(request.method==="GET"&&url.pathname==="/health")
       return reply(200,{ok:true,service:"numerologia-redflag-draft-ai",version:VERSION,
         ai_bound:!!env.AI,owner_drafts_only:true,live_answers_enabled:false});
+    // CI-only inference bridge for creating and independently reviewing one
+    // private 366-date bank. Disabled without the temporary SHA-256 secret.
+    if(url.pathname==="/v1/redflag-batch-run"){
+      if(request.method!=="POST")return reply(405,{ok:false,error:"METHOD_NOT_ALLOWED"});
+      if(!await ephemeralBatchProofValid(
+        request.headers.get("X-Numi-Redflag-Batch"),env.REDFLAG_BATCH_KEY_SHA256))
+        return reply(403,{ok:false,error:"FORBIDDEN"});
+      if(!env.AI)return reply(503,{ok:false,error:"AI_UNAVAILABLE"});
+      if(!(request.headers.get("Content-Type")||"").startsWith("application/json"))
+        return reply(415,{ok:false,error:"JSON_REQUIRED"});
+      const raw=await request.text();
+      if(raw.length>18000)return reply(413,{ok:false,error:"INPUT_TOO_LARGE"});
+      let body;
+      try{body=JSON.parse(raw)}catch{return reply(400,{ok:false,error:"INVALID_JSON"});}
+      if(!body||!Array.isArray(body.messages)||body.messages.length<1||
+        body.messages.length>4||body.messages.some(m=>!m||
+          !["system","user","assistant"].includes(m.role)||typeof m.content!=="string"||
+          m.content.length<1||m.content.length>9500)||
+        !Number.isInteger(body.max_completion_tokens)||body.max_completion_tokens<50||
+        body.max_completion_tokens>900||typeof body.temperature!=="number"||
+        body.temperature<0||body.temperature>1.2)
+        return reply(400,{ok:false,error:"INVALID_BATCH_INPUT"});
+      try{
+        const result=await env.AI.run(MODEL,{
+          messages:body.messages,
+          max_completion_tokens:body.max_completion_tokens,
+          temperature:body.temperature,
+          chat_template_kwargs:{enable_thinking:false}
+        });
+        const answer=result?.response??result?.choices?.[0]?.message?.content;
+        if(typeof answer!=="string"||!answer.trim()||answer.length>7500)
+          return reply(503,{ok:false,error:"MODEL_NO_TEXT"});
+        return reply(200,{ok:true,response:answer});
+      }catch(e){
+        console.error("REDFLAG_BATCH_MODEL_ERROR",e?.name||"error");
+        return reply(503,{ok:false,error:"MODEL_UNAVAILABLE"});
+      }
+    }
     if(request.method!=="POST"||!["/v1/draft","/v1/redflag-draft"].includes(url.pathname))
       return reply(404,{ok:false,error:"NOT_FOUND"});
     if(!env.AI)return reply(503,{ok:false,error:"AI_UNAVAILABLE"});
