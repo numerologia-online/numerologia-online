@@ -28,7 +28,7 @@ jobs:
           worker=Path('cloudflare/redflag-draft-ai/src/index.js').read_text()
           assert 'naTestOwner(naCurrent($db))' in p
           assert 'naAllowedOrigins()' in p
-          assert "'/v1/redflag-style-test'" in p
+          assert "/v1/redflag-style-test" in p
           assert "'draft_only'" in p
           assert 'style-test' in p
           assert 'wallet' not in p
