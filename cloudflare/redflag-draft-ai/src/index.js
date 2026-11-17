@@ -115,14 +115,26 @@ export default {
     // CI-only inference bridge for creating and independently reviewing one
     // private 366-date bank. Disabled without the temporary SHA-256 secret.
     if(url.pathname==="/v1/redflag-batch-run"){
-      if(request.method!=="POST")return reply(405,{ok:false,error:"METHOD_NOT_ALLOWED"});
+      if(!["POST","GET"].includes(request.method))return reply(405,{ok:false,error:"METHOD_NOT_ALLOWED"});
       if(!await ephemeralBatchProofValid(
         request.headers.get("X-Numi-Redflag-Batch"),env.REDFLAG_BATCH_KEY_SHA256))
         return reply(403,{ok:false,error:"FORBIDDEN"});
       if(!env.AI)return reply(503,{ok:false,error:"AI_UNAVAILABLE"});
-      if(!(request.headers.get("Content-Type")||"").startsWith("application/json"))
+      if(request.method==="POST"&&!(request.headers.get("Content-Type")||"").startsWith("application/json"))
         return reply(415,{ok:false,error:"JSON_REQUIRED"});
-      const raw=await request.text();
+      // GET mode exists only for verified temporary CI access. Some edge
+      // configurations reject POST from build runners before it reaches Worker.
+      // Keep the one-use secret in a header, never in a URL.
+      let raw;
+      if(request.method==="GET"){
+        const encoded=url.searchParams.get("payload");
+        if(typeof encoded!=="string"||encoded.length<4||encoded.length>17500||
+          !/^[a-zA-Z0-9_-]+$/.test(encoded))return reply(400,{ok:false,error:"INVALID_PAYLOAD"});
+        try{
+          const binary=atob(encoded.replace(/-/g,"+").replace(/_/g,"/"));
+          raw=new TextDecoder().decode(Uint8Array.from(binary,char=>char.charCodeAt(0)));
+        }catch{return reply(400,{ok:false,error:"INVALID_PAYLOAD"});}
+      }else raw=await request.text();
       if(raw.length>18000)return reply(413,{ok:false,error:"INPUT_TOO_LARGE"});
       let body;
       try{body=JSON.parse(raw)}catch{return reply(400,{ok:false,error:"INVALID_JSON"});}
