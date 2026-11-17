@@ -346,3 +346,35 @@
 .moment-pair-error{font-size:12px;color:#a14334;margin:12px 0 0}
 .moment-pair-change{margin-top:11px;border:0;background:transparent;color:#896d43;text-decoration:underline;text-underline-offset:3px;padding:2px 0;font-size:13px;font-weight:650}
 @media(max-width:550px){.moment-pair-grid{grid-template-columns:1fr;gap:11px}.moment-pair-dates{padding:15px 14px}.moment-pair-intro strong{font-size:21px}}
+
+/* Inline Love answers: verified-owner preview. Other topics and billing unchanged. */
+.explore .moment-inline-item{min-width:0}
+.explore .moment-inline-item>.question-entry{width:100%}
+.explore .moment-inline-item.is-open>.question-entry{
+  border-color:#c6d2c8;border-radius:13px 13px 0 0;background:#f1f5ef;
+}
+.explore .moment-inline-item.is-open .moment-question-chevron{transform:rotate(90deg)}
+.explore .moment-inline-answer{
+  margin:-1px 0 6px;padding:18px 19px 20px;
+  border:1px solid #c6d2c8;border-top:0;border-radius:0 0 14px 14px;
+  background:#fffefb;box-shadow:0 6px 17px #143d3010;overflow-wrap:anywhere;
+}
+.moment-answer-text{white-space:pre-line;font-size:15.5px;line-height:1.65;color:#253f32}
+.moment-answer-loading,.moment-answer-error{font-size:14px;line-height:1.5;color:#587262;margin:0}
+.moment-answer-error{color:#934a44}
+.moment-answer-actions{margin-top:19px;padding-top:16px;border-top:1px solid #e3e9de;display:flex;flex-direction:column;gap:9px}
+.moment-answer-actions-heading{font-size:16px;line-height:1.3;color:#173e31;margin-bottom:2px}
+.moment-answer-action,.moment-answer-retry{
+  display:block;width:100%;min-height:45px;padding:10px 13px;
+  border:1px solid #c6d6c9;border-radius:11px;background:#eaf2e9;
+  color:#174733;font:700 14px/1.3 'DM Sans',system-ui,sans-serif;
+  text-align:center;cursor:pointer;
+}
+.moment-answer-share{background:#fffaf1;border-color:#dac8a7;color:#785b2d}
+.moment-answer-retry{margin-top:12px}
+.moment-answer-action:disabled{opacity:.65;cursor:wait}
+.moment-answer-action-feedback{margin:3px 0 0;font-size:13px;line-height:1.5;color:#64776b}
+@media(max-width:650px){
+  .explore .moment-inline-answer{padding:15px 14px 17px}
+  .moment-answer-text{font-size:14.5px;line-height:1.6}
+}
