@@ -276,18 +276,26 @@ const ensureAnswer = (question, state) => {
       .find(node=>node.dataset.questionId===id);
     const target=article?.querySelector(".redflag-answer");
     if(!category||!target){state.answerErrors.set(id,"Не удалось проверить вопрос. Откройте его ещё раз.");return;}
-    const task=import("./wallet-client.js?v=owner-access-20261116").then(({showInlinePurchase})=>
+    const task=import("./wallet-client.js?v=fast-redflag-owner-20261117").then(({showInlinePurchase})=>
       showInlinePurchase(item,target,(material)=>{
         if(activeProfile!==profile)return;
         const paragraphs=(material.sections||[]).flatMap(section=>(section.paragraphs||[])
           .flatMap(text=>String(text).split(/\n\s*\n/).map(part=>part.trim()).filter(Boolean)));
-        if(!paragraphs.length){state.answerErrors.set(id,"Материал пока недоступен.");return;}
+        if(!paragraphs.length){
+          state.answerErrors.set(id,"Материал пока недоступен.");
+          if(target.isConnected) target.textContent="Материал пока недоступен.";
+          return;
+        }
         state.answers.set(id,{answer:paragraphs.join("\n"),paragraphs});
         renderCategories({type:"question",id});
       }));
     state.answerRequests.set(id,task);
-    void task.catch(()=>{if(profile===activeProfile)state.answerErrors.set(id,"Не удалось проверить покупку.");})
-      .finally(()=>{if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);});
+    void task.catch(()=>{
+      if(profile===activeProfile){
+        state.answerErrors.set(id,"Не удалось загрузить ответ. Попробуйте ещё раз.");
+        if(target.isConnected) target.textContent="Не удалось загрузить ответ. Попробуйте ещё раз.";
+      }
+    }).finally(()=>{if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);});
     return;
   }
   // First question in each published category remains genuinely free.
@@ -485,29 +493,19 @@ const createQuestion = (question, state) => {
   } else if (opened) {
     const waiting = document.createElement("p");
     waiting.className = "redflag-loading";
-    waiting.textContent = state.answerErrors.get(question.id) || "";
-    if (!waiting.textContent) {
-      waiting.classList.add("redflag-loading-dots");
-      waiting.setAttribute("aria-label", "Загрузка");
-    }
+    waiting.setAttribute("role", "status");
+    waiting.textContent = state.answerErrors.get(question.id)
+      || (question.isFree ? "Загружаем ответ…" : "Проверяем доступ к ответу…");
     answer.append(waiting);
   }
 
-  // Hold the pressed visual state briefly before re-rendering the button.
-  button.addEventListener("pointerdown", () => article.classList.add("is-pressing"));
-  button.addEventListener("pointercancel", () => article.classList.remove("is-pressing"));
+  // Open immediately. Do not remove a focused button after a delayed timer:
+  // mobile Safari and Telegram can scroll to the browser's abandoned focus.
   button.addEventListener("click", () => {
-    article.classList.add("is-pressing");
-    button.disabled = true;
-    window.setTimeout(() => {
-      state.activeQuestionId = opened ? null : question.id;
-      button.blur();
-      renderCategories({ type: "question", id: question.id });
-      if (!opened) {
-        // Keep the selected question where it was tapped.
-        ensureAnswer(question, state);
-      }
-    }, 145);
+    button.blur();
+    state.activeQuestionId = opened ? null : question.id;
+    renderCategories({ type: "question", id: question.id });
+    if (!opened) ensureAnswer(question, state);
   });
 
   article.append(button, answer);
@@ -547,22 +545,12 @@ const createCategory = (category, index) => {
   const questionCount = state.questions?.length ?? category.questionCount;
   toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · ${questionCount} вопросов</small><strong>${category.title}</strong>${category.id === "intimacy" ? '<span class="redflag-age-label" aria-label="Для взрослых, 18 плюс">18+</span>' : ""}<small class="redflag-category-count">${questionCount} вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
   toggle.addEventListener("click", () => {
-    const headingTop = toggle.getBoundingClientRect().top;
     const opening = !state.expanded;
     if (opening) collapseOtherCategories(category.id);
     state.expanded = opening;
     if (!opening) state.activeQuestionId = null;
     toggle.blur();
     renderCategories({ type: "category", id: category.id });
-    // Closing a preceding category shortens the page. Keep this heading
-    // at the same visible position rather than leaving the user at its end.
-    const heading = categoriesRoot.children[index]?.querySelector(".redflag-category-toggle");
-    if (heading) {
-      const movement = heading.getBoundingClientRect().top - headingTop;
-      if (Math.abs(movement) > 1) {
-        window.scrollTo({ top: Math.max(0, window.scrollY + movement), behavior: "instant" });
-      }
-    }
     if (opening) ensureQuestions(category);
   });
   section.append(toggle);
@@ -612,21 +600,47 @@ const repaintOnlyQuestions = (questionId) => {
   if (cards.length !== state.questions.length) return false;
   const records = new Map(state.questions.map(question => [question.id, question]));
   if (!cards.every(card => records.has(card.dataset.questionId))) return false;
+  // Keep the existing article nodes. Replacing a tapped card removes Safari's
+  // scroll anchor, which can jump the page when a longer answer opens.
   for (const card of cards) {
     const question = records.get(card.dataset.questionId);
     const shouldOpen = !question.isComingSoon && state.activeQuestionId === question.id;
     if (question.id === questionId || card.classList.contains("is-open") !== shouldOpen) {
-      card.replaceWith(createQuestion(question, state));
+      const updated = createQuestion(question, state);
+      card.className = updated.className;
+      card.replaceChildren(...updated.childNodes);
     }
   }
   return true;
 };
 const renderCategories = (anchor = null) => {
+  // Anchor to the exact card the person tapped, not the page bottom.
+  // Correct only actual layout movement; never scroll to an answer automatically.
+  const index = anchor?.type === "category"
+    ? REDFLAG_CATEGORIES.findIndex(category => category.id === anchor.id)
+    : -1;
+  const anchorNode = anchor?.type === "question"
+    ? [...categoriesRoot.querySelectorAll(".redflag-question")]
+        .find(card => card.dataset.questionId === anchor.id)
+    : (index >= 0 ? categoriesRoot.children[index]?.querySelector(".redflag-category-toggle") : null);
+  const beforeTop = anchorNode?.getBoundingClientRect().top;
+  const preserve = Number.isFinite(beforeTop)
+    && beforeTop > -100 && beforeTop < window.innerHeight + 100;
+  const stabilize = () => {
+    if (!preserve || !anchorNode?.isConnected) return;
+    const difference = anchorNode.getBoundingClientRect().top - beforeTop;
+    if (Math.abs(difference) > 1)
+      window.scrollTo({ top: Math.max(0, window.scrollY + difference), behavior: "instant" });
+  };
   if (categoriesRoot.children.length !== REDFLAG_CATEGORIES.length) {
     categoriesRoot.replaceChildren(...REDFLAG_CATEGORIES.map(createCategory));
+    stabilize();
     return;
   }
-  if (anchor?.type === "question" && repaintOnlyQuestions(anchor.id)) return;
+  if (anchor?.type === "question" && repaintOnlyQuestions(anchor.id)) {
+    stabilize();
+    return;
+  }
   REDFLAG_CATEGORIES.forEach((category, index) => {
     const element = categoriesRoot.children[index];
     const state = categoryStates.get(category.id);
@@ -636,6 +650,15 @@ const renderCategories = (anchor = null) => {
       || (anchor === null && state.expanded);
     if (needsUpdate) element.replaceWith(createCategory(category, index));
   });
+  // A category replacement may change the node identity; use its new heading.
+  if (anchor?.type === "category" && preserve) {
+    const heading = categoriesRoot.children[index]?.querySelector(".redflag-category-toggle");
+    if (heading) {
+      const difference = heading.getBoundingClientRect().top - beforeTop;
+      if (Math.abs(difference) > 1)
+        window.scrollTo({ top: Math.max(0, window.scrollY + difference), behavior: "instant" });
+    }
+  } else stabilize();
 };
 
 birthDateInput.addEventListener("input", () => {
