@@ -1,0 +1,49 @@
+name: Red Flag first question AI bank pilot, private drafts only
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-care-or-control-batch-20261117.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  statuses: write
+concurrency:
+  group: redflag-first-question-ai-draft-pilot
+  cancel-in-progress: false
+jobs:
+  generate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify scope and generator
+        run: |
+          node --check scripts/redflag-generate-one-bank.mjs
+          SELFTEST=1 BATCH_LIMIT=1 node scripts/redflag-generate-one-bank.mjs
+      - name: Generate only unpublished AI drafts with independent AI review
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: de77758c4b3efd26fef26ab600cb02a2
+          BATCH_LIMIT: "1"
+        run: node scripts/redflag-generate-one-bank.mjs
+      - name: Store draft privately as an Actions artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: redflag-care-or-control-pilot
+          path: redflag-batch-output/
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Mark verified pilot
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-batch-pilot" -f description="One private Red Flag draft generated and passed independent AI/editor checks" >/dev/null
+      - name: Flag failed pilot
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-batch-pilot" -f description="Cloudflare AI private draft pilot failed; no production content changed" >/dev/null
