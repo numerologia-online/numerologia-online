@@ -72,7 +72,7 @@ jobs:
               req=urllib.request.Request(url+'?version=full-birthdate-two-person-monthly-20261117&attempt='+str(attempt),
                 headers={'Cache-Control':'no-store','User-Agent':'NumiOneQuestionVerifiedRelease/1.0'})
               with urllib.request.urlopen(req,timeout=16) as r:result=json.load(r)
-              if result.get('love001_cycle_version')=='full-birthdate-two-person-monthly-20261117' and result.get('ai_bound') is True:
+              if result.get('love001_emotion_version')=='direct-feelings-20261117' and result.get('ai_bound') is True:
                 break
             except Exception as ex:
               exception_name=ex.__class__.__name__
