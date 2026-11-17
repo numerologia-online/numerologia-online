@@ -67,7 +67,7 @@ try {
         'title'=>(string)$selectedQuestion['title'],
         'day'=>$day,'month'=>$month,'followups'=>$followups
     ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
-    $curl=curl_init('https://numerologia-redflag-draft-ai.tankraft431.workers.dev/v1/draft');
+    $curl=curl_init('https://numerologia-300-ai.tankraft431.workers.dev/v1/redflag-draft');
     if ($curl===false)rfLabReply(503,['ok'=>false,'error'=>'AI_CONNECT_FAILED']);
     curl_setopt_array($curl,[
         CURLOPT_POST=>true,CURLOPT_RETURNTRANSFER=>true,
