@@ -49,10 +49,17 @@ try {
     }
     if ($selectedCategory===null||$selectedQuestion===null)
         rfLabReply(400,['ok'=>false,'error'=>'QUESTION_NOT_IN_DRAFT_CATALOG']);
-    $followups=[];
-    foreach ($selectedCategory['questions'] as $question)
-        if ($question['id']!==$id&&count($followups)<4)
-            $followups[]=(string)$question['title'];
+    // Recommend only actual already-published questions, NEVER a draft/soon item.
+    // Keep these titles synchronized with redflag-public-catalog.js ready entries.
+    $publishedRelated=[
+        'flags'=>['Уважает женское «нет» или начинает давить?','Верный или у него каждая вторая «просто подруга»?','Держит слово или опять одни красивые разговоры?'],
+        'infidelity'=>['Верный или у него каждая вторая «просто подруга»?','Уважает женское «нет» или начинает давить?','Какой финальный вердикт по этому мужчине без розовых очков?'],
+        'intimacy'=>['Сексуальный огонь или пять минут — и спасибо?','На каком языке любви он вообще понимает чувства?','Уважает женское «нет» или начинает давить?'],
+        'family'=>['Самостоятельный мужчина или мамина корзиночка?','Будет опорой для семьи или всё снова окажется на твоих плечах?','Держит слово или опять одни красивые разговоры?'],
+        'language'=>['На каком языке любви он вообще понимает чувства?','Пишет первым или ждёт инициативы от женщины?','Держит слово или опять одни красивые разговоры?'],
+        'verdict'=>['Какой финальный вердикт по этому мужчине без розовых очков?','Верный или у него каждая вторая «просто подруга»?','Щедрый мужчина или считает каждую копейку?'],
+    ];
+    $followups=$publishedRelated[$category]??[];
     $configPath=dirname(__DIR__,3).'/private/numi-moment-groq/config.local.php';
     if (!is_file($configPath))rfLabReply(503,['ok'=>false,'error'=>'AI_AUTH_NOT_READY']);
     $config=require $configPath;
