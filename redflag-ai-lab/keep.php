@@ -43,6 +43,8 @@ try {
             if (($question['id']??null)===$id){$found=true;break 2;}
         }
     }
+    // The first Red Flag question is owner-testable without being public.
+    if ($category==='flags'&&$id==='say-no')$found=true;
     if (!$found)rfKeepReply(400,['ok'=>false,'error'=>'UNPUBLISHED_QUESTION_REQUIRED']);
     $dir=dirname(__DIR__,3).'/private/numi-redflag-owner-kept-v1';
     $key=$day.'-'.$month;
