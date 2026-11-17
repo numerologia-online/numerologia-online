@@ -370,18 +370,10 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
           }
         }catch(_){/* Existing owner AI previews continue if storage is temporarily unavailable. */}
       }
-      // Pass brief previews of this date's OTHER owner answers, so one theme
-      // cannot swallow all nine questions. No extra AI call or client billing.
-      const avoid_summaries=[...state.answers]
-        .filter(([otherId,entry])=>otherId!==id&&entry?.isDraft&&typeof entry.answer==="string")
-        .slice(-6).map(([otherId,entry])=>{
-          const title=state.questions?.find(item=>item.id===otherId)?.title||otherId;
-          return (title.slice(0,65)+": "+entry.answer.replace(/\s+/g," ").slice(0,125)).slice(0,205);
-        });
       const response=await fetch("/redflag-ai-lab/draft.php",{
         method:"POST",credentials:"same-origin",cache:"no-store",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({category,question_id:id,day:birth.day,month:birth.month,avoid_summaries})
+        body:JSON.stringify({category,question_id:id,day:birth.day,month:birth.month})
       });
       const data=await response.json();
       if(!response.ok||data?.ok!==true||data?.draft_only!==true||
