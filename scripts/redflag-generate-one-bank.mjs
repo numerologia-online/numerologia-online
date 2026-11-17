@@ -28,23 +28,23 @@ const save=()=>{
 };
 const sleep=ms=>new Promise(ok=>setTimeout(ok,ms));
 async function run(messages,maxTokens=650,temp=.76){
-  const token=process.env.CLOUDFLARE_API_TOKEN,account=process.env.CLOUDFLARE_ACCOUNT_ID;
-  if(!token||!account)throw Error("WORKERS_AI_AUTH_MISSING");
-  const url="https://api.cloudflare.com/client/v4/accounts/"+account+"/ai/run/"+p.MODEL;
+  const key=process.env.REDFLAG_BATCH_KEY;
+  if(!key||!/^[a-f0-9]{64}$/.test(key))throw Error("BATCH_TEMP_KEY_MISSING");
+  const url="https://numerologia-300-ai.tankraft431.workers.dev/v1/redflag-batch-run";
   for(let i=0;i<4;i++){
     try{
       const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),85000);
       let response;
-      try{response=await fetch(url,{method:"POST",headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
-        body:JSON.stringify({messages,temperature:temp,max_completion_tokens:maxTokens,chat_template_kwargs:{enable_thinking:false}}),signal:controller.signal});}
+      try{response=await fetch(url,{method:"POST",headers:{"X-Numi-Redflag-Batch":key,"Content-Type":"application/json"},
+        body:JSON.stringify({messages,temperature:temp,max_completion_tokens:maxTokens}),signal:controller.signal});}
       finally{clearTimeout(timer);}
       if(!response.ok){
         if([429,500,502,503,504].includes(response.status)&&i<3){await sleep(2500*(i+1));continue;}
         throw Error("WORKERS_AI_HTTP_"+response.status);
       }
       const data=await response.json();
-      if(data.success===false)throw Error("WORKERS_AI_RESULT_FAILED");
-      const v=data.result??data,answer=v.response??v.choices?.[0]?.message?.content;
+      if(data.ok!==true)throw Error("WORKERS_AI_RESULT_FAILED");
+      const answer=data.response;
       if(typeof answer!=="string")throw Error("WORKERS_AI_MISSING_TEXT");
       return answer.trim().replace(/\r\n/g,"\n").replace(/\n{3,}/g,"\n\n");
     }catch(e){
@@ -70,6 +70,7 @@ function context(d){
 function staticIssues(text,previous){
   const errors=[];
   if(!p.validDraft(text))errors.push("STRUCTURE_LENGTH_OR_ENERGY_LEAK");
+  if(text.length<680||text.length>1260)errors.push("WRONG_LENGTH");
   if(!p.hasReadyFollowup(text,followups))errors.push("NO_PUBLISHED_FOLLOWUP");
   if(/[:—]/u.test(text))errors.push("COLON_OR_LONG_DASH");
   const parts=p.draftParagraphs(text);
