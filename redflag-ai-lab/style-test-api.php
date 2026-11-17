@@ -62,7 +62,7 @@ try {
        ($json['published']??null)!==false||($json['draft_only']??null)!==true||
        ($json['question_id']??null)!=='say-no'||
        ($json['date_key']??null)!==($day.'-'.$month)||
-       !is_string($answer)||mb_strlen(trim($answer))<750||mb_strlen($answer)>1100)
+       !is_string($answer)||mb_strlen(trim($answer))<420||mb_strlen($answer)>1800)
        rfStyleApiReply(503,['ok'=>false,'error'=>'INVALID_AI_ANSWER']);
     rfStyleApiReply(200,['ok'=>true,'draft_only'=>true,'published'=>false,
         'style_test'=>true,'question_id'=>'say-no',
