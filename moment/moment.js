@@ -123,8 +123,8 @@
       '\n\n✨ Нумерология онлайн\n🌐 '+siteLink+'\n🤖 '+botLink;
     const controls=elem('div','moment-answer-actions');
     const heading=elem('strong','moment-answer-actions-heading','Не потеряй свой ответ ❤️');
-    const save=elem('button','moment-answer-action moment-answer-save','❤️ Сохранить ответ в Telegram');
-    const share=elem('button','moment-answer-action moment-answer-share','💌 Поделиться с подругой');
+    const save=elem('button','moment-answer-action moment-answer-save','❤️ Сохранить в бот');
+    const share=elem('button','moment-answer-action moment-answer-share','💌 Переслать подруге');
     const notice=elem('p','moment-answer-action-feedback');
     notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');notice.hidden=true;
     controls.append(heading,save,share,notice);
