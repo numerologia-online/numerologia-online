@@ -93,6 +93,17 @@ const parseRedFlagDate = (value) => {
   return { day, month, year };
 };
 
+// This is the same button for every visitor, not an owner-only control.
+const checkManButton = form.querySelector(".redflag-submit");
+const checkManLabel = checkManButton.querySelector(".redflag-submit-label");
+const checkManArrow = checkManButton.querySelector(".redflag-submit-arrow");
+const syncCheckManButton = () => {
+  const valid = Boolean(parseRedFlagDate(birthDateInput.value));
+  checkManLabel.textContent = valid ? "Проверить мужчину" : "Введите дату";
+  checkManArrow.hidden = !valid;
+};
+syncCheckManButton();
+
 // Share the exact currently calculated answer, not a second calculation.
 // The server route reuses the verified sender used by "Личный расчёт дня".
 const REDFLAG_SITE_URL = "https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?view=redflag";
@@ -981,6 +992,7 @@ birthDateInput.addEventListener("input", () => {
   const digits = birthDateInput.value.replace(/\D/g, "").slice(0, 8);
   const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
   birthDateInput.value = parts.join(".");
+  syncCheckManButton();
   clearError();
   if (activeProfile) {
     activeProfile = undefined;
@@ -1048,6 +1060,7 @@ backButton.addEventListener("click", () => {
 });
 
 export const openRedFlag = () => {
+  syncCheckManButton();
   home.classList.remove("is-active");
   redFlag.classList.add("is-active");
   window.scrollTo({ top: 0, behavior: "instant" });
