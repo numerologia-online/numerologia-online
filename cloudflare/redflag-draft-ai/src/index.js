@@ -46,6 +46,19 @@ const ENERGY_SHADOWS={
   21:"широта взглядов в тени превращается в избегание обязательств и вечное «потом»",
   22:"свобода в тени превращается в безответственность и капризы"
 };
+// Temporary CI-only batch access: Worker stores ONLY the SHA-256 of an
+// ephemeral 64-character secret. The token itself remains in the CI runner
+// and must be removed after the one-bank generation. All requests still
+// produce unpublishable drafts and never access purchases or private banks.
+async function ephemeralBatchProofValid(provided,expectedHash){
+  if(typeof provided!=="string"||!/^[a-f0-9]{64}$/.test(provided)||
+    typeof expectedHash!=="string"||!/^[a-f0-9]{64}$/.test(expectedHash))return false;
+  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(provided));
+  const bytes=new Uint8Array(digest);let mismatch=0;
+  for(let i=0;i<bytes.length;i++)
+    mismatch|=bytes[i]^parseInt(expectedHash.slice(i*2,i*2+2),16);
+  return mismatch===0;
+}
 const CATEGORY_RULES={
   flags:"ЭТО ИМЕННО КРАСНЫЕ ФЛАГИ. Вытаскивай на свет неприятные сценарии: давление, двойные стандарты, контроль, перекладывание вины, ревность, уход от ответственности. Улыбка допустима, оправдания плохого поведения нет. Не называй человека насильником или абьюзером по дате.",
   infidelity:"Тема верности, честности и соблазнов. Показывай неприглядные проявления: запасные варианты, флирт ради самооценки, размытые границы, недоговорённости. Не объявляй факт измены по дате.",
@@ -102,7 +115,10 @@ export default {
     if(request.method!=="POST"||!["/v1/draft","/v1/redflag-draft"].includes(url.pathname))
       return reply(404,{ok:false,error:"NOT_FOUND"});
     if(!env.AI)return reply(503,{ok:false,error:"AI_UNAVAILABLE"});
-    if(!await serverProofValid(request.headers.get("X-Numi-Moment-Proof")))
+    const phpOwnerProof=await serverProofValid(request.headers.get("X-Numi-Moment-Proof"));
+    const ciBatchProof=phpOwnerProof?false:await ephemeralBatchProofValid(
+      request.headers.get("X-Numi-Redflag-Batch"),env.REDFLAG_BATCH_KEY_SHA256);
+    if(!phpOwnerProof&&!ciBatchProof)
       return reply(403,{ok:false,error:"FORBIDDEN"});
     if(!(request.headers.get("Content-Type")||"").startsWith("application/json"))
       return reply(415,{ok:false,error:"JSON_REQUIRED"});
