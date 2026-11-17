@@ -28,6 +28,11 @@ jobs:
           gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-batch-preflight" -f description="Generator syntax, question, published followups and worker prompt validated" >/dev/null
       - name: Install Wrangler for temporary hashed AI batch authorization
         run: npm install --no-save --no-audit --no-fund wrangler@4
+      - name: Checkpoint numi/redflag-batch-wrangler-ready
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-batch-wrangler-ready" -f description="Batch stage completed" >/dev/null
       - name: Activate one-use hashed batch proof (not customer auth)
         id: ephemeral
         env:
@@ -41,6 +46,11 @@ jobs:
           echo "::add-mask::$DIGEST"
           printf '%s' "$DIGEST" | npx wrangler secret put REDFLAG_BATCH_KEY_SHA256 --name numerologia-300-ai --cwd cloudflare/moment-300-ai
           echo "REDFLAG_BATCH_KEY=$KEY" >> "$GITHUB_ENV"
+      - name: Checkpoint numi/redflag-batch-secret-installed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-batch-secret-installed" -f description="Batch stage completed" >/dev/null
       - name: Verify temporary batch proof is private
         run: |
           python3 - <<'PY'
@@ -60,6 +70,11 @@ jobs:
           assert status==200 and data.get("ok") is True and isinstance(data.get("response"),str),"BATCH_AI_PROOF_NOT_READY:"+str(status)
           print("REDFLAG_EPHEMERAL_AI_ACCESS_OK")
           PY
+      - name: Checkpoint numi/redflag-batch-auth-test-passed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-batch-auth-test-passed" -f description="Batch stage completed" >/dev/null
       - name: Generate only unpublished AI drafts with independent AI review
         env:
           BATCH_LIMIT: "1"
