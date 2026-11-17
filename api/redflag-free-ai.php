@@ -16,7 +16,7 @@ function rfFreeReply(int $status,array $result): never {
 function rfFreeValidResponse(string $answer): bool {
     return mb_strlen($answer)>=450&&mb_strlen($answer)<=1900&&
         (bool)preg_match('/\S+\n\s*\n\S+/u',$answer)&&
-        !preg_match('/(?:аркан|энерг|нумеролог|девятк|восьм[её]рк|сочетани\w*\s+чисел|число\s+рождения|\d{1,2}\s*[-\/]\s*\d{1,2})/iu',$answer);
+        !preg_match('/(?:аркан|энерг|нумеролог|девятк|восьм[её]рк|сочетани\w*\s+чисел|число\s+рождения|\d{1,2}\s*[-\/]\s*\d{1,2}|ледян\w*|молчан\w*|внезапн\w*\s+исчезновен\w*)/iu',$answer);
 }
 function rfFreeClean(string $text): string {
     $text=str_replace("\r\n","\n",trim($text));
