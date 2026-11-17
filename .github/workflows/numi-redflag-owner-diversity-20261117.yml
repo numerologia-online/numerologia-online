@@ -1,4 +1,4 @@
-name: Publish ONLY owner Red Flag diverse question previews
+name: Publish ONLY owner Red Flag minimal direct-question prompt
 on:
   push:
     branches: [main]
@@ -37,32 +37,36 @@ jobs:
           index=Path('index.html').read_text()
           assert 'naTestOwner(naCurrent($db))' in php and 'naAllowedOrigins()' in php
           assert 'workers.dev/v1/redflag-owner-question' in php
-          assert "'followups'=>$followups,'avoid_summaries'=>$avoid" in php
-          assert 'avoid_summaries=[...state.answers]' in feature
+          assert "'followups'=>$followups" in php
+          assert 'avoid_summaries' not in feature
           assert 'showInlinePurchase(item,target,' in feature
           assert '"/api/redflag-free-ai.php"' in feature
-          assert 'const OWNER_QUESTION_SYSTEM=' in worker
+          assert 'const OWNER_QUESTION_SYSTEM=STYLE_TEST_SYSTEM;' in worker
           assert 'const ENERGY_SHADOWS=' in worker and 'const SYSTEM=' in worker
           assert '"/v1/redflag-owner-question"' in router
-          assert 'redflag-feature.js?v=owner-diverse-20261117-b' in app
-          assert 'app.js?v=owner-diverse-20261117-b' in index
-          print('OWNER_ONLY_NEW_PROMPT_PREVIEW_VALIDATED')
+          assert 'redflag-feature.js?v=owner-direct-minimal-20261117-c' in app
+          assert 'app.js?v=owner-direct-minimal-20261117-c' in index
+          assert 'ДРУГИЕ УЖЕ ПОКАЗАННЫЕ' not in worker
+          print('OWNER_MINIMAL_DIRECT_QUESTION_PROMPT_VALIDATED')
           PY
-      - name: Wait until isolated Cloudflare owner route is deployed
+      - name: Run nine mock-model question isolation tests
+        run: node tests/redflag-owner-direct-question.test.mjs
+      - name: Wait until revised Cloudflare owner prompt is deployed
         run: |
           python3 - <<'PY'
-          import urllib.request,urllib.error,time
-          url='https://numerologia-300-ai.tankraft431.workers.dev/v1/redflag-owner-question'
+          import urllib.request,urllib.error,time,json
+          url='https://numerologia-300-ai.tankraft431.workers.dev/health'
           for i in range(20):
-              req=urllib.request.Request(url,data=b'{}',method='POST',headers={'Content-Type':'application/json'})
+              req=urllib.request.Request(url+'?prompt=direct-question-minimal-20261117-c&n='+str(i),headers={'Cache-Control':'no-store'})
               try:
                   with urllib.request.urlopen(req,timeout=12) as res:
-                      raise RuntimeError('OWNER_AI_ROUTE_PUBLIC_'+str(res.status))
-              except urllib.error.HTTPError as e:
-                  if e.code==403:
-                      print('NEW_OWNER_ROUTE_CLOUDFLARE_LIVE_DENIES_GUEST')
+                      body=json.load(res)
+                  if body.get('redflag_owner_prompt_version')=='direct-question-minimal-20261117-c' and body.get('ai_bound') is True:
+                      print('NEW_OWNER_PROMPT_CLOUDFLARE_VERSION_VERIFIED')
                       break
-                  print('WAIT_CLOUDFLARE_ROUTE',i+1,e.code,flush=True)
+                  print('WAIT_NEW_OWNER_PROMPT',i+1,body.get('redflag_owner_prompt_version'),flush=True)
+              except Exception as e:
+                  print('WAIT_CLOUDFLARE_HEALTH',i+1,type(e).__name__,flush=True)
               if i==19:raise RuntimeError('OWNER_NEW_PROMPT_NOT_LIVE')
               time.sleep(6)
           PY
@@ -144,10 +148,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-owner-diversity-live" -f description="Owner test uses new prompt; guest denied; public prices and banks untouched" >/dev/null
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-owner-minimal-live" -f description="Owner test uses new prompt; guest denied; public prices and banks untouched" >/dev/null
       - name: Record failed release
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-owner-diversity-live" -f description="Owner diversity preview unverified; check workflow and rollback" >/dev/null
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-owner-minimal-live" -f description="Owner diversity preview unverified; check workflow and rollback" >/dev/null
