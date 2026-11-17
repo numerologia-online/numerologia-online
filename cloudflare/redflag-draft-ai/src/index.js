@@ -89,6 +89,8 @@ const STYLE_TEST_SYSTEM=[
 ].join(" ");
 const styleTestOK=(s)=>typeof s==="string"&&s.length>=750&&s.length<=1100&&
  s.trim().split(/\n\s*\n/).length===2&&!/[—:]/u.test(s)&&!hiddenCalculationLeak(s);
+// Only the owner test uses this free-form prompt. Existing client/free routes keep SYSTEM.
+const OWNER_QUESTION_SYSTEM=STYLE_TEST_SYSTEM+" Каждый вопрос раскрывает отдельную грань, а не повторяет один портрет мужчины. Дай ответ именно на вопрос, не своди ревность, самооценку, заботу, ответственность и другие разные темы к одной истории о молчании или исчезновениях. Если для конкретной темы риск слабый, скажи об этом, не придумывай красный флаг. Примеры уже написанных ответов, если переданы, даны только для избежания повторов, а не для копирования.";
 const draftWords=(answer)=>typeof answer==="string"?answer.trim().split(/\s+/).filter(Boolean).length:0;
 const draftParagraphs=(answer)=>typeof answer==="string"?answer.trim().split(/\n\s*\n+/).filter(Boolean):[];
 const normalizeDraft=(answer)=>typeof answer==="string"?answer.trim().replace(/\r\n/g,"\n").replace(/\n{3,}/g,"\n\n"):"";
@@ -172,7 +174,7 @@ export default {
         return reply(503,{ok:false,error:"MODEL_UNAVAILABLE"});
       }
     }
-    if(request.method!=="POST"||!["/v1/draft","/v1/redflag-draft","/v1/redflag-style-test"].includes(url.pathname))
+    if(request.method!=="POST"||!["/v1/draft","/v1/redflag-draft","/v1/redflag-style-test","/v1/redflag-owner-question"].includes(url.pathname))
       return reply(404,{ok:false,error:"NOT_FOUND"});
     if(!env.AI)return reply(503,{ok:false,error:"AI_UNAVAILABLE"});
     const phpOwnerProof=await serverProofValid(request.headers.get("X-Numi-Moment-Proof"));
@@ -195,7 +197,12 @@ export default {
       ||input.followups.some(title=>typeof title!=="string"||title.length>170))
       return reply(400,{ok:false,error:"INVALID_INPUT"});
     const styleTest=url.pathname==="/v1/redflag-style-test";
-    if(styleTest){
+    const ownerQuestion=url.pathname==="/v1/redflag-owner-question";
+    if(styleTest||ownerQuestion){
+      const avoid=ownerQuestion?(input.avoid_summaries??[]):[];
+      if(!Array.isArray(avoid)||avoid.length>6||
+         avoid.some(s=>typeof s!=="string"||s.length>210))
+        return reply(400,{ok:false,error:"INVALID_CONTEXT"});
       // A separate owner-authenticated experiment. All existing customer and
       // production paths below remain byte-for-byte unchanged.
       const dayEnergy=energy22(input.day),monthEnergy=energy22(input.month);
@@ -205,12 +212,17 @@ export default {
         "Месяц рождения мужчины: "+input.month+" (энергия месяца "+monthEnergy+").",
         "Нужен индивидуальный нумерологический вывод о теневых проявлениях именно пары "+
          dayEnergy+" и "+monthEnergy+" применительно к этому вопросу. Напиши только ответ для женщины."
-      ].join("\n");
+      ];
+      if(ownerQuestion){
+        question.push("Главное здесь: ответить на этот вопрос отдельно, не подменять его общим портретом и не вставлять рекомендации других платных вопросов.");
+        if(avoid.length)question.push("ДРУГИЕ УЖЕ ПОКАЗАННЫЕ ОТВЕТЫ для этой даты. Не повторяй их главные сюжеты, примеры и выводы. Они НЕ факты о мужчине:\n"+avoid.join("\n"));
+      }
+      const questionText=question.join("\n");
       try{
         let answer="";
         for(let attempt=0;attempt<3;attempt++){
-          const messages=[{role:"system",content:STYLE_TEST_SYSTEM},
-            {role:"user",content:question}];
+          const messages=[{role:"system",content:ownerQuestion?OWNER_QUESTION_SYSTEM:STYLE_TEST_SYSTEM},
+            {role:"user",content:questionText}];
           if(attempt>0){
             messages.push({role:"assistant",content:answer.slice(0,1600)});
             messages.push({role:"user",content:
