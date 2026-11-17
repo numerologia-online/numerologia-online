@@ -37,138 +37,42 @@ const collapseOtherCategories = (keepId) => {
 let activeProfile;
 let formattedDate;
 
-// Only the owner can see unpublished AI drafts INSIDE the regular Red Flag cards.
-// The existing customer catalog, paid wallet and approved answer path are untouched.
+// The regular Red Flag accordion remains the only interface for answers.
+// Unfinished questions receive an on-demand AI test answer ONLY after verified
+// owner authorization. Neither customer paid access nor published banks change.
 const redflagDraftSections = new Set(["flags","infidelity","intimacy","family","language","verdict"]);
-let ownerDraftAccess = false;
-let ownerDraftAccessChecked = false;
-const ownerDraftCache = new Map();
-const ownerDraftBusy = new Set();
-const ownerDraftFailures = new Map();
-const ownerDraftKey = (category,id,day,month) =>
-  category+"|"+id+"|"+day+"-"+month;
-
-async function verifyOwnerDraftAccess() {
+let ownerDraftAccess=false,ownerDraftAccessChecked=false;
+const ownerDraftInScope=(question,state)=>{
+  const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
+  return Boolean(question.isComingSoon&&ownerDraftAccess&&redflagDraftSections.has(section));
+};
+async function verifyOwnerDraftAccess(){
   if(ownerDraftAccessChecked)return;
   ownerDraftAccessChecked=true;
-  try {
+  try{
     const response=await fetch("/redflag-ai-lab/draft.php",{
       method:"GET",credentials:"same-origin",cache:"no-store",
       headers:{"Accept":"application/json"}
     });
     if(!response.ok)return;
-    const result=await response.json();
-    if(result?.ok!==true||result?.owner!==true||result?.draft_only!==true)return;
+    const data=await response.json();
+    if(data?.ok!==true||data?.owner!==true||data?.draft_only!==true)return;
     ownerDraftAccess=true;
     if(redFlag.classList.contains("is-active"))renderCategories();
-  }catch(_){/* Do not expose or enable drafts without owner verification. */}
+  }catch(_){/* Unverified users never see draft generation. */}
 }
 window.addEventListener("numi:account-session-changed",()=>{
   ownerDraftAccess=false;ownerDraftAccessChecked=false;
-  ownerDraftCache.clear();ownerDraftFailures.clear();ownerDraftBusy.clear();
-  if(redFlag.classList.contains("is-active")) {
+  for(const state of categoryStates.values()){
+    for(const [id,response] of state.answers)
+      if(response?.isDraft)state.answers.delete(id);
+    state.activeQuestionId=null;
+  }
+  if(redFlag.classList.contains("is-active")){
     renderCategories();
     void verifyOwnerDraftAccess();
   }
 });
-const appendOwnerDraftPanel = (article,question,state) => {
-  if(!ownerDraftAccess||!activeProfile||!question.isComingSoon)return;
-  const category=[...categoryStates].find(([,value])=>value===state)?.[0];
-  if(!redflagDraftSections.has(category))return;
-  const panel=document.createElement("details");
-  panel.className="redflag-owner-ai";
-  panel.style.cssText="margin:8px 12px 13px;padding:11px 12px;border:1px dashed #c8b798;border-radius:12px;background:#faf7f0;color:#204b3e;";
-  const summary=document.createElement("summary");
-  summary.textContent="✨ Создать ИИ-черновик (только владелец)";
-  summary.style.cssText="font:700 14px/1.4 system-ui;cursor:pointer;";
-  const controls=document.createElement("div");
-  controls.style.cssText="padding-top:12px;display:flex;flex-wrap:wrap;gap:8px;";
-  const one=document.createElement("button"),five=document.createElement("button");
-  for(const [button,label] of [[one,"1 дата"],[five,"5 дат подряд"]]){
-    button.type="button";
-    button.textContent=label;
-    button.style.cssText="padding:10px 12px;border:1px solid #bbc9bb;border-radius:10px;background:#fff;color:#184232;font:700 13px system-ui;cursor:pointer;";
-    controls.append(button);
-  }
-  const status=document.createElement("p");
-  status.setAttribute("role","status");status.style.cssText="margin:10px 0;font:13px/1.4 system-ui;color:#51645a";
-  const results=document.createElement("div");
-  const current=(day,month)=>ownerDraftCache.get(ownerDraftKey(category,question.id,day,month));
-  const draw=()=>{
-    results.replaceChildren();
-    const input=parseRedFlagDate(birthDateInput.value);
-    if(!input)return;
-    const list=[...ownerDraftCache.values()].filter(item=>item.category===category&&item.question_id===question.id);
-    for(const item of list){
-      const heading=document.createElement("strong");
-      heading.textContent="Дата "+item.date_key;
-      heading.style.cssText="display:block;margin:13px 0 7px;font:750 14px system-ui;";
-      const text=document.createElement("p");
-      text.textContent=item.answer;
-      text.style.cssText="white-space:pre-wrap;font:15px/1.55 system-ui;margin:0 0 12px;";
-      results.append(heading,text);
-    }
-    if(list.length){
-      const download=document.createElement("button");
-      download.type="button";download.textContent="Скачать черновики JSON";
-      download.style.cssText="margin-top:10px;padding:9px;border:1px solid #bda681;border-radius:10px;background:white;color:#234a39;";
-      download.addEventListener("click",()=>{
-        const data={schemaVersion:2,section:category,questionId:question.id,question:question.title,
-          status:"draft",keyRule:"day-month",
-          entries:Object.fromEntries(list.map(x=>[x.date_key,x.answer]))};
-        const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)+"\n"],{type:"application/json"}));
-        const link=document.createElement("a");link.href=url;
-        link.download="redflag-draft-"+category+"-"+question.id+".json";
-        document.body.append(link);link.click();link.remove();URL.revokeObjectURL(url);
-      });
-      results.append(download);
-    }
-  };
-  const generate=async(count)=>{
-    const input=parseRedFlagDate(birthDateInput.value);
-    if(!input){status.textContent="Сначала укажи дату рождения мужчины.";return;}
-    const key=category+"|"+question.id;
-    if(ownerDraftBusy.has(key))return;
-    ownerDraftBusy.add(key);one.disabled=true;five.disabled=true;
-    ownerDraftFailures.delete(key);
-    let done=0;
-    try{
-      for(let i=0;i<count;i++){
-        const date=new Date(Date.UTC(2000,input.month-1,input.day+i));
-        const day=date.getUTCDate(),month=date.getUTCMonth()+1,date_key=day+"-"+month;
-        status.textContent="Идёт расчёт "+(i+1)+" из "+count+" ("+date_key+")…";
-        if(!current(day,month)){
-          const response=await fetch("/redflag-ai-lab/draft.php",{
-            method:"POST",credentials:"same-origin",cache:"no-store",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({category,question_id:question.id,day,month})
-          });
-          const data=await response.json();
-          if(!response.ok||data.ok!==true||data.draft_only!==true
-             ||data.category!==category||data.question_id!==question.id
-             ||data.date_key!==date_key||typeof data.answer!=="string")
-            throw new Error("ИИ не вернул черновик: "+String(data.error||response.status));
-          ownerDraftCache.set(ownerDraftKey(category,question.id,day,month),data);
-        }
-        done++;
-        draw();
-      }
-      status.textContent="Готово: "+done+" черновиков. Это не опубликованные ответы.";
-    }catch(e){
-      const message="Получено "+done+" из "+count+". "+String(e?.message||"Ошибка связи");
-      ownerDraftFailures.set(key,message);
-      status.textContent=message;
-    }finally{
-      ownerDraftBusy.delete(key);one.disabled=false;five.disabled=false;
-    }
-  };
-  one.addEventListener("click",()=>void generate(1));
-  five.addEventListener("click",()=>void generate(5));
-  draw();
-  panel.append(summary,controls,status,results);
-  article.append(panel);
-};
-
 
 // One consistent deep link for Telegram mini-app question buttons.
 // Example: ?view=redflag&question=love:honest-or-disappear
@@ -395,12 +299,39 @@ const clearError = () => {
 // Paid questions are opened IN PLACE; never send the reader into a cart.
 // Publication state comes from the approved material catalogue, not a per-section switch.
 const ensureAnswer = (question, state) => {
-  if(question.isComingSoon)return;
+  if(question.isComingSoon&&!ownerDraftInScope(question,state))return;
   const id=question.id;
   if(state.answers.has(id)||state.answerRequests.has(id))return;
   const profile=activeProfile;
   if(!profile)return;
   state.answerErrors.delete(id);
+  if(ownerDraftInScope(question,state)){
+    const category=[...categoryStates].find(([,value])=>value===state)?.[0];
+    const birth=parseRedFlagDate(birthDateInput.value);
+    if(!birth){state.answerErrors.set(id,"Укажи дату рождения мужчины.");return;}
+    const task=fetch("/redflag-ai-lab/draft.php",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({category,question_id:id,day:birth.day,month:birth.month})
+    }).then(async response=>{
+      const data=await response.json();
+      if(!response.ok||data?.ok!==true||data?.draft_only!==true||
+         data?.category!==category||data?.question_id!==id||
+         data?.date_key!==birth.day+"-"+birth.month||typeof data?.answer!=="string")
+        throw new Error("DRAFT_UNAVAILABLE");
+      if(profile!==activeProfile||!ownerDraftAccess)return;
+      state.answers.set(id,{answer:data.answer,isDraft:true});
+    }).catch(()=>{
+      if(profile===activeProfile&&ownerDraftAccess)
+        state.answerErrors.set(id,"ИИ-ответ не загрузился. Закрой вопрос и открой снова.");
+    }).finally(()=>{
+      if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
+      if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
+        renderCategories({type:"question",id});
+    });
+    state.answerRequests.set(id,task);
+    return;
+  }
   if(!question.isFree){
     const category=[...categoryStates].find(([,value])=>value===state)?.[0];
     const item={product_code:"redflag_question",category,question_id:id,
@@ -519,8 +450,16 @@ const fillQuestionButton = (button, question, showExpand = false) => {
     const badge = document.createElement("span");
     badge.className = "redflag-question-price";
     badge.style.alignSelf = "flex-start";
-    badge.textContent = "Скоро";
+    const isOwnerDraft=ownerDraftAccess&&
+      redflagDraftSections.has([...categoryStates].find(([,value])=>
+        value.questions?.some(q=>q.id===question.id))?.[0]);
+    badge.textContent = isOwnerDraft ? "ИИ · тест" : "Скоро";
     button.append(badge);
+    if (isOwnerDraft&&showExpand) {
+      const plus=document.createElement("b");
+      plus.setAttribute("aria-hidden","true");plus.textContent="+";
+      button.append(plus);
+    }
     return;
   }
   if (question.isFree) {
@@ -559,7 +498,7 @@ const fillQuestionButton = (button, question, showExpand = false) => {
 };
 
 const createQuestion = (question, state) => {
-  const opened = !question.isComingSoon && state.activeQuestionId === question.id;
+  const opened = (!question.isComingSoon || ownerDraftInScope(question,state)) && state.activeQuestionId === question.id;
   const article = document.createElement("article");
   article.className = `redflag-question${opened ? " is-open" : ""}${activeProfile ? " is-calculated" : " is-preview"}`;
   article.dataset.questionId = question.id;
@@ -568,13 +507,12 @@ const createQuestion = (question, state) => {
     const preview = document.createElement("button");
     preview.type = "button";
     preview.className = "redflag-question-toggle redflag-question-preview";
-    preview.disabled = Boolean(question.isComingSoon);
+    preview.disabled = Boolean(question.isComingSoon&&!ownerDraftInScope(question,state));
     fillQuestionButton(preview, question);
     preview.addEventListener("click", () => {
       const date = parseRedFlagDate(birthDateInput.value);
       if (!date) {
         showError("Введите дату рождения мужчины в формате ДД.ММ.ГГГГ.");
-        form.scrollIntoView({ behavior: "smooth", block: "center" });
         return;
       }
       activeProfile = buildRelationshipProfile(date);
@@ -592,7 +530,7 @@ const createQuestion = (question, state) => {
   const button = document.createElement("button");
   button.className = "redflag-question-toggle";
   button.type = "button";
-  button.disabled = Boolean(question.isComingSoon);
+  button.disabled = Boolean(question.isComingSoon&&!ownerDraftInScope(question,state));
   button.setAttribute("aria-expanded", String(opened));
   fillQuestionButton(button, question, true);
 
@@ -600,6 +538,18 @@ const createQuestion = (question, state) => {
   answer.className = "redflag-answer";
   answer.hidden = !opened;
   if (opened && response) {
+    if(response.isDraft){
+      const note=document.createElement("p");
+      note.className="redflag-owner-ai-label";
+      note.textContent="✨ ИИ-ответ для проверки. Видишь только ты. Не опубликован.";
+      note.style.cssText="margin:4px 0 12px;font:750 13px/1.5 system-ui;color:#91683b";
+      const text=document.createElement("p");
+      text.textContent=response.answer;
+      text.style.whiteSpace="pre-wrap";
+      answer.append(note,text);
+      article.append(button,answer);
+      return article;
+    }
     const paragraphs = response.paragraphs ?? [response.answer];
     const scales = (response.scales ?? []).map(({ label, value }) => ({
       label,
@@ -628,7 +578,8 @@ const createQuestion = (question, state) => {
     waiting.className = "redflag-loading";
     waiting.setAttribute("role", "status");
     waiting.textContent = state.answerErrors.get(question.id)
-      || (question.isFree ? "Загружаем ответ…" : "Проверяем доступ к ответу…");
+      || (ownerDraftInScope(question,state) ? "Идёт расчёт…" :
+          question.isFree ? "Загружаем ответ…" : "Проверяем доступ к ответу…");
     answer.append(waiting);
   }
 
@@ -642,7 +593,6 @@ const createQuestion = (question, state) => {
   });
 
   article.append(button, answer);
-  appendOwnerDraftPanel(article,question,state);
   return article;
 };
 
@@ -738,7 +688,7 @@ const repaintOnlyQuestions = (questionId) => {
   // scroll anchor, which can jump the page when a longer answer opens.
   for (const card of cards) {
     const question = records.get(card.dataset.questionId);
-    const shouldOpen = !question.isComingSoon && state.activeQuestionId === question.id;
+    const shouldOpen = (!question.isComingSoon||ownerDraftInScope(question,state)) && state.activeQuestionId === question.id;
     if (question.id === questionId || card.classList.contains("is-open") !== shouldOpen) {
       const updated = createQuestion(question, state);
       card.className = updated.className;
