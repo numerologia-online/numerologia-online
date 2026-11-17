@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/numi-moment-cloudflare-ai-deploy.yml
       - cloudflare/moment-300-ai/src/index.js
+      - cloudflare/moment-300-ai/tests/love001-full-birthdate-monthly.mjs
       - cloudflare/moment-300-ai/wrangler.jsonc
   workflow_dispatch:
 permissions:
