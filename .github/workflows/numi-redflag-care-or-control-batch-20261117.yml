@@ -65,7 +65,8 @@ jobs:
               try:
                   with urllib.request.urlopen(req,timeout=70) as response:return response.status,json.load(response)
               except urllib.error.HTTPError as e:
-                  return e.code,{}
+                  try:return e.code,json.loads(e.read(4000))
+                  except:return e.code,{"error":"EDGE_NON_JSON"}
           def checkpoint(name):
               import subprocess
               subprocess.run(['gh','api','--method','POST',
