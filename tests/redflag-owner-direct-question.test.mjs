@@ -39,7 +39,7 @@ for(const q of flags){
   assert.equal(result.date_key,"9-9");
   assert.equal(calls,1,"No added AI request for a valid answer");
   assert.equal(received.length,2);
-  assert.match(received[0].content,/В первом предложении прямо ответь/);
+  assert.match(received[0].content,/В первой фразе ответь ИМЕННО/);
   assert.ok(received[0].content.length<1000);
   assert.ok(!/ледян|молчан|исчезновен|допрос за каждый лайк/u.test(received[0].content));
   assert.ok(received[1].content.includes("Вопрос: "+q.title));
