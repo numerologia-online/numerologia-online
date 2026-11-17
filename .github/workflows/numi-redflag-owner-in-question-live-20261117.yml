@@ -1,4 +1,4 @@
-name: Publish owner-only AI answers inside Red Flag question cards
+name: Repair free Red Flag question tap without altering paid flows
 on:
   push:
     branches: [main]
@@ -31,16 +31,22 @@ jobs:
           index=Path('index.html').read_text()
           assert 'ownerDraftInScope(question,state)' in feature
           assert 'if(ownerDraftInScope(question,state))' in feature
-          assert 'state.answers.set(id,{answer:data.answer,isDraft:true})' in feature
+          assert 'state.answers.set(id,{answer:data.answer,isDraft:true,isSaved:false})' in feature
           assert 'showInlinePurchase(item,target,' in feature
           assert 'state.answerErrors.set(id,"Не удалось загрузить ответ. Попробуйте ещё раз.")' in feature
           assert 'redflag-ai-lab/draft.php' in feature
           assert '5 дат подряд' not in feature and 'appendOwnerDraftPanel' not in feature
           assert 'ИИ-ответ для проверки. Видишь только ты. Не опубликован.' in feature
-          assert 'redflag-feature.js?v=choose-category-after-date-20261117' in app
-          assert 'app.js?v=choose-category-after-date-20261117' in index
+          assert 'redflag-feature.js?v=free-question-tap-fix-20261117' in app
+          assert 'app.js?v=free-question-tap-fix-20261117' in index
           assert 'state.expanded = false;' in feature and 'const firstCategory = linkedCategory || REDFLAG_CATEGORIES[0]' not in feature
-          print('REDFLAG_ONE_ANSWER_IN_CARD_VALIDATED',flush=True)
+          assert 'categoriesRoot.addEventListener("click",(event)=>{' in feature
+          assert 'event.stopImmediatePropagation();' in feature
+          assert 'if(!question?.isFree||question.isComingSoon)return;' in feature
+          # Published first free Red Flag question must have a real answer
+          catalog=Path('redflag-public-catalog.js').read_text()
+          assert '"id": "say-no"' in catalog and '"status": "ready"' in catalog
+          print('REDFLAG_FREE_ANSWER_TAP_VALIDATED',flush=True)
           PY
       - name: Backup and publish only 3 Red Flag front-end files, verify public hashes
         env:
@@ -114,10 +120,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-owner-ai-in-cards-live" -f description="Verified owner-only direct Red Flag AI answers live; three static files only" >/dev/null
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-free-question-live" -f description="Verified owner-only direct Red Flag AI answers live; three static files only" >/dev/null
       - name: Flag incomplete Red Flag owner AI publication
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-owner-ai-in-cards-live" -f description="Owner AI Red Flag UI did not verify live; no readiness claim" >/dev/null
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-free-question-live" -f description="Owner AI Red Flag UI did not verify live; no readiness claim" >/dev/null
