@@ -1,0 +1,104 @@
+name: Release approved Red Flag warning-signs description
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-flags-description-20261117.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate approved copy and exact cache-bust chain
+        run: |
+          set -euo pipefail
+          for path in redflag-public-catalog.js redflag-text-bank.js redflag-categories.js redflag-feature.js app.js; do
+            node --input-type=module --check < "$path"
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          approved='Индивидуальный нумерологический расчёт по дате рождения мужчины. Анализ даты рождения помогает раскрыть теневые стороны характера, возможную склонность к контролю, эмоциональному давлению, эгоцентризму и перекладыванию ответственности. Особое внимание уделяется тому, как эти качества могут проявляться в отношениях с женщиной.'
+          content=Path('redflag-public-catalog.js').read_text()
+          assert content.count(approved)==1
+          assert '"id": "flags"' in content
+          assert '"id": "money"' in content
+          chain=[('redflag-text-bank.js','redflag-public-catalog.js'),('redflag-categories.js','redflag-text-bank.js'),('redflag-feature.js','redflag-categories.js'),('app.js','redflag-feature.js'),('index.html','app.js')]
+          for owner,target in chain:
+            assert target+'?v=flags-description-20261117' in Path(owner).read_text(),(owner,target)
+          print('REDFLAG_FLAGS_DESCRIPTION_CHECKED')
+          PY
+      - name: Backup, upload six scoped files, verify actual published content
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib,hashlib,io,os,ssl,subprocess,time,urllib.request
+          from pathlib import Path
+          paths=['redflag-public-catalog.js','redflag-text-bank.js','redflag-categories.js','redflag-feature.js','app.js','index.html']
+          desired={path:Path(path).read_bytes() for path in paths}
+          def sha(x):return hashlib.sha256(x).hexdigest()
+          baseline={}
+          for path in paths:
+            history=subprocess.check_output(['git','log','--format=%H','-n','150','--',path],text=True).splitlines()
+            baseline[path]={sha(subprocess.check_output(['git','show',commit+':'+path])) for commit in history}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          def read(path):
+            stream=io.BytesIO()
+            ftp.retrbinary('RETR '+root+path,stream.write)
+            return stream.getvalue()
+          def put(path,body):
+            ftp.storbinary('STOR '+root+path,io.BytesIO(body))
+            if sha(read(path))!=sha(body):raise RuntimeError('FTP_READBACK_MISMATCH '+path)
+          touched=[]
+          try:
+            original={p:read(p) for p in paths}
+            for p in paths:
+              if sha(original[p]) not in baseline[p]:raise RuntimeError('REFUSE_UNRECOGNIZED_LIVE_FILE '+p)
+            backup=home+'/site-safeguard-backups/flags-description-'+time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+            ftp.mkd(backup)
+            for p in paths:
+              dest=backup+'/'+p+'.bak'
+              ftp.storbinary('STOR '+dest,io.BytesIO(original[p]))
+              data=io.BytesIO();ftp.retrbinary('RETR '+dest,data.write)
+              if data.getvalue()!=original[p]:raise RuntimeError('BACKUP_VERIFY_FAIL '+p)
+            for p in paths:
+              if read(p)!=original[p]:raise RuntimeError('CONCURRENT_LIVE_MODIFICATION '+p)
+              if original[p]!=desired[p]:
+                touched.append(p)
+                put(p,desired[p])
+            for p in paths:
+              url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'+p+'?flags_desc_check='+str(time.time_ns())
+              req=urllib.request.Request(url,headers={'Cache-Control':'no-cache','User-Agent':'NumiRedFlagRelease'})
+              with urllib.request.urlopen(req,timeout=35) as result:
+                public=result.read(300000)
+              if sha(public)!=sha(desired[p]):raise RuntimeError('PUBLIC_FILE_MISMATCH '+p)
+            print('REDFLAG_FLAGS_DESCRIPTION_PUBLISHED_AND_VERIFIED',flush=True)
+          except BaseException:
+            for p in reversed(touched):
+              try:
+                put(p,original[p])
+                print('ROLLBACK_OK '+p,flush=True)
+              except BaseException:print('ROLLBACK_FAILED '+p,flush=True)
+            raise
+          finally:
+            try:ftp.quit()
+            except BaseException:ftp.close()
+          PY
