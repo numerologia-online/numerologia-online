@@ -37,7 +37,7 @@ jobs:
           assert {c['id'] for c in d['categories']}=={'flags','infidelity','intimacy','family','language','verdict'}
           assert len({(c['id'],q['id']) for c in d['categories'] for q in c['questions']})==54
           php=(root/'draft.php').read_text()
-          for guard in ['naTestOwner(', 'naAllowedOrigins()', 'checkdate(', 'owner_draft_only', 'DRAFT_GENERATION_UNAVAILABLE', 'numerologia-redflag-draft-ai']:
+          for guard in ['naTestOwner(', 'naAllowedOrigins()', 'checkdate(', 'owner_draft_only', 'DRAFT_GENERATION_UNAVAILABLE', 'numerologia-300-ai', 'v1/redflag-draft']:
               if guard=='owner_draft_only':guard="draft_only'=>true"
               assert guard in php,guard
           for banned in ['file_put_contents(', 'storbinary', 'wallet-client','numi-redflag-content.php']:
