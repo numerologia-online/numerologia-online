@@ -66,24 +66,53 @@ assert.equal(singleAnswer.split(/\n\s*\n/).length,2);
 assert.ok(!/[—:]/.test(singleAnswer));
 assert.equal(retryCalls,1,"Formatting repair must not trigger another paid inference");
 
-// Regression for the REAL production error: model returned ~1300 chars
-// in one paragraph while mentioning an energy. Owner preview must show it.
+// A real Gemini/Gemma-style answer can contain many explicit numerological
+// references. Rewrite it instead of sending that internal calculation to readers.
 let actualCalls=0;
 const realShape=("Энергия девятки даёт склонность оценивать человека через собственные привычки и ожидания. " +
  "Здесь важно смотреть не на заявленную скромность, а на его реакцию, когда чужое мнение отличается. ")
  .repeat(7).trim().replace(/[.!?]/g,",");
+const repaired="Скорее скромный, но скромность не гарантирует уважения к чужому мнению. " +
+ "Он может не хвастаться собой, зато резко обесценивать чужие интересы или решения. " +
+ "Обрати внимание, умеет ли он признавать, что другой человек прав, и слушать без насмешек. "+
+ "Когда он искренне интересуется твоими планами, это больше говорит о его отношении, чем громкие заявления. "+
+ "Если же на твой успех он реагирует холодной критикой, тут есть повод задуматься.\n\n"+
+ "Проверь эту сторону по поведению. Настоящая скромность не требует, чтобы ты уменьшала себя рядом с мужчиной. "+
+ "Если тебе приходится скрывать собственные достижения, чтобы не задеть его самолюбие, важно это заметить.";
+let rewriteReceived;
 const realShapeResponse=await worker.fetch(new Request("https://example.test/v1/redflag-owner-question",{
  method:"POST",headers:{"Content-Type":"application/json","X-Numi-Redflag-Batch":proof},
  body:JSON.stringify({category:"flags",question_id:"hero",title:flags[1].title,day:9,month:9,followups:[]})
 }),{
  REDFLAG_BATCH_KEY_SHA256:hash,
- AI:{run:async()=>{actualCalls++;return {response:realShape};}}
+ AI:{run:async(_model,args)=>{
+   actualCalls++;
+   if(actualCalls===1)return {response:realShape};
+   rewriteReceived=args.messages;
+   return {response:repaired};
+ }}
 });
-assert.equal(realShapeResponse.status,200,"Do not discard an otherwise useful owner draft");
+assert.equal(realShapeResponse.status,200,"Owner draft with calculation leak must be rewritten");
 const realResult=await realShapeResponse.json();
 assert.equal(realResult.answer.split(/\n\s*\n/).length,2);
-assert.equal(actualCalls,1);
+assert.equal(actualCalls,2,"Only invalid calculations justify a second AI call");
 assert.equal(realResult.published,false);
+assert.equal(realResult.answer.includes("девятки"),false);
+assert.equal(realResult.answer.includes("матрица"),false);
+assert.ok(rewriteReceived.some(m=>m.role==="assistant"));
+assert.match(rewriteReceived.at(-1).content,/УБЕРИ упоминания расчёта/);
+
+// Never silently approve two responses which still expose the calculation.
+let badCalls=0;
+const stillLeaked=await worker.fetch(new Request("https://example.test/v1/redflag-owner-question",{
+ method:"POST",headers:{"Content-Type":"application/json","X-Numi-Redflag-Batch":proof},
+ body:JSON.stringify({category:"flags",question_id:"hero",title:flags[1].title,day:9,month:9,followups:[]})
+}),{
+ REDFLAG_BATCH_KEY_SHA256:hash,
+ AI:{run:async()=>{badCalls++;return {response:realShape};}}
+});
+assert.equal(stillLeaked.status,503,"Never show numerology calculation leaks in owner draft");
+assert.equal(badCalls,2);
 
 const guest=await worker.fetch(new Request("https://example.test/v1/redflag-owner-question",{
   method:"POST",
