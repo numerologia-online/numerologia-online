@@ -48,14 +48,14 @@ body.moment-inline-love-view #result-heading{display:none}
 body.moment-inline-love-view #question-hero{padding-bottom:0}
 body.moment-inline-love-view #question-title{margin-bottom:10px}
 body.moment-inline-love-view #result{margin-top:12px}
-.moment-love-controls{display:flex;flex-direction:column;gap:10px;padding-top:18px;margin-top:20px;border-top:1px solid #e4dbc9}
-.moment-love-controls strong{font-size:16px;color:#173e31}
-.moment-love-controls button{margin:0;min-height:47px;padding:11px 14px;font-size:15px}
-.moment-love-controls .moment-save-answer{background:#e6f0e8;border:1px solid #bfd5c7;color:#164733}
-.moment-love-controls .moment-share-answer{background:#f5ecdc;border:1px solid #d5be96;color:#674c2b}
-.moment-love-controls .moment-save-feedback{font-size:13px;line-height:1.5;color:#536e5f;margin:0}
+.moment-answer-controls{display:flex;flex-direction:column;gap:10px;padding-top:18px;margin-top:20px;border-top:1px solid #e4dbc9}
+.moment-answer-controls strong{font-size:16px;color:#173e31}
+.moment-answer-controls button{margin:0;min-height:47px;padding:11px 14px;font-size:15px}
+.moment-answer-controls .moment-save-answer{background:#e6f0e8;border:1px solid #bfd5c7;color:#164733}
+.moment-answer-controls .moment-share-answer{background:#f5ecdc;border:1px solid #d5be96;color:#674c2b}
+.moment-answer-controls .moment-save-feedback{font-size:13px;line-height:1.5;color:#536e5f;margin:0}
 body.moment-inline-love-view .ask-another-question{margin-top:16px}
-@media(max-width:420px){body.moment-inline-love-view #result{padding:20px 17px}.moment-love-controls button{font-size:14px}}
+@media(max-width:420px){body.moment-inline-love-view #result{padding:20px 17px}.moment-answer-controls button{font-size:14px}}
 </style></head><body><main>
 <a class="back" id="back-to-questions" href="./">← К выбору вопросов</a>
 <div id="question-hero"><span id="question-category">Ваш личный вопрос</span><h1 id="question-title">Выбранный вопрос</h1></div>
@@ -115,14 +115,20 @@ function openSavedMomentBot(url){
     window.Telegram.WebApp.openTelegramLink(url);
   }else{location.assign(url);}
 }
-function renderCompactLoveControls(question,answer,self,other){
+function renderMomentAnswerActions(question,answer,dates={}){
   const result=$('result'),next=$('ask-another-question');
-  result.querySelector('.moment-love-controls')?.remove();
-  const report='✨ 300 вопросов о жизни\nВопрос: '+question.title+
-    '\nВаша дата рождения: '+self+'\nДата рождения мужчины: '+other+
-    '\n\n'+answer+'\n\n✨ Нумерология онлайн\n🌐 https://нумерология-онлайн.рф/moment/\n🤖 https://t.me/Numerologiaonline_bot';
+  result.querySelector('.moment-answer-controls')?.remove();
+  if(!question||typeof answer!=='string'||!answer.trim())return;
+  const self=dates.self??$('birth').value;
+  const other=dates.other??$('other').value;
+  const lines=['✨ 300 вопросов о жизни','Вопрос: '+question.title];
+  if(toIsoDate(self))lines.push('Ваша дата рождения: '+self);
+  if(question.mode==='partner'&&toIsoDate(other))lines.push('Дата рождения мужчины: '+other);
+  if(question.mode==='event'&&toIsoDate($('event-date').value))lines.push('Дата события: '+$('event-date').value);
+  const report=lines.join('\n')+'\n\n'+answer.trim()+
+    '\n\n✨ Нумерология онлайн\n🌐 https://нумерология-онлайн.рф/moment/\n🤖 https://t.me/Numerologiaonline_bot';
   const wrapper=document.createElement('div');
-  wrapper.className='moment-love-controls';
+  wrapper.className='moment-answer-controls';
   const title=document.createElement('strong');
   title.textContent='Не потеряй свой ответ ❤️';
   const save=document.createElement('button');
@@ -166,6 +172,13 @@ function renderCompactLoveControls(question,answer,self,other){
     openSavedMomentBot('https://t.me/share/url?url='+encodeURIComponent('https://нумерология-онлайн.рф/moment/')+'&text='+encodeURIComponent(report));
   });
 }
+
+function renderCurrentAnswerActions(answer,questionId=''){
+  const id=questionId||$('question').value;
+  const question=catalog?.questions?.find(item=>item.id===id);
+  if(!question||typeof answer!=='string'||!answer.trim())return;
+  renderMomentAnswerActions(question,answer);
+}
 async function showCompactLoveAnswer(question){
   document.body.classList.add('moment-inline-love-view');
   $('work').hidden=true;
@@ -191,7 +204,7 @@ async function showCompactLoveAnswer(question){
     $('answer').textContent=response.answer.trim();
     $('result').hidden=false;
     $('status').hidden=true;
-    renderCompactLoveControls(question,response.answer.trim(),self,other);
+    renderMomentAnswerActions(question,response.answer.trim(),{self,other});
   }catch(_){
     showCompactStatus('Не удалось получить ответ. Вернись к списку вопросов и попробуй ещё раз.');
   }
@@ -385,6 +398,7 @@ async function pollOwnerJob(job,title){
         $('result-heading').textContent=title;
         $('answer').textContent=res.answer;
         $('result').hidden=false;
+        renderCurrentAnswerActions(res.answer);
         showReviewCandidate(res.answer);
         await saveReview('save_draft',true);
         feedback.textContent='✓ Настоящий тестовый ответ Groq получен через GitHub.';
@@ -482,6 +496,7 @@ $('generate-cloudflare').addEventListener('click',async()=>{
     $('result-heading').textContent=result.question;
     $('answer').textContent=result.answer;
     $('result').hidden=false;
+    renderCurrentAnswerActions(result.answer,initialQuestionId);
     updateReturnLinks();
     showReviewCandidate(result.answer);
     await saveReview('save_draft',true);
@@ -544,6 +559,7 @@ async function loadReviewForQuestion(){
       $('result-heading').textContent=response.record.question||$('question').selectedOptions[0]?.textContent||'Сохранённый образец';
       $('answer').textContent=response.record.answer;
       $('result').hidden=false;
+      renderCurrentAnswerActions(response.record.answer,id);
       showReviewCandidate(response.record.answer,response.record.note||'');
       $('review-feedback').textContent='Загружен сохранённый образец. Его можно исправить или изменить статус.';
     }
@@ -581,6 +597,7 @@ async function saveReview(action,silent=false){
     if(!result.ok)throw Error(result.error||'REVIEW_SAVE_FAILED');
     reviewStatuses[id]=result.status;
     $('answer').textContent=$('review-answer').value.trim();
+    renderCurrentAnswerActions($('answer').textContent,id);
     $('review-status').textContent='Текущий статус: '+reviewLabels[result.status];
     $('review-status').classList.toggle('review-approved',result.status==='approved');
     $('review-feedback').textContent=
