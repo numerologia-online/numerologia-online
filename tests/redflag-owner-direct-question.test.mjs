@@ -22,11 +22,24 @@ const makeRequest=(url,category,id,title,followups=[])=>new Request("https://exa
   headers:{"Content-Type":"application/json","X-Numi-Redflag-Batch":proof},
   body:JSON.stringify({category,question_id:id,title,day:9,month:9,followups})
 });
+const tenRelated=[
+  "Держит слово или опять одни красивые разговоры?",
+  "Будет опорой для семьи или всё снова окажется на твоих плечах?",
+  "Щедрый мужчина или считает каждую копейку?",
+  "Пишет первым или ждёт инициативы от женщины?",
+  "Верный или у него каждая вторая «просто подруга»?",
+  "На каком языке любви он вообще понимает чувства?",
+  "Самостоятельный мужчина или мамина корзиночка?",
+  "Какой финальный вердикт по этому мужчине без розовых очков?",
+  "Будет ли мужчина жить за твой счёт?",
+  "Сексуальный огонь или пять минут — и спасибо?"
+];
+assert.equal(tenRelated.length,10);
 // Every owner flags question must reach the model and return its exact output
 // (no canned replies, added upsells, rewriting, formatting rules or retries).
 for(const q of flags){
   const res=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags",q.id,q.title,
-    ["Держит слово или опять одни красивые разговоры?"]),env);
+    tenRelated),env);
   assert.equal(res.status,200,q.id+" preview route");
   const json=await res.json();
   assert.equal(json.answer,answer,"Must preserve model output verbatim");
@@ -35,7 +48,7 @@ for(const q of flags){
   assert.equal(json.style_version,"flags-owner-approved-20261117");
 }
 const first=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags","say-no",
-  "Уважает женское «нет» или начинает давить?"),env);
+  "Уважает женское «нет» или начинает давить?",tenRelated),env);
 assert.equal(first.status,200,"First free question owner preview must work");
 assert.equal((await first.json()).answer,answer);
 const trial=await worker.fetch(makeRequest("/v1/redflag-style-test","flags","say-no",
@@ -47,6 +60,11 @@ assert.equal(calls,11);
 const publicAttempt=await worker.fetch(makeRequest("/v1/redflag-draft","flags","say-no",
   "Уважает женское «нет» или начинает давить?"),env);
 assert.equal(publicAttempt.status,409);
+assert.equal(calls,11);
+// Other categories still reject inputs beyond their original 5-title maximum.
+const oversizedOther=await worker.fetch(makeRequest("/v1/redflag-owner-question","infidelity","options",
+  "Верный или постоянно ищет запасные варианты?",tenRelated.slice(0,6)),env);
+assert.equal(oversizedOther.status,400,"Other categories retain original input limit");
 assert.equal(calls,11);
 // All other categories retain their existing owner path.
 const other=catalog.categories.find(c=>c.id==="infidelity").questions[0];
