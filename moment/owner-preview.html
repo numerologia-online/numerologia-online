@@ -41,6 +41,21 @@ body{background:#fbf8f3;color:#173e31}main{padding:19px 17px 65px;max-width:690p
 .ask-another-question{display:block;margin:24px auto 8px;padding:15px 18px;width:100%;border:1px solid #c9b28b;border-radius:13px;background:#f5ecdc;text-align:center;text-decoration:none;color:#194531;font-weight:750;font-size:16px}
 @media(max-width:420px){main{padding:16px 14px 50px}#work{padding:19px 16px}#question-title{font-size:31px}}
 
+/* A direct Love question shows only its answer. The full owner editor remains at ?editor=1. */
+body.moment-inline-love-view #work,body.moment-inline-love-view #review-progress,
+body.moment-inline-love-view #review-controls{display:none!important}
+body.moment-inline-love-view #result-heading{display:none}
+body.moment-inline-love-view #question-hero{padding-bottom:0}
+body.moment-inline-love-view #question-title{margin-bottom:10px}
+body.moment-inline-love-view #result{margin-top:12px}
+.moment-love-controls{display:flex;flex-direction:column;gap:10px;padding-top:18px;margin-top:20px;border-top:1px solid #e4dbc9}
+.moment-love-controls strong{font-size:16px;color:#173e31}
+.moment-love-controls button{margin:0;min-height:47px;padding:11px 14px;font-size:15px}
+.moment-love-controls .moment-save-answer{background:#e6f0e8;border:1px solid #bfd5c7;color:#164733}
+.moment-love-controls .moment-share-answer{background:#f5ecdc;border:1px solid #d5be96;color:#674c2b}
+.moment-love-controls .moment-save-feedback{font-size:13px;line-height:1.5;color:#536e5f;margin:0}
+body.moment-inline-love-view .ask-another-question{margin-top:16px}
+@media(max-width:420px){body.moment-inline-love-view #result{padding:20px 17px}.moment-love-controls button{font-size:14px}}
 </style></head><body><main>
 <a class="back" id="back-to-questions" href="./">← К выбору вопросов</a>
 <div id="question-hero"><span id="question-category">Ваш личный вопрос</span><h1 id="question-title">Выбранный вопрос</h1></div>
@@ -85,6 +100,103 @@ body{background:#fbf8f3;color:#173e31}main{padding:19px 17px 65px;max-width:690p
 'use strict';
 const $=id=>document.getElementById(id);let catalog;
 const pairSessionKey='numi-moment-pair-session-v1';
+const compactQuestionParams=new URLSearchParams(location.search);
+function compactLoveMode(question){
+  return question?.category==='love' && question.mode==='partner' &&
+    compactQuestionParams.get('question')===question.id &&
+    compactQuestionParams.get('editor')!=='1';
+}
+function showCompactStatus(message){
+  $('status').textContent=message;
+  $('status').hidden=false;
+}
+function openSavedMomentBot(url){
+  if(typeof window.Telegram?.WebApp?.openTelegramLink==='function'){
+    window.Telegram.WebApp.openTelegramLink(url);
+  }else{location.assign(url);}
+}
+function renderCompactLoveControls(question,answer,self,other){
+  const result=$('result'),next=$('ask-another-question');
+  result.querySelector('.moment-love-controls')?.remove();
+  const report='✨ 300 вопросов о жизни\\nВопрос: '+question.title+
+    '\\nВаша дата рождения: '+self+'\\nДата рождения мужчины: '+other+
+    '\\n\\n'+answer+'\\n\\n✨ Нумерология онлайн\\n🌐 https://нумерология-онлайн.рф/moment/\\n🤖 https://t.me/Numerologiaonline_bot';
+  const wrapper=document.createElement('div');
+  wrapper.className='moment-love-controls';
+  const title=document.createElement('strong');
+  title.textContent='Не потеряй свой ответ ❤️';
+  const save=document.createElement('button');
+  save.className='moment-save-answer';save.type='button';save.textContent='❤️ Сохранить в бот';
+  const share=document.createElement('button');
+  share.className='moment-share-answer';share.type='button';share.textContent='💌 Переслать подруге';
+  const feedback=document.createElement('p');
+  feedback.className='moment-save-feedback';feedback.hidden=true;
+  feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');
+  wrapper.append(title,save,share,feedback);
+  next.before(wrapper);
+  const bot='https://t.me/Numerologiaonline_bot';
+  let savedLink='';
+  save.addEventListener('click',async()=>{
+    if(savedLink){openSavedMomentBot(savedLink);return;}
+    if(report.length>3800){
+      feedback.hidden=false;feedback.textContent='Ответ слишком длинный для одного сообщения в боте.';return;
+    }
+    save.disabled=true;feedback.hidden=false;feedback.textContent='Готовлю сохранение…';
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),14000);
+    try{
+      const response=await fetch('/api/redflag-save.php',{
+        method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'create',text:report}),signal:controller.signal
+      });
+      const value=await response.json();
+      if(!response.ok||value?.ok!==true||!/^r_[A-Za-z0-9_-]{32}$/.test(value?.ticket||''))throw Error('SAVE_FAILED');
+      savedLink=bot+'?start='+encodeURIComponent(value.ticket);
+      save.textContent='🤖 Открыть бота с ответом';
+      feedback.textContent='Ссылка готова. В Telegram нажми «Начать», чтобы сохранить ответ.';
+      openSavedMomentBot(savedLink);
+    }catch(_){feedback.textContent='Не удалось подготовить сохранение. Попробуй ещё раз.';}
+    finally{clearTimeout(timeout);save.disabled=false;}
+  });
+  share.addEventListener('click',async()=>{
+    if(navigator.share){
+      try{await navigator.share({title:question.title,text:report});return;}
+      catch(error){if(error?.name==='AbortError')return;}
+    }
+    openSavedMomentBot('https://t.me/share/url?url='+encodeURIComponent('https://нумерология-онлайн.рф/moment/')+'&text='+encodeURIComponent(report));
+  });
+}
+async function showCompactLoveAnswer(question){
+  document.body.classList.add('moment-inline-love-view');
+  $('work').hidden=true;
+  $('review-progress').hidden=true;
+  $('review-controls').hidden=true;
+  $('result').hidden=true;
+  const self=$('birth').value,other=$('other').value;
+  const birth=toIsoDate(self),partner=toIsoDate(other);
+  if(!birth||!partner){
+    showCompactStatus('Чтобы открыть ответ, сначала укажи обе даты в разделе «Любовь и чувства». Возвращаться к вводу дат внутри вопроса не нужно.');
+    return;
+  }
+  showCompactStatus('Составляю ваш личный ответ…');
+  try{
+    const now=toIsoMoment(localMomentString(new Date()));
+    const response=await getJson('./owner-ai.php',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({question_id:question.id,birth_date:birth,other_date:partner,moment:now})
+    });
+    if(!response.ok||typeof response.answer!=='string'||!response.answer.trim()||
+      response.question_id!==question.id)throw Error('ANSWER_UNAVAILABLE');
+    $('result-heading').textContent=question.title;
+    $('answer').textContent=response.answer.trim();
+    $('result').hidden=false;
+    $('status').hidden=true;
+    renderCompactLoveControls(question,response.answer.trim(),self,other);
+  }catch(_){
+    showCompactStatus('Не удалось получить ответ. Вернись к списку вопросов и попробуй ещё раз.');
+  }
+}
+
 function loadPairSession(){
   try{const data=JSON.parse(sessionStorage.getItem(pairSessionKey)||'null');
     if(data&&toIsoDate(data.self)&&toIsoDate(data.other)){
@@ -254,7 +366,7 @@ function updateMode(){
 }
 $('category').addEventListener('change',()=>{showQuestions();void loadReviewForQuestion();});
 $('question').addEventListener('change',()=>{const item=catalog.questions.find(q=>q.id===$('question').value);if(item)$('category').value=item.category;updateMode();void loadReviewForQuestion();});
-async function init(){try{const access=await getJson('./owner-ai.php');if(!access.ok||!access.owner){$('status').hidden=false;$('status').textContent='Для проверки войдите в аккаунт владельца.';return;}const r=await fetch('./questions.json',{cache:'no-store'});catalog=await r.json();if(!Array.isArray(catalog.questions)||catalog.questions.length!==300)throw Error('Каталог неполный');$('category').replaceChildren(...catalog.categories.map(c=>new Option(c.title+' ('+c.count+')',c.id)));const requestedId=new URLSearchParams(location.search).get('question');const requested=catalog.questions.find(q=>q.id===requestedId);$('category').value=requested?.category||'love';showQuestions();if(requested){$('question').value=requested.id;updateMode();}loadPairSession();updateReturnLinks();setMomentNow();$('status').hidden=true;await loadReviewOverview();await loadReviewForQuestion();try{const prev=JSON.parse(sessionStorage.getItem(ownerQueueJobKey)||'null');if(prev&&/^[a-f0-9]{32}$/.test(prev.job))void pollOwnerJob(prev.job,prev.title||'Тестовый ответ');}catch(_){};$('work').hidden=false;}catch(e){$('status').hidden=false;$('status').textContent='Не получилось загрузить вопрос. Обновите страницу.';}}
+async function init(){try{const access=await getJson('./owner-ai.php');if(!access.ok||!access.owner){$('status').hidden=false;$('status').textContent='Для проверки войдите в аккаунт владельца.';return;}const r=await fetch('./questions.json',{cache:'no-store'});catalog=await r.json();if(!Array.isArray(catalog.questions)||catalog.questions.length!==300)throw Error('Каталог неполный');$('category').replaceChildren(...catalog.categories.map(c=>new Option(c.title+' ('+c.count+')',c.id)));const requestedId=new URLSearchParams(location.search).get('question');const requested=catalog.questions.find(q=>q.id===requestedId);$('category').value=requested?.category||'love';showQuestions();if(requested){$('question').value=requested.id;updateMode();}loadPairSession();updateReturnLinks();setMomentNow();$('status').hidden=true;if(compactLoveMode(requested)){await showCompactLoveAnswer(requested);return;}await loadReviewOverview();await loadReviewForQuestion();try{const prev=JSON.parse(sessionStorage.getItem(ownerQueueJobKey)||'null');if(prev&&/^[a-f0-9]{32}$/.test(prev.job))void pollOwnerJob(prev.job,prev.title||'Тестовый ответ');}catch(_){};$('work').hidden=false;}catch(e){$('status').hidden=false;$('status').textContent='Не получилось загрузить вопрос. Обновите страницу.';}}
 
 const ownerQueueJobKey='numi-moment-groq-current-job';
 let queueChecking=false;
