@@ -1,4 +1,4 @@
-name: Publish ONLY owner Red Flag minimal direct-question prompt
+name: Repair ONLY owner Red Flag AI answers not loading
 on:
   push:
     branches: [main]
@@ -23,6 +23,7 @@ jobs:
         run: |
           set -euo pipefail
           php -l redflag-ai-lab/draft.php
+          php -l redflag-ai-lab/style-test-api.php
           node --check redflag-feature.js
           node --check app.js
           node --check cloudflare/redflag-draft-ai/src/index.js
@@ -44,9 +45,13 @@ jobs:
           assert 'const OWNER_QUESTION_SYSTEM=STYLE_TEST_SYSTEM;' in worker
           assert 'const ENERGY_SHADOWS=' in worker and 'const SYSTEM=' in worker
           assert '"/v1/redflag-owner-question"' in router
-          assert 'redflag-feature.js?v=owner-direct-minimal-20261117-c' in app
-          assert 'app.js?v=owner-direct-minimal-20261117-c' in index
+          assert 'redflag-feature.js?v=owner-format-recovery-20261117-d' in app
+          assert 'app.js?v=owner-format-recovery-20261117-d' in index
           assert 'ДРУГИЕ УЖЕ ПОКАЗАННЫЕ' not in worker
+          assert 'const normalizeOwnerText=' in worker
+          assert 'for(let attempt=0;attempt<2;attempt++)' in worker
+          assert 'data.answer.length<420||data.answer.length>1800' in feature
+          assert 'mb_strlen(trim($answer))<420||mb_strlen($answer)>1800' in Path('redflag-ai-lab/style-test-api.php').read_text()
           print('OWNER_MINIMAL_DIRECT_QUESTION_PROMPT_VALIDATED')
           PY
       - name: Run nine mock-model question isolation tests
@@ -57,11 +62,11 @@ jobs:
           import urllib.request,urllib.error,time,json
           url='https://numerologia-300-ai.tankraft431.workers.dev/health'
           for i in range(20):
-              req=urllib.request.Request(url+'?prompt=direct-question-minimal-20261117-c&n='+str(i),headers={'Cache-Control':'no-store','User-Agent':'NumiOneQuestionVerifiedRelease/1.0'})
+              req=urllib.request.Request(url+'?prompt=owner-minimal-live-recovery-20261117&n='+str(i),headers={'Cache-Control':'no-store','User-Agent':'NumiOneQuestionVerifiedRelease/1.0'})
               try:
                   with urllib.request.urlopen(req,timeout=12) as res:
                       body=json.load(res)
-                  if body.get('redflag_owner_prompt_version')=='direct-question-minimal-20261117-c' and body.get('ai_bound') is True:
+                  if body.get('redflag_owner_prompt_version')=='owner-minimal-live-recovery-20261117' and body.get('ai_bound') is True:
                       print('NEW_OWNER_PROMPT_CLOUDFLARE_VERSION_VERIFIED')
                       break
                   print('WAIT_NEW_OWNER_PROMPT',i+1,body.get('redflag_owner_prompt_version'),flush=True)
@@ -70,7 +75,7 @@ jobs:
               if i==19:raise RuntimeError('OWNER_NEW_PROMPT_NOT_LIVE')
               time.sleep(6)
           PY
-      - name: Back up and publish only four owner Red Flag files
+      - name: Back up and publish four owner Red Flag files with rollback
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
@@ -79,7 +84,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import ftplib,ssl,os,io,hashlib,subprocess,urllib.request,urllib.error,time
-          paths=['redflag-ai-lab/draft.php','redflag-feature.js','app.js','index.html']
+          paths=['redflag-ai-lab/style-test-api.php','redflag-feature.js','app.js','index.html']
           wanted={p:Path(p).read_bytes() for p in paths}
           sha=lambda b:hashlib.sha256(b).hexdigest()
           known={}
@@ -127,13 +132,14 @@ jobs:
                   with urllib.request.urlopen(req,timeout=25) as res:
                       live=res.read(300000)
                   if sha(live)!=sha(wanted[p]):raise RuntimeError('PUBLIC_HASH_MISMATCH_'+p)
-              req=urllib.request.Request(origin+'redflag-ai-lab/draft.php',method='GET')
-              try:
-                  with urllib.request.urlopen(req,timeout=20) as res:
-                      raise RuntimeError('OWNER_GUARD_EXPOSED_'+str(res.status))
-              except urllib.error.HTTPError as e:
-                  if e.code!=403:raise RuntimeError('OWNER_GUARD_FAILED_'+str(e.code))
-              print('OWNER_DIVERSE_RED_FLAG_LIVE_VERIFIED client_paid_untouched=true')
+              for owner_api in ['redflag-ai-lab/draft.php','redflag-ai-lab/style-test-api.php']:
+                  req=urllib.request.Request(origin+owner_api,method='GET')
+                  try:
+                      with urllib.request.urlopen(req,timeout=20) as res:
+                          raise RuntimeError('OWNER_GUARD_EXPOSED_'+owner_api+'_'+str(res.status))
+                  except urllib.error.HTTPError as e:
+                      if e.code!=403:raise RuntimeError('OWNER_GUARD_FAILED_'+owner_api+'_'+str(e.code))
+              print('OWNER_FORMAT_RECOVERY_RED_FLAG_LIVE_VERIFIED client_paid_untouched=true')
           except BaseException:
               for p in reversed(updated):
                   try:put(p,previous[p]);print('ROLLBACK_OK',p,flush=True)
@@ -148,10 +154,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-owner-minimal-live" -f description="Owner test uses new prompt; guest denied; public prices and banks untouched" >/dev/null
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-owner-recovery-live" -f description="Owner test uses new prompt; guest denied; public prices and banks untouched" >/dev/null
       - name: Record failed release
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-owner-minimal-live" -f description="Owner diversity preview unverified; check workflow and rollback" >/dev/null
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-owner-recovery-live" -f description="Owner diversity preview unverified; check workflow and rollback" >/dev/null
