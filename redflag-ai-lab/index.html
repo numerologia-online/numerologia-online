@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Черновики Red Flag | Нумерология онлайн</title>
+<style>
+:root{color-scheme:light;font-family:system-ui,-apple-system,sans-serif;background:#f8f6f2;color:#1b4538}
+*{box-sizing:border-box}body{margin:0}main{max-width:780px;padding:22px 17px 48px;margin:auto}
+h1,h2{font-family:Georgia,serif;color:#153f32;margin:0 0 12px;line-height:1.17}
+h1{font-size:clamp(29px,6vw,41px)}h2{font-size:23px}
+p{line-height:1.55}.muted{color:#708074}.eyebrow{color:#b58b49;text-transform:uppercase;letter-spacing:.2em;font-weight:750;font-size:12px}
+a{color:#315c47}.panel{border:1px solid #ddc9a9;border-radius:22px;background:#fffdf9;padding:22px;margin:16px 0}
+label{display:block;font-weight:750;margin:16px 0 8px}select{width:100%;font:inherit;border:1px solid #b9c8b9;border-radius:12px;background:white;color:#163f32;padding:13px 12px;min-height:50px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+button{appearance:none;border:1px solid #d2ba8e;border-radius:13px;background:#ede7dd;color:#164033;padding:13px 15px;font:inherit;font-weight:720;min-height:48px;cursor:pointer}
+button.primary{background:#183f32;color:#fff;border-color:#183f32}
+button:disabled{opacity:.5;cursor:wait}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.item{border:1px solid #ccd9cc;padding:17px;border-radius:15px;margin:13px 0;background:#fff}
+.item h3{font-size:16px;margin:0 0 10px}.item p{white-space:pre-wrap;line-height:1.58;margin:0 0 12px}
+.item small{color:#718377}.item button{font-size:14px;padding:8px 12px;min-height:38px}
+#status{margin:16px 0;color:#406354}.error{color:#a13e32!important}
+.notice{padding:13px 15px;border-left:3px solid #c2a06c;background:#f2ebe0;border-radius:8px;margin:15px 0}
+[hidden]{display:none!important}@media(max-width:500px){main{padding:18px 12px}.panel{padding:17px}.actions{flex-direction:column}button{width:100%}}
+</style></head><body><main>
+<a href="../?view=redflag">← Вернуться на сайт</a>
+<p class="eyebrow">Только для владельца</p>
+<h1>ИИ-черновики для Red Flag</h1>
+<p class="muted">Шесть незаполненных разделов, 54 вопроса. Генерируй ответы на разные даты рождения, проверяй и сохраняй черновики. Покупатели их не увидят.</p>
+<div class="notice">⚠️ Здесь ничего не публикуется и не списываются деньги с баланса. Не переносить черновики в платные банки без проверки.</div>
+<div class="panel" id="work" hidden>
+<label for="category">Раздел</label><select id="category"></select>
+<label for="question">Вопрос</label><select id="question"></select>
+<div class="cols">
+ <div><label for="day">Начать с числа</label><select id="day"></select></div>
+ <div><label for="month">Месяц рождения</label><select id="month"></select></div>
+</div>
+<p class="muted">Для Red Flag используется только день и месяц рождения мужчины. Год здесь намеренно не участвует.</p>
+<div class="actions">
+<button id="one" class="primary" type="button">Создать 1 черновик</button>
+<button id="five" type="button">Создать 5 черновиков подряд</button>
+</div>
+<p id="status" role="status" aria-live="polite"></p>
+</div>
+<div class="panel" id="results" hidden>
+<h2>Черновики для проверки</h2>
+<p class="muted" id="count"></p>
+<div id="items"></div>
+<div class="actions">
+<button type="button" id="download" class="primary">Скачать черновики JSON</button>
+<button type="button" id="copyall">Скопировать JSON</button>
+</div>
+</div>
+<p id="login" class="muted">Проверяю доступ владельца…</p>
+</main>
+<script>
+(() => {
+"use strict";
+const $=id=>document.getElementById(id);
+let catalog=null,busy=false;
+const cache=new Map();
+const key=(category,question,day,month)=>category+"|"+question+"|"+day+"-"+month;
+const selected=()=>({category:$("category").value,question_id:$("question").value,
+ day:Number($("day").value),month:Number($("month").value)});
+const options=(node,values,valueKey,labelKey)=>{
+ node.replaceChildren(...values.map(item=>{
+   const option=document.createElement("option");
+   option.value=String(item[valueKey]);option.textContent=String(item[labelKey]);return option;
+ }));
+};
+const list=[...Array(31)].map((_,i)=>({v:i+1,t:String(i+1).padStart(2,"0")}));
+const months=[...Array(12)].map((_,i)=>({v:i+1,t:String(i+1).padStart(2,"0")}));
+options($("day"),list,"v","t");
+options($("month"),months,"v","t");
+function updateQuestion(){
+ const cat=catalog?.categories.find(entry=>entry.id===$("category").value);
+ options($("question"),cat?.questions||[],"id","title");
+ render();
+}
+function resultData(){
+ const q=selected(),cat=catalog?.categories.find(c=>c.id===q.category);
+ const question=cat?.questions.find(x=>x.id===q.question_id);
+ const entries=Object.fromEntries([...cache.values()].filter(r=>
+   r.category===q.category&&r.question_id===q.question_id)
+   .map(r=>[r.date_key,r.answer]));
+ return {schemaVersion:2,section:q.category,questionId:q.question_id,
+   question:question?.title||"",status:"draft",keyRule:"day-month",entries};
+}
+function render(){
+ const data=resultData(),records=Object.entries(data.entries);
+ $("results").hidden=!records.length;
+ $("count").textContent=records.length+" черновиков для вопроса: "+data.question;
+ $("items").replaceChildren(...records.map(([date,answer])=>{
+   const box=document.createElement("div");box.className="item";
+   const heading=document.createElement("h3");heading.textContent="Дата "+date;
+   const p=document.createElement("p");p.textContent=answer;
+   const btn=document.createElement("button");btn.type="button";btn.textContent="Скопировать ответ";
+   btn.addEventListener("click",()=>navigator.clipboard.writeText(answer).then(()=>{btn.textContent="Скопировано ✓";}).catch(()=>{}));
+   box.append(heading,p,btn);return box;
+ }));
+}
+function setBusy(value){
+ busy=value;$("one").disabled=value;$("five").disabled=value;
+ $("category").disabled=value;$("question").disabled=value;
+ $("day").disabled=value;$("month").disabled=value;
+}
+async function createOne(day,month,q){
+ const id=key(q.category,q.question_id,day,month);
+ if(cache.has(id))return false;
+ const response=await fetch("./draft.php",{
+   method:"POST",credentials:"same-origin",cache:"no-store",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({...q,day,month})
+ });
+ const data=await response.json();
+ if(!response.ok||data.ok!==true||!data.draft_only||data.date_key!==day+"-"+month
+     ||typeof data.answer!=="string")throw Error("Не удалось получить ответ. "+(data.error||""));
+ cache.set(id,data);return true;
+}
+async function generate(total){
+ if(busy||!catalog)return;
+ const q=selected(),start=new Date(Date.UTC(2000,q.month-1,q.day));
+ if(start.getUTCMonth()+1!==q.month||start.getUTCDate()!==q.day){
+   $("status").textContent="Такой даты не существует.";return;
+ }
+ setBusy(true);$("status").classList.remove("error");
+ let completed=0;
+ for(let i=0;i<total;i++){
+   const date=new Date(Date.UTC(2000,q.month-1,q.day+i));
+   const day=date.getUTCDate(),month=date.getUTCMonth()+1;
+   $("status").textContent="Идёт расчёт: "+(i+1)+" из "+total+" ("+day+"."+month+")…";
+   try{await createOne(day,month,q);completed++;render();}
+   catch(error){$("status").classList.add("error");$("status").textContent=
+     "Получено "+completed+" из "+total+". "+error.message;
+     setBusy(false);return;}
+ }
+ $("status").textContent="Готово: "+completed+" черновиков. Проверь все перед публикацией.";
+ setBusy(false);
+}
+$("one").addEventListener("click",()=>generate(1));
+$("five").addEventListener("click",()=>generate(5));
+$("category").addEventListener("change",updateQuestion);
+$("question").addEventListener("change",render);
+const exportText=()=>JSON.stringify(resultData(),null,2)+"\n";
+$("copyall").addEventListener("click",()=>navigator.clipboard.writeText(exportText()).then(()=>{
+ $("status").textContent="Черновики скопированы.";
+}).catch(()=>{$("status").textContent="Не удалось скопировать. Используй скачивание."; }));
+$("download").addEventListener("click",()=>{
+ const data=resultData();if(!Object.keys(data.entries).length)return;
+ const file=new Blob([exportText()],{type:"application/json;charset=utf-8"});
+ const url=URL.createObjectURL(file),a=document.createElement("a");
+ a.href=url;a.download="redflag-draft-"+data.section+"-"+data.questionId+".json";
+ document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);
+});
+fetch("./draft.php",{credentials:"same-origin",cache:"no-store"})
+ .then(async response=>{const d=await response.json();if(!response.ok||!d.owner||!d.draft_only)throw Error("Войди на сайт как владелец, чтобы открыть редактор.");
+   catalog=d.catalog;
+   options($("category"),catalog.categories,"id","title");
+   updateQuestion();$("work").hidden=false;$("login").hidden=true;
+ }).catch(error=>{$("login").textContent=error.message;});
+})();
+</script></body></html>
