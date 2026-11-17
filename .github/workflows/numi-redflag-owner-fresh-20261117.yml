@@ -88,7 +88,7 @@ jobs:
                   if not str(e).startswith('550'):raise
               timestamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
               for p in paths:
-                  dest=backup+'/redflag-owner-fresh-'+timestamp+'-'+p+'.bak'
+                  dest=backup+'/redflag-owner-fresh-'+timestamp+'-'+p.replace('/','-')+'.bak'
                   ftp.storbinary('STOR '+dest,io.BytesIO(previous[p]))
                   b=io.BytesIO();ftp.retrbinary('RETR '+dest,b.write)
                   if b.getvalue()!=previous[p]:raise RuntimeError('BACKUP_FAILED_'+p)
