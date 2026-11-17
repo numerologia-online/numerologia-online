@@ -24,6 +24,8 @@ jobs:
           set -euo pipefail
           node --check redflag-feature.js
           node --check app.js
+          php -l redflag-ai-lab/draft.php
+          grep -Fq "preg_replace('/[ \\t]*[—–:][ \\t]*/u'" redflag-ai-lab/draft.php
           python3 - <<'PY'
           from pathlib import Path
           js=Path('redflag-feature.js').read_text()
