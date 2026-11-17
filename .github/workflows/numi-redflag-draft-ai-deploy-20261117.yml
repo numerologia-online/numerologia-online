@@ -51,6 +51,35 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-draft-uploaded" -f description="Isolated Red Flag draft uploaded stage succeeded" >/dev/null
+      - name: Diagnose Red Flag worker.dev route
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          GH_SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request,urllib.error
+          base='https://api.cloudflare.com/client/v4/accounts/de77758c4b3efd26fef26ab600cb02a2/workers/scripts/numerologia-redflag-draft-ai/subdomain'
+          headers={'Authorization':'Bearer '+os.environ['CLOUDFLARE_API_TOKEN'],'Content-Type':'application/json'}
+          kind='unknown'
+          try:
+              req=urllib.request.Request(base,headers=headers)
+              with urllib.request.urlopen(req,timeout=20) as response:info=json.load(response)
+              if info.get('success') and isinstance(info.get('result'),dict):
+                  kind='enabled' if info['result'].get('enabled') is True else 'disabled'
+              else:kind='unexpected-response'
+          except urllib.error.HTTPError as error:kind='api-http-'+str(error.code)
+          except Exception:kind='unreachable'
+          url=f"https://api.github.com/repos/{os.environ['GH_REPO']}/statuses/{os.environ['GH_SHA']}"
+          body=json.dumps({'state':'success','context':'numi/redflag-route-'+kind,
+            'description':'Cloudflare route configuration diagnostic: '+kind}).encode()
+          req=urllib.request.Request(url,data=body,method='POST',headers={
+              'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json',
+              'Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=15):pass
+          print('REDFLAG_DRAFT_ROUTE_DIAG',kind,flush=True)
+          PY
       - name: Record nonsecret live health diagnostics
         env:
           GH_TOKEN: ${{ github.token }}
