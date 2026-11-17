@@ -1,0 +1,144 @@
+name: Publish owner-only new-prompt preview IN Telegram Red Flag
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-telegram-owner-style-preview-release.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  statuses: write
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate isolated owner-only Telegram prompt trial
+        run: |
+          set -euo pipefail
+          php -l redflag-ai-lab/style-test-api.php
+          node --check redflag-feature.js
+          node --check app.js
+          python3 - <<'PY'
+          from pathlib import Path
+          api=Path('redflag-ai-lab/style-test-api.php').read_text()
+          feature=Path('redflag-feature.js').read_text()
+          assert 'naTestOwner(naCurrent(naDB()))' in api
+          assert 'naAllowedOrigins()' in api
+          assert "/v1/redflag-style-test" in api
+          assert "'draft_only'=>true" in api
+          assert "'published'=>false" in api
+          assert "wallet" not in api.lower()
+          assert "numi-account" in api
+          assert "style-test-api.php" in feature
+          assert "if(question.isFree&&question.id===\"say-no\"&&ownerDraftAccess" in feature
+          assert "addOwnerStyleTrial(answer)" in feature
+          assert "const task=Promise.resolve().then(()=>question.answer(profile));" in feature
+          assert "showInlinePurchase(item,target," in feature
+          assert "redflag-feature.js?v=telegram-owner-style-trial-20261117" in Path('app.js').read_text()
+          assert "app.js?v=telegram-owner-style-trial-20261117" in Path('index.html').read_text()
+          print('OWNER_TELEGRAM_TRIAL_UI_ISOLATED_OK')
+          PY
+      - name: Backup and publish narrowly, verify guest denied and frontend live
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import ftplib,ssl,os,io,hashlib,subprocess,urllib.request,urllib.error,time
+          paths=['redflag-ai-lab/style-test-api.php','redflag-feature.js','app.js','index.html']
+          data={p:Path(p).read_bytes() for p in paths}
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          known={}
+          for p in paths:
+              revs=subprocess.check_output(['git','log','--format=%H','-n','280','--',p],text=True).splitlines()
+              known[p]={sha(subprocess.check_output(['git','show',rev+':'+p])) for rev in revs}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          prefix=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          def read(p):
+              buf=io.BytesIO()
+              try:ftp.retrbinary('RETR '+prefix+p,buf.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              return buf.getvalue()
+          def put(p,b):
+              ftp.storbinary('STOR '+prefix+p,io.BytesIO(b))
+              if read(p)!=b:raise RuntimeError('FTP_READBACK_MISMATCH_'+p)
+          old={};modified=[]
+          try:
+              old={p:read(p) for p in paths}
+              for p in paths:
+                  if p=='redflag-ai-lab/style-test-api.php' and old[p] is not None:
+                      raise RuntimeError('API_PREEXISTS_REFUSE_OVERWRITE')
+                  if p!='redflag-ai-lab/style-test-api.php' and old[p] is None:
+                      raise RuntimeError('EXISTING_FILE_MISSING_'+p)
+                  if old[p] is not None and sha(old[p]) not in known[p]:
+                      raise RuntimeError('UNRECOGNIZED_LIVE_FILE_'+p)
+              backdir=home+'/site-safeguard-backups'
+              try:ftp.mkd(backdir)
+              except ftplib.error_perm as e:
+                  if not str(e).startswith('550'):raise
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              for p in paths:
+                  if old[p] is None:continue
+                  backup=backdir+'/redflag-owner-telegram-'+stamp+'-'+p.replace('/','-')+'.bak'
+                  ftp.storbinary('STOR '+backup,io.BytesIO(old[p]))
+                  buf=io.BytesIO();ftp.retrbinary('RETR '+backup,buf.write)
+                  if buf.getvalue()!=old[p]:raise RuntimeError('BACKUP_FAILED_'+p)
+              for p in paths:
+                  if read(p)!=old[p]:raise RuntimeError('CONCURRENT_EDIT_'+p)
+                  if old[p]!=data[p]:modified.append(p);put(p,data[p])
+              site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+              for p in ['redflag-feature.js','app.js','index.html']:
+                  url=site+p+'?telegram_style_v='+str(time.time_ns())
+                  req=urllib.request.Request(url,headers={'Cache-Control':'no-store'})
+                  with urllib.request.urlopen(req,timeout=25) as res:
+                      content=res.read(200000)
+                  if sha(content)!=sha(data[p]):raise RuntimeError('LIVE_FRONTEND_HASH_MISMATCH_'+p)
+              url=site+'redflag-ai-lab/style-test-api.php'
+              # API cannot give a test without an authenticated owner session.
+              req=urllib.request.Request(url,data=b'{"question_id":"say-no","day":31,"month":10}',
+                  headers={'Content-Type':'application/json','Origin':site.rstrip('/')},method='POST')
+              try:
+                  with urllib.request.urlopen(req,timeout=18) as res:
+                      raise RuntimeError('DANGEROUS_PUBLIC_TEST_ACCESS_'+str(res.status))
+              except urllib.error.HTTPError as e:
+                  if e.code!=403:raise RuntimeError('OWNER_GUARD_FAILED_HTTP_'+str(e.code))
+              print('TELEGRAM_OWNER_NEW_STYLE_PREVIEW_LIVE VERIFIED_SHA and owner_only_403',flush=True)
+          except BaseException:
+              for p in reversed(modified):
+                  try:
+                      if old[p] is None:ftp.delete(prefix+p)
+                      else:put(p,old[p])
+                      print('ROLLBACK_OK',p,flush=True)
+                  except BaseException:print('ROLLBACK_FAILED',p,flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+      - name: Confirm owner-only Telegram trial
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-owner-telegram-new-style-live" -f description="Owner-only preview in Telegram first free question; customers unchanged" >/dev/null
+      - name: Record owner-only preview failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-owner-telegram-new-style-live" -f description="Owner-only Telegram preview release unverified; see rollback" >/dev/null
