@@ -187,7 +187,7 @@ const SYSTEM = [
 export default {
   async fetch(request, env) {
     const pathname = new URL(request.url).pathname;
-    if (pathname === "/v1/redflag-draft" || pathname === "/v1/redflag-batch-run") return redflagDraftWorker.fetch(request,env);
+    if (["/v1/redflag-draft","/v1/redflag-batch-run","/v1/redflag-style-test","/v1/redflag-owner-question"].includes(pathname)) return redflagDraftWorker.fetch(request,env);
     if (request.method === "GET" && pathname === "/health")
       return reply(200, { ok: true, service: "numi-moment-300-owner-preview", ai_bound: !!env.AI, live_answers_enabled: false, love001_cycle_version: "full-birthdate-two-person-monthly-20261117", love001_emotion_version: "direct-feelings-20261117", redflag_draft_version: "redflag-owner-drafts-v3-no-numbers-ready-cta-20261117" });
     if (pathname !== "/v1/owner-preview" || request.method !== "POST")
