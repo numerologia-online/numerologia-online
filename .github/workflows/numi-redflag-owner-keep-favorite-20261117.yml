@@ -1,0 +1,140 @@
+name: Publish owner-only Red Flag saved favorites
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-owner-keep-favorite-20261117.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  statuses: write
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify private owner control and unchanged paid code
+        run: |
+          set -euo pipefail
+          node --check redflag-feature.js
+          node --check app.js
+          php -l redflag-ai-lab/draft.php
+          php -l redflag-ai-lab/keep.php
+          python3 - <<'PY'
+          from pathlib import Path
+          feature=Path('redflag-feature.js').read_text()
+          php=Path('redflag-ai-lab/keep.php').read_text()
+          original=Path('redflag-ai-lab/draft.php').read_text()
+          assert all(x in feature for x in ('ownerDraftInScope(question,state)',
+             '/redflag-ai-lab/keep.php','Сохранить этот вариант',
+             'Другой вариант','Изменить текст','showInlinePurchase(item,target,'))
+          assert all(x in php for x in ('naTestOwner(','naAllowedOrigins()','checkdate(',
+             "'autoPublish'=>false","'status'=>'draft_kept_by_owner'",
+             "dirname(__DIR__,3).'/private/",'file_put_contents('))
+          assert "str_replace(['—',':'],[',',','],trim($answer))" in original
+          assert 'redflag-feature.js?v=owner-keep-favorite-20261117' in Path('app.js').read_text()
+          assert 'app.js?v=owner-keep-favorite-20261117' in Path('index.html').read_text()
+          print('OWNER_ONLY_SAVE_TEST_OK')
+          PY
+      - name: Back up and publish just five designated files
+        env:
+          REG_FTP_USER: \${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: \${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import ftplib,ssl,os,io,hashlib,subprocess,urllib.request,urllib.error,time
+          paths=['redflag-ai-lab/keep.php','redflag-ai-lab/draft.php',
+                 'redflag-feature.js','app.js','index.html']
+          wanted={p:Path(p).read_bytes() for p in paths}
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          known={}
+          for p in paths:
+              revs=subprocess.check_output(['git','log','--format=%H','-n','250','--',p],text=True).splitlines()
+              known[p]={sha(subprocess.check_output(['git','show',rev+':'+p])) for rev in revs}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          prefix=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          def read(p):
+              out=io.BytesIO()
+              try:ftp.retrbinary('RETR '+prefix+p,out.write)
+              except ftplib.error_perm as exc:
+                  if str(exc).startswith('550'):return None
+                  raise
+              return out.getvalue()
+          def put(p,content):
+              ftp.storbinary('STOR '+prefix+p,io.BytesIO(content))
+              if read(p)!=content:raise RuntimeError('FTP_READBACK_MISMATCH:'+p)
+          originals={};changed=[]
+          try:
+              originals={p:read(p) for p in paths}
+              for p in paths:
+                  if p.endswith('keep.php') and originals[p] is not None:
+                      raise RuntimeError('REFUSE_TO_OVERWRITE_SAVE_ENDPOINT')
+                  if originals[p] is not None and sha(originals[p]) not in known[p]:
+                      raise RuntimeError('UNKNOWN_LIVE_FILE:'+p)
+                  if originals[p] is None and not p.endswith('keep.php'):
+                      raise RuntimeError('EXPECTED_LIVE_FILE_MISSING:'+p)
+              backupDir=home+'/site-safeguard-backups'
+              try:ftp.mkd(backupDir)
+              except ftplib.error_perm as exc:
+                  if not str(exc).startswith('550'):raise
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              for p in paths:
+                  if originals[p] is None:continue
+                  backup=backupDir+'/redflag-keep-'+stamp+'-'+p.replace('/','-')+'.bak'
+                  ftp.storbinary('STOR '+backup,io.BytesIO(originals[p]))
+                  back=io.BytesIO();ftp.retrbinary('RETR '+backup,back.write)
+                  if back.getvalue()!=originals[p]:raise RuntimeError('BACKUP_MISMATCH:'+p)
+              for p in paths:
+                  if read(p)!=originals[p]:raise RuntimeError('CONCURRENT_EDIT:'+p)
+                  if wanted[p]!=originals[p]:
+                      changed.append(p);put(p,wanted[p])
+              public='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+              for p in ['redflag-feature.js','app.js','index.html']:
+                  req=urllib.request.Request(public+p+'?keep_verify='+str(time.time_ns()),
+                      headers={'Cache-Control':'no-cache'})
+                  with urllib.request.urlopen(req,timeout=35) as res:live=res.read(250000)
+                  if sha(live)!=sha(wanted[p]):raise RuntimeError('PUBLIC_MISMATCH:'+p)
+              for p in ['redflag-ai-lab/keep.php','redflag-ai-lab/draft.php']:
+                  req=urllib.request.Request(public+p,headers={'Cache-Control':'no-store'})
+                  try:
+                      with urllib.request.urlopen(req,timeout=30) as res:
+                          raise RuntimeError('OWNER_ENDPOINT_EXPOSED:'+p)
+                  except urllib.error.HTTPError as exc:
+                      if exc.code not in (401,403):raise
+              print('REDFLAG_OWNER_FAVORITE_LIVE_OK paid_bank_untouched=true')
+          except BaseException:
+              for p in reversed(changed):
+                  try:
+                      if originals[p] is None:ftp.delete(prefix+p)
+                      else:put(p,originals[p])
+                      print('ROLLBACK_OK',p,flush=True)
+                  except BaseException:print('ROLLBACK_FAILED',p,flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+      - name: Record verified live version
+        if: success()
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          gh api --method POST "repos/\${{ github.repository }}/statuses/\${{ github.sha }}" -f state=success -f context="numi/redflag-owner-keep-live" -f description="Owner-only saved drafts deployed with backups and no paid bank changes" >/dev/null
+      - name: Flag unverified publication
+        if: failure()
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          gh api --method POST "repos/\${{ github.repository }}/statuses/\${{ github.sha }}" -f state=failure -f context="numi/redflag-owner-keep-live" -f description="Owner keep variant did not pass endpoint and live source checks" >/dev/null
