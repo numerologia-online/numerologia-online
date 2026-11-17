@@ -37,8 +37,9 @@ jobs:
           assert 'redflag-ai-lab/draft.php' in feature
           assert '5 дат подряд' not in feature and 'appendOwnerDraftPanel' not in feature
           assert 'ИИ-ответ для проверки. Видишь только ты. Не опубликован.' in feature
-          assert 'redflag-feature.js?v=owner-ai-in-cards-20261117' in app
-          assert 'app.js?v=owner-ai-in-cards-20261117' in index
+          assert 'redflag-feature.js?v=choose-category-after-date-20261117' in app
+          assert 'app.js?v=choose-category-after-date-20261117' in index
+          assert 'state.expanded = false;' in feature and 'const firstCategory = linkedCategory || REDFLAG_CATEGORIES[0]' not in feature
           print('REDFLAG_ONE_ANSWER_IN_CARD_VALIDATED',flush=True)
           PY
       - name: Backup and publish only 3 Red Flag front-end files, verify public hashes
