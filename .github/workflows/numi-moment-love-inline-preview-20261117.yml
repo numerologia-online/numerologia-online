@@ -38,7 +38,7 @@ jobs:
             "const response=await fetch('/api/redflag-save.php'",
             "navigator.share({title:q.title,text:report})",
             "showComingSoon(q.title)",
-            "data?.ok===true",
+            "data?.ok!==true",
           ]:
             assert required in js,required
           assert "/* Inline Love answers: verified-owner preview." in css
