@@ -83,6 +83,7 @@ jobs:
           elif result.get('ai_bound') is not True: reason='binding'
           elif result.get('service')!='numi-moment-300-owner-preview':reason='service'
           elif result.get('love001_cycle_version')!='full-birthdate-two-person-monthly-20261117':reason='stale'
+          elif result.get('love001_emotion_version')!='direct-feelings-20261117':reason='stale-emotions'
           elif result.get('live_answers_enabled') is not False:reason='gate'
           if reason is not None:
             print('MOMENT_LIVE_VERIFY_FAILED',reason,'exception',exception_name,flush=True)
