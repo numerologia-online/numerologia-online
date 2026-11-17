@@ -38,13 +38,6 @@ try {
     if (!is_string($category)||!is_string($id)||!is_int($day)||!is_int($month)
         ||!checkdate($month,$day,2000))
         rfLabReply(400,['ok'=>false,'error'=>'INVALID_SELECTION']);
-    // Only owner-generated drafts may carry short previews of earlier answers.
-    $avoid=$body['avoid_summaries']??[];
-    if (!is_array($avoid)||!array_is_list($avoid)||count($avoid)>6)
-        rfLabReply(400,['ok'=>false,'error'=>'INVALID_CONTEXT']);
-    foreach ($avoid as $preview)
-        if (!is_string($preview)||mb_strlen($preview)>210)
-            rfLabReply(400,['ok'=>false,'error'=>'INVALID_CONTEXT']);
     $selectedCategory=null;$selectedQuestion=null;
     foreach ($catalog['categories'] as $entry) {
         if (($entry['id']??null)===$category) {
@@ -79,7 +72,7 @@ try {
     $encoded=json_encode([
         'category'=>$category,'question_id'=>$id,
         'title'=>(string)$selectedQuestion['title'],
-        'day'=>$day,'month'=>$month,'followups'=>$followups,'avoid_summaries'=>$avoid
+        'day'=>$day,'month'=>$month,'followups'=>$followups
     ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
     $curl=curl_init('https://numerologia-300-ai.tankraft431.workers.dev/v1/redflag-owner-question');
     if ($curl===false)rfLabReply(503,['ok'=>false,'error'=>'AI_CONNECT_FAILED']);
