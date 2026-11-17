@@ -1,0 +1,96 @@
+name: Publish ONLY owner Red Flag simple numerology style test
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-style-owner-test-publish.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  statuses: write
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate isolated owner-only preview
+        run: |
+          set -euo pipefail
+          php -l redflag-ai-lab/style-test.php
+          node --check cloudflare/redflag-draft-ai/src/index.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('redflag-ai-lab/style-test.php').read_text()
+          worker=Path('cloudflare/redflag-draft-ai/src/index.js').read_text()
+          assert 'naTestOwner(naCurrent($db))' in p
+          assert 'naAllowedOrigins()' in p
+          assert "'/v1/redflag-style-test'" in p
+          assert "'draft_only'" in p
+          assert 'style-test' in p
+          assert 'wallet' not in p
+          assert 'STYLE_TEST_SYSTEM' in worker
+          assert '"/v1/redflag-style-test"' in worker
+          assert 'if(!phpOwnerProof&&!ciBatchProof)' in worker
+          print('OWNER_RED_FLAG_TEST_ONLY_VERIFIED')
+          PY
+      - name: Publish one owner-only PHP test and verify guest cannot enter
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import ftplib,ssl,os,io,hashlib,urllib.request,urllib.error,time
+          p='redflag-ai-lab/style-test.php'
+          desired=Path(p).read_bytes()
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')
+          remote=root+'/www/xn--c1adkkdfjbp1a4l.online/'+p
+          def read():
+              b=io.BytesIO()
+              try:ftp.retrbinary('RETR '+remote,b.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              return b.getvalue()
+          old=read()
+          if old is not None:raise RuntimeError('ISOLATED_TEST_ALREADY_EXISTS_REFUSING_OVERWRITE')
+          try:
+              ftp.storbinary('STOR '+remote,io.BytesIO(desired))
+              if read()!=desired:raise RuntimeError('FTP_HASH_CHECK_FAILED')
+              url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'+p+'?v='+str(time.time_ns())
+              req=urllib.request.Request(url,headers={'Cache-Control':'no-store'})
+              try:
+                  with urllib.request.urlopen(req,timeout=20) as r:
+                      raise RuntimeError('CRITICAL_OWNER_ACCESS_BYPASS_HTTP_'+str(r.status))
+              except urllib.error.HTTPError as e:
+                  if e.code!=403:raise RuntimeError('UNEXPECTED_OWNER_TEST_HTTP_'+str(e.code))
+              print('LIVE_OWNER_STYLE_TEST_PROTECTED_OK')
+          except BaseException:
+              try:ftp.delete(remote);print('OWNER_TEST_ROLLED_BACK')
+              except BaseException:print('OWNER_TEST_ROLLBACK_FAILED')
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+      - name: Confirm private test release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-owner-simple-style-test-live" -f description="Owner-only new prompt test published, guest access forbidden; customer texts unchanged" >/dev/null
+      - name: Record private test failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-owner-simple-style-test-live" -f description="Owner test publication failed; customer texts unchanged" >/dev/null
