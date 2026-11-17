@@ -37,8 +37,8 @@ jobs:
           assert js.count('syncCheckManButton();')>=3
           assert 'form.addEventListener("submit"' in js
           assert 'showInlinePurchase(item,target,' in js
-          assert 'redflag-feature.js?v=owner-fresh-previews-20261117' in app
-          assert 'app.js?v=owner-fresh-previews-20261117' in html
+          assert 'redflag-feature.js?v=flags-owner-preview-20261117' in app
+          assert 'app.js?v=flags-owner-preview-20261117' in html
           assert 'if(!opened&&ownerDraftInScope(question,state)){' in js
           assert 'state.answers.delete(question.id);' in js
           assert 'ensureAnswer(question, state, {forceNew:ownerDraftInScope(question,state)})' in js
