@@ -47,6 +47,10 @@ try {
             break;
         }
     }
+    // The first free question has a separate public catalog entry; test it
+    // as a PRIVATE owner draft too, without enabling it for visitors.
+    if ($category==='flags'&&$id==='say-no'&&$selectedCategory!==null)
+        $selectedQuestion=['id'=>'say-no','title'=>'Уважает женское «нет» или начинает давить?'];
     if ($selectedCategory===null||$selectedQuestion===null)
         rfLabReply(400,['ok'=>false,'error'=>'QUESTION_NOT_IN_DRAFT_CATALOG']);
     // Recommend only actual already-published questions, NEVER a draft/soon item.
@@ -59,7 +63,20 @@ try {
         'language'=>['На каком языке любви он вообще понимает чувства?','Пишет первым или ждёт инициативы от женщины?','Держит слово или опять одни красивые разговоры?'],
         'verdict'=>['Какой финальный вердикт по этому мужчине без розовых очков?','Верный или у него каждая вторая «просто подруга»?','Щедрый мужчина или считает каждую копейку?'],
     ];
-    $followups=[]; // Owner diversity test must never force identical upsells.
+    // For flags only: already published question titles from OTHER sections.
+    // The model chooses naturally; no forced text append or template.
+    $followups=$category==='flags' ? [
+        "Держит слово или опять одни красивые разговоры?",
+        "Будет опорой для семьи или всё снова окажется на твоих плечах?",
+        "Щедрый мужчина или считает каждую копейку?",
+        "Пишет первым или ждёт инициативы от женщины?",
+        "Верный или у него каждая вторая «просто подруга»?",
+        "На каком языке любви он вообще понимает чувства?",
+        "Самостоятельный мужчина или мамина корзиночка?",
+        "Какой финальный вердикт по этому мужчине без розовых очков?",
+        "Будет ли мужчина жить за твой счёт?",
+        "Сексуальный огонь или пять минут — и спасибо?",
+    ] : [];
     $configPath=dirname(__DIR__,3).'/private/numi-moment-groq/config.local.php';
     if (!is_file($configPath))rfLabReply(503,['ok'=>false,'error'=>'AI_AUTH_NOT_READY']);
     $config=require $configPath;
@@ -104,7 +121,7 @@ try {
     rfLabReply(200,['ok'=>true,'draft_only'=>true,'published'=>false,
         'category'=>$category,'question_id'=>$id,
         'question'=>(string)$selectedQuestion['title'],
-        'date_key'=>$expectedKey,'answer'=>str_replace(['—',':'],[',',','],trim($answer))]);
+        'date_key'=>$expectedKey,'answer'=>$category==='flags'?trim($answer):str_replace(['—',':'],[',',','],trim($answer))]);
 }catch(Throwable $exception){
     error_log('REDFLAG_OWNER_AI_DRAFT:'.get_class($exception));
     rfLabReply(503,['ok'=>false,'error'=>'TEMPORARILY_UNAVAILABLE']);
