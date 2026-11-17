@@ -48,7 +48,7 @@ jobs:
           assert 'if(question.isFree&&id==="say-no"' in js
           print('OWNER_FRESH_TESTS_AND_CLIENT_CODE_PRESERVED')
           PY
-      - name: Backup and upload only three owner test frontend files
+      - name: Backup and upload owner test files
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
@@ -57,7 +57,7 @@ jobs:
           python3 - <<'PY'
           import os,ftplib,ssl,io,hashlib,subprocess,time,urllib.request
           from pathlib import Path
-          paths=['redflag-feature.js','app.js','index.html']
+          paths=['redflag-feature.js','app.js','index.html','redflag-ai-lab/draft.php','redflag-ai-lab/keep.php']
           wanted={p:Path(p).read_bytes() for p in paths}
           sha=lambda b:hashlib.sha256(b).hexdigest()
           approved={}
@@ -97,7 +97,7 @@ jobs:
                   if previous[p]!=wanted[p]:
                       updated.append(p);publish(p,wanted[p])
               base='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
-              for p in paths:
+              for p in ['redflag-feature.js','app.js','index.html']:
                   req=urllib.request.Request(base+p+'?check='+str(time.time_ns()),
                     headers={'Cache-Control':'no-cache','User-Agent':'NumiVerifiedOwnerFreshPreview/1.0'})
                   with urllib.request.urlopen(req,timeout=25) as response:
