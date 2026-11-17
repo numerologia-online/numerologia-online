@@ -33,6 +33,14 @@ jobs:
       - name: Test only first Moment question across full dates and monthly cycles
         run: |
           node --test cloudflare/moment-300-ai/tests/love001-full-birthdate-monthly.mjs
+      - name: Confirm test step for diagnosis
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -f state=success \
+            -f context="numi/moment-test" \
+            -f description="test completed for one-question release" >/dev/null
       - name: Deploy only target Worker
         uses: cloudflare/wrangler-action@v4
         with:
@@ -40,6 +48,14 @@ jobs:
           accountId: de77758c4b3efd26fef26ab600cb02a2
           workingDirectory: cloudflare/moment-300-ai
           command: deploy
+      - name: Confirm upload step for diagnosis
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -f state=success \
+            -f context="numi/moment-upload" \
+            -f description="upload completed for one-question release" >/dev/null
       - name: Check live Workers AI binding without using any billable inference
         run: |
           python3 - <<'PY'
@@ -61,6 +77,14 @@ jobs:
             raise RuntimeError('OWNER_ONLY_GATE_UNEXPECTEDLY_CHANGED')
           print('MOMENT_LOVE001_LIVE_VERIFIED full_birthdate=true both_personal_months=true only_question=love-001')
           PY
+      - name: Confirm health step for diagnosis
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -f state=success \
+            -f context="numi/moment-health" \
+            -f description="health completed for one-question release" >/dev/null
       - name: Record confirmed release on the exact main commit
         if: success()
         env:
