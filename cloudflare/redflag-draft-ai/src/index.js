@@ -83,11 +83,11 @@ const SYSTEM=[
 // Only owner preview model gets this compact prompt.
 // The existing production free and paid routes remain unchanged.
 const STYLE_TEST_SYSTEM=[
-  "Ты опытный нумеролог. Пиши женщине о мужчине как умная, доброжелательная подруга: живо, ясно, без лести.",
-  "В первом предложении прямо ответь на заданный вопрос. Далее объясни именно этот ответ, а не общий характер мужчины.",
-  "Опирайся на возможные теневые проявления двух энергий дня и месяца рождения по системе 22 энергий Матрицы судьбы и их взаимодействие. Если риск по вопросу не выражен, так и скажи.",
-  "Это трактовка склонностей, не доказательство реальных поступков человека.",
-  "Напиши два содержательных абзаца, всего 750–1100 знаков с пробелами. Без двоеточий, длинных тире, названий арканов, формул и рекомендаций других вопросов."
+  "Ты нумеролог, пишешь женщине о мужчине как умная заботливая подруга. Говори живо и прямо, без лести, пафоса и канцелярита.",
+  "В первой фразе ответь ИМЕННО на заданный вопрос. Если вопрос предлагает выбор, дай ясный выбор или честную оговорку. Не заменяй ответ описанием характера и внутреннего мира мужчины.",
+  "Для вывода мысленно используй теневые стороны двух чисел, дня и месяца рождения по системе 22 энергий. Это ТОЛЬКО внутренние данные. В готовом тексте НИКОГДА не называй числа, энергии, арканы, матрицу, нумерологию, девятки или способ расчёта.",
+  "Опиши один конкретный риск или его отсутствие и наблюдаемые признаки поведения только по теме вопроса. Не приписывай человеку достоверные поступки по дате и не придумывай злодея там, где риск невелик.",
+  "Ответ для читательницы, а не отчёт о методе. Два коротких живых абзаца, всего примерно 650–950 знаков. Без двоеточий, длинных тире, формул, навязанных переходов к другим вопросам и универсальных психологических рассуждений."
 ].join(" ");
 const OWNER_QUESTION_SYSTEM=STYLE_TEST_SYSTEM;
 // Normalize formatting only for owner testing; NEVER change the customer's route.
@@ -110,10 +110,12 @@ const normalizeOwnerText=(raw)=>{
   }else answer=paragraphs.join("\n\n");
   return answer;
 };
-// Owner may review numerology slips themselves. Never silently reject a real
-// owner-only draft just because the model mentioned an energy by name.
-const styleTestOK=(s)=>typeof s==="string"&&s.length>=200&&s.length<=3000&&
- s.trim().split(/\n\s*\n/).length===2;
+// Owner drafts must never expose private calculations or turn into a
+// numerology lecture. Reject and rewrite bad content instead of displaying it.
+const ownerHasCalculationLeak=(s)=>hiddenCalculationLeak(s)||
+ /(?:матриц\w*|нумеролог\w*|числ[аоеу]м?\s+рождения|сочетани\w*\s+(?:двух\s+)?(?:чисел|энергий)|дв[еух]\s+девятк\w*|расч[её]т\w*\s+по\s+дат)/iu.test(s);
+const styleTestOK=(s)=>typeof s==="string"&&s.length>=350&&s.length<=1800&&
+ s.trim().split(/\n\s*\n/).length===2&&!ownerHasCalculationLeak(s);
 const draftWords=(answer)=>typeof answer==="string"?answer.trim().split(/\s+/).filter(Boolean).length:0;
 const draftParagraphs=(answer)=>typeof answer==="string"?answer.trim().split(/\n\s*\n+/).filter(Boolean):[];
 const normalizeDraft=(answer)=>typeof answer==="string"?answer.trim().replace(/\r\n/g,"\n").replace(/\n{3,}/g,"\n\n"):"";
@@ -240,8 +242,9 @@ export default {
           const messages=[{role:"system",content:ownerQuestion?OWNER_QUESTION_SYSTEM:STYLE_TEST_SYSTEM},
             {role:"user",content:questionText}];
           if(attempt>0){
+            messages.push({role:"assistant",content:answer.slice(0,1800)});
             messages.push({role:"user",content:
-              "Начни с прямого ответа на заданный вопрос. Напиши два содержательных абзаца, простым языком, без названий энергий. Верни только ответ."});
+              "Перепиши ответ как редактор для обычной женщины. В прежнем тексте есть служебные рассуждения о числах, энергиях или матрице либо лишняя общая психология. Полностью УБЕРИ упоминания расчёта. Первой фразой ответь именно на вопрос «"+input.title+"», далее только конкретные проявления по этой теме. Два коротких абзаца. Верни только итоговый текст."});
           }
           const generation=await env.AI.run(MODEL,{
             messages,temperature:attempt?0.65:0.82,
@@ -263,7 +266,7 @@ export default {
             return reply(200,{ok:true,draft_only:true,published:false,
               style_test:true,category:input.category,question_id:input.question_id,
               date_key:input.day+"-"+input.month,
-              answer,style_version:"owner-direct-answer-validated-20261117"});
+              answer,style_version:"owner-reader-first-no-calculations-20261117"});
         }
         return reply(503,{ok:false,error:"STYLE_TEST_LENGTH_OR_FORMAT"+checks.map(x=>"_RAW"+x.raw_chars+"_TEXT"+x.answer_chars+"_PAR"+x.paragraphs+"_LEAK"+(x.hidden_leak?1:0)+"_TYPE"+x.raw_type.toUpperCase()+"_KEYS"+x.model_keys.join("Z").toUpperCase().replace(/[^A-Z0-9]/g,"")).join(""),checks});
       }catch(error){
