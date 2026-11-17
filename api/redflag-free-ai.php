@@ -3,7 +3,7 @@ declare(strict_types=1);
 /* Public and genuinely FREE Red Flag answer for exactly flags/say-no.
    One birthday day-month => one cached AI answer for 24 hours. No charges,
    owner-only drafts, paid content, answer bank or user profile modifications. */
-require dirname(__DIR__,2).'/private/numi-account-20261031/core.php';
+require dirname(__DIR__,3).'/private/numi-account-20261031/core.php';
 naHeaders();
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: private, no-store, max-age=0');
@@ -41,7 +41,7 @@ try {
         rfFreeReply(400,['ok'=>false,'error'=>'INVALID_DATE_OR_QUESTION']);
     $day=$input['day'];$month=$input['month'];
     $key=$day.'-'.$month;
-    $store=dirname(__DIR__,2).'/private/numi-redflag-free-ai-v1';
+    $store=dirname(__DIR__,3).'/private/numi-redflag-free-ai-v1';
     if (!is_dir($store)&&!mkdir($store,0700,true)&&!is_dir($store))
         rfFreeReply(503,['ok'=>false,'error'=>'TEMPORARILY_UNAVAILABLE']);
     $file=$store.'/day-'.$day.'-month-'.$month.'.json';
@@ -82,7 +82,7 @@ try {
     ftruncate($handle,0);rewind($handle);
     fwrite($handle,json_encode($recent,JSON_THROW_ON_ERROR));
     fflush($handle);flock($handle,LOCK_UN);fclose($handle);
-    $configPath=dirname(__DIR__,2).'/private/numi-moment-groq/config.local.php';
+    $configPath=dirname(__DIR__,3).'/private/numi-moment-groq/config.local.php';
     if (!is_file($configPath))rfFreeReply(503,['ok'=>false,'error'=>'AI_NOT_READY']);
     $config=require $configPath;
     $groqKey=is_array($config)?($config['groq_api_key']??null):null;
