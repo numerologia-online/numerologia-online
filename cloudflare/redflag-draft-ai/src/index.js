@@ -261,7 +261,7 @@ export default {
               date_key:input.day+"-"+input.month,
               answer,style_version:"owner-minimal-live-recovery-20261117"});
         }
-        return reply(503,{ok:false,error:"STYLE_TEST_LENGTH_OR_FORMAT",checks});
+        return reply(503,{ok:false,error:"STYLE_TEST_LENGTH_OR_FORMAT"+checks.map(x=>"_RAW"+x.raw_chars+"_TEXT"+x.answer_chars+"_PAR"+x.paragraphs+"_LEAK"+(x.hidden_leak?1:0)+"_TYPE"+x.raw_type.toUpperCase()+"_KEYS"+x.model_keys.join("Z").toUpperCase().replace(/[^A-Z0-9]/g,"")).join(""),checks});
       }catch(error){
         console.error("REDFLAG_STYLE_TEST_ERROR",error?.name||"error");
         return reply(503,{ok:false,error:"AI_TEMPORARILY_UNAVAILABLE"});
