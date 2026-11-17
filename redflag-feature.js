@@ -441,7 +441,7 @@ priceStyles.textContent = `
 document.head.append(priceStyles);
 
 // Render both rates without fetching paid answer content.
-const fillQuestionButton = (button, question, showExpand = false) => {
+const fillQuestionButton = (button, question, showExpand = false, state = null) => {
   const label = document.createElement("span");
   label.className = "redflag-question-label";
   label.textContent = question.title;
@@ -450,9 +450,7 @@ const fillQuestionButton = (button, question, showExpand = false) => {
     const badge = document.createElement("span");
     badge.className = "redflag-question-price";
     badge.style.alignSelf = "flex-start";
-    const isOwnerDraft=ownerDraftAccess&&
-      redflagDraftSections.has([...categoryStates].find(([,value])=>
-        value.questions?.some(q=>q.id===question.id))?.[0]);
+    const isOwnerDraft=state!==null&&ownerDraftInScope(question,state);
     badge.textContent = isOwnerDraft ? "ИИ · тест" : "Скоро";
     button.append(badge);
     if (isOwnerDraft&&showExpand) {
@@ -508,7 +506,7 @@ const createQuestion = (question, state) => {
     preview.type = "button";
     preview.className = "redflag-question-toggle redflag-question-preview";
     preview.disabled = Boolean(question.isComingSoon&&!ownerDraftInScope(question,state));
-    fillQuestionButton(preview, question);
+    fillQuestionButton(preview, question, false, state);
     preview.addEventListener("click", () => {
       const date = parseRedFlagDate(birthDateInput.value);
       if (!date) {
@@ -532,7 +530,7 @@ const createQuestion = (question, state) => {
   button.type = "button";
   button.disabled = Boolean(question.isComingSoon&&!ownerDraftInScope(question,state));
   button.setAttribute("aria-expanded", String(opened));
-  fillQuestionButton(button, question, true);
+  fillQuestionButton(button, question, true, state);
 
   const answer = document.createElement("div");
   answer.className = "redflag-answer";
@@ -547,9 +545,7 @@ const createQuestion = (question, state) => {
       text.textContent=response.answer;
       text.style.whiteSpace="pre-wrap";
       answer.append(note,text);
-      article.append(button,answer);
-      return article;
-    }
+    } else {
     const paragraphs = response.paragraphs ?? [response.answer];
     const scales = (response.scales ?? []).map(({ label, value }) => ({
       label,
@@ -573,6 +569,7 @@ const createQuestion = (question, state) => {
     ${paragraphs.map((paragraph) => `<p>${escapeMarkup(paragraph)}</p>`).join("")}
     ${observationMarkup}`;
     addRedFlagShare(answer, formatRedFlagMessage(question, response, formattedDate));
+    }
   } else if (opened) {
     const waiting = document.createElement("p");
     waiting.className = "redflag-loading";
