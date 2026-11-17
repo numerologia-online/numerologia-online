@@ -20,3 +20,5 @@ jobs:
         run: python3 .github/scripts/numi-redflag-live-ai-diagnose.py
 
 # Second real request: capture length/type of model output, not just generic failure.
+
+# Third real owner question: verification after eliminating proven format rejection.
