@@ -66,6 +66,25 @@ assert.equal(singleAnswer.split(/\n\s*\n/).length,2);
 assert.ok(!/[—:]/.test(singleAnswer));
 assert.equal(retryCalls,1,"Formatting repair must not trigger another paid inference");
 
+// Regression for the REAL production error: model returned ~1300 chars
+// in one paragraph while mentioning an energy. Owner preview must show it.
+let actualCalls=0;
+const realShape=("Энергия девятки даёт склонность оценивать человека через собственные привычки и ожидания. " +
+ "Здесь важно смотреть не на заявленную скромность, а на его реакцию, когда чужое мнение отличается. ")
+ .repeat(7).trim().replace(/[.!?]/g,",");
+const realShapeResponse=await worker.fetch(new Request("https://example.test/v1/redflag-owner-question",{
+ method:"POST",headers:{"Content-Type":"application/json","X-Numi-Redflag-Batch":proof},
+ body:JSON.stringify({category:"flags",question_id:"hero",title:flags[1].title,day:9,month:9,followups:[]})
+}),{
+ REDFLAG_BATCH_KEY_SHA256:hash,
+ AI:{run:async()=>{actualCalls++;return {response:realShape};}}
+});
+assert.equal(realShapeResponse.status,200,"Do not discard an otherwise useful owner draft");
+const realResult=await realShapeResponse.json();
+assert.equal(realResult.answer.split(/\n\s*\n/).length,2);
+assert.equal(actualCalls,1);
+assert.equal(realResult.published,false);
+
 const guest=await worker.fetch(new Request("https://example.test/v1/redflag-owner-question",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
