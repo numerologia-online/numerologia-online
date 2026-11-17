@@ -63,7 +63,7 @@ assert.notEqual(sameDayMonthOlder.feeling.now,nextCalendarMonth.feeling.now,
 assert.equal(sameDayMonthOlder.feeling.baseline,nextCalendarMonth.feeling.baseline,
   "changing the month must not arbitrarily change baseline emotional style");
 assert.match(sameDayMonthOlder.messages[0].content,/ПОЛНЫЕ даты рождения/);
-assert.match(sameDayMonthOlder.messages[0].content,/ЧУВСТВА/);
+assert.match(sameDayMonthOlder.messages[0].content,/К ЭТОЙ ЖЕНЩИНЕ/);
 assert.match(sameDayMonthOlder.messages[0].content,/Первые 2 предложения о КОНКРЕТНЫХ чувствах/);
 assert.match(sameDayMonthOlder.messages[0].content,/СТРОГО НЕ ПИШИ В ОТВЕТЕ/);
 assert.doesNotMatch(sameDayMonthOlder.messages[1].content,/Приоритет трактовки:/);
