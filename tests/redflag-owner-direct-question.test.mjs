@@ -16,7 +16,7 @@ const hash=createHash("sha256").update(proof).digest("hex");
 let calls=0;
 const answer="Ему может быть непросто сразу принимать отказ, когда затронуты его интересы. При этом внимательное отношение к границам возможно, если он умеет вести разговор без давления и замечать настроение партнёрши. Оценивать стоит не громкие обещания, а то, как он ведёт себя, когда услышит неудобное для себя решение. Женщина вправе не соглашаться и не объяснять свою позицию по кругу. "
 +"\n\nЕсли хочешь проверить его в другой ситуации, посмотри вопрос «Держит слово или опять одни красивые разговоры?». Он поможет по-новому присмотреться к поступкам и понять, совпадают ли слова с делами.";
-const env={REDFLAG_BATCH_KEY_SHA256:hash,AI:{run:async(opts)=>{calls++;assert.equal(opts.messages.length,2);return {response:answer};}}};
+const env={REDFLAG_BATCH_KEY_SHA256:hash,AI:{run:async(model,opts)=>{calls++;assert.equal(opts.messages.length,2);return {response:answer};}}};
 const makeRequest=(url,category,id,title,followups=[])=>new Request("https://example.test"+url,{
   method:"POST",
   headers:{"Content-Type":"application/json","X-Numi-Redflag-Batch":proof},
