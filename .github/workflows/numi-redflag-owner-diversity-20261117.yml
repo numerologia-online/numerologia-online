@@ -57,7 +57,7 @@ jobs:
           import urllib.request,urllib.error,time,json
           url='https://numerologia-300-ai.tankraft431.workers.dev/health'
           for i in range(20):
-              req=urllib.request.Request(url+'?prompt=direct-question-minimal-20261117-c&n='+str(i),headers={'Cache-Control':'no-store'})
+              req=urllib.request.Request(url+'?prompt=direct-question-minimal-20261117-c&n='+str(i),headers={'Cache-Control':'no-store','User-Agent':'NumiOneQuestionVerifiedRelease/1.0'})
               try:
                   with urllib.request.urlopen(req,timeout=12) as res:
                       body=json.load(res)
