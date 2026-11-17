@@ -74,7 +74,7 @@ jobs:
               req=urllib.request.Request(url+'?version=full-birthdate-two-person-monthly-20261117&attempt='+str(attempt),
                 headers={'Cache-Control':'no-store','User-Agent':'NumiOneQuestionVerifiedRelease/1.0'})
               with urllib.request.urlopen(req,timeout=16) as r:result=json.load(r)
-              if result.get('love001_emotion_version')=='direct-feelings-20261117' and result.get('redflag_draft_version')=='redflag-owner-drafts-v2-sharp-20261117' and result.get('ai_bound') is True:
+              if result.get('love001_emotion_version')=='direct-feelings-20261117' and result.get('redflag_draft_version')=='redflag-owner-drafts-v3-no-numbers-ready-cta-20261117' and result.get('ai_bound') is True:
                 break
             except Exception as ex:
               exception_name=ex.__class__.__name__
@@ -86,7 +86,7 @@ jobs:
           elif result.get('service')!='numi-moment-300-owner-preview':reason='service'
           elif result.get('love001_cycle_version')!='full-birthdate-two-person-monthly-20261117':reason='stale'
           elif result.get('love001_emotion_version')!='direct-feelings-20261117':reason='stale-emotions'
-          elif result.get('redflag_draft_version')!='redflag-owner-drafts-v2-sharp-20261117':reason='redflag-route-not-live'
+          elif result.get('redflag_draft_version')!='redflag-owner-drafts-v3-no-numbers-ready-cta-20261117':reason='redflag-route-not-live'
           elif result.get('live_answers_enabled') is not False:reason='gate'
           if reason is not None:
             print('MOMENT_LIVE_VERIFY_FAILED',reason,'exception',exception_name,flush=True)
