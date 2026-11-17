@@ -12,15 +12,34 @@ export async function walletRequest(action,payload={}){
 // Reusable, server-verified owner access. Never bypasses a paywall in client code:
 // the private REG.RU endpoint checks the owner account and returns only
 // finished material. Normal visitors continue through their usual purchase.
+// Cache only the *positive owner identity check* briefly in this tab.
+// Every individual material still goes through server authorization as before.
+let ownerVerifiedUntil=0;
+let ownerCheckInFlight=null;
+window.addEventListener("numi:account-session-changed",()=>{
+  ownerVerifiedUntil=0;
+  ownerCheckInFlight=null;
+});
+async function verifyOwnerSession(){
+  if(Date.now()<ownerVerifiedUntil)return true;
+  if(!ownerCheckInFlight){
+    ownerCheckInFlight=(async()=>{
+      const status=await fetch("/api/numi-owner-access.php",{
+        method:"GET",credentials:"same-origin",cache:"no-store",
+        headers:{"Accept":"application/json"}
+      });
+      if(!status.ok)return false;
+      const who=await status.json();
+      const verified=who?.ok===true&&who?.owner===true;
+      if(verified)ownerVerifiedUntil=Date.now()+60000;
+      return verified;
+    })().finally(()=>{ownerCheckInFlight=null;});
+  }
+  return ownerCheckInFlight;
+}
 export async function walletOwnerMaterial(item){
   if(!item||typeof item.product_code!=="string")return null;
-  const status=await fetch("/api/numi-owner-access.php",{
-    method:"GET",credentials:"same-origin",cache:"no-store",
-    headers:{"Accept":"application/json"}
-  });
-  if(!status.ok)return null;
-  const who=await status.json();
-  if(who?.ok!==true||who?.owner!==true)return null;
+  if(!await verifyOwnerSession())return null;
   const response=await fetch("/api/numi-owner-material.php",{
     method:"POST",credentials:"same-origin",cache:"no-store",
     headers:{"Content-Type":"application/json"},
