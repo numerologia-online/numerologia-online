@@ -1,0 +1,147 @@
+name: Publish Red Flag owner draft lab, no paid content changes
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-draft-lab-deploy-20261117.yml
+      - redflag-ai-lab/index.html
+      - redflag-ai-lab/catalog.json
+      - redflag-ai-lab/draft.php
+  workflow_dispatch:
+permissions:
+  contents: read
+  statuses: write
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify exact scope, owner access and 54 unpublished questions
+        run: |
+          set -euo pipefail
+          php -l redflag-ai-lab/draft.php
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,subprocess
+          root=Path('redflag-ai-lab')
+          d=json.loads((root/'catalog.json').read_text())
+          assert d['mode']=='owner_draft_only' and d['keyRule']=='day-month'
+          assert len(d['categories'])==6 and d['questions']==54
+          assert all(len(cat['questions'])==9 for cat in d['categories'])
+          assert {c['id'] for c in d['categories']}=={'flags','infidelity','intimacy','family','language','verdict'}
+          assert len({(c['id'],q['id']) for c in d['categories'] for q in c['questions']})==54
+          php=(root/'draft.php').read_text()
+          for guard in ['naTestOwner(', 'naAllowedOrigins()', 'checkdate(', 'owner_draft_only', 'DRAFT_GENERATION_UNAVAILABLE', 'numerologia-redflag-draft-ai']:
+              if guard=='owner_draft_only':guard="draft_only'=>true"
+              assert guard in php,guard
+          for banned in ['file_put_contents(', 'storbinary', 'wallet-client','numi-redflag-content.php']:
+              assert banned not in php,banned
+          html=(root/'index.html').read_text()
+          assert 'draft.php' in html and 'Скачать черновики JSON' in html
+          js=html.rsplit('<script>',1)[1].split('</script>',1)[0]
+          temp=Path('/tmp/redflag-ai-lab.js');temp.write_text(js)
+          subprocess.run(['node','--check',str(temp)],check=True)
+          print('REDFLAG_OWNER_DRAFT_LAB_SOURCE_OK',flush=True)
+          PY
+      - name: Safeguard and publish only redflag-ai-lab new files
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,hashlib,subprocess,urllib.request,urllib.error,time
+          from pathlib import Path
+          paths=['redflag-ai-lab/index.html','redflag-ai-lab/catalog.json','redflag-ai-lab/draft.php']
+          wanted={p:Path(p).read_bytes() for p in paths}
+          sha=lambda data:hashlib.sha256(data).hexdigest()
+          oldVersions={}
+          for p in paths:
+              revs=subprocess.check_output(['git','log','--format=%H','--',p],text=True).splitlines()
+              oldVersions[p]={sha(subprocess.check_output(['git','show',rev+':'+p])) for rev in revs}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          prefix=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          folder=prefix+'redflag-ai-lab'
+          def read(p):
+              buf=io.BytesIO()
+              try:ftp.retrbinary('RETR '+prefix+p,buf.write)
+              except ftplib.error_perm as exc:
+                  if str(exc).startswith('550'):return None
+                  raise
+              return buf.getvalue()
+          def put(p,data):
+              ftp.storbinary('STOR '+prefix+p,io.BytesIO(data))
+              if read(p)!=data:raise RuntimeError('FTP_READBACK_FAILED:'+p)
+          previous={};written=[]
+          try:
+              try:ftp.mkd(folder)
+              except ftplib.error_perm as exc:
+                  if not str(exc).startswith('550'):raise
+              previous={p:read(p) for p in paths}
+              for p in paths:
+                  if previous[p] is not None and sha(previous[p]) not in oldVersions[p]:
+                      raise RuntimeError('UNKNOWN_EXISTING_LIVE_FILE:'+p)
+              backupDir=home+'/site-safeguard-backups'
+              try:ftp.mkd(backupDir)
+              except ftplib.error_perm as exc:
+                  if not str(exc).startswith('550'):raise
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              for p in paths:
+                  if previous[p] is None:continue
+                  backup=backupDir+'/redflag-ai-lab-'+stamp+'-'+p.replace('/','-')+'.bak'
+                  ftp.storbinary('STOR '+backup,io.BytesIO(previous[p]))
+                  buffer=io.BytesIO();ftp.retrbinary('RETR '+backup,buffer.write)
+                  if buffer.getvalue()!=previous[p]:raise RuntimeError('BACKUP_FAILED:'+p)
+              for p in paths:
+                  if read(p)!=previous[p]:raise RuntimeError('CONCURRENT_CHANGE:'+p)
+                  if wanted[p]!=previous[p]:
+                      written.append(p);put(p,wanted[p])
+              publicRoot='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+              for p in paths[:2]:
+                  url=publicRoot+p+'?draft_lab_verify='+str(time.time_ns())
+                  req=urllib.request.Request(url,headers={'Cache-Control':'no-cache'})
+                  with urllib.request.urlopen(req,timeout=30) as response:actual=response.read(100000)
+                  if sha(actual)!=sha(wanted[p]):raise RuntimeError('LIVE_SHA_NOT_VERIFIED:'+p)
+              # The PHP endpoint should never expose the owner's drafting facility
+              # to anonymous requests.
+              req=urllib.request.Request(publicRoot+'redflag-ai-lab/draft.php',headers={'Cache-Control':'no-store'})
+              try:
+                  with urllib.request.urlopen(req,timeout=30) as response:
+                      raise RuntimeError('UNAUTHORIZED_DRAFT_ENDPOINT_ACCESSIBLE')
+              except urllib.error.HTTPError as error:
+                  if error.code not in (401,403):raise
+              print('REDFLAG_OWNER_DRAFT_LAB_LIVE_OK files=3 paid_banks_unchanged=true',flush=True)
+          except BaseException:
+              for p in reversed(written):
+                  try:
+                      if previous[p] is None:ftp.delete(prefix+p)
+                      else:put(p,previous[p])
+                      print('REDFLAG_OWNER_DRAFT_ROLLBACK_OK',p,flush=True)
+                  except BaseException:print('REDFLAG_OWNER_DRAFT_ROLLBACK_FAILED',p,flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+      - name: Report live success
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-draft-lab-live" -f description="Owner-only Red Flag AI draft editor verified live without paid bank changes" >/dev/null
+      - name: Report failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-draft-lab-live" -f description="Red Flag owner lab publication not verified" >/dev/null
