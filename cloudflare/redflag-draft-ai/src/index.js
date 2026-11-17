@@ -80,17 +80,18 @@ const SYSTEM=[
   "Не утверждай, что нумерология доказывает поведение человека. Не объясняй расчёт. Во втором абзаце обязательно направь женщину к реальному готовому вопросу из списка; например «А если хочешь разобраться, насколько он вообще уважает твои границы, загляни в „Уважает женское «нет» или начинает давить?“». Пример только про стиль перехода, выбирай нужное название из списка для конкретного случая."
 ].join(" ");
 // Isolated experiment, never used by the customer free answer or paid answers.
+// Only owner preview model gets this compact prompt.
+// The existing production free and paid routes remain unchanged.
 const STYLE_TEST_SYSTEM=[
-  "Ты опытная нумеролог. Пишешь женщине о мужчине, как заботливая, умная и интересная подруга. Тон добрый к читательнице, живой, естественный.",
-  "Дай конкретный ответ на заданный вопрос. Раскрой возможные красные флаги через теневые стороны ДВУХ энергий мужчины, дня и месяца рождения, и их взаимодействие. Не используй готовый список недостатков. Самостоятельно интерпретируй сочетание по системе 22 энергий Матрицы судьбы.",
-  "Честная трактовка, без искусственных комплиментов и без приписывания реальному мужчине доказанных поступков. Рассматривай склонности и возможные проявления, а не установленные факты.",
-  "Ровно два связных абзаца, суммарно от 750 до 1100 знаков с пробелами. Никаких двоеточий и длинных тире. Не называй в ответе числа энергий или арканы, не объясняй формулу.",
-  "Никаких дополнительных сюжетных шаблонов, обязательных примеров, заранее названных красных флагов и предложений купить другой вопрос. Пусть смысл идёт именно от сочетания энергий и вопроса."
+  "Ты опытный нумеролог. Пиши женщине о мужчине как умная, доброжелательная подруга: живо, ясно, без лести.",
+  "В первом предложении прямо ответь на заданный вопрос. Далее объясни именно этот ответ, а не общий характер мужчины.",
+  "Опирайся на возможные теневые проявления двух энергий дня и месяца рождения по системе 22 энергий Матрицы судьбы и их взаимодействие. Если риск по вопросу не выражен, так и скажи.",
+  "Это трактовка склонностей, не доказательство реальных поступков человека.",
+  "Напиши два содержательных абзаца, всего 750–1100 знаков с пробелами. Без двоеточий, длинных тире, названий арканов, формул и рекомендаций других вопросов."
 ].join(" ");
+const OWNER_QUESTION_SYSTEM=STYLE_TEST_SYSTEM;
 const styleTestOK=(s)=>typeof s==="string"&&s.length>=750&&s.length<=1100&&
  s.trim().split(/\n\s*\n/).length===2&&!/[—:]/u.test(s)&&!hiddenCalculationLeak(s);
-// Only the owner test uses this free-form prompt. Existing client/free routes keep SYSTEM.
-const OWNER_QUESTION_SYSTEM=STYLE_TEST_SYSTEM+" Каждый вопрос раскрывает отдельную грань, а не повторяет один портрет мужчины. Дай ответ именно на вопрос, не своди ревность, самооценку, заботу, ответственность и другие разные темы к одной истории о молчании или исчезновениях. Если для конкретной темы риск слабый, скажи об этом, не придумывай красный флаг. Примеры уже написанных ответов, если переданы, даны только для избежания повторов, а не для копирования.";
 const draftWords=(answer)=>typeof answer==="string"?answer.trim().split(/\s+/).filter(Boolean).length:0;
 const draftParagraphs=(answer)=>typeof answer==="string"?answer.trim().split(/\n\s*\n+/).filter(Boolean):[];
 const normalizeDraft=(answer)=>typeof answer==="string"?answer.trim().replace(/\r\n/g,"\n").replace(/\n{3,}/g,"\n\n"):"";
@@ -199,36 +200,23 @@ export default {
     const styleTest=url.pathname==="/v1/redflag-style-test";
     const ownerQuestion=url.pathname==="/v1/redflag-owner-question";
     if(styleTest||ownerQuestion){
-      const avoid=ownerQuestion?(input.avoid_summaries??[]):[];
-      if(!Array.isArray(avoid)||avoid.length>6||
-         avoid.some(s=>typeof s!=="string"||s.length>210))
-        return reply(400,{ok:false,error:"INVALID_CONTEXT"});
-      // A separate owner-authenticated experiment. All existing customer and
-      // production paths below remain byte-for-byte unchanged.
+      // Isolated owner-only experiment. No customer routes, earlier answers,
+      // hard-coded energy shadows, prescribed plots or sales links.
       const dayEnergy=energy22(input.day),monthEnergy=energy22(input.month);
-      const question=[
-        "Вопрос о мужчине: "+input.title,
-        "День рождения мужчины: "+input.day+" (энергия дня "+dayEnergy+").",
-        "Месяц рождения мужчины: "+input.month+" (энергия месяца "+monthEnergy+").",
-        "Нужен индивидуальный нумерологический вывод о теневых проявлениях именно пары "+
-         dayEnergy+" и "+monthEnergy+" применительно к этому вопросу. Напиши только ответ для женщины."
-      ];
-      if(ownerQuestion){
-        question.push("Главное здесь: ответить на этот вопрос отдельно, не подменять его общим портретом и не вставлять рекомендации других платных вопросов.");
-        if(avoid.length)question.push("ДРУГИЕ УЖЕ ПОКАЗАННЫЕ ОТВЕТЫ для этой даты. Не повторяй их главные сюжеты, примеры и выводы. Они НЕ факты о мужчине:\n"+avoid.join("\n"));
-      }
-      const questionText=question.join("\n");
+      const questionText=[
+        "Вопрос: "+input.title,
+        "День рождения мужчины: "+input.day+" (энергия "+dayEnergy+").",
+        "Месяц рождения мужчины: "+input.month+" (энергия "+monthEnergy+").",
+        "Напиши ответ только на этот вопрос, учитывая обе энергии."
+      ].join("\n");
       try{
         let answer="";
         for(let attempt=0;attempt<3;attempt++){
           const messages=[{role:"system",content:ownerQuestion?OWNER_QUESTION_SYSTEM:STYLE_TEST_SYSTEM},
             {role:"user",content:questionText}];
           if(attempt>0){
-            messages.push({role:"assistant",content:answer.slice(0,1600)});
             messages.push({role:"user",content:
-              "Перепиши, сохранив конкретный нумерологический смысл. Нужны строго два абзаца, "+
-              "750–1100 знаков с пробелами, никаких двоеточий и длинных тире, без названий энергий "+
-              "в ответе, только конкретный вывод на вопрос. Верни только текст."});
+              "Сделай новую попытку. Начни с прямого ответа на вопрос. Два абзаца, 750–1100 знаков, без двоеточий, длинных тире и названий энергий. Только готовый текст."});
           }
           const generation=await env.AI.run(MODEL,{
             messages,temperature:attempt?0.65:0.82,
@@ -241,7 +229,7 @@ export default {
             return reply(200,{ok:true,draft_only:true,published:false,
               style_test:true,category:input.category,question_id:input.question_id,
               date_key:input.day+"-"+input.month,
-              answer,style_version:"simple-numerology-20261117"});
+              answer,style_version:"owner-direct-question-minimal-20261117"});
         }
         return reply(503,{ok:false,error:"STYLE_TEST_LENGTH_OR_FORMAT"});
       }catch(error){
