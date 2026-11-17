@@ -556,6 +556,65 @@ const fillQuestionButton = (button, question, showExpand = false, state = null) 
   }
 };
 
+// Purely editorial first-question experiment IN the Telegram mini-app.
+// Only a verified owner sees it. Customer free content is unchanged.
+const ownerStyleTrialStates=new Map();
+const addOwnerStyleTrial=(target)=>{
+  const birth=parseRedFlagDate(birthDateInput.value);
+  if(!birth)return;
+  const key=birth.day+"-"+birth.month;
+  const draft=ownerStyleTrialStates.get(key)||{answer:"",loading:false,error:""};
+  const panel=document.createElement("section");
+  panel.style.cssText="padding:14px;margin:0 0 16px;border:1px solid #cbb6c0;border-radius:14px;background:#faf5f7;";
+  const header=document.createElement("p");
+  header.style.cssText="margin:0 0 8px;font-weight:750;color:#6b4157;";
+  header.textContent="🧪 Новый ИИ. Только для тебя, клиентам не видно.";
+  const help=document.createElement("p");
+  help.style.cssText="font-size:13px;margin:0 0 10px;color:#75606b;";
+  help.textContent="Новая инструкция без готовых шаблонов. Текущий ответ сайта остаётся ниже.";
+  const go=document.createElement("button");
+  go.type="button";
+  go.textContent=draft.answer?"↻ Другой вариант ИИ":"✨ Проверить новую инструкцию";
+  go.disabled=draft.loading;
+  go.style.cssText="background:#493141;color:white;border:0;border-radius:11px;padding:10px 14px;font:600 14px/1.4 system-ui;";
+  const output=document.createElement("p");
+  output.setAttribute("role","status");
+  output.style.cssText="margin:12px 0 0;white-space:pre-wrap;font-size:15px;line-height:1.6;";
+  output.textContent=draft.loading?"ИИ готовит ответ…":draft.error||draft.answer;
+  panel.append(header,help,go,output);
+  target.prepend(panel);
+  go.addEventListener("click",async()=>{
+    const current=ownerStyleTrialStates.get(key);
+    if(current?.loading)return;
+    const trial={answer:current?.answer||"",loading:true,error:""};
+    ownerStyleTrialStates.set(key,trial);
+    go.disabled=true;
+    output.textContent="ИИ готовит новый ответ…";
+    try{
+      const response=await fetch("/redflag-ai-lab/style-test-api.php",{
+        method:"POST",credentials:"same-origin",cache:"no-store",
+        headers:{"Content-Type":"application/json","Accept":"application/json"},
+        body:JSON.stringify({question_id:"say-no",day:birth.day,month:birth.month}),
+        signal:AbortSignal.timeout(110000)
+      });
+      const data=await response.json();
+      if(!response.ok||data?.ok!==true||data?.style_test!==true||
+        data?.published!==false||data?.draft_only!==true||
+        data?.question_id!=="say-no"||data?.date_key!==key||
+        typeof data?.answer!=="string"||data.answer.length<750||data.answer.length>1100)
+        throw new Error("STYLE_TRIAL_UNAVAILABLE");
+      trial.answer=data.answer;
+      output.textContent=data.answer;
+      go.textContent="↻ Другой вариант ИИ";
+    }catch(_){
+      trial.error="Новый ИИ-ответ не получен. Попробуй ещё раз.";
+      output.textContent=trial.error;
+    }finally{
+      trial.loading=false;go.disabled=false;
+    }
+  });
+};
+
 const createQuestion = (question, state) => {
   const opened = (!question.isComingSoon || ownerDraftInScope(question,state)) && state.activeQuestionId === question.id;
   const article = document.createElement("article");
@@ -711,6 +770,9 @@ const createQuestion = (question, state) => {
     ${observationMarkup}`;
     addRedFlagShare(answer, formatRedFlagMessage(question, response, formattedDate));
     }
+    if(question.isFree&&question.id==="say-no"&&ownerDraftAccess&&
+      [...categoryStates].some(([category,entry])=>category==="flags"&&entry===state))
+      addOwnerStyleTrial(answer);
   } else if (opened) {
     const waiting = document.createElement("p");
     waiting.className = "redflag-loading";
