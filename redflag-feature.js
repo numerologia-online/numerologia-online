@@ -1,6 +1,6 @@
 // Red Flag deliberately needs only day and month, with no birth-year dependence.
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=flags-cleared-20261117";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=flags-owner-preview-20261117";
 
 // Paid content is rendered as text; do not interpret author-controlled paragraphs as HTML.
 const escapeMarkup = value => String(value??"").replace(/[&<>"']/g,char=>({
@@ -44,7 +44,7 @@ const redflagDraftSections = new Set(["flags","infidelity","intimacy","family","
 let ownerDraftAccess=false,ownerDraftAccessChecked=false;
 const ownerDraftInScope=(question,state)=>{
   const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
-  return Boolean(section!=="flags"&&question.isComingSoon&&ownerDraftAccess&&redflagDraftSections.has(section));
+  return Boolean(question.isComingSoon&&ownerDraftAccess&&redflagDraftSections.has(section));
 };
 async function verifyOwnerDraftAccess(){
   if(ownerDraftAccessChecked)return;
@@ -319,7 +319,7 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
   // The FIRST free Red Flag question is AI-generated for ALL visitors.
   // This is deliberately before owner-only test drafts and before paid access.
   // Never fall back to the three old generic teaser variants.
-  if(question.isFree&&id==="say-no"&&[...categoryStates].some(
+  if(question.isFree&&id==="say-no"&&!ownerDraftInScope(question,state)&&[...categoryStates].some(
     ([category,entry])=>category==="flags"&&entry===state)){
     const birthday=parseRedFlagDate(birthDateInput.value);
     if(!birthday){
@@ -801,7 +801,7 @@ const createQuestion = (question, state) => {
     ${observationMarkup}`;
     addRedFlagShare(answer, formatRedFlagMessage(question, response, formattedDate));
     }
-    if(question.isFree&&question.id==="say-no"&&ownerDraftAccess&&
+    if(question.isFree&&question.id==="say-no"&&ownerDraftAccess&&!response?.isDraft&&
       [...categoryStates].some(([category,entry])=>category==="flags"&&entry===state))
       addOwnerStyleTrial(answer);
   } else if (opened) {
