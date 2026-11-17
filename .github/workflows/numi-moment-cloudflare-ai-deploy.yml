@@ -35,6 +35,8 @@ jobs:
       - name: Test only first Moment question across full dates and monthly cycles
         run: |
           node --test cloudflare/moment-300-ai/tests/love001-full-birthdate-monthly.mjs
+      - name: Verify nine Red Flag owner questions and real-format regression
+        run: node tests/redflag-owner-direct-question.test.mjs
       - name: Confirm test step for diagnosis
         env:
           GH_TOKEN: ${{ github.token }}
