@@ -76,6 +76,17 @@ function relationNumbers(birth, other, moment) {
   const femaleMonth=reduceNumber(femaleCycle.year+now.month);
   const maleLifePath=reduceNumber(digitSum(other));
   const womanLifePath=reduceNumber(digitSum(birth));
+  // Same day and month with a different year is a different full birth-date.
+  // Preserve year-derived numerology and actual age instead of classifying
+  // everyone born on (say) October 31 by day/month alone.
+  const maleBirthYearCode=reduceNumber(digitSum(String(man.year)));
+  const womanBirthYearCode=reduceNumber(digitSum(String(woman.year)));
+  const yearsOld=person=>now.year-person.year-
+    ((now.month<person.month||(now.month===person.month&&now.day<person.day))?1:0);
+  const maleAge=yearsOld(man), womanAge=yearsOld(woman);
+  const maleAgeCycle=reduceNumber(maleAge);
+  const womanAgeCycle=reduceNumber(womanAge);
+  const birthYearInteraction=reduceNumber(maleBirthYearCode+womanBirthYearCode);
   const manDay=reduceNumber(man.day), manMonth=reduceNumber(man.month);
   const womanDay=reduceNumber(woman.day), womanMonth=reduceNumber(woman.month);
   const attraction=reduceNumber(manDay+womanDay);
@@ -84,21 +95,22 @@ function relationNumbers(birth, other, moment) {
   const momentNumber=reduceNumber(digitSum(moment.slice(0,10))+digitSum(moment.slice(11)));
   const cycleMonth=String(now.year)+"-"+String(now.month).padStart(2,"0");
   const pairMonth=reduceNumber(maleMonth+femaleMonth);
-  return {manDay,manMonth,maleLifePath,womanDay,womanMonth,womanLifePath,
-    attraction,interaction,tension,maleYear:maleCycle.year,maleMonth,
+  return {manDay,manMonth,maleLifePath,maleBirthYearCode,maleAge,maleAgeCycle,
+    womanDay,womanMonth,womanLifePath,womanBirthYearCode,womanAge,womanAgeCycle,
+    birthYearInteraction,attraction,interaction,tension,maleYear:maleCycle.year,maleMonth,
     womanYear:femaleCycle.year,womanMonth:femaleMonth,pairMonth,cycleMonth,
     activeYear:maleCycle.activeYear,womanActiveYear:femaleCycle.activeYear,momentNumber};
 }
 const LOVE001_SYSTEM = [
   "Только для вопроса «Что он чувствует ко мне?». Напиши один цельный, выразительный абзац на русском, 130–190 слов, без заголовков, списков, второго абзаца и названий энергий.",
   "Стиль: тёплая и наблюдательная женщина разговаривает с другой женщиной. Повествование живое и конкретное, без комплиментов ради утешения, без сладких обещаний, без шаблонных слов про судьбу и без длинных тире.",
-  "Используй ТОЛЬКО переданные вычисленные показатели, не придумывай другие результаты расчётов или события отношений. Эмоциональный стиль мужчины выводи из дня, месяца и жизненного пути; потенциальную динамику конкретной пары — из показателей сочетания. Ни один показатель сам по себе не доказывает любовь.",
+  "Используй ТОЛЬКО переданные вычисленные показатели, не придумывай другие результаты расчётов или события отношений. Эмоциональный стиль мужчины выводи из дня, месяца, ПОЛНОЙ даты рождения (maleLifePath и maleBirthYearCode) и возрастного этапа (maleAgeCycle); потенциальную динамику конкретной пары — из сочетания ПОЛНЫХ дат рождения (включая womanLifePath, womanBirthYearCode и birthYearInteraction). Ни один показатель сам по себе не доказывает любовь.",
   "ОБЯЗАТЕЛЬНО учитывай ОБА личных годовых цикла (maleYear и womanYear) и ОБА личных месячных цикла (maleMonth и womanMonth). Год каждого человека начинается в его день рождения; месяц меняется с календарным месяцем. pairMonth показывает совместное настроение периода. Сопоставь нынешние потребности женщины с доступностью и направленностью мужчины. Числа месяца не подменяют характер и не гарантируют перемену чувств.",
-  "Особенно важно: ответ на ЭТУ пару дат в ДРУГОМ календарном месяце должен получить содержательно иной акцент по текущим циклам, если месячные числа изменились. Не делай изменения искусственными: показывай, что в этот месяц может усиливаться или ослабевать именно в его проявлении чувств. Не просто меняй одно слово или название месяца.",
+  "Особенно важно: ответ на ЭТУ пару дат в ДРУГОМ календарном месяце должен получить содержательно иной акцент по текущим циклам, если месячные числа изменились. Не делай изменения искусственными: показывай, что в этот месяц может усиливаться или ослабевать именно в его проявлении чувств. Не просто меняй одно слово или название месяца. Разные годы рождения при одинаковом дне и месяце обязательно сравнивай через жизненный путь, код года рождения и возрастной цикл: один только день рождения не задаёт одинаковый ответ всем людям.",
   "День и месяц рождения читаются вместе, в том числе при противоречиях. Не сочиняй скрытое желание любви при любом охлаждении. Возможны отсутствие интереса, недостаток вовлечённости, поверхностное притяжение, нерешительность и дистанция. Ни хорошее, ни плохое не приписывай человеку автоматически.",
   "В трактовках ЛИЧНОГО месяца: 1 собственные планы или начало; 2 сближение либо зависимость; 3 общение либо поверхностность; 4 устойчивость либо загруженность; 5 перемены либо непостоянство; 6 отношения либо обязательства; 7 внутренняя работа либо дистанция; 8 амбиции, деньги либо контроль; 9 завершение либо отпускание прошлого; 11/22/33 усиленные неоднозначные темы. Для мужчины и женщины сравнивай значения, а не вставляй одну заготовленную фразу.",
   "Сразу ответь на вопрос вероятностным выводом. Основной объём посвяти взаимодействию конкретных людей СЕЙЧАС и месячному контексту, а не общему психологическому портрету. Заверши одним проверяемым ориентиром на реальные поступки. Не утверждай, что знаешь мысли мужчины: нумерология является символической интерпретацией.",
-  "Не выдумывай лайки, просмотры сторис, переписки, встречи, измены и общую биографию, если пользователь не сообщил таких фактов. Избегай универсального сюжета «он закрытый, но чувства есть» и оправдания любого отсутствия инициативы.",
+  "Не выдумывай лайки, просмотры сторис, переписки, встречи, измены и общую биографию, если пользователь не сообщил таких фактов. Избегай универсального сюжета «он закрытый, но чувства есть» и оправдания любого отсутствия инициативы. Возраст и числовой код рождения не равны зрелости, верности или способности любить; это только дополнительные условные акценты, а не факты о человеке.",
   "Не перечисляй формулы, значения чисел и названия энергий в тексте для клиента. Не обещай, что чувства непременно появятся или исчезнут к следующему месяцу."
 ].join(" ");
 
@@ -117,7 +129,7 @@ export default {
   async fetch(request, env) {
     const pathname = new URL(request.url).pathname;
     if (request.method === "GET" && pathname === "/health")
-      return reply(200, { ok: true, service: "numi-moment-300-owner-preview", ai_bound: !!env.AI, live_answers_enabled: false, love001_cycle_version: "two-person-monthly-20261117" });
+      return reply(200, { ok: true, service: "numi-moment-300-owner-preview", ai_bound: !!env.AI, live_answers_enabled: false, love001_cycle_version: "full-birthdate-two-person-monthly-20261117" });
     if (pathname !== "/v1/owner-preview" || request.method !== "POST")
       return reply(404, { ok: false, error: "NOT_FOUND" });
     if (!env.AI)
@@ -161,6 +173,7 @@ export default {
       const values = relationNumbers(body.birth_date,body.other_date,when);
       lines.push("Для вопроса love-001 заранее рассчитанные показатели (не показывать числа в ответе): "+JSON.stringify(values));
       lines.push("Цикл текущего календарного месяца: "+values.cycleMonth+". Мужчина: личный год "+values.maleYear+", личный месяц "+values.maleMonth+". Женщина: личный год "+values.womanYear+", личный месяц "+values.womanMonth+". Месячный фон пары: "+values.pairMonth+".");
+      lines.push("Различия по ПОЛНОЙ дате рождения: мужчина — жизненный путь "+values.maleLifePath+", код года рождения "+values.maleBirthYearCode+", возраст "+values.maleAge+", возрастной цикл "+values.maleAgeCycle+"; женщина — жизненный путь "+values.womanLifePath+", код года рождения "+values.womanBirthYearCode+", возраст "+values.womanAge+", возрастной цикл "+values.womanAgeCycle+"; взаимосвязь кодов года рождения "+values.birthYearInteraction+". Не своди людей, родившихся в один день и месяц разных лет, к одному характеру.");
       lines.push("Показатель attraction: потенциальное притяжение; interaction: динамика пары; tension: возможные разногласия. Это символические углы, не факты о чувствах.");
       lines.push("Приоритет трактовки: исходные качества мужчины 30%, сочетание пары 25%, годовые и месячные циклы ОБОИХ 40%, момент 5%. Важно показать особенности именно месяца "+values.cycleMonth+" без выдуманных действий и обещаний.");
     }
