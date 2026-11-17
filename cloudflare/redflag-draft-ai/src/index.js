@@ -44,7 +44,7 @@ export default {
     if(request.method==="GET"&&url.pathname==="/health")
       return reply(200,{ok:true,service:"numerologia-redflag-draft-ai",version:VERSION,
         ai_bound:!!env.AI,owner_drafts_only:true,live_answers_enabled:false});
-    if(request.method!=="POST"||url.pathname!=="/v1/draft")
+    if(request.method!=="POST"||!["/v1/draft","/v1/redflag-draft"].includes(url.pathname))
       return reply(404,{ok:false,error:"NOT_FOUND"});
     if(!env.AI)return reply(503,{ok:false,error:"AI_UNAVAILABLE"});
     if(!await serverProofValid(request.headers.get("X-Numi-Moment-Proof")))
