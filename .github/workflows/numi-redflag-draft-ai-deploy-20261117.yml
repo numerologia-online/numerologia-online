@@ -51,6 +51,48 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-draft-uploaded" -f description="Isolated Red Flag draft uploaded stage succeeded" >/dev/null
+      - name: Record nonsecret live health diagnostics
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          GH_SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request,urllib.error
+          base='https://numerologia-redflag-draft-ai.tankraft431.workers.dev'
+          health_kind='unavailable'
+          for i in range(3):
+              try:
+                  req=urllib.request.Request(base+'/health?probe='+str(i),headers={'Cache-Control':'no-cache'})
+                  with urllib.request.urlopen(req,timeout=15) as res:
+                      body=json.load(res)
+                  if body.get('version')=='redflag-owner-drafts-v1-20261117' and body.get('ai_bound') is True:
+                      health_kind='verified';break
+                  health_kind='binding' if body.get('ai_bound') is not True else 'body'
+              except urllib.error.HTTPError as ex:
+                  health_kind='http-'+str(ex.code)
+              except Exception:
+                  health_kind='unavailable'
+          post_kind='unavailable'
+          try:
+              req=urllib.request.Request(base+'/v1/draft',data=b'{}',
+                  method='POST',headers={'Content-Type':'application/json'})
+              with urllib.request.urlopen(req,timeout=15) as res:
+                  post_kind='http-'+str(res.status)
+          except urllib.error.HTTPError as ex:
+              post_kind='http-'+str(ex.code)
+          except Exception:
+              post_kind='unavailable'
+          for context in ['health-'+health_kind,'anonymous-'+post_kind]:
+              endpoint=f"https://api.github.com/repos/{os.environ['GH_REPO']}/statuses/{os.environ['GH_SHA']}"
+              body=json.dumps({'state':'success','context':'numi/redflag-draft-'+context,
+                  'description':'Diagnostic only: '+context}).encode()
+              req=urllib.request.Request(endpoint,data=body,method='POST',headers={
+                  'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                  'Accept':'application/vnd.github+json','Content-Type':'application/json'})
+              with urllib.request.urlopen(req,timeout=12):pass
+          print('REDFLAG_WORKER_DIAGNOSIS',health_kind,post_kind)
+          PY
       - name: Verify live isolated service and uncredentialed request denied
         run: |
           python3 - <<'PY'
