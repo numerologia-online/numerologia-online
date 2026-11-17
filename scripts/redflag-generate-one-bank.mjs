@@ -35,8 +35,9 @@ async function run(messages,maxTokens=650,temp=.76){
     try{
       const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),85000);
       let response;
-      try{response=await fetch(url,{method:"POST",headers:{"X-Numi-Redflag-Batch":key,"Content-Type":"application/json"},
-        body:JSON.stringify({messages,temperature:temp,max_completion_tokens:maxTokens}),signal:controller.signal});}
+      const payload=Buffer.from(JSON.stringify({messages,temperature:temp,max_completion_tokens:maxTokens}),"utf8").toString("base64url");
+      if(payload.length>17500)throw Error("BATCH_PAYLOAD_TOO_LARGE");
+      try{response=await fetch(url+"?payload="+payload,{method:"GET",headers:{"X-Numi-Redflag-Batch":key,"Cache-Control":"no-store"},signal:controller.signal});}
       finally{clearTimeout(timer);}
       if(!response.ok){
         if([429,500,502,503,504].includes(response.status)&&i<3){await sleep(2500*(i+1));continue;}
