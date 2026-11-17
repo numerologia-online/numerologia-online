@@ -121,7 +121,7 @@ try {
     rfLabReply(200,['ok'=>true,'draft_only'=>true,'published'=>false,
         'category'=>$category,'question_id'=>$id,
         'question'=>(string)$selectedQuestion['title'],
-        'date_key'=>$expectedKey,'answer'=>$category==='flags'?trim($answer):str_replace(['—',':'],[',',','],trim($answer))]);
+        'date_key'=>$expectedKey,'answer'=>$category==='flags'?preg_replace('/[ \t]*[—–:][ \t]*/u',', ',trim($answer)):str_replace(['—',':'],[',',','],trim($answer))]);
 }catch(Throwable $exception){
     error_log('REDFLAG_OWNER_AI_DRAFT:'.get_class($exception));
     rfLabReply(503,['ok'=>false,'error'=>'TEMPORARILY_UNAVAILABLE']);
