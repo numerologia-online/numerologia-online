@@ -48,6 +48,24 @@ for(const q of flags){
   assert.ok(!/ДРУГИЕ УЖЕ ПОКАЗАННЫЕ|ТЕНЬ дня|ТЕНЬ месяца|рекоменд/u.test(received[1].content));
   assert.equal(received[1].content.split("\n").length,4);
 }
+// The model often produces a single paragraph, using a colon or long dash.
+// It must be formatted into two paragraphs rather than discarded.
+let retryCalls=0;
+const single=Array(6).fill(paragraph).join(" ")+": "+Array(2).fill(outro).join(" ");
+const singleResponse=await worker.fetch(new Request("https://example.test/v1/redflag-owner-question",{
+  method:"POST",
+  headers:{"Content-Type":"application/json","X-Numi-Redflag-Batch":proof},
+  body:JSON.stringify({category:"flags",question_id:"hero",title:flags[1].title,day:9,month:9,followups:[]})
+}),{
+  REDFLAG_BATCH_KEY_SHA256:hash,
+  AI:{run:async()=>{retryCalls++;return {response:single};}}
+});
+assert.equal(singleResponse.status,200,"A valid one-paragraph model answer should be reformatted");
+const singleAnswer=(await singleResponse.json()).answer;
+assert.equal(singleAnswer.split(/\n\s*\n/).length,2);
+assert.ok(!/[—:]/.test(singleAnswer));
+assert.equal(retryCalls,1,"Formatting repair must not trigger another paid inference");
+
 const guest=await worker.fetch(new Request("https://example.test/v1/redflag-owner-question",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
