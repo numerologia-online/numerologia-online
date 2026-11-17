@@ -360,27 +360,9 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
     const birth=parseRedFlagDate(birthDateInput.value);
     if(!birth){state.answerErrors.set(id,"Укажи дату рождения мужчины.");return;}
     const task=(async()=>{
-      // If the owner has explicitly kept a version, display THAT text.
-      // Only "Другой вариант" bypasses it and asks AI for something new.
-      if(!forceNew){
-        try{
-          const previous=await fetch("/redflag-ai-lab/keep.php",{
-            method:"POST",credentials:"same-origin",cache:"no-store",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({action:"get",category,question_id:id,day:birth.day,month:birth.month})
-          });
-          if(previous.ok){
-            const saved=await previous.json();
-            if(saved?.ok===true&&saved?.saved===true&&saved?.draft_only===true&&
-               saved?.category===category&&saved?.question_id===id&&
-               saved?.date_key===birth.day+"-"+birth.month&&typeof saved?.answer==="string"){
-              if(profile===activeProfile&&ownerDraftAccess)
-                state.answers.set(id,{answer:saved.answer,isDraft:true,isSaved:true});
-              return;
-            }
-          }
-        }catch(_){/* Existing owner AI previews continue if storage is temporarily unavailable. */}
-      }
+      // Always request a fresh AI response for a test question. Previously
+      // kept editor drafts stay safely on the server and can be opened via
+      // the separate "Показать сохранённое" control.
       const response=await fetch("/redflag-ai-lab/draft.php",{
         method:"POST",credentials:"same-origin",cache:"no-store",
         headers:{"Content-Type":"application/json"},
@@ -670,7 +652,9 @@ const createQuestion = (question, state) => {
     if(response.isDraft){
       const note=document.createElement("p");
       note.className="redflag-owner-ai-label";
-      note.textContent="✨ ИИ-ответ для проверки. Видишь только ты. Не опубликован.";
+      note.textContent=response.isSaved
+        ?"📂 Сохранённый черновик. Не новый ответ ИИ. Клиентам не видно."
+        :"✨ Новый ИИ-ответ для проверки. Только тебе, не опубликован.";
       note.style.cssText="margin:4px 0 12px;font:750 13px/1.5 system-ui;color:#91683b";
       const text=document.createElement("p");
       text.textContent=response.answer;
@@ -686,11 +670,14 @@ const createQuestion = (question, state) => {
       saveButton.disabled=Boolean(response.isSaved);
       const otherButton=document.createElement("button");
       otherButton.type="button";
-      otherButton.textContent="↻ Другой вариант";
+      otherButton.textContent="↻ Другой вариант ИИ";
+      const keptButton=document.createElement("button");
+      keptButton.type="button";
+      keptButton.textContent="📂 Показать сохранённое";
       const editButton=document.createElement("button");
       editButton.type="button";
       editButton.textContent="Изменить текст";
-      for(const control of [saveButton,otherButton,editButton]){
+      for(const control of [saveButton,otherButton,keptButton,editButton]){
         control.style.cssText="padding:9px 11px;border-radius:10px;border:1px solid #cdbdc4;background:#fff;color:#583851;font:600 13px/1.4 system-ui;";
         controls.append(control);
       }
@@ -733,6 +720,39 @@ const createQuestion = (question, state) => {
         state.answerErrors.delete(question.id);
         ensureAnswer(question,state,{forceNew:true});
         renderCategories({type:"question",id:question.id});
+      });
+      keptButton.addEventListener("click",async()=>{
+        if(state.answerRequests.has(question.id))return;
+        keptButton.disabled=true;
+        status.textContent="Проверяю сохранённый черновик…";
+        try{
+          const birth=parseRedFlagDate(birthDateInput.value);
+          const category=[...categoryStates].find(([,entry])=>entry===state)?.[0];
+          if(!birth||!category)throw Error("INVALID_SELECTION");
+          const responseFromStore=await fetch("/redflag-ai-lab/keep.php",{
+            method:"POST",credentials:"same-origin",cache:"no-store",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({action:"get",category,question_id:question.id,day:birth.day,month:birth.month})
+          });
+          const stored=await responseFromStore.json();
+          if(!responseFromStore.ok||stored?.ok!==true)throw Error("KEEP_GET_FAILED");
+          if(stored.saved!==true){
+            status.textContent="Для этой даты сохранённого варианта нет.";
+            keptButton.disabled=false;
+            return;
+          }
+          if(stored?.draft_only!==true||stored?.published!==false||
+             stored?.category!==category||stored?.question_id!==question.id||
+             stored?.date_key!==birth.day+"-"+birth.month||
+             typeof stored.answer!=="string")throw Error("INVALID_SAVED_DRAFT");
+          if(state.activeQuestionId===question.id&&ownerDraftAccess){
+            state.answers.set(question.id,{answer:stored.answer,isDraft:true,isSaved:true});
+            renderCategories({type:"question",id:question.id});
+          }
+        }catch(_){
+          status.textContent="Не удалось открыть сохранённый вариант.";
+          keptButton.disabled=false;
+        }
       });
       editButton.addEventListener("click",()=>{
         if(answer.querySelector(".redflag-owner-edit"))return;
@@ -798,9 +818,15 @@ const createQuestion = (question, state) => {
   // mobile Safari and Telegram can scroll to the browser's abandoned focus.
   button.addEventListener("click", () => {
     button.blur();
+    // Reopening an owner test must not silently show an old in-memory draft.
+    // Explicitly kept drafts remain on the server, available via their button.
+    if(!opened&&ownerDraftInScope(question,state)){
+      state.answers.delete(question.id);
+      state.answerErrors.delete(question.id);
+    }
     state.activeQuestionId = opened ? null : question.id;
     renderCategories({ type: "question", id: question.id });
-    if (!opened) ensureAnswer(question, state);
+    if (!opened) ensureAnswer(question, state, {forceNew:ownerDraftInScope(question,state)});
   });
 
   article.append(button, answer);
