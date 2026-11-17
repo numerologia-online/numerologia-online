@@ -1,11 +1,5 @@
 name: Deploy isolated Red Flag draft-only AI service
 on:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/numi-redflag-draft-ai-deploy-20261117.yml
-      - cloudflare/redflag-draft-ai/src/index.js
-      - cloudflare/redflag-draft-ai/wrangler.jsonc
   workflow_dispatch:
 permissions:
   contents: read
