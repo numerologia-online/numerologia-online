@@ -229,6 +229,9 @@ export default {
       ].join("\n");
       try{
         let answer="";
+        // Numeric-only diagnosis for protected owner requests. No generated
+        // prose or credentials are returned on failure.
+        const checks=[];
         for(let attempt=0;attempt<2;attempt++){
           const messages=[{role:"system",content:ownerQuestion?OWNER_QUESTION_SYSTEM:STYLE_TEST_SYSTEM},
             {role:"user",content:questionText}];
@@ -241,15 +244,24 @@ export default {
             max_completion_tokens:730,
             chat_template_kwargs:{enable_thinking:false}
           });
-          answer=normalizeOwnerText(generation?.response??
-            generation?.choices?.[0]?.message?.content);
+          const rawAnswer=generation?.response??
+            generation?.choices?.[0]?.message?.content;
+          answer=normalizeOwnerText(rawAnswer);
+          checks.push({
+            raw_type:typeof rawAnswer,
+            raw_chars:typeof rawAnswer==="string"?rawAnswer.length:0,
+            answer_chars:answer.length,
+            paragraphs:answer.split(/\\n\\s*\\n/).length,
+            hidden_leak:hiddenCalculationLeak(answer),
+            model_keys:generation&&typeof generation==="object"?Object.keys(generation).slice(0,6):[]
+          });
           if(styleTestOK(answer))
             return reply(200,{ok:true,draft_only:true,published:false,
               style_test:true,category:input.category,question_id:input.question_id,
               date_key:input.day+"-"+input.month,
               answer,style_version:"owner-minimal-live-recovery-20261117"});
         }
-        return reply(503,{ok:false,error:"STYLE_TEST_LENGTH_OR_FORMAT"});
+        return reply(503,{ok:false,error:"STYLE_TEST_LENGTH_OR_FORMAT",checks});
       }catch(error){
         console.error("REDFLAG_STYLE_TEST_ERROR",error?.name||"error");
         return reply(503,{ok:false,error:"AI_TEMPORARILY_UNAVAILABLE"});
