@@ -16,7 +16,7 @@ function rfFreeReply(int $status,array $result): never {
 function rfFreeValidResponse(string $answer): bool {
     return mb_strlen($answer)>=450&&mb_strlen($answer)<=1900&&
         (bool)preg_match('/\S+\n\s*\n\S+/u',$answer)&&
-        !preg_match('/(?:аркан|энерг|нумеролог|девятк|восьм[её]рк|сочетани\w*\s+чисел|число\s+рождения|\d{1,2}\s*[-\/]\s*\d{1,2}|ледян\w*|молчан\w*|внезапн\w*\s+исчезновен\w*)/iu',$answer);
+        !preg_match('/(?:аркан|энерг|нумеролог|девятк|восьм[её]рк|сочетани\w*\s+чисел|число\s+рождения|\d{1,2}\s*[-\/]\s*\d{1,2})/iu',$answer);
 }
 function rfFreeClean(string $text): string {
     $text=str_replace("\r\n","\n",trim($text));
@@ -39,6 +39,9 @@ try {
         !is_int($input['day']??null)||!is_int($input['month']??null)||
         !checkdate($input['month'],$input['day'],2000))
         rfFreeReply(400,['ok'=>false,'error'=>'INVALID_DATE_OR_QUESTION']);
+    // Red Flag texts and instructions were cleared by the owner. Keep the
+    // existing AI connection configured, but do not serve cached or new text.
+    rfFreeReply(503,['ok'=>false,'error'=>'FLAGS_PROMPT_CLEARED']);
     $day=$input['day'];$month=$input['month'];
     $key=$day.'-'.$month;
     $store=dirname(__DIR__,3).'/private/numi-redflag-free-ai-v1';
@@ -89,11 +92,7 @@ try {
     if (!is_string($groqKey)||!str_starts_with($groqKey,'gsk_'))
         rfFreeReply(503,['ok'=>false,'error'=>'AI_NOT_READY']);
     $proof=hash_hmac('sha256','numi-moment-cloudflare-bridge-v1',$groqKey);
-    $followups=[
-        'Держит слово или опять одни красивые разговоры?',
-        'Верный или у него каждая вторая «просто подруга»?',
-        'Какой финальный вердикт по этому мужчине без розовых очков?'
-    ];
+    $followups=[]; // Cleared: no Red Flag response/upsell instructions.
     $payload=json_encode([
         'category'=>'flags','question_id'=>'say-no',
         'title'=>'Уважает женское «нет» или начинает давить?',
