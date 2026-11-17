@@ -45,6 +45,8 @@ jobs:
           DIGEST="$(printf '%s' "$KEY" | sha256sum | cut -d' ' -f1)"
           echo "::add-mask::$DIGEST"
           printf '%s' "$DIGEST" | npx wrangler secret put REDFLAG_BATCH_KEY_SHA256 --name numerologia-300-ai --cwd cloudflare/moment-300-ai
+          # Force live activation of the temporary binding before smoke-check.
+          npx wrangler deploy --cwd cloudflare/moment-300-ai
           echo "REDFLAG_BATCH_KEY=$KEY" >> "$GITHUB_ENV"
       - name: Checkpoint numi/redflag-batch-secret-installed
         env:
