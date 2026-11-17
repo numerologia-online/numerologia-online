@@ -774,27 +774,30 @@ form.addEventListener("submit", async (event) => {
   try {
     activeProfile = buildRelationshipProfile(date);
     formattedDate = birthDateInput.value;
+    // A date calculation never chooses a category for the visitor.
+    // This applies equally to free, paid and owner-only AI questions.
     for (const state of categoryStates.values()) {
+      state.expanded = false;
+      state.activeQuestionId = null;
       state.answers.clear();
       state.answerRequests.clear();
       state.answerErrors.clear();
     }
+    // An explicit question-specific deep link is a user's own choice,
+    // not an automatic selection of the first ("money") category.
     const linkedCategory = requestedQuestion
       ? REDFLAG_CATEGORIES.find((category) => category.id === requestedQuestion[1])
       : null;
-    const firstCategory = linkedCategory || REDFLAG_CATEGORIES[0];
-    const firstState = categoryStates.get(firstCategory.id);
-    collapseOtherCategories(firstCategory.id);
-    firstState.expanded = true;
-    await ensureQuestions(firstCategory);
-    for (const state of categoryStates.values()) state.activeQuestionId = null;
-    // Keep a directly linked question selected after the date is entered.
-    const linkedQuestion = linkedCategory
-      ? firstState.questions?.find((question) => question.id === requestedQuestion[2])
-      : null;
-    if (linkedQuestion) {
-      firstState.activeQuestionId = linkedQuestion.id;
-      ensureAnswer(linkedQuestion, firstState);
+    if (linkedCategory) {
+      const linkedState = categoryStates.get(linkedCategory.id);
+      linkedState.expanded = true;
+      await ensureQuestions(linkedCategory);
+      const linkedQuestion = linkedState.questions
+        ?.find((question) => question.id === requestedQuestion[2]);
+      if (linkedQuestion) {
+        linkedState.activeQuestionId = linkedQuestion.id;
+        ensureAnswer(linkedQuestion, linkedState);
+      }
     }
     clearError();
     renderCategories();
