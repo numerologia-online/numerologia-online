@@ -1,0 +1,52 @@
+name: Remove bad icy-silence Red Flag private drafts and free cache
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-clean-icy-silence-20261117.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  statuses: write
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify PHP blocks bad saved free AI text and preserves site
+        run: |
+          set -euo pipefail
+          php -l api/redflag-free-ai.php
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('api/redflag-free-ai.php').read_text()
+          assert 'ледян' in s and 'молчан' in s
+          assert '/v1/redflag-draft' in s
+          assert "rfFreeValidResponse($answer)" in s
+          assert "['question_id'=>'say-no'" in s
+          assert "CURLOPT_TIMEOUT=>85" in s
+          print('VALIDATED_PRIVATE_CACHE_AND_PUBLIC_FILTER_SCOPE')
+          PY
+      - name: Publish filter and delete ONLY bad matching private JSON copies
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 .github/scripts/numi-redflag-clean-icy-silence-20261117.py
+      - name: Record success
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-bad-cache-cleared" -f description="Bad icy-silence private owner drafts and free caches selectively cleared, free filter installed" >/dev/null
+      - name: Record failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-bad-cache-cleared" -f description="Targeted Red Flag cleanup incomplete; see action" >/dev/null
