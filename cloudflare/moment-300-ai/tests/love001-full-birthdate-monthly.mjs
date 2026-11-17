@@ -1,0 +1,60 @@
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+
+const source=readFileSync("cloudflare/moment-300-ai/src/index.js","utf8");
+const {default:worker}=await import("data:text/javascript;base64,"+Buffer.from(source).toString("base64"));
+const sampleText="О чувствах человека нельзя судить достоверно только по дате рождения. Смотрите на поступки и взаимность, а символический расчёт используйте лишь как дополнительный ракурс.";
+async function inspect(questionId,man,moment){
+  let messages;
+  const env={
+    MOMENT_BRIDGE_SECRET:"test-only-bridge",
+    AI:{run:async(_model,options)=>{
+      messages=options.messages;
+      return {response:sampleText};
+    }}
+  };
+  const req=new Request("https://example.test/v1/owner-preview",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","X-Numi-Moment-Secret":"test-only-bridge"},
+    body:JSON.stringify({
+      question_id:questionId,
+      title:questionId==="love-001"?"Что он чувствует ко мне?":"Вспоминает ли он обо мне?",
+      birth_date:"1988-02-14",
+      other_date:man,
+      moment
+    })
+  });
+  const res=await worker.fetch(req,env);
+  assert.equal(res.status,200);
+  const data=await res.json();
+  assert.equal(data.ok,true);
+  assert.ok(messages);
+  const note=messages[1].content.split("\n").find(line=>line.includes("заранее рассчитанные показатели"));
+  return {messages,values:note?JSON.parse(note.slice(note.indexOf("{"))):null};
+}
+const sameDayMonthOlder=await inspect("love-001","1985-10-31","2026-11-17T11:20");
+const sameDayMonthYounger=await inspect("love-001","1997-10-31","2026-11-17T11:20");
+const nextCalendarMonth=await inspect("love-001","1985-10-31","2026-12-17T11:20");
+const differentDay=await inspect("love-001","1985-10-10","2026-11-17T11:20");
+const anotherQuestion=await inspect("love-002","1985-10-31","2026-11-17T11:20");
+const a=sameDayMonthOlder.values,b=sameDayMonthYounger.values,c=nextCalendarMonth.values,d=differentDay.values;
+assert.ok(a&&b&&c&&d,"love-001 must calculate a distinct full-date profile");
+assert.notEqual(a.maleLifePath,b.maleLifePath);
+assert.notEqual(a.maleBirthYearCode,b.maleBirthYearCode);
+assert.notEqual(a.maleAge,b.maleAge);
+assert.notEqual(a.maleAgeCycle,b.maleAgeCycle);
+assert.notEqual(a.birthYearInteraction,b.birthYearInteraction);
+assert.notEqual(a.maleMonth,c.maleMonth);
+assert.notEqual(a.womanMonth,c.womanMonth);
+assert.notEqual(a.pairMonth,c.pairMonth);
+assert.notEqual(a.manDay,d.manDay);
+assert.match(sameDayMonthOlder.messages[0].content,/ПОЛНОЙ даты рождения/);
+assert.match(sameDayMonthOlder.messages[0].content,/ОБА личных месячных цикла/);
+assert.notEqual(anotherQuestion.messages[0].content,sameDayMonthOlder.messages[0].content);
+assert.equal(anotherQuestion.values,null,"other 299 questions must keep existing prompt");
+const health=await worker.fetch(new Request("https://example.test/health"),{AI:{}});
+assert.equal(health.status,200);
+const status=await health.json();
+assert.equal(status.love001_cycle_version,"full-birthdate-two-person-monthly-20261117");
+assert.equal(status.live_answers_enabled,false);
+console.log("PASS: love-001 full birth years, age cycles, both personal months, other 299 isolated");
