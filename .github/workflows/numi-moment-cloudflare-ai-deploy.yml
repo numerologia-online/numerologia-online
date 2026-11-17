@@ -57,24 +57,45 @@ jobs:
             -f context="numi/moment-upload" \
             -f description="upload completed for one-question release" >/dev/null
       - name: Check live Workers AI binding without using any billable inference
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_SHA: ${{ github.sha }}
+          GH_REPO: ${{ github.repository }}
         run: |
           python3 - <<'PY'
-          import json,urllib.request,time
+          import json,os,urllib.request,urllib.error,time
           url='https://numerologia-300-ai.tankraft431.workers.dev/health'
           result=None
-          for attempt in range(5):
+          exception_name='none'
+          for attempt in range(6):
             try:
-              req=urllib.request.Request(url,headers={'Cache-Control':'no-cache'})
-              with urllib.request.urlopen(req,timeout=20) as r:result=json.load(r)
-              if result.get('ai_bound') is True:break
-            except Exception:pass
-            time.sleep(3)
-          if not result or result.get('ai_bound') is not True or result.get('service')!='numi-moment-300-owner-preview':
-            raise RuntimeError('CLOUDFLARE_WORKER_AI_BINDING_UNVERIFIED')
-          if result.get('love001_cycle_version')!='full-birthdate-two-person-monthly-20261117':
-            raise RuntimeError('CLOUDFLARE_LIVE_LOVE001_VERSION_STALE')
-          if result.get('live_answers_enabled') is not False:
-            raise RuntimeError('OWNER_ONLY_GATE_UNEXPECTEDLY_CHANGED')
+              req=urllib.request.Request(url+'?version=full-birthdate-two-person-monthly-20261117&attempt='+str(attempt),
+                headers={'Cache-Control':'no-store','User-Agent':'NumiOneQuestionVerifiedRelease/1.0'})
+              with urllib.request.urlopen(req,timeout=16) as r:result=json.load(r)
+              if result.get('love001_cycle_version')=='full-birthdate-two-person-monthly-20261117' and result.get('ai_bound') is True:
+                break
+            except Exception as ex:
+              exception_name=ex.__class__.__name__
+              print('MOMENT_HEALTH_TRY',attempt+1,'error_class',exception_name,flush=True)
+            if attempt!=5:time.sleep(3)
+          reason=None
+          if result is None: reason='unreachable'
+          elif result.get('ai_bound') is not True: reason='binding'
+          elif result.get('service')!='numi-moment-300-owner-preview':reason='service'
+          elif result.get('love001_cycle_version')!='full-birthdate-two-person-monthly-20261117':reason='stale'
+          elif result.get('live_answers_enabled') is not False:reason='gate'
+          if reason is not None:
+            print('MOMENT_LIVE_VERIFY_FAILED',reason,'exception',exception_name,flush=True)
+            endpoint=f"https://api.github.com/repos/{os.environ['GH_REPO']}/statuses/{os.environ['GH_SHA']}"
+            data=json.dumps({'state':'failure','context':'numi/moment-health-'+reason,
+              'description':'Live health verification failed: '+reason}).encode()
+            req=urllib.request.Request(endpoint,data=data,method='POST',headers={
+              'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+              'Accept':'application/vnd.github+json','Content-Type':'application/json'})
+            try:
+              with urllib.request.urlopen(req,timeout=12) as res:pass
+            except Exception as ex:print('MOMENT_HEALTH_DIAG_REPORT_ERROR',ex.__class__.__name__)
+            raise RuntimeError('CLOUDFLARE_LIVE_CHECK_'+reason.upper())
           print('MOMENT_LOVE001_LIVE_VERIFIED full_birthdate=true both_personal_months=true only_question=love-001')
           PY
       - name: Confirm health step for diagnosis
