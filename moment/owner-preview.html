@@ -118,9 +118,9 @@ function openSavedMomentBot(url){
 function renderCompactLoveControls(question,answer,self,other){
   const result=$('result'),next=$('ask-another-question');
   result.querySelector('.moment-love-controls')?.remove();
-  const report='✨ 300 вопросов о жизни\\nВопрос: '+question.title+
-    '\\nВаша дата рождения: '+self+'\\nДата рождения мужчины: '+other+
-    '\\n\\n'+answer+'\\n\\n✨ Нумерология онлайн\\n🌐 https://нумерология-онлайн.рф/moment/\\n🤖 https://t.me/Numerologiaonline_bot';
+  const report='✨ 300 вопросов о жизни\nВопрос: '+question.title+
+    '\nВаша дата рождения: '+self+'\nДата рождения мужчины: '+other+
+    '\n\n'+answer+'\n\n✨ Нумерология онлайн\n🌐 https://нумерология-онлайн.рф/moment/\n🤖 https://t.me/Numerologiaonline_bot';
   const wrapper=document.createElement('div');
   wrapper.className='moment-love-controls';
   const title=document.createElement('strong');
