@@ -298,7 +298,7 @@ const clearError = () => {
 // Resolve only the opened question. Cache its result for this calculated date.
 // Paid questions are opened IN PLACE; never send the reader into a cart.
 // Publication state comes from the approved material catalogue, not a per-section switch.
-const ensureAnswer = (question, state) => {
+const ensureAnswer = (question, state, {forceNew = false} = {}) => {
   if(question.isComingSoon&&!ownerDraftInScope(question,state))return;
   const id=question.id;
   if(state.answers.has(id)||state.answerRequests.has(id))return;
@@ -309,19 +309,41 @@ const ensureAnswer = (question, state) => {
     const category=[...categoryStates].find(([,value])=>value===state)?.[0];
     const birth=parseRedFlagDate(birthDateInput.value);
     if(!birth){state.answerErrors.set(id,"Укажи дату рождения мужчины.");return;}
-    const task=fetch("/redflag-ai-lab/draft.php",{
-      method:"POST",credentials:"same-origin",cache:"no-store",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({category,question_id:id,day:birth.day,month:birth.month})
-    }).then(async response=>{
+    const task=(async()=>{
+      // If the owner has explicitly kept a version, display THAT text.
+      // Only "Другой вариант" bypasses it and asks AI for something new.
+      if(!forceNew){
+        try{
+          const previous=await fetch("/redflag-ai-lab/keep.php",{
+            method:"POST",credentials:"same-origin",cache:"no-store",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({action:"get",category,question_id:id,day:birth.day,month:birth.month})
+          });
+          if(previous.ok){
+            const saved=await previous.json();
+            if(saved?.ok===true&&saved?.saved===true&&saved?.draft_only===true&&
+               saved?.category===category&&saved?.question_id===id&&
+               saved?.date_key===birth.day+"-"+birth.month&&typeof saved?.answer==="string"){
+              if(profile===activeProfile&&ownerDraftAccess)
+                state.answers.set(id,{answer:saved.answer,isDraft:true,isSaved:true});
+              return;
+            }
+          }
+        }catch(_){/* Existing owner AI previews continue if storage is temporarily unavailable. */}
+      }
+      const response=await fetch("/redflag-ai-lab/draft.php",{
+        method:"POST",credentials:"same-origin",cache:"no-store",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({category,question_id:id,day:birth.day,month:birth.month})
+      });
       const data=await response.json();
       if(!response.ok||data?.ok!==true||data?.draft_only!==true||
          data?.category!==category||data?.question_id!==id||
          data?.date_key!==birth.day+"-"+birth.month||typeof data?.answer!=="string")
         throw new Error("DRAFT_UNAVAILABLE");
       if(profile!==activeProfile||!ownerDraftAccess)return;
-      state.answers.set(id,{answer:data.answer,isDraft:true});
-    }).catch(()=>{
+      state.answers.set(id,{answer:data.answer,isDraft:true,isSaved:false});
+    })().catch(()=>{
       if(profile===activeProfile&&ownerDraftAccess)
         state.answerErrors.set(id,"ИИ-ответ не загрузился. Закрой вопрос и открой снова.");
     }).finally(()=>{
@@ -545,6 +567,86 @@ const createQuestion = (question, state) => {
       text.textContent=response.answer;
       text.style.whiteSpace="pre-wrap";
       answer.append(note,text);
+      // Editing and saving are available ONLY on authenticated owner drafts.
+      // Saving writes to /private and never marks a public question as ready.
+      const controls=document.createElement("div");
+      controls.style.cssText="margin:16px 0 8px;display:flex;gap:8px;flex-wrap:wrap;";
+      const saveButton=document.createElement("button");
+      saveButton.type="button";
+      saveButton.textContent=response.isSaved?"✓ Сохранено":"❤️ Сохранить этот вариант";
+      saveButton.disabled=Boolean(response.isSaved);
+      const otherButton=document.createElement("button");
+      otherButton.type="button";
+      otherButton.textContent="↻ Другой вариант";
+      const editButton=document.createElement("button");
+      editButton.type="button";
+      editButton.textContent="Изменить текст";
+      for(const control of [saveButton,otherButton,editButton]){
+        control.style.cssText="padding:9px 11px;border-radius:10px;border:1px solid #cdbdc4;background:#fff;color:#583851;font:600 13px/1.4 system-ui;";
+        controls.append(control);
+      }
+      const status=document.createElement("p");
+      status.setAttribute("role","status");
+      status.style.cssText="margin:8px 0;color:#806043;font:600 13px/1.4 system-ui;";
+      answer.append(controls,status);
+      const selected=()=>({
+        action:"save",category:[...categoryStates].find(([,value])=>value===state)?.[0],
+        question_id:question.id,
+        day:parseRedFlagDate(birthDateInput.value)?.day,
+        month:parseRedFlagDate(birthDateInput.value)?.month,
+        answer:response.answer
+      });
+      saveButton.addEventListener("click",async()=>{
+        saveButton.disabled=true;status.textContent="Сохраняю выбранный текст…";
+        try{
+          const body=selected();
+          const saved=await fetch("/redflag-ai-lab/keep.php",{
+            method:"POST",credentials:"same-origin",cache:"no-store",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify(body)
+          });
+          const result=await saved.json();
+          if(!saved.ok||result?.ok!==true||result?.saved!==true||
+              result?.draft_only!==true||result?.published!==false)
+            throw new Error("SAVE_FAILED");
+          if(state.answers.get(question.id)===response){
+            response.isSaved=true;
+            saveButton.textContent="✓ Сохранено";
+          }
+          status.textContent="Сохранено для этой даты и вопроса. Покупатели пока не видят.";
+        }catch(_){
+          saveButton.disabled=false;status.textContent="Не сохранилось. Попробуй ещё раз.";
+        }
+      });
+      otherButton.addEventListener("click",()=>{
+        if(state.answerRequests.has(question.id))return;
+        state.answers.delete(question.id);
+        state.answerErrors.delete(question.id);
+        ensureAnswer(question,state,{forceNew:true});
+        renderCategories({type:"question",id:question.id});
+      });
+      editButton.addEventListener("click",()=>{
+        if(answer.querySelector(".redflag-owner-edit"))return;
+        const area=document.createElement("textarea");
+        area.className="redflag-owner-edit";
+        area.value=response.answer;
+        area.rows=10;
+        area.style.cssText="display:block;width:100%;box-sizing:border-box;margin:8px 0;padding:10px;border:1px solid #cdbdc4;border-radius:10px;font:15px/1.55 system-ui;";
+        const apply=document.createElement("button");
+        apply.type="button";
+        apply.textContent="Применить правку";
+        apply.style.cssText="padding:10px;border-radius:10px;border:1px solid #cdbdc4;background:#fff;";
+        apply.addEventListener("click",()=>{
+          const next=area.value.trim();
+          if(next.length<300||!next.includes("\n\n")){
+            status.textContent="Нужны два абзаца текста. Проверь правку.";return;
+          }
+          response.answer=next;response.isSaved=false;
+          renderCategories({type:"question",id:question.id});
+        });
+        controls.after(area,apply);
+        area.focus();
+      });
     } else {
     const paragraphs = response.paragraphs ?? [response.answer];
     const scales = (response.scales ?? []).map(({ label, value }) => ({
