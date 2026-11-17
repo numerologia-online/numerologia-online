@@ -107,9 +107,9 @@ jobs:
               print('ONLY_FLAGS_SITE_FILES_VERIFIED',flush=True)
               dirs=[
                   (home+'/private/numi-redflag-owner-kept-v1',
-                   re.compile(r'^flags__[a-z0-9-]+__[0-9]{1,2}-[0-9]{1,2}\\.json$')),
+                   re.compile(r'^flags__[a-z0-9-]+__[0-9]{1,2}-[0-9]{1,2}\.json$')),
                   (home+'/private/numi-redflag-free-ai-v1',
-                   re.compile(r'^day-[0-9]{1,2}-month-[0-9]{1,2}\\.json$'))
+                   re.compile(r'^day-[0-9]{1,2}-month-[0-9]{1,2}\.json$'))
               ]
               for directory,pattern in dirs:
                   try:listing=ftp.nlst(directory)
