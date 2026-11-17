@@ -30,7 +30,12 @@ async function inspect(questionId,man,moment){
   assert.equal(data.ok,true);
   assert.ok(messages);
   const note=messages[1].content.split("\n").find(line=>line.includes("заранее рассчитанные показатели"));
-  return {messages,values:note?JSON.parse(note.slice(note.indexOf("{"))):null};
+  const feelingLine=messages[1].content.split("\n").find(line=>line.includes("ВНУТРЕННИЙ ориентир для прямого ответа про ЧУВСТВА:"));
+  return {
+    messages,
+    values:note?JSON.parse(note.slice(note.indexOf("{"))):null,
+    feeling:feelingLine?JSON.parse(feelingLine.slice(feelingLine.indexOf("{"))):null
+  };
 }
 const sameDayMonthOlder=await inspect("love-001","1985-10-31","2026-11-17T11:20");
 const sameDayMonthYounger=await inspect("love-001","1997-10-31","2026-11-17T11:20");
@@ -48,13 +53,27 @@ assert.notEqual(a.maleMonth,c.maleMonth);
 assert.notEqual(a.womanMonth,c.womanMonth);
 assert.notEqual(a.pairMonth,c.pairMonth);
 assert.notEqual(a.manDay,d.manDay);
-assert.match(sameDayMonthOlder.messages[0].content,/ПОЛНОЙ даты рождения/);
-assert.match(sameDayMonthOlder.messages[0].content,/ОБА личных месячных цикла/);
+assert.ok(sameDayMonthOlder.feeling && sameDayMonthYounger.feeling && nextCalendarMonth.feeling);
+assert.notEqual(sameDayMonthOlder.feeling.baseline,sameDayMonthYounger.feeling.baseline,
+  "same day/month but different birth years must differ in emotional baseline");
+assert.notEqual(sameDayMonthOlder.feeling.towardHer,sameDayMonthYounger.feeling.towardHer,
+  "different full dates must produce a different pair feeling");
+assert.notEqual(sameDayMonthOlder.feeling.now,nextCalendarMonth.feeling.now,
+  "next calendar month must change the current emotional shade");
+assert.equal(sameDayMonthOlder.feeling.baseline,nextCalendarMonth.feeling.baseline,
+  "changing the month must not arbitrarily change baseline emotional style");
+assert.match(sameDayMonthOlder.messages[0].content,/ПОЛНЫЕ даты рождения/);
+assert.match(sameDayMonthOlder.messages[0].content,/ЧУВСТВА/);
+assert.match(sameDayMonthOlder.messages[0].content,/Первые 2 предложения о КОНКРЕТНЫХ чувствах/);
+assert.match(sameDayMonthOlder.messages[0].content,/СТРОГО НЕ ПИШИ В ОТВЕТЕ/);
+assert.doesNotMatch(sameDayMonthOlder.messages[1].content,/Приоритет трактовки:/);
 assert.notEqual(anotherQuestion.messages[0].content,sameDayMonthOlder.messages[0].content);
 assert.equal(anotherQuestion.values,null,"other 299 questions must keep existing prompt");
+assert.equal(anotherQuestion.feeling,null,"other 299 must not use first-question feelings lens");
 const health=await worker.fetch(new Request("https://example.test/health"),{AI:{}});
 assert.equal(health.status,200);
 const status=await health.json();
 assert.equal(status.love001_cycle_version,"full-birthdate-two-person-monthly-20261117");
 assert.equal(status.live_answers_enabled,false);
+assert.equal(status.love001_emotion_version,"direct-feelings-20261117");
 console.log("PASS: love-001 full birth years, age cycles, both personal months, other 299 isolated");
