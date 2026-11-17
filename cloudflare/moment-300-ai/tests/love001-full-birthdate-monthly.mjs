@@ -83,7 +83,26 @@ const status=await health.json();
 assert.equal(status.love001_cycle_version,"full-birthdate-two-person-monthly-20261117");
 assert.equal(status.live_answers_enabled,false);
 assert.equal(status.love001_emotion_version,"direct-feelings-20261117");
-assert.equal(status.redflag_draft_version,"redflag-owner-drafts-v2-sharp-20261117");
+assert.equal(status.redflag_draft_version,"redflag-owner-drafts-v3-no-numbers-ready-cta-20261117");
+
+const draftSourcePrefix=redflagSource.split("export default {")[0];
+const draftTools=new Function(draftSourcePrefix+
+  "\nreturn {hiddenCalculationLeak,validDraft,ensureReadyFollowup,hasReadyFollowup,draftParagraphs};")();
+assert.equal(draftTools.hiddenCalculationLeak("Девятка-девятка означает характер."),true,
+  "Never expose numerology energy names to the reader");
+assert.equal(draftTools.hiddenCalculationLeak("По энергии 9-9 мужчина ведёт себя так."),true,
+  "Never expose numeric energy pairs to the reader");
+assert.equal(draftTools.hiddenCalculationLeak("Он может ревновать и проверять сообщения."),false);
+const sampleDraft=Array(15).fill("Он любит управлять всеми твоими планами, но с отказами справляется тяжело.").join(" ")+
+  "\n\nЕсли отказывает тебе в простом выборе, посмотри, как он реагирует на твои границы.";
+const readyFollowup="Уважает женское «нет» или начинает давить?";
+const linkedDraft=draftTools.ensureReadyFollowup(sampleDraft,[readyFollowup]);
+assert.equal(draftTools.draftParagraphs(linkedDraft).length,2);
+assert.ok(draftTools.draftParagraphs(linkedDraft)[1].includes(readyFollowup),
+  "A second paragraph must point only to an existing ready question");
+assert.equal(linkedDraft.includes("\\n"),false,
+  "The displayed answer must have actual newlines, not literal backslash-n text");
+
 const unauthorized=await worker.fetch(new Request("https://example.test/v1/redflag-draft",{
   method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
 }),{AI:{}});
