@@ -844,6 +844,38 @@ const renderCategories = (anchor = null) => {
   } else stabilize();
 };
 
+// Capture clicks on published free questions at the accordion root. Unlike
+// paid and draft cards, these must work immediately without remote requests,
+// even when Safari/Telegram has replaced the original card DOM.
+categoriesRoot.addEventListener("click",(event)=>{
+  const button=event.target.closest?.(".redflag-question-toggle");
+  if(!button||!categoriesRoot.contains(button)||button.disabled)return;
+  const card=button.closest(".redflag-question");
+  const questionId=card?.dataset.questionId;
+  if(!questionId)return;
+  const entry=[...categoryStates.values()].find(state=>
+    state.expanded&&state.questions?.some(question=>question.id===questionId));
+  const question=entry?.questions?.find(item=>item.id===questionId);
+  if(!question?.isFree||question.isComingSoon)return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  button.blur();
+  if(!activeProfile){
+    const date=parseRedFlagDate(birthDateInput.value);
+    if(!date){
+      showError("Введите дату рождения мужчины в формате ДД.ММ.ГГГГ.");
+      return;
+    }
+    activeProfile=buildRelationshipProfile(date);
+    formattedDate=birthDateInput.value;
+  }
+  const shouldOpen=entry.activeQuestionId!==questionId;
+  entry.activeQuestionId=shouldOpen?questionId:null;
+  clearError();
+  if(shouldOpen)ensureAnswer(question,entry);
+  renderCategories({type:"question",id:questionId});
+},true);
+
 birthDateInput.addEventListener("input", () => {
   const digits = birthDateInput.value.replace(/\D/g, "").slice(0, 8);
   const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
