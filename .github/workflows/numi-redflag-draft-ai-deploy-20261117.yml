@@ -34,6 +34,11 @@ jobs:
           if(src.includes('wallet')||src.includes('purchase')||src.includes('storbinary'))throw Error('UNEXPECTED_PAYMENT_OR_PUBLICATION_CODE');
           console.log('REDFLAG_OWNER_DRAFT_ONLY_SOURCE_OK');
           JS
+      - name: Mark Red Flag draft preflight complete
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-draft-preflight" -f description="Isolated Red Flag draft preflight stage succeeded" >/dev/null
       - name: Deploy ONLY Red Flag draft worker
         uses: cloudflare/wrangler-action@v4
         with:
@@ -41,6 +46,11 @@ jobs:
           accountId: de77758c4b3efd26fef26ab600cb02a2
           workingDirectory: cloudflare/redflag-draft-ai
           command: deploy
+      - name: Mark Red Flag draft uploaded complete
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-draft-uploaded" -f description="Isolated Red Flag draft uploaded stage succeeded" >/dev/null
       - name: Verify live isolated service and uncredentialed request denied
         run: |
           python3 - <<'PY'
