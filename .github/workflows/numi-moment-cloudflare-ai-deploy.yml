@@ -29,6 +29,9 @@ jobs:
           if(!src.includes('MOMENT_BRIDGE_SECRET')||!src.includes('env.AI.run('))throw Error('MOMENT_AUTH_OR_AI_MISSING');
           console.log('MOMENT_CLOUDFLARE_TARGET_ISOLATED_OK');
           JS
+      - name: Test only first Moment question across full dates and monthly cycles
+        run: |
+          node --test cloudflare/moment-300-ai/tests/love001-full-birthdate-monthly.mjs
       - name: Deploy only target Worker
         uses: cloudflare/wrangler-action@v4
         with:
