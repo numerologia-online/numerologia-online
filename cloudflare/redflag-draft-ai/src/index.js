@@ -89,6 +89,17 @@ const STYLE_TEST_SYSTEM=[
   "Опиши один конкретный риск или его отсутствие и наблюдаемые признаки поведения только по теме вопроса. Не приписывай человеку достоверные поступки по дате и не придумывай злодея там, где риск невелик.",
   "Ответ для читательницы, а не отчёт о методе. Два коротких живых абзаца, всего примерно 650–950 знаков. Без двоеточий, длинных тире, формул, навязанных переходов к другим вопросам и универсальных психологических рассуждений."
 ].join(" ");
+// Only for the owner-facing Красные флаги test. Text agreed with the owner.
+const FLAGS_OWNER_PROMPT=[
+  "Ты опытный нумеролог, глубоко понимающий систему 22 энергий Матрицы судьбы.",
+  "Твоя задача дать женщине содержательный, интересный и конкретный ответ на её вопрос о мужчине.",
+  "Анализируй взаимодействие двух энергий, дня и месяца рождения. Рассматривай их вместе, учитывая как сильные, так и теневые проявления. Не описывай энергии по отдельности.",
+  "Важно - отвечай именно на заданный вопрос, а не составляй общий психологический портрет мужчины в каждом ответе.",
+  "Пиши живым, естественным языком, как умная, проницательная и доброжелательная женщина другой женщине. Допустимы лёгкая ирония, прямота и немного остроты, когда это уместно.",
+  "Раскрывай возможные склонности, противоречия, мотивы и проявления мужчины именно в ситуации, о которой спрашивает женщина. Не старайся описывать мужчину только с хорошей стороны!",
+  "Не упоминай числа, названия энергий, арканы и способы расчёта. Женщина должна получить готовый ответ, а не объяснение нумерологической методики.",
+  "Ответ состоит из двух содержательных абзацев общим объёмом 750–1100 символов с пробелами. Первый абзац это ответ, а второй это мягкое, нативное предложение проверить этого же мужчину в другом вопросе, который реально доступен у нас в других разделах. Без заголовков, списков, двоеточий и длинных тире."
+].join("\n\n");
 const OWNER_QUESTION_SYSTEM=STYLE_TEST_SYSTEM;
 // Normalize formatting only for owner testing; NEVER change the customer's route.
 // A genuine reply must not disappear because the model used one paragraph.
@@ -221,10 +232,38 @@ export default {
       ||!Array.isArray(input.followups)||input.followups.length>5
       ||input.followups.some(title=>typeof title!=="string"||title.length>170))
       return reply(400,{ok:false,error:"INVALID_INPUT"});
-    // OWNER RESET: only flags are cleared. Keep Cloudflare binding and routes,
-    // but never generate or serve text until an owner supplies a new prompt.
-    if(input.category==="flags")
-      return reply(409,{ok:false,error:"FLAGS_PROMPT_CLEARED",draft_only:true,published:false});
+    // Красные флаги: owner-only test with the exact newly approved prompt.
+    // Do not pass this category through other sections' rules, editing,
+    // automatic re-prompts, energy-shadow templates or forced upsells.
+    if(input.category==="flags"){
+      const isOwnerQuestion=url.pathname==="/v1/redflag-owner-question";
+      const isStyleTrial=url.pathname==="/v1/redflag-style-test";
+      if(!isOwnerQuestion&&!isStyleTrial)
+        return reply(409,{ok:false,error:"FLAGS_NOT_PUBLISHED",draft_only:true,published:false});
+      const userInput=[
+        "Вопрос: "+input.title,
+        "День рождения мужчины: "+input.day+" (энергия "+energy22(input.day)+").",
+        "Месяц рождения мужчины: "+input.month+" (энергия "+energy22(input.month)+").",
+        "Реально доступные вопросы в других разделах: "+JSON.stringify(input.followups)
+      ].join("\n");
+      try{
+        const generation=await env.AI.run(MODEL,{
+          messages:[{role:"system",content:FLAGS_OWNER_PROMPT},{role:"user",content:userInput}],
+          temperature:0.82,max_completion_tokens:900,
+          chat_template_kwargs:{enable_thinking:false}
+        });
+        const answer=normalizeDraft(generation?.response??generation?.choices?.[0]?.message?.content);
+        if(!answer)
+          return reply(503,{ok:false,error:"MODEL_NO_TEXT"});
+        return reply(200,{ok:true,draft_only:true,published:false,
+          style_test:isStyleTrial,category:input.category,question_id:input.question_id,
+          date_key:input.day+"-"+input.month,answer,
+          style_version:"flags-owner-approved-20261117"});
+      }catch(error){
+        console.error("REDFLAG_FLAGS_TEST_AI_ERROR",error?.name||"error");
+        return reply(503,{ok:false,error:"FLAGS_AI_UNAVAILABLE"});
+      }
+    }
     const styleTest=url.pathname==="/v1/redflag-style-test";
     const ownerQuestion=url.pathname==="/v1/redflag-owner-question";
     if(styleTest||ownerQuestion){
