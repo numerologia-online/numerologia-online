@@ -79,6 +79,16 @@ const SYSTEM=[
   "Пример нужного градуса, НЕ для копирования: «Забота хороша, пока не превращается в службу контроля. Ты попросила совет, а он уже решил за тебя, где работать и с кем дружить. Спасибо, конечно, но начальник у тебя уже есть». Это стиль, а не готовый универсальный ответ.",
   "Не утверждай, что нумерология доказывает поведение человека. Не объясняй расчёт. Во втором абзаце обязательно направь женщину к реальному готовому вопросу из списка; например «А если хочешь разобраться, насколько он вообще уважает твои границы, загляни в „Уважает женское «нет» или начинает давить?“». Пример только про стиль перехода, выбирай нужное название из списка для конкретного случая."
 ].join(" ");
+// Isolated experiment, never used by the customer free answer or paid answers.
+const STYLE_TEST_SYSTEM=[
+  "Ты опытная нумеролог. Пишешь женщине о мужчине, как заботливая, умная и интересная подруга. Тон добрый к читательнице, живой, естественный.",
+  "Дай конкретный ответ на заданный вопрос. Раскрой возможные красные флаги через теневые стороны ДВУХ энергий мужчины, дня и месяца рождения, и их взаимодействие. Не используй готовый список недостатков. Самостоятельно интерпретируй сочетание по системе 22 энергий Матрицы судьбы.",
+  "Честная трактовка, без искусственных комплиментов и без приписывания реальному мужчине доказанных поступков. Рассматривай склонности и возможные проявления, а не установленные факты.",
+  "Ровно два связных абзаца, суммарно от 750 до 1100 знаков с пробелами. Никаких двоеточий и длинных тире. Не называй в ответе числа энергий или арканы, не объясняй формулу.",
+  "Никаких дополнительных сюжетных шаблонов, обязательных примеров, заранее названных красных флагов и предложений купить другой вопрос. Пусть смысл идёт именно от сочетания энергий и вопроса."
+].join(" ");
+const styleTestOK=(s)=>typeof s==="string"&&s.length>=750&&s.length<=1100&&
+ s.trim().split(/\n\s*\n/).length===2&&!/[—:]/u.test(s)&&!hiddenCalculationLeak(s);
 const draftWords=(answer)=>typeof answer==="string"?answer.trim().split(/\s+/).filter(Boolean).length:0;
 const draftParagraphs=(answer)=>typeof answer==="string"?answer.trim().split(/\n\s*\n+/).filter(Boolean):[];
 const normalizeDraft=(answer)=>typeof answer==="string"?answer.trim().replace(/\r\n/g,"\n").replace(/\n{3,}/g,"\n\n"):"";
@@ -162,7 +172,7 @@ export default {
         return reply(503,{ok:false,error:"MODEL_UNAVAILABLE"});
       }
     }
-    if(request.method!=="POST"||!["/v1/draft","/v1/redflag-draft"].includes(url.pathname))
+    if(request.method!=="POST"||!["/v1/draft","/v1/redflag-draft","/v1/redflag-style-test"].includes(url.pathname))
       return reply(404,{ok:false,error:"NOT_FOUND"});
     if(!env.AI)return reply(503,{ok:false,error:"AI_UNAVAILABLE"});
     const phpOwnerProof=await serverProofValid(request.headers.get("X-Numi-Moment-Proof"));
@@ -184,6 +194,49 @@ export default {
       ||!Array.isArray(input.followups)||input.followups.length>5
       ||input.followups.some(title=>typeof title!=="string"||title.length>170))
       return reply(400,{ok:false,error:"INVALID_INPUT"});
+    const styleTest=url.pathname==="/v1/redflag-style-test";
+    if(styleTest){
+      // A separate owner-authenticated experiment. All existing customer and
+      // production paths below remain byte-for-byte unchanged.
+      const dayEnergy=energy22(input.day),monthEnergy=energy22(input.month);
+      const question=[
+        "Вопрос о мужчине: "+input.title,
+        "День рождения мужчины: "+input.day+" (энергия дня "+dayEnergy+").",
+        "Месяц рождения мужчины: "+input.month+" (энергия месяца "+monthEnergy+").",
+        "Нужен индивидуальный нумерологический вывод о теневых проявлениях именно пары "+
+         dayEnergy+" и "+monthEnergy+" применительно к этому вопросу. Напиши только ответ для женщины."
+      ].join("\n");
+      try{
+        let answer="";
+        for(let attempt=0;attempt<3;attempt++){
+          const messages=[{role:"system",content:STYLE_TEST_SYSTEM},
+            {role:"user",content:question}];
+          if(attempt>0){
+            messages.push({role:"assistant",content:answer.slice(0,1600)});
+            messages.push({role:"user",content:
+              "Перепиши, сохранив конкретный нумерологический смысл. Нужны строго два абзаца, "+
+              "750–1100 знаков с пробелами, никаких двоеточий и длинных тире, без названий энергий "+
+              "в ответе, только конкретный вывод на вопрос. Верни только текст."});
+          }
+          const generation=await env.AI.run(MODEL,{
+            messages,temperature:attempt?0.65:0.82,
+            max_completion_tokens:730,
+            chat_template_kwargs:{enable_thinking:false}
+          });
+          answer=normalizeDraft(generation?.response??
+            generation?.choices?.[0]?.message?.content);
+          if(styleTestOK(answer))
+            return reply(200,{ok:true,draft_only:true,published:false,
+              style_test:true,category:input.category,question_id:input.question_id,
+              date_key:input.day+"-"+input.month,
+              answer,style_version:"simple-numerology-20261117"});
+        }
+        return reply(503,{ok:false,error:"STYLE_TEST_LENGTH_OR_FORMAT"});
+      }catch(error){
+        console.error("REDFLAG_STYLE_TEST_ERROR",error?.name||"error");
+        return reply(503,{ok:false,error:"AI_TEMPORARILY_UNAVAILABLE"});
+      }
+    }
     const code=String(input.day)+"-"+String(input.month);
     const day=energy22(input.day),month=energy22(input.month);
     const combined=energy22(day+month),contrast=energy22(Math.abs(day-month)||22);
