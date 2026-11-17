@@ -83,7 +83,7 @@ const status=await health.json();
 assert.equal(status.love001_cycle_version,"full-birthdate-two-person-monthly-20261117");
 assert.equal(status.live_answers_enabled,false);
 assert.equal(status.love001_emotion_version,"direct-feelings-20261117");
-assert.equal(status.redflag_draft_version,"redflag-owner-drafts-v1-20261117");
+assert.equal(status.redflag_draft_version,"redflag-owner-drafts-v2-sharp-20261117");
 const unauthorized=await worker.fetch(new Request("https://example.test/v1/redflag-draft",{
   method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
 }),{AI:{}});
