@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  statuses: write
 concurrency:
   group: cloudflare-numerologia-300-ai
   cancel-in-progress: false
@@ -54,5 +55,49 @@ jobs:
             time.sleep(3)
           if not result or result.get('ai_bound') is not True or result.get('service')!='numi-moment-300-owner-preview':
             raise RuntimeError('CLOUDFLARE_WORKER_AI_BINDING_UNVERIFIED')
-          print('MOMENT_CLOUDFLARE_AI_BINDING_LIVE_OK service_only=300 owner_protected=true telegram_untouched=true')
+          if result.get('love001_cycle_version')!='full-birthdate-two-person-monthly-20261117':
+            raise RuntimeError('CLOUDFLARE_LIVE_LOVE001_VERSION_STALE')
+          if result.get('live_answers_enabled') is not False:
+            raise RuntimeError('OWNER_ONLY_GATE_UNEXPECTEDLY_CHANGED')
+          print('MOMENT_LOVE001_LIVE_VERIFIED full_birthdate=true both_personal_months=true only_question=love-001')
+          PY
+      - name: Record confirmed release on the exact main commit
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_SHA: ${{ github.sha }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request
+          url=f"https://api.github.com/repos/{os.environ['GH_REPO']}/statuses/{os.environ['GH_SHA']}"
+          data=json.dumps({"state":"success","context":"numi/moment-love001-live",
+            "description":"Cloudflare live health confirms full-date, two personal months, owner-only gate"}).encode()
+          request=urllib.request.Request(url,data=data,method="POST",headers={
+            "Authorization":"Bearer "+os.environ['GH_TOKEN'],
+            "Accept":"application/vnd.github+json",
+            "X-GitHub-Api-Version":"2022-11-28","Content-Type":"application/json"})
+          with urllib.request.urlopen(request,timeout=15) as response:
+            assert response.status==201
+          print("MOMENT_LOVE001_DEPLOY_STATUS_PUBLISHED")
+          PY
+      - name: Record failure if Cloudflare release was not confirmed
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_SHA: ${{ github.sha }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request
+          url=f"https://api.github.com/repos/{os.environ['GH_REPO']}/statuses/{os.environ['GH_SHA']}"
+          data=json.dumps({"state":"failure","context":"numi/moment-love001-live",
+            "description":"One-question deploy or live verification failed; check GitHub Actions"}).encode()
+          request=urllib.request.Request(url,data=data,method="POST",headers={
+            "Authorization":"Bearer "+os.environ['GH_TOKEN'],
+            "Accept":"application/vnd.github+json",
+            "X-GitHub-Api-Version":"2022-11-28","Content-Type":"application/json"})
+          with urllib.request.urlopen(request,timeout=15) as response:
+            assert response.status==201
+          print("MOMENT_LOVE001_DEPLOY_FAILURE_RECORDED")
           PY
