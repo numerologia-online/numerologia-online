@@ -21,6 +21,11 @@ jobs:
         run: |
           node --check scripts/redflag-generate-one-bank.mjs
           SELFTEST=1 BATCH_LIMIT=1 node scripts/redflag-generate-one-bank.mjs
+      - name: Mark local preflight success
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-batch-preflight" -f description="Generator syntax, question, published followups and worker prompt validated" >/dev/null
       - name: Generate only unpublished AI drafts with independent AI review
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -41,6 +46,24 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-batch-pilot" -f description="One private Red Flag draft generated and passed independent AI/editor checks" >/dev/null
+      - name: Distinguish AI API permissions from answer quality
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json,os,subprocess,pathlib
+          p=pathlib.Path('redflag-batch-output/care-or-control-report.json')
+          result=json.loads(p.read_text()) if p.exists() else {}
+          code=('no-output' if not result else
+                'quality-rejected' if result.get('flagged',0)>0 else
+                'api-or-permissions')
+          env=dict(os.environ)
+          subprocess.run(['gh','api','--method','POST',
+              'repos/'+env['GITHUB_REPOSITORY']+'/statuses/'+env['GITHUB_SHA'],
+              '-f','state=failure','-f','context=numi/redflag-batch-'+code,
+              '-f','description=Pilot diagnostic: '+code],check=True)
+          PY
       - name: Flag failed pilot
         if: failure()
         env:
