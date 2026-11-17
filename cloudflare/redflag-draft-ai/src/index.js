@@ -90,8 +90,26 @@ const STYLE_TEST_SYSTEM=[
   "Напиши два содержательных абзаца, всего 750–1100 знаков с пробелами. Без двоеточий, длинных тире, названий арканов, формул и рекомендаций других вопросов."
 ].join(" ");
 const OWNER_QUESTION_SYSTEM=STYLE_TEST_SYSTEM;
-const styleTestOK=(s)=>typeof s==="string"&&s.length>=750&&s.length<=1100&&
- s.trim().split(/\n\s*\n/).length===2&&!/[—:]/u.test(s)&&!hiddenCalculationLeak(s);
+// Normalize formatting only for owner testing; NEVER change the customer's route.
+// A genuine reply must not disappear because the model used one paragraph.
+const normalizeOwnerText=(raw)=>{
+  let answer=normalizeDraft(raw).replace(/[—:]/g,",").replace(/,{2,}/g,",");
+  const paragraphs=answer.split(/\n\s*\n/).map(p=>p.replace(/\s+/g," ").trim()).filter(Boolean);
+  if(paragraphs.length===1){
+    const one=paragraphs[0];
+    const matches=[...one.matchAll(/[.!?](?=\s|$)/g)].map(m=>m.index+1);
+    const pivot=matches.filter(n=>n>=Math.floor(one.length*0.32)&&n<=Math.floor(one.length*0.7))
+      .sort((x,y)=>Math.abs(x-one.length/2)-Math.abs(y-one.length/2))[0];
+    if(pivot)answer=one.slice(0,pivot).trim()+"\n\n"+one.slice(pivot).trim();
+    else answer=one;
+  }else if(paragraphs.length>2){
+    answer=paragraphs.slice(0,Math.ceil(paragraphs.length/2)).join(" ")+"\n\n"+
+      paragraphs.slice(Math.ceil(paragraphs.length/2)).join(" ");
+  }else answer=paragraphs.join("\n\n");
+  return answer;
+};
+const styleTestOK=(s)=>typeof s==="string"&&s.length>=420&&s.length<=1800&&
+ s.trim().split(/\n\s*\n/).length===2&&!hiddenCalculationLeak(s);
 const draftWords=(answer)=>typeof answer==="string"?answer.trim().split(/\s+/).filter(Boolean).length:0;
 const draftParagraphs=(answer)=>typeof answer==="string"?answer.trim().split(/\n\s*\n+/).filter(Boolean):[];
 const normalizeDraft=(answer)=>typeof answer==="string"?answer.trim().replace(/\r\n/g,"\n").replace(/\n{3,}/g,"\n\n"):"";
@@ -211,25 +229,25 @@ export default {
       ].join("\n");
       try{
         let answer="";
-        for(let attempt=0;attempt<3;attempt++){
+        for(let attempt=0;attempt<2;attempt++){
           const messages=[{role:"system",content:ownerQuestion?OWNER_QUESTION_SYSTEM:STYLE_TEST_SYSTEM},
             {role:"user",content:questionText}];
           if(attempt>0){
             messages.push({role:"user",content:
-              "Сделай новую попытку. Начни с прямого ответа на вопрос. Два абзаца, 750–1100 знаков, без двоеточий, длинных тире и названий энергий. Только готовый текст."});
+              "Начни с прямого ответа на заданный вопрос. Напиши два содержательных абзаца, простым языком, без названий энергий. Верни только ответ."});
           }
           const generation=await env.AI.run(MODEL,{
             messages,temperature:attempt?0.65:0.82,
             max_completion_tokens:730,
             chat_template_kwargs:{enable_thinking:false}
           });
-          answer=normalizeDraft(generation?.response??
+          answer=normalizeOwnerText(generation?.response??
             generation?.choices?.[0]?.message?.content);
           if(styleTestOK(answer))
             return reply(200,{ok:true,draft_only:true,published:false,
               style_test:true,category:input.category,question_id:input.question_id,
               date_key:input.day+"-"+input.month,
-              answer,style_version:"owner-direct-question-minimal-20261117"});
+              answer,style_version:"owner-minimal-live-recovery-20261117"});
         }
         return reply(503,{ok:false,error:"STYLE_TEST_LENGTH_OR_FORMAT"});
       }catch(error){
