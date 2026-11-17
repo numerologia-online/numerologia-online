@@ -60,7 +60,7 @@ async function ephemeralBatchProofValid(provided,expectedHash){
   return mismatch===0;
 }
 const CATEGORY_RULES={
-  flags:"ЭТО ИМЕННО КРАСНЫЕ ФЛАГИ. Вытаскивай на свет неприятные сценарии: давление, двойные стандарты, контроль, перекладывание вины, ревность, уход от ответственности. Улыбка допустима, оправдания плохого поведения нет. Не называй человека насильником или абьюзером по дате.",
+  flags:"", // Cleared by owner request: no Red Flag instruction until a new one is provided.
   infidelity:"Тема верности, честности и соблазнов. Показывай неприглядные проявления: запасные варианты, флирт ради самооценки, размытые границы, недоговорённости. Не объявляй факт измены по дате.",
   intimacy:"Обрати внимание на эгоизм, уважение к отказу, нежность и реальную взаимность. Не придумывай подробности интимной жизни человека, никаких откровенных сексуальных сцен.",
   family:"Показывай не только достоинства, но и бытовое иждивенчество, инфантильность, пустые обещания, чрезмерный контроль. Привязывай вывод исключительно к вопросу.",
@@ -221,6 +221,10 @@ export default {
       ||!Array.isArray(input.followups)||input.followups.length>5
       ||input.followups.some(title=>typeof title!=="string"||title.length>170))
       return reply(400,{ok:false,error:"INVALID_INPUT"});
+    // OWNER RESET: only flags are cleared. Keep Cloudflare binding and routes,
+    // but never generate or serve text until an owner supplies a new prompt.
+    if(input.category==="flags")
+      return reply(409,{ok:false,error:"FLAGS_PROMPT_CLEARED",draft_only:true,published:false});
     const styleTest=url.pathname==="/v1/redflag-style-test";
     const ownerQuestion=url.pathname==="/v1/redflag-owner-question";
     if(styleTest||ownerQuestion){
