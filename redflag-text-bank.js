@@ -138,6 +138,14 @@ const calculateAnswer = async (bankName, publicQuestion, free, profile) => {
   if (!variant || typeof variant.answer !== "string") {
     throw accessError("ANSWER_NOT_FOUND");
   }
+  // The first Red Flag question is genuinely free and comes from the public
+  // catalog. Render its complete answer as two real paragraphs immediately,
+  // without payment, network inference or the old four-line teaser.
+  if (bankName === "flags" && question.id === "say-no") {
+    const paragraphs = variant.answer.split(/\n\s*\n/).map(text => text.trim()).filter(Boolean);
+    if (paragraphs.length !== 2) throw accessError("INVALID_FREE_ANSWER_FORMAT");
+    return { answer: variant.answer, paragraphs };
+  }
   return {
     verdict: variant.verdict,
     answer: variant.answer + (question.usePeriod ? " " + profile.periodNote : ""),
