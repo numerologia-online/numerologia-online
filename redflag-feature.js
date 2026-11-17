@@ -37,6 +37,139 @@ const collapseOtherCategories = (keepId) => {
 let activeProfile;
 let formattedDate;
 
+// Only the owner can see unpublished AI drafts INSIDE the regular Red Flag cards.
+// The existing customer catalog, paid wallet and approved answer path are untouched.
+const redflagDraftSections = new Set(["flags","infidelity","intimacy","family","language","verdict"]);
+let ownerDraftAccess = false;
+let ownerDraftAccessChecked = false;
+const ownerDraftCache = new Map();
+const ownerDraftBusy = new Set();
+const ownerDraftFailures = new Map();
+const ownerDraftKey = (category,id,day,month) =>
+  category+"|"+id+"|"+day+"-"+month;
+
+async function verifyOwnerDraftAccess() {
+  if(ownerDraftAccessChecked)return;
+  ownerDraftAccessChecked=true;
+  try {
+    const response=await fetch("/redflag-ai-lab/draft.php",{
+      method:"GET",credentials:"same-origin",cache:"no-store",
+      headers:{"Accept":"application/json"}
+    });
+    if(!response.ok)return;
+    const result=await response.json();
+    if(result?.ok!==true||result?.owner!==true||result?.draft_only!==true)return;
+    ownerDraftAccess=true;
+    if(redFlag.classList.contains("is-active"))renderCategories();
+  }catch(_){/* Do not expose or enable drafts without owner verification. */}
+}
+window.addEventListener("numi:account-session-changed",()=>{
+  ownerDraftAccess=false;ownerDraftAccessChecked=false;
+  ownerDraftCache.clear();ownerDraftFailures.clear();ownerDraftBusy.clear();
+  if(redFlag.classList.contains("is-active")) {
+    renderCategories();
+    void verifyOwnerDraftAccess();
+  }
+});
+const appendOwnerDraftPanel = (article,question,state) => {
+  if(!ownerDraftAccess||!activeProfile||!question.isComingSoon)return;
+  const category=[...categoryStates].find(([,value])=>value===state)?.[0];
+  if(!redflagDraftSections.has(category))return;
+  const panel=document.createElement("details");
+  panel.className="redflag-owner-ai";
+  panel.style.cssText="margin:8px 12px 13px;padding:11px 12px;border:1px dashed #c8b798;border-radius:12px;background:#faf7f0;color:#204b3e;";
+  const summary=document.createElement("summary");
+  summary.textContent="✨ Создать ИИ-черновик (только владелец)";
+  summary.style.cssText="font:700 14px/1.4 system-ui;cursor:pointer;";
+  const controls=document.createElement("div");
+  controls.style.cssText="padding-top:12px;display:flex;flex-wrap:wrap;gap:8px;";
+  const one=document.createElement("button"),five=document.createElement("button");
+  for(const [button,label] of [[one,"1 дата"],[five,"5 дат подряд"]]){
+    button.type="button";
+    button.textContent=label;
+    button.style.cssText="padding:10px 12px;border:1px solid #bbc9bb;border-radius:10px;background:#fff;color:#184232;font:700 13px system-ui;cursor:pointer;";
+    controls.append(button);
+  }
+  const status=document.createElement("p");
+  status.setAttribute("role","status");status.style.cssText="margin:10px 0;font:13px/1.4 system-ui;color:#51645a";
+  const results=document.createElement("div");
+  const current=(day,month)=>ownerDraftCache.get(ownerDraftKey(category,question.id,day,month));
+  const draw=()=>{
+    results.replaceChildren();
+    const input=parseRedFlagDate(birthDateInput.value);
+    if(!input)return;
+    const list=[...ownerDraftCache.values()].filter(item=>item.category===category&&item.question_id===question.id);
+    for(const item of list){
+      const heading=document.createElement("strong");
+      heading.textContent="Дата "+item.date_key;
+      heading.style.cssText="display:block;margin:13px 0 7px;font:750 14px system-ui;";
+      const text=document.createElement("p");
+      text.textContent=item.answer;
+      text.style.cssText="white-space:pre-wrap;font:15px/1.55 system-ui;margin:0 0 12px;";
+      results.append(heading,text);
+    }
+    if(list.length){
+      const download=document.createElement("button");
+      download.type="button";download.textContent="Скачать черновики JSON";
+      download.style.cssText="margin-top:10px;padding:9px;border:1px solid #bda681;border-radius:10px;background:white;color:#234a39;";
+      download.addEventListener("click",()=>{
+        const data={schemaVersion:2,section:category,questionId:question.id,question:question.title,
+          status:"draft",keyRule:"day-month",
+          entries:Object.fromEntries(list.map(x=>[x.date_key,x.answer]))};
+        const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)+"\n"],{type:"application/json"}));
+        const link=document.createElement("a");link.href=url;
+        link.download="redflag-draft-"+category+"-"+question.id+".json";
+        document.body.append(link);link.click();link.remove();URL.revokeObjectURL(url);
+      });
+      results.append(download);
+    }
+  };
+  const generate=async(count)=>{
+    const input=parseRedFlagDate(birthDateInput.value);
+    if(!input){status.textContent="Сначала укажи дату рождения мужчины.";return;}
+    const key=category+"|"+question.id;
+    if(ownerDraftBusy.has(key))return;
+    ownerDraftBusy.add(key);one.disabled=true;five.disabled=true;
+    ownerDraftFailures.delete(key);
+    let done=0;
+    try{
+      for(let i=0;i<count;i++){
+        const date=new Date(Date.UTC(2000,input.month-1,input.day+i));
+        const day=date.getUTCDate(),month=date.getUTCMonth()+1,date_key=day+"-"+month;
+        status.textContent="Идёт расчёт "+(i+1)+" из "+count+" ("+date_key+")…";
+        if(!current(day,month)){
+          const response=await fetch("/redflag-ai-lab/draft.php",{
+            method:"POST",credentials:"same-origin",cache:"no-store",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({category,question_id:question.id,day,month})
+          });
+          const data=await response.json();
+          if(!response.ok||data.ok!==true||data.draft_only!==true
+             ||data.category!==category||data.question_id!==question.id
+             ||data.date_key!==date_key||typeof data.answer!=="string")
+            throw new Error("ИИ не вернул черновик: "+String(data.error||response.status));
+          ownerDraftCache.set(ownerDraftKey(category,question.id,day,month),data);
+        }
+        done++;
+        draw();
+      }
+      status.textContent="Готово: "+done+" черновиков. Это не опубликованные ответы.";
+    }catch(e){
+      const message="Получено "+done+" из "+count+". "+String(e?.message||"Ошибка связи");
+      ownerDraftFailures.set(key,message);
+      status.textContent=message;
+    }finally{
+      ownerDraftBusy.delete(key);one.disabled=false;five.disabled=false;
+    }
+  };
+  one.addEventListener("click",()=>void generate(1));
+  five.addEventListener("click",()=>void generate(5));
+  draw();
+  panel.append(summary,controls,status,results);
+  article.append(panel);
+};
+
+
 // One consistent deep link for Telegram mini-app question buttons.
 // Example: ?view=redflag&question=love:honest-or-disappear
 const deepLinkParams = new URLSearchParams(window.location.search);
@@ -509,6 +642,7 @@ const createQuestion = (question, state) => {
   });
 
   article.append(button, answer);
+  appendOwnerDraftPanel(article,question,state);
   return article;
 };
 
@@ -733,6 +867,7 @@ export const openRedFlag = () => {
   redFlag.classList.add("is-active");
   window.scrollTo({ top: 0, behavior: "instant" });
   renderCategories();
+  void verifyOwnerDraftAccess();
 
   // A broadcast deep link opens the exact named question, not just the section.
   // Date input remains optional until the question is actually requested.
