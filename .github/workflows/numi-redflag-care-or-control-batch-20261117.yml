@@ -75,7 +75,13 @@ jobs:
           status,_=post({})
           checkpoint('anonymous-http-'+str(status))
           assert status==403,"UNAUTHENTICATED_BATCH_ACCESS"
-          status,data=post({"X-Numi-Redflag-Batch":os.environ["REDFLAG_BATCH_KEY"]})
+          import time
+          status,data=403,{}
+          for attempt in range(12):
+              status,data=post({"X-Numi-Redflag-Batch":os.environ["REDFLAG_BATCH_KEY"]})
+              if status==200 and data.get("ok") is True and isinstance(data.get("response"),str):break
+              if status not in (403,404,429,503):break
+              time.sleep(3)
           checkpoint('authorized-http-'+str(status)+'-'+str(data.get('error','ok')).lower())
           assert status==200 and data.get("ok") is True and isinstance(data.get("response"),str),"BATCH_AI_PROOF_NOT_READY:"+str(status)
           print("REDFLAG_EPHEMERAL_AI_ACCESS_OK")
@@ -103,7 +109,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: de77758c4b3efd26fef26ab600cb02a2
         run: |
-          npx wrangler secret delete REDFLAG_BATCH_KEY_SHA256 --name numerologia-300-ai --cwd cloudflare/moment-300-ai --skip-confirmation
+          printf 'y\n' | npx wrangler secret delete REDFLAG_BATCH_KEY_SHA256 --name numerologia-300-ai --cwd cloudflare/moment-300-ai
       - name: Mark verified pilot
         if: success()
         env:
