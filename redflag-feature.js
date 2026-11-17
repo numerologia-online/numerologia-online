@@ -1,6 +1,6 @@
 // Red Flag deliberately needs only day and month, with no birth-year dependence.
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=redflag-comic-ready-366-20261110";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=money-description-20261117";
 
 // Paid content is rendered as text; do not interpret author-controlled paragraphs as HTML.
 const escapeMarkup = value => String(value??"").replace(/[&<>"']/g,char=>({
