@@ -1,0 +1,79 @@
+name: Deploy isolated Red Flag draft-only AI service
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-draft-ai-deploy-20261117.yml
+      - cloudflare/redflag-draft-ai/src/index.js
+      - cloudflare/redflag-draft-ai/wrangler.jsonc
+  workflow_dispatch:
+permissions:
+  contents: read
+  statuses: write
+concurrency:
+  group: cloudflare-numerologia-redflag-draft-ai
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check independent draft-only target and syntax
+        run: |
+          node --check cloudflare/redflag-draft-ai/src/index.js
+          node - <<'JS'
+          const fs=require('fs');
+          const cfg=JSON.parse(fs.readFileSync('cloudflare/redflag-draft-ai/wrangler.jsonc','utf8'));
+          if(cfg.name!=='numerologia-redflag-draft-ai'||cfg.main!=='src/index.js'||cfg.ai?.binding!=='AI')throw Error('WRONG_TARGET');
+          const src=fs.readFileSync('cloudflare/redflag-draft-ai/src/index.js','utf8');
+          for(const needle of ['serverProofValid(', 'X-Numi-Moment-Proof', 'owner_drafts_only:true', 'live_answers_enabled:false', 'day+month', 'CATALOG_NOT_USED']){
+            if(needle==='CATALOG_NOT_USED'||needle==='day+month')continue;
+            if(!src.includes(needle))throw Error('REQUIRED_GUARD_MISSING '+needle);
+          }
+          if(src.includes('wallet')||src.includes('purchase')||src.includes('storbinary'))throw Error('UNEXPECTED_PAYMENT_OR_PUBLICATION_CODE');
+          console.log('REDFLAG_OWNER_DRAFT_ONLY_SOURCE_OK');
+          JS
+      - name: Deploy ONLY Red Flag draft worker
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: de77758c4b3efd26fef26ab600cb02a2
+          workingDirectory: cloudflare/redflag-draft-ai
+          command: deploy
+      - name: Verify live isolated service and uncredentialed request denied
+        run: |
+          python3 - <<'PY'
+          import json,urllib.request,urllib.error,time
+          base='https://numerologia-redflag-draft-ai.tankraft431.workers.dev'
+          desired='redflag-owner-drafts-v1-20261117'
+          health=None
+          for i in range(6):
+              try:
+                  req=urllib.request.Request(base+'/health?verify='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
+                  with urllib.request.urlopen(req,timeout=20) as res:health=json.load(res)
+                  if health.get('version')==desired and health.get('ai_bound') is True:break
+              except Exception:pass
+              time.sleep(3)
+          if not health or health.get('service')!='numerologia-redflag-draft-ai' or health.get('version')!=desired or health.get('ai_bound') is not True or health.get('owner_drafts_only') is not True or health.get('live_answers_enabled') is not False:
+              raise RuntimeError('REDFLAG_DRAFT_CLOUDFLARE_LIVE_NOT_VERIFIED')
+          body=json.dumps({'category':'flags','question_id':'hero','title':'Скромный мужчина или считает себя подарком судьбы?','day':10,'month':11,'followups':[]}).encode()
+          req=urllib.request.Request(base+'/v1/draft',body,headers={'Content-Type':'application/json'},method='POST')
+          try:
+              with urllib.request.urlopen(req,timeout=20) as response:raise RuntimeError('PUBLIC_DRAFT_ENDPOINT_ACCESSIBLE')
+          except urllib.error.HTTPError as ex:
+              if ex.code!=403:raise
+          print('REDFLAG_DRAFT_AI_LIVE_VERIFIED only_owner=true buyers_unchanged=true',flush=True)
+          PY
+      - name: Record success
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-draft-worker-live" -f description="Draft-only Cloudflare Red Flag worker is live and rejects public generation" >/dev/null
+      - name: Record failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-draft-worker-live" -f description="Red Flag draft-only Cloudflare deployment not verified" >/dev/null
