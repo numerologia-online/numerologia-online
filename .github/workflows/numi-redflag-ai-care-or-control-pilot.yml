@@ -1,9 +1,5 @@
-name: Red Flag first question AI pilot: six dates, no public release
+name: "Red Flag first question AI pilot - paused while authenticated batch is configured"
 on:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/numi-redflag-ai-care-or-control-pilot.yml
   workflow_dispatch:
 permissions:
   contents: write
