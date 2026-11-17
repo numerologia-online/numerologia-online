@@ -305,6 +305,45 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
   const profile=activeProfile;
   if(!profile)return;
   state.answerErrors.delete(id);
+  // The FIRST free Red Flag question is AI-generated for ALL visitors.
+  // This is deliberately before owner-only test drafts and before paid access.
+  // Never fall back to the three old generic teaser variants.
+  if(question.isFree&&id==="say-no"&&[...categoryStates].some(
+    ([category,entry])=>category==="flags"&&entry===state)){
+    const birthday=parseRedFlagDate(birthDateInput.value);
+    if(!birthday){
+      state.answerErrors.set(id,"Укажи дату рождения мужчины.");
+      renderCategories({type:"question",id});
+      return;
+    }
+    const dateKey=birthday.day+"-"+birthday.month;
+    const task=fetch("/api/redflag-free-ai.php",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({question_id:"say-no",day:birthday.day,month:birthday.month}),
+      signal:AbortSignal.timeout(100000)
+    }).then(async response=>{
+      const data=await response.json();
+      if(!response.ok||data?.ok!==true||data?.free!==true||
+        data?.ai_generated!==true||data?.question_id!=="say-no"||
+        data?.date_key!==dateKey||typeof data?.answer!=="string"||
+        data.answer.length<450||data.answer.length>1900)
+        throw new Error("FREE_AI_UNAVAILABLE");
+      const paragraphs=data.answer.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);
+      if(paragraphs.length!==2)throw new Error("INVALID_PARAGRAPHS");
+      if(profile!==activeProfile)return;
+      state.answers.set(id,{answer:data.answer,paragraphs});
+    }).catch(()=>{
+      if(profile===activeProfile)
+        state.answerErrors.set(id,"Ответ временно не загрузился. Нажми на вопрос ещё раз.");
+    }).finally(()=>{
+      if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
+      if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
+        renderCategories({type:"question",id});
+    });
+    state.answerRequests.set(id,task);
+    return;
+  }
   if(ownerDraftInScope(question,state)){
     const category=[...categoryStates].find(([,value])=>value===state)?.[0];
     const birth=parseRedFlagDate(birthDateInput.value);
