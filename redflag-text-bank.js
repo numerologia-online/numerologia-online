@@ -1,6 +1,6 @@
 // Red Flag: question titles and prices are public; paid author texts stay server-side.
 import { reduce22 } from "./redflag-profile.js?v=1";
-import { PUBLIC_CATEGORIES, PUBLIC_QUESTIONS } from "./redflag-public-catalog.js?v=free-say-no-full-text-20261117";
+import { PUBLIC_CATEGORIES, PUBLIC_QUESTIONS } from "./redflag-public-catalog.js?v=flags-cleared-20261117";
 
 const AUTH_BASE = "https://xn--c1adkkdfjbp1a4l.online";
 const publicRequests = new Map();
