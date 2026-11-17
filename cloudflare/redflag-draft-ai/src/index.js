@@ -78,8 +78,11 @@ const validDraft=(answer)=>{
     draftWords(normalized)>=80&&draftWords(normalized)<=190&&
     draftParagraphs(normalized).length===2&&!hiddenCalculationLeak(normalized);
 };
-const hasReadyFollowup=(answer,titles)=>
-  titles.length>0&&titles.some(title=>answer.includes(title));
+const hasReadyFollowup=(answer,titles)=>{
+  const paragraphs=draftParagraphs(answer);
+  return paragraphs.length===2&&titles.length>0&&
+    titles.some(title=>paragraphs[1].includes(title));
+};
 const ensureReadyFollowup=(answer,titles)=>{
   if(!titles.length||hasReadyFollowup(answer,titles))return answer;
   const paragraphs=draftParagraphs(answer);
