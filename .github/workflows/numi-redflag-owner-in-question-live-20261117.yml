@@ -1,0 +1,122 @@
+name: Publish owner-only AI answers inside Red Flag question cards
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-owner-in-question-live-20261117.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  statuses: write
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate exactly one owner-only AI answer per unfinished Red Flag question
+        run: |
+          set -euo pipefail
+          node --check redflag-feature.js
+          node --check app.js
+          python3 - <<'PY'
+          from pathlib import Path
+          feature=Path('redflag-feature.js').read_text()
+          app=Path('app.js').read_text()
+          index=Path('index.html').read_text()
+          assert 'ownerDraftInScope(question,state)' in feature
+          assert 'if(ownerDraftInScope(question,state))' in feature
+          assert 'state.answers.set(id,{answer:data.answer,isDraft:true})' in feature
+          assert 'showInlinePurchase(item,target,' in feature
+          assert 'state.answerErrors.set(id,"Не удалось загрузить ответ. Попробуйте ещё раз.")' in feature
+          assert 'redflag-ai-lab/draft.php' in feature
+          assert '5 дат подряд' not in feature and 'appendOwnerDraftPanel' not in feature
+          assert 'ИИ-ответ для проверки. Видишь только ты. Не опубликован.' in feature
+          assert 'redflag-feature.js?v=owner-ai-in-cards-20261117' in app
+          assert 'app.js?v=owner-ai-in-cards-20261117' in index
+          print('REDFLAG_ONE_ANSWER_IN_CARD_VALIDATED',flush=True)
+          PY
+      - name: Backup and publish only 3 Red Flag front-end files, verify public hashes
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import ftplib,ssl,os,io,hashlib,subprocess,time,urllib.request
+          files=['redflag-feature.js','app.js','index.html']
+          desired={file:Path(file).read_bytes() for file in files}
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          known={}
+          for file in files:
+              commits=subprocess.check_output(['git','log','--format=%H','-n','250','--',file],text=True).splitlines()
+              known[file]={sha(subprocess.check_output(['git','show',rev+':'+file])) for rev in commits}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')
+          prefix=root+'/www/xn--c1adkkdfjbp1a4l.online/'
+          def read(file):
+              out=io.BytesIO()
+              ftp.retrbinary('RETR '+prefix+file,out.write)
+              return out.getvalue()
+          def write(file,content):
+              ftp.storbinary('STOR '+prefix+file,io.BytesIO(content))
+              if read(file)!=content:raise RuntimeError('REDFLAG_OWNER_UI_FTP_READBACK_FAILED:'+file)
+          original={};changed=[]
+          try:
+              original={file:read(file) for file in files}
+              for file in files:
+                  if sha(original[file]) not in known[file]:
+                      raise RuntimeError('UNKNOWN_LIVE_VERSION_NO_OVERWRITE:'+file)
+              backupDir=root+'/site-safeguard-backups'
+              try:ftp.mkd(backupDir)
+              except ftplib.error_perm as exc:
+                  if not str(exc).startswith('550'):raise
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              for file in files:
+                  backup=backupDir+'/redflag-owner-one-answer-'+stamp+'-'+file+'.bak'
+                  ftp.storbinary('STOR '+backup,io.BytesIO(original[file]))
+                  check=io.BytesIO()
+                  ftp.retrbinary('RETR '+backup,check.write)
+                  if check.getvalue()!=original[file]:raise RuntimeError('BACKUP_CHECK_FAILED:'+file)
+              for file in files:
+                  if read(file)!=original[file]:raise RuntimeError('LIVE_CHANGED_DURING_BACKUP:'+file)
+                  if desired[file]!=original[file]:
+                      changed.append(file)
+                      write(file,desired[file])
+              for file in files:
+                  url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'+file+'?owner_ai_verify='+str(time.time_ns())
+                  req=urllib.request.Request(url,headers={'Cache-Control':'no-cache'})
+                  with urllib.request.urlopen(req,timeout=30) as res:live=res.read(250000)
+                  if sha(live)!=sha(desired[file]):
+                      raise RuntimeError('PUBLIC_SHA_MISMATCH:'+file)
+              print('OWNER_AI_ONE_ANSWER_IN_REDFLAG_LIVE_OK unchanged_paid_banks=true',flush=True)
+          except BaseException:
+              for file in reversed(changed):
+                  try:write(file,original[file]);print('ROLLBACK_OK',file,flush=True)
+                  except BaseException:print('ROLLBACK_FAILED',file,flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+      - name: Confirm Red Flag owner AI live on REG.RU
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-owner-ai-in-cards-live" -f description="Verified owner-only direct Red Flag AI answers live; three static files only" >/dev/null
+      - name: Flag incomplete Red Flag owner AI publication
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-owner-ai-in-cards-live" -f description="Owner AI Red Flag UI did not verify live; no readiness claim" >/dev/null
