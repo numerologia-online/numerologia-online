@@ -201,7 +201,7 @@
       addLoveAnswerActions(body,q,cached,self,other);return;
     }
     const requestId=++loveRequestVersion;
-    const feedback=elem('p','moment-answer-loading','Составляю твой личный ответ…');
+    const feedback=elem('p','moment-answer-loading','Идёт расчёт…');
     feedback.setAttribute('role','status');
     body.append(feedback);
     try{
