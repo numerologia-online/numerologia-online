@@ -571,7 +571,7 @@ const addOwnerStyleTrial=(target)=>{
   header.textContent="🧪 Новый ИИ. Только для тебя, клиентам не видно.";
   const help=document.createElement("p");
   help.style.cssText="font-size:13px;margin:0 0 10px;color:#75606b;";
-  help.textContent="Новая инструкция без готовых шаблонов. Текущий ответ сайта остаётся ниже.";
+  help.textContent="Проверяем новую инструкцию. Ниже показан прежний клиентский ответ, его пока не меняли.";
   const go=document.createElement("button");
   go.type="button";
   go.textContent=draft.answer?"↻ Другой вариант ИИ":"✨ Проверить новую инструкцию";
@@ -601,7 +601,7 @@ const addOwnerStyleTrial=(target)=>{
       if(!response.ok||data?.ok!==true||data?.style_test!==true||
         data?.published!==false||data?.draft_only!==true||
         data?.question_id!=="say-no"||data?.date_key!==key||
-        typeof data?.answer!=="string"||data.answer.length<750||data.answer.length>1100)
+        typeof data?.answer!=="string"||data.answer.length<420||data.answer.length>1800)
         throw new Error("STYLE_TRIAL_UNAVAILABLE");
       trial.answer=data.answer;
       output.textContent=data.answer;
