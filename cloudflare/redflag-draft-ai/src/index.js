@@ -229,7 +229,7 @@ export default {
       ||typeof input.question_id!=="string"||!/^[a-z][a-z0-9-]{1,60}$/.test(input.question_id)
       ||typeof input.title!=="string"||input.title.length<5||input.title.length>170
       ||!validDayMonth(input.day,input.month)
-      ||!Array.isArray(input.followups)||input.followups.length>5
+      ||!Array.isArray(input.followups)||input.followups.length>(input.category==="flags"?10:5)
       ||input.followups.some(title=>typeof title!=="string"||title.length>170))
       return reply(400,{ok:false,error:"INVALID_INPUT"});
     // Красные флаги: owner-only test with the exact newly approved prompt.
