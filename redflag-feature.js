@@ -44,7 +44,7 @@ const redflagDraftSections = new Set(["flags","infidelity","intimacy","family","
 let ownerDraftAccess=false,ownerDraftAccessChecked=false;
 const ownerDraftInScope=(question,state)=>{
   const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
-  return Boolean(question.isComingSoon&&ownerDraftAccess&&redflagDraftSections.has(section));
+  return Boolean(section!=="flags"&&question.isComingSoon&&ownerDraftAccess&&redflagDraftSections.has(section));
 };
 async function verifyOwnerDraftAccess(){
   if(ownerDraftAccessChecked)return;
