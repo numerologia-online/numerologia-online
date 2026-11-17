@@ -71,7 +71,7 @@ const draftParagraphs=(answer)=>typeof answer==="string"?answer.trim().split(/\n
 const normalizeDraft=(answer)=>typeof answer==="string"?answer.trim().replace(/\r\n/g,"\n").replace(/\n{3,}/g,"\n\n"):"";
 // Remove accidental disclosures such as "девятка-девятка" or "9-9"
 // from customer-facing prose. The actual two-energy calculation stays intact.
-const hiddenCalculationLeak=(answer)=>/\\b(?:аркан\\w*|энерги\\w*|нумеролог\\w*|девятк\\w*|восьм[её]рк\\w*|сем[её]рк\\w*|шест[её]рк\\w*|пят[её]рк\\w*|четв[её]рк\\w*|тройк\\w*|двойк\\w*|единиц\\w*|сочетани\\w*\\s+чисел|число\\s+рождения|месяц\\s+рождения|день\\s+рождения)\\b|\\b\\d{1,2}\\s*[-\\/]\\s*\\d{1,2}\\b/iu.test(answer);
+const hiddenCalculationLeak=(answer)=>/(?:аркан|энерг|нумеролог|девятк|восьм[её]рк|сем[её]рк|шест[её]рк|пят[её]рк|четв[её]рк|тройк|двойк|единиц|сочетани\w*\s+чисел|число\s+рождения|месяц\s+рождения|день\s+рождения|\d{1,2}\s*[-\/]\s*\d{1,2})/iu.test(answer);
 const validDraft=(answer)=>{
   const normalized=normalizeDraft(answer);
   return normalized.length>=580&&normalized.length<=1420&&
@@ -88,7 +88,7 @@ const ensureReadyFollowup=(answer,titles)=>{
   // Preserve the author's actual answer. Add only a directly related published
   // question rather than rewriting the core interpretation.
   paragraphs[1]+=" "+suffix;
-  return paragraphs.join("\\n\\n");
+  return paragraphs.join("\n\n");
 };
 export default {
   async fetch(request,env){
