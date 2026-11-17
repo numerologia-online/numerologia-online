@@ -767,7 +767,13 @@ document.addEventListener("DOMContentLoaded",()=>{
       @media(max-width:390px){#numi-reviews-preview{padding:8px 12px}#numi-reviews-preview .numi-reviews-text{font-size:12.5px}}
       @media(prefers-reduced-motion:reduce){#numi-reviews-preview .numi-reviews-text{transition:none}}
     </style>
-</head>
+    <style id="redflag-approved-intro-20261117">
+      #redflag .redflag-approved-copy{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin:0;line-height:1.4}
+      #redflag .redflag-approved-copy>strong:first-child{font-size:clamp(23px,5.6vw,30px);line-height:1.18;font-weight:800}
+      #redflag .redflag-approved-copy>span{font-size:clamp(14px,3.8vw,17px);line-height:1.48}
+      #redflag .redflag-approved-copy>.redflag-approved-last{font-size:clamp(15px,4vw,18px);line-height:1.4;font-weight:750}
+    </style>
+  </head>
   <body>
     <main class="app-shell">
       <section id="home" class="screen is-active" aria-labelledby="home-title">
@@ -932,7 +938,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
           <div class="redflag-intro">
             <h1 id="redflag-title">Мужчина<br />или Red Flag?</h1>
-            <p><strong>Не гадай. Проверь его!</strong> Щедрый или жадный? Верный или гуляет? Узнай по дате рождения.</p>
+            <p class="redflag-approved-copy"><strong>Не гадай. Проверь его!</strong><span>Каждый ответ основан на индивидуальном нумерологическом расчёте по дате рождения мужчины.</span><strong class="redflag-approved-last">Выбирай то, что действительно хочешь о нём узнать.</strong></p>
           </div>
 
           <form id="redflag-form" class="redflag-form" novalidate>
