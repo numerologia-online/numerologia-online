@@ -1,3 +1,4 @@
+import redflagDraftWorker from "../../redflag-draft-ai/src/index.js";
 /* Separate AI-only Worker for the owner preview of the 300-question Moment catalog.
    Does not interact with Telegram, wallet, purchases, other report products or user accounts.
    Requests may arrive ONLY from a server with the private MOMENT_BRIDGE_SECRET.
@@ -186,8 +187,9 @@ const SYSTEM = [
 export default {
   async fetch(request, env) {
     const pathname = new URL(request.url).pathname;
+    if (pathname === "/v1/redflag-draft") return redflagDraftWorker.fetch(request,env);
     if (request.method === "GET" && pathname === "/health")
-      return reply(200, { ok: true, service: "numi-moment-300-owner-preview", ai_bound: !!env.AI, live_answers_enabled: false, love001_cycle_version: "full-birthdate-two-person-monthly-20261117", love001_emotion_version: "direct-feelings-20261117" });
+      return reply(200, { ok: true, service: "numi-moment-300-owner-preview", ai_bound: !!env.AI, live_answers_enabled: false, love001_cycle_version: "full-birthdate-two-person-monthly-20261117", love001_emotion_version: "direct-feelings-20261117", redflag_draft_version: "redflag-owner-drafts-v1-20261117" });
     if (pathname !== "/v1/owner-preview" || request.method !== "POST")
       return reply(404, { ok: false, error: "NOT_FOUND" });
     if (!env.AI)
