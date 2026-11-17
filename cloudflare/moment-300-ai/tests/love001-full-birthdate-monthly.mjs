@@ -2,7 +2,14 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 
 const source=readFileSync("cloudflare/moment-300-ai/src/index.js","utf8");
-const {default:worker}=await import("data:text/javascript;base64,"+Buffer.from(source).toString("base64"));
+const redflagSource=readFileSync("cloudflare/redflag-draft-ai/src/index.js","utf8");
+const redflagDataUrl="data:text/javascript;base64,"+Buffer.from(redflagSource).toString("base64");
+const bundled=source.replace(
+  'import redflagDraftWorker from "../../redflag-draft-ai/src/index.js";',
+  'import redflagDraftWorker from "'+redflagDataUrl+'";'
+);
+assert.notEqual(bundled,source,"Expected isolated Red Flag module import");
+const {default:worker}=await import("data:text/javascript;base64,"+Buffer.from(bundled).toString("base64"));
 const sampleText="О чувствах человека нельзя судить достоверно только по дате рождения. Смотрите на поступки и взаимность, а символический расчёт используйте лишь как дополнительный ракурс.";
 async function inspect(questionId,man,moment){
   let messages;
@@ -76,4 +83,9 @@ const status=await health.json();
 assert.equal(status.love001_cycle_version,"full-birthdate-two-person-monthly-20261117");
 assert.equal(status.live_answers_enabled,false);
 assert.equal(status.love001_emotion_version,"direct-feelings-20261117");
+assert.equal(status.redflag_draft_version,"redflag-owner-drafts-v1-20261117");
+const unauthorized=await worker.fetch(new Request("https://example.test/v1/redflag-draft",{
+  method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
+}),{AI:{}});
+assert.equal(unauthorized.status,403,"Red Flag drafting must reject anonymous requests");
 console.log("PASS: love-001 full birth years, age cycles, both personal months, other 299 isolated");
