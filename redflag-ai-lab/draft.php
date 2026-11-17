@@ -25,8 +25,8 @@ try {
         rfLabReply(405,['ok'=>false,'error'=>'METHOD_NOT_ALLOWED']);
     if (!in_array((string)($_SERVER['HTTP_ORIGIN']??''),naAllowedOrigins(),true))
         rfLabReply(403,['ok'=>false,'error'=>'ORIGIN_DENIED']);
-    $raw=file_get_contents('php://input',false,null,0,2049);
-    if (!is_string($raw)||strlen($raw)>2048)
+    $raw=file_get_contents('php://input',false,null,0,5001);
+    if (!is_string($raw)||strlen($raw)>5000)
         rfLabReply(400,['ok'=>false,'error'=>'INVALID_REQUEST']);
     $body=json_decode($raw,true,10,JSON_THROW_ON_ERROR);
     if (!is_array($body))
@@ -38,6 +38,13 @@ try {
     if (!is_string($category)||!is_string($id)||!is_int($day)||!is_int($month)
         ||!checkdate($month,$day,2000))
         rfLabReply(400,['ok'=>false,'error'=>'INVALID_SELECTION']);
+    // Only owner-generated drafts may carry short previews of earlier answers.
+    $avoid=$body['avoid_summaries']??[];
+    if (!is_array($avoid)||!array_is_list($avoid)||count($avoid)>6)
+        rfLabReply(400,['ok'=>false,'error'=>'INVALID_CONTEXT']);
+    foreach ($avoid as $preview)
+        if (!is_string($preview)||mb_strlen($preview)>210)
+            rfLabReply(400,['ok'=>false,'error'=>'INVALID_CONTEXT']);
     $selectedCategory=null;$selectedQuestion=null;
     foreach ($catalog['categories'] as $entry) {
         if (($entry['id']??null)===$category) {
@@ -59,7 +66,7 @@ try {
         'language'=>['На каком языке любви он вообще понимает чувства?','Пишет первым или ждёт инициативы от женщины?','Держит слово или опять одни красивые разговоры?'],
         'verdict'=>['Какой финальный вердикт по этому мужчине без розовых очков?','Верный или у него каждая вторая «просто подруга»?','Щедрый мужчина или считает каждую копейку?'],
     ];
-    $followups=$publishedRelated[$category]??[];
+    $followups=[]; // Owner diversity test must never force identical upsells.
     $configPath=dirname(__DIR__,3).'/private/numi-moment-groq/config.local.php';
     if (!is_file($configPath))rfLabReply(503,['ok'=>false,'error'=>'AI_AUTH_NOT_READY']);
     $config=require $configPath;
@@ -72,9 +79,9 @@ try {
     $encoded=json_encode([
         'category'=>$category,'question_id'=>$id,
         'title'=>(string)$selectedQuestion['title'],
-        'day'=>$day,'month'=>$month,'followups'=>$followups
+        'day'=>$day,'month'=>$month,'followups'=>$followups,'avoid_summaries'=>$avoid
     ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
-    $curl=curl_init('https://numerologia-300-ai.tankraft431.workers.dev/v1/redflag-draft');
+    $curl=curl_init('https://numerologia-300-ai.tankraft431.workers.dev/v1/redflag-owner-question');
     if ($curl===false)rfLabReply(503,['ok'=>false,'error'=>'AI_CONNECT_FAILED']);
     curl_setopt_array($curl,[
         CURLOPT_POST=>true,CURLOPT_RETURNTRANSFER=>true,
