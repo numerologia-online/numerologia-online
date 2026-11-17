@@ -44,8 +44,8 @@ jobs:
           PY
       - name: Back up and publish just five designated files
         env:
-          REG_FTP_USER: \${{ secrets.REG_FTP_USER }}
-          REG_FTP_PASSWORD: \${{ secrets.REG_FTP_PASSWORD }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -129,12 +129,12 @@ jobs:
       - name: Record verified live version
         if: success()
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          gh api --method POST "repos/\${{ github.repository }}/statuses/\${{ github.sha }}" -f state=success -f context="numi/redflag-owner-keep-live" -f description="Owner-only saved drafts deployed with backups and no paid bank changes" >/dev/null
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-owner-keep-live" -f description="Owner-only saved drafts deployed with backups and no paid bank changes" >/dev/null
       - name: Flag unverified publication
         if: failure()
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          gh api --method POST "repos/\${{ github.repository }}/statuses/\${{ github.sha }}" -f state=failure -f context="numi/redflag-owner-keep-live" -f description="Owner keep variant did not pass endpoint and live source checks" >/dev/null
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-owner-keep-live" -f description="Owner keep variant did not pass endpoint and live source checks" >/dev/null
