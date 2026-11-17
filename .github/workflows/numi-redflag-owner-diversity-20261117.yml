@@ -1,0 +1,153 @@
+name: Publish ONLY owner Red Flag diverse question previews
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-owner-diversity-20261117.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  statuses: write
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate owner-only route and preserve public paid access
+        run: |
+          set -euo pipefail
+          php -l redflag-ai-lab/draft.php
+          node --check redflag-feature.js
+          node --check app.js
+          node --check cloudflare/redflag-draft-ai/src/index.js
+          node --check cloudflare/moment-300-ai/src/index.js
+          python3 - <<'PY'
+          from pathlib import Path
+          php=Path('redflag-ai-lab/draft.php').read_text()
+          feature=Path('redflag-feature.js').read_text()
+          worker=Path('cloudflare/redflag-draft-ai/src/index.js').read_text()
+          router=Path('cloudflare/moment-300-ai/src/index.js').read_text()
+          app=Path('app.js').read_text()
+          index=Path('index.html').read_text()
+          assert 'naTestOwner(naCurrent($db))' in php and 'naAllowedOrigins()' in php
+          assert 'workers.dev/v1/redflag-owner-question' in php
+          assert "'followups'=>$followups,'avoid_summaries'=>$avoid" in php
+          assert 'avoid_summaries=[...state.answers]' in feature
+          assert 'showInlinePurchase(item,target,' in feature
+          assert '"/api/redflag-free-ai.php"' in feature
+          assert 'const OWNER_QUESTION_SYSTEM=' in worker
+          assert 'const ENERGY_SHADOWS=' in worker and 'const SYSTEM=' in worker
+          assert '"/v1/redflag-owner-question"' in router
+          assert 'redflag-feature.js?v=owner-diverse-20261117-b' in app
+          assert 'app.js?v=owner-diverse-20261117-b' in index
+          print('OWNER_ONLY_NEW_PROMPT_PREVIEW_VALIDATED')
+          PY
+      - name: Wait until isolated Cloudflare owner route is deployed
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,time
+          url='https://numerologia-300-ai.tankraft431.workers.dev/v1/redflag-owner-question'
+          for i in range(20):
+              req=urllib.request.Request(url,data=b'{}',method='POST',headers={'Content-Type':'application/json'})
+              try:
+                  with urllib.request.urlopen(req,timeout=12) as res:
+                      raise RuntimeError('OWNER_AI_ROUTE_PUBLIC_'+str(res.status))
+              except urllib.error.HTTPError as e:
+                  if e.code==403:
+                      print('NEW_OWNER_ROUTE_CLOUDFLARE_LIVE_DENIES_GUEST')
+                      break
+                  print('WAIT_CLOUDFLARE_ROUTE',i+1,e.code,flush=True)
+              if i==19:raise RuntimeError('OWNER_NEW_PROMPT_NOT_LIVE')
+              time.sleep(6)
+          PY
+      - name: Back up and publish only four owner Red Flag files
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import ftplib,ssl,os,io,hashlib,subprocess,urllib.request,urllib.error,time
+          paths=['redflag-ai-lab/draft.php','redflag-feature.js','app.js','index.html']
+          wanted={p:Path(p).read_bytes() for p in paths}
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          known={}
+          for p in paths:
+              revisions=subprocess.check_output(['git','log','--format=%H','-n','350','--',p],text=True).splitlines()
+              known[p]={sha(subprocess.check_output(['git','show',rev+':'+p])) for rev in revisions}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          prefix=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          def read(p):
+              output=io.BytesIO()
+              ftp.retrbinary('RETR '+prefix+p,output.write)
+              return output.getvalue()
+          def put(p,data):
+              ftp.storbinary('STOR '+prefix+p,io.BytesIO(data))
+              if read(p)!=data:raise RuntimeError('FTP_READBACK_MISMATCH_'+p)
+          previous={};updated=[]
+          try:
+              previous={p:read(p) for p in paths}
+              for p in paths:
+                  if sha(previous[p]) not in known[p]:
+                      raise RuntimeError('UNRECOGNIZED_LIVE_FILE_REFUSE_OVERWRITE_'+p)
+              backupdir=home+'/site-safeguard-backups'
+              try:ftp.mkd(backupdir)
+              except ftplib.error_perm as e:
+                  if not str(e).startswith('550'):raise
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              for p in paths:
+                  bak=backupdir+'/redflag-owner-diverse-'+stamp+'-'+p.replace('/','-')+'.bak'
+                  ftp.storbinary('STOR '+bak,io.BytesIO(previous[p]))
+                  check=io.BytesIO()
+                  ftp.retrbinary('RETR '+bak,check.write)
+                  if check.getvalue()!=previous[p]:raise RuntimeError('BACKUP_FAILED_'+p)
+              for p in paths:
+                  if read(p)!=previous[p]:raise RuntimeError('CONCURRENT_SERVER_EDIT_'+p)
+                  if previous[p]!=wanted[p]:
+                      updated.append(p)
+                      put(p,wanted[p])
+              origin='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+              for p in ['redflag-feature.js','app.js','index.html']:
+                  req=urllib.request.Request(origin+p+'?owner_diverse='+str(time.time_ns()),headers={'Cache-Control':'no-store'})
+                  with urllib.request.urlopen(req,timeout=25) as res:
+                      live=res.read(300000)
+                  if sha(live)!=sha(wanted[p]):raise RuntimeError('PUBLIC_HASH_MISMATCH_'+p)
+              req=urllib.request.Request(origin+'redflag-ai-lab/draft.php',method='GET')
+              try:
+                  with urllib.request.urlopen(req,timeout=20) as res:
+                      raise RuntimeError('OWNER_GUARD_EXPOSED_'+str(res.status))
+              except urllib.error.HTTPError as e:
+                  if e.code!=403:raise RuntimeError('OWNER_GUARD_FAILED_'+str(e.code))
+              print('OWNER_DIVERSE_RED_FLAG_LIVE_VERIFIED client_paid_untouched=true')
+          except BaseException:
+              for p in reversed(updated):
+                  try:put(p,previous[p]);print('ROLLBACK_OK',p,flush=True)
+                  except BaseException:print('ROLLBACK_FAILED',p,flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
+      - name: Record verified private owner release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-owner-diversity-live" -f description="Owner test uses new prompt; guest denied; public prices and banks untouched" >/dev/null
+      - name: Record failed release
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-owner-diversity-live" -f description="Owner diversity preview unverified; check workflow and rollback" >/dev/null
