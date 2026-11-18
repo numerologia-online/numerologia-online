@@ -100,44 +100,23 @@ const FLAGS_OWNER_PROMPT=[
   "Не упоминай числа, названия энергий, арканы и способы расчёта. Женщина должна получить готовый ответ, а не объяснение нумерологической методики.",
   "Всего два абзаца и ориентир 750–1100 символов с пробелами. Первый абзац это прямой ответ с понятными проявлениями поведения. Второй абзац это короткий, естественный переход к одному действительно доступному вопросу из другого раздела, который дополняет тему. Без заголовков, списков, двоеточий и длинных тире."
 ].join("\n\n");
-// A single inference returns short private analysis and a standalone answer.
-// Only the answer is returned through the owner PHP route.
-// Groq GPT-OSS 120B supports strict JSON Schema decoding. The model must
-// return one complete JSON object, not fragile hand-written XML delimiters.
-const FLAGS_GROQ_SCHEMA={
-  type:"json_schema",
-  json_schema:{
-    name:"redflag_owner_analysis",
-    strict:true,
-    schema:{
-      type:"object",
-      properties:{
-        day:{type:"string",description:"Короткий частный анализ энергии дня для этого вопроса"},
-        month:{type:"string",description:"Самостоятельный равноправный анализ энергии месяца"},
-        combined:{type:"string",description:"Конкретное взаимодействие энергий с равным весом"},
-        answer:{type:"string",description:"Готовый ответ читательнице в двух абзацах"}
-      },
-      required:["day","month","combined","answer"],
-      additionalProperties:false
-    }
-  }
-};
-const FLAGS_JSON_INSTRUCTION=[
-  "Верни строго JSON по заданной схеме. Никакой XML-разметки, Markdown или текста вокруг JSON.",
-  "day и month, короткие самостоятельные объяснения влияния соответствующих энергий на заданный вопрос.",
-  "combined, механизм их взаимного влияния строго 50 на 50.",
-  "answer, только готовый живой ответ женщине двумя абзацами. Не раскрывай в нём расчёты или служебный анализ."
+// Private Gemma owner preview: no remote API, API key or rigid JSON.
+const FLAGS_GEMMA_FORMAT=[
+  "Верни только готовый русский текст для женщины, без заметок, разметки и служебных размышлений. Ровно два абзаца, всего примерно 750–1100 символов.",
+  "Сначала коротко ответь на заданный вопрос. Затем объясни механизм конкретного поведения, который следует именно из сочетания двух энергий. Не описывай мужчину вообще, а раскрывай отдельную грань в рамках вопроса.",
+  "Для вопросов об одной дате обязательно меняй предмет наблюдения: самооценка, ревность, умение извиняться, реакция на отказ и забота не должны сводиться к одной и той же истории о молчании, контроле или страхе близости.",
+  "Для одной даты с разными месяцами дай действительно разный механизм поведения, поскольку обе энергии имеют равный вес. Не используй одну и ту же характеристику дня с подменой двух слов.",
+  "Не выдумывай измены, жестокость, доказанные действия и реальные мысли человека. Это символическая трактовка склонностей по дате, а не установление фактов.",
+  "Второй абзац должен естественно предложить ровно один вопрос из переданного списка, обязательно с его точным названием. Не добавляй вымышленные вопросы.",
+  "Избегай заезженных объяснений, комплиментов всем подряд, длинных тире, двоеточий, перечней чисел, слов «энергия», «нумерология», «аркан» и расчётов. Разговорный, наблюдательный стиль без искусственной драматизации."
 ].join("\n");
-const parseFlagsOwnerStructured=(raw)=>{
-  if(typeof raw!=="string"||!raw.trim())return null;
-  let result;
-  try{result=JSON.parse(raw)}catch{return null;}
-  if(!result||typeof result!=="object"||Array.isArray(result))return null;
-  const day=result.day,month=result.month,combined=result.combined;
-  const answer=normalizeDraft(result.answer);
-  if([day,month,combined].some(v=>typeof v!=="string"||v.trim().length<20||v.length>900)||
-    answer.length<380||answer.length>5200||hiddenCalculationLeak(answer))return null;
-  return {answer,energy_notes_valid:true};
+const flagsOutputValid=(raw,followups)=>{
+  if(typeof raw!=="string")return false;
+  const answer=normalizeDraft(raw),parts=draftParagraphs(answer);
+  return answer.length>=420&&answer.length<=1550&&parts.length===2
+    &&parts[0].length>=275&&parts[1].length>=55
+    &&!ownerHasCalculationLeak(answer)
+    &&(!followups.length||followups.some(title=>parts[1].includes(title)));
 };
 // The owner chose a separate subject of analysis for each Красные флаги question.
 // A focus directs the analysis; it never supplies a fixed answer or verdict.
@@ -301,49 +280,36 @@ export default {
         "Реально доступные вопросы в других разделах: "+JSON.stringify(input.followups)
       ].join("\n");
       try{
-        // One owner-only inference: question first, both energies second,
-        // final answer only. Other Red Flag sections and buyers remain unchanged.
-        // Groq is the OWNER-APPROVED provider for the private Red Flag test.
-        // The API key is a Cloudflare encrypted secret, never sent to the browser.
-        // Do not silently fall back to Gemma if Groq is unavailable.
-        if(typeof env.GROQ_API_KEY!=="string"||!env.GROQ_API_KEY.startsWith("gsk_"))
-          return reply(503,{ok:false,error:"FLAGS_GROQ_NOT_CONFIGURED"});
-        const upstream=await fetch("https://api.groq.com/openai/v1/chat/completions",{
-          method:"POST",
-          headers:{"Authorization":"Bearer "+env.GROQ_API_KEY,
-            "Content-Type":"application/json","Accept":"application/json",
-            "User-Agent":"NumiRedFlagGroqClient/1.0"},
-          body:JSON.stringify({
-            model:"openai/gpt-oss-120b",
-            messages:[{role:"system",content:FLAGS_OWNER_PROMPT+"\n\n"+FLAGS_JSON_INSTRUCTION},
-              {role:"user",content:userInput}],
-            response_format:FLAGS_GROQ_SCHEMA,
-            temperature:0.7,
-            reasoning_effort:"low",
-            max_completion_tokens:2300,
-            stream:false
-          })
+        const system=FLAGS_OWNER_PROMPT+"\n\n"+FLAGS_GEMMA_FORMAT;
+        const messages=[{role:"system",content:system},{role:"user",content:userInput}];
+        const first=await env.AI.run(MODEL,{
+          messages,
+          temperature:0.77,max_completion_tokens:900,
+          chat_template_kwargs:{enable_thinking:false}
         });
-        if(!upstream.ok){
-          // Narrow diagnostics for owner only: never expose API key or raw body.
-          const body=await upstream.text();
-          const waf=upstream.status===403&&(
-            /error code: 1010|error code 1010|browser signature|banned the browser signature/i.test(body)||
-            /cloudflare/i.test(body)&&/attention required|sorry, you have been blocked/i.test(body));
-          return reply(503,{ok:false,error:"FLAGS_GROQ_HTTP_"+upstream.status+(waf?"_WAF_BLOCK":"")});
+        let answer=normalizeDraft(first?.response??first?.choices?.[0]?.message?.content);
+        if(!flagsOutputValid(answer,input.followups)){
+          // Retry malformed/short output once without supplying a scripted portrait.
+          const retry=await env.AI.run(MODEL,{
+            messages:[
+              ...messages,
+              {role:"assistant",content:answer.slice(0,2500)},
+              {role:"user",content:"Перепиши весь ответ с нуля. Нужны ровно два абзаца, в первом конкретный ответ на вопрос из сочетания дня и месяца 50 на 50, во втором точное название одного доступного вопроса. 750–1100 символов. Не повторяй общие психологические штампы, не рассказывай о вычислениях, не используй двоеточия и длинные тире. Верни только ответ."}
+            ],
+            temperature:0.72,max_completion_tokens:900,
+            chat_template_kwargs:{enable_thinking:false}
+          });
+          answer=normalizeDraft(retry?.response??retry?.choices?.[0]?.message?.content);
         }
-        const generation=await upstream.json();
-        const structured=parseFlagsOwnerStructured(generation?.choices?.[0]?.message?.content);
-        if(!structured)
-          return reply(503,{ok:false,error:"FLAGS_ENERGY_ANALYSIS_INCOMPLETE"});
-        const answer=structured.answer;
+        if(!flagsOutputValid(answer,input.followups))
+          return reply(503,{ok:false,error:"FLAGS_GEMMA_OUTPUT_INCOMPLETE"});
         return reply(200,{ok:true,draft_only:true,published:false,
           style_test:isStyleTrial,category:input.category,question_id:input.question_id,
           date_key:input.day+"-"+input.month,answer,
-          model:"openai/gpt-oss-120b",style_version:"flags-owner-groq120b-strict-json-20261118"});
+          model:MODEL,style_version:"flags-owner-gemma4-question-specific-20261118"});
       }catch(error){
-        console.error("REDFLAG_FLAGS_TEST_AI_ERROR",error?.name||"error");
-        return reply(503,{ok:false,error:"FLAGS_AI_UNAVAILABLE"});
+        console.error("REDFLAG_FLAGS_GEMMA_ERROR",error?.name||"error");
+        return reply(503,{ok:false,error:"FLAGS_GEMMA_UNAVAILABLE"});
       }
     }
     const styleTest=url.pathname==="/v1/redflag-style-test";
