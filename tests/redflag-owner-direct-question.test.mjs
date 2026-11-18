@@ -15,7 +15,7 @@ assert.match(source,/строго равный вес, 50 на 50/);
 assert.match(source,/вывод делай только из сочетания/i);
 assert.match(source,/const parseFlagsOwnerStructured=/);
 assert.match(source,/FLAGS_PRIVATE_RESPONSE_FORMAT/);
-assert.match(source,/Сначала пойми, о каком поступке спрашивает женщина/);
+assert.match(source,/Сначала пойми, о каком конкретном поступке спрашивает женщина/);
 assert.doesNotMatch(source,/const FLAGS_ANALYSIS_PROMPT=/);
 const {default:worker}=await import("data:text/javascript;base64,"+Buffer.from(source).toString("base64"));
 const proof="a".repeat(64);
