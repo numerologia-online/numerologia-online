@@ -301,8 +301,15 @@ export default {
           });
           answer=normalizeDraft(retry?.response??retry?.choices?.[0]?.message?.content);
         }
-        if(!flagsOutputValid(answer,input.followups))
-          return reply(503,{ok:false,error:"FLAGS_GEMMA_OUTPUT_INCOMPLETE"});
+        if(!flagsOutputValid(answer,input.followups)){
+          // Private diagnostic only: never return failed generated prose or user data.
+          const parts=draftParagraphs(answer);
+          return reply(503,{ok:false,error:"FLAGS_GEMMA_OUTPUT_INCOMPLETE",
+            diagnosis:{chars:answer.length,paragraphs:parts.length,
+              first:parts[0]?.length||0,second:parts[1]?.length||0,
+              leak:ownerHasCalculationLeak(answer),
+              followup:input.followups.some(t=>parts[1]?.includes(t))}});
+        }
         return reply(200,{ok:true,draft_only:true,published:false,
           style_test:isStyleTrial,category:input.category,question_id:input.question_id,
           date_key:input.day+"-"+input.month,answer,
