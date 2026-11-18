@@ -5,8 +5,5 @@
   "workers_dev": true,
   "ai": {
     "binding": "AI"
-  },
-  "placement": {
-    "region": "aws:us-east-1"
   }
 }
