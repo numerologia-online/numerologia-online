@@ -98,8 +98,9 @@ assert.equal(oversized.status,400);
 assert.equal(calls,11);
 const other=catalog.categories.find(c=>c.id==="infidelity").questions[0];
 const otherResponse=await worker.fetch(makeRequest("/v1/redflag-owner-question","infidelity",other.id,other.title),env);
-assert.equal(otherResponse.status,200,"Other Red Flag category must remain intact");
-assert.equal((await otherResponse.json()).ok,true);
+const otherData=await otherResponse.json();
+assert.equal(otherResponse.status,200,"Other Red Flag category must remain intact: "+JSON.stringify(otherData));
+assert.equal(otherData.ok,true);
 assert.ok(calls>=12);
 const inputsBefore=observedInputs.length;
 for(const [day,month,expectedDayEnergy,expectedMonthEnergy] of [
