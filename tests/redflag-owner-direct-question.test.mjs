@@ -6,12 +6,14 @@ const source=readFileSync("cloudflare/redflag-draft-ai/src/index.js","utf8");
 const catalog=JSON.parse(readFileSync("redflag-ai-lab/catalog.json","utf8"));
 const flags=catalog.categories.find(c=>c.id==="flags").questions;
 assert.equal(flags.length,9);
-assert.match(source,/flags-owner-gemma4-soft-50-50-clean-20261118/);
-assert.match(source,/Учитывай каждую на 50 процентов/);
-assert.match(source,/Месяц точно так же важен, как день/);
-assert.match(source,/взаимное влияние обеих энергий/i);
+assert.match(source,/flags-owner-gemma4-warm-personal-cta-20261118/);
+assert.match(source,/на равных, 50 на 50/);
+assert.match(source,/энергии дня и месяца/);
+assert.match(source,/одна усиливает или смягчает другую/i);
 assert.match(source,/мягко/);
 assert.match(source,/const flagsFinishAnswer=/);
+assert.doesNotMatch(source,/const FLAGS_CTA_LEADS=/);
+assert.match(source,/Точное название следующего доступного вопроса для второго абзаца/);
 assert.match(source,/const flagsOutputValid=/);
 assert.match(source,/const flagsRelatedFollowup=/);
 assert.doesNotMatch(source,/const FLAGS_ENERGY_ROWS=/);
@@ -66,7 +68,7 @@ for(const q of flags){
   assert.ok(tenRelated.some(title=>json.answer.split("\n\n")[1].includes(title)),"Related title must be exact");
   assert.equal(json.draft_only,true);
   assert.equal(json.published,false);
-  assert.equal(json.style_version,"flags-owner-gemma4-soft-50-50-clean-20261118");
+  assert.equal(json.style_version,"flags-owner-gemma4-warm-personal-cta-20261118");
   assert.equal(json.model,"@cf/google/gemma-4-26b-a4b-it");
 }
 for(let i=0;i<flags.length;i++){
@@ -75,6 +77,7 @@ for(let i=0;i<flags.length;i++){
   assert.ok(observedInputs[i].includes("День рождения мужчины: 9 (энергия дня 9)."));
   assert.ok(observedInputs[i].includes("Месяц рождения мужчины: 9 (энергия месяца 9)."));
   assert.ok(!observedInputs[i].includes("Профиль"),"Do not inject fixed answer");
+  assert.ok(observedInputs[i].includes("Точное название следующего доступного вопроса"),"Give Gemma an exact question for a personal CTA");
 }
 const first=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags","say-no",
   "Уважает женское «нет» или начинает давить?",tenRelated),env);
