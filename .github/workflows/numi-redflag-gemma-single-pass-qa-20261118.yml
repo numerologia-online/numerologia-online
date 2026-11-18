@@ -1,0 +1,109 @@
+name: Review three ninth-day dates across all ten owner-only Red Flag questions
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-gemma-single-pass-qa-20261118.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate 30 owner drafts across 3 birth months and 10 questions; measure model latency
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request,urllib.error,hashlib,hmac,datetime,time,difflib,pathlib
+          key=os.environ.get("GROQ_API_KEY","")
+          if not key.startswith("gsk_"):raise RuntimeError("SERVER_OWNER_PROOF_UNAVAILABLE")
+          proof=hmac.new(key.encode(),b"numi-moment-cloudflare-bridge-v1",hashlib.sha256).hexdigest()
+          url="https://numerologia-300-ai.tankraft431.workers.dev/v1/redflag-owner-question"
+          questions=[
+            ("say-no","Уважает женское «нет» или начинает давить?"),
+            ("care-or-control","Заботится или будет контролировать каждый твой шаг?"),
+            ("hero","Скромный мужчина или считает себя подарком судьбы?"),
+            ("jealousy","Ревнует от любви или устроит допрос за каждый лайк?"),
+            ("argument","Умеет говорить о проблемах или наказывает молчанием?"),
+            ("abuse-signal","Какой тревожный сигнал нельзя пропустить в начале знакомства?"),
+            ("support-or-cause","Будет твоей опорой или сам доведёт до слёз?"),
+            ("apology","После ссоры извинится или виноватой сделает тебя?"),
+            ("weak-place","Какая его слабость может разрушить ваши отношения?"),
+            ("calm-or-swings","С ним спокойно или тебя ждут эмоциональные качели?")
+          ]
+          followups=[
+            "Держит слово или опять одни красивые разговоры?",
+            "Будет опорой для семьи или всё снова окажется на твоих плечах?",
+            "Щедрый мужчина или считает каждую копейку?",
+            "Пишет первым или ждёт инициативы от женщины?",
+            "Верный или у него каждая вторая «просто подруга»?",
+            "На каком языке любви он вообще понимает чувства?",
+            "Самостоятельный мужчина или мамина корзиночка?",
+            "Какой финальный вердикт по этому мужчине без розовых очков?",
+            "Будет ли мужчина жить за твой счёт?",
+            "Сексуальный огонь или пять минут — и спасибо?"
+          ]
+          data=[]
+          for day,month in [(9,1),(9,2),(9,9)]:
+            for qid,title in questions:
+              payload={"category":"flags","question_id":qid,"title":title,
+                "day":day,"month":month,"followups":followups}
+              encoded=json.dumps(payload,ensure_ascii=False).encode("utf8")
+              req=urllib.request.Request(url,data=encoded,method="POST",
+                headers={"Content-Type":"application/json","Accept":"application/json",
+                "X-Numi-Moment-Proof":proof,"User-Agent":"NumiGemmaDiversityReview/1.0"})
+              started=time.perf_counter()
+              try:
+                with urllib.request.urlopen(req,timeout=115) as r:
+                  code=r.status;body=json.load(r)
+              except urllib.error.HTTPError as e:
+                code=e.code
+                try: body=json.loads(e.read(1000))
+                except Exception:body={}
+              except Exception as e:
+                code=0;body={"error":type(e).__name__}
+              elapsed=round(time.perf_counter()-started,2)
+              answer=body.get("answer","")
+              valid=code==200 and body.get("ok") is True and body.get("model")=="@cf/google/gemma-4-26b-a4b-it" and isinstance(answer,str) and len(answer)>=420
+              print("GEMMA_NINTH_DAY",day,month,qid,"HTTP",code,"chars",len(answer),"valid",valid,"seconds",elapsed,"needs_review",body.get("editorial_review_needed"),"error",body.get("error","none"),flush=True)
+              data.append({"day":day,"month":month,"question_id":qid,"title":title,
+                "http":code,"valid":valid,"answer":answer if valid else "",
+                "elapsed_seconds":elapsed,"style_version":body.get("style_version"),
+                "error":body.get("error"),"editorial_review_needed":body.get("editorial_review_needed")})
+              time.sleep(1)
+          complete=[x for x in data if x["valid"]]
+          print("GEMMA_NINTH_DAY_SUMMARY",len(complete),"/30",flush=True)
+          print("EDITORIAL_REVIEW_NEEDED",sum(x.get("editorial_review_needed") is True for x in complete),"/",len(complete),flush=True)
+          if complete:
+            durations=sorted(x["elapsed_seconds"] for x in complete)
+            print("LATENCY_SECONDS_MEDIAN",durations[len(durations)//2],"P90",durations[min(len(durations)-1,int(len(durations)*0.9))],flush=True)
+          if any(x.get("style_version")!="flags-owner-gemma4-single-pass-editor-20261118" for x in complete):
+            raise RuntimeError("OWNER_FLAGS_NOT_NEW_VERSION")
+          def first(x):return x["answer"].split("\n\n")[0]
+          for qid,_ in questions:
+            group=[x for x in complete if x["question_id"]==qid]
+            if len(group)>=2:
+              sims=[(a["month"],b["month"],round(difflib.SequenceMatcher(None,first(a),first(b)).ratio(),3))
+                for i,a in enumerate(group) for b in group[i+1:]]
+              print("GEMMA_NINTH_DAY_CROSS_MONTH",qid,sims,flush=True)
+          for day,month in [(9,1),(9,2),(9,9)]:
+            group=[x for x in complete if x["day"]==day and x["month"]==month]
+            if len(group)==2:
+              sim=round(difflib.SequenceMatcher(None,first(group[0]),first(group[1])).ratio(),3)
+              print("GEMMA_NINTH_DAY_SAME_DATE",day,month,"similarity",sim,flush=True)
+          directory=pathlib.Path("gemma-private-single-pass-qa")
+          directory.mkdir(exist_ok=True)
+          (directory/"results.json").write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding="utf8")
+          PY
+      - name: Store owner-only draft comparisons for human review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: redflag-gemma4-three-dates-ten-questions-single-pass
+          path: gemma-private-ninth-day-review/
+          retention-days: 1
+          if-no-files-found: warn
