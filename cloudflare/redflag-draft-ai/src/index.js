@@ -152,7 +152,7 @@ const flagsFinishAnswer=(raw,questionId,followup)=>{
   const intro=FLAGS_CTA_LEADS[questionId]||"Если хочется посмотреть на ситуацию ещё с одной стороны, открой";
   return core+"\n\n"+intro+" «"+followup[0]+"».";
 };
-if(FLAGS_ENERGY_ROWS.length!==22||!FLAGS_ENERGY_ROWS.every((row,i)=>row[0]===i+1))
+if(FLAGS_ENERGY_ARCHETYPES.length!==22||FLAGS_ENERGY_ARCHETYPES.some(x=>typeof x!=="string"||!x.trim()))
   throw new Error("FLAGS_ENERGY_GUIDE_INCOMPLETE");
 
 // Pick a contextually related, actually available follow-up without another AI call.
