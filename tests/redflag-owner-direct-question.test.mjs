@@ -9,41 +9,22 @@ assert.equal(flags.length,9);
 assert.match(source,/const FLAGS_OWNER_PROMPT=/);
 assert.match(source,/if\(input.category==="flags"\)/);
 assert.match(source,/category:input.category,question_id:input.question_id/);
-assert.match(source,/style_version:"flags-owner-two-stage-energy-selection-20261118"/);
-assert.match(source,/const FLAGS_ANALYSIS_PROMPT=/);
-assert.match(source,/const flagsPlanSelection=/);
+assert.match(source,/style_version:"flags-owner-question-first-single-20261118"/);
+assert.match(source,/Сначала определи суть заданного вопроса/);
+assert.doesNotMatch(source,/const FLAGS_ANALYSIS_PROMPT=/);
 const {default:worker}=await import("data:text/javascript;base64,"+Buffer.from(source).toString("base64"));
 const proof="a".repeat(64);
 const hash=createHash("sha256").update(proof).digest("hex");
 let calls=0;
 const observedInputs=[];
-const observedPlans=[];
-const plan=[
-  "ВАРИАНТ_1: человек может начать переубеждать женщину и не слышать отказ",
-  "ВАРИАНТ_2: мужчина может торговаться и предлагать другие условия",
-  "ВАРИАНТ_3: мужчина может уважить границу без дальнейшего обсуждения",
-  "ВЫБОР: сначала проверить готовность услышать решение женщины",
-  "ПОВЕДЕНИЕ: после ясного отказа он может продолжать убеждать, вместо того чтобы остановиться",
-  "ГРАНИЦА: тревожное поведение нельзя оправдывать его хорошими намерениями"
-].join("\n");
 const answer="Ему может быть непросто сразу принимать отказ, когда затронуты его интересы. При этом внимательное отношение к границам возможно, если он умеет вести разговор без давления и замечать настроение партнёрши. Оценивать стоит не громкие обещания, а то, как он ведёт себя, когда услышит неудобное для себя решение. Женщина вправе не соглашаться и не объяснять свою позицию по кругу. "
 +"\n\nЕсли хочешь проверить его в другой ситуации, посмотри вопрос «Держит слово или опять одни красивые разговоры?». Он поможет по-новому присмотреться к поступкам и понять, совпадают ли слова с делами.";
 const env={REDFLAG_BATCH_KEY_SHA256:hash,AI:{run:async(model,opts)=>{
   calls++;
   assert.equal(opts.messages.length,2);
-  if(opts.messages[0].content.includes("Ты выполняешь только внутренний этап")){
-    observedPlans.push(opts.messages[1].content);
-    assert.ok(!opts.messages[1].content.includes("Реально доступные вопросы"),"Analysis must focus on question, not recommendations");
-    return {response:plan};
-  }
-  if(opts.messages[0].content.includes("FLAGS_OWNER_PROMPT_NOT_REAL"))throw new Error("Unexpected system prompt");
+  assert.match(opts.messages[0].content,/Сначала определи суть заданного вопроса/);
+  assert.ok(!opts.messages[1].content.includes("Внутренний выбор трактовки"));
   observedInputs.push(opts.messages[1].content);
-  if(opts.messages[1].content.includes("Внутренний выбор трактовки")){
-    assert.ok(opts.messages[1].content.includes("сначала проверить готовность услышать решение"));
-    assert.ok(opts.messages[1].content.includes("после ясного отказа он может продолжать убеждать"));
-    assert.ok(!opts.messages[1].content.includes("ВАРИАНТ_1:"),"Alternative interpretations must not pollute final draft");
-    assert.ok(!opts.messages[1].content.includes("ВАРИАНТ_3:"),"Alternative interpretations must not pollute final draft");
-  }
   return {response:answer};
 }}};
 const makeRequest=(url,category,id,title,followups=[])=>new Request("https://example.test"+url,{
@@ -74,7 +55,7 @@ for(const q of flags){
   assert.equal(json.answer,answer,"Must preserve model output verbatim");
   assert.equal(json.draft_only,true);
   assert.equal(json.published,false);
-  assert.equal(json.style_version,"flags-owner-two-stage-energy-selection-20261118");
+  assert.equal(json.style_version,"flags-owner-question-first-single-20261118");
 }
 // Each question provides a DIFFERENT analysis focus to the AI,
 // with no prewritten red-flag scenario or automatic postediting.
@@ -94,7 +75,6 @@ for(let i=0;i<flags.length;i++){
   assert.ok(observedInputs[i].includes(expectedFocus[flags[i].id]),
     "Missing per-question focus for "+flags[i].id);
   assert.equal(observedInputs[i].split("Направление анализа этого вопроса: ").length,2);
-  assert.ok(observedPlans[i].includes(expectedFocus[flags[i].id]),"Analysis stage needs its own focus");
 }
 const first=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags","say-no",
   "Уважает женское «нет» или начинает давить?",tenRelated),env);
@@ -105,26 +85,26 @@ const trial=await worker.fetch(makeRequest("/v1/redflag-style-test","flags","say
   "Уважает женское «нет» или начинает давить?"),env);
 assert.equal(trial.status,200,"Legacy protected owner trial should use same new prompt");
 assert.equal((await trial.json()).style_test,true);
-assert.equal(calls,22);
+assert.equal(calls,11);
 // Public flags path remains disabled; must not bill or expose unapproved drafts.
 const publicAttempt=await worker.fetch(makeRequest("/v1/redflag-draft","flags","say-no",
   "Уважает женское «нет» или начинает давить?"),env);
 assert.equal(publicAttempt.status,409);
-assert.equal(calls,22);
+assert.equal(calls,11);
 // Other categories still reject inputs beyond their original 5-title maximum.
 const oversizedOther=await worker.fetch(makeRequest("/v1/redflag-owner-question","infidelity","options",
   "Верный или постоянно ищет запасные варианты?",tenRelated.slice(0,6)),env);
 assert.equal(oversizedOther.status,400,"Other categories retain original input limit");
-assert.equal(calls,22);
+assert.equal(calls,11);
 // All other categories retain their existing owner path.
 const other=catalog.categories.find(c=>c.id==="infidelity").questions[0];
 const otherResponse=await worker.fetch(makeRequest("/v1/redflag-owner-question","infidelity",other.id,other.title),env);
 assert.equal(otherResponse.status,200,"Other category unchanged");
 assert.equal((await otherResponse.json()).ok,true);
-assert.equal(calls,23);
+assert.equal(calls,12);
 const guest=await worker.fetch(new Request("https://example.test/v1/redflag-owner-question",{
   method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
 }),env);
 assert.equal(guest.status,403);
-assert.equal(observedPlans.length,11,"Owner flags has its own analysis pass per request");
-console.log("PASS: flags uses two private AI passes; 10 owner tests work; public flags blocked; others intact");
+assert.equal(observedInputs.length,12,"Exactly one AI call per owner flags question, plus one for other section");
+console.log("PASS: flags uses one question-first owner AI call; 10 questions work; public flags blocked; other sections intact");
