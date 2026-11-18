@@ -2,129 +2,92 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {createHash,webcrypto} from "node:crypto";
 if(!globalThis.crypto)globalThis.crypto=webcrypto;
+
 const source=readFileSync("cloudflare/redflag-draft-ai/src/index.js","utf8");
+const bridge=readFileSync("redflag-ai-lab/draft.php","utf8");
 const catalog=JSON.parse(readFileSync("redflag-ai-lab/catalog.json","utf8"));
 const flags=catalog.categories.find(c=>c.id==="flags").questions;
 assert.equal(flags.length,9);
-assert.match(source,/flags-owner-gemma4-warm-natural-cta-20261118/);
-assert.match(source,/на равных, 50 на 50/);
-assert.match(source,/энергии дня и месяца/);
-assert.match(source,/одна усиливает или смягчает другую/i);
-assert.match(source,/мягко/);
-assert.match(source,/const flagsFinishAnswer=/);
-assert.doesNotMatch(source,/const FLAGS_CTA_LEADS=/);
-assert.match(source,/Точное название следующего доступного вопроса для второго абзаца/);
-assert.match(source,/const flagsOutputValid=/);
-assert.match(source,/const flagsRelatedFollowup=/);
-assert.doesNotMatch(source,/const FLAGS_ENERGY_ROWS=/);
-assert.doesNotMatch(source,/const FLAGS_QUESTION_FOCUS=/);
-assert.doesNotMatch(source,/Профиль дня:/);
-assert.doesNotMatch(source,/const retry=await env\.AI\.run\(MODEL/);
-assert.doesNotMatch(source,/api\.groq\.com/);
+
+// No old owner Red Flag prompts, energy profiles, scripts, CTA, or lint engine.
+for(const old of [
+  "FLAGS_OWNER_PROMPT","FLAGS_ENERGY_ROWS","FLAGS_NINTH_QUESTION_VIEW",
+  "FLAGS_RELATED_FOLLOWUPS","flagsRelatedFollowup","flagsFinishAnswer",
+  "flagsOutputValid","flagsGenericPortrait","FLAGS_QUESTION_FOCUS"
+])assert.ok(!source.includes(old),"Old flag-only guidance remains: "+old);
+assert.ok(!bridge.includes("$publishedRelated"),"Old PHP recommendation palette remains");
+assert.ok(bridge.includes("$followups=[]"),"No follow-up hints leave the PHP owner bridge");
+assert.match(source,/flags-owner-clean-slate-no-prompt-20261118/);
+
+const begin=source.indexOf('if(input.category==="flags"){');
+const end=source.indexOf("const styleTest=url.pathname",begin);
+assert.ok(begin>0&&end>begin);
+const branch=source.slice(begin,end);
+assert.doesNotMatch(branch,/energy22|\\bSYSTEM\\b|OWNER_QUESTION_SYSTEM|followup|шаблон|тен[ьи]|второй абзац/iu);
+assert.equal(branch.split("env.AI.run(MODEL").length-1,1,"Exactly one inference in flags");
+assert.match(branch,/messages:\[\{role:"user",content:userInput\}\]/,"Owner flag must have no system prompt");
+assert.doesNotMatch(branch,/messages:\[\{role:"system"/,"Owner flag must not include old system instructions");
+
 const {default:worker}=await import("data:text/javascript;base64,"+Buffer.from(source).toString("base64"));
 const proof="a".repeat(64);
 const hash=createHash("sha256").update(proof).digest("hex");
-const answer="Ему может быть непросто сразу принять отказ, когда его желания расходятся с твоими. В таком сочетании он может сначала настаивать на своём, а потом вполне спокойно обсуждать твоё решение, если слышит аргументы и не принимает каждое возражение за личную обиду. Поэтому здесь важно не угадывать мысли и не проверять мужчину на прочность, а смотреть, действительно ли он признаёт твоё право выбирать и умеет вовремя остановиться. Отговорки и обещания сами по себе ничего не доказывают."
-+"\n\nЕсли хочешь увидеть, насколько его слова совпадают с поступками в других ситуациях, посмотри вопрос «Держит слово или опять одни красивые разговоры?». Это поможет не принимать красивые речи за уже сделанные дела.";
-const observedInputs=[],observedSystems=[];
-let calls=0,shortOnce=false,shortSeen=false;
+const answer="Ему может быть непросто принять отказ, когда он уверен в своей идее. Если ты говоришь нет, возможны разные реакции, но по одной дате нельзя узнать, как он поведёт себя в реальности. Важно смотреть, слышит ли он твои слова и может ли остановиться без долгих уговоров. Если ты несколько раз объяснила своё решение, а мужчина продолжает давить, это уже заметное поведение, независимо от его дня рождения.\n\nТы сама сможешь оценить, насколько комфортно тебе рядом с ним и уважает ли он границы.";
+let calls=0,mode="ok";
+const observed=[];
 const env={REDFLAG_BATCH_KEY_SHA256:hash,AI:{run:async(model,opts)=>{
   calls++;
   assert.equal(model,"@cf/google/gemma-4-26b-a4b-it");
-  assert.equal(opts.messages[0].role,"system");
-  if(opts.messages[0].content.includes("Ты опытная нумеролог"))
-    assert.match(opts.messages[0].content,/50 на 50/);
-  assert.equal(opts.chat_template_kwargs.enable_thinking,false);
-  observedSystems.push(opts.messages[0].content);
-  const userText=opts.messages.find(x=>x.role==="user")?.content||"";
-  observedInputs.push(userText);
-  if(shortOnce&&!shortSeen){shortSeen=true;return {response:"Короткий ответ."};}
-  return {response:answer};
+  observed.push(opts.messages);
+  return {response:mode==="empty"?"":answer};
 }}};
-const makeRequest=(url,category,id,title,followups=[],day=9,month=9)=>new Request("https://example.test"+url,{
-  method:"POST",
-  headers:{"Content-Type":"application/json","X-Numi-Redflag-Batch":proof},
-  body:JSON.stringify({category,question_id:id,title,day,month,followups})
-});
-const tenRelated=[
-  "Держит слово или опять одни красивые разговоры?",
-  "Будет опорой для семьи или всё снова окажется на твоих плечах?",
-  "Щедрый мужчина или считает каждую копейку?",
-  "Пишет первым или ждёт инициативы от женщины?",
-  "Верный или у него каждая вторая «просто подруга»?",
-  "На каком языке любви он вообще понимает чувства?",
-  "Самостоятельный мужчина или мамина корзиночка?",
-  "Какой финальный вердикт по этому мужчине без розовых очков?",
-  "Будет ли мужчина жить за твой счёт?",
-  "Сексуальный огонь или пять минут — и спасибо?"
-];
-assert.equal(tenRelated.length,10);
+const makeRequest=(route,category,id,title,day=9,month=9)=>
+  new Request("https://example.test"+route,{
+    method:"POST",
+    headers:{"Content-Type":"application/json","X-Numi-Redflag-Batch":proof},
+    body:JSON.stringify({category,question_id:id,title,day,month,followups:[]})
+  });
 for(const q of flags){
-  const res=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags",q.id,q.title,tenRelated),env);
-  assert.equal(res.status,200,q.id);
-  const json=await res.json();
-  assert.ok(json.answer.startsWith(answer.split("\n\n")[0]),"Keep complete main answer");
-  assert.equal(json.answer.split("\n\n").length,2,"Always two paragraphs");
-  assert.ok(tenRelated.some(title=>json.answer.split("\n\n")[1].includes(title)),"Related title must be exact");
-  assert.equal(json.draft_only,true);
-  assert.equal(json.published,false);
-  assert.equal(json.style_version,"flags-owner-gemma4-warm-natural-cta-20261118");
-  assert.equal(json.model,"@cf/google/gemma-4-26b-a4b-it");
+  const result=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags",q.id,q.title),env);
+  assert.equal(result.status,200,q.id);
+  const got=await result.json();
+  assert.equal(got.answer,answer);
+  assert.equal(got.draft_only,true);
+  assert.equal(got.published,false);
+  assert.equal(got.style_version,"flags-owner-clean-slate-no-prompt-20261118");
+  assert.equal(observed.at(-1).length,1);
+  assert.equal(observed.at(-1)[0].role,"user");
+  assert.equal(observed.at(-1)[0].content,"Вопрос: "+q.title+"\nДата рождения: 09.09");
 }
-for(let i=0;i<flags.length;i++){
-  assert.ok(observedInputs[i].includes("Вопрос женщины: "+flags[i].title),
-    "Question title must be passed without prescribed focus");
-  assert.ok(observedInputs[i].includes("День рождения мужчины: 9 (энергия дня 9)."));
-  assert.ok(observedInputs[i].includes("Месяц рождения мужчины: 9 (энергия месяца 9)."));
-  assert.ok(!observedInputs[i].includes("Профиль"),"Do not inject fixed answer");
-  assert.ok(observedInputs[i].includes("Точное название следующего доступного вопроса"),"Give Gemma an exact question for a personal CTA");
-}
-const first=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags","say-no",
-  "Уважает женское «нет» или начинает давить?",tenRelated),env);
-assert.equal(first.status,200);
-assert.ok((await first.json()).answer.startsWith(answer.split("\n\n")[0]));
-assert.match(observedInputs.at(-1),/Вопрос женщины: Уважает женское «нет» или начинает давить/);
-const trial=await worker.fetch(makeRequest("/v1/redflag-style-test","flags","say-no",
-  "Уважает женское «нет» или начинает давить?",tenRelated),env);
+assert.equal(calls,9);
+const otherDate=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags",flags[0].id,flags[0].title,31,10),env);
+assert.equal(otherDate.status,200);
+assert.equal(observed.at(-1)[0].content,"Вопрос: "+flags[0].title+"\nДата рождения: 31.10");
+assert.equal(calls,10);
+
+const trial=await worker.fetch(makeRequest("/v1/redflag-style-test","flags",flags[1].id,flags[1].title),env);
 assert.equal(trial.status,200);
 assert.equal((await trial.json()).style_test,true);
 assert.equal(calls,11);
-const publicAttempt=await worker.fetch(makeRequest("/v1/redflag-draft","flags","say-no",
-  "Уважает женское «нет» или начинает давить?",tenRelated),env);
-assert.equal(publicAttempt.status,409);
+const publicAttempt=await worker.fetch(makeRequest("/v1/redflag-draft","flags",flags[1].id,flags[1].title),env);
+assert.equal(publicAttempt.status,409,"Customer-facing flags must remain unavailable");
 assert.equal(calls,11);
-const oversized=await worker.fetch(makeRequest("/v1/redflag-owner-question","infidelity","options",
-  "Верный или постоянно ищет запасные варианты?",tenRelated.slice(0,6)),env);
-assert.equal(oversized.status,400);
-assert.equal(calls,11);
+mode="empty";
+const empty=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags",flags[1].id,flags[1].title),env);
+assert.equal(empty.status,503,"Empty response must not be published or regenerated");
+assert.equal(calls,12,"Empty response cannot cause second inference");
+mode="ok";
+
 const other=catalog.categories.find(c=>c.id==="infidelity").questions[0];
 const otherResponse=await worker.fetch(makeRequest("/v1/redflag-owner-question","infidelity",other.id,other.title),env);
 const otherData=await otherResponse.json();
-assert.equal(otherResponse.status,200,"Other Red Flag category must remain intact: "+JSON.stringify(otherData));
+assert.equal(otherResponse.status,200,"Other Red Flag categories must remain intact: "+JSON.stringify(otherData));
 assert.equal(otherData.ok,true);
-assert.ok(calls>=12);
-const inputsBefore=observedInputs.length;
-for(const [day,month,expectedDayEnergy,expectedMonthEnergy] of [
-  [9,1,9,1],[9,3,9,3],[9,9,9,9],[9,10,9,10],[10,9,10,9],[31,10,4,10]
-]){
-  const res=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags","say-no",
-    "Уважает женское «нет» или начинает давить?",tenRelated,day,month),env);
-  assert.equal(res.status,200,"Distinct pair "+day+"."+month);
-  const text=observedInputs.at(-1);
-  assert.ok(text.includes("День рождения мужчины: "+day+" (энергия дня "+expectedDayEnergy+")"));
-  assert.ok(text.includes("Месяц рождения мужчины: "+month+" (энергия месяца "+expectedMonthEnergy+")"));
-}
-assert.equal(observedInputs.length-inputsBefore,6,"Each combination has its own inference input");
-assert.notEqual(observedInputs[inputsBefore],observedInputs[inputsBefore+1],
-  "Changing month changes actual model evidence");
-shortOnce=true;shortSeen=false;
-const beforeRetry=calls;
-const retry=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags","hero",
-  "Скромный мужчина или считает себя подарком судьбы?",tenRelated,22,3),env);
-assert.equal(retry.status,503,"A too-short draft is rejected, never retried");
-assert.equal(calls-beforeRetry,1,"One inference per request, no slow second pass");
+assert.equal(calls,13);
+
 const guest=await worker.fetch(new Request("https://example.test/v1/redflag-owner-question",{
-  method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
+  method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({category:"flags",question_id:flags[0].id,title:flags[0].title,day:9,month:9,followups:[]})
 }),env);
 assert.equal(guest.status,403);
-console.log("PASS: owner flags Gemma 4 only, nine original question titles, six date combinations, no second AI call, other Red Flag categories intact, buyers blocked");
+assert.equal(calls,13);
+console.log("PASS: protected blank-slate flags uses only date+question, zero prompts, one inference; other categories untouched; customers blocked");
