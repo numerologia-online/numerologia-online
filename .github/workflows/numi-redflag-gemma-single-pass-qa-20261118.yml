@@ -1,4 +1,4 @@
-name: Review Gemma energy-guide Red Flag answers: three dates and five questions
+name: Review Gemma energy guide Red Flag answers for three dates and five questions
 on:
   push:
     branches: [main]
