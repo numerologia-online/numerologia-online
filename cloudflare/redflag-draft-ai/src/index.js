@@ -100,6 +100,35 @@ const FLAGS_OWNER_PROMPT=[
   "Не упоминай числа, названия энергий, арканы и способы расчёта. Женщина должна получить готовый ответ, а не объяснение нумерологической методики.",
   "Всего два абзаца и ориентир 750–1100 символов с пробелами. Первый абзац это прямой ответ с понятными проявлениями поведения. Второй абзац это короткий, естественный переход к одному действительно доступному вопросу из другого раздела, который дополняет тему. Без заголовков, списков, двоеточий и длинных тире."
 ].join("\n\n");
+// First genuine AI pass for owner-only flags. No fixed meanings for specific energies:
+// the model must generate and compare alternative question-specific interpretations.
+const FLAGS_ANALYSIS_PROMPT=[
+  "Ты выполняешь только внутренний этап нумерологического анализа 22 энергий. Не пиши ответ женщине и не делай литературных вступлений.",
+  "Сопоставь обе энергии дня и месяца рождения с конкретным вопросом и его направлением. Исследуй не одну очевидную характеристику, а несколько реально разных сторон сочетания. Для каждой возможной трактовки учитывай обе энергии, включая их противоречия и смягчающие проявления.",
+  "Найди три содержательно разных возможных механизма поведения в ситуации вопроса. Каждый должен вести к иному наблюдаемому поступку или реакции. Три пересказа одной черты недопустимы. Не выбирай наиболее привычный образ энергии автоматически, но и не придумывай нехарактерные ей черты ради оригинальности.",
+  "Выбери один механизм, который убедительнее всего отвечает именно на этот вопрос. Объяснение мотива не делает неприятный поступок приемлемым. Не придумывай человеку преступлений или реальных событий.",
+  "Верни краткий внутренний план ровно в таком формате, без Markdown, без ответа читательнице:",
+  "ВАРИАНТ_1: возможный механизм и наблюдаемая реакция",
+  "ВАРИАНТ_2: другой механизм и другая наблюдаемая реакция",
+  "ВАРИАНТ_3: третий механизм и третья наблюдаемая реакция",
+  "ВЫБОР: самый подходящий механизм, опирающийся на обе энергии",
+  "ПОВЕДЕНИЕ: что женщина сможет заметить в поступках и общении",
+  "ГРАНИЦА: что важно не оправдывать объяснением его мотивов"
+].join("\n");
+const flagsPlanSelection=(raw)=>{
+  const text=normalizeDraft(raw).slice(0,2800);
+  if(!text)return null;
+  const pick=(name)=>text.match(new RegExp("^"+name+":\\s*(.+)$","mi"))?.[1]?.trim()||"";
+  const selection=pick("ВЫБОР"),behavior=pick("ПОВЕДЕНИЕ"),boundary=pick("ГРАНИЦА");
+  // A less disciplined model can still return a usable nonempty plan, but
+  // the final pass sees only the chosen interpretation when fields exist.
+  if(selection&&behavior)return [
+    "Выбранная трактовка: "+selection.slice(0,420),
+    "Наблюдаемое поведение: "+behavior.slice(0,360),
+    ...(boundary?["Граница между причиной и оправданием: "+boundary.slice(0,300)]:[])
+  ].join("\n");
+  return text.slice(0,1600);
+};
 // The owner chose a separate subject of analysis for each Красные флаги question.
 // A focus directs the analysis; it never supplies a fixed answer or verdict.
 const FLAGS_QUESTION_FOCUS=Object.freeze({
@@ -262,9 +291,26 @@ export default {
         "Реально доступные вопросы в других разделах: "+JSON.stringify(input.followups)
       ].join("\n");
       try{
+        // Stage 1: model explores several independent interpretations and
+        // selects one based on BOTH energies and THIS question. Never shown.
+        const analysis=await env.AI.run(MODEL,{
+          messages:[
+            {role:"system",content:FLAGS_ANALYSIS_PROMPT},
+            {role:"user",content:userInput.split("\n").slice(0,4).join("\n")}
+          ],
+          temperature:0.72,max_completion_tokens:540,
+          chat_template_kwargs:{enable_thinking:false}
+        });
+        const choice=flagsPlanSelection(analysis?.response??analysis?.choices?.[0]?.message?.content);
+        if(!choice)
+          return reply(503,{ok:false,error:"FLAGS_ANALYSIS_UNAVAILABLE"});
+        // Stage 2: a separate inference writes for the reader. No raw list
+        // of alternative interpretations is supplied, just the selected one.
         const generation=await env.AI.run(MODEL,{
-          messages:[{role:"system",content:FLAGS_OWNER_PROMPT},{role:"user",content:userInput}],
-          temperature:0.82,max_completion_tokens:900,
+          messages:[{role:"system",content:FLAGS_OWNER_PROMPT},
+            {role:"user",content:userInput+"\n\nВнутренний выбор трактовки для этого вопроса (не показывай его читательнице):\n"+choice+
+              "\nСразу ответь на вопрос; опиши конкретные поступки. Не подменяй ответ оправданием поведения."}],
+          temperature:0.78,max_completion_tokens:900,
           chat_template_kwargs:{enable_thinking:false}
         });
         const answer=normalizeDraft(generation?.response??generation?.choices?.[0]?.message?.content);
@@ -273,7 +319,7 @@ export default {
         return reply(200,{ok:true,draft_only:true,published:false,
           style_test:isStyleTrial,category:input.category,question_id:input.question_id,
           date_key:input.day+"-"+input.month,answer,
-          style_version:"flags-owner-approved-20261117"});
+          style_version:"flags-owner-two-stage-energy-selection-20261118"});
       }catch(error){
         console.error("REDFLAG_FLAGS_TEST_AI_ERROR",error?.name||"error");
         return reply(503,{ok:false,error:"FLAGS_AI_UNAVAILABLE"});
