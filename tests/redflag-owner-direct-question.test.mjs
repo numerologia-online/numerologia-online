@@ -6,7 +6,7 @@ const source=readFileSync("cloudflare/redflag-draft-ai/src/index.js","utf8");
 const catalog=JSON.parse(readFileSync("redflag-ai-lab/catalog.json","utf8"));
 const flags=catalog.categories.find(c=>c.id==="flags").questions;
 assert.equal(flags.length,9);
-assert.match(source,/flags-owner-gemma4-energy-guide-20261118/);
+assert.match(source,/flags-owner-gemma4-focused-energy-guide-20261118/);
 assert.match(source,/равным весом 50\/50/);
 assert.match(source,/найди их взаимодействие именно по заданному вопросу/i);
 assert.match(source,/Отдельные вопросы одной даты/i);
@@ -14,6 +14,8 @@ assert.match(source,/Если месяц меняется/i);
 assert.match(source,/одну понятную ситуацию/);
 assert.match(source,/const FLAGS_ENERGY_ROWS=/);
 assert.match(source,/const FLAGS_ENERGY_PROFILES=/);
+assert.match(source,/const FLAGS_NINTH_QUESTION_VIEW=/);
+assert.match(source,/const flagsFinishAnswer=/);
 assert.match(source,/const FLAGS_QUESTION_FACETS=/);
 assert.match(source,/Профиль дня:/);
 assert.match(source,/Профиль месяца:/);
@@ -65,10 +67,12 @@ for(const q of flags){
   const res=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags",q.id,q.title,tenRelated),env);
   assert.equal(res.status,200,q.id);
   const json=await res.json();
-  assert.equal(json.answer,answer);
+  assert.ok(json.answer.startsWith(answer.split("\n\n")[0]),"Keep complete main answer");
+  assert.equal(json.answer.split("\n\n").length,2,"Always two paragraphs");
+  assert.ok(tenRelated.some(title=>json.answer.split("\n\n")[1].includes(title)),"Related title must be exact");
   assert.equal(json.draft_only,true);
   assert.equal(json.published,false);
-  assert.equal(json.style_version,"flags-owner-gemma4-energy-guide-20261118");
+  assert.equal(json.style_version,"flags-owner-gemma4-focused-energy-guide-20261118");
   assert.equal(json.model,"@cf/google/gemma-4-26b-a4b-it");
 }
 const focus={
@@ -91,7 +95,7 @@ for(let i=0;i<flags.length;i++){
 const first=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags","say-no",
   "Уважает женское «нет» или начинает давить?",tenRelated),env);
 assert.equal(first.status,200);
-assert.equal((await first.json()).answer,answer);
+assert.ok((await first.json()).answer.startsWith(answer.split("\n\n")[0]));
 assert.match(observedInputs.at(-1),/отношение мужчины к отказу/);
 const trial=await worker.fetch(makeRequest("/v1/redflag-style-test","flags","say-no",
   "Уважает женское «нет» или начинает давить?",tenRelated),env);
