@@ -1,4 +1,4 @@
-name: Compare free-form Gemma on one question and three dates
+name: Test warm personalized Red Flag second paragraphs on three dates
 on:
   push:
     branches: [main]
@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 13
     steps:
       - uses: actions/checkout@v4
-      - name: Generate three owner drafts for the same question and compare latency
+      - name: Generate three owner drafts with warm individual second paragraphs
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
@@ -72,7 +72,7 @@ jobs:
           if complete:
             durations=sorted(x["elapsed_seconds"] for x in complete)
             print("LATENCY_SECONDS_MEDIAN",durations[len(durations)//2],"P90",durations[min(len(durations)-1,int(len(durations)*0.9))],flush=True)
-          if any(x.get("style_version")!="flags-owner-gemma4-open-interpretation-20261118" for x in complete):
+          if any(x.get("style_version")!="flags-owner-gemma4-warm-personal-cta-20261118" for x in complete):
             raise RuntimeError("OWNER_FLAGS_NOT_NEW_VERSION")
           def first(x):return x["answer"].split("\n\n")[0]
           for qid,_ in questions:
@@ -94,7 +94,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: redflag-gemma4-open-interpretation-three-dates
+          name: redflag-gemma4-warm-personal-cta-three-dates
           path: gemma-private-single-pass-qa/
           retention-days: 1
           if-no-files-found: warn
