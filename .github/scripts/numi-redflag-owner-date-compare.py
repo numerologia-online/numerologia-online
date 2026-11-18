@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-off owner Red Flag date comparison through a removable REG.RU PHP bridge.
+"""One-off owner Red Flag GROQ comparison through a removable REG.RU PHP bridge.
 No customer files, paid answers, live purchases or secret material written to logs.
 """
 import concurrent.futures
@@ -39,44 +39,74 @@ try {
     $data=require $conf;
     $key=is_array($data)?($data["groq_api_key"]??null):null;
     if(!is_string($key)||!str_starts_with($key,"gsk_"))throw new RuntimeException("PRIVATE_KEY_MISSING");
-    $proof=hash_hmac("sha256","numi-moment-cloudflare-bridge-v1",$key);
+    $system=<<<'OWNER_SYSTEM'
+Ты опытный нумеролог, работающий с 22 энергиями Матрицы судьбы. Женщина задала конкретный вопрос о мужчине и хочет получить на него понятный, интересный и полезный ответ.
+
+Начни сразу с ответа на сам вопрос. Уже первое предложение должно дать ясный вывод. Если вопрос предлагает два варианта, скажи, какой вероятнее, или объясни, как проявляются оба. Не начинай с вступлений вроде «Слушай», «Знаешь», «Тут ситуация непростая» и не открывай ответ общим портретом мужчины. Не используй одну и ту же начальную формулу для всех вопросов.
+
+Сначала пойми, о каком конкретном поступке спрашивает женщина. Самостоятельно используй свои знания системы 22 энергий, без готовых списков характеристик и предписанных сценариев. Дай энергии дня и энергии месяца строго равный вес, 50 на 50. Ни одна из них не главная и не вспомогательная. Исследуй их взаимодействие именно для этого вопроса: где они усиливают, смягчают или меняют проявления друг друга. Вывод делай только из сочетания, а не из одной энергии с декоративным дополнением второй. Если месяц изменился, заново осмысли сочетание, не перекрашивай прежний ответ парой слов. Для разных вопросов об одном мужчине выбирай разные уместные стороны сочетания, не повторяй привычный портрет. Если энергии одинаковые, исследуй их совместное усиление, не выдумывай искусственные различия. Не придумывай свойства человека только ради разнообразия. Промежуточный анализ не показывай женщине.
+
+Рассказывай прежде всего, как это может проявиться в поступках и общении с женщиной, на что ей обратить внимание и чем это может обернуться в отношениях. Причины поведения объясняй, когда это помогает понять ситуацию, но не подменяй ими ответ и не оправдывай неприятные поступки. Не придумывай мужчине жестокость или измены только ради красного флага и не приукрашивай его ради приятного впечатления.
+
+Пиши легко, естественно и обычными человеческими словами, как наблюдательная доброжелательная женщина разговаривает с подругой. Можно с теплом, точностью, лёгкой иронией и характером. Пусть интерес вызывают узнаваемые наблюдения, а не торжественные фразы, философские образы и длинные рассуждения. Не делай мужчину загадкой, которую читательнице нужно разгадывать.
+
+Сохраняй узнаваемость мужчины между вопросами, но каждый раз отвечай на новую тему. Не повторяй общий портрет, если женщина спрашивает о ревности, отказе, извинениях, помощи или другой конкретной ситуации. Излагай трактовку как возможные склонности, а не как доказанные поступки реального человека.
+
+Не упоминай числа, названия энергий, арканы и способы расчёта. Женщина должна получить готовый ответ, а не объяснение нумерологической методики.
+
+Всего два абзаца и ориентир 750–1100 символов с пробелами. Первый абзац это прямой ответ с понятными проявлениями поведения. Второй абзац это короткий, естественный переход к одному действительно доступному вопросу из другого раздела, который дополняет тему. Без заголовков, списков, двоеточий и длинных тире.
+OWNER_SYSTEM;
+    $followups=[
+      "Держит слово или опять одни красивые разговоры?",
+      "Будет опорой для семьи или всё снова окажется на твоих плечах?",
+      "Щедрый мужчина или считает каждую копейку?",
+      "Пишет первым или ждёт инициативы от женщины?",
+      "Верный или у него каждая вторая «просто подруга»?",
+      "На каком языке любви он вообще понимает чувства?",
+      "Самостоятельный мужчина или мамина корзиночка?",
+      "Какой финальный вердикт по этому мужчине без розовых очков?",
+      "Будет ли мужчина жить за твой счёт?",
+      "Сексуальный огонь или пять минут — и спасибо?"
+    ];
+    $user="Вопрос: ".$titles[$input["id"]]."\n".
+       "День рождения мужчины: 9 (энергия 9).\n".
+       "Месяц рождения мужчины: ".$input["month"]." (энергия ".$input["month"].").\n".
+       "Тема вопроса: ".($input["id"]==="hero"
+         ?"Как мужчина оценивает себя, принимает похвалу, добивается признания и ведёт себя при несогласии."
+         :"Как мужчина реагирует на отказ женщины, выдерживает границы, пытается ли уговорить или надавить.")."\n".
+       "Доступные дополнительные вопросы: ".json_encode($followups,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
     $payload=json_encode([
-      "category"=>"flags","question_id"=>$input["id"],
-      "title"=>$titles[$input["id"]],
-      "day"=>9,"month"=>$input["month"],
-      "followups"=>[
-        "Держит слово или опять одни красивые разговоры?",
-        "Будет опорой для семьи или всё снова окажется на твоих плечах?",
-        "Щедрый мужчина или считает каждую копейку?",
-        "Пишет первым или ждёт инициативы от женщины?",
-        "Верный или у него каждая вторая «просто подруга»?",
-        "На каком языке любви он вообще понимает чувства?",
-        "Самостоятельный мужчина или мамина корзиночка?",
-        "Какой финальный вердикт по этому мужчине без розовых очков?",
-        "Будет ли мужчина жить за твой счёт?",
-        "Сексуальный огонь или пять минут — и спасибо?"
-      ]
+      "model"=>"openai/gpt-oss-120b",
+      "messages"=>[["role"=>"system","content"=>$system],
+                    ["role"=>"user","content"=>$user]],
+      "reasoning_effort"=>"medium",
+      "max_completion_tokens"=>1800,
+      "stream"=>false
     ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
-    $ch=curl_init("https://numerologia-redflag-draft-ai.tankraft431.workers.dev/v1/redflag-owner-question");
+    $ch=curl_init("https://api.groq.com/openai/v1/chat/completions");
     if(!$ch)throw new RuntimeException("CURL_INIT_FAILED");
     curl_setopt_array($ch,[
       CURLOPT_POST=>true,CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,
-      CURLOPT_CONNECTTIMEOUT=>10,CURLOPT_TIMEOUT=>95,CURLOPT_MAXREDIRS=>0,
+      CURLOPT_CONNECTTIMEOUT=>10,CURLOPT_TIMEOUT=>110,CURLOPT_MAXREDIRS=>0,
       CURLOPT_HTTPHEADER=>["Content-Type: application/json","Accept: application/json",
-        "X-Numi-Moment-Proof: ".$proof,"User-Agent: NumiOwnerDateComparison/1.0"],
+        "Authorization: Bearer ".$key,"User-Agent: NumiOwnerGroqComparison/1.0"],
       CURLOPT_POSTFIELDS=>$payload
     ]);
-    $text=curl_exec($ch);
+    $raw=curl_exec($ch);
     $status=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE);
     $errno=curl_errno($ch);
     curl_close($ch);
-    $parsed=is_string($text)?json_decode($text,true):null;
-    echo json_encode(["upstream_http"=>$status,"curl_errno"=>$errno,
-      "ok"=>$parsed["ok"]??false,"answer"=>$parsed["answer"]??null,
-      "style_version"=>$parsed["style_version"]??null,
-      "draft_only"=>$parsed["draft_only"]??null,
-      "published"=>$parsed["published"]??null,
-      "error"=>$parsed["error"]??null],JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE);
+    $parsed=is_string($raw)?json_decode($raw,true):null;
+    $answer=is_array($parsed)?($parsed["choices"][0]["message"]["content"]??null):null;
+    $ok=$status===200 && is_string($answer) && mb_strlen(trim($answer))>=200;
+    echo json_encode([
+      "upstream_http"=>$status,"curl_errno"=>$errno,
+      "ok"=>$ok,"answer"=>$ok?trim($answer):null,
+      "style_version"=>"groq-gpt-oss-120b-20261118",
+      "draft_only"=>true,"published"=>false,
+      "usage_tokens"=>is_array($parsed)?($parsed["usage"]["total_tokens"]??null):null,
+      "error"=>$ok?null:($status===429?"GROQ_FREE_RATE_LIMIT":($status===401?"GROQ_KEY_UNAUTHORIZED":"GROQ_MODEL_UNAVAILABLE"))
+    ],JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE);
 } catch(Throwable $e) {
     echo json_encode(["ok"=>false,"error"=>preg_replace("/[^A-Z_]/","",strtoupper($e->getMessage()))]);
 }
@@ -149,7 +179,7 @@ try:
     passed=sum(r.get("ok") is True and r.get("draft_only") is True and
                r.get("published") is False and isinstance(r.get("answer"),str)
                for r in results)
-    print("PROBE_SUMMARY",passed,"/",len(results),"private owner drafts generated",flush=True)
+    print("PROBE_SUMMARY",passed,"/",len(results),"private Groq owner drafts generated",flush=True)
     if passed==0:
         raise RuntimeError("NO_OWNER_MODEL_ANSWERS")
 finally:
