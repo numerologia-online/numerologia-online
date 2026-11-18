@@ -226,35 +226,15 @@ export default {
     // Красные флаги: owner-only test with the exact newly approved prompt.
     // Do not pass this category through other sections' rules, editing,
     // automatic re-prompts, energy-shadow templates or forced upsells.
+    // Clean slate for ONLY the owner preview category "Красные флаги".
+    // Keep the protected Cloudflare AI connection, but do not send a date,
+    // question, energy, prompt or previous answers until a new prompt is approved.
+    // Other categories and the independent 300-question service stay untouched.
     if(input.category==="flags"){
-      const isOwnerQuestion=url.pathname==="/v1/redflag-owner-question";
-      const isStyleTrial=url.pathname==="/v1/redflag-style-test";
-      if(!isOwnerQuestion&&!isStyleTrial)
+      if(url.pathname!=="/v1/redflag-owner-question"&&url.pathname!=="/v1/redflag-style-test")
         return reply(409,{ok:false,error:"FLAGS_NOT_PUBLISHED",draft_only:true,published:false});
-      // Clean slate: no system prompt, no energies, analyses, suggested follow-ups
-      // or automatic second paragraph. Send only the selected question and birth date.
-      const userInput=[
-        "Вопрос: "+input.title,
-        "Дата рождения: "+String(input.day).padStart(2,"0")+"."+String(input.month).padStart(2,"0")
-      ].join("\n");
-      try{
-        const generated=await env.AI.run(MODEL,{
-          messages:[{role:"user",content:userInput}],
-          temperature:0.7,max_completion_tokens:690,
-          chat_template_kwargs:{enable_thinking:false}
-        });
-        const rawAnswer=generated?.response??generated?.choices?.[0]?.message?.content;
-        const answer=typeof rawAnswer==="string"?rawAnswer.trim():"";
-        if(!answer||answer.length>7500)
-          return reply(503,{ok:false,error:"FLAGS_EMPTY_DRAFT"});
-        return reply(200,{ok:true,draft_only:true,published:false,
-          style_test:isStyleTrial,category:input.category,question_id:input.question_id,
-          date_key:input.day+"-"+input.month,answer,
-          model:MODEL,style_version:"flags-owner-clean-slate-no-prompt-20261118"});
-      }catch(error){
-        console.error("REDFLAG_FLAGS_AI_ERROR",error?.name||"error");
-        return reply(503,{ok:false,error:"FLAGS_AI_UNAVAILABLE"});
-      }
+      return reply(409,{ok:false,error:"FLAGS_PROMPT_NOT_CONFIGURED",
+        draft_only:true,published:false,model:MODEL});
     }
     const styleTest=url.pathname==="/v1/redflag-style-test";
     const ownerQuestion=url.pathname==="/v1/redflag-owner-question";
