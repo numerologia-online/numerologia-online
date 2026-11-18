@@ -1,0 +1,60 @@
+name: Trace Red Flag Telegram website PHP bridge on REG.RU without touching customer files
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-site-php-trace-20261118.yml
+permissions:
+  contents: read
+jobs:
+  trace:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare actual REG.RU Red Flag site PHP to approved source, and test PHP to Groq Worker
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,io,os,hashlib,pathlib,secrets,json,urllib.request,urllib.error
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')
+          prefix=root+'/www/xn--c1adkkdfjbp1a4l.online/'
+          files=['redflag-ai-lab/draft.php','redflag-feature.js','redflag-ai-lab/catalog.json',
+                 'redflag-ai-lab/style-test-api.php','app.js','index.html']
+          def read(path):
+              out=io.BytesIO()
+              ftp.retrbinary('RETR '+path,out.write)
+              return out.getvalue()
+          try:
+              for path in files:
+                  local=pathlib.Path(path).read_bytes()
+                  try:live=read(prefix+path)
+                  except Exception as exc:
+                      print('REDFLAG_SITE_FILE',path,'error',type(exc).__name__,flush=True)
+                      continue
+                  print('REDFLAG_SITE_FILE',path,'match',hashlib.sha256(live).digest()==hashlib.sha256(local).digest(),
+                        'live_bytes',len(live),'local_bytes',len(local),flush=True)
+              keyfile=read(root+'/private/numi-moment-groq/config.local.php')
+              print('REDFLAG_PRIVATE_CONFIG_PRESENT',len(keyfile)>20,flush=True)
+          finally:
+              ftp.quit()
+          domains=['https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/',
+                   'https://нумерология-онлайн.рф/']
+          for rooturl in domains:
+              for path in ['redflag-ai-lab/draft.php','redflag-feature.js']:
+                  try:
+                      req=urllib.request.Request(rooturl+path,headers={'Cache-Control':'no-store','User-Agent':'NumiRedflagPublicReadOnlyCheck/1.0'})
+                      with urllib.request.urlopen(req,timeout=25) as resp:
+                          raw=resp.read(120000);status=resp.status
+                      print('REDFLAG_PUBLIC_CHECK',rooturl,path,'status',status,'bytes',len(raw),flush=True)
+                  except urllib.error.HTTPError as ex:
+                      print('REDFLAG_PUBLIC_CHECK',rooturl,path,'http',ex.code,flush=True)
+                  except Exception as ex:
+                      print('REDFLAG_PUBLIC_CHECK',rooturl,path,'error',type(ex).__name__,flush=True)
+          PY
