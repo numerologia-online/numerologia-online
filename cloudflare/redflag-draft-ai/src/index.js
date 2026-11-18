@@ -111,6 +111,19 @@ const FLAGS_GEMMA_FORMAT=[
   "Второй абзац должен естественно предложить ровно один вопрос из переданного списка, обязательно с его точным названием. Не добавляй вымышленные вопросы.",
   "Избегай заезженных объяснений, комплиментов всем подряд, длинных тире, двоеточий, перечней чисел, слов «энергия», «нумерология», «аркан» и расчётов. Разговорный, наблюдательный стиль без искусственной драматизации."
 ].join("\n");
+// Detect the repetitive generic portrait that made earlier answers feel identical.
+// This is a review signal, not a predefined interpretation for any energy.
+const flagsGenericPortrait=(raw)=>{
+  const first=draftParagraphs(normalizeDraft(raw))[0]||"";
+  const templates=[
+    /внутренн\w*\s+(?:мир|глубин|спокойств|ценност|ощущен)/iu,
+    /глубок\w*\s+(?:раздум|пониман|чувств|мудрост|мир|избирательн)/iu,
+    /(?:закрыва|закрыт|замкну|отстран|дистанцир|уходит?\s+в\s+себя)/iu,
+    /(?:интеллектуальн\w*\s+превосходств|исключительност|особого\s+склада)/iu,
+    /(?:самоценност|достоинств|особый\s+путь)/iu
+  ];
+  return templates.filter(pattern=>pattern.test(first)).length>=3;
+};
 const flagsOutputValid=(raw,followups)=>{
   if(typeof raw!=="string")return false;
   const answer=normalizeDraft(raw),parts=draftParagraphs(answer);
@@ -289,13 +302,13 @@ export default {
           chat_template_kwargs:{enable_thinking:false}
         });
         let answer=normalizeDraft(first?.response??first?.choices?.[0]?.message?.content);
-        if(!flagsOutputValid(answer,input.followups)){
-          // Retry malformed/short output once without supplying a scripted portrait.
+        if(!flagsOutputValid(answer,input.followups)||flagsGenericPortrait(answer)){
+          // Retry malformed or repetitive output once, with no preset energy palette.
           const retry=await env.AI.run(MODEL,{
             messages:[
               ...messages,
               {role:"assistant",content:answer.slice(0,2500)},
-              {role:"user",content:"Перепиши весь ответ с нуля. Нужны ровно два абзаца, в первом конкретный ответ на вопрос из сочетания дня и месяца 50 на 50, во втором точное название одного доступного вопроса. 750–1100 символов. Не повторяй общие психологические штампы, не рассказывай о вычислениях, не используй двоеточия и длинные тире. Верни только ответ."}
+              {role:"user",content:"Перепиши весь ответ с нуля. Нужны ровно два абзаца, в первом конкретный ответ на вопрос из сочетания дня и месяца 50 на 50, во втором точное название одного доступного вопроса. 750–1100 символов. Не оправдывай мужчину его внутренней глубиной, скромностью, мудростью или отстранением. Вместо интеллектуального превосходства и закрытости покажи наблюдаемую реакцию в ситуации из вопроса, реальную неприятную сторону, если она возможна. Если месяц другой, поведение должно отличаться по сути, а не парой прилагательных. Не рассказывай о вычислениях, не используй двоеточия и длинные тире. Верни только ответ."}
             ],
             temperature:0.72,max_completion_tokens:900,
             chat_template_kwargs:{enable_thinking:false}
@@ -305,7 +318,7 @@ export default {
         // This route is OWNER-ONLY and cannot publish to buyers. Avoid losing a
         // substantial, safe draft just because Gemma missed an exact title or
         // a paragraph separator. Flag it for editorial review instead.
-        const editorialReviewNeeded=!flagsOutputValid(answer,input.followups);
+        const editorialReviewNeeded=!flagsOutputValid(answer,input.followups)||flagsGenericPortrait(answer);
         if(answer.length<380||answer.length>2900||ownerHasCalculationLeak(answer)){
           const parts=draftParagraphs(answer);
           return reply(503,{ok:false,error:"FLAGS_GEMMA_OUTPUT_INCOMPLETE",
