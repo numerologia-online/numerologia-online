@@ -67,7 +67,9 @@ globalThis.fetch=async (url,opts)=>{
   assert.match(payload.messages[0].content,/<COMBINED>/);
   assert.doesNotMatch(payload.messages[1].content,/Палитра энергии|ТЕНЬ дня:/);
   observedInputs.push(payload.messages[1].content);
-  return new Response(JSON.stringify({choices:[{message:{content:structuredAnswer}}]}),
+  // Real Groq sometimes omits only the final </ANSWER> XML tag.
+  const content=groqCalls===1?structuredAnswer.replace("</ANSWER>",""):structuredAnswer;
+  return new Response(JSON.stringify({choices:[{message:{content}}]}),
     {status:200,headers:{"Content-Type":"application/json"}});
 };
 const makeRequest=(url,category,id,title,followups=[],day=9,month=9)=>new Request("https://example.test"+url,{
