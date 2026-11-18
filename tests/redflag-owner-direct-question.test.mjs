@@ -9,7 +9,7 @@ assert.equal(flags.length,9);
 assert.match(source,/flags-owner-gemma4-question-specific-20261118/);
 assert.match(source,/строго равный вес, 50 на 50/);
 assert.match(source,/вывод делай только из сочетания/i);
-assert.match(source,/разные вопросы об одной дате/i);
+assert.match(source,/Для вопросов об одной дате/i);
 assert.match(source,/разными месяцами/i);
 assert.match(source,/Сначала пойми, о каком конкретном поступке спрашивает женщина/);
 assert.match(source,/const FLAGS_QUESTION_FOCUS=/);
