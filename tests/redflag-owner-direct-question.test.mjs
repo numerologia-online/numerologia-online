@@ -6,18 +6,19 @@ const source=readFileSync("cloudflare/redflag-draft-ai/src/index.js","utf8");
 const catalog=JSON.parse(readFileSync("redflag-ai-lab/catalog.json","utf8"));
 const flags=catalog.categories.find(c=>c.id==="flags").questions;
 assert.equal(flags.length,9);
-assert.match(source,/flags-owner-gemma4-open-interpretation-20261118/);
-assert.match(source,/энергию дня и энергию месяца на равных/i);
-assert.match(source,/как одна меняет проявление другой/i);
+assert.match(source,/flags-owner-gemma4-focused-energy-guide-20261118/);
+assert.match(source,/равным весом 50\/50/);
+assert.match(source,/найди их взаимодействие именно по заданному вопросу/i);
+assert.match(source,/Отдельные вопросы одной даты/i);
 assert.match(source,/Если месяц меняется/i);
-assert.match(source,/Для разных вопросов одной даты/i);
-assert.match(source,/const FLAGS_ENERGY_ARCHETYPES=/);
-assert.match(source,/const flagsEnergyEvidence=/);
-assert.doesNotMatch(source,/const FLAGS_NINTH_QUESTION_VIEW=/);
-assert.doesNotMatch(source,/const FLAGS_QUESTION_FACETS=/);
+assert.match(source,/одну понятную ситуацию/);
+assert.match(source,/const FLAGS_ENERGY_ROWS=/);
+assert.match(source,/const FLAGS_ENERGY_PROFILES=/);
+assert.match(source,/const FLAGS_NINTH_QUESTION_VIEW=/);
 assert.match(source,/const flagsFinishAnswer=/);
-assert.match(source,/Краткий ориентир дня:/);
-assert.match(source,/Краткий ориентир месяца:/);
+assert.match(source,/const FLAGS_QUESTION_FACETS=/);
+assert.match(source,/Профиль дня:/);
+assert.match(source,/Профиль месяца:/);
 assert.match(source,/const FLAGS_QUESTION_FOCUS=/);
 assert.match(source,/const flagsOutputValid=/);
 assert.match(source,/const flagsRelatedFollowup=/);
@@ -35,8 +36,8 @@ const env={REDFLAG_BATCH_KEY_SHA256:hash,AI:{run:async(model,opts)=>{
   calls++;
   assert.equal(model,"@cf/google/gemma-4-26b-a4b-it");
   assert.equal(opts.messages[0].role,"system");
-  if(opts.messages[0].content.includes("Ты опытная нумеролог"))
-    assert.match(opts.messages[0].content,/две энергии/);
+  if(opts.messages[0].content.includes("Ты опытный нумеролог по системе 22 энергий"))
+    assert.match(opts.messages[0].content,/50\/50/);
   assert.equal(opts.chat_template_kwargs.enable_thinking,false);
   observedSystems.push(opts.messages[0].content);
   const userText=opts.messages.find(x=>x.role==="user")?.content||"";
@@ -71,7 +72,7 @@ for(const q of flags){
   assert.ok(tenRelated.some(title=>json.answer.split("\n\n")[1].includes(title)),"Related title must be exact");
   assert.equal(json.draft_only,true);
   assert.equal(json.published,false);
-  assert.equal(json.style_version,"flags-owner-gemma4-open-interpretation-20261118");
+  assert.equal(json.style_version,"flags-owner-gemma4-focused-energy-guide-20261118");
   assert.equal(json.model,"@cf/google/gemma-4-26b-a4b-it");
 }
 const focus={
@@ -88,8 +89,8 @@ const focus={
 for(let i=0;i<flags.length;i++){
   assert.ok(observedInputs[i].includes(focus[flags[i].id]),"Missing distinct question focus "+flags[i].id);
   assert.ok(observedInputs[i].includes("Месяц рождения мужчины: 9 (энергия 9)."));
-  assert.ok(observedInputs[i].includes("Краткий ориентир дня:"),"Day profile required");
-  assert.ok(observedInputs[i].includes("Краткий ориентир месяца:"),"Month profile required");
+  assert.ok(observedInputs[i].includes("Профиль дня:"),"Day profile required");
+  assert.ok(observedInputs[i].includes("Профиль месяца:"),"Month profile required");
 }
 const first=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags","say-no",
   "Уважает женское «нет» или начинает давить?",tenRelated),env);
