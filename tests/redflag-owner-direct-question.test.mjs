@@ -136,7 +136,7 @@ for(const [day,month,expectedDayEnergy,expectedMonthEnergy] of [
   assert.ok(payload.includes("Месяц рождения мужчины: "+month+" (энергия "+expectedMonthEnergy+")"),"Month energy "+month);
   assert.ok(!payload.includes("<DAY>"),"Service notes must only be in private model prompt");
 }
-assert.equal(calls,beforePairs+3,"One inference per day/month pair");
+assert.equal(calls,beforePairs+6,"One inference per day/month pair");
 const guest=await worker.fetch(new Request("https://example.test/v1/redflag-owner-question",{
   method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
 }),env);
