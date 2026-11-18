@@ -1,4 +1,4 @@
-name: Review all twelve day-nine birthdays with private Gemma 4 answers
+name: Audit new warm Gemma across all twelve ninth-day birth months
 on:
   push:
     branches: [main]
@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-      - name: Generate owner-only 12 dates x 2 questions and compare semantic variation
+      - name: Generate 24 owner-only drafts from current warm Gemma and compare meaning
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
@@ -48,6 +48,7 @@ jobs:
               req=urllib.request.Request(url,data=encoded,method="POST",
                 headers={"Content-Type":"application/json","Accept":"application/json",
                 "X-Numi-Moment-Proof":proof,"User-Agent":"NumiGemmaDiversityReview/1.0"})
+              started=time.perf_counter()
               try:
                 with urllib.request.urlopen(req,timeout=115) as r:
                   code=r.status;body=json.load(r)
@@ -57,14 +58,23 @@ jobs:
                 except Exception:body={}
               except Exception as e:
                 code=0;body={"error":type(e).__name__}
+              elapsed=round(time.perf_counter()-started,2)
               answer=body.get("answer","")
               valid=code==200 and body.get("ok") is True and body.get("model")=="@cf/google/gemma-4-26b-a4b-it" and isinstance(answer,str) and len(answer)>=420
-              print("GEMMA_NINTH_DAY",day,month,qid,"HTTP",code,"chars",len(answer),"valid",valid,"error",body.get("error","none"),flush=True)
+              print("GEMMA_NINTH_DAY",day,month,qid,"HTTP",code,"chars",len(answer),"valid",valid,"seconds",elapsed,"review",body.get("editorial_review_needed"),"style",body.get("style_version"),"error",body.get("error","none"),flush=True)
               data.append({"day":day,"month":month,"question_id":qid,"title":title,
-                "http":code,"valid":valid,"answer":answer if valid else "","error":body.get("error"),"editorial_review_needed":body.get("editorial_review_needed")})
+                "http":code,"valid":valid,"answer":answer if valid else "",
+                "elapsed_seconds":elapsed,"style_version":body.get("style_version"),
+                "error":body.get("error"),"editorial_review_needed":body.get("editorial_review_needed")})
               time.sleep(1)
           complete=[x for x in data if x["valid"]]
           print("GEMMA_NINTH_DAY_SUMMARY",len(complete),"/24",flush=True)
+          print("EDITORIAL_REVIEW_NEEDED",sum(x.get("editorial_review_needed") is True for x in complete),"/",len(complete),flush=True)
+          if complete:
+            durations=sorted(x["elapsed_seconds"] for x in complete)
+            print("LATENCY_MEDIAN",durations[len(durations)//2],"P90",durations[min(len(durations)-1,int(len(durations)*0.9))],flush=True)
+          if any(x.get("style_version")!="flags-owner-gemma4-soft-50-50-clean-20261118" for x in complete):
+            raise RuntimeError("NOT_CURRENT_WARM_GEMMA_PROMPT")
           def first(x):return x["answer"].split("\n\n")[0]
           for qid,_ in questions:
             group=[x for x in complete if x["question_id"]==qid]
@@ -85,7 +95,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: redflag-gemma4-12-months-24-private-drafts
+          name: redflag-gemma4-warm-12-months-24-private-drafts
           path: gemma-private-ninth-day-review/
           retention-days: 1
           if-no-files-found: warn
