@@ -35,7 +35,7 @@ const env={REDFLAG_BATCH_KEY_SHA256:hash,AI:{run:async(model,opts)=>{
   calls++;
   assert.equal(opts.messages.length,2);
   if(opts.messages[0].content.includes("Ты опытный нумеролог, работающий с 22 энергиями")){
-    assert.match(opts.messages[0].content,/Сначала пойми, о каком поступке спрашивает женщина/);
+    assert.match(opts.messages[0].content,/Сначала пойми, о каком конкретном поступке спрашивает женщина/);
     assert.match(opts.messages[0].content,/<DAY>/);
     assert.match(opts.messages[0].content,/<MONTH>/);
     assert.match(opts.messages[0].content,/<COMBINED>/);
