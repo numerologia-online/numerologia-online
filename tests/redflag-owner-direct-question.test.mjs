@@ -6,7 +6,7 @@ const source=readFileSync("cloudflare/redflag-draft-ai/src/index.js","utf8");
 const catalog=JSON.parse(readFileSync("redflag-ai-lab/catalog.json","utf8"));
 const flags=catalog.categories.find(c=>c.id==="flags").questions;
 assert.equal(flags.length,9);
-assert.match(source,/flags-owner-gemma4-warm-personal-cta-20261118/);
+assert.match(source,/flags-owner-gemma4-warm-natural-cta-20261118/);
 assert.match(source,/на равных, 50 на 50/);
 assert.match(source,/энергии дня и месяца/);
 assert.match(source,/одна усиливает или смягчает другую/i);
@@ -68,7 +68,7 @@ for(const q of flags){
   assert.ok(tenRelated.some(title=>json.answer.split("\n\n")[1].includes(title)),"Related title must be exact");
   assert.equal(json.draft_only,true);
   assert.equal(json.published,false);
-  assert.equal(json.style_version,"flags-owner-gemma4-warm-personal-cta-20261118");
+  assert.equal(json.style_version,"flags-owner-gemma4-warm-natural-cta-20261118");
   assert.equal(json.model,"@cf/google/gemma-4-26b-a4b-it");
 }
 for(let i=0;i<flags.length;i++){
