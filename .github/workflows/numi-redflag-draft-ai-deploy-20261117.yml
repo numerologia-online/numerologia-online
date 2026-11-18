@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - cloudflare/redflag-draft-ai/src/index.js
+      - tests/redflag-owner-direct-question.test.mjs
       - .github/workflows/numi-redflag-draft-ai-deploy-20261117.yml
 permissions:
   contents: read
