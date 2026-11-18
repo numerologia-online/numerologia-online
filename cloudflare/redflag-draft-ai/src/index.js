@@ -283,20 +283,36 @@ export default {
       try{
         // One owner-only inference: question first, both energies second,
         // final answer only. Other Red Flag sections and buyers remain unchanged.
-        const generation=await env.AI.run(MODEL,{
-          messages:[{role:"system",content:FLAGS_OWNER_PROMPT+"\n\n"+FLAGS_PRIVATE_RESPONSE_FORMAT},
-            {role:"user",content:userInput}],
-          temperature:0.78,max_completion_tokens:1150,
-          chat_template_kwargs:{enable_thinking:false}
+        // Groq is the OWNER-APPROVED provider for the private Red Flag test.
+        // The API key is a Cloudflare encrypted secret, never sent to the browser.
+        // Do not silently fall back to Gemma if Groq is unavailable.
+        if(typeof env.GROQ_API_KEY!=="string"||!env.GROQ_API_KEY.startsWith("gsk_"))
+          return reply(503,{ok:false,error:"FLAGS_GROQ_NOT_CONFIGURED"});
+        const upstream=await fetch("https://api.groq.com/openai/v1/chat/completions",{
+          method:"POST",
+          headers:{"Authorization":"Bearer "+env.GROQ_API_KEY,
+            "Content-Type":"application/json","Accept":"application/json"},
+          body:JSON.stringify({
+            model:"openai/gpt-oss-120b",
+            messages:[{role:"system",content:FLAGS_OWNER_PROMPT+"\n\n"+FLAGS_PRIVATE_RESPONSE_FORMAT},
+              {role:"user",content:userInput}],
+            temperature:0.7,
+            reasoning_effort:"low",
+            max_completion_tokens:2300,
+            stream:false
+          })
         });
-        const structured=parseFlagsOwnerStructured(generation?.response??generation?.choices?.[0]?.message?.content);
+        if(!upstream.ok)
+          return reply(503,{ok:false,error:"FLAGS_GROQ_HTTP_"+upstream.status});
+        const generation=await upstream.json();
+        const structured=parseFlagsOwnerStructured(generation?.choices?.[0]?.message?.content);
         if(!structured)
           return reply(503,{ok:false,error:"FLAGS_ENERGY_ANALYSIS_INCOMPLETE"});
         const answer=structured.answer;
         return reply(200,{ok:true,draft_only:true,published:false,
           style_test:isStyleTrial,category:input.category,question_id:input.question_id,
           date_key:input.day+"-"+input.month,answer,
-          style_version:"flags-owner-5050-independent-20261118"});
+          model:"openai/gpt-oss-120b",style_version:"flags-owner-groq120b-5050-20261118"});
       }catch(error){
         console.error("REDFLAG_FLAGS_TEST_AI_ERROR",error?.name||"error");
         return reply(503,{ok:false,error:"FLAGS_AI_UNAVAILABLE"});
