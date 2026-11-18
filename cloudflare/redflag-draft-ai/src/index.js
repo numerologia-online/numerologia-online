@@ -102,26 +102,43 @@ const FLAGS_OWNER_PROMPT=[
 ].join("\n\n");
 // A single inference returns short private analysis and a standalone answer.
 // Only the answer is returned through the owner PHP route.
+// Groq GPT-OSS 120B supports strict JSON Schema decoding. The model must
+// return one complete JSON object, not fragile hand-written XML delimiters.
+const FLAGS_GROQ_SCHEMA={
+  type:"json_schema",
+  json_schema:{
+    name:"redflag_owner_analysis",
+    strict:true,
+    schema:{
+      type:"object",
+      properties:{
+        day:{type:"string",description:"Короткий частный анализ энергии дня для этого вопроса"},
+        month:{type:"string",description:"Самостоятельный равноправный анализ энергии месяца"},
+        combined:{type:"string",description:"Конкретное взаимодействие энергий с равным весом"},
+        answer:{type:"string",description:"Готовый ответ читательнице в двух абзацах"}
+      },
+      required:["day","month","combined","answer"],
+      additionalProperties:false
+    }
+  }
+};
+const FLAGS_JSON_INSTRUCTION=[
+  "Верни строго JSON по заданной схеме. Никакой XML-разметки, Markdown или текста вокруг JSON.",
+  "day и month, короткие самостоятельные объяснения влияния соответствующих энергий на заданный вопрос.",
+  "combined, механизм их взаимного влияния строго 50 на 50.",
+  "answer, только готовый живой ответ женщине двумя абзацами. Не раскрывай в нём расчёты или служебный анализ."
+].join("\n");
 const parseFlagsOwnerStructured=(raw)=>{
-  if(typeof raw!=="string")return null;
-  const get=(tag)=>raw.match(new RegExp("<"+tag+">\\s*([\\s\\S]*?)\\s*<\\/"+tag+">","i"))?.[1]?.trim()||"";
-  const day=get("DAY"),month=get("MONTH"),combined=get("COMBINED");
-  // GPT-OSS sometimes omits the final closing tag while returning a complete
-  // customer answer. Accept that harmless formatting variation only after the
-  // three private analysis blocks are present and pass their checks.
-  const answer=normalizeDraft(get("ANSWER")||raw.match(/<ANSWER>\s*([\s\S]*)$/i)?.[1]);
-  if([day,month,combined].some(s=>s.length<20||s.length>650)||answer.length<380||answer.length>5200||
-    hiddenCalculationLeak(answer))return null;
+  if(typeof raw!=="string"||!raw.trim())return null;
+  let result;
+  try{result=JSON.parse(raw)}catch{return null;}
+  if(!result||typeof result!=="object"||Array.isArray(result))return null;
+  const day=result.day,month=result.month,combined=result.combined;
+  const answer=normalizeDraft(result.answer);
+  if([day,month,combined].some(v=>typeof v!=="string"||v.trim().length<20||v.length>900)||
+    answer.length<380||answer.length>5200||hiddenCalculationLeak(answer))return null;
   return {answer,energy_notes_valid:true};
 };
-const FLAGS_PRIVATE_RESPONSE_FORMAT=[
-  "В одном ответе верни четыре блока, чтобы сайт мог проверить, что ты действительно исследовал обе энергии. Первые три блока служебные, женщина их не увидит. Каждый служебный блок пиши одним-двумя короткими предложениями.",
-  "<DAY>Самостоятельный вклад энергии дня в возможное поведение по этому вопросу, без готовых характеристик.</DAY>",
-  "<MONTH>Равноправный самостоятельный вклад энергии месяца по этому вопросу, без повторения дня.</MONTH>",
-  "<COMBINED>Как оба вклада 50 на 50 формируют одну конкретную реакцию, которую нельзя вывести только из одной энергии. При одинаковых энергиях покажи их усиление.</COMBINED>",
-  "<ANSWER>Здесь только два живых абзаца готового ответа женщине, без чисел, названий энергий, разметки и служебных выводов.</ANSWER>",
-  "Вставь настоящие рассуждения и готовый текст вместо пояснений в тегах; соблюдай порядок и названия четырёх тегов. Сохрани лёгкий живой стиль, не превращай ответ в таблицу или отчёт."
-].join("\n");
 // The owner chose a separate subject of analysis for each Красные флаги question.
 // A focus directs the analysis; it never supplies a fixed answer or verdict.
 const FLAGS_QUESTION_FOCUS=Object.freeze({
@@ -297,8 +314,9 @@ export default {
             "Content-Type":"application/json","Accept":"application/json"},
           body:JSON.stringify({
             model:"openai/gpt-oss-120b",
-            messages:[{role:"system",content:FLAGS_OWNER_PROMPT+"\n\n"+FLAGS_PRIVATE_RESPONSE_FORMAT},
+            messages:[{role:"system",content:FLAGS_OWNER_PROMPT+"\n\n"+FLAGS_JSON_INSTRUCTION},
               {role:"user",content:userInput}],
+            response_format:FLAGS_GROQ_SCHEMA,
             temperature:0.7,
             reasoning_effort:"low",
             max_completion_tokens:2300,
@@ -315,7 +333,7 @@ export default {
         return reply(200,{ok:true,draft_only:true,published:false,
           style_test:isStyleTrial,category:input.category,question_id:input.question_id,
           date_key:input.day+"-"+input.month,answer,
-          model:"openai/gpt-oss-120b",style_version:"flags-owner-groq120b-5050-20261118"});
+          model:"openai/gpt-oss-120b",style_version:"flags-owner-groq120b-strict-json-20261118"});
       }catch(error){
         console.error("REDFLAG_FLAGS_TEST_AI_ERROR",error?.name||"error");
         return reply(503,{ok:false,error:"FLAGS_AI_UNAVAILABLE"});
