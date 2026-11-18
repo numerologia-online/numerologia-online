@@ -97,6 +97,7 @@ const FLAGS_OWNER_PROMPT=[
   "Рассказывай прежде всего, как это может проявиться в поступках и общении с женщиной, на что ей обратить внимание и чем это может обернуться в отношениях. Причины поведения объясняй, когда это помогает понять ситуацию, но не подменяй ими ответ и не оправдывай неприятные поступки. Не придумывай мужчине жестокость или измены только ради красного флага и не приукрашивай его ради приятного впечатления.",
   "Пиши легко, естественно и обычными человеческими словами, как наблюдательная доброжелательная женщина разговаривает с подругой. Можно с теплом, точностью, лёгкой иронией и характером. Пусть интерес вызывают узнаваемые наблюдения, а не торжественные фразы, философские образы и длинные рассуждения. Не делай мужчину загадкой, которую читательнице нужно разгадывать.",
   "Сохраняй узнаваемость мужчины между вопросами, но каждый раз отвечай на новую тему. Не повторяй общий портрет, если женщина спрашивает о ревности, отказе, извинениях, помощи или другой конкретной ситуации. Излагай трактовку как возможные склонности, а не как доказанные поступки реального человека.",
+  "Не пытайся сделать любого мужчину приятным и глубоким. Иногда у склонности есть неприятная цена. Назови конкретный риск по вопросу, не оправдывай его достоинством. Особенно избегай универсального образа «закрытый, мудрый, самостоятельный, просто ценит личное пространство». Слова «внутренний мир», «глубина», «исключительность», «отстраниться», «уйти в себя» не заменяют ответ на вопрос. Вместо этих клише опиши поступок или реакцию, которую женщина может заметить.",
   "Не упоминай числа, названия энергий, арканы и способы расчёта. Женщина должна получить готовый ответ, а не объяснение нумерологической методики.",
   "Всего два абзаца и ориентир 750–1100 символов с пробелами. Первый абзац это прямой ответ с понятными проявлениями поведения. Второй абзац это короткий, естественный переход к одному действительно доступному вопросу из другого раздела, который дополняет тему. Без заголовков, списков, двоеточий и длинных тире."
 ].join("\n\n");
@@ -301,8 +302,11 @@ export default {
           });
           answer=normalizeDraft(retry?.response??retry?.choices?.[0]?.message?.content);
         }
-        if(!flagsOutputValid(answer,input.followups)){
-          // Private diagnostic only: never return failed generated prose or user data.
+        // This route is OWNER-ONLY and cannot publish to buyers. Avoid losing a
+        // substantial, safe draft just because Gemma missed an exact title or
+        // a paragraph separator. Flag it for editorial review instead.
+        const editorialReviewNeeded=!flagsOutputValid(answer,input.followups);
+        if(answer.length<380||answer.length>2900||ownerHasCalculationLeak(answer)){
           const parts=draftParagraphs(answer);
           return reply(503,{ok:false,error:"FLAGS_GEMMA_OUTPUT_INCOMPLETE",
             diagnosis:{chars:answer.length,paragraphs:parts.length,
@@ -311,6 +315,7 @@ export default {
               followup:input.followups.some(t=>parts[1]?.includes(t))}});
         }
         return reply(200,{ok:true,draft_only:true,published:false,
+          editorial_review_needed:editorialReviewNeeded,
           style_test:isStyleTrial,category:input.category,question_id:input.question_id,
           date_key:input.day+"-"+input.month,answer,
           model:MODEL,style_version:"flags-owner-gemma4-question-specific-20261118"});
