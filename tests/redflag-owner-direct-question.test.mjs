@@ -33,7 +33,7 @@ const env={REDFLAG_BATCH_KEY_SHA256:hash,AI:{run:async(model,opts)=>{
   assert.equal(model,"@cf/google/gemma-4-26b-a4b-it");
   assert.equal(opts.messages[0].role,"system");
   if(opts.messages[0].content.includes("Ты опытная нумеролог"))
-    assert.match(opts.messages[0].content,/50 процентов/);
+    assert.match(opts.messages[0].content,/50 на 50/);
   assert.equal(opts.chat_template_kwargs.enable_thinking,false);
   observedSystems.push(opts.messages[0].content);
   const userText=opts.messages.find(x=>x.role==="user")?.content||"";
