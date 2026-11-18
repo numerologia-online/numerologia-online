@@ -26,7 +26,7 @@ jobs:
               'Щедрый мужчина или считает каждую копейку?']}
           req=urllib.request.Request('https://numerologia-300-ai.tankraft431.workers.dev/v1/redflag-owner-question',
             data=json.dumps(body,ensure_ascii=False).encode(),method='POST',
-            headers={'Content-Type':'application/json','X-Numi-Moment-Proof':proof})
+            headers={'Content-Type':'application/json','X-Numi-Moment-Proof':proof,'User-Agent':'NumiGemmaDiversityReview/1.0'})
           try:
             with urllib.request.urlopen(req,timeout=125) as res: result=json.load(res);code=res.status
           except urllib.error.HTTPError as e:
