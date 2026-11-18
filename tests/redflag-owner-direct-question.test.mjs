@@ -6,12 +6,17 @@ const source=readFileSync("cloudflare/redflag-draft-ai/src/index.js","utf8");
 const catalog=JSON.parse(readFileSync("redflag-ai-lab/catalog.json","utf8"));
 const flags=catalog.categories.find(c=>c.id==="flags").questions;
 assert.equal(flags.length,9);
-assert.match(source,/flags-owner-gemma4-single-pass-editor-20261118/);
+assert.match(source,/flags-owner-gemma4-energy-guide-20261118/);
 assert.match(source,/равным весом 50\/50/);
 assert.match(source,/найди их взаимодействие именно по заданному вопросу/i);
 assert.match(source,/Отдельные вопросы одной даты/i);
 assert.match(source,/Если месяц меняется/i);
-assert.match(source,/конкретную наблюдаемую ситуацию/);
+assert.match(source,/одну понятную ситуацию/);
+assert.match(source,/const FLAGS_ENERGY_ROWS=/);
+assert.match(source,/const FLAGS_ENERGY_PROFILES=/);
+assert.match(source,/const FLAGS_QUESTION_FACETS=/);
+assert.match(source,/Профиль дня:/);
+assert.match(source,/Профиль месяца:/);
 assert.match(source,/const FLAGS_QUESTION_FOCUS=/);
 assert.match(source,/const flagsOutputValid=/);
 assert.match(source,/const flagsRelatedFollowup=/);
@@ -63,7 +68,7 @@ for(const q of flags){
   assert.equal(json.answer,answer);
   assert.equal(json.draft_only,true);
   assert.equal(json.published,false);
-  assert.equal(json.style_version,"flags-owner-gemma4-single-pass-editor-20261118");
+  assert.equal(json.style_version,"flags-owner-gemma4-energy-guide-20261118");
   assert.equal(json.model,"@cf/google/gemma-4-26b-a4b-it");
 }
 const focus={
@@ -80,6 +85,8 @@ const focus={
 for(let i=0;i<flags.length;i++){
   assert.ok(observedInputs[i].includes(focus[flags[i].id]),"Missing distinct question focus "+flags[i].id);
   assert.ok(observedInputs[i].includes("Месяц рождения мужчины: 9 (энергия 9)."));
+  assert.ok(observedInputs[i].includes("Профиль дня:"),"Day profile required");
+  assert.ok(observedInputs[i].includes("Профиль месяца:"),"Month profile required");
 }
 const first=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags","say-no",
   "Уважает женское «нет» или начинает давить?",tenRelated),env);
@@ -117,6 +124,8 @@ for(const [day,month,expectedDayEnergy,expectedMonthEnergy] of [
   assert.ok(text.includes("Месяц рождения мужчины: "+month+" (энергия "+expectedMonthEnergy+")"));
 }
 assert.equal(observedInputs.length-inputsBefore,6,"Each combination has its own inference input");
+assert.notEqual(observedInputs[inputsBefore],observedInputs[inputsBefore+1],
+  "Changing month changes actual model evidence");
 shortOnce=true;shortSeen=false;
 const beforeRetry=calls;
 const retry=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags","hero",
