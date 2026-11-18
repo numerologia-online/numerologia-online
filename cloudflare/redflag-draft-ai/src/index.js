@@ -60,7 +60,7 @@ async function ephemeralBatchProofValid(provided,expectedHash){
   return mismatch===0;
 }
 const CATEGORY_RULES={
-  flags:"", // Cleared by owner request: no Red Flag instruction until a new one is provided.
+  flags:"", // Retained only as a valid category. No rules are applied in the owner-only route.
   infidelity:"Тема верности, честности и соблазнов. Показывай неприглядные проявления: запасные варианты, флирт ради самооценки, размытые границы, недоговорённости. Не объявляй факт измены по дате.",
   intimacy:"Обрати внимание на эгоизм, уважение к отказу, нежность и реальную взаимность. Не придумывай подробности интимной жизни человека, никаких откровенных сексуальных сцен.",
   family:"Показывай не только достоинства, но и бытовое иждивенчество, инфантильность, пустые обещания, чрезмерный контроль. Привязывай вывод исключительно к вопросу.",
@@ -89,65 +89,8 @@ const STYLE_TEST_SYSTEM=[
   "Опиши один конкретный риск или его отсутствие и наблюдаемые признаки поведения только по теме вопроса. Не приписывай человеку достоверные поступки по дате и не придумывай злодея там, где риск невелик.",
   "Ответ для читательницы, а не отчёт о методе. Два коротких живых абзаца, всего примерно 650–950 знаков. Без двоеточий, длинных тире, формул, навязанных переходов к другим вопросам и универсальных психологических рассуждений."
 ].join(" ");
-// Only the owner-only "Красные флаги" experiment uses this ONE Gemma prompt.
-// No energy templates, separate question rules, second inference or AI editor.
-// Owner-only Red Flags: both paragraphs are created in ONE model call.
-// The site validates exact available titles but does not paste a canned CTA.
-const FLAGS_OWNER_PROMPT=[
-  "Ты опытная нумеролог. Говори с женщиной о мужчине как внимательная подруга. Легко, тепло, мягко и по-человечески. Не пиши как психолог из учебника и не старайся звучать литературно. Это нумерологическая символическая трактовка склонностей, а не достоверные факты о человеке.",
-  "Учитывай энергии дня и месяца по системе 22 энергий на равных, 50 на 50. Не повторяй две характеристики по отдельности. Осмысляй вместе их сильные, слабые и теневые стороны, где одна усиливает или смягчает другую. Если месяц меняется, по сути меняются возможные проявления мужчины. Если вопрос другой, раскрывай совершенно иную сторону сочетания. Не своди любую дату к молчанию, гордости или контролю.",
-  "Сразу, в первом предложении, дай ясный ответ на вопрос. Не начинай с «Слушай», «Тут получается», «По его дате видно», «С одной стороны», «В нём живёт» и других вступлений. Покажи один наблюдаемый пример возможного поведения в отношениях и объясни, чем он важен женщине. Если есть риск, называй его прямо, не оправдывай мужчину. Если риск небольшой, не придумывай опасность. Никогда не объявляй по дате доказанные измены, насилие или реальные поступки.",
-  "КРАЙНЕ ВАЖНО: живой язык. Не пиши «оскорбление твоего ума», «закроется в скорлупе», «неприступная крепость», «интеллектуальное давление тишиной», «глубокий внутренний мир» и похожие драматичные или искусственные обороты. Это звучит нелепо. Лучше просто сказать «он может обидеться», «начнёт спорить», «не услышит отказ». Но не повторяй и эти примеры в каждом ответе. Обычные слова, понятные настоящей женщине, без театральных метафор. Не делай отказ похожим на сцену из романа. Убирай выражения «внутренний кодекс», «мудрый наставник», «идеальный финал», «внутри живёт», если они не относятся прямо к вопросу.",
-  "Напиши РОВНО ДВА абзаца суммарно примерно 760–960 символов. Первый абзац около 560–730 символов даёт ответ и один жизненный нюанс. Второй абзац около 150–230 символов, тёплое, заботливое продолжение ИМЕННО этой трактовки. Мягко покажи, какую ещё сторону мужчины полезно рассмотреть, и естественно предложи один переданный уже доступный вопрос. Название вопроса скопируй ДОСЛОВНО в кавычках, не меняй ни слова. Без рекламы, без общих фраз. Не предлагай «спроси меня» и не пиши «было бы здорово узнать» — женщина не разговаривает с тобой, она открывает другой вопрос на сайте. Увязывай его с конкретным риском или проявлением из первого абзаца.",
-  "Верни только два готовых абзаца. Никаких заголовков, меток «[Рекомендация от сайта]», «[Сайт]», списков, двоеточий, длинных тире, формул и упоминаний чисел, энергий, нумерологии или расчётов."
-].join("\n\n");
-const flagsFinishAnswer=(raw)=>{
-  // Formatting cleanup only. Gemma owns the personal second paragraph.
-  return normalizeDraft(raw)
-    .replace(/\[\s*(?:рекомендация\s+от\s+сайта|сайт|второй\s+абзац)\s*\]/giu,"")
-    .replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
-};
-// Pick a contextually related, actually available follow-up without another AI call.
-// Rotate equally relevant editorial options across months to avoid the same upsell.
-const FLAGS_RELATED_FOLLOWUPS=Object.freeze({
-  "hero":["Щедрый мужчина", "Будет ли мужчина жить за твой счёт", "Самостоятельный мужчина"],
-  "say-no":["На каком языке любви", "Будет опорой для семьи", "Пишет первым"],
-  "care-or-control":["Верный или", "Будет опорой для семьи", "На каком языке любви"],
-  "jealousy":["Верный или", "Пишет первым", "Какой финальный вердикт"],
-  "argument":["Держит слово", "На каком языке любви", "Будет опорой для семьи"],
-  "abuse-signal":["Держит слово", "Какой финальный вердикт", "Будет опорой для семьи"],
-  "support-or-cause":["Будет опорой для семьи", "Щедрый мужчина", "Держит слово"],
-  "apology":["Держит слово", "На каком языке любви", "Пишет первым"],
-  "weak-place":["Какой финальный вердикт", "Верный или", "Будет опорой для семьи"],
-  "calm-or-swings":["На каком языке любви", "Будет опорой для семьи", "Держит слово"]
-});
-const flagsRelatedFollowup=(titles,questionId,month)=>{
-  if(!titles.length)return [];
-  const patterns=FLAGS_RELATED_FOLLOWUPS[questionId]||[];
-  const relevant=patterns.map(prefix=>titles.find(t=>t.startsWith(prefix))).filter(Boolean);
-  return [relevant.length?relevant[(month-1)%relevant.length]:titles[0]];
-};
-// Detect the repetitive generic portrait that made earlier answers feel identical.
-// This is a review signal, not a predefined interpretation for any energy.
-const flagsGenericPortrait=(raw)=>{
-  const first=draftParagraphs(normalizeDraft(raw))[0]||"";
-  const templates=[
-    /внутренн\w*\s+(?:мир|глубин|спокойств|ценност|ощущен)/iu,
-    /глубок\w*\s+(?:раздум|пониман|чувств|мудрост|мир|избирательн)/iu,
-    /(?:закрыва|закрыт|замкну|отстран|дистанцир|уходит?\s+в\s+себя)/iu,
-    /(?:интеллектуальн\w*\s+превосходств|исключительност|особого\s+склада)/iu,
-    /(?:самоценност|достоинств|особый\s+путь)/iu
-  ];
-  return templates.filter(pattern=>pattern.test(first)).length>=3;
-};
-const flagsOutputValid=(raw,followups)=>{
-  if(typeof raw!=="string")return false;
-  const answer=normalizeDraft(raw),parts=draftParagraphs(answer);
-  return answer.length>=420&&answer.length<=1550&&parts.length===2
-    &&parts[0].length>=275&&parts[1].length>=55
-    &&!ownerHasCalculationLeak(answer)
-    &&(!followups.length||followups.some(title=>parts[1].includes(title)));
-};
+// Owner-only "Красные флаги" has no editorial or numerology prompt.
+// Draft connection and the original question/date remain; other categories are isolated.
 const OWNER_QUESTION_SYSTEM=STYLE_TEST_SYSTEM;
 // Normalize formatting only for owner testing; NEVER change the customer's route.
 // A genuine reply must not disappear because the model used one paragraph.
@@ -288,45 +231,29 @@ export default {
       const isStyleTrial=url.pathname==="/v1/redflag-style-test";
       if(!isOwnerQuestion&&!isStyleTrial)
         return reply(409,{ok:false,error:"FLAGS_NOT_PUBLISHED",draft_only:true,published:false});
-      const followup=flagsRelatedFollowup(input.followups,input.question_id,input.month);
+      // Clean slate: no system prompt, no energies, analyses, suggested follow-ups
+      // or automatic second paragraph. Send only the selected question and birth date.
       const userInput=[
-        "Вопрос женщины: "+input.title,
-        "День рождения мужчины: "+input.day+" (энергия дня "+energy22(input.day)+").",
-        "Месяц рождения мужчины: "+input.month+" (энергия месяца "+energy22(input.month)+").",
-        "Обе энергии равноправны. Самостоятельно осмысли их сочетание именно для этого вопроса.",
-        "Точное название следующего доступного вопроса для второго абзаца: "+JSON.stringify(followup[0]||""),
-        "Напиши оба абзаца сама, в одном ответе. Второй должен быть связан с конкретной мыслью первого, не добавляй служебных меток."
+        "Вопрос: "+input.title,
+        "Дата рождения: "+String(input.day).padStart(2,"0")+"."+String(input.month).padStart(2,"0")
       ].join("\n");
       try{
-        // One model call only; all editorial reasoning happens inside it.
-        // Lightweight local validation cannot add model latency.
         const generated=await env.AI.run(MODEL,{
-          messages:[{role:"system",content:FLAGS_OWNER_PROMPT},
-            {role:"user",content:userInput}],
-          temperature:0.70,max_completion_tokens:690,
+          messages:[{role:"user",content:userInput}],
+          temperature:0.7,max_completion_tokens:690,
           chat_template_kwargs:{enable_thinking:false}
         });
-        const answer=flagsFinishAnswer(
-          generated?.response??generated?.choices?.[0]?.message?.content);
-        const editorialReviewNeeded=!flagsOutputValid(answer,followup)||
-          flagsGenericPortrait(answer)||
-          /(?:он точно|он никогда|он всегда|он обязательно|этот мужчина точно)/iu.test(answer);
-        if(answer.length<380||answer.length>2900||ownerHasCalculationLeak(answer)){
-          const parts=draftParagraphs(answer);
-          return reply(503,{ok:false,error:"FLAGS_GEMMA_OUTPUT_INCOMPLETE",
-            diagnosis:{chars:answer.length,paragraphs:parts.length,
-              first:parts[0]?.length||0,second:parts[1]?.length||0,
-              leak:ownerHasCalculationLeak(answer),
-              followup:followup.some(t=>parts[1]?.includes(t))}});
-        }
+        const rawAnswer=generated?.response??generated?.choices?.[0]?.message?.content;
+        const answer=typeof rawAnswer==="string"?rawAnswer.trim():"";
+        if(!answer||answer.length>7500)
+          return reply(503,{ok:false,error:"FLAGS_EMPTY_DRAFT"});
         return reply(200,{ok:true,draft_only:true,published:false,
-          editorial_review_needed:editorialReviewNeeded,
           style_test:isStyleTrial,category:input.category,question_id:input.question_id,
           date_key:input.day+"-"+input.month,answer,
-          model:MODEL,style_version:"flags-owner-gemma4-warm-natural-cta-20261118"});
+          model:MODEL,style_version:"flags-owner-clean-slate-no-prompt-20261118"});
       }catch(error){
-        console.error("REDFLAG_FLAGS_GEMMA_ERROR",error?.name||"error");
-        return reply(503,{ok:false,error:"FLAGS_GEMMA_UNAVAILABLE"});
+        console.error("REDFLAG_FLAGS_AI_ERROR",error?.name||"error");
+        return reply(503,{ok:false,error:"FLAGS_AI_UNAVAILABLE"});
       }
     }
     const styleTest=url.pathname==="/v1/redflag-style-test";
