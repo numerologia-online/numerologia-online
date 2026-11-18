@@ -1,6 +1,11 @@
 name: Deploy isolated Red Flag draft-only AI service
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - cloudflare/redflag-draft-ai/src/index.js
+      - .github/workflows/numi-redflag-draft-ai-deploy-20261117.yml
 permissions:
   contents: read
   statuses: write
@@ -16,6 +21,7 @@ jobs:
       - name: Check independent draft-only target and syntax
         run: |
           node --check cloudflare/redflag-draft-ai/src/index.js
+          node tests/redflag-owner-direct-question.test.mjs
           node - <<'JS'
           const fs=require('fs');
           const cfg=JSON.parse(fs.readFileSync('cloudflare/redflag-draft-ai/wrangler.jsonc','utf8'));
@@ -89,7 +95,7 @@ jobs:
                   req=urllib.request.Request(base+'/health?probe='+str(i),headers={'Cache-Control':'no-cache'})
                   with urllib.request.urlopen(req,timeout=15) as res:
                       body=json.load(res)
-                  if body.get('version')=='redflag-owner-drafts-v1-20261117' and body.get('ai_bound') is True:
+                  if body.get('version')=='redflag-owner-drafts-v3-no-numbers-ready-cta-20261117' and body.get('ai_bound') is True:
                       health_kind='verified';break
                   health_kind='binding' if body.get('ai_bound') is not True else 'body'
               except urllib.error.HTTPError as ex:
@@ -121,7 +127,7 @@ jobs:
           python3 - <<'PY'
           import json,urllib.request,urllib.error,time
           base='https://numerologia-redflag-draft-ai.tankraft431.workers.dev'
-          desired='redflag-owner-drafts-v1-20261117'
+          desired='redflag-owner-drafts-v3-no-numbers-ready-cta-20261117'
           health=None
           for i in range(6):
               try:
