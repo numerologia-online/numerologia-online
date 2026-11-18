@@ -99,7 +99,7 @@ const FLAGS_OWNER_PROMPT=[
   "Реалистично показывай неприятную сторону, если она следует из сочетания, и её цену для женщины. Не оправдывай контроль, жестокость и пренебрежение; но и не выдумывай их там, где по трактовке риск слабый. Не объявляй по дате доказанные измены, насилие, мотивы и поступки. Избегай категоричных «он точно», «он никогда», «всегда будет». Говори о вероятных склонностях через конкретные реакции.",
   "Одна короткая узнаваемая жизненная ситуация лучше нескольких общих прилагательных. Убирай шаблоны «закрытый и мудрый», «уйдёт в себя», «особенный», «внутренний мир», «самодостаточность», «считает себя выше всех», если они не раскрывают сам вопрос. Не приписывай каждой дате желание доминировать или страх близости. Если месяц меняется, меняется механизм поведения, а не только тон.",
   "Стиль: естественная живая речь женщины к женщине, конкретно, с наблюдательностью и мягкой иронией там, где она уместна. Никаких красивостей ради красивостей, пафоса, оправданий каждого мужчины и универсальных советов. Не называй энергии, числа, арканы, матрицу и расчёты.",
-  "Ответ строго из двух абзацев примерно 750–1100 символов с пробелами. Первый, основной: прямой ответ и конкретное проявление в общении/поступках. Второй, значительно короче: естественный переход к переданному доступному вопросу с его ТОЧНЫМ названием. Без списков, заголовков, двоеточий и длинных тире. Верни ТОЛЬКО готовый текст."
+  "Напиши ОДИН основной абзац примерно 630–850 символов с пробелами: прямой ответ, конкретный риск или его отсутствие, один наблюдаемый поступок. Второй абзац с рекомендацией сайт добавит сам. Не делай вывод из общей репутации энергии: применяй только переданную тематическую грань. Избегай лекций, длинных рассуждений, двоеточий, длинных тире, заголовков и списков. Верни ТОЛЬКО готовый абзац."
 ].join("\n\n");
 // Editorial numerical sourcebook: exactly 22 energy archetypes, not 22 x N question texts.
 // Each energy has distinct subject-specific facets. Only TWO matching profiles
@@ -342,11 +342,50 @@ const FLAGS_QUESTION_FACETS=Object.freeze({
   "weak-place":["care","mood"],
   "calm-or-swings":["mood"]
 });
+// The ninth-day pilot gets a distinct concrete question lens. This prevents
+// all nine dates from collapsing into the same 'silent expert' portrait.
+const FLAGS_NINTH_QUESTION_VIEW=Object.freeze({
+  "say-no":"Сильная грань: умеет воспринимать чужое решение как самостоятельное. Тень: продолжает уточнять причины уже окончательного отказа, словно право на «нет» зависит от убедительности объяснения.",
+  "care-or-control":"Сильная грань: может заметить бытовую проблему и помочь с конкретным шагом. Тень: предлагает исправление там, где женщина просила лишь поддержки, и забывает спросить, нужна ли ей помощь.",
+  "hero":"Сильная грань: ценит результаты без публичного спектакля. Тень: обесценивает чужой успех, если тот достигнут непривычным ему способом.",
+  "jealousy":"Сильная грань: оценивает доверие по повторяющимся поступкам, не по сценам. Тень: копит несовпадения в рассказах, но не задаёт прямого вопроса, пока тревога не выросла.",
+  "argument":"Сильная грань: умеет отделить факты от обиды и вернуться к сложной теме. Тень: спорит о деталях, когда важнее договориться, и оставляет чувство неуслышанности.",
+  "abuse-signal":"На старте отношений обрати внимание, уважает ли её выбор без экзамена на разумность. Тень видна, когда насмешка над чужим решением маскируется под полезный совет.",
+  "support-or-cause":"Сильная грань: может точно организовать помощь, вспомнить про нужную мелочь. Тень: оставляет женщину одну делать всю практическую работу, пока предлагает способы её улучшить.",
+  "apology":"Сильная грань: исправляет конкретную ошибку поступком, даже если не любит красивых речей. Тень: исправление заменяет признанием вреда, который причинил.",
+  "weak-place":"Уязвимость: медленно переходит от обсуждения к совместному решению, особенно когда два человека по-разному понимают правильный выход. Важно не превращать близость в бесконечное согласование.",
+  "calm-or-swings":"Сильная грань: умеет восстановить равновесие короткой паузой. Тень: не договаривается, когда вернётся к разговору, и оставляет партнёршу в неопределённости."
+});
 const flagsEnergyEvidence=(number,questionId)=>{
   const entry=FLAGS_ENERGY_PROFILES[number];
   const facets=FLAGS_QUESTION_FACETS[questionId]||["boundaries"];
-  return ["ресурс: "+entry.resource,"тень: "+entry.shadow,
-    ...facets.map(facet=>"по теме: "+entry[facet])].join(" | ");
+  // Don't feed the same generic 'resource/shadow' to every question.
+  // Focused source notes are small and cannot add another AI call.
+  const notes=facets.map(facet=>entry[facet]);
+  if(number===9&&FLAGS_NINTH_QUESTION_VIEW[questionId])
+    return "точный ракурс вопроса: "+FLAGS_NINTH_QUESTION_VIEW[questionId]+
+      " | дополнительные грани: "+notes.join(" / ");
+  return notes.join(" | ");
+};
+// One approved cross-sell title + editorial second paragraph without more AI.
+// The only generated content is the main, question-specific interpretation.
+const FLAGS_CTA_LEADS=Object.freeze({
+  "say-no":"Границы видны не только в отказах. Для сравнения посмотри",
+  "care-or-control":"Чтобы разобраться, что стоит за его вниманием, посмотри",
+  "hero":"А как его отношение к себе отражается в других поступках, поможет проверить вопрос",
+  "jealousy":"Ещё одна проверка того, как он строит отношения, вопрос",
+  "argument":"А чтобы понять, совпадают ли разговоры с действиями, посмотри",
+  "abuse-signal":"Если хочешь рассмотреть его поступки без розовых очков, посмотри",
+  "support-or-cause":"Чтобы понять, насколько на него можно рассчитывать, посмотри",
+  "apology":"Есть смысл проверить, что происходит после его обещаний. Посмотри",
+  "weak-place":"А общий взгляд на эти риски можно получить в вопросе",
+  "calm-or-swings":"Чтобы увидеть, как он проявляет чувства на деле, посмотри"
+});
+const flagsFinishAnswer=(raw,questionId,followup)=>{
+  const core=normalizeDraft(raw).replace(/\s*\n+\s*/g," ").replace(/\s{2,}/g," ").trim();
+  if(!followup.length)return core;
+  const intro=FLAGS_CTA_LEADS[questionId]||"Если хочется посмотреть на ситуацию ещё с одной стороны, открой";
+  return core+"\n\n"+intro+" «"+followup[0]+"».";
 };
 if(FLAGS_ENERGY_ROWS.length!==22||!FLAGS_ENERGY_ROWS.every((row,i)=>row[0]===i+1))
   throw new Error("FLAGS_ENERGY_GUIDE_INCOMPLETE");
@@ -554,8 +593,8 @@ export default {
         "Профиль дня: "+flagsEnergyEvidence(energy22(input.day),input.question_id),
         "Месяц рождения мужчины: "+input.month+" (энергия "+energy22(input.month)+").",
         "Профиль месяца: "+flagsEnergyEvidence(energy22(input.month),input.question_id),
-        "Сравни обе стороны: где усиливают друг друга, где ограничивают. Не приписывай каждой энергии весь профиль; найди взаимодействие по вопросу.",
-        "Один проверенный доступный следующий вопрос: "+JSON.stringify(followup)
+        "Сравни обе стороны: где усиливают друг друга, где ограничивают. Не повторяй шаблон из соседних тем: здесь важен только конкретный заданный вопрос.",
+        "Рекомендацию следующего вопроса добавит сайт. Не придумывай второй абзац и призыв к покупке."
       ].join("\n");
       try{
         // One model call only; all editorial reasoning happens inside it.
@@ -563,10 +602,12 @@ export default {
         const generated=await env.AI.run(MODEL,{
           messages:[{role:"system",content:FLAGS_OWNER_PROMPT},
             {role:"user",content:userInput}],
-          temperature:0.79,max_completion_tokens:780,
+          temperature:0.72,max_completion_tokens:660,
           chat_template_kwargs:{enable_thinking:false}
         });
-        const answer=normalizeDraft(generated?.response??generated?.choices?.[0]?.message?.content);
+        const answer=flagsFinishAnswer(
+          generated?.response??generated?.choices?.[0]?.message?.content,
+          input.question_id,followup);
         const editorialReviewNeeded=!flagsOutputValid(answer,followup)||
           flagsGenericPortrait(answer)||
           /(?:он точно|он никогда|он всегда|он обязательно|этот мужчина точно)/iu.test(answer);
@@ -582,7 +623,7 @@ export default {
           editorial_review_needed:editorialReviewNeeded,
           style_test:isStyleTrial,category:input.category,question_id:input.question_id,
           date_key:input.day+"-"+input.month,answer,
-          model:MODEL,style_version:"flags-owner-gemma4-energy-guide-20261118"});
+          model:MODEL,style_version:"flags-owner-gemma4-focused-energy-guide-20261118"});
       }catch(error){
         console.error("REDFLAG_FLAGS_GEMMA_ERROR",error?.name||"error");
         return reply(503,{ok:false,error:"FLAGS_GEMMA_UNAVAILABLE"});
