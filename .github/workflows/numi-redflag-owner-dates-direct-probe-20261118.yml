@@ -1,9 +1,10 @@
-name: Compare private Red Flag owner AI responses for four dates
+name: Compare isolated Red Flag owner AI responses through protected server bridge
 on:
   push:
     branches: [main]
     paths:
       - .github/workflows/numi-redflag-owner-dates-direct-probe-20261118.yml
+      - .github/scripts/numi-redflag-owner-date-compare.py
 permissions:
   contents: read
 jobs:
@@ -12,71 +13,18 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-      - name: Ask the same live Cloudflare model with the exact owner-only Red Flag prompt
+      - name: Check temporary probe syntax
+        run: python3 -m py_compile .github/scripts/numi-redflag-owner-date-compare.py
+      - name: Query genuine Cloudflare AI through expiring owner-only REG.RU bridge
         env:
-          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          node --input-type=module <<'JS'
-          import fs from 'node:fs';
-          import vm from 'node:vm';
-          const source=fs.readFileSync('cloudflare/redflag-draft-ai/src/index.js','utf8');
-          if(!source.includes('flags-owner-5050-independent-20261118')||source.includes('FLAGS_ENERGY_PALETTE'))
-            throw Error('WRONG_OWNER_TEST_VERSION');
-          const bundle=vm.runInNewContext(
-            source.replace('export default {','const __worker_export = {')+
-            '\n({prompt:FLAGS_OWNER_PROMPT,format:FLAGS_PRIVATE_RESPONSE_FORMAT,focus:FLAGS_QUESTION_FOCUS,energy22:energy22,model:MODEL})',
-            {console}
-          );
-          const cases=[];
-          const questions=[
-            ['say-no','Уважает женское «нет» или начинает давить?'],
-            ['hero','Скромный мужчина или считает себя подарком судьбы?']
-          ];
-          for(const month of [1,3,9,10])for(const [id,title] of questions)
-            cases.push({day:9,month,id,title});
-          const followups=['Держит слово или опять одни красивые разговоры?',
-            'Будет опорой для семьи или всё снова окажется на твоих плечах?'];
-          const endpoint='https://api.cloudflare.com/client/v4/accounts/de77758c4b3efd26fef26ab600cb02a2/ai/run/'+bundle.model;
-          let passed=0;
-          async function ask(c){
-            const input=[
-              'Вопрос: '+c.title,
-              'Направление анализа этого вопроса: '+(bundle.focus[c.id]||''),
-              'День рождения мужчины: '+c.day+' (энергия '+bundle.energy22(c.day)+').',
-              'Месяц рождения мужчины: '+c.month+' (энергия '+bundle.energy22(c.month)+').',
-              'Реально доступные вопросы в других разделах: '+JSON.stringify(followups)
-            ].join('\n');
-            const body={messages:[{role:'system',content:bundle.prompt+'\n\n'+bundle.format},
-              {role:'user',content:input}],temperature:0.78,max_completion_tokens:1150,
-              chat_template_kwargs:{enable_thinking:false}};
-            const response=await fetch(endpoint,{
-              method:'POST',
-              headers:{Authorization:'Bearer '+process.env.CF_TOKEN,'Content-Type':'application/json'},
-              body:JSON.stringify(body),signal:AbortSignal.timeout(100000)
-            });
-            const json=await response.json().catch(()=>({}));
-            const result=json.result||{};
-            const raw=result.response??result.choices?.[0]?.message?.content??'';
-            const value=typeof raw==='string'?raw:'';
-            const get=(tag)=>value.match(new RegExp('<'+tag+'>\\s*([\\s\\S]*?)\\s*<\\/'+tag+'>','i'))?.[1]?.trim()||'';
-            const answer=get('ANSWER');
-            const valid=!!(get('DAY')&&get('MONTH')&&get('COMBINED')&&answer);
-            if(response.ok&&valid)passed++;
-            console.log('OWNER_AI_CASE '+JSON.stringify({
-              date:'09.'+String(c.month).padStart(2,'0'),question:c.id,
-              http:response.status,valid,
-              answer:answer||value.slice(0,3000),
-              error_codes:(json.errors||[]).map(e=>e.code).slice(0,2)
-            }));
-          }
-          for(let i=0;i<cases.length;i+=2)
-            await Promise.all(cases.slice(i,i+2).map(c=>ask(c).catch(e=>{
-              console.log('OWNER_AI_CASE '+JSON.stringify({
-                date:'09.'+String(c.month).padStart(2,'0'),question:c.id,
-                valid:false,error:e.name||'request-failed'
-              }));
-            })));
-          console.log('OWNER_AI_SUMMARY '+JSON.stringify({total:cases.length,structured_answers:passed,
-            owner_only:true,published:false,customer_routes_changed:false}));
-          if(passed===0)process.exitCode=1;
-          JS
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 .github/scripts/numi-redflag-owner-date-compare.py
+      - name: Save eight unapproved responses without putting draft text into public logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: redflag-owner-date-comparison-20261118
+          path: redflag-probe-output/owner-date-comparison.json
+          retention-days: 1
+          if-no-files-found: warn
