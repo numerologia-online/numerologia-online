@@ -9,7 +9,10 @@ assert.equal(flags.length,9);
 assert.match(source,/const FLAGS_OWNER_PROMPT=/);
 assert.match(source,/if\(input.category==="flags"\)/);
 assert.match(source,/category:input.category,question_id:input.question_id/);
-assert.match(source,/style_version:"flags-owner-question-first-single-20261118"/);
+assert.match(source,/style_version:"flags-owner-two-energy-private-check-20261118"/);
+assert.match(source,/const FLAGS_ENERGY_PALETTE=Object\.freeze/);
+assert.match(source,/const parseFlagsOwnerStructured=/);
+assert.match(source,/FLAGS_PRIVATE_RESPONSE_FORMAT/);
 assert.match(source,/Сначала определи суть заданного вопроса/);
 assert.doesNotMatch(source,/const FLAGS_ANALYSIS_PROMPT=/);
 const {default:worker}=await import("data:text/javascript;base64,"+Buffer.from(source).toString("base64"));
@@ -17,22 +20,34 @@ const proof="a".repeat(64);
 const hash=createHash("sha256").update(proof).digest("hex");
 let calls=0;
 const observedInputs=[];
+const structuredAnswer=[
+  "<DAY>Первая энергия раскрывается через самостоятельный выбор и отношение к чужому решению.</DAY>",
+  "<MONTH>Вторая энергия добавляет другой способ выражать несогласие и искать компромисс.</MONTH>",
+  "<COMBINED>Их взаимодействие меняет конкретную реакцию на отказ и её заметные последствия.</COMBINED>",
+  "<ANSWER>"+answer+"</ANSWER>"
+].join("\n");
 const answer="Ему может быть непросто сразу принимать отказ, когда затронуты его интересы. При этом внимательное отношение к границам возможно, если он умеет вести разговор без давления и замечать настроение партнёрши. Оценивать стоит не громкие обещания, а то, как он ведёт себя, когда услышит неудобное для себя решение. Женщина вправе не соглашаться и не объяснять свою позицию по кругу. "
 +"\n\nЕсли хочешь проверить его в другой ситуации, посмотри вопрос «Держит слово или опять одни красивые разговоры?». Он поможет по-новому присмотреться к поступкам и понять, совпадают ли слова с делами.";
 const env={REDFLAG_BATCH_KEY_SHA256:hash,AI:{run:async(model,opts)=>{
   calls++;
   assert.equal(opts.messages.length,2);
   if(opts.messages[0].content.includes("Ты опытный нумеролог, работающий с 22 энергиями")){
-    assert.match(opts.messages[0].content,/Сначала определи суть заданного вопроса/);
+    assert.match(opts.messages[0].content,/Сначала пойми, о каком поступке спрашивает женщина/);
+    assert.match(opts.messages[0].content,/<DAY>/);
+    assert.match(opts.messages[0].content,/<MONTH>/);
+    assert.match(opts.messages[0].content,/<COMBINED>/);
     assert.ok(!opts.messages[1].content.includes("Внутренний выбор трактовки"));
+    assert.match(opts.messages[1].content,/Палитра энергии дня/);
+    assert.match(opts.messages[1].content,/Палитра энергии месяца/);
     observedInputs.push(opts.messages[1].content);
+    return {response:structuredAnswer};
   }
   return {response:answer};
 }}};
-const makeRequest=(url,category,id,title,followups=[])=>new Request("https://example.test"+url,{
+const makeRequest=(url,category,id,title,followups=[],day=9,month=9)=>new Request("https://example.test"+url,{
   method:"POST",
   headers:{"Content-Type":"application/json","X-Numi-Redflag-Batch":proof},
-  body:JSON.stringify({category,question_id:id,title,day:9,month:9,followups})
+  body:JSON.stringify({category,question_id:id,title,day,month,followups})
 });
 const tenRelated=[
   "Держит слово или опять одни красивые разговоры?",
@@ -57,7 +72,7 @@ for(const q of flags){
   assert.equal(json.answer,answer,"Must preserve model output verbatim");
   assert.equal(json.draft_only,true);
   assert.equal(json.published,false);
-  assert.equal(json.style_version,"flags-owner-question-first-single-20261118");
+  assert.equal(json.style_version,"flags-owner-two-energy-private-check-20261118");
 }
 // Each question provides a DIFFERENT analysis focus to the AI,
 // with no prewritten red-flag scenario or automatic postediting.
@@ -104,9 +119,23 @@ const otherResponse=await worker.fetch(makeRequest("/v1/redflag-owner-question",
 assert.equal(otherResponse.status,200,"Other category unchanged");
 assert.equal((await otherResponse.json()).ok,true);
 assert.equal(calls,12);
+// Separate pair comparison, same month but different day: no generic 9-only payload.
+const beforePairs=calls;
+for(const [day,month,expectedDayEnergy,expectedMonthEnergy] of [
+  [9,9,9,9],[10,9,10,9],[31,10,4,10]
+]){
+  const pair=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags","say-no",
+    "Уважает женское «нет» или начинает давить?",tenRelated,day,month),env);
+  assert.equal(pair.status,200,"Valid pair "+day+"-"+month);
+  const payload=observedInputs.at(-1);
+  assert.ok(payload.includes("День рождения мужчины: "+day+" (энергия "+expectedDayEnergy+")"),"Day energy "+day);
+  assert.ok(payload.includes("Месяц рождения мужчины: "+month+" (энергия "+expectedMonthEnergy+")"),"Month energy "+month);
+  assert.ok(!payload.includes("<DAY>"),"Service notes must only be in private model prompt");
+}
+assert.equal(calls,beforePairs+3,"One inference per day/month pair");
 const guest=await worker.fetch(new Request("https://example.test/v1/redflag-owner-question",{
   method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
 }),env);
 assert.equal(guest.status,403);
-assert.equal(observedInputs.length,11,"Exactly one AI call per owner flags question");
-console.log("PASS: flags uses one question-first owner AI call; 10 questions work; public flags blocked; other sections intact");
+assert.equal(observedInputs.length,14,"One AI call for each owner flags request, including three date pairs");
+console.log("PASS: all 22 palettes, separate energy checks, one owner-only AI call, 10 questions, pair differentiation, public blocked, others intact");
