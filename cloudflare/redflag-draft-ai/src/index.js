@@ -106,7 +106,10 @@ const parseFlagsOwnerStructured=(raw)=>{
   if(typeof raw!=="string")return null;
   const get=(tag)=>raw.match(new RegExp("<"+tag+">\\s*([\\s\\S]*?)\\s*<\\/"+tag+">","i"))?.[1]?.trim()||"";
   const day=get("DAY"),month=get("MONTH"),combined=get("COMBINED");
-  const answer=normalizeDraft(get("ANSWER"));
+  // GPT-OSS sometimes omits the final closing tag while returning a complete
+  // customer answer. Accept that harmless formatting variation only after the
+  // three private analysis blocks are present and pass their checks.
+  const answer=normalizeDraft(get("ANSWER")||raw.match(/<ANSWER>\s*([\s\S]*)$/i)?.[1]);
   if([day,month,combined].some(s=>s.length<20||s.length>650)||answer.length<380||answer.length>5200||
     hiddenCalculationLeak(answer))return null;
   return {answer,energy_notes_valid:true};
