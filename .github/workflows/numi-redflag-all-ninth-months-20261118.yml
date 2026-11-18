@@ -86,6 +86,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: redflag-gemma4-12-months-24-private-drafts
-          path: gemma-private-diversity/
+          path: gemma-private-ninth-day-review/
           retention-days: 1
           if-no-files-found: warn
