@@ -16,7 +16,6 @@ assert.match(source,/const flagsEnergyEvidence=/);
 assert.doesNotMatch(source,/const FLAGS_NINTH_QUESTION_VIEW=/);
 assert.doesNotMatch(source,/const FLAGS_QUESTION_FACETS=/);
 assert.match(source,/const flagsFinishAnswer=/);
-assert.match(source,/const FLAGS_QUESTION_FACETS=/);
 assert.match(source,/Краткий ориентир дня:/);
 assert.match(source,/Краткий ориентир месяца:/);
 assert.match(source,/const FLAGS_QUESTION_FOCUS=/);
