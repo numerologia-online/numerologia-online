@@ -46,13 +46,6 @@ jobs:
             -f state=success \
             -f context="numi/moment-test" \
             -f description="test completed for one-question release" >/dev/null
-      - name: Deploy only target Worker
-        uses: cloudflare/wrangler-action@v4
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: de77758c4b3efd26fef26ab600cb02a2
-          workingDirectory: cloudflare/moment-300-ai
-          command: deploy
       - name: Bind the existing Groq API key to this Worker as an encrypted secret
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -79,6 +72,13 @@ jobs:
             raise RuntimeError('GROQ_SECRET_UNCONFIRMED')
           print('GROQ_SECRET_BOUND_TO_WORKER name_only=GROQ_API_KEY',flush=True)
           PY
+      - name: Deploy only target Worker
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: de77758c4b3efd26fef26ab600cb02a2
+          workingDirectory: cloudflare/moment-300-ai
+          command: deploy
       - name: Confirm upload step for diagnosis
         env:
           GH_TOKEN: ${{ github.token }}
@@ -119,6 +119,7 @@ jobs:
           elif result.get('redflag_draft_version')!='redflag-owner-drafts-v3-no-numbers-ready-cta-20261117':reason='redflag-route-not-live'
           elif result.get('live_answers_enabled') is not False:reason='gate'
           if reason is not None:
+            if result is not None:print('MOMENT_HEALTH_STATUS',json.dumps({k:result.get(k) for k in ('service','ai_bound','redflag_owner_model','redflag_groq_bound','redflag_draft_version')},ensure_ascii=False),flush=True)
             print('MOMENT_LIVE_VERIFY_FAILED',reason,'exception',exception_name,flush=True)
             endpoint=f"https://api.github.com/repos/{os.environ['GH_REPO']}/statuses/{os.environ['GH_SHA']}"
             data=json.dumps({'state':'failure','context':'numi/moment-health-'+reason,
