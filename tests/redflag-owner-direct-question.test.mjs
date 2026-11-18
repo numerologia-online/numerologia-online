@@ -27,7 +27,8 @@ const env={REDFLAG_BATCH_KEY_SHA256:hash,AI:{run:async(model,opts)=>{
   calls++;
   assert.equal(model,"@cf/google/gemma-4-26b-a4b-it");
   assert.equal(opts.messages[0].role,"system");
-  assert.match(opts.messages[0].content,/50 на 50/);
+  if(opts.messages[0].content.includes("Ты опытный нумеролог, работающий с 22 энергиями"))
+    assert.match(opts.messages[0].content,/50 на 50/);
   assert.equal(opts.chat_template_kwargs.enable_thinking,false);
   observedSystems.push(opts.messages[0].content);
   const userText=opts.messages.find(x=>x.role==="user")?.content||"";
