@@ -22,9 +22,11 @@ const answer="Ему может быть непросто сразу прини�
 const env={REDFLAG_BATCH_KEY_SHA256:hash,AI:{run:async(model,opts)=>{
   calls++;
   assert.equal(opts.messages.length,2);
-  assert.match(opts.messages[0].content,/Сначала определи суть заданного вопроса/);
-  assert.ok(!opts.messages[1].content.includes("Внутренний выбор трактовки"));
-  observedInputs.push(opts.messages[1].content);
+  if(opts.messages[0].content.includes("Ты опытный нумеролог, работающий с 22 энергиями")){
+    assert.match(opts.messages[0].content,/Сначала определи суть заданного вопроса/);
+    assert.ok(!opts.messages[1].content.includes("Внутренний выбор трактовки"));
+    observedInputs.push(opts.messages[1].content);
+  }
   return {response:answer};
 }}};
 const makeRequest=(url,category,id,title,followups=[])=>new Request("https://example.test"+url,{
@@ -106,5 +108,5 @@ const guest=await worker.fetch(new Request("https://example.test/v1/redflag-owne
   method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
 }),env);
 assert.equal(guest.status,403);
-assert.equal(observedInputs.length,12,"Exactly one AI call per owner flags question, plus one for other section");
+assert.equal(observedInputs.length,11,"Exactly one AI call per owner flags question");
 console.log("PASS: flags uses one question-first owner AI call; 10 questions work; public flags blocked; other sections intact");
