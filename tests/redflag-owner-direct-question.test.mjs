@@ -13,7 +13,7 @@ assert.match(source,/style_version:"flags-owner-two-energy-private-check-2026111
 assert.match(source,/const FLAGS_ENERGY_PALETTE=Object\.freeze/);
 assert.match(source,/const parseFlagsOwnerStructured=/);
 assert.match(source,/FLAGS_PRIVATE_RESPONSE_FORMAT/);
-assert.match(source,/Сначала определи суть заданного вопроса/);
+assert.match(source,/Сначала пойми, о каком поступке спрашивает женщина/);
 assert.doesNotMatch(source,/const FLAGS_ANALYSIS_PROMPT=/);
 const {default:worker}=await import("data:text/javascript;base64,"+Buffer.from(source).toString("base64"));
 const proof="a".repeat(64);
