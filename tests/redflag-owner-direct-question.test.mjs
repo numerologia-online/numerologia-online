@@ -6,14 +6,16 @@ const source=readFileSync("cloudflare/redflag-draft-ai/src/index.js","utf8");
 const catalog=JSON.parse(readFileSync("redflag-ai-lab/catalog.json","utf8"));
 const flags=catalog.categories.find(c=>c.id==="flags").questions;
 assert.equal(flags.length,9);
-assert.match(source,/flags-owner-gemma4-question-specific-20261118/);
-assert.match(source,/строго равный вес, 50 на 50/);
-assert.match(source,/вывод делай только из сочетания/i);
-assert.match(source,/Для вопросов об одной дате/i);
+assert.match(source,/flags-owner-gemma4-single-pass-editor-20261118/);
+assert.match(source,/равным весом 50\/50/);
+assert.match(source,/найди их взаимодействие именно по заданному вопросу/i);
+assert.match(source,/Отдельные вопросы одной даты/i);
 assert.match(source,/разными месяцами/i);
-assert.match(source,/Сначала пойми, о каком конкретном поступке спрашивает женщина/);
+assert.match(source,/конкретную наблюдаемую ситуацию/);
 assert.match(source,/const FLAGS_QUESTION_FOCUS=/);
 assert.match(source,/const flagsOutputValid=/);
+assert.match(source,/const flagsRelatedFollowup=/);
+assert.doesNotMatch(source,/const retry=await env\.AI\.run\(MODEL/);
 assert.doesNotMatch(source,/api\.groq\.com/);
 assert.doesNotMatch(source,/FLAGS_GROQ_SCHEMA/);
 const {default:worker}=await import("data:text/javascript;base64,"+Buffer.from(source).toString("base64"));
@@ -27,8 +29,8 @@ const env={REDFLAG_BATCH_KEY_SHA256:hash,AI:{run:async(model,opts)=>{
   calls++;
   assert.equal(model,"@cf/google/gemma-4-26b-a4b-it");
   assert.equal(opts.messages[0].role,"system");
-  if(opts.messages[0].content.includes("Ты опытный нумеролог, работающий с 22 энергиями"))
-    assert.match(opts.messages[0].content,/50 на 50/);
+  if(opts.messages[0].content.includes("Ты опытный нумеролог по системе 22 энергий"))
+    assert.match(opts.messages[0].content,/50\/50/);
   assert.equal(opts.chat_template_kwargs.enable_thinking,false);
   observedSystems.push(opts.messages[0].content);
   const userText=opts.messages.find(x=>x.role==="user")?.content||"";
@@ -61,7 +63,7 @@ for(const q of flags){
   assert.equal(json.answer,answer);
   assert.equal(json.draft_only,true);
   assert.equal(json.published,false);
-  assert.equal(json.style_version,"flags-owner-gemma4-question-specific-20261118");
+  assert.equal(json.style_version,"flags-owner-gemma4-single-pass-editor-20261118");
   assert.equal(json.model,"@cf/google/gemma-4-26b-a4b-it");
 }
 const focus={
@@ -119,10 +121,10 @@ shortOnce=true;shortSeen=false;
 const beforeRetry=calls;
 const retry=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags","hero",
   "Скромный мужчина или считает себя подарком судьбы?",tenRelated,22,3),env);
-assert.equal(retry.status,200,"Retry a too-short first generation");
-assert.equal(calls-beforeRetry,2,"Only one retry, not unlimited calls");
+assert.equal(retry.status,503,"A too-short draft is rejected, never retried");
+assert.equal(calls-beforeRetry,1,"One inference per request, no slow second pass");
 const guest=await worker.fetch(new Request("https://example.test/v1/redflag-owner-question",{
   method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
 }),env);
 assert.equal(guest.status,403);
-console.log("PASS: owner flags Gemma 4 only, nine distinct question focuses, six date combinations, guarded retry, other Red Flag categories intact, buyers blocked");
+console.log("PASS: owner flags Gemma 4 only, nine distinct question focuses, six date combinations, no second AI call, other Red Flag categories intact, buyers blocked");
