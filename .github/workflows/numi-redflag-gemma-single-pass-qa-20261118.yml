@@ -1,4 +1,4 @@
-name: Review focused Gemma Red Flag answers for three dates and five questions
+name: Compare free-form Gemma on one question and three dates
 on:
   push:
     branches: [main]
@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 13
     steps:
       - uses: actions/checkout@v4
-      - name: Generate 15 owner drafts with both energy profiles and measure latency
+      - name: Generate three owner drafts for the same question and compare latency
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
@@ -24,11 +24,7 @@ jobs:
           proof=hmac.new(key.encode(),b"numi-moment-cloudflare-bridge-v1",hashlib.sha256).hexdigest()
           url="https://numerologia-300-ai.tankraft431.workers.dev/v1/redflag-owner-question"
           questions=[
-            ("say-no","Уважает женское «нет» или начинает давить?"),
-            ("care-or-control","Заботится или будет контролировать каждый твой шаг?"),
-            ("hero","Скромный мужчина или считает себя подарком судьбы?"),
-            ("apology","После ссоры извинится или виноватой сделает тебя?"),
-            ("weak-place","Какая его слабость может разрушить ваши отношения?"),
+            ("say-no","Уважает женское «нет» или начинает давить?")
           ]
           followups=[
             "Держит слово или опять одни красивые разговоры?",
@@ -71,12 +67,12 @@ jobs:
                 "error":body.get("error"),"editorial_review_needed":body.get("editorial_review_needed")})
               time.sleep(1)
           complete=[x for x in data if x["valid"]]
-          print("GEMMA_NINTH_DAY_SUMMARY",len(complete),"/15",flush=True)
+          print("GEMMA_NINTH_DAY_SUMMARY",len(complete),"/3",flush=True)
           print("EDITORIAL_REVIEW_NEEDED",sum(x.get("editorial_review_needed") is True for x in complete),"/",len(complete),flush=True)
           if complete:
             durations=sorted(x["elapsed_seconds"] for x in complete)
             print("LATENCY_SECONDS_MEDIAN",durations[len(durations)//2],"P90",durations[min(len(durations)-1,int(len(durations)*0.9))],flush=True)
-          if any(x.get("style_version")!="flags-owner-gemma4-focused-energy-guide-20261118" for x in complete):
+          if any(x.get("style_version")!="flags-owner-gemma4-open-interpretation-20261118" for x in complete):
             raise RuntimeError("OWNER_FLAGS_NOT_NEW_VERSION")
           def first(x):return x["answer"].split("\n\n")[0]
           for qid,_ in questions:
@@ -98,7 +94,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: redflag-gemma4-focused-guide-three-dates-five-questions
+          name: redflag-gemma4-open-interpretation-three-dates
           path: gemma-private-single-pass-qa/
           retention-days: 1
           if-no-files-found: warn
