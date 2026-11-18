@@ -9,8 +9,10 @@ assert.equal(flags.length,9);
 assert.match(source,/const FLAGS_OWNER_PROMPT=/);
 assert.match(source,/if\(input.category==="flags"\)/);
 assert.match(source,/category:input.category,question_id:input.question_id/);
-assert.match(source,/style_version:"flags-owner-two-energy-private-check-20261118"/);
-assert.match(source,/const FLAGS_ENERGY_PALETTE=Object\.freeze/);
+assert.match(source,/style_version:"flags-owner-5050-independent-20261118"/);
+assert.doesNotMatch(source,/FLAGS_ENERGY_PALETTE/);
+assert.match(source,/строго равный вес, 50 на 50/);
+assert.match(source,/вывод делай только из сочетания/i);
 assert.match(source,/const parseFlagsOwnerStructured=/);
 assert.match(source,/FLAGS_PRIVATE_RESPONSE_FORMAT/);
 assert.match(source,/Сначала пойми, о каком поступке спрашивает женщина/);
@@ -38,8 +40,9 @@ const env={REDFLAG_BATCH_KEY_SHA256:hash,AI:{run:async(model,opts)=>{
     assert.match(opts.messages[0].content,/<MONTH>/);
     assert.match(opts.messages[0].content,/<COMBINED>/);
     assert.ok(!opts.messages[1].content.includes("Внутренний выбор трактовки"));
-    assert.match(opts.messages[1].content,/Палитра энергии дня/);
-    assert.match(opts.messages[1].content,/Палитра энергии месяца/);
+    assert.doesNotMatch(opts.messages[1].content,/Палитра энергии|готовые характеристики/);
+    assert.ok(opts.messages[0].content.includes("50 на 50"));
+    assert.ok(!opts.messages[1].content.includes("ТЕНЬ дня:"));
     observedInputs.push(opts.messages[1].content);
     return {response:structuredAnswer};
   }
@@ -73,7 +76,7 @@ for(const q of flags){
   assert.equal(json.answer,answer,"Must preserve model output verbatim");
   assert.equal(json.draft_only,true);
   assert.equal(json.published,false);
-  assert.equal(json.style_version,"flags-owner-two-energy-private-check-20261118");
+  assert.equal(json.style_version,"flags-owner-5050-independent-20261118");
 }
 // Each question provides a DIFFERENT analysis focus to the AI,
 // with no prewritten red-flag scenario or automatic postediting.
@@ -123,7 +126,7 @@ assert.equal(calls,12);
 // Separate pair comparison, same month but different day: no generic 9-only payload.
 const beforePairs=calls;
 for(const [day,month,expectedDayEnergy,expectedMonthEnergy] of [
-  [9,9,9,9],[10,9,10,9],[31,10,4,10]
+  [9,1,9,1],[9,3,9,3],[9,9,9,9],[9,10,9,10],[10,9,10,9],[31,10,4,10]
 ]){
   const pair=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags","say-no",
     "Уважает женское «нет» или начинает давить?",tenRelated,day,month),env);
@@ -138,5 +141,5 @@ const guest=await worker.fetch(new Request("https://example.test/v1/redflag-owne
   method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
 }),env);
 assert.equal(guest.status,403);
-assert.equal(observedInputs.length,14,"One AI call for each owner flags request, including three date pairs");
-console.log("PASS: all 22 palettes, separate energy checks, one owner-only AI call, 10 questions, pair differentiation, public blocked, others intact");
+assert.equal(observedInputs.length,17,"One AI call for each owner flags request, including six date pairs");
+console.log("PASS: no preset palette in owner flags, equal day/month instruction, one owner-only AI call, 10 questions, six date pair payloads, public blocked, others intact");
