@@ -134,12 +134,14 @@ assert.equal(groqCalls,11);
 const publicAttempt=await worker.fetch(makeRequest("/v1/redflag-draft","flags","say-no",
   "Уважает женское «нет» или начинает давить?"),env);
 assert.equal(publicAttempt.status,409);
-assert.equal(calls,11);
+assert.equal(groqCalls,11);
+assert.equal(calls,0);
 // Other categories still reject inputs beyond their original 5-title maximum.
 const oversizedOther=await worker.fetch(makeRequest("/v1/redflag-owner-question","infidelity","options",
   "Верный или постоянно ищет запасные варианты?",tenRelated.slice(0,6)),env);
 assert.equal(oversizedOther.status,400,"Other categories retain original input limit");
-assert.equal(calls,11);
+assert.equal(groqCalls,11);
+assert.equal(calls,0);
 // All other categories retain their existing owner path.
 const other=catalog.categories.find(c=>c.id==="infidelity").questions[0];
 const otherResponse=await worker.fetch(makeRequest("/v1/redflag-owner-question","infidelity",other.id,other.title),env);
