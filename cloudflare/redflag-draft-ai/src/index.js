@@ -311,7 +311,8 @@ export default {
         const upstream=await fetch("https://api.groq.com/openai/v1/chat/completions",{
           method:"POST",
           headers:{"Authorization":"Bearer "+env.GROQ_API_KEY,
-            "Content-Type":"application/json","Accept":"application/json"},
+            "Content-Type":"application/json","Accept":"application/json",
+            "User-Agent":"NumiRedFlagGroqClient/1.0"},
           body:JSON.stringify({
             model:"openai/gpt-oss-120b",
             messages:[{role:"system",content:FLAGS_OWNER_PROMPT+"\n\n"+FLAGS_JSON_INSTRUCTION},
@@ -323,8 +324,14 @@ export default {
             stream:false
           })
         });
-        if(!upstream.ok)
-          return reply(503,{ok:false,error:"FLAGS_GROQ_HTTP_"+upstream.status});
+        if(!upstream.ok){
+          // Narrow diagnostics for owner only: never expose API key or raw body.
+          const body=await upstream.text();
+          const waf=upstream.status===403&&(
+            /error code: 1010|error code 1010|browser signature|banned the browser signature/i.test(body)||
+            /cloudflare/i.test(body)&&/attention required|sorry, you have been blocked/i.test(body));
+          return reply(503,{ok:false,error:"FLAGS_GROQ_HTTP_"+upstream.status+(waf?"_WAF_BLOCK":"")});
+        }
         const generation=await upstream.json();
         const structured=parseFlagsOwnerStructured(generation?.choices?.[0]?.message?.content);
         if(!structured)
