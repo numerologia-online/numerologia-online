@@ -10,7 +10,7 @@ assert.match(source,/flags-owner-gemma4-single-pass-editor-20261118/);
 assert.match(source,/равным весом 50\/50/);
 assert.match(source,/найди их взаимодействие именно по заданному вопросу/i);
 assert.match(source,/Отдельные вопросы одной даты/i);
-assert.match(source,/разными месяцами/i);
+assert.match(source,/Если месяц меняется/i);
 assert.match(source,/конкретную наблюдаемую ситуацию/);
 assert.match(source,/const FLAGS_QUESTION_FOCUS=/);
 assert.match(source,/const flagsOutputValid=/);
