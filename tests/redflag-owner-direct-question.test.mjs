@@ -6,25 +6,19 @@ const source=readFileSync("cloudflare/redflag-draft-ai/src/index.js","utf8");
 const catalog=JSON.parse(readFileSync("redflag-ai-lab/catalog.json","utf8"));
 const flags=catalog.categories.find(c=>c.id==="flags").questions;
 assert.equal(flags.length,9);
-assert.match(source,/flags-owner-gemma4-focused-energy-guide-20261118/);
-assert.match(source,/равным весом 50\/50/);
-assert.match(source,/найди их взаимодействие именно по заданному вопросу/i);
-assert.match(source,/Отдельные вопросы одной даты/i);
-assert.match(source,/Если месяц меняется/i);
-assert.match(source,/одну понятную ситуацию/);
-assert.match(source,/const FLAGS_ENERGY_ROWS=/);
-assert.match(source,/const FLAGS_ENERGY_PROFILES=/);
-assert.match(source,/const FLAGS_NINTH_QUESTION_VIEW=/);
+assert.match(source,/flags-owner-gemma4-soft-50-50-clean-20261118/);
+assert.match(source,/Учитывай каждую на 50 процентов/);
+assert.match(source,/Месяц точно так же важен, как день/);
+assert.match(source,/взаимное влияние обеих энергий/i);
+assert.match(source,/мягко/);
 assert.match(source,/const flagsFinishAnswer=/);
-assert.match(source,/const FLAGS_QUESTION_FACETS=/);
-assert.match(source,/Профиль дня:/);
-assert.match(source,/Профиль месяца:/);
-assert.match(source,/const FLAGS_QUESTION_FOCUS=/);
 assert.match(source,/const flagsOutputValid=/);
 assert.match(source,/const flagsRelatedFollowup=/);
+assert.doesNotMatch(source,/const FLAGS_ENERGY_ROWS=/);
+assert.doesNotMatch(source,/const FLAGS_QUESTION_FOCUS=/);
+assert.doesNotMatch(source,/Профиль дня:/);
 assert.doesNotMatch(source,/const retry=await env\.AI\.run\(MODEL/);
 assert.doesNotMatch(source,/api\.groq\.com/);
-assert.doesNotMatch(source,/FLAGS_GROQ_SCHEMA/);
 const {default:worker}=await import("data:text/javascript;base64,"+Buffer.from(source).toString("base64"));
 const proof="a".repeat(64);
 const hash=createHash("sha256").update(proof).digest("hex");
@@ -36,8 +30,8 @@ const env={REDFLAG_BATCH_KEY_SHA256:hash,AI:{run:async(model,opts)=>{
   calls++;
   assert.equal(model,"@cf/google/gemma-4-26b-a4b-it");
   assert.equal(opts.messages[0].role,"system");
-  if(opts.messages[0].content.includes("Ты опытный нумеролог по системе 22 энергий"))
-    assert.match(opts.messages[0].content,/50\/50/);
+  if(opts.messages[0].content.includes("Ты опытная нумеролог"))
+    assert.match(opts.messages[0].content,/50 процентов/);
   assert.equal(opts.chat_template_kwargs.enable_thinking,false);
   observedSystems.push(opts.messages[0].content);
   const userText=opts.messages.find(x=>x.role==="user")?.content||"";
@@ -72,31 +66,21 @@ for(const q of flags){
   assert.ok(tenRelated.some(title=>json.answer.split("\n\n")[1].includes(title)),"Related title must be exact");
   assert.equal(json.draft_only,true);
   assert.equal(json.published,false);
-  assert.equal(json.style_version,"flags-owner-gemma4-focused-energy-guide-20261118");
+  assert.equal(json.style_version,"flags-owner-gemma4-soft-50-50-clean-20261118");
   assert.equal(json.model,"@cf/google/gemma-4-26b-a4b-it");
 }
-const focus={
-  "care-or-control":"границу между заботой и стремлением распоряжаться жизнью женщины",
-  "hero":"самооценку мужчины",
-  "jealousy":"доверие, отношение к вниманию других мужчин",
-  "argument":"обсуждает неудобные темы",
-  "abuse-signal":"ранним тревожным сигналом при знакомстве",
-  "support-or-cause":"когда женщине тяжело и нужна помощь",
-  "apology":"признавать собственную неправоту после ссоры",
-  "weak-place":"уязвимая сторона взаимодействия двух энергий",
-  "calm-or-swings":"эмоциональную устойчивость и предсказуемость мужчины"
-};
 for(let i=0;i<flags.length;i++){
-  assert.ok(observedInputs[i].includes(focus[flags[i].id]),"Missing distinct question focus "+flags[i].id);
-  assert.ok(observedInputs[i].includes("Месяц рождения мужчины: 9 (энергия 9)."));
-  assert.ok(observedInputs[i].includes("Профиль дня:"),"Day profile required");
-  assert.ok(observedInputs[i].includes("Профиль месяца:"),"Month profile required");
+  assert.ok(observedInputs[i].includes("Вопрос женщины: "+flags[i].title),
+    "Question title must be passed without prescribed focus");
+  assert.ok(observedInputs[i].includes("День рождения мужчины: 9 (энергия дня 9)."));
+  assert.ok(observedInputs[i].includes("Месяц рождения мужчины: 9 (энергия месяца 9)."));
+  assert.ok(!observedInputs[i].includes("Профиль"),"Do not inject fixed answer");
 }
 const first=await worker.fetch(makeRequest("/v1/redflag-owner-question","flags","say-no",
   "Уважает женское «нет» или начинает давить?",tenRelated),env);
 assert.equal(first.status,200);
 assert.ok((await first.json()).answer.startsWith(answer.split("\n\n")[0]));
-assert.match(observedInputs.at(-1),/отношение мужчины к отказу/);
+assert.match(observedInputs.at(-1),/Вопрос женщины: Уважает женское «нет» или начинает давить/);
 const trial=await worker.fetch(makeRequest("/v1/redflag-style-test","flags","say-no",
   "Уважает женское «нет» или начинает давить?",tenRelated),env);
 assert.equal(trial.status,200);
@@ -124,8 +108,8 @@ for(const [day,month,expectedDayEnergy,expectedMonthEnergy] of [
     "Уважает женское «нет» или начинает давить?",tenRelated,day,month),env);
   assert.equal(res.status,200,"Distinct pair "+day+"."+month);
   const text=observedInputs.at(-1);
-  assert.ok(text.includes("День рождения мужчины: "+day+" (энергия "+expectedDayEnergy+")"));
-  assert.ok(text.includes("Месяц рождения мужчины: "+month+" (энергия "+expectedMonthEnergy+")"));
+  assert.ok(text.includes("День рождения мужчины: "+day+" (энергия дня "+expectedDayEnergy+")"));
+  assert.ok(text.includes("Месяц рождения мужчины: "+month+" (энергия месяца "+expectedMonthEnergy+")"));
 }
 assert.equal(observedInputs.length-inputsBefore,6,"Each combination has its own inference input");
 assert.notEqual(observedInputs[inputsBefore],observedInputs[inputsBefore+1],
@@ -140,4 +124,4 @@ const guest=await worker.fetch(new Request("https://example.test/v1/redflag-owne
   method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
 }),env);
 assert.equal(guest.status,403);
-console.log("PASS: owner flags Gemma 4 only, nine distinct question focuses, six date combinations, no second AI call, other Red Flag categories intact, buyers blocked");
+console.log("PASS: owner flags Gemma 4 only, nine original question titles, six date combinations, no second AI call, other Red Flag categories intact, buyers blocked");
