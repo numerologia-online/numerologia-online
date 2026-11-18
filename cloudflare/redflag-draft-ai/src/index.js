@@ -233,8 +233,45 @@ export default {
     if(input.category==="flags"){
       if(url.pathname!=="/v1/redflag-owner-question"&&url.pathname!=="/v1/redflag-style-test")
         return reply(409,{ok:false,error:"FLAGS_NOT_PUBLISHED",draft_only:true,published:false});
-      return reply(409,{ok:false,error:"FLAGS_PROMPT_NOT_CONFIGURED",
-        draft_only:true,published:false,model:MODEL});
+      // Fresh, independent editorial prompt for owner-only flags drafts.
+      // No legacy energy shadow dictionary, sales templates or other categories.
+      const flagsSystem=[
+        "Ты опытная женщина-нумеролог, которая разговаривает с другой женщиной как с близкой подругой. Пиши живым, красивым, простым языком. Твой голос тёплый, заботливый, искренний и уверенный.",
+        "Дай конкретный ответ именно на заданный вопрос о мужчине. Не подменяй ответ общим психологическим портретом.",
+        "Основа трактовки — две равноправные энергии даты рождения, день и месяц, каждая имеет одинаковую значимость. Учитывай взаимодействие обеих, выбирай наиболее подходящие этому вопросу грани каждой. Не своди дату к одной доминирующей черте.",
+        "У энергий много проявлений. Для другого вопроса с той же датой ищи новые релевантные стороны сочетания, а не пересказывай один и тот же характер. Не пользуйся одинаковыми сюжетами, вступлениями и шаблонами.",
+        "Особенно внимательно рассматривай теневые стороны. Не идеализируй мужчину и не оправдывай недостатки автоматически, но и не выдумывай дурные поступки. Показывай возможные слабости, противоречия и риски по существу вопроса.",
+        "Живые бытовые примеры и неожиданные точные наблюдения приветствуются, если помогают ответу. Не перегружай абстрактной психологией.",
+        "Весь нумерологический расчёт оставь за кадром. Не называй числа, арканы, энергии, матрицу и метод вычисления в готовом тексте.",
+        "Избегай двоеточий, длинных тире и искусственных оборотов. Пиши свободно и разнообразно, как индивидуальную консультацию.",
+        "Нумерология описывает возможные склонности, но не доказывает реальные поступки человека. Два естественных абзаца, ориентировочно 650–1100 знаков. Верни только готовый текст."
+      ].join(" ");
+      const dayEnergy=energy22(input.day),monthEnergy=energy22(input.month);
+      const flagsQuestion=[
+        "Вопрос женщины: "+input.title,
+        "День рождения мужчины: "+input.day+"; энергия дня: "+dayEnergy+".",
+        "Месяц рождения мужчины: "+input.month+"; энергия месяца: "+monthEnergy+".",
+        "Трактуй обе энергии с равным весом, исключительно применительно к вопросу. Никаких технических пояснений в ответе."
+      ].join("\n");
+      try{
+        const result=await env.AI.run(MODEL,{
+          messages:[{role:"system",content:flagsSystem},{role:"user",content:flagsQuestion}],
+          temperature:0.9,max_completion_tokens:850,
+          chat_template_kwargs:{enable_thinking:false}
+        });
+        const rawAnswer=result?.response??result?.choices?.[0]?.message?.content;
+        const answer=normalizeOwnerText(rawAnswer);
+        if(typeof answer!=="string"||answer.length<380||answer.length>1700||
+          ownerHasCalculationLeak(answer))
+          return reply(503,{ok:false,error:"FLAGS_DRAFT_NEEDS_REVIEW",draft_only:true});
+        return reply(200,{ok:true,draft_only:true,published:false,
+          style_test:true,category:input.category,question_id:input.question_id,
+          date_key:input.day+"-"+input.month,answer,
+          model:MODEL,style_version:"flags-free-voice-equal-day-month-20261119"});
+      }catch(error){
+        console.error("FLAGS_OWNER_AI_ERROR",error?.name||"error");
+        return reply(503,{ok:false,error:"FLAGS_AI_UNAVAILABLE",draft_only:true});
+      }
     }
     const styleTest=url.pathname==="/v1/redflag-style-test";
     const ownerQuestion=url.pathname==="/v1/redflag-owner-question";
