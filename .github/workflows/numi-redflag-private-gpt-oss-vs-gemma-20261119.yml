@@ -122,3 +122,5 @@ jobs:
             -f state="$state" -f context="numi/redflag-gptoss-private-qa" \
             -f description="Test stronger model locally with private owner-only drafts" \
             -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >/dev/null
+
+# energy-lens-editorial-20261119: evaluate specific month/day shadow interactions
