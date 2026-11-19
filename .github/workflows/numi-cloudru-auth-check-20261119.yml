@@ -1,4 +1,4 @@
-name: Apply vivid lightly ironic tone to existing Haiku owner previews
+name: Apply supplied Red Flag instruction
 on:
   push:
     branches: [main]
@@ -28,8 +28,8 @@ jobs:
           previous=subprocess.check_output(['git','show','HEAD^:'+p])
           desired=Path(p).read_bytes()
           assert previous.count(b'anthropic/claude-haiku-4.5')==2 and desired.count(b'anthropic/claude-haiku-4.5')==2
-          start='Тон '.encode()
-          finish=b'\n\n'
+          start=b'    $system='
+          finish=b'    $user=json_encode'
           old_start=previous.index(start);old_end=previous.index(finish,old_start)
           new_start=desired.index(start);new_end=desired.index(finish,new_start)
           assert previous[:old_start]==desired[:new_start] and previous[old_end:]==desired[new_end:]
