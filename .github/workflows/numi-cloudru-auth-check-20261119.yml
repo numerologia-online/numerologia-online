@@ -1,4 +1,4 @@
-name: Route existing cached Telegram Red Flag requests to direct Cloud.ru
+name: Switch existing owner Red Flag to selected Claude Haiku 4.5
 on:
   push:
     branches: [main]
@@ -14,17 +14,27 @@ jobs:
     timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
-      - name: Update one existing Red Flag route, without model calls
+        with:
+          fetch-depth: 2
+      - name: Verify model catalogue and change only model ID, without generation
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+          CLOUD_RU_API_KEY: ${{ secrets.CLOUD_RU_API_KEY_2 }}
         run: |
           python3 -u - <<'PY'
-          import os,ssl,ftplib,io,json,hashlib,subprocess,urllib.request,urllib.error
+          import os,ssl,ftplib,io,json,re,subprocess,urllib.request,urllib.error
           from pathlib import Path
-          p='redflag-ai-lab/draft.php'
+          model='anthropic/claude-haiku-4.5'
+          request=urllib.request.Request('https://foundation-models.api.cloud.ru/v1/models',headers={'Authorization':'Bearer '+os.environ['CLOUD_RU_API_KEY'].strip()})
+          with urllib.request.urlopen(request,timeout=30) as response:catalog=json.load(response)
+          if model not in [x.get('id') for x in catalog.get('data',[])]:raise SystemExit('SELECTED_MODEL_NOT_IN_CATALOG')
+          print('CLAUDE_HAIKU_45_CATALOG_CONFIRMED no_generation=true')
+          p='redflag-ai-lab/style-test-api.php'
+          previous=subprocess.check_output(['git','show','HEAD^:'+p])
           desired=Path(p).read_bytes()
-          if subprocess.run(['php','-l'],input=desired,capture_output=True).returncode:raise SystemExit('SYNTAX_FAILED')
+          assert previous.count(b'ai-sage/GigaChat3-10B-A1.8B')==2
+          assert desired==previous.replace(b'ai-sage/GigaChat3-10B-A1.8B',model.encode())
           f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
           f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
           root=f.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
@@ -37,24 +47,29 @@ jobs:
           def get(p,data=None):
               req=urllib.request.Request(site+p,data=data,headers={'Origin':site.rstrip('/'),'Content-Type':'application/json','Cache-Control':'no-cache'})
               try:
-                  with urllib.request.urlopen(req,timeout=25) as r:return r.status,r.read(300000)
+                  with urllib.request.urlopen(req,timeout=25) as r:return r.status,r.read(10000)
               except urllib.error.HTTPError as e:return e.code,e.read(10000)
           old=read(p);changed=False
           try:
-              if hashlib.sha256(old).hexdigest()!='43a738e1685d431aecbe7695e4da09a31535fe688aa44afb922c1541223c7b8f':raise RuntimeError('BASELINE_CHANGED')
-              guarded=['redflag-feature.js','redflag-ai-lab/style-test-api.php','index.html','app.js','api/numi-account.php']
-              before={x:read(x) for x in guarded}
-              if b'foundation-models.api.cloud.ru/v1/chat/completions' not in before[guarded[1]]:raise RuntimeError('DIRECT_TARGET_MISSING')
-              changed=True;put(p,desired)
-              for data in [None,b'{"category":"flags","question_id":"care-or-control","day":9,"month":9}']:
-                  code,body=get(p,data)
-                  if code!=403 or json.loads(body).get('error')!='OWNER_ONLY':raise RuntimeError('OWNER_GUARD_FAILED')
-              for x in guarded:
-                  if read(x)!=before[x]:raise RuntimeError('UNEXPECTED_CHANGE_'+x)
+              start=b"base64_decode('"
+              offset=old.index(start)+len(start);end=old.index(b"'",offset)
+              encoded=old[offset:end]
+              if old[:offset]+b'__CLOUDRU_KEY_BASE64__'+old[end:]!=previous:raise RuntimeError('LIVE_API_DIFFERS_FROM_EXPECTED')
+              target=desired.replace(b'__CLOUDRU_KEY_BASE64__',encoded)
+              if subprocess.run(['php','-l'],input=target,capture_output=True).returncode:raise RuntimeError('SYNTAX_FAILED')
+              guard=['redflag-ai-lab/draft.php','redflag-feature.js','index.html','app.js','api/numi-account.php']
+              before={x:read(x) for x in guard}
+              changed=True;put(p,target)
+              for route in [p,'redflag-ai-lab/draft.php']:
+                  for data in [None,b'{"category":"flags","question_id":"care-or-control","day":9,"month":9}']:
+                      code,body=get(route,data)
+                      if code!=403 or json.loads(body).get('error')!='OWNER_ONLY':raise RuntimeError('OWNER_GUARD_FAILED')
+              for x in guard:
+                  if read(x)!=before[x]:raise RuntimeError('OTHER_FILE_CHANGED_'+x)
               if get('')[0]!=200:raise RuntimeError('HOMEPAGE_FAILED')
-              print('EXISTING_TELEGRAM_ROUTE_FIXED owner_get_post_403=true protected_files_identical=true homepage_200=true model_calls=0')
+              print('CLAUDE_HAIKU_45_LIVE model_id='+model+' prompt_unchanged=true protected_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
           except BaseException:
-              if changed:put(p,old);print('SINGLE_ROUTE_ROLLED_BACK')
+              if changed:put(p,old);print('MODEL_SWITCH_ROLLED_BACK')
               raise
           finally:
               try:f.quit()
