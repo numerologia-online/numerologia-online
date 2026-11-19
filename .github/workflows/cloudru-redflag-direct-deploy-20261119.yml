@@ -1,4 +1,4 @@
-name: Publish direct Cloud.ru answers in existing Red Flag and remove separate preview
+name: Publish direct Cloud.ru Red Flag Telegram button repair
 on:
   push:
     branches: [main]
@@ -32,14 +32,17 @@ jobs:
           assert 'checkOwnerDraftAccess()' in js
           assert 'redflag-cloudru.php' in js
           assert 'Authorization: Bearer ' in php
-          assert "cloudru-direct-20261119" in app
-          assert 'app.js?v=cloudru-direct-20261119' in index
+          assert "cloudru-telegram-fix-20261119" in app
+          assert 'app.js?v=cloudru-telegram-fix-20261119' in index
           assert 'numi-account-20261031/core.php' in php
           assert 'naTestOwner($account)' in php
+          assert "naTelegramUser($init)" in php
+          assert 'isFlagsQuestion(question,state)' in js
+          assert 'init_data:window.Telegram?.WebApp?.initData||""' in js
           assert "PLEASE_WAIT_15_SECONDS" in php
           print('DIRECT_REDFLAG_SYNTAX_AND_SCOPE_OK')
           PY
-      - name: Deploy only approved files, delete old preview, verify no public API access
+      - name: Deploy only approved files, verify no public API access
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
@@ -48,9 +51,7 @@ jobs:
           import ftplib,ssl,os,io,hashlib,subprocess,urllib.request,urllib.error,time
           from pathlib import Path
           changed_paths=['api/redflag-cloudru.php','redflag-feature.js','app.js','index.html']
-          obsolete='redflag-ai-lab/cloudru-owner-preview.php'
           desired={p:Path(p).read_bytes() for p in changed_paths}
-          old_preview=Path(obsolete).read_bytes()
           digest=lambda data:hashlib.sha256(data).hexdigest()
           # Compare against previously committed source before touching a live file.
           known={}
@@ -85,15 +86,13 @@ jobs:
               try:ftp.mkd(backupdir)
               except ftplib.error_perm as e:
                   if not str(e).startswith('550'):raise
-              for p in changed_paths+[obsolete]:previous[p]=read(p)
+              for p in changed_paths:previous[p]=read(p)
               for p in changed_paths:
                   old=previous[p]
                   if old is not None and old!=desired[p] and digest(old) not in known[p]:
                       raise RuntimeError('LIVE_SOURCE_UNRECOGNIZED:'+p)
-              if previous[obsolete] is not None and previous[obsolete]!=old_preview:
-                  raise RuntimeError('OLD_PREVIEW_MODIFIED_EXTERNALLY')
               stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
-              for p in changed_paths+[obsolete]:
+              for p in changed_paths:
                   old=previous[p]
                   if old is None or (p in desired and old==desired[p]):continue
                   bak=backupdir+'/cloudru-redflag-'+stamp+'-'+p.replace('/','-')+'.bak'
@@ -104,10 +103,6 @@ jobs:
                   if previous[p]!=desired[p]:
                       touched.append(p)
                       write(p,desired[p])
-              if previous[obsolete] is not None:
-                  touched.append(obsolete)
-                  ftp.delete(root+obsolete)
-                  if read(obsolete)is not None:raise RuntimeError('PREVIEW_NOT_REMOVED')
               # Owner-only route must reject anonymous visitors. No inference request.
               url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/api/redflag-cloudru.php'
               req=urllib.request.Request(url,headers={'Cache-Control':'no-cache','User-Agent':'NumiRedFlagDirectDeploy/1.0'})
@@ -120,7 +115,7 @@ jobs:
               req=urllib.request.Request(homepage,headers={'Cache-Control':'no-cache'})
               with urllib.request.urlopen(req,timeout=30) as resp:
                   if resp.status!=200:raise RuntimeError('HOMEPAGE_NOT_200')
-              print('DIRECT_CLOUDRU_REDFLAG_LIVE_OK; owner_gate=403; homepage=200; old_preview_removed=true; site_customers_unchanged=true; paid_model_requests=0',flush=True)
+              print('DIRECT_CLOUDRU_REDFLAG_LIVE_OK; owner_gate=403; homepage=200; site_customers_unchanged=true; paid_model_requests=0',flush=True)
           except BaseException:
               for p in reversed(touched):
                   try:
