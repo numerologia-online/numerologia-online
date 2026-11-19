@@ -1,74 +1,92 @@
-name: Switch owner Red Flag to Claude Sonnet 4.6
+name: Publish owner-only Sonnet 22 energy reference to REG.RU
 on:
   push:
     branches: [main]
     paths: [.github/workflows/numi-cloudru-auth-check-20261119.yml]
+  workflow_dispatch:
 permissions:
   contents: read
+  statuses: write
 concurrency:
   group: reg-ru-manual-publication
   cancel-in-progress: false
 jobs:
   publish:
     runs-on: ubuntu-24.04
-    timeout-minutes: 4
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 8
-      - name: Publish owner-only Claude Sonnet 4.6 test without generating answers
+          fetch-depth: 0
+      - name: Safe one-file publication with key preservation and rollback
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
+          set -euo pipefail
           python3 -u - <<'PY'
-          import os,ssl,ftplib,io,json,re,subprocess,urllib.request,urllib.error,base64
+          import ftplib,io,os,ssl,subprocess,urllib.request,urllib.error,re,base64
           from pathlib import Path
-          p='redflag-ai-lab/style-test-api.php'
-          previous=subprocess.check_output(['git','show','170ad31a2e1e276195277f2f9a4aaacf02d5b226:'+p])
-          desired=Path(p).read_bytes()
-          old_model=b'google/gemini-3.8-flash'
-          new_model=b'anthropic/claude-sonnet-4.6'
-          assert previous.count(old_model)==2 and desired.count(new_model)==2
-          assert previous.count(b']],750);')==1 and desired.count(b']],1600);')==1
-          assert desired==previous.replace(old_model,new_model).replace(b']],750);',b']],1600);'), 'ONLY_TEST_MODEL_AND_COMPLETION_LIMIT_MAY_CHANGE'
-          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
-          f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
-          root=f.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
+          path='redflag-ai-lab/style-test-api.php'
+          ref='ab2ae3730b3ba00eddad2cfe174ec43e813c5865'
+          marker=b'__CLOUDRU_KEY_BASE64__'
+          expected_old=subprocess.check_output(['git','show',ref+'^:'+path])
+          desired=subprocess.check_output(['git','show',ref+':'+path])
+          assert Path(path).read_bytes()==desired,'SOURCE_CHANGED'
+          assert desired.count(marker)==1 and expected_old.count(marker)==1,'KEY_MARKER_WRONG'
+          assert len(re.findall(rb'^\s+\d+=>',desired,re.M))==22,'ENERGY_MAP_INCOMPLETE'
+          assert b'anthropic/claude-sonnet-4.6' in desired,'MODEL_CHANGED'
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          prefix=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
           def read(p):
-              b=io.BytesIO();f.retrbinary('RETR '+root+p,b.write);return b.getvalue()
-          def put(p,b):
-              f.storbinary('STOR '+root+p,io.BytesIO(b))
-              if read(p)!=b:raise RuntimeError('READBACK_MISMATCH')
-          site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
-          def get(p,data=None):
-              req=urllib.request.Request(site+p,data=data,headers={'Origin':site.rstrip('/'),'Content-Type':'application/json','Cache-Control':'no-cache'})
+              buf=io.BytesIO();ftp.retrbinary('RETR '+prefix+p,buf.write);return buf.getvalue()
+          def put(p,data):
+              ftp.storbinary('STOR '+prefix+p,io.BytesIO(data))
+              if read(p)!=data:raise RuntimeError('FTP_READBACK_FAILED')
+          def http(p,data=None):
+              url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'+p
+              req=urllib.request.Request(url,data=data,headers={'Origin':'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai','Content-Type':'application/json','Cache-Control':'no-store'})
               try:
-                  with urllib.request.urlopen(req,timeout=25) as r:return r.status,r.read(10000)
-              except urllib.error.HTTPError as e:return e.code,e.read(10000)
-          old=read(p);changed=False
+                  with urllib.request.urlopen(req,timeout=25) as res:return res.status
+              except urllib.error.HTTPError as e:return e.code
+          original=None;changed=False
           try:
+              original=read(path)
               start=b"base64_decode('"
-              offset=old.index(start)+len(start);end=old.index(b"'",offset)
-              encoded=old[offset:end]
-              if old[:offset]+b'__CLOUDRU_KEY_BASE64__'+old[end:]!=previous:raise RuntimeError('LIVE_API_DIFFERS_FROM_EXPECTED')
-              target=desired.replace(b'__CLOUDRU_KEY_BASE64__',encoded)
-              if subprocess.run(['php','-l'],input=target,capture_output=True).returncode:raise RuntimeError('SYNTAX_FAILED')
-              guard=['redflag-ai-lab/draft.php','redflag-feature.js','index.html','app.js','api/numi-account.php']
-              before={x:read(x) for x in guard}
-              changed=True;put(p,target)
-              for route in [p,'redflag-ai-lab/draft.php']:
-                  for data in [None,b'{"category":"flags","question_id":"care-or-control","day":9,"month":9}']:
-                      code,body=get(route,data)
-                      if code!=403 or json.loads(body).get('error')!='OWNER_ONLY':raise RuntimeError('OWNER_GUARD_FAILED')
-              for x in guard:
-                  if read(x)!=before[x]:raise RuntimeError('OTHER_FILE_CHANGED_'+x)
-              if get('')[0]!=200:raise RuntimeError('HOMEPAGE_FAILED')
-              print('REDFLAG_SONNET46_TEST model=anthropic/claude-sonnet-4.6 owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
+              assert original.count(start)==1,'LIVE_KEY_LOCATION_UNKNOWN'
+              pos=original.index(start)+len(start)
+              end=original.index(b"'",pos)
+              key_encoded=original[pos:end]
+              assert len(base64.b64decode(key_encoded,validate=True))>12,'LIVE_KEY_INVALID'
+              assert original[:pos]+marker+original[end:]==expected_old,'LIVE_FILE_DIFFERS_FROM_EXPECTED'
+              target=desired.replace(marker,key_encoded)
+              assert subprocess.run(['php','-l'],input=target,capture_output=True).returncode==0,'PHP_SYNTAX_ERROR'
+              guards=['redflag-ai-lab/draft.php','redflag-feature.js','index.html','app.js','api/numi-account.php']
+              snapshots={p:read(p) for p in guards}
+              assert http('')==200,'HOMEPAGE_PRECHECK'
+              changed=True;put(path,target)
+              assert http(path)==403,'OWNER_GET_GUARD_FAILED'
+              assert http(path,b'{"category":"flags","question_id":"care-or-control","day":3,"month":6}')==403,'OWNER_POST_GUARD_FAILED'
+              assert http('')==200,'HOMEPAGE_POSTCHECK'
+              for p in guards:assert read(p)==snapshots[p],'OTHER_FILE_CHANGED'
+              assert read(path)==target,'TARGET_MISMATCH'
+              print('SONNET_22_ENERGIES_REGRU_PUBLISHED owner_only=true energy_count=22 key_preserved=true unrelated_files_identical=true homepage_200=true inference_calls=0',flush=True)
           except BaseException:
-              if changed:put(p,old);print('MODEL_SWITCH_ROLLED_BACK')
+              if changed and original is not None:
+                  try:put(path,original);print('ROLLBACK_OK',flush=True)
+                  except BaseException:print('ROLLBACK_FAILED',flush=True)
               raise
           finally:
-              try:f.quit()
-              except Exception:f.close()
+              try:ftp.quit()
+              except BaseException:ftp.close()
           PY
+      - name: Report verified deployment
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then outcome=success; message="Owner Sonnet 22 energies published on REG.RU"; else outcome=failure; message="Owner Sonnet REG.RU publication failed"; fi
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state="$outcome" -f context="numi/sonnet-22-energies-regru" -f description="$message" >/dev/null
