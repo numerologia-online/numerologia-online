@@ -1,4 +1,4 @@
-name: Switch owner-only Red Flag preview to Claude Opus 4.8
+name: Diagnose Claude Opus 4.8 Cloud.ru response read-only
 on:
   push:
     branches: [main]
@@ -9,66 +9,63 @@ concurrency:
   group: reg-ru-manual-publication
   cancel-in-progress: false
 jobs:
-  publish:
+  diagnose:
     runs-on: ubuntu-24.04
     timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      - name: Publish revised instruction without generating answers
+      - name: Test actual Cloud.ru API without modifying server or generating customer text
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 -u - <<'PY'
-          import os,ssl,ftplib,io,json,re,subprocess,urllib.request,urllib.error
+          import os,ftplib,ssl,io,base64,json,urllib.request,urllib.error,time
           from pathlib import Path
-          p='redflag-ai-lab/style-test-api.php'
-          previous=subprocess.check_output(['git','show','HEAD^:'+p])
-          desired=Path(p).read_bytes()
-          old_model=b'anthropic/claude-haiku-4.5'
-          new_model=b'anthropic/claude-opus-4.8'
-          assert previous.count(old_model)==2 and desired.count(new_model)==2
-          expected=previous.replace(old_model,new_model).replace(b",'temperature'=>0.8",b'')
-          assert desired==expected, 'ONLY_MODEL_AND_SAMPLING_PARAMETER_MAY_CHANGE'
-          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
-          f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          f.connect('server172.hosting.reg.ru',21)
+          f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          f.prot_p()
           root=f.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
-          def read(p):
-              b=io.BytesIO();f.retrbinary('RETR '+root+p,b.write);return b.getvalue()
-          def put(p,b):
-              f.storbinary('STOR '+root+p,io.BytesIO(b))
-              if read(p)!=b:raise RuntimeError('READBACK_MISMATCH')
-          site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
-          def get(p,data=None):
-              req=urllib.request.Request(site+p,data=data,headers={'Origin':site.rstrip('/'),'Content-Type':'application/json','Cache-Control':'no-cache'})
-              try:
-                  with urllib.request.urlopen(req,timeout=25) as r:return r.status,r.read(10000)
-              except urllib.error.HTTPError as e:return e.code,e.read(10000)
-          old=read(p);changed=False
+          buf=io.BytesIO()
+          f.retrbinary('RETR '+root+'redflag-ai-lab/style-test-api.php',buf.write)
+          f.quit()
+          live=buf.getvalue()
+          start=b"base64_decode('";i=live.index(start)+len(start);j=live.index(b"'",i)
+          encoded=live[i:j]
+          normalized=live[:i]+b'__CLOUDRU_KEY_BASE64__'+live[j:]
+          assert normalized==Path('redflag-ai-lab/style-test-api.php').read_bytes(), 'LIVE_CODE_MISMATCH'
+          assert live.count(b'anthropic/claude-opus-4.8')==2, 'LIVE_MODEL_MISMATCH'
+          key=base64.b64decode(encoded,validate=True).decode()
+          request_body=json.dumps({
+              'model':'anthropic/claude-opus-4.8',
+              'messages':[{'role':'user','content':'Напиши только слово да.'}],
+              'max_tokens':1100,'stream':False
+          },ensure_ascii=False).encode()
+          req=urllib.request.Request('https://foundation-models.api.cloud.ru/v1/chat/completions',data=request_body,headers={'Content-Type':'application/json','Authorization':'Bearer '+key},method='POST')
+          t=time.monotonic()
           try:
-              start=b"base64_decode('"
-              offset=old.index(start)+len(start);end=old.index(b"'",offset)
-              encoded=old[offset:end]
-              if old[:offset]+b'__CLOUDRU_KEY_BASE64__'+old[end:]!=previous:raise RuntimeError('LIVE_API_DIFFERS_FROM_EXPECTED')
-              target=desired.replace(b'__CLOUDRU_KEY_BASE64__',encoded)
-              if subprocess.run(['php','-l'],input=target,capture_output=True).returncode:raise RuntimeError('SYNTAX_FAILED')
-              guard=['redflag-ai-lab/draft.php','redflag-feature.js','index.html','app.js','api/numi-account.php']
-              before={x:read(x) for x in guard}
-              changed=True;put(p,target)
-              for route in [p,'redflag-ai-lab/draft.php']:
-                  for data in [None,b'{"category":"flags","question_id":"care-or-control","day":9,"month":9}']:
-                      code,body=get(route,data)
-                      if code!=403 or json.loads(body).get('error')!='OWNER_ONLY':raise RuntimeError('OWNER_GUARD_FAILED')
-              for x in guard:
-                  if read(x)!=before[x]:raise RuntimeError('OTHER_FILE_CHANGED_'+x)
-              if get('')[0]!=200:raise RuntimeError('HOMEPAGE_FAILED')
-              print('REDFLAG_OPUS_48_UPDATED model=claude-opus-4.8 owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
-          except BaseException:
-              if changed:put(p,old);print('MODEL_SWITCH_ROLLED_BACK')
-              raise
-          finally:
-              try:f.quit()
-              except Exception:f.close()
+              with urllib.request.urlopen(req,timeout=95) as resp:
+                  status=resp.status;raw=resp.read(25000)
+          except urllib.error.HTTPError as e:
+              status=e.code;raw=e.read(25000)
+          except Exception as e:
+              print('PROVIDER_CONNECT_ERROR',type(e).__name__,'elapsed_s',round(time.monotonic()-t,1))
+              raise SystemExit(1)
+          try: parsed=json.loads(raw)
+          except Exception: parsed={}
+          print('PROVIDER_STATUS',status,'elapsed_s',round(time.monotonic()-t,1))
+          if status!=200:
+              err=parsed.get('error',{}) if isinstance(parsed,dict) else {}
+              if isinstance(err,dict):
+                  print('PROVIDER_ERROR_TYPE',str(err.get('type','unknown'))[:80])
+                  message=str(err.get('message',''))
+                  # Avoid outputting any untrusted sensitive text from provider.
+                  print('PROVIDER_ERROR_CATEGORY', 'model' if 'model' in message.lower() else 'token' if 'token' in message.lower() else 'quota' if 'quota' in message.lower() else 'parameter' if 'parameter' in message.lower() else 'other')
+                  print('PROVIDER_ERROR_TEXT',message.replace(key,'[REDACTED]')[:220])
+              else: print('PROVIDER_ERROR_FORMAT',type(err).__name__)
+              raise SystemExit(1)
+          print('PROVIDER_CONTENT_OK',bool(parsed.get('choices',[{}])[0].get('message',{}).get('content')))
+          print('PROVIDER_USAGE',json.dumps(parsed.get('usage',{}),ensure_ascii=False))
+          print('DIAG_READ_ONLY website_writes=0 prompt_unchanged=true')
           PY
