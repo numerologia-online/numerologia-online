@@ -39,15 +39,30 @@ jobs:
               else:
                   print("REDFLAG_DELETE_HTTP",e.code,flush=True)
                   raise
-          try:
-              with urllib.request.urlopen(urllib.request.Request(url,headers=headers,method="GET"),timeout=20) as response:
-                  print("REDFLAG_STILL_PRESENT",response.status,flush=True)
-                  raise RuntimeError("CLOUDFLARE_SCRIPT_NOT_REMOVED")
-          except urllib.error.HTTPError as e:
-              if e.code!=404:
+          import time
+          confirmed=False
+          for attempt in range(7):
+              time.sleep(5)
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(url,headers=headers,method="GET"),timeout=20) as response:
+                      print("REDFLAG_SCRIPT_STILL_RESPONDING",attempt+1,response.status,flush=True)
+              except urllib.error.HTTPError as e:
+                  if e.code==404:
+                      confirmed=True
+                      print("REDFLAG_SCRIPT_NOT_FOUND_VERIFIED",flush=True)
+                      break
                   print("REDFLAG_VERIFY_HTTP",e.code,flush=True)
                   raise
-              print("REDFLAG_SCRIPT_NOT_FOUND_VERIFIED",flush=True)
+              if attempt in (2,4):
+                  try:
+                      with urllib.request.urlopen(urllib.request.Request(url,headers=headers,method="DELETE"),timeout=40) as response:
+                          check=json.load(response)
+                      print("REDFLAG_REPEAT_DELETE_SUCCESS",check.get("success"),flush=True)
+                  except urllib.error.HTTPError as e:
+                      if e.code==404:
+                          confirmed=True;break
+                      raise
+          if not confirmed:raise RuntimeError("REDFLAG_WORKER_STILL_PRESENT_AFTER_RETRY")
           PY
       - name: Record verified removal
         if: always()
