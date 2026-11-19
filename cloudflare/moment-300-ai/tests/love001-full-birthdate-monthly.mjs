@@ -97,6 +97,24 @@ const unauthorized=await worker.fetch(new Request("https://example.test/v1/redfl
 }),{});
 assert.equal(unauthorized.status,404,"Retired route must not reach a model");
 const transportEnv={MOMENT_BRIDGE_SECRET:"test-only-bridge",GROQ_API_KEY:"gsk_test_only"};
+const metadataFetch=globalThis.fetch;
+let metadataCalls=0;
+try{
+  globalThis.fetch=async(url,options)=>{
+    metadataCalls++;
+    assert.equal(options.method,"GET");
+    assert.equal(url,"https://api.groq.com/openai/v1/models");
+    return Response.json({data:[{id:"openai/gpt-oss-120b"}]});
+  };
+  const denied=await worker.fetch(new Request("https://example.test/health",{headers:{"X-Numi-Moment-Check":"provider-metadata"}}),transportEnv);
+  assert.equal(denied.status,403);
+  assert.equal(metadataCalls,0,"Public callers cannot request provider metadata");
+  const result=await worker.fetch(new Request("https://example.test/health",{headers:{"X-Numi-Moment-Check":"provider-metadata","X-Numi-Moment-Secret":"test-only-bridge"}}),transportEnv);
+  const metadata=await result.json();
+  assert.equal(metadata.provider_http,200);
+  assert.equal(metadata.model_available,true);
+  assert.equal(metadataCalls,1,"Diagnostics must only list models and never generate an answer");
+}finally{globalThis.fetch=metadataFetch;}
 function transportRequest(authenticated=true){
   return new Request("https://example.test/v1/owner-preview",{
     method:"POST",

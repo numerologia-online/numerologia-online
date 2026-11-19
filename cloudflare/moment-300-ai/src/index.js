@@ -189,8 +189,32 @@ const SYSTEM = [
 export default {
   async fetch(request, env) {
     const pathname = new URL(request.url).pathname;
-    if (request.method === "GET" && pathname === "/health")
-      return reply(200, { ok: true, service: "numi-moment-300-owner-preview", provider: "groq", model: MODEL, groq_key_bound: typeof env.GROQ_API_KEY === "string" && env.GROQ_API_KEY.startsWith("gsk_"), workers_ai_used: false, provider_version: PROVIDER_VERSION, live_answers_enabled: false, love001_cycle_version: "full-birthdate-two-person-monthly-20261117", love001_emotion_version: "direct-feelings-20261117" });
+    if (request.method === "GET" && pathname === "/health") {
+      const status = { ok: true, service: "numi-moment-300-owner-preview", provider: "groq", model: MODEL, groq_key_bound: typeof env.GROQ_API_KEY === "string" && env.GROQ_API_KEY.startsWith("gsk_"), workers_ai_used: false, provider_version: PROVIDER_VERSION, live_answers_enabled: false, love001_cycle_version: "full-birthdate-two-person-monthly-20261117", love001_emotion_version: "direct-feelings-20261117" };
+      if (request.headers.get("X-Numi-Moment-Check") !== "provider-metadata") return reply(200, status);
+      const provided = request.headers.get("X-Numi-Moment-Secret");
+      const authorized = !!(env.MOMENT_BRIDGE_SECRET && provided === env.MOMENT_BRIDGE_SECRET) ||
+        await verifyOwnerServerProof(request.headers.get("X-Numi-Moment-Proof"));
+      if (!authorized) return reply(403, { ok: false, error: "FORBIDDEN" });
+      if (!status.groq_key_bound) return reply(503, { ok: false, error: "GROQ_KEY_MISSING" });
+      // Authenticated diagnostics use only the models list. Never perform inference.
+      try {
+        const response = await fetch(GROQ_ENDPOINT.replace(/\/chat\/completions$/, "/models"), {
+          method: "GET", redirect: "error", signal: AbortSignal.timeout(10000),
+          headers: { "Authorization": "Bearer " + env.GROQ_API_KEY, "Accept": "application/json" }
+        });
+        const raw = await response.text();
+        let data; try { data = JSON.parse(raw); } catch { data = null; }
+        const message = typeof data?.error?.message === "string" ? data.error.message : null;
+        return reply(200, { ...status, provider_http: response.status,
+          model_available: Array.isArray(data?.data) && data.data.some(model => model.id === MODEL),
+          provider_error: String(data?.error?.code || data?.error?.type || "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80) || null,
+          provider_message: message ? message.replace(/gsk_[a-zA-Z0-9_-]+/g, "[redacted]").slice(0, 300) : null,
+          provider_json: !!data, colo: request.cf?.colo || null, request_country: request.cf?.country || null });
+      } catch (error) {
+        return reply(200, { ...status, provider_http: null, provider_network_error: error?.name || "Error" });
+      }
+    }
     if (pathname !== "/v1/owner-preview" || request.method !== "POST")
       return reply(404, { ok: false, error: "NOT_FOUND" });
     const provided = request.headers.get("X-Numi-Moment-Secret");
