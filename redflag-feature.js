@@ -37,10 +37,30 @@ const collapseOtherCategories = (keepId) => {
 let activeProfile;
 let formattedDate;
 
-// Red Flag's automated model previews are disconnected. Unfinished questions stay marked "Скоро".
-const ownerDraftInScope=()=>false;
-const ownerDraftAccess=false;
+// Cloud.ru is called directly from REG.RU only after an owner's explicit question click.
+// All customer-paid publication paths remain unchanged.
+let ownerDraftAccess=false;
+const ownerDraftInScope=(question,state)=>ownerDraftAccess
+  && [...categoryStates].some(([name,current])=>name==="flags"&&current===state);
+let ownerAccessRequest=null;
+const checkOwnerDraftAccess=()=>{
+  if(ownerAccessRequest)return ownerAccessRequest;
+  ownerAccessRequest=fetch("/api/redflag-cloudru.php",{
+    method:"GET",credentials:"same-origin",cache:"no-store"
+  }).then(async response=>response.ok?await response.json():null)
+    .then(data=>{
+      const next=data?.ok===true&&data?.owner===true;
+      if(ownerDraftAccess!==next){
+        ownerDraftAccess=next;
+        if(redFlag.classList.contains("is-active"))renderCategories();
+      }
+    }).catch(()=>{ownerDraftAccess=false;})
+    .finally(()=>{ownerAccessRequest=null;});
+  return ownerAccessRequest;
+};
 window.addEventListener("numi:account-session-changed",()=>{
+  ownerDraftAccess=false;
+  void checkOwnerDraftAccess();
   for(const state of categoryStates.values()){
     for(const [id,response] of state.answers)
       if(response?.isDraft)state.answers.delete(id);
@@ -291,6 +311,40 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
   const profile=activeProfile;
   if(!profile)return;
   state.answerErrors.delete(id);
+  if(ownerDraftInScope(question,state)){
+    const birth=parseRedFlagDate(birthDateInput.value);
+    if(!birth){state.answerErrors.set(id,"Проверь дату рождения.");return;}
+    const task=fetch("/api/redflag-cloudru.php",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({category:"flags",question_id:id,day:birth.day,month:birth.month})
+    }).then(async response=>{
+      const result=await response.json().catch(()=>null);
+      if(!response.ok||result?.ok!==true||result?.draft_only!==true
+         ||result?.published!==false||result?.question_id!==id
+         ||result?.date_key!==birth.day+"-"+birth.month
+         ||typeof result.answer!=="string")throw new Error(result?.error||"MODEL_UNAVAILABLE");
+      if(activeProfile===profile)
+        state.answers.set(id,{answer:result.answer,isDraft:true,provider:"cloud.ru"});
+    }).catch(err=>{
+      if(activeProfile!==profile)return;
+      const code=String(err?.message||"");
+      const message=code==="PLEASE_WAIT_15_SECONDS"
+        ?"Подожди 15 секунд, потом открой вопрос ещё раз."
+        :code==="CLOUDRU_HTTP_401"
+        ?"Cloud.ru не принял API-ключ."
+        :code==="CLOUDRU_HTTP_403"
+        ?"Cloud.ru отказал в доступе к модели."
+        :"Cloud.ru не выдал ответ ("+code.replace(/[^A-Z0-9_]/g,"").slice(0,40)+").";
+      state.answerErrors.set(id,message);
+    }).finally(()=>{
+      if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
+      if(activeProfile===profile&&state.expanded&&state.activeQuestionId===id)
+        renderCategories({type:"question",id});
+    });
+    state.answerRequests.set(id,task);
+    return;
+  }
   // The first free Red Flag question remains visible but has no live generator.
   if(question.isFree&&id==="say-no"){
     state.answerErrors.set(id,"Ответ пока в разработке.");
@@ -498,7 +552,9 @@ const createQuestion = (question, state) => {
     if(response.isDraft){
       const note=document.createElement("p");
       note.className="redflag-owner-ai-label";
-      note.textContent=response.isSaved
+      note.textContent=response.provider==="cloud.ru"
+        ?"Ответ Cloud.ru с REG.RU. Только для владельца. Клиентам не опубликован."
+        :response.isSaved
         ?"📂 Сохранённый черновик. Не новый ответ ИИ. Клиентам не видно."
         :"✨ Новый ИИ-ответ для проверки. Только тебе, не опубликован.";
       note.style.cssText="margin:4px 0 12px;font:750 13px/1.5 system-ui;color:#91683b";
@@ -506,6 +562,11 @@ const createQuestion = (question, state) => {
       text.textContent=response.answer;
       text.style.whiteSpace="pre-wrap";
       answer.append(note,text);
+      if(response.provider==="cloud.ru"){
+        const info=document.createElement("small");
+        info.textContent="Следующий ответ создаётся только после нового нажатия на вопрос и может оплачиваться по тарифу Cloud.ru.";
+        answer.append(info);
+      } else {
       // Editing and saving are available ONLY on authenticated owner drafts.
       // Saving writes to /private and never marks a public question as ready.
       const controls=document.createElement("div");
@@ -622,6 +683,7 @@ const createQuestion = (question, state) => {
         controls.after(area,apply);
         area.focus();
       });
+      }
     } else {
     const paragraphs = response.paragraphs ?? [response.answer];
     const scales = (response.scales ?? []).map(({ label, value }) => ({
@@ -929,6 +991,7 @@ backButton.addEventListener("click", () => {
 });
 
 export const openRedFlag = () => {
+  void checkOwnerDraftAccess();
   syncCheckManButton();
   home.classList.remove("is-active");
   redFlag.classList.add("is-active");
