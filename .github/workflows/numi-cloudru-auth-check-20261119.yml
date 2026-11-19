@@ -1,52 +1,62 @@
-name: Diagnose Red Flag request paths without generation or writes
+name: Route existing cached Telegram Red Flag requests to direct Cloud.ru
 on:
   push:
     branches: [main]
     paths: [.github/workflows/numi-cloudru-auth-check-20261119.yml]
 permissions:
   contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
 jobs:
-  inspect:
+  publish:
     runs-on: ubuntu-24.04
     timeout-minutes: 4
     steps:
-      - name: Read request statuses and redacted Red Flag error codes
+      - uses: actions/checkout@v4
+      - name: Update one existing Red Flag route, without model calls
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 -u - <<'PY'
-          import os,ssl,ftplib,io,re,json,hashlib
+          import os,ssl,ftplib,io,json,hashlib,subprocess,urllib.request,urllib.error
+          from pathlib import Path
+          p='redflag-ai-lab/draft.php'
+          desired=Path(p).read_bytes()
+          if subprocess.run(['php','-l'],input=desired,capture_output=True).returncode:raise SystemExit('SYNTAX_FAILED')
           f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
           f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
-          home=f.pwd().rstrip('/');host='xn--c1adkkdfjbp1a4l.online'
+          root=f.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
           def read(p):
-              b=io.BytesIO()
-              try:f.retrbinary('RETR '+home+'/'+p,b.write)
-              except ftplib.error_perm:return b''
-              return b.getvalue()
-          for p in ['redflag-feature.js','redflag-ai-lab/draft.php']:
-              b=read('www/'+host+'/'+p)
-              print('LIVE_ROUTE '+json.dumps({'file':p,'sha256':hashlib.sha256(b).hexdigest(),'old_route_mentions':b.count(b'/redflag-ai-lab/draft.php'),'direct_route_mentions':b.count(b'/redflag-ai-lab/style-test-api.php'),'old_worker_mentions':b.count(b'workers.dev')}))
-          access=read('logs/'+host+'.access.log').decode('utf-8','replace')
-          rows=[]
-          for row in access.splitlines():
-              parts=row.split('"')
-              if len(parts)<3:continue
-              request=parts[1].split()
-              if len(request)<2:continue
-              route=request[1].split('?',1)[0]
-              if route not in ('/redflag-ai-lab/draft.php','/redflag-ai-lab/style-test-api.php'):continue
-              stamp=row.split('[',1)[-1].split(']',1)[0]
-              rows.append([stamp,request[0],route,parts[2].strip().split()[0]])
-          print('RECENT_REDFLAG_REQUESTS '+json.dumps(rows[-30:]))
-          errors=read('logs/'+host+'.error.log').decode('utf-8','replace')
-          found=[]
-          for row in errors.splitlines():
-              if 'REDFLAG_CLOUDRU:' in row:
-                  m=re.search(r'REDFLAG_CLOUDRU:([A-Za-z0-9_: -]{1,180})',row)
-                  if m:found.append(m.group(1))
-          print('REDFLAG_ERROR_CODES '+json.dumps(found[-10:]))
-          f.quit()
-          print('READ_ONLY no_model_calls=true')
+              b=io.BytesIO();f.retrbinary('RETR '+root+p,b.write);return b.getvalue()
+          def put(p,b):
+              f.storbinary('STOR '+root+p,io.BytesIO(b))
+              if read(p)!=b:raise RuntimeError('READBACK_MISMATCH')
+          site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          def get(p,data=None):
+              req=urllib.request.Request(site+p,data=data,headers={'Origin':site.rstrip('/'),'Content-Type':'application/json','Cache-Control':'no-cache'})
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as r:return r.status,r.read(300000)
+              except urllib.error.HTTPError as e:return e.code,e.read(10000)
+          old=read(p);changed=False
+          try:
+              if hashlib.sha256(old).hexdigest()!='43a738e1685d431aecbe7695e4da09a31535fe688aa44afb922c1541223c7b8f':raise RuntimeError('BASELINE_CHANGED')
+              guarded=['redflag-feature.js','redflag-ai-lab/style-test-api.php','index.html','app.js','api/numi-account.php']
+              before={x:read(x) for x in guarded}
+              if b'foundation-models.api.cloud.ru/v1/chat/completions' not in before[guarded[1]]:raise RuntimeError('DIRECT_TARGET_MISSING')
+              changed=True;put(p,desired)
+              for data in [None,b'{"category":"flags","question_id":"care-or-control","day":9,"month":9}']:
+                  code,body=get(p,data)
+                  if code!=403 or json.loads(body).get('error')!='OWNER_ONLY':raise RuntimeError('OWNER_GUARD_FAILED')
+              for x in guarded:
+                  if read(x)!=before[x]:raise RuntimeError('UNEXPECTED_CHANGE_'+x)
+              if get('')[0]!=200:raise RuntimeError('HOMEPAGE_FAILED')
+              print('EXISTING_TELEGRAM_ROUTE_FIXED owner_get_post_403=true protected_files_identical=true homepage_200=true model_calls=0')
+          except BaseException:
+              if changed:put(p,old);print('SINGLE_ROUTE_ROLLED_BACK')
+              raise
+          finally:
+              try:f.quit()
+              except Exception:f.close()
           PY
