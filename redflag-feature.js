@@ -37,41 +37,16 @@ const collapseOtherCategories = (keepId) => {
 let activeProfile;
 let formattedDate;
 
-// The regular Red Flag accordion remains the only interface for answers.
-// Unfinished questions receive an on-demand AI test answer ONLY after verified
-// owner authorization. Neither customer paid access nor published banks change.
-const redflagDraftSections = new Set(["flags","infidelity","intimacy","family","language","verdict"]);
-let ownerDraftAccess=false,ownerDraftAccessChecked=false;
-const ownerDraftInScope=(question,state)=>{
-  const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
-  return Boolean(question.isComingSoon&&ownerDraftAccess&&redflagDraftSections.has(section));
-};
-async function verifyOwnerDraftAccess(){
-  if(ownerDraftAccessChecked)return;
-  ownerDraftAccessChecked=true;
-  try{
-    const response=await fetch("/redflag-ai-lab/draft.php",{
-      method:"GET",credentials:"same-origin",cache:"no-store",
-      headers:{"Accept":"application/json"}
-    });
-    if(!response.ok)return;
-    const data=await response.json();
-    if(data?.ok!==true||data?.owner!==true||data?.draft_only!==true)return;
-    ownerDraftAccess=true;
-    if(redFlag.classList.contains("is-active"))renderCategories();
-  }catch(_){/* Unverified users never see draft generation. */}
-}
+// Red Flag's automated model previews are disconnected. Unfinished questions stay marked "Скоро".
+const ownerDraftInScope=()=>false;
+const ownerDraftAccess=false;
 window.addEventListener("numi:account-session-changed",()=>{
-  ownerDraftAccess=false;ownerDraftAccessChecked=false;
   for(const state of categoryStates.values()){
     for(const [id,response] of state.answers)
       if(response?.isDraft)state.answers.delete(id);
     state.activeQuestionId=null;
   }
-  if(redFlag.classList.contains("is-active")){
-    renderCategories();
-    void verifyOwnerDraftAccess();
-  }
+  if(redFlag.classList.contains("is-active"))renderCategories();
 });
 
 // One consistent deep link for Telegram mini-app question buttons.
@@ -316,74 +291,9 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
   const profile=activeProfile;
   if(!profile)return;
   state.answerErrors.delete(id);
-  // The FIRST free Red Flag question is AI-generated for ALL visitors.
-  // This is deliberately before owner-only test drafts and before paid access.
-  // Never fall back to the three old generic teaser variants.
-  if(question.isFree&&id==="say-no"&&!ownerDraftInScope(question,state)&&[...categoryStates].some(
-    ([category,entry])=>category==="flags"&&entry===state)){
-    const birthday=parseRedFlagDate(birthDateInput.value);
-    if(!birthday){
-      state.answerErrors.set(id,"Укажи дату рождения мужчины.");
-      renderCategories({type:"question",id});
-      return;
-    }
-    const dateKey=birthday.day+"-"+birthday.month;
-    const task=fetch("/api/redflag-free-ai.php",{
-      method:"POST",credentials:"same-origin",cache:"no-store",
-      headers:{"Content-Type":"application/json","Accept":"application/json"},
-      body:JSON.stringify({question_id:"say-no",day:birthday.day,month:birthday.month}),
-      signal:AbortSignal.timeout(100000)
-    }).then(async response=>{
-      const data=await response.json();
-      if(!response.ok||data?.ok!==true||data?.free!==true||
-        data?.ai_generated!==true||data?.question_id!=="say-no"||
-        data?.date_key!==dateKey||typeof data?.answer!=="string"||
-        data.answer.length<450||data.answer.length>1900)
-        throw new Error("FREE_AI_UNAVAILABLE");
-      const paragraphs=data.answer.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);
-      if(paragraphs.length!==2)throw new Error("INVALID_PARAGRAPHS");
-      if(profile!==activeProfile)return;
-      state.answers.set(id,{answer:data.answer,paragraphs});
-    }).catch(()=>{
-      if(profile===activeProfile)
-        state.answerErrors.set(id,"Ответ временно не загрузился. Нажми на вопрос ещё раз.");
-    }).finally(()=>{
-      if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
-      if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
-        renderCategories({type:"question",id});
-    });
-    state.answerRequests.set(id,task);
-    return;
-  }
-  if(ownerDraftInScope(question,state)){
-    const category=[...categoryStates].find(([,value])=>value===state)?.[0];
-    const birth=parseRedFlagDate(birthDateInput.value);
-    if(!birth){state.answerErrors.set(id,"Укажи дату рождения мужчины.");return;}
-    const task=(async()=>{
-      // Always request a fresh AI response for a test question. Previously
-      // kept editor drafts stay safely on the server and can be opened via
-      // the separate "Показать сохранённое" control.
-      const response=await fetch("/redflag-ai-lab/draft.php",{
-        method:"POST",credentials:"same-origin",cache:"no-store",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({category,question_id:id,day:birth.day,month:birth.month})
-      });
-      const data=await response.json();
-      if(!response.ok||data?.ok!==true||data?.draft_only!==true||
-         data?.category!==category||data?.question_id!==id||
-         data?.date_key!==birth.day+"-"+birth.month||typeof data?.answer!=="string")
-        throw new Error("DRAFT_UNAVAILABLE");
-      if(profile!==activeProfile||!ownerDraftAccess)return;
-      state.answers.set(id,{answer:data.answer,isDraft:true,isSaved:false});
-    })().catch(()=>{
-      if(profile===activeProfile&&ownerDraftAccess)
-        state.answerErrors.set(id,"ИИ-ответ не загрузился. Закрой вопрос и открой снова.");
-    }).finally(()=>{
-      if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
-      if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
-        renderCategories({type:"question",id});
-    });
-    state.answerRequests.set(id,task);
+  // The first free Red Flag question remains visible but has no live generator.
+  if(question.isFree&&id==="say-no"){
+    state.answerErrors.set(id,"Ответ пока в разработке.");
     return;
   }
   if(!question.isFree){
@@ -504,14 +414,8 @@ const fillQuestionButton = (button, question, showExpand = false, state = null) 
     const badge = document.createElement("span");
     badge.className = "redflag-question-price";
     badge.style.alignSelf = "flex-start";
-    const isOwnerDraft=state!==null&&ownerDraftInScope(question,state);
-    badge.textContent = isOwnerDraft ? "ИИ · тест" : "Скоро";
+    badge.textContent = "Скоро";
     button.append(badge);
-    if (isOwnerDraft&&showExpand) {
-      const plus=document.createElement("b");
-      plus.setAttribute("aria-hidden","true");plus.textContent="+";
-      button.append(plus);
-    }
     return;
   }
   if (question.isFree) {
@@ -547,65 +451,6 @@ const fillQuestionButton = (button, question, showExpand = false, state = null) 
     plus.textContent = "+";
     button.append(plus);
   }
-};
-
-// Purely editorial first-question experiment IN the Telegram mini-app.
-// Only a verified owner sees it. Customer free content is unchanged.
-const ownerStyleTrialStates=new Map();
-const addOwnerStyleTrial=(target)=>{
-  const birth=parseRedFlagDate(birthDateInput.value);
-  if(!birth)return;
-  const key=birth.day+"-"+birth.month;
-  const draft=ownerStyleTrialStates.get(key)||{answer:"",loading:false,error:""};
-  const panel=document.createElement("section");
-  panel.style.cssText="padding:14px;margin:0 0 16px;border:1px solid #cbb6c0;border-radius:14px;background:#faf5f7;";
-  const header=document.createElement("p");
-  header.style.cssText="margin:0 0 8px;font-weight:750;color:#6b4157;";
-  header.textContent="🧪 Новый ИИ. Только для тебя, клиентам не видно.";
-  const help=document.createElement("p");
-  help.style.cssText="font-size:13px;margin:0 0 10px;color:#75606b;";
-  help.textContent="Проверяем новую инструкцию. Ниже показан прежний клиентский ответ, его пока не меняли.";
-  const go=document.createElement("button");
-  go.type="button";
-  go.textContent=draft.answer?"↻ Другой вариант ИИ":"✨ Проверить новую инструкцию";
-  go.disabled=draft.loading;
-  go.style.cssText="background:#493141;color:white;border:0;border-radius:11px;padding:10px 14px;font:600 14px/1.4 system-ui;";
-  const output=document.createElement("p");
-  output.setAttribute("role","status");
-  output.style.cssText="margin:12px 0 0;white-space:pre-wrap;font-size:15px;line-height:1.6;";
-  output.textContent=draft.loading?"ИИ готовит ответ…":draft.error||draft.answer;
-  panel.append(header,help,go,output);
-  target.prepend(panel);
-  go.addEventListener("click",async()=>{
-    const current=ownerStyleTrialStates.get(key);
-    if(current?.loading)return;
-    const trial={answer:current?.answer||"",loading:true,error:""};
-    ownerStyleTrialStates.set(key,trial);
-    go.disabled=true;
-    output.textContent="ИИ готовит новый ответ…";
-    try{
-      const response=await fetch("/redflag-ai-lab/style-test-api.php",{
-        method:"POST",credentials:"same-origin",cache:"no-store",
-        headers:{"Content-Type":"application/json","Accept":"application/json"},
-        body:JSON.stringify({question_id:"say-no",day:birth.day,month:birth.month}),
-        signal:AbortSignal.timeout(110000)
-      });
-      const data=await response.json();
-      if(!response.ok||data?.ok!==true||data?.style_test!==true||
-        data?.published!==false||data?.draft_only!==true||
-        data?.question_id!=="say-no"||data?.date_key!==key||
-        typeof data?.answer!=="string"||data.answer.length<420||data.answer.length>1800)
-        throw new Error("STYLE_TRIAL_UNAVAILABLE");
-      trial.answer=data.answer;
-      output.textContent=data.answer;
-      go.textContent="↻ Другой вариант ИИ";
-    }catch(_){
-      trial.error="Новый ИИ-ответ не получен. Попробуй ещё раз.";
-      output.textContent=trial.error;
-    }finally{
-      trial.loading=false;go.disabled=false;
-    }
-  });
 };
 
 const createQuestion = (question, state) => {
@@ -801,9 +646,6 @@ const createQuestion = (question, state) => {
     ${observationMarkup}`;
     addRedFlagShare(answer, formatRedFlagMessage(question, response, formattedDate));
     }
-    if(question.isFree&&question.id==="say-no"&&ownerDraftAccess&&!response?.isDraft&&
-      [...categoryStates].some(([category,entry])=>category==="flags"&&entry===state))
-      addOwnerStyleTrial(answer);
   } else if (opened) {
     const waiting = document.createElement("p");
     waiting.className = "redflag-loading";
@@ -1091,7 +933,6 @@ export const openRedFlag = () => {
   redFlag.classList.add("is-active");
   window.scrollTo({ top: 0, behavior: "instant" });
   renderCategories();
-  void verifyOwnerDraftAccess();
 
   // A broadcast deep link opens the exact named question, not just the section.
   // Date input remains optional until the question is actually requested.
