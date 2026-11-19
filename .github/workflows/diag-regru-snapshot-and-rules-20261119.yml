@@ -1,0 +1,81 @@
+name: Investigate live REG.RU state vs November 18 (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diag-regru-snapshot-and-rules-20261119.yml']
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Hash compare real production files and read access-rule metadata without touching anything
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,ssl,os,io,re,hashlib,subprocess,urllib.request,urllib.error,time,sys
+          base='c98df6b145ad6341cbf98394542cf45c2b9856cf'
+          h=lambda b:hashlib.sha256(b).hexdigest()[:15]
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')
+          web=root+'/www/xn--c1adkkdfjbp1a4l.online/'
+          def read(path):
+              data=io.BytesIO()
+              try: ftp.retrbinary('RETR '+path, data.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              return data.getvalue()
+          names=['index.html','app.js','auth-profile.js','account-browser.js','telegram-scroll-guard.js',
+                 'service-worker.js','redflag-feature.js','api/redflag-free-ai.php',
+                 'account-browser.css','wallet-client.js','wallet-topup.html','store-browser.js',
+                 'store-entry.js','store-catalog.json','assets/telegram-web-app-20261102.js']
+          for n in names:
+              live=read(web+n)
+              try:old=subprocess.check_output(['git','show',base+':'+n],stderr=subprocess.DEVNULL)
+              except subprocess.CalledProcessError:old=None
+              try:current=subprocess.check_output(['git','show','HEAD:'+n],stderr=subprocess.DEVNULL)
+              except subprocess.CalledProcessError:current=None
+              label='MISSING' if live is None else 'NOV18_EXACT' if old is not None and live==old else 'MAIN_EXACT' if current is not None and live==current else 'DIFFERENT'
+              print('LIVE',n,label,'bytes',len(live) if live else None, 'sha',h(live) if live else '-',flush=True)
+          for path in [root+'/.htaccess',root+'/www/.htaccess',web+'.htaccess',
+                       web+'.user.ini',root+'/www/.user.ini',web+'api/.htaccess',
+                       web+'api/redflag-cloudru.php',web+'redflag-ai-lab/index.html',
+                       root+'/private/numerologia-daily-08-msk-21-10-2026.php']:
+              data=read(path)
+              if data is None:
+                  print('OTHER',path.replace(root,'~'),'ABSENT',flush=True);continue
+              # Never show sensitive contents, users, bot credentials, IP allowlists or private config
+              if path.endswith('.htaccess') or path.endswith('.user.ini'):
+                  text=data.decode('utf-8','replace')
+                  kinds=sorted(set(re.findall(r'^\s*(?:RewriteCond|RewriteRule|Require|Deny|Allow|Order|Redirect|SetEnvIf|FilesMatch|ErrorDocument|Header|php_value|auto_prepend_file)',text,re.I|re.M)))
+                  has_geo=bool(re.search(r'GEOIP|COUNTRY|REMOTE_ADDR|HTTP_USER_AGENT|HTTP_REFERER|HTTP_CF_|bot|deny|Require|ErrorDocument|auto_prepend_file',text,re.I))
+                  print('RULES',path.replace(root,'~'),'sha',h(data),'bytes',len(data),'directive_types',kinds,'conditional_or_access',has_geo,flush=True)
+              else:
+                  print('OTHER',path.replace(root,'~'),'PRESENT bytes',len(data),'sha',h(data),flush=True)
+          ftp.quit()
+          print('FTP_READONLY_COMPLETE',flush=True)
+          PY
+      - name: Check public HTML and asset headers without account, requests, or writes
+        run: |
+          python3 -u - <<'PY'
+          import urllib.request,urllib.error
+          url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
+          for path in ['/','/index.html','/app.js','/auth-profile.js','/account-browser.js','/redflag-feature.js',
+                       '/assets/telegram-web-app-20261102.js','/service-worker.js']:
+              req=urllib.request.Request(url+path,headers={'Cache-Control':'no-cache','User-Agent':'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile Safari/604.1'})
+              try:
+                  with urllib.request.urlopen(req,timeout=18) as r:
+                      content=r.read(250000)
+                      print('PUBLIC',path,'status',r.status,'type',r.headers.get('Content-Type'),'cache',r.headers.get('Cache-Control'),'bytes_read',len(content),'final_host',r.url.split('/')[2],flush=True)
+              except Exception as e:print('PUBLIC_ERR',path,type(e).__name__,str(e)[:100],flush=True)
+          PY
