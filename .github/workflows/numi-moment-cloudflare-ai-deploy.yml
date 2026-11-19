@@ -1,4 +1,4 @@
-name: Deploy ONLY numerologia-300-ai Worker with Cloudflare AI binding
+name: Deploy Moment 300 with direct Groq and no Workers AI
 on:
   push:
     branches: [main]
@@ -25,12 +25,12 @@ jobs:
           node - <<'JS'
           const fs=require('fs');
           const cfg=JSON.parse(fs.readFileSync('cloudflare/moment-300-ai/wrangler.jsonc','utf8'));
-          if(cfg.name!=='numerologia-300-ai'||cfg.main!=='src/index.js'||cfg.ai?.binding!=='AI')throw Error('WRONG_CLOUDFLARE_DEPLOY_TARGET');
+          if(cfg.name!=='numerologia-300-ai'||cfg.main!=='src/index.js'||Object.hasOwn(cfg,'ai'))throw Error('WRONG_CLOUDFLARE_DEPLOY_TARGET');
           const src=fs.readFileSync('cloudflare/moment-300-ai/src/index.js','utf8');
-          if(!src.includes('MOMENT_BRIDGE_SECRET')||!src.includes('env.AI.run('))throw Error('MOMENT_AUTH_OR_AI_MISSING');
+          if(!src.includes('MOMENT_BRIDGE_SECRET')||!src.includes('env.GROQ_API_KEY')||!src.includes('https://api.groq.com/openai/v1/chat/completions')||src.includes('env.AI.run('))throw Error('MOMENT_AUTH_OR_GROQ_MISSING');
           console.log('MOMENT_CLOUDFLARE_TARGET_ISOLATED_OK');
           JS
-      - name: Test only first Moment question across full dates and monthly cycles
+      - name: Test Groq transport, authentication, full dates and monthly cycles locally
         run: |
           node --test cloudflare/moment-300-ai/tests/love001-full-birthdate-monthly.mjs
       - name: Confirm test step for diagnosis
@@ -82,7 +82,7 @@ jobs:
             -f state=success \
             -f context="numi/moment-upload" \
             -f description="upload completed for one-question release" >/dev/null
-      - name: Check live Workers AI binding without using any billable inference
+      - name: Check live Groq configuration without using any inference
         env:
           GH_TOKEN: ${{ github.token }}
           GH_SHA: ${{ github.sha }}
@@ -95,10 +95,10 @@ jobs:
           exception_name='none'
           for attempt in range(6):
             try:
-              req=urllib.request.Request(url+'?version=full-birthdate-two-person-monthly-20261117&attempt='+str(attempt),
+              req=urllib.request.Request(url+'?version=groq-direct-20261119&attempt='+str(attempt),
                 headers={'Cache-Control':'no-store','User-Agent':'NumiOneQuestionVerifiedRelease/1.0'})
               with urllib.request.urlopen(req,timeout=16) as r:result=json.load(r)
-              if result.get('love001_emotion_version')=='direct-feelings-20261117' and result.get('ai_bound') is True:
+              if result.get('provider_version')=='groq-direct-20261119' and result.get('groq_key_bound') is True:
                 break
             except Exception as ex:
               exception_name=ex.__class__.__name__
@@ -106,13 +106,15 @@ jobs:
             if attempt!=5:time.sleep(3)
           reason=None
           if result is None: reason='unreachable'
-          elif result.get('ai_bound') is not True: reason='binding'
+          elif result.get('groq_key_bound') is not True: reason='groq-key'
+          elif result.get('provider')!='groq' or result.get('provider_version')!='groq-direct-20261119':reason='provider'
+          elif result.get('workers_ai_used') is not False:reason='workers-ai-enabled'
           elif result.get('service')!='numi-moment-300-owner-preview':reason='service'
           elif result.get('love001_cycle_version')!='full-birthdate-two-person-monthly-20261117':reason='stale'
           elif result.get('love001_emotion_version')!='direct-feelings-20261117':reason='stale-emotions'
           elif result.get('live_answers_enabled') is not False:reason='gate'
           if reason is not None:
-            if result is not None:print('MOMENT_HEALTH_STATUS',json.dumps({k:result.get(k) for k in ('service','ai_bound','love001_cycle_version','love001_emotion_version')},ensure_ascii=False),flush=True)
+            if result is not None:print('MOMENT_HEALTH_STATUS',json.dumps({k:result.get(k) for k in ('service','provider','groq_key_bound','workers_ai_used','provider_version')},ensure_ascii=False),flush=True)
             print('MOMENT_LIVE_VERIFY_FAILED',reason,'exception',exception_name,flush=True)
             endpoint=f"https://api.github.com/repos/{os.environ['GH_REPO']}/statuses/{os.environ['GH_SHA']}"
             data=json.dumps({'state':'failure','context':'numi/moment-health-'+reason,
@@ -124,7 +126,52 @@ jobs:
               with urllib.request.urlopen(req,timeout=12) as res:pass
             except Exception as ex:print('MOMENT_HEALTH_DIAG_REPORT_ERROR',ex.__class__.__name__)
             raise RuntimeError('CLOUDFLARE_LIVE_CHECK_'+reason.upper())
-          print('MOMENT_LOVE001_LIVE_VERIFIED full_birthdate=true both_personal_months=true only_question=love-001')
+          print('MOMENT_GROQ_LIVE_CONFIGURATION_VERIFIED workers_ai_used=false inference_calls=0')
+          PY
+      - name: Publish only the Moment provider label to REG.RU with backup
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          php -l moment/owner-ai.php
+          python3 - <<'PY'
+          import ftplib,hashlib,io,os,pathlib,ssl,time
+          desired=pathlib.Path('moment/owner-ai.php').read_bytes()
+          previous=desired.replace(b"header('X-Numi-Moment-AI: groq');",b"header('X-Numi-Moment-AI: cloudflare');").replace(b"'provider'=>'groq'",b"'provider'=>'cloudflare'")
+          if desired==previous:raise RuntimeError('MOMENT_PROVIDER_LABEL_MISSING')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          def read(path):
+            stream=io.BytesIO()
+            ftp.retrbinary('RETR '+path,stream.write)
+            return stream.getvalue()
+          def put(path,data):
+            ftp.storbinary('STOR '+path,io.BytesIO(data))
+            if read(path)!=data:raise RuntimeError('MOMENT_UPLOAD_READBACK_FAILED')
+          try:
+            ftp.connect('server172.hosting.reg.ru',21)
+            ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+            ftp.prot_p();ftp.set_pasv(True)
+            home=ftp.pwd().rstrip('/')
+            target=home+'/www/xn--c1adkkdfjbp1a4l.online/moment/owner-ai.php'
+            original=read(target)
+            if original==desired:
+              print('MOMENT_GROQ_PROVIDER_LABEL_ALREADY_CURRENT',flush=True)
+            else:
+              if original!=previous:raise RuntimeError('MOMENT_LIVE_HANDLER_CHANGED_NO_UPLOAD')
+              backup=home+'/site-safeguard-backups'
+              try:ftp.mkd(backup)
+              except ftplib.error_perm:
+                ftp.cwd(backup)
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              put(backup+'/'+stamp+'-'+hashlib.sha256(original).hexdigest()[:12]+'-moment-owner-ai.php',original)
+              try:put(target,desired)
+              except Exception:
+                put(target,original)
+                raise
+              print('MOMENT_GROQ_PROVIDER_LABEL_PUBLISHED_AND_VERIFIED',flush=True)
+          finally:
+            try:ftp.quit()
+            except Exception:ftp.close()
           PY
       - name: Confirm health step for diagnosis
         env:
@@ -145,7 +192,7 @@ jobs:
           import json,os,urllib.request
           url=f"https://api.github.com/repos/{os.environ['GH_REPO']}/statuses/{os.environ['GH_SHA']}"
           data=json.dumps({"state":"success","context":"numi/moment-love001-live",
-            "description":"Cloudflare live health confirms full-date, two personal months, owner-only gate"}).encode()
+            "description":"Groq configured, Workers AI disabled, owner-only gate preserved"}).encode()
           request=urllib.request.Request(url,data=data,method="POST",headers={
             "Authorization":"Bearer "+os.environ['GH_TOKEN'],
             "Accept":"application/vnd.github+json",
@@ -175,3 +222,4 @@ jobs:
             assert response.status==201
           print("MOMENT_LOVE001_DEPLOY_FAILURE_RECORDED")
           PY
+

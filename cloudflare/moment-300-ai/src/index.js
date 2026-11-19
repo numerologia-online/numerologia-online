@@ -1,9 +1,11 @@
 /* Separate AI-only Worker for the owner preview of the 300-question Moment catalog.
-   Independent model service only; no other catalog routes.
+   Direct Groq inference only; no Workers AI usage or other catalog routes.
    Does not interact with Telegram, wallet, purchases, other report products or user accounts.
    Requests may arrive ONLY from a server with the private MOMENT_BRIDGE_SECRET.
 */
-const MODEL = "@cf/google/gemma-4-26b-a4b-it";
+const MODEL = "openai/gpt-oss-120b";
+const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
+const PROVIDER_VERSION = "groq-direct-20261119";
 const MAX_BODY_BYTES = 5000;
 const BRIDGE_PROOF_SHA256 = "429a97ba8051a87f8e35b37a2e86259fad874d8d481ac811e77d42a3a15229d5";
 async function verifyOwnerServerProof(proof) {
@@ -188,17 +190,17 @@ export default {
   async fetch(request, env) {
     const pathname = new URL(request.url).pathname;
     if (request.method === "GET" && pathname === "/health")
-      return reply(200, { ok: true, service: "numi-moment-300-owner-preview", ai_bound: !!env.AI, live_answers_enabled: false, love001_cycle_version: "full-birthdate-two-person-monthly-20261117", love001_emotion_version: "direct-feelings-20261117" });
+      return reply(200, { ok: true, service: "numi-moment-300-owner-preview", provider: "groq", model: MODEL, groq_key_bound: typeof env.GROQ_API_KEY === "string" && env.GROQ_API_KEY.startsWith("gsk_"), workers_ai_used: false, provider_version: PROVIDER_VERSION, live_answers_enabled: false, love001_cycle_version: "full-birthdate-two-person-monthly-20261117", love001_emotion_version: "direct-feelings-20261117" });
     if (pathname !== "/v1/owner-preview" || request.method !== "POST")
       return reply(404, { ok: false, error: "NOT_FOUND" });
-    if (!env.AI)
-      return reply(503, { ok: false, error: "AI_BINDING_MISSING" });
     const provided = request.headers.get("X-Numi-Moment-Secret");
     const bridgeProof = request.headers.get("X-Numi-Moment-Proof");
     const approvedByEnv = !!(env.MOMENT_BRIDGE_SECRET && provided && provided === env.MOMENT_BRIDGE_SECRET);
     const approvedByServer = await verifyOwnerServerProof(bridgeProof);
     if (!approvedByEnv && !approvedByServer)
       return reply(403, { ok: false, error: "FORBIDDEN" });
+    if (typeof env.GROQ_API_KEY !== "string" || !env.GROQ_API_KEY.startsWith("gsk_"))
+      return reply(503, { ok: false, error: "GROQ_KEY_MISSING" });
     if (!(request.headers.get("Content-Type") || "").startsWith("application/json"))
       return reply(415, { ok: false, error: "JSON_REQUIRED" });
     const bodyText = await request.text();
@@ -238,21 +240,41 @@ export default {
 
     }
     try {
-      const result = await env.AI.run(MODEL, {
-        messages: [
-          { role: "system", content: special ? LOVE001_SYSTEM : SYSTEM },
-          { role: "user", content: lines.join("\n") }
-        ],
-        max_completion_tokens: 650,
-        temperature: 0.55,
-        chat_template_kwargs: { enable_thinking: false }
+      const response = await fetch(GROQ_ENDPOINT, {
+        method: "POST",
+        redirect: "error",
+        signal: AbortSignal.timeout(70000),
+        headers: {
+          "Authorization": "Bearer " + env.GROQ_API_KEY,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            { role: "system", content: special ? LOVE001_SYSTEM : SYSTEM },
+            { role: "user", content: lines.join("\n") }
+          ],
+          max_completion_tokens: 2000,
+          temperature: 0.55,
+          reasoning_effort: "low",
+          reasoning_format: "hidden",
+          stream: false
+        })
       });
-      const answer = result?.response ?? result?.choices?.[0]?.message?.content;
-      if (typeof answer !== "string" || answer.trim().length < 70 || answer.length > 7000)
+      if (!response.ok) {
+        console.error("MOMENT_GROQ_STATUS", response.status);
+        return reply(response.status === 429 ? 429 : 503, {
+          ok: false, error: response.status === 429 ? "MODEL_RATE_LIMITED" : "MODEL_UNAVAILABLE"
+        });
+      }
+      const result = await response.json();
+      const answer = result?.choices?.[0]?.message?.content;
+      if (result?.choices?.[0]?.finish_reason === "length" || typeof answer !== "string" || answer.trim().length < 70 || answer.length > 7000)
         return reply(503, { ok: false, error: "MODEL_OUTPUT_NOT_READY" });
       return reply(200, {
         ok: true, test: true, question_id: body.question_id,
-        answer: answer.trim(), model: MODEL
+        answer: answer.trim(), provider: "groq", model: MODEL
       });
     } catch (error) {
       console.error("MOMENT_AI_ERROR", error?.name || "unknown");
@@ -260,3 +282,4 @@ export default {
     }
   }
 };
+

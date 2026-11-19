@@ -8,10 +8,17 @@ async function inspect(questionId,man,moment){
   let messages;
   const env={
     MOMENT_BRIDGE_SECRET:"test-only-bridge",
-    AI:{run:async(_model,options)=>{
-      messages=options.messages;
-      return {response:sampleText};
-    }}
+    GROQ_API_KEY:"gsk_test_only_not_a_real_key"
+  };
+  const originalFetch=globalThis.fetch;
+  globalThis.fetch=async(url,options)=>{
+    assert.equal(url,"https://api.groq.com/openai/v1/chat/completions");
+    assert.equal(options.headers.Authorization,"Bearer "+env.GROQ_API_KEY);
+    const payload=JSON.parse(options.body);
+    assert.equal(payload.model,"openai/gpt-oss-120b");
+    assert.equal(payload.reasoning_format,"hidden");
+    messages=payload.messages;
+    return Response.json({choices:[{message:{content:sampleText},finish_reason:"stop"}]});
   };
   const req=new Request("https://example.test/v1/owner-preview",{
     method:"POST",
@@ -24,10 +31,13 @@ async function inspect(questionId,man,moment){
       moment
     })
   });
-  const res=await worker.fetch(req,env);
+  let res;
+  try { res=await worker.fetch(req,env); }
+  finally { globalThis.fetch=originalFetch; }
   assert.equal(res.status,200);
   const data=await res.json();
   assert.equal(data.ok,true);
+  assert.equal(data.provider,"groq");
   assert.ok(messages);
   const note=messages[1].content.split("\n").find(line=>line.includes("заранее рассчитанные показатели"));
   const feelingLine=messages[1].content.split("\n").find(line=>line.includes("ВНУТРЕННИЙ ориентир для прямого ответа про ЧУВСТВА:"));
@@ -70,15 +80,51 @@ assert.doesNotMatch(sameDayMonthOlder.messages[1].content,/Приоритет т
 assert.notEqual(anotherQuestion.messages[0].content,sameDayMonthOlder.messages[0].content);
 assert.equal(anotherQuestion.values,null,"other 299 questions must keep existing prompt");
 assert.equal(anotherQuestion.feeling,null,"other 299 must not use first-question feelings lens");
-const health=await worker.fetch(new Request("https://example.test/health"),{AI:{}});
+const health=await worker.fetch(new Request("https://example.test/health"),{GROQ_API_KEY:"gsk_test_only"});
 assert.equal(health.status,200);
 const status=await health.json();
 assert.equal(status.love001_cycle_version,"full-birthdate-two-person-monthly-20261117");
 assert.equal(status.live_answers_enabled,false);
+assert.equal(status.provider,"groq");
+assert.equal(status.groq_key_bound,true);
+assert.equal(status.workers_ai_used,false);
+assert.equal(status.provider_version,"groq-direct-20261119");
 assert.equal(status.love001_emotion_version,"direct-feelings-20261117");
 assert.equal(status.redflag_owner_model,undefined,"No model details for retired module");
 const unauthorized=await worker.fetch(new Request("https://example.test/v1/redflag-draft",{
   method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
-}),{AI:{}});
+}),{});
 assert.equal(unauthorized.status,404,"Retired route must not reach a model");
+const transportEnv={MOMENT_BRIDGE_SECRET:"test-only-bridge",GROQ_API_KEY:"gsk_test_only"};
+function transportRequest(authenticated=true){
+  return new Request("https://example.test/v1/owner-preview",{
+    method:"POST",
+    headers:{"Content-Type":"application/json",...(authenticated?{"X-Numi-Moment-Secret":"test-only-bridge"}:{})},
+    body:JSON.stringify({question_id:"love-002",title:"Вспоминает ли он обо мне?",birth_date:"1988-02-14",other_date:"1985-10-31"})
+  });
+}
+const originalFetch=globalThis.fetch;
+let calls=0;
+try{
+  globalThis.fetch=async()=>{calls++;throw Error("Network must not be used");};
+  const denied=await worker.fetch(transportRequest(false),transportEnv);
+  assert.equal(denied.status,403);
+  const missingKey=await worker.fetch(transportRequest(),{MOMENT_BRIDGE_SECRET:"test-only-bridge"});
+  assert.equal(missingKey.status,503);
+  assert.equal((await missingKey.json()).error,"GROQ_KEY_MISSING");
+  assert.equal(calls,0,"Rejected requests must not call either provider");
+  for(const statusCode of [401,403,429]){
+    calls=0;
+    globalThis.fetch=async()=>{calls++;return Response.json({error:{message:"provider rejected"}},{status:statusCode});};
+    const response=await worker.fetch(transportRequest(),transportEnv);
+    assert.equal(response.status,statusCode===429?429:503);
+    assert.equal((await response.json()).error,statusCode===429?"MODEL_RATE_LIMITED":"MODEL_UNAVAILABLE");
+    assert.equal(calls,1,"Never retry or fall back to Workers AI");
+  }
+  globalThis.fetch=async()=>Response.json({choices:[{message:{content:sampleText},finish_reason:"length"}]});
+  const truncated=await worker.fetch(transportRequest(),transportEnv);
+  assert.equal(truncated.status,503,"A truncated provider response must not become a completed answer");
+}finally{globalThis.fetch=originalFetch;}
+console.log("PASS: direct Groq only, auth before inference, limits, no retries or Workers AI fallback");
 console.log("PASS: love-001 full birth years, age cycles, both personal months, other 299 isolated");
+

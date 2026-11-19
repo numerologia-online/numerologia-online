@@ -77,10 +77,11 @@ try{
     if(($parsed['ok']??false)!==true||!is_string($answer)||mb_strlen(trim($answer))<70||mb_strlen($answer)>5000)
       omReply(503,['ok'=>false,'error'=>'WORKER_MODEL_OUTPUT_NOT_READY']);
     $answer=str_replace('—',':',trim($answer));
-    header('X-Numi-Moment-AI: cloudflare');
-    omReply(200,['ok'=>true,'test'=>true,'provider'=>'cloudflare',
+    header('X-Numi-Moment-AI: groq');
+    omReply(200,['ok'=>true,'test'=>true,'provider'=>'groq',
       'question_id'=>$id,'question'=>$q['title'],'answer'=>$answer]);
 }catch(Throwable $e){
     error_log('MOMENT_OWNER_PREVIEW:'.get_class($e));
     omReply(503,['ok'=>false,'error'=>'TEMPORARILY_UNAVAILABLE']);
 }
+
