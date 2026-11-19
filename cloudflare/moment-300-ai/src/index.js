@@ -258,7 +258,7 @@ export default {
           max_completion_tokens: 2000,
           temperature: 0.55,
           reasoning_effort: "low",
-          reasoning_format: "hidden",
+          include_reasoning: false,
           stream: false
         })
       });

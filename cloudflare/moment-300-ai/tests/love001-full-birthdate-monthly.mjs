@@ -16,7 +16,8 @@ async function inspect(questionId,man,moment){
     assert.equal(options.headers.Authorization,"Bearer "+env.GROQ_API_KEY);
     const payload=JSON.parse(options.body);
     assert.equal(payload.model,"openai/gpt-oss-120b");
-    assert.equal(payload.reasoning_format,"hidden");
+    assert.equal(payload.include_reasoning,false);
+    assert.equal(Object.hasOwn(payload,"reasoning_format"),false,"GPT-OSS rejects reasoning_format");
     messages=payload.messages;
     return Response.json({choices:[{message:{content:sampleText},finish_reason:"stop"}]});
   };
