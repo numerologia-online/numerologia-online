@@ -37,33 +37,10 @@ const collapseOtherCategories = (keepId) => {
 let activeProfile;
 let formattedDate;
 
-// Cloud.ru is called directly from REG.RU only after an owner's explicit question click.
-// All customer-paid publication paths remain unchanged.
-let ownerDraftAccess=false;
-const isFlagsQuestion=(question,state)=>Boolean(question)
-  && [...categoryStates].some(([name,current])=>name==="flags"&&current===state);
-const ownerDraftInScope=(question,state)=>ownerDraftAccess&&isFlagsQuestion(question,state);
-let ownerAccessRequest=null;
-const checkOwnerDraftAccess=()=>{
-  if(ownerAccessRequest)return ownerAccessRequest;
-  ownerAccessRequest=fetch("/api/redflag-cloudru.php",{
-    method:"POST",credentials:"same-origin",cache:"no-store",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({action:"access",init_data:window.Telegram?.WebApp?.initData||""})
-  }).then(async response=>response.ok?await response.json():null)
-    .then(data=>{
-      const next=data?.ok===true&&data?.owner===true;
-      if(ownerDraftAccess!==next){
-        ownerDraftAccess=next;
-        if(redFlag.classList.contains("is-active"))renderCategories();
-      }
-    }).catch(()=>{ownerDraftAccess=false;})
-    .finally(()=>{ownerAccessRequest=null;});
-  return ownerAccessRequest;
-};
+// Red Flag's automated model previews are disconnected. Unfinished questions stay marked "Скоро".
+const ownerDraftInScope=()=>false;
+const ownerDraftAccess=false;
 window.addEventListener("numi:account-session-changed",()=>{
-  ownerDraftAccess=false;
-  void checkOwnerDraftAccess();
   for(const state of categoryStates.values()){
     for(const [id,response] of state.answers)
       if(response?.isDraft)state.answers.delete(id);
@@ -308,52 +285,12 @@ const clearError = () => {
 // Paid questions are opened IN PLACE; never send the reader into a cart.
 // Publication state comes from the approved material catalogue, not a per-section switch.
 const ensureAnswer = (question, state, {forceNew = false} = {}) => {
-  if(question.isComingSoon&&!isFlagsQuestion(question,state))return;
+  if(question.isComingSoon&&!ownerDraftInScope(question,state))return;
   const id=question.id;
   if(state.answers.has(id)||state.answerRequests.has(id))return;
   const profile=activeProfile;
   if(!profile)return;
   state.answerErrors.delete(id);
-  if(isFlagsQuestion(question,state)&&!ownerDraftAccess){
-    state.answerErrors.set(id,"Сайт не распознал вход владельца. Проверь, что ты открыла сайт из своего Telegram-бота под привязанным аккаунтом.");
-    renderCategories({type:"question",id});
-    return;
-  }
-  if(ownerDraftInScope(question,state)){
-    const birth=parseRedFlagDate(birthDateInput.value);
-    if(!birth){state.answerErrors.set(id,"Проверь дату рождения.");return;}
-    const task=fetch("/api/redflag-cloudru.php",{
-      method:"POST",credentials:"same-origin",cache:"no-store",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({category:"flags",question_id:id,day:birth.day,month:birth.month,
-        init_data:window.Telegram?.WebApp?.initData||""})
-    }).then(async response=>{
-      const result=await response.json().catch(()=>null);
-      if(!response.ok||result?.ok!==true||result?.draft_only!==true
-         ||result?.published!==false||result?.question_id!==id
-         ||result?.date_key!==birth.day+"-"+birth.month
-         ||typeof result.answer!=="string")throw new Error(result?.error||"MODEL_UNAVAILABLE");
-      if(activeProfile===profile)
-        state.answers.set(id,{answer:result.answer,isDraft:true,provider:"cloud.ru"});
-    }).catch(err=>{
-      if(activeProfile!==profile)return;
-      const code=String(err?.message||"");
-      const message=code==="PLEASE_WAIT_15_SECONDS"
-        ?"Подожди 15 секунд, потом открой вопрос ещё раз."
-        :code==="CLOUDRU_HTTP_401"
-        ?"Cloud.ru не принял API-ключ."
-        :code==="CLOUDRU_HTTP_403"
-        ?"Cloud.ru отказал в доступе к модели."
-        :"Cloud.ru не выдал ответ ("+code.replace(/[^A-Z0-9_]/g,"").slice(0,40)+").";
-      state.answerErrors.set(id,message);
-    }).finally(()=>{
-      if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
-      if(activeProfile===profile&&state.expanded&&state.activeQuestionId===id)
-        renderCategories({type:"question",id});
-    });
-    state.answerRequests.set(id,task);
-    return;
-  }
   // The first free Red Flag question remains visible but has no live generator.
   if(question.isFree&&id==="say-no"){
     state.answerErrors.set(id,"Ответ пока в разработке.");
@@ -478,7 +415,7 @@ const fillQuestionButton = (button, question, showExpand = false, state = null) 
     const badge = document.createElement("span");
     badge.className = "redflag-question-price";
     badge.style.alignSelf = "flex-start";
-    badge.textContent = ownerDraftInScope(question,state) ? "Проверить ИИ" : "Скоро";
+    badge.textContent = "Скоро";
     button.append(badge);
     return;
   }
@@ -518,7 +455,7 @@ const fillQuestionButton = (button, question, showExpand = false, state = null) 
 };
 
 const createQuestion = (question, state) => {
-  const opened = (!question.isComingSoon || isFlagsQuestion(question,state)) && state.activeQuestionId === question.id;
+  const opened = (!question.isComingSoon || ownerDraftInScope(question,state)) && state.activeQuestionId === question.id;
   const article = document.createElement("article");
   article.className = `redflag-question${opened ? " is-open" : ""}${activeProfile ? " is-calculated" : " is-preview"}`;
   article.dataset.questionId = question.id;
@@ -527,7 +464,7 @@ const createQuestion = (question, state) => {
     const preview = document.createElement("button");
     preview.type = "button";
     preview.className = "redflag-question-toggle redflag-question-preview";
-    preview.disabled = Boolean(question.isComingSoon&&!isFlagsQuestion(question,state));
+    preview.disabled = Boolean(question.isComingSoon&&!ownerDraftInScope(question,state));
     fillQuestionButton(preview, question, false, state);
     preview.addEventListener("click", () => {
       const date = parseRedFlagDate(birthDateInput.value);
@@ -550,7 +487,7 @@ const createQuestion = (question, state) => {
   const button = document.createElement("button");
   button.className = "redflag-question-toggle";
   button.type = "button";
-  button.disabled = Boolean(question.isComingSoon&&!isFlagsQuestion(question,state));
+  button.disabled = Boolean(question.isComingSoon&&!ownerDraftInScope(question,state));
   button.setAttribute("aria-expanded", String(opened));
   fillQuestionButton(button, question, true, state);
 
@@ -561,9 +498,7 @@ const createQuestion = (question, state) => {
     if(response.isDraft){
       const note=document.createElement("p");
       note.className="redflag-owner-ai-label";
-      note.textContent=response.provider==="cloud.ru"
-        ?"Ответ Cloud.ru с REG.RU. Только для владельца. Клиентам не опубликован."
-        :response.isSaved
+      note.textContent=response.isSaved
         ?"📂 Сохранённый черновик. Не новый ответ ИИ. Клиентам не видно."
         :"✨ Новый ИИ-ответ для проверки. Только тебе, не опубликован.";
       note.style.cssText="margin:4px 0 12px;font:750 13px/1.5 system-ui;color:#91683b";
@@ -571,11 +506,6 @@ const createQuestion = (question, state) => {
       text.textContent=response.answer;
       text.style.whiteSpace="pre-wrap";
       answer.append(note,text);
-      if(response.provider==="cloud.ru"){
-        const info=document.createElement("small");
-        info.textContent="Следующий ответ создаётся только после нового нажатия на вопрос и может оплачиваться по тарифу Cloud.ru.";
-        answer.append(info);
-      } else {
       // Editing and saving are available ONLY on authenticated owner drafts.
       // Saving writes to /private and never marks a public question as ready.
       const controls=document.createElement("div");
@@ -692,7 +622,6 @@ const createQuestion = (question, state) => {
         controls.after(area,apply);
         area.focus();
       });
-      }
     } else {
     const paragraphs = response.paragraphs ?? [response.answer];
     const scales = (response.scales ?? []).map(({ label, value }) => ({
@@ -839,7 +768,7 @@ const repaintOnlyQuestions = (questionId) => {
   // scroll anchor, which can jump the page when a longer answer opens.
   for (const card of cards) {
     const question = records.get(card.dataset.questionId);
-    const shouldOpen = (!question.isComingSoon||isFlagsQuestion(question,state)) && state.activeQuestionId === question.id;
+    const shouldOpen = (!question.isComingSoon||ownerDraftInScope(question,state)) && state.activeQuestionId === question.id;
     if (question.id === questionId || card.classList.contains("is-open") !== shouldOpen) {
       const updated = createQuestion(question, state);
       card.className = updated.className;
@@ -908,7 +837,7 @@ categoriesRoot.addEventListener("click",(event)=>{
   const entry=[...categoryStates.values()].find(state=>
     state.expanded&&state.questions?.some(question=>question.id===questionId));
   const question=entry?.questions?.find(item=>item.id===questionId);
-  if(!question?.isFree||(question.isComingSoon&&!isFlagsQuestion(question,entry)))return;
+  if(!question?.isFree||question.isComingSoon)return;
   event.preventDefault();
   event.stopImmediatePropagation();
   button.blur();
@@ -983,7 +912,7 @@ form.addEventListener("submit", async (event) => {
         ?.find((question) => question.id === requestedQuestion[2]);
       if (linkedQuestion) {
         linkedState.activeQuestionId = linkedQuestion.id;
-        if(!ownerDraftInScope(linkedQuestion,linkedState))ensureAnswer(linkedQuestion, linkedState);
+        ensureAnswer(linkedQuestion, linkedState);
       }
     }
     clearError();
@@ -1000,7 +929,6 @@ backButton.addEventListener("click", () => {
 });
 
 export const openRedFlag = () => {
-  void checkOwnerDraftAccess();
   syncCheckManButton();
   home.classList.remove("is-active");
   redFlag.classList.add("is-active");
