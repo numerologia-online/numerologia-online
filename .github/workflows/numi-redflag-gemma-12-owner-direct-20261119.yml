@@ -127,3 +127,5 @@ jobs:
             -f state="$outcome" -f context="numi/redflag-12-local-gemma-qa" \
             -f description="12 real private Gemma owner-only drafts; no site publication" \
             -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >/dev/null
+
+# editorial-revision-2-20261119: repeat real 12-date QA with revised equal-day/month owner-only prompt
