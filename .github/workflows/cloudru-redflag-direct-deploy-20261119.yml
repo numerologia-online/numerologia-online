@@ -1,0 +1,135 @@
+name: Publish direct Cloud.ru answers in existing Red Flag and remove separate preview
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/cloudru-redflag-direct-deploy-20261119.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 100
+      - name: Validate PHP, JS and HTML before server changes
+        run: |
+          php -l api/redflag-cloudru.php
+          node --input-type=module --check < redflag-feature.js
+          node --input-type=module --check < app.js
+          python3 - <<'PY'
+          from pathlib import Path
+          js=Path('redflag-feature.js').read_text('utf-8')
+          php=Path('api/redflag-cloudru.php').read_text('utf-8')
+          app=Path('app.js').read_text('utf-8')
+          index=Path('index.html').read_text('utf-8')
+          assert 'checkOwnerDraftAccess()' in js
+          assert 'redflag-cloudru.php' in js
+          assert 'Authorization: Bearer ' in php
+          assert "cloudru-direct-20261119" in app
+          assert 'app.js?v=cloudru-direct-20261119' in index
+          assert 'numi-account-20261031/core.php' in php
+          assert 'naTestOwner($account)' in php
+          assert "PLEASE_WAIT_15_SECONDS" in php
+          print('DIRECT_REDFLAG_SYNTAX_AND_SCOPE_OK')
+          PY
+      - name: Deploy only approved files, delete old preview, verify no public API access
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,hashlib,subprocess,urllib.request,urllib.error,time
+          from pathlib import Path
+          changed_paths=['api/redflag-cloudru.php','redflag-feature.js','app.js','index.html']
+          obsolete='redflag-ai-lab/cloudru-owner-preview.php'
+          desired={p:Path(p).read_bytes() for p in changed_paths}
+          old_preview=Path(obsolete).read_bytes()
+          digest=lambda data:hashlib.sha256(data).hexdigest()
+          # Compare against previously committed source before touching a live file.
+          known={}
+          for p in changed_paths:
+              revs=subprocess.check_output(['git','log','-n','95','--format=%H','--',p],text=True).splitlines()
+              variants=set()
+              for rev in revs:
+                  try:
+                      variants.add(digest(subprocess.check_output(['git','show',rev+':'+p],stderr=subprocess.DEVNULL)))
+                  except subprocess.CalledProcessError:pass
+              known[p]=variants
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          backupdir=home+'/site-safeguard-backups'
+          def read(rel):
+              b=io.BytesIO()
+              try:ftp.retrbinary('RETR '+root+rel,b.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              return b.getvalue()
+          def write(rel,data):
+              ftp.storbinary('STOR '+root+rel,io.BytesIO(data))
+              if read(rel)!=data:raise RuntimeError('LIVE_READBACK_FAILED:'+rel)
+          previous={}
+          touched=[]
+          try:
+              try:ftp.mkd(backupdir)
+              except ftplib.error_perm as e:
+                  if not str(e).startswith('550'):raise
+              for p in changed_paths+[obsolete]:previous[p]=read(p)
+              for p in changed_paths:
+                  old=previous[p]
+                  if old is not None and old!=desired[p] and digest(old) not in known[p]:
+                      raise RuntimeError('LIVE_SOURCE_UNRECOGNIZED:'+p)
+              if previous[obsolete] is not None and previous[obsolete]!=old_preview:
+                  raise RuntimeError('OLD_PREVIEW_MODIFIED_EXTERNALLY')
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              for p in changed_paths+[obsolete]:
+                  old=previous[p]
+                  if old is None or (p in desired and old==desired[p]):continue
+                  bak=backupdir+'/cloudru-redflag-'+stamp+'-'+p.replace('/','-')+'.bak'
+                  ftp.storbinary('STOR '+bak,io.BytesIO(old))
+                  b=io.BytesIO();ftp.retrbinary('RETR '+bak,b.write)
+                  if b.getvalue()!=old:raise RuntimeError('BACKUP_FAILED:'+p)
+              for p in changed_paths:
+                  if previous[p]!=desired[p]:
+                      touched.append(p)
+                      write(p,desired[p])
+              if previous[obsolete] is not None:
+                  touched.append(obsolete)
+                  ftp.delete(root+obsolete)
+                  if read(obsolete)is not None:raise RuntimeError('PREVIEW_NOT_REMOVED')
+              # Owner-only route must reject anonymous visitors. No inference request.
+              url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/api/redflag-cloudru.php'
+              req=urllib.request.Request(url,headers={'Cache-Control':'no-cache','User-Agent':'NumiRedFlagDirectDeploy/1.0'})
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as resp: status=resp.status
+              except urllib.error.HTTPError as e:status=e.code
+              if status!=403:raise RuntimeError('OWNER_GUARD_HTTP_'+str(status))
+              # No customer-side model requests. Only check HTML availability.
+              homepage='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+              req=urllib.request.Request(homepage,headers={'Cache-Control':'no-cache'})
+              with urllib.request.urlopen(req,timeout=30) as resp:
+                  if resp.status!=200:raise RuntimeError('HOMEPAGE_NOT_200')
+              print('DIRECT_CLOUDRU_REDFLAG_LIVE_OK; owner_gate=403; homepage=200; old_preview_removed=true; site_customers_unchanged=true; paid_model_requests=0',flush=True)
+          except BaseException:
+              for p in reversed(touched):
+                  try:
+                      if previous[p] is None:ftp.delete(root+p)
+                      else:write(p,previous[p])
+                      print('RESTORED',p,flush=True)
+                  except BaseException:print('RESTORE_FAILED',p,flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except Exception:ftp.close()
+          PY
