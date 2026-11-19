@@ -27,7 +27,7 @@ jobs:
           origin='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
           site=origin+'/moment/'
           token=secrets.token_hex(32)
-          request_id='groq-site-one-answer-20261119-4e1e0a91'
+          request_id='groq-site-one-answer-20261119-gpt-oss-fixed'
           php=r'''<?php
           declare(strict_types=1);
           header('Content-Type: application/json; charset=utf-8');
