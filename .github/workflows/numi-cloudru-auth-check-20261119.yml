@@ -20,7 +20,7 @@ jobs:
           key=os.environ.get('CLOUD_RU_API_KEY','').strip()
           if not key:raise SystemExit('CLOUD_RU_API_KEY_2_MISSING')
           payload={'model':'ai-sage/GigaChat3-10B-A1.8B','messages':[{'role':'user','content':'Ответь одним словом: работает'}],'max_tokens':20,'stream':False}
-          req=urllib.request.Request('https://foundation-models.api.cloud.ru/v1/chat/completions',data=json.dumps(payload).encode(),headers={'Content-Type':'application/json','Authorization':'Bearer '+key})
+          req=urllib.request.Request('https://foundation-models.api.cloud.ru/v1/chat/completions',data=json.dumps(payload).encode(),headers={'Content-Type':'application/json','Authorization':'Api-Key '+key})
           try:
               with urllib.request.urlopen(req,timeout=50) as res:
                   data=json.load(res)
@@ -28,7 +28,8 @@ jobs:
                   if not answer:raise SystemExit('PROVIDER_EMPTY_RESPONSE')
                   print('CLOUD_RU_AUTH_OK model='+payload['model']+' answer='+str(answer).replace(key,'[redacted]')[:100])
           except urllib.error.HTTPError as e:
-              print('CLOUD_RU_AUTH_FAILED http='+str(e.code))
+              body=e.read(3000).decode('utf-8','replace').replace(key,'[redacted]')
+              print('CLOUD_RU_AUTH_FAILED http='+str(e.code)+' detail='+body[:700])
               raise SystemExit(1)
           print('WEBSITE_UNCHANGED inference_calls=1')
           PY
