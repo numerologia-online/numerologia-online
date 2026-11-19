@@ -15,8 +15,8 @@ const end=source.indexOf("    const styleTest=url.pathname",start);
 assert.ok(start>0&&end>start);
 const route=source.slice(start,end);
 assert.match(route,/flagsSystem/);
-assert.match(route,/энергии даты рождения, день и месяц/);
-assert.match(route,/одинаковую значимость/);
+assert.match(route,/День и месяц рождения равно важны/);
+assert.match(route,/Используй оба ориентира с равным весом/);
 assert.match(route,/input\.day/);
 assert.match(route,/input\.month/);
 assert.match(route,/env\.AI\.run\(MODEL/);
@@ -55,7 +55,7 @@ for(let month=1;month<=12;month++){
   assert.equal(d.style_version,"flags-free-voice-equal-day-month-20261119");
   assert.ok(d.answer.length>=380);
   const messages=calls.at(-1).messages;
-  assert.match(messages[0].content,/одинаковую значимость/);
+  assert.match(messages[0].content,/День и месяц рождения равно важны/);
   assert.match(messages[1].content,new RegExp("Месяц рождения мужчины: "+month+";"));
   assert.match(messages[1].content,/День рождения мужчины: 9;/);
 }
