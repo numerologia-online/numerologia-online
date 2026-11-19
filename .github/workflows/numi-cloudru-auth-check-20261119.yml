@@ -1,4 +1,4 @@
-name: Diagnose Claude Opus 4.8 Cloud.ru response read-only
+name: Measure full-length Opus 4.8 generation latency read-only
 on:
   push:
     branches: [main]
@@ -68,4 +68,49 @@ jobs:
           print('PROVIDER_CONTENT_OK',bool(parsed.get('choices',[{}])[0].get('message',{}).get('content')))
           print('PROVIDER_USAGE',json.dumps(parsed.get('usage',{}),ensure_ascii=False))
           print('DIAG_READ_ONLY website_writes=0 prompt_unchanged=true')
+          # Check the exact production prompt size with one owner-only unpaid-preview sample.
+          import re
+          text=normalized.decode()
+          match=re.search(r"    \\$system='(.*?)';\\n    \\$user=json_encode\\(",text,re.S)
+          assert match,'SYSTEM_PROMPT_NOT_FOUND'
+          system=match.group(1)
+          catalog=json.loads(Path('redflag-ai-lab/catalog.json').read_text())
+          cat=next(c for c in catalog['categories'] if c['id']=='flags')
+          question=next(q for q in cat['questions'] if q['id']=='care-or-control')
+          followups=[q['title'] for q in cat['questions'] if q['id']!=question['id']]
+          user=json.dumps({
+            'вопрос_женщины':question['title'],
+            'внутренние_данные_о_мужчине_не_повторять_в_ответе':{
+              'день_его_рождения':9,'месяц_его_рождения':9,
+              'энергия_дня_по_системе_22':9,'энергия_месяца_по_системе_22':9
+            },
+            'варианты_вопроса_для_короткого_продолжения':followups
+          },ensure_ascii=False)
+          full=json.dumps({
+            'model':'anthropic/claude-opus-4.8',
+            'messages':[{'role':'system','content':system},{'role':'user','content':user}],
+            'max_tokens':1100,'stream':False
+          },ensure_ascii=False).encode()
+          req=urllib.request.Request('https://foundation-models.api.cloud.ru/v1/chat/completions',data=full,headers={'Content-Type':'application/json','Authorization':'Bearer '+key},method='POST')
+          t=time.monotonic()
+          try:
+              with urllib.request.urlopen(req,timeout=130) as resp:
+                  status=resp.status;raw=resp.read(50000)
+          except urllib.error.HTTPError as e:
+              status=e.code;raw=e.read(50000)
+          except Exception as e:
+              print('FULL_REQUEST_CONNECT_ERROR',type(e).__name__,'elapsed_s',round(time.monotonic()-t,1))
+              raise SystemExit(1)
+          parsed=json.loads(raw)
+          print('FULL_REQUEST_STATUS',status,'elapsed_s',round(time.monotonic()-t,1))
+          if status==200:
+              choice=parsed.get('choices',[{}])[0]
+              answer=choice.get('message',{}).get('content') or ''
+              print('FULL_REQUEST_RESULT','answer_chars',len(answer),'finish_reason',choice.get('finish_reason'),'usage',json.dumps(parsed.get('usage',{})))
+          else:
+              err=parsed.get('error',{})
+              msg=str(err.get('message','')) if isinstance(err,dict) else ''
+              print('FULL_REQUEST_ERROR',msg.replace(key,'[REDACTED]')[:250])
+              raise SystemExit(1)
+          print('FULL_PROBE_COMPLETE website_writes=0')
           PY
