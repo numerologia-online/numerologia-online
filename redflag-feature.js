@@ -294,6 +294,7 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
   // The first free Red Flag question remains visible but has no live generator.
   if(question.isFree&&id==="say-no"){
     state.answerErrors.set(id,"Ответ пока в разработке.");
+    renderCategories({type:"question",id});
     return;
   }
   if(!question.isFree){
