@@ -1,4 +1,4 @@
-name: Verify all twelve 09.xx Red Flag drafts against real Cloudflare Gemma without REG.RU
+name: Run 12 private 09.xx Red Flag answers with local Wrangler and real Cloudflare Gemma
 on:
   push:
     branches: [main]
@@ -14,102 +14,116 @@ jobs:
     timeout-minutes: 22
     steps:
       - uses: actions/checkout@v4
-      - name: Generate twelve answers from real Gemma using EXACT owner-only Red Flag prompt
+      - name: Run real Gemma through same isolated Worker using local Wrangler AI binding
         id: qa
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           python3 - <<'PY'
-          import os,re,json,pathlib,urllib.request,urllib.error,time,difflib,concurrent.futures,datetime
-          source=pathlib.Path("cloudflare/redflag-draft-ai/src/index.js").read_text(encoding="utf-8")
-          match=re.search(r'const flagsSystem=\[([\s\S]*?)\]\.join\(" "\);',source)
-          if not match:raise RuntimeError("CURRENT_OWNER_PROMPT_NOT_FOUND")
-          strings=[json.loads(line.strip().rstrip(",")) for line in match.group(1).splitlines() if line.strip().startswith('"')]
-          if len(strings)!=9:raise RuntimeError("PROMPT_FRAGMENT_COUNT_CHANGED")
-          system=" ".join(strings)
-          if "одинаковую значимость" not in system:raise RuntimeError("EQUAL_DAY_MONTH_NOT_IN_PROMPT")
-          token=os.environ.get("CLOUDFLARE_API_TOKEN","")
-          if len(token)<15:raise RuntimeError("CF_AI_TOKEN_MISSING")
-          endpoint="https://api.cloudflare.com/client/v4/accounts/de77758c4b3efd26fef26ab600cb02a2/ai/run/@cf/google/gemma-4-26b-a4b-it"
-          title="Уважает женское «нет» или начинает давить?"
-          def invoke(month):
-              question="\n".join([
-                "Вопрос женщины: "+title,
-                "День рождения мужчины: 9; энергия дня: 9.",
-                "Месяц рождения мужчины: "+str(month)+"; энергия месяца: "+str(month)+".",
-                "Трактуй обе энергии с равным весом, исключительно применительно к вопросу. Никаких технических пояснений в ответе."
-              ])
-              body=json.dumps({"messages":[{"role":"system","content":system},
-                {"role":"user","content":question}],"temperature":0.9,
-                "max_completion_tokens":850,"chat_template_kwargs":{"enable_thinking":False}},
-                ensure_ascii=False).encode()
-              code=0;error=None;answer=""
-              for attempt in range(3):
-                  req=urllib.request.Request(endpoint,data=body,method="POST",
-                    headers={"Authorization":"Bearer "+token,"Content-Type":"application/json",
-                      "Accept":"application/json","User-Agent":"NumerologiaRedFlagPrivateGemma12/1.0"})
-                  try:
-                      with urllib.request.urlopen(req,timeout=125) as response:
-                          code=response.status;result=json.load(response)
-                      payload=result.get("result",{})
-                      if isinstance(payload,dict):
-                          answer=payload.get("response") or (payload.get("choices") or [{}])[0].get("message",{}).get("content","")
-                      if not isinstance(answer,str):answer=""
-                      error=None if answer else "EMPTY_MODEL_TEXT"
-                  except urllib.error.HTTPError as ex:
-                      code=ex.code;answer=""
-                      try:
-                          parsed=json.loads(ex.read(3000))
-                          error=str(parsed.get("errors",parsed.get("error","API_ERROR")))[:300]
-                      except Exception:error="HTTP_"+str(code)
-                  except Exception as ex:
-                      code=0;error=type(ex).__name__;answer=""
-                  if answer or code in (401,403,404):break
-                  time.sleep((attempt+1)*5)
-              return {"date":f"09.{month:02d}","day":9,"month":month,
-                "http":code,"ok":bool(code==200 and len(answer)>=380),
-                "answer":answer,"chars":len(answer),"error":error}
-          with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-              results=sorted(executor.map(invoke,range(1,13)),key=lambda x:x["month"])
-          for item in results:
-              print("GEMMA_REST_12",item["date"],"HTTP",item["http"],"ANSWER_CHARS",item["chars"],
-                    "OK",item["ok"],"ERROR",item["error"],flush=True)
-          comparisons=[]
-          valid=[x for x in results if x["ok"]]
-          for i,a in enumerate(valid):
-              for b in valid[i+1:]:
-                  one=a["answer"].split("\n\n")[0]
-                  two=b["answer"].split("\n\n")[0]
-                  ratio=round(difflib.SequenceMatcher(None,one,two).ratio(),3)
-                  if ratio>=0.75:comparisons.append({"a":a["date"],"b":b["date"],"similarity":ratio})
+          import os,json,subprocess,urllib.request,urllib.error,hmac,hashlib,pathlib,time,difflib,concurrent.futures,datetime
+          key=os.environ.get("GROQ_API_KEY","")
+          if not key.startswith("gsk_"):raise RuntimeError("OWNER_PROOF_NOT_CONFIGURED")
+          proof=hmac.new(key.encode(),b"numi-moment-cloudflare-bridge-v1",hashlib.sha256).hexdigest()
           folder=pathlib.Path("private-gemma-12-redflag")
           folder.mkdir(exist_ok=True)
-          (folder/"twelve-dates.json").write_text(json.dumps({
-            "test_type":"real Cloudflare Workers AI REST; identical model, system and user messages",
-            "timestamp":datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "model":"@cf/google/gemma-4-26b-a4b-it","question":title,
-            "published":False,"reg_ru_touched":False,
-            "answers":results,"high_similarity_pairs":comparisons
-          },ensure_ascii=False,indent=2),encoding="utf-8")
-          print("GEMMA_REST_12_SUMMARY",len(valid),"/12","SIMILARITY_PAIRS",len(comparisons),flush=True)
-          if len(valid)!=12:raise RuntimeError("GEMMA_REST_12_INCOMPLETE")
+          title="Уважает женское «нет» или начинает давить?"
+          endpoint="http://127.0.0.1:8787/v1/redflag-owner-question"
+          log=folder/"wrangler-dev.log"
+          env=os.environ.copy()
+          env["NO_PROXY"]="localhost,127.0.0.1"
+          env["no_proxy"]="localhost,127.0.0.1"
+          env["WRANGLER_SEND_METRICS"]="false"
+          client=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+          with log.open("w",encoding="utf-8") as logfile:
+              p=subprocess.Popen(["npx","--yes","wrangler@4","dev","--ip","127.0.0.1","--port","8787"],
+                cwd="cloudflare/redflag-draft-ai",env=env,stdout=logfile,stderr=subprocess.STDOUT)
+              try:
+                  ready=False
+                  for i in range(75):
+                      if p.poll() is not None:break
+                      try:
+                          with client.open("http://127.0.0.1:8787/health",timeout=3) as r:
+                              health=json.load(r)
+                          if health.get("ok") and health.get("ai_bound") is True:
+                              ready=True;break
+                      except Exception:pass
+                      time.sleep(1)
+                  print("WRANGLER_LOCAL_HEALTH",ready,"process_alive",p.poll() is None,flush=True)
+                  if not ready:
+                      reason="LOCAL_WRANGLER_AI_BINDING_UNAVAILABLE"
+                      print("WRANGLER_LOCAL_START_RESULT",reason,flush=True)
+                      raise RuntimeError(reason)
+                  def check(month):
+                      data={"category":"flags","question_id":"say-no","title":title,
+                        "day":9,"month":month,"followups":[]}
+                      code=0;message="";answer=""
+                      for attempt in range(3):
+                          req=urllib.request.Request(endpoint,data=json.dumps(data,ensure_ascii=False).encode(),
+                            method="POST",headers={"Content-Type":"application/json","Accept":"application/json",
+                              "X-Numi-Moment-Proof":proof})
+                          try:
+                              with client.open(req,timeout=125) as res:
+                                  code=res.status;result=json.load(res)
+                          except urllib.error.HTTPError as err:
+                              code=err.code
+                              try:result=json.loads(err.read(2500))
+                              except Exception:result={}
+                          except Exception as err:
+                              code=0;result={"error":type(err).__name__}
+                          answer=result.get("answer","")
+                          message=result.get("error")
+                          if code==200 or code in (401,403,404,409):break
+                          time.sleep((attempt+1)*4)
+                      ok=(code==200 and result.get("ok") is True and
+                        result.get("published") is False and result.get("draft_only") is True and
+                        result.get("model")=="@cf/google/gemma-4-26b-a4b-it" and
+                        result.get("date_key")=="9-"+str(month) and
+                        isinstance(answer,str) and len(answer)>=380)
+                      return {"date":f"09.{month:02d}","day":9,"month":month,"http":code,
+                        "ok":bool(ok),"chars":len(answer),"answer":answer if ok else "",
+                        "error":message}
+                  with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                      results=sorted(executor.map(check,range(1,13)),key=lambda x:x["month"])
+                  pairs=[]
+                  valid=[x for x in results if x["ok"]]
+                  for i,a in enumerate(valid):
+                      for b in valid[i+1:]:
+                          ratio=round(difflib.SequenceMatcher(None,
+                            a["answer"].split("\n\n")[0],b["answer"].split("\n\n")[0]).ratio(),3)
+                          if ratio>=0.75:pairs.append({"a":a["date"],"b":b["date"],"similarity":ratio})
+                  for item in results:
+                      print("GEMMA_LOCAL_12",item["date"],"HTTP",item["http"],
+                        "OK",item["ok"],"CHARS",item["chars"],"ERROR",item["error"],flush=True)
+                  (folder/"twelve-dates.json").write_text(json.dumps({
+                    "test_type":"isolated same Worker source with remote Cloudflare Workers AI binding",
+                    "timestamp":datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                    "model":"@cf/google/gemma-4-26b-a4b-it","question":title,
+                    "published":False,"reg_ru_touched":False,"answers":results,
+                    "high_similarity_pairs":pairs
+                  },ensure_ascii=False,indent=2),encoding="utf-8")
+                  print("GEMMA_LOCAL_12_SUMMARY",len(valid),"/12","HIGH_SIMILARITY_PAIRS",len(pairs),flush=True)
+                  if len(valid)!=12:raise RuntimeError("GEMMA_LOCAL_12_INCOMPLETE")
+              finally:
+                  p.terminate()
+                  try:p.wait(timeout=8)
+                  except subprocess.TimeoutExpired:p.kill()
           PY
-      - name: Keep unapproved genuine test drafts in a short-lived artifact
+      - name: Save genuine unpublished draft comparisons or diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: private-owner-gemma-09-01-to-09-12
-          path: private-gemma-12-redflag/
+          path: private-gemma-12-redflag/twelve-dates.json
           retention-days: 3
           if-no-files-found: warn
-      - name: Record test result and direct run link
+      - name: Record the QA outcome and direct run link
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ "${{ steps.qa.outcome }}" = "success" ]; then outcome=success; else outcome=failure; fi
           gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" \
-            -f state="$outcome" \
-            -f context="numi/redflag-12-direct-gemma-qa" \
-            -f description="12 real Gemma owner-only Red Flag answers; no site publication" \
+            -f state="$outcome" -f context="numi/redflag-12-local-gemma-qa" \
+            -f description="12 real private Gemma owner-only drafts; no site publication" \
             -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >/dev/null
