@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 3
       - name: Publish revised instruction without generating answers
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
@@ -25,11 +25,11 @@ jobs:
           import os,ssl,ftplib,io,json,re,subprocess,urllib.request,urllib.error
           from pathlib import Path
           p='redflag-ai-lab/style-test-api.php'
-          previous=subprocess.check_output(['git','show','HEAD^:'+p])
+          previous=subprocess.check_output(['git','show','HEAD~2:'+p])
           desired=Path(p).read_bytes()
           assert previous.count(b'anthropic/claude-opus-4.8')==2 and desired.count(b'anthropic/claude-opus-4.8')==2
-          start=b'Выдай ровно два абзаца на русском языке'
-          end=b' Уже первая фраза отвечает'
+          start='Выдай ровно два абзаца на русском языке'.encode()
+          end=' Уже первая фраза отвечает'.encode()
           pa=previous.index(start);pb=previous.index(end,pa)
           da=desired.index(start);db=desired.index(end,da)
           old_no_prompt=previous[:pa]+previous[pb:]
