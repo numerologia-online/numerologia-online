@@ -1,4 +1,4 @@
-name: Apply revised two-energy Red Flag owner instruction
+name: Apply unified day-month rule and strict answer length
 on:
   push:
     branches: [main]
