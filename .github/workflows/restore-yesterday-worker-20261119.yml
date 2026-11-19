@@ -1,0 +1,66 @@
+name: Restore November 18 Cloudflare Moment Worker only
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/restore-yesterday-worker-20261119.yml']
+permissions:
+  contents: read
+concurrency:
+  group: cloudflare-numerologia-300-ai
+  cancel-in-progress: false
+jobs:
+  restore:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Replace runner-only source with exact November 18 Worker snapshot
+        run: |
+          python3 - <<'PY'
+          import subprocess,pathlib
+          base='c98df6b145ad6341cbf98394542cf45c2b9856cf'
+          paths=['cloudflare/moment-300-ai/src/index.js','cloudflare/moment-300-ai/wrangler.jsonc',
+            'cloudflare/moment-300-ai/tests/love001-full-birthdate-monthly.mjs',
+            'cloudflare/redflag-draft-ai/src/index.js','cloudflare/redflag-draft-ai/wrangler.jsonc',
+            'tests/redflag-owner-direct-question.test.mjs']
+          for p in paths:
+              contents=subprocess.check_output(['git','show',base+':'+p])
+              path=pathlib.Path(p);path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(contents)
+              print('RESTORED_RUNNER_ONLY',p,len(contents))
+          PY
+          node --check cloudflare/moment-300-ai/src/index.js
+          node --check cloudflare/redflag-draft-ai/src/index.js
+          node - <<'JS'
+          const fs=require('fs');
+          const cfg=JSON.parse(fs.readFileSync('cloudflare/moment-300-ai/wrangler.jsonc','utf8'));
+          if(cfg.name!=='numerologia-300-ai'||cfg.ai?.binding!=='AI')throw Error('INVALID_WORKER_SNAPSHOT');
+          if(!fs.readFileSync('cloudflare/moment-300-ai/src/index.js','utf8').includes('redflagDraftWorker.fetch'))throw Error('INVALID_OLD_ROUTES');
+          console.log('NOV_18_WORKER_VALIDATED_ZERO_MODEL_CALLS');
+          JS
+      - name: Deploy exact previous working Worker, without generating text
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: de77758c4b3efd26fef26ab600cb02a2
+          workingDirectory: cloudflare/moment-300-ai
+          command: deploy
+      - name: Verify public health only (no chargeable inference)
+        run: |
+          python3 - <<'PY'
+          import json,urllib.request,urllib.error,time
+          url='https://numerologia-300-ai.tankraft431.workers.dev/health'
+          for attempt in range(5):
+              try:
+                  req=urllib.request.Request(url+'?restore_20261118='+str(time.time_ns()),headers={'Cache-Control':'no-store'})
+                  with urllib.request.urlopen(req,timeout=15) as response:
+                      data=json.load(response)
+                  if data.get('ok') is True and data.get('ai_bound') is True and data.get('redflag_owner_model')=='@cf/google/gemma-4-26b-a4b-it' and data.get('live_answers_enabled') is False:
+                      print('CLOUDFLARE_PRE_NOV19_WORKER_RESTORED model_calls=0 payments_untouched=true',flush=True)
+                      break
+              except Exception as e:
+                  print('HEALTH_CHECK_RETRY',attempt,type(e).__name__,flush=True)
+              if attempt==4:raise RuntimeError('CLOUDFLARE_WORKER_HEALTH_NOT_CONFIRMED')
+              time.sleep(4)
+          PY
