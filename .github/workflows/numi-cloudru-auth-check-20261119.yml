@@ -1,4 +1,4 @@
-name: Switch existing owner Red Flag to selected Claude Haiku 4.5
+name: Update only owner Red Flag instruction, no generation
 on:
   push:
     branches: [main]
@@ -16,25 +16,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - name: Verify model catalogue and change only model ID, without generation
+      - name: Publish revised instruction without generating answers
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
-          CLOUD_RU_API_KEY: ${{ secrets.CLOUD_RU_API_KEY_2 }}
         run: |
           python3 -u - <<'PY'
           import os,ssl,ftplib,io,json,re,subprocess,urllib.request,urllib.error
           from pathlib import Path
-          model='anthropic/claude-haiku-4.5'
-          request=urllib.request.Request('https://foundation-models.api.cloud.ru/v1/models',headers={'Authorization':'Bearer '+os.environ['CLOUD_RU_API_KEY'].strip()})
-          with urllib.request.urlopen(request,timeout=30) as response:catalog=json.load(response)
-          if model not in [x.get('id') for x in catalog.get('data',[])]:raise SystemExit('SELECTED_MODEL_NOT_IN_CATALOG')
-          print('CLAUDE_HAIKU_45_CATALOG_CONFIRMED no_generation=true')
           p='redflag-ai-lab/style-test-api.php'
           previous=subprocess.check_output(['git','show','HEAD^:'+p])
           desired=Path(p).read_bytes()
-          assert previous.count(b'ai-sage/GigaChat3-10B-A1.8B')==2
-          assert desired==previous.replace(b'ai-sage/GigaChat3-10B-A1.8B',model.encode())
+          assert previous.count(b'anthropic/claude-haiku-4.5')==2 and desired.count(b'anthropic/claude-haiku-4.5')==2
+          start=b'    $system='
+          finish=b'    $answer=rfCloudCall'
+          old_start=previous.index(start);old_end=previous.index(finish,old_start)
+          new_start=desired.index(start);new_end=desired.index(finish,new_start)
+          assert previous[:old_start]==desired[:new_start] and previous[old_end:]==desired[new_end:]
           f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
           f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
           root=f.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
@@ -67,7 +65,7 @@ jobs:
               for x in guard:
                   if read(x)!=before[x]:raise RuntimeError('OTHER_FILE_CHANGED_'+x)
               if get('')[0]!=200:raise RuntimeError('HOMEPAGE_FAILED')
-              print('CLAUDE_HAIKU_45_LIVE model_id='+model+' prompt_unchanged=true protected_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
+              print('REDFLAG_PROMPT_UPDATED model_unchanged=claude-haiku-4.5 owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
           except BaseException:
               if changed:put(p,old);print('MODEL_SWITCH_ROLLED_BACK')
               raise
