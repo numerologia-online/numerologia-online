@@ -273,11 +273,27 @@ export default {
         "Это нумерологическая интерпретация возможных склонностей, а не доказательство реальных поступков человека."
       ].join(" ");
       const dayEnergy=energy22(input.day),monthEnergy=energy22(input.month);
+      // Exact titles from the existing question catalog.
+      // The owner can pass a more relevant verified list in input.followups.
+      const readyQuestionTitles=[
+        "Заботится или будет контролировать каждый твой шаг?",
+        "Скромный мужчина или считает себя подарком судьбы?",
+        "Умеет говорить о проблемах или наказывает молчанием?",
+        "После ссоры извинится или виноватой сделает тебя?",
+        "Обещает и делает или просто король планов?",
+        "Будет партнёром или начальником в семье?",
+        "Как он реагирует на критику и неудобную правду?",
+        "Ему можно доверять или лучше снять розовые очки?",
+        "С ним вообще стоит связываться или лучше не тратить время?"
+      ];
+      const nextQuestionTitles=(input.followups.length?input.followups:readyQuestionTitles)
+        .filter(title=>title!==input.title);
       const flagsQuestion=[
         "Вопрос женщины: "+input.title,
         "День рождения мужчины: "+input.day+"; энергия дня: "+dayEnergy+"; ориентир дня: "+openArchetypes[dayEnergy]+".",
         "Месяц рождения мужчины: "+input.month+"; энергия месяца: "+monthEnergy+"; ориентир месяца: "+openArchetypes[monthEnergy]+".",
-        "Используй оба ориентира с равным весом, но только релевантные данному вопросу грани. В ответе не называй чисел, ориентиров и энергий."
+        "Используй оба ориентира с равным весом, но только релевантные данному вопросу грани. В ответе не называй чисел, ориентиров и энергий.",
+        "Доступные вопросы, из которых во втором абзаце можно мягко предложить один по точному названию: "+JSON.stringify(nextQuestionTitles)
       ].join("\n");
       try{
         const result=await env.AI.run(MODEL,{
