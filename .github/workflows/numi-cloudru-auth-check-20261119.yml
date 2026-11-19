@@ -1,83 +1,75 @@
-name: Audit all Red Flag date combinations without inference or server writes
+name: Apply question-specific day and month interpretation instruction
 on:
   push:
     branches: [main]
     paths: [.github/workflows/numi-cloudru-auth-check-20261119.yml]
 permissions:
   contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
 jobs:
-  audit:
+  publish:
     runs-on: ubuntu-24.04
     timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
-      - name: Read live code and exhaustively verify prompt assembly without model calls
+        with:
+          fetch-depth: 2
+      - name: Publish revised instruction without generating answers
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 -u - <<'PY'
-          import os,io,ssl,ftplib,json,base64,subprocess,hashlib
+          import os,ssl,ftplib,io,json,re,subprocess,urllib.request,urllib.error
           from pathlib import Path
-          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          p='redflag-ai-lab/style-test-api.php'
+          previous=subprocess.check_output(['git','show','HEAD^:'+p])
+          desired=Path(p).read_bytes()
+          assert previous.count(b'anthropic/claude-haiku-4.5')==2 and desired.count(b'anthropic/claude-haiku-4.5')==2
+          start='Основа внутреннего'.encode()
+          finish=b'\n\n'
+          old_start=previous.index(start);old_end=previous.index(finish,old_start)
+          new_start=desired.index(start);new_end=desired.index(finish,new_start)
+          assert previous[:old_start]==desired[:new_start] and previous[old_end:]==desired[new_end:]
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
           f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
           root=f.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
-          live={}
-          for p in ['redflag-feature.js','redflag-ai-lab/style-test-api.php','redflag-ai-lab/draft.php','redflag-ai-lab/catalog.json']:
-              b=io.BytesIO();f.retrbinary('RETR '+root+p,b.write);live[p]=b.getvalue()
-          f.quit()
-          api=live['redflag-ai-lab/style-test-api.php']
-          start=b"base64_decode('";offset=api.index(start)+len(start);end=api.index(b"'",offset)
-          normalized=api[:offset]+b'__CLOUDRU_KEY_BASE64__'+api[end:]
-          assert normalized==Path('redflag-ai-lab/style-test-api.php').read_bytes(),'LIVE_API_DIFFERS'
-          for p in ['redflag-feature.js','redflag-ai-lab/draft.php','redflag-ai-lab/catalog.json']:
-              assert live[p]==Path(p).read_bytes(),'LIVE_DIFFERS_'+p
-          assert b"require __DIR__.'/style-test-api.php'" in live['redflag-ai-lab/draft.php']
-          print('LIVE_FILES_MATCH_REPOSITORY frontend=true api=true legacy_route=true catalog=true')
-          source=normalized.decode()
-          start=source.index('    $energy=$day;')
-          finish=source.index('    $answer=rfCloudCall',start)
-          snippet=source[start:finish]
-          assert 'rfCloudCall(' not in snippet and 'curl_' not in snippet
-          assert "'messages'=>$messages" in source
-          assert "['role'=>'system','content'=>$system],['role'=>'user','content'=>$user]" in source
-          catalog=base64.b64encode(live['redflag-ai-lab/catalog.json']).decode()
-          php="""<?php
-          function assembled($day,$month,$category,$question){
-          __SNIPPET__
-          return [$system,$user];
-          }
-          $catalog=json_decode(base64_decode('__CATALOG__'),true);
-          $count=0;$seen=[];$systems=[];$months=[];
-          for($month=1;$month<=12;$month++){
-            for($day=1;$day<=31;$day++){
-              if(!checkdate($month,$day,2000))continue;
-              foreach($catalog['categories'] as $category){
-                foreach($category['questions'] as $question){
-                  [$system,$user]=assembled($day,$month,$category,$question);
-                  $data=json_decode($user,true,20,JSON_THROW_ON_ERROR);
-                  $input=$data['внутренние_данные_о_мужчине_не_повторять_в_ответе'];
-                  $expected=$day;while($expected>22)$expected=array_sum(str_split((string)$expected));
-                  if($input['день_его_рождения']!==$day||
-                     $input['месяц_его_рождения']!==$month||
-                     $input['энергия_дня_по_системе_22']!==$expected||
-                     $input['энергия_месяца_по_системе_22']!==$month)
-                    throw new RuntimeException('DATE_MAPPING_FAILED');
-                  if($data['вопрос_женщины']!==$question['title'])throw new RuntimeException('QUESTION_CHANGED');
-                  if(!str_contains($system,'50 на 50'))throw new RuntimeException('CURRENT_INSTRUCTION_MISSING');
-                  $seen[hash('sha256',$user)]=true;$systems[hash('sha256',$system)]=true;$months[$month]=true;$count++;
-                }
-              }
-            }
-          }
-          if($count!==366*$catalog['questions']||count($seen)!==$count||count($systems)!==1||count($months)!==12)
-            throw new RuntimeException('COVERAGE_FAILED');
-          echo json_encode(['assembled'=>$count,'unique_payloads'=>count($seen),'months'=>count($months),'same_current_system'=>count($systems)===1,'day_and_month_preserved'=>true,'model_calls'=>0],JSON_UNESCAPED_UNICODE);
-          """
-          php=php.replace('__SNIPPET__',snippet).replace('__CATALOG__',catalog)
-          result=subprocess.run(['php'],input=php.encode(),capture_output=True)
-          if result.returncode:
-              print('PROMPT_ASSEMBLY_AUDIT_FAILED');raise SystemExit(1)
-          print('ALL_DATES_ALL_QUESTIONS '+result.stdout.decode())
-          print('READ_ONLY_COMPLETE website_writes=0 model_calls=0')
+          def read(p):
+              b=io.BytesIO();f.retrbinary('RETR '+root+p,b.write);return b.getvalue()
+          def put(p,b):
+              f.storbinary('STOR '+root+p,io.BytesIO(b))
+              if read(p)!=b:raise RuntimeError('READBACK_MISMATCH')
+          site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          def get(p,data=None):
+              req=urllib.request.Request(site+p,data=data,headers={'Origin':site.rstrip('/'),'Content-Type':'application/json','Cache-Control':'no-cache'})
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as r:return r.status,r.read(10000)
+              except urllib.error.HTTPError as e:return e.code,e.read(10000)
+          old=read(p);changed=False
+          try:
+              start=b"base64_decode('"
+              offset=old.index(start)+len(start);end=old.index(b"'",offset)
+              encoded=old[offset:end]
+              if old[:offset]+b'__CLOUDRU_KEY_BASE64__'+old[end:]!=previous:raise RuntimeError('LIVE_API_DIFFERS_FROM_EXPECTED')
+              target=desired.replace(b'__CLOUDRU_KEY_BASE64__',encoded)
+              if subprocess.run(['php','-l'],input=target,capture_output=True).returncode:raise RuntimeError('SYNTAX_FAILED')
+              guard=['redflag-ai-lab/draft.php','redflag-feature.js','index.html','app.js','api/numi-account.php']
+              before={x:read(x) for x in guard}
+              changed=True;put(p,target)
+              for route in [p,'redflag-ai-lab/draft.php']:
+                  for data in [None,b'{"category":"flags","question_id":"care-or-control","day":9,"month":9}']:
+                      code,body=get(route,data)
+                      if code!=403 or json.loads(body).get('error')!='OWNER_ONLY':raise RuntimeError('OWNER_GUARD_FAILED')
+              for x in guard:
+                  if read(x)!=before[x]:raise RuntimeError('OTHER_FILE_CHANGED_'+x)
+              if get('')[0]!=200:raise RuntimeError('HOMEPAGE_FAILED')
+              print('REDFLAG_QUESTION_SPECIFIC_INSTRUCTION_UPDATED model_unchanged=claude-haiku-4.5 owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
+          except BaseException:
+              if changed:put(p,old);print('MODEL_SWITCH_ROLLED_BACK')
+              raise
+          finally:
+              try:f.quit()
+              except Exception:f.close()
           PY
