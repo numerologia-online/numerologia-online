@@ -40,7 +40,7 @@ try {
         cloudReply(400,['ok'=>false,'error'=>'INVALID_SELECTION']);
     // Trusted catalogue prevents arbitrary user text from becoming a prompt.
     $catalog=json_decode((string)file_get_contents(dirname(__DIR__).'/redflag-ai-lab/catalog.json'),true,20,JSON_THROW_ON_ERROR);
-    $title=null;
+    $title=$id==='say-no' ? 'Уважает женское «нет» или начинает давить?' : null;
     $followups=[];
     foreach (($catalog['categories']??[]) as $category) {
         if (($category['id']??null)!=='flags')continue;
@@ -93,7 +93,7 @@ try {
         CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,
         CURLOPT_CONNECTTIMEOUT=>12,CURLOPT_TIMEOUT=>75,
         CURLOPT_HTTPHEADER=>[
-            'Authorization: Api-Key '.$key,
+            'Authorization: Bearer '.$key,
             'Content-Type: application/json',
             'Accept: application/json',
             'User-Agent: NumiRedFlagDirectCloudRu/1.0'
