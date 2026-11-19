@@ -1,0 +1,109 @@
+name: Private Red Flag editorial comparison - stronger model, six dates
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-compare-stronger-model-20261119.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  statuses: write
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare actual Red Flag prompt on stronger Groq model
+        id: qa
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json,os,pathlib,re,urllib.request,urllib.error,time,concurrent.futures,difflib
+          key=os.environ.get("GROQ_API_KEY","")
+          if not key.startswith("gsk_"):raise RuntimeError("MODEL_TEST_KEY_MISSING")
+          code=pathlib.Path("cloudflare/redflag-draft-ai/src/index.js").read_text("utf-8")
+          system_match=re.search(r'const flagsSystem=\[([\s\S]*?)\]\.join\(" "\);',code)
+          archetypes_match=re.search(r'const openArchetypes=\{([\s\S]*?)\};',code)
+          titles_match=re.search(r'const readyQuestionTitles=\[([\s\S]*?)\];',code)
+          if not all([system_match,archetypes_match,titles_match]):raise RuntimeError("PROMPT_SOURCE_NOT_FOUND")
+          system=" ".join(json.loads(x.strip().rstrip(",")) for x in system_match.group(1).splitlines() if x.strip().startswith('"'))
+          archetypes={int(k):v for k,v in re.findall(r'(\d+):"([^"]+)"',archetypes_match.group(1))}
+          titles=[json.loads(x.strip().rstrip(",")) for x in titles_match.group(1).splitlines() if x.strip().startswith('"')]
+          if len(archetypes)!=22 or len(titles)<8 or "900–1300" not in system:
+              raise RuntimeError("PROMPT_NOT_CURRENT")
+          question="Уважает женское «нет» или начинает давить?"
+          choices=[(9,2),(9,7),(9,9),(31,3),(31,8),(31,12)]
+          def energy(n):
+              while n>22:n=sum(int(c) for c in str(n))
+              return n
+          def compare(day,month):
+              de,me=energy(day),energy(month)
+              payload_text="\n".join([
+                "Вопрос женщины: "+question,
+                f"День рождения мужчины: {day}; энергия дня: {de}; ориентир дня: {archetypes[de]}.",
+                f"Месяц рождения мужчины: {month}; энергия месяца: {me}; ориентир месяца: {archetypes[me]}.",
+                "Используй оба ориентира с равным весом, но только релевантные данному вопросу грани. В ответе не называй чисел, ориентиров и энергий.",
+                "Доступные вопросы, из которых во втором абзаце можно мягко предложить один по точному названию: "+json.dumps(titles,ensure_ascii=False)
+              ])
+              payload=json.dumps({"model":"openai/gpt-oss-120b","messages":[
+                {"role":"system","content":system},{"role":"user","content":payload_text}],
+                "max_completion_tokens":2000,"reasoning_effort":"low","temperature":0.85,
+                "stream":False},ensure_ascii=False).encode("utf-8")
+              response_text="";error=None;http=0
+              for attempt in range(3):
+                  req=urllib.request.Request("https://api.groq.com/openai/v1/chat/completions",
+                    data=payload,method="POST",headers={"Authorization":"Bearer "+key,
+                    "Content-Type":"application/json","Accept":"application/json"})
+                  try:
+                      with urllib.request.urlopen(req,timeout=125) as response:
+                          http=response.status;data=json.load(response)
+                      response_text=data.get("choices",[{}])[0].get("message",{}).get("content") or ""
+                      error=None;break
+                  except urllib.error.HTTPError as ex:
+                      http=ex.code
+                      try:error=str(json.loads(ex.read(2500)).get("error","HTTP_ERR"))[:250]
+                      except Exception:error="HTTP_"+str(http)
+                      if http in (401,403,404):break
+                  except Exception as ex:
+                      http=0;error=type(ex).__name__
+                  time.sleep(6*(attempt+1))
+              pars=[p for p in re.split(r'\n\s*\n',response_text.strip()) if p]
+              exact=[t for t in titles if len(pars)>=2 and "«"+t+"»" in pars[-1]]
+              ok=(http==200 and len(response_text)>400)
+              return {"date":f"{day:02}.{month:02}","day":day,"month":month,
+                "http":http,"ok":ok,"error":error,"chars":len(response_text),
+                "paragraphs":len(pars),"exact_followup":exact,"answer":response_text if ok else ""}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+              results=list(executor.map(lambda args:compare(*args),choices))
+          for r in results:
+              print("STRONG_MODEL_COMPARE",r["date"],"HTTP",r["http"],"CHARS",r["chars"],
+                "PAR",r["paragraphs"],"EXACT_QUESTION",bool(r["exact_followup"]),
+                "ERROR",r["error"],flush=True)
+          folder=pathlib.Path("private-stronger-model-compare")
+          folder.mkdir(exist_ok=True)
+          (folder/"six-dates.json").write_text(json.dumps({
+            "model":"openai/gpt-oss-120b","question":question,"published":False,
+            "reg_ru_touched":False,"answers":results},ensure_ascii=False,indent=2),encoding="utf-8")
+          print("STRONG_MODEL_SUMMARY",sum(r["ok"] for r in results),"/6",flush=True)
+          if sum(r["ok"] for r in results)!=6:raise RuntimeError("STRONG_MODEL_COMPARISON_INCOMPLETE")
+          PY
+      - name: Save private comparison answers
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: private-stronger-model-six-dates
+          path: private-stronger-model-compare/six-dates.json
+          retention-days: 3
+          if-no-files-found: warn
+      - name: Record test outcome
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ steps.qa.outcome }}" = "success" ]; then status=success; else status=failure; fi
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -f state="$status" -f context="numi/redflag-stronger-model-qa" \
+            -f description="Private six-date strong-model comparison only" \
+            -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >/dev/null
