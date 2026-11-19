@@ -1,0 +1,56 @@
+name: Verify current REG.RU renders in iPhone WebKit (read only)
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diag-current-mobile-webkit-20261119.yml']
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Install temporary WebKit browser
+        run: |
+          mkdir -p /tmp/reg-numi-webkit
+          cd /tmp/reg-numi-webkit
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund playwright@1.56.1 >/dev/null
+          npx playwright install --with-deps webkit >/dev/null
+      - name: Open live site and cabinet without logging in, buying or sending any requests to private services
+        run: |
+          cd /tmp/reg-numi-webkit
+          node <<'JS'
+          const {webkit}=require('playwright');
+          (async()=>{
+            const browser=await webkit.launch({headless:true});
+            for(const host of ['xn----8sbhhqijddjgdebdz2c2o.xn--p1ai','xn--c1adkkdfjbp1a4l.online']){
+              const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2,locale:'ru-RU'});
+              const page=await context.newPage(),jsErrors=[],failed=[],httpErrors=[];
+              page.on('pageerror',e=>jsErrors.push(e.message.slice(0,190)));
+              page.on('requestfailed',r=>{if(failed.length<25)failed.push([new URL(r.url()).pathname,r.failure()?.errorText])});
+              page.on('response',r=>{if(r.status()>=400&&httpErrors.length<25)httpErrors.push([new URL(r.url()).pathname,r.status()])});
+              try{
+                const t=Date.now(),response=await page.goto('https://'+host+'/',{waitUntil:'domcontentloaded',timeout:26000});
+                await page.waitForTimeout(1800);
+                const data=await page.evaluate(()=>({
+                  ready:document.readyState,
+                  title:document.title,
+                  textLength:document.body?.innerText?.length||0,
+                  mainButtons:document.querySelectorAll('[data-open-redflag]').length,
+                  accountButtons:document.querySelectorAll('[data-account-open="profile"]').length,
+                  scripts:[...document.scripts].filter(s=>s.src).length,
+                  htmlBackground:getComputedStyle(document.body).backgroundColor,
+                }));
+                let modal=false,clickError=null;
+                try{
+                  await page.locator('[data-account-open="profile"]').click({timeout:5000});
+                  modal=await page.locator('#account-dialog').evaluate(el=>el.open);
+                }catch(e){clickError=e.message.slice(0,190)}
+                console.log('WEBKIT',JSON.stringify({host,status:response.status(),redirectedHost:new URL(page.url()).hostname,elapsedMs:Date.now()-t,data,modal,clickError,jsErrors,httpErrors,failed}),flush=true);
+              }catch(e){console.log('WEBKIT_ERROR',JSON.stringify({host,error:e.message.slice(0,220),jsErrors,httpErrors,failed}))}
+              await context.close();
+            }
+            await browser.close();
+          })().catch(e=>{console.log('BROWSER_FATAL',e.message);process.exitCode=1});
+          JS
