@@ -1,4 +1,4 @@
-name: Apply supplied Red Flag instruction
+name: Apply revised two-energy Red Flag owner instruction
 on:
   push:
     branches: [main]
