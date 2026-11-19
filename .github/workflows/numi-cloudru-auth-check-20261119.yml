@@ -1,4 +1,4 @@
-name: Test Gemini 3 Flash Preview in owner Red Flag
+name: Preflight and switch Gemini 3.8 Flash owner Red Flag
 on:
   push:
     branches: [main]
@@ -22,13 +22,13 @@ jobs:
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 -u - <<'PY'
-          import os,ssl,ftplib,io,json,re,subprocess,urllib.request,urllib.error
+          import os,ssl,ftplib,io,json,re,subprocess,urllib.request,urllib.error,base64
           from pathlib import Path
           p='redflag-ai-lab/style-test-api.php'
           previous=subprocess.check_output(['git','show','HEAD^:'+p])
           desired=Path(p).read_bytes()
-          old_model=b'anthropic/claude-opus-4.8'
-          new_model=b'google/gemini-3-flash-preview'
+          old_model=b'google/gemini-3-flash-preview'
+          new_model=b'google/gemini-3.8-flash'
           assert previous.count(old_model)==2 and desired.count(new_model)==2
           assert desired==previous.replace(old_model,new_model), 'ONLY_TEST_MODEL_MAY_CHANGE'
           f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
@@ -55,7 +55,33 @@ jobs:
               if subprocess.run(['php','-l'],input=target,capture_output=True).returncode:raise RuntimeError('SYNTAX_FAILED')
               guard=['redflag-ai-lab/draft.php','redflag-feature.js','index.html','app.js','api/numi-account.php']
               before={x:read(x) for x in guard}
-              changed=True;put(p,target)
+              # Test the Cloud.ru API using the existing server key BEFORE modifying any live file.
+          # One short capped request. Never log the key or the generated text.
+          check_body=json.dumps({
+              'model':'google/gemini-3.8-flash',
+              'messages':[{'role':'user','content':'Ответь одним словом: да'}],
+              'max_tokens':512,'stream':False
+          },ensure_ascii=False).encode('utf-8')
+          check_key=base64.b64decode(encoded,validate=True).decode('utf-8')
+          check_req=urllib.request.Request('https://foundation-models.api.cloud.ru/v1/chat/completions',
+              data=check_body,headers={'Content-Type':'application/json','Authorization':'Bearer '+check_key},method='POST')
+          try:
+              with urllib.request.urlopen(check_req,timeout=35) as check_resp:
+                  check_status=check_resp.status
+                  check_data=json.loads(check_resp.read(200000))
+          except urllib.error.HTTPError as err:
+              print('GEMINI_PREFLIGHT_FAILED_HTTP',err.code)
+              raise RuntimeError('API_PREFLIGHT_HTTP_FAILED') from None
+          except (TimeoutError,urllib.error.URLError) as err:
+              print('GEMINI_PREFLIGHT_UNAVAILABLE',type(err).__name__)
+              raise RuntimeError('API_PREFLIGHT_CONNECT_FAILED') from None
+          check_choices=check_data.get('choices') or []
+          check_text=check_choices[0].get('message',{}).get('content') if check_choices else None
+          if check_status!=200 or not isinstance(check_text,str) or not check_text.strip():
+              print('GEMINI_PREFLIGHT_NO_TEXT',check_status)
+              raise RuntimeError('API_PREFLIGHT_NO_TEXT')
+          print('GEMINI_PREFLIGHT_OK',check_status)
+          changed=True;put(p,target)
               for route in [p,'redflag-ai-lab/draft.php']:
                   for data in [None,b'{"category":"flags","question_id":"care-or-control","day":9,"month":9}']:
                       code,body=get(route,data)
@@ -63,7 +89,7 @@ jobs:
               for x in guard:
                   if read(x)!=before[x]:raise RuntimeError('OTHER_FILE_CHANGED_'+x)
               if get('')[0]!=200:raise RuntimeError('HOMEPAGE_FAILED')
-              print('REDFLAG_GEMINI_3_FLASH_PREVIEW model=google/gemini-3-flash-preview owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
+              print('REDFLAG_GEMINI_38_FLASH model=google/gemini-3.8-flash owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
           except BaseException:
               if changed:put(p,old);print('MODEL_SWITCH_ROLLED_BACK')
               raise
