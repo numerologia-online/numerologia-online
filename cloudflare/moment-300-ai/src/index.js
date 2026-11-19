@@ -1,4 +1,5 @@
 /* Separate AI-only Worker for the owner preview of the 300-question Moment catalog.
+   Independent model service only; no other catalog routes.
    Does not interact with Telegram, wallet, purchases, other report products or user accounts.
    Requests may arrive ONLY from a server with the private MOMENT_BRIDGE_SECRET.
 */
