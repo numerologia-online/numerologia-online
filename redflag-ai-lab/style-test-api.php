@@ -73,6 +73,7 @@ try {
     $answer=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$user]],1100);
     session_write_close();
     rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
+        'category'=>$category['id'],'question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
         'answer'=>$answer,'model'=>'ai-sage/GigaChat3-10B-A1.8B']);
 } catch(Throwable $e) {
     if(session_status()===PHP_SESSION_ACTIVE)session_write_close();

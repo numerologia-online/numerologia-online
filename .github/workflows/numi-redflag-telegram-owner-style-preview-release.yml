@@ -36,7 +36,7 @@ jobs:
           encoded=base64.b64encode(key.encode()).decode()
           print('::add-mask::'+encoded)
           desired={p:Path(p).read_bytes() for p in paths}
-          expected={p:subprocess.check_output(['git','show','HEAD^:'+p]) for p in paths}
+          expected_hashes={api:'5712dd71351e918fd284d263fbbba773f289e1bb1c8c5add621ea6885cad8e01',front:'4a3877f1154ad4199506bddb367ce607006a7859950c2c1e96d68f0aa9a3cb41'}
           if desired[api].count(b'__CLOUDRU_KEY_BASE64__')!=1:raise SystemExit('INVALID_KEY_TEMPLATE')
           desired[api]=desired[api].replace(b'__CLOUDRU_KEY_BASE64__',encoded.encode())
           token=secrets.token_hex(32)
@@ -78,7 +78,7 @@ jobs:
               catalog=read('redflag-ai-lab/catalog.json')
               if catalog!=Path('redflag-ai-lab/catalog.json').read_bytes():raise RuntimeError('CATALOG_MISMATCH')
               for p in paths:
-                  if original[p]!=expected[p]:raise RuntimeError('LIVE_DIFFERS_FROM_BASELINE_'+p)
+                  if hashlib.sha256(original[p]).hexdigest()!=expected_hashes[p]:raise RuntimeError('LIVE_DIFFERS_FROM_BASELINE_'+p)
               if request('')[0]!=200:raise RuntimeError('HOMEPAGE_UNAVAILABLE_BEFORE_CHANGE')
               modified.append(api);put(api,probe)
               code,body=request(api,headers={'X-Numi-Deployment':token})
@@ -97,7 +97,7 @@ jobs:
               for p in guarded:
                   if read(p)!=unchanged[p]:raise RuntimeError('GUARDED_FILE_CHANGED_'+p)
               if request('')[0]!=200:raise RuntimeError('HOMEPAGE_UNAVAILABLE_AFTER_CHANGE')
-              code,body=request('api/numi-account.php?action=session')
+              code,body=request('api/numi-account.php',data=b'{"action":"session"}',headers={'Content-Type':'application/json','Origin':site.rstrip('/')})
               if code not in (200,401):raise RuntimeError('ACCOUNT_ENDPOINT_CHECK_FAILED_'+str(code))
               try:json.loads(body)
               except ValueError:raise RuntimeError('ACCOUNT_ENDPOINT_NOT_JSON')
