@@ -147,10 +147,10 @@ button.secondary{background:#716b76}.result{background:white;padding:20px;border
 <?php if($message !== ''): ?><div class="result"><?=cloudH($message)?></div><?php endif; ?>
 <form method="post"><button class="secondary" type="submit" name="action" value="auth">Проверить ключ без генерации</button></form>
 <p><small>Следующая кнопка отправляет один запрос к платной модели. Автоповторов нет.</small></p>
-<form method="post" onsubmit="this.querySelectorAll('button').forEach(b=>b.disabled=true)">
+<form method="post" onsubmit="this.querySelectorAll('button').forEach(b=>b.disabled=true)"><input type="hidden" name="action" value="generate">
 <label>День<input name="day" type="number" min="1" max="31" required value="<?=cloudH((string)$day)?>"></label>
 <label>Месяц<input name="month" type="number" min="1" max="12" required value="<?=cloudH((string)$month)?>"></label>
-<button type="submit" name="action" value="generate">Получить один ответ</button>
+<button type="submit">Получить один ответ</button>
 </form>
 <?php if($answer !== ''): ?><div class="result"><?=cloudH($answer)?></div><?php endif; ?>
 </main></body></html>
