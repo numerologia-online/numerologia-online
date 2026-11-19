@@ -20,7 +20,7 @@ jobs:
           key=os.environ.get('CLOUD_RU_API_KEY','').strip()
           if not key:raise SystemExit('CLOUD_RU_API_KEY_2_MISSING')
           payload={'model':'ai-sage/GigaChat3-10B-A1.8B','messages':[{'role':'user','content':'Ответь одним словом: работает'}],'max_tokens':20,'stream':False}
-          req=urllib.request.Request('https://foundation-models.api.cloud.ru/v1/chat/completions',data=json.dumps(payload).encode(),headers={'Content-Type':'application/json','Authorization':'Api-Key '+key})
+          req=urllib.request.Request('https://foundation-models.api.cloud.ru/v1/chat/completions',data=json.dumps(payload).encode(),headers={'Content-Type':'application/json','Authorization':'Bearer '+key})
           try:
               with urllib.request.urlopen(req,timeout=50) as res:
                   data=json.load(res)
