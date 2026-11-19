@@ -279,6 +279,8 @@
     setAccountButton("Подключаем...");
     accountButton.disabled = true;
     const raw = getInitData();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
     try {
       if (!raw) {
         throw new Error("Telegram не передал данные о пользователе. Возможно, кнопку бота нужно настроить как полноценное мини-приложение.");
@@ -288,7 +290,8 @@
         mode: "cors",
         cache: "no-store",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "get", init_data: raw })
+        body: JSON.stringify({ action: "get", init_data: raw }),
+        signal: controller.signal
       });
       const data = await res.json();
       if (!res.ok || data?.ok !== true || !data?.user?.id) {
@@ -304,10 +307,15 @@
       // current Mini App page open. The cabinet opens only on request.
     } catch (err) {
       // Do not interrupt visitors with a modal when automatic login fails.
-      setMessage("Автоматический вход не удался: " + (err?.message || "Нет соединения с сервером."), !!raw);
+      setMessage("Автоматический вход не удался: " + (err?.name === "AbortError"
+        ? "Сервер не ответил вовремя. Можно повторить вход."
+        : err?.message || "Нет соединения с сервером."), !!raw);
       // Keep the cabinet visible when an interactive login attempt fails.
     } finally {
+      clearTimeout(timeout);
       loading = false;
+      accountButton.disabled = false;
+      if (buttonLabel?.textContent === "Подключаем...") setAccountButton("Личный кабинет", Boolean(user));
     }
   }
 
