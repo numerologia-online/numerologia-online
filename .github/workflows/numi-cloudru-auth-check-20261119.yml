@@ -1,81 +1,62 @@
-name: Use plain direct language without flattering Red Flag interpretations
+name: Read-only diagnosis of cabinet connecting state
 on:
   push:
     branches: [main]
     paths: [.github/workflows/numi-cloudru-auth-check-20261119.yml]
 permissions:
   contents: read
-concurrency:
-  group: reg-ru-manual-publication
-  cancel-in-progress: false
 jobs:
-  publish:
+  inspect:
     runs-on: ubuntu-24.04
     timeout-minutes: 4
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      - name: Publish revised instruction without generating answers
+      - name: Read profile routing and request status without changes
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 -u - <<'PY'
-          import os,ssl,ftplib,io,json,re,subprocess,urllib.request,urllib.error
-          from pathlib import Path
-          p='redflag-ai-lab/style-test-api.php'
-          previous=subprocess.check_output(['git','show','HEAD^:'+p])
-          desired=Path(p).read_bytes()
-          assert previous.count(b'anthropic/claude-haiku-4.5')==2 and desired.count(b'anthropic/claude-haiku-4.5')==2
-          start='Тон '.encode()
-          finish=b'\n\n'
-          old_start=previous.index(start);old_end=previous.index(finish,old_start)
-          filter_block="    // Enforce the requested punctuation without another model call.\n    $answer=preg_replace('/\\\\h*[–—―]\\\\h*/u', ', ', $answer)??$answer;\n    $answer=preg_replace('/([,.;:!?])\\\\h*,\\\\h*/u', '$1 ', $answer)??$answer;\n".encode()
-          assert desired.count(filter_block)==1
-          comparable=desired
-          new_start=comparable.index(start);new_end=comparable.index(finish,new_start)
-          assert previous[:old_start]==comparable[:new_start] and previous[old_end:]==comparable[new_end:]
-          sample="<?php $answer='Пример — без – длинных ― тире.';\n"+filter_block.decode()+"echo $answer;"
-          result=subprocess.run(['php'],input=sample.encode(),capture_output=True)
-          assert result.returncode==0 and result.stdout.decode()=='Пример, без, длинных, тире.', 'PUNCTUATION_CHECK_FAILED'
-          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          import os,ssl,ftplib,io,re,json,hashlib,time,urllib.request,urllib.error
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
           f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
-          root=f.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
-          def read(p):
-              b=io.BytesIO();f.retrbinary('RETR '+root+p,b.write);return b.getvalue()
-          def put(p,b):
-              f.storbinary('STOR '+root+p,io.BytesIO(b))
-              if read(p)!=b:raise RuntimeError('READBACK_MISMATCH')
-          site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
-          def get(p,data=None):
-              req=urllib.request.Request(site+p,data=data,headers={'Origin':site.rstrip('/'),'Content-Type':'application/json','Cache-Control':'no-cache'})
+          home=f.pwd().rstrip('/');host='xn--c1adkkdfjbp1a4l.online'
+          def read(path):
+              b=io.BytesIO()
+              try:f.retrbinary('RETR '+home+'/'+path,b.write)
+              except ftplib.error_perm:return b''
+              return b.getvalue()
+          for p in ['auth-profile.js','api/profile.php','api/numi-miniapp.php']:
+              b=read('www/'+host+'/'+p)
+              print('FILE '+json.dumps({'path':p,'size':len(b),'sha256':hashlib.sha256(b).hexdigest()}))
+              if p=='api/profile.php':
+                  safe=re.sub(r'[A-Za-z0-9_+=/-]{24,}','[redacted]',b.decode('utf-8','replace'))
+                  print('PROFILE_ROUTING '+safe[:18000])
+              if p.endswith('.js'):
+                  print('CLIENT_ROUTING '+json.dumps([s.strip() for s in b.decode('utf-8','replace').splitlines() if 'CHECK_URL' in s or 'Abort' in s or '12000' in s]))
+          text=read('logs/'+host+'.access.log').decode('utf-8','replace')
+          rows=[]
+          for line in text.splitlines():
+              parts=line.split('"')
+              if len(parts)<3:continue
+              req=parts[1].split()
+              if len(req)<2:continue
+              path=req[1].split('?',1)[0]
+              if path not in ['/api/profile.php','/api/numi-miniapp.php','/api/numi-account.php']:continue
+              rows.append([line.split('[',1)[-1].split(']',1)[0],req[0],path,parts[2].strip().split()[0]])
+          print('RECENT_CABINET_REQUESTS '+json.dumps(rows[-24:]))
+          f.quit()
+          site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
+          for path,payload in [('/api/profile.php',{'action':'get','init_data':''}),('/api/numi-account.php',{'action':'session'})]:
+              start=time.monotonic()
+              req=urllib.request.Request(site+path,data=json.dumps(payload).encode(),headers={'Content-Type':'application/json','Origin':site})
               try:
-                  with urllib.request.urlopen(req,timeout=25) as r:return r.status,r.read(10000)
-              except urllib.error.HTTPError as e:return e.code,e.read(10000)
-          old=read(p);changed=False
-          try:
-              start=b"base64_decode('"
-              offset=old.index(start)+len(start);end=old.index(b"'",offset)
-              encoded=old[offset:end]
-              if old[:offset]+b'__CLOUDRU_KEY_BASE64__'+old[end:]!=previous:raise RuntimeError('LIVE_API_DIFFERS_FROM_EXPECTED')
-              target=desired.replace(b'__CLOUDRU_KEY_BASE64__',encoded)
-              if subprocess.run(['php','-l'],input=target,capture_output=True).returncode:raise RuntimeError('SYNTAX_FAILED')
-              guard=['redflag-ai-lab/draft.php','redflag-feature.js','index.html','app.js','api/numi-account.php']
-              before={x:read(x) for x in guard}
-              changed=True;put(p,target)
-              for route in [p,'redflag-ai-lab/draft.php']:
-                  for data in [None,b'{"category":"flags","question_id":"care-or-control","day":9,"month":9}']:
-                      code,body=get(route,data)
-                      if code!=403 or json.loads(body).get('error')!='OWNER_ONLY':raise RuntimeError('OWNER_GUARD_FAILED')
-              for x in guard:
-                  if read(x)!=before[x]:raise RuntimeError('OTHER_FILE_CHANGED_'+x)
-              if get('')[0]!=200:raise RuntimeError('HOMEPAGE_FAILED')
-              print('REDFLAG_PLAIN_DIRECT_TONE_UPDATED model_unchanged=claude-haiku-4.5 owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
-          except BaseException:
-              if changed:put(p,old);print('MODEL_SWITCH_ROLLED_BACK')
-              raise
-          finally:
-              try:f.quit()
-              except Exception:f.close()
+                  with urllib.request.urlopen(req,timeout=18) as r:status=r.status;body=r.read(3000)
+              except urllib.error.HTTPError as e:status=e.code;body=e.read(3000)
+              except Exception as e:
+                  print('API_CHECK '+json.dumps({'route':path,'error':type(e).__name__}));continue
+              try:
+                  d=json.loads(body);safe={k:d.get(k) for k in ['ok','error','authenticated'] if k in d}
+              except Exception:safe={'json':False}
+              print('API_CHECK '+json.dumps({'route':path,'http':status,'seconds':round(time.monotonic()-start,2),'result':safe}))
+          print('READ_ONLY_COMPLETE model_calls=0 writes=0')
           PY
