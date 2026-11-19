@@ -165,7 +165,8 @@ jobs:
           import json,os,urllib.request
           url=f"https://api.github.com/repos/{os.environ['GH_REPO']}/statuses/{os.environ['GH_SHA']}"
           data=json.dumps({"state":"failure","context":"numi/moment-love001-live",
-            "description":"One-question deploy or live verification failed; check GitHub Actions"}).encode()
+            "description":"One-question deploy or live verification failed; check GitHub Actions",
+             "target_url":f"https://github.com/{os.environ['GH_REPO']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"}).encode()
           request=urllib.request.Request(url,data=data,method="POST",headers={
             "Authorization":"Bearer "+os.environ['GH_TOKEN'],
             "Accept":"application/vnd.github+json",
