@@ -40,13 +40,16 @@ let formattedDate;
 // Cloud.ru is called directly from REG.RU only after an owner's explicit question click.
 // All customer-paid publication paths remain unchanged.
 let ownerDraftAccess=false;
-const ownerDraftInScope=(question,state)=>ownerDraftAccess
+const isFlagsQuestion=(question,state)=>Boolean(question)
   && [...categoryStates].some(([name,current])=>name==="flags"&&current===state);
+const ownerDraftInScope=(question,state)=>ownerDraftAccess&&isFlagsQuestion(question,state);
 let ownerAccessRequest=null;
 const checkOwnerDraftAccess=()=>{
   if(ownerAccessRequest)return ownerAccessRequest;
   ownerAccessRequest=fetch("/api/redflag-cloudru.php",{
-    method:"GET",credentials:"same-origin",cache:"no-store"
+    method:"POST",credentials:"same-origin",cache:"no-store",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({action:"access",init_data:window.Telegram?.WebApp?.initData||""})
   }).then(async response=>response.ok?await response.json():null)
     .then(data=>{
       const next=data?.ok===true&&data?.owner===true;
@@ -305,19 +308,25 @@ const clearError = () => {
 // Paid questions are opened IN PLACE; never send the reader into a cart.
 // Publication state comes from the approved material catalogue, not a per-section switch.
 const ensureAnswer = (question, state, {forceNew = false} = {}) => {
-  if(question.isComingSoon&&!ownerDraftInScope(question,state))return;
+  if(question.isComingSoon&&!isFlagsQuestion(question,state))return;
   const id=question.id;
   if(state.answers.has(id)||state.answerRequests.has(id))return;
   const profile=activeProfile;
   if(!profile)return;
   state.answerErrors.delete(id);
+  if(isFlagsQuestion(question,state)&&!ownerDraftAccess){
+    state.answerErrors.set(id,"Сайт не распознал вход владельца. Проверь, что ты открыла сайт из своего Telegram-бота под привязанным аккаунтом.");
+    renderCategories({type:"question",id});
+    return;
+  }
   if(ownerDraftInScope(question,state)){
     const birth=parseRedFlagDate(birthDateInput.value);
     if(!birth){state.answerErrors.set(id,"Проверь дату рождения.");return;}
     const task=fetch("/api/redflag-cloudru.php",{
       method:"POST",credentials:"same-origin",cache:"no-store",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({category:"flags",question_id:id,day:birth.day,month:birth.month})
+      body:JSON.stringify({category:"flags",question_id:id,day:birth.day,month:birth.month,
+        init_data:window.Telegram?.WebApp?.initData||""})
     }).then(async response=>{
       const result=await response.json().catch(()=>null);
       if(!response.ok||result?.ok!==true||result?.draft_only!==true
@@ -469,7 +478,7 @@ const fillQuestionButton = (button, question, showExpand = false, state = null) 
     const badge = document.createElement("span");
     badge.className = "redflag-question-price";
     badge.style.alignSelf = "flex-start";
-    badge.textContent = "Скоро";
+    badge.textContent = ownerDraftInScope(question,state) ? "Проверить ИИ" : "Скоро";
     button.append(badge);
     return;
   }
@@ -509,7 +518,7 @@ const fillQuestionButton = (button, question, showExpand = false, state = null) 
 };
 
 const createQuestion = (question, state) => {
-  const opened = (!question.isComingSoon || ownerDraftInScope(question,state)) && state.activeQuestionId === question.id;
+  const opened = (!question.isComingSoon || isFlagsQuestion(question,state)) && state.activeQuestionId === question.id;
   const article = document.createElement("article");
   article.className = `redflag-question${opened ? " is-open" : ""}${activeProfile ? " is-calculated" : " is-preview"}`;
   article.dataset.questionId = question.id;
@@ -518,7 +527,7 @@ const createQuestion = (question, state) => {
     const preview = document.createElement("button");
     preview.type = "button";
     preview.className = "redflag-question-toggle redflag-question-preview";
-    preview.disabled = Boolean(question.isComingSoon&&!ownerDraftInScope(question,state));
+    preview.disabled = Boolean(question.isComingSoon&&!isFlagsQuestion(question,state));
     fillQuestionButton(preview, question, false, state);
     preview.addEventListener("click", () => {
       const date = parseRedFlagDate(birthDateInput.value);
@@ -541,7 +550,7 @@ const createQuestion = (question, state) => {
   const button = document.createElement("button");
   button.className = "redflag-question-toggle";
   button.type = "button";
-  button.disabled = Boolean(question.isComingSoon&&!ownerDraftInScope(question,state));
+  button.disabled = Boolean(question.isComingSoon&&!isFlagsQuestion(question,state));
   button.setAttribute("aria-expanded", String(opened));
   fillQuestionButton(button, question, true, state);
 
@@ -830,7 +839,7 @@ const repaintOnlyQuestions = (questionId) => {
   // scroll anchor, which can jump the page when a longer answer opens.
   for (const card of cards) {
     const question = records.get(card.dataset.questionId);
-    const shouldOpen = (!question.isComingSoon||ownerDraftInScope(question,state)) && state.activeQuestionId === question.id;
+    const shouldOpen = (!question.isComingSoon||isFlagsQuestion(question,state)) && state.activeQuestionId === question.id;
     if (question.id === questionId || card.classList.contains("is-open") !== shouldOpen) {
       const updated = createQuestion(question, state);
       card.className = updated.className;
@@ -899,7 +908,7 @@ categoriesRoot.addEventListener("click",(event)=>{
   const entry=[...categoryStates.values()].find(state=>
     state.expanded&&state.questions?.some(question=>question.id===questionId));
   const question=entry?.questions?.find(item=>item.id===questionId);
-  if(!question?.isFree||question.isComingSoon)return;
+  if(!question?.isFree||(question.isComingSoon&&!isFlagsQuestion(question,entry)))return;
   event.preventDefault();
   event.stopImmediatePropagation();
   button.blur();
@@ -974,7 +983,7 @@ form.addEventListener("submit", async (event) => {
         ?.find((question) => question.id === requestedQuestion[2]);
       if (linkedQuestion) {
         linkedState.activeQuestionId = linkedQuestion.id;
-        ensureAnswer(linkedQuestion, linkedState);
+        if(!ownerDraftInScope(linkedQuestion,linkedState))ensureAnswer(linkedQuestion, linkedState);
       }
     }
     clearError();
