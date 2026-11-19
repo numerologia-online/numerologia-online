@@ -1,4 +1,4 @@
-name: Apply unified day-month rule and strict answer length
+name: Switch owner-only Red Flag preview to Claude Opus 4.8
 on:
   push:
     branches: [main]
@@ -27,12 +27,11 @@ jobs:
           p='redflag-ai-lab/style-test-api.php'
           previous=subprocess.check_output(['git','show','HEAD^:'+p])
           desired=Path(p).read_bytes()
-          assert previous.count(b'anthropic/claude-haiku-4.5')==2 and desired.count(b'anthropic/claude-haiku-4.5')==2
-          start=b'    $system='
-          finish=b'    $user=json_encode'
-          old_start=previous.index(start);old_end=previous.index(finish,old_start)
-          new_start=desired.index(start);new_end=desired.index(finish,new_start)
-          assert previous[:old_start]==desired[:new_start] and previous[old_end:]==desired[new_end:]
+          old_model=b'anthropic/claude-haiku-4.5'
+          new_model=b'anthropic/claude-opus-4.8'
+          assert previous.count(old_model)==2 and desired.count(new_model)==2
+          expected=previous.replace(old_model,new_model).replace(b",'temperature'=>0.8",b'')
+          assert desired==expected, 'ONLY_MODEL_AND_SAMPLING_PARAMETER_MAY_CHANGE'
           f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
           f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
           root=f.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
@@ -65,7 +64,7 @@ jobs:
               for x in guard:
                   if read(x)!=before[x]:raise RuntimeError('OTHER_FILE_CHANGED_'+x)
               if get('')[0]!=200:raise RuntimeError('HOMEPAGE_FAILED')
-              print('REDFLAG_VIVID_TONE_UPDATED model_unchanged=claude-haiku-4.5 owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
+              print('REDFLAG_OPUS_48_UPDATED model=claude-opus-4.8 owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
           except BaseException:
               if changed:put(p,old);print('MODEL_SWITCH_ROLLED_BACK')
               raise
