@@ -1,4 +1,4 @@
-name: Run 12 private 09.xx Red Flag answers with local Wrangler and real Cloudflare Gemma
+name: Diagnose one private Cloudflare Gemma failure without deployment
 on:
   push:
     branches: [main]
@@ -35,9 +35,20 @@ jobs:
           env["no_proxy"]="localhost,127.0.0.1"
           env["WRANGLER_SEND_METRICS"]="false"
           client=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+          # Create an ISOLATED LOCAL COPY to diagnose model failures; never deploy.
+          import shutil
+          runtime=folder/"isolated-worker"
+          (runtime/"src").mkdir(parents=True,exist_ok=True)
+          source=pathlib.Path("cloudflare/redflag-draft-ai/src/index.js").read_text("utf-8")
+          needle='console.error("FLAGS_OWNER_AI_ERROR",error?.name||"error");'
+          assert source.count(needle)==1
+          diagnostics='console.error("FLAGS_OWNER_DIAG",JSON.stringify({name:String(error?.name||""),code:String(error?.code||""),status:String(error?.status||""),message:String(error?.message||"").slice(0,500).replace(/(?:gsk_[A-Za-z0-9_-]+|Bearer\\s+[^\\s]+)/g,"[REDACTED]"),cause:String(error?.cause?.message||"").slice(0,200).replace(/(?:gsk_[A-Za-z0-9_-]+|Bearer\\s+[^\\s]+)/g,"[REDACTED]")}));'
+          source=source.replace(needle,diagnostics)
+          (runtime/"src/index.js").write_text(source,"utf-8")
+          shutil.copyfile("cloudflare/redflag-draft-ai/wrangler.jsonc",runtime/"wrangler.jsonc")
           with log.open("w",encoding="utf-8") as logfile:
               p=subprocess.Popen(["npx","--yes","wrangler@4","dev","--ip","127.0.0.1","--port","8787"],
-                cwd="cloudflare/redflag-draft-ai",env=env,stdout=logfile,stderr=subprocess.STDOUT)
+                cwd=str(runtime),env=env,stdout=logfile,stderr=subprocess.STDOUT)
               try:
                   ready=False
                   for i in range(75):
@@ -58,7 +69,7 @@ jobs:
                       data={"category":"flags","question_id":"hero","title":title,
                         "day":9,"month":month,"followups":[]}
                       code=0;message="";answer=""
-                      for attempt in range(3):
+                      for attempt in range(1):
                           req=urllib.request.Request(endpoint,data=json.dumps(data,ensure_ascii=False).encode(),
                             method="POST",headers={"Content-Type":"application/json","Accept":"application/json",
                               "X-Numi-Moment-Proof":proof})
@@ -84,7 +95,7 @@ jobs:
                         "ok":bool(ok),"chars":len(answer),"answer":answer if ok else "",
                         "error":message}
                   with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-                      results=sorted(executor.map(check,range(1,13)),key=lambda x:x["month"])
+                      results=sorted(executor.map(check,[1]),key=lambda x:x["month"])
                   pairs=[]
                   valid=[x for x in results if x["ok"]]
                   for i,a in enumerate(valid):
@@ -103,17 +114,23 @@ jobs:
                     "high_similarity_pairs":pairs
                   },ensure_ascii=False,indent=2),encoding="utf-8")
                   print("GEMMA_LOCAL_12_SUMMARY",len(valid),"/12","HIGH_SIMILARITY_PAIRS",len(pairs),flush=True)
-                  if len(valid)!=12:raise RuntimeError("GEMMA_LOCAL_12_INCOMPLETE")
+                  if len(valid)!=1:raise RuntimeError("GEMMA_SINGLE_DIAG_FAILED")
               finally:
                   p.terminate()
                   try:p.wait(timeout=8)
                   except subprocess.TimeoutExpired:p.kill()
+                  try:
+                      for line in log.read_text("utf-8",errors="replace").splitlines():
+                          if "FLAGS_OWNER_DIAG" in line:
+                              print("PRIVATE_CF_DIAGNOSTIC",line[-850:],flush=True)
+                  except Exception as log_error:
+                      print("DIAGNOSTIC_LOG_READ_FAILED",type(log_error).__name__,flush=True)
           PY
       - name: Save genuine unpublished draft comparisons or diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: private-owner-gemma-09-01-to-09-12
+          name: private-owner-gemma-single-diagnostic
           path: private-gemma-12-redflag/twelve-dates.json
           retention-days: 3
           if-no-files-found: warn
@@ -125,7 +142,7 @@ jobs:
           if [ "${{ steps.qa.outcome }}" = "success" ]; then outcome=success; else outcome=failure; fi
           gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" \
             -f state="$outcome" -f context="numi/redflag-12-local-gemma-qa" \
-            -f description="12 real private Gemma owner-only drafts; no site publication" \
+            -f description="One isolated Gemma diagnostic; no site publication" \
             -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >/dev/null
 
 # editorial-revision-2-20261119: repeat real 12-date QA with revised equal-day/month owner-only prompt
