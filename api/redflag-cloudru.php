@@ -14,10 +14,12 @@ function cloudReply(int $http, array $body): never {
     exit;
 }
 try {
-    $account=naCurrent(naDB());
-    if (!naTestOwner($account)) cloudReply(403,['ok'=>false,'error'=>'OWNER_ONLY']);
-    if (($_SERVER['REQUEST_METHOD']??'GET')==='GET')
+    $db=naDB();
+    $account=naCurrent($db);
+    if (($_SERVER['REQUEST_METHOD']??'GET')==='GET') {
+        if (!naTestOwner($account)) cloudReply(403,['ok'=>false,'error'=>'OWNER_ONLY']);
         cloudReply(200,['ok'=>true,'owner'=>true,'provider'=>'cloud.ru','live_answers_enabled'=>false]);
+    }
     if (($_SERVER['REQUEST_METHOD']??'')!=='POST')
         cloudReply(405,['ok'=>false,'error'=>'METHOD_NOT_ALLOWED']);
     $origin=(string)($_SERVER['HTTP_ORIGIN']??'');
@@ -30,7 +32,22 @@ try {
     if (!is_string($raw)||strlen($raw)>4000)
         cloudReply(413,['ok'=>false,'error'=>'REQUEST_TOO_LARGE']);
     $input=json_decode($raw,true,8,JSON_THROW_ON_ERROR);
-    if (!is_array($input)||($input['category']??null)!=='flags')
+    if (!is_array($input) || array_is_list($input))
+        cloudReply(400,['ok'=>false,'error'=>'INVALID_REQUEST']);
+    // Native Telegram Mini App uses signed initData, not a web-browser cookie.
+    // Verify the signature on REG.RU and resolve the exact linked account.
+    $init=$input['init_data']??'';
+    if (is_string($init) && $init!=='' && strlen($init)<4096) {
+        $telegram=naTelegramUser($init);
+        if ($telegram && !empty($telegram['id'])) {
+            $linked=naByIdentity($db,'telegram',(string)$telegram['id']);
+            if (naTestOwner($linked)) $account=$linked;
+        }
+    }
+    if (!naTestOwner($account)) cloudReply(403,['ok'=>false,'error'=>'OWNER_ONLY']);
+    if (($input['action']??null)==='access')
+        cloudReply(200,['ok'=>true,'owner'=>true,'provider'=>'cloud.ru','live_answers_enabled'=>false]);
+    if (($input['category']??null)!=='flags')
         cloudReply(400,['ok'=>false,'error'=>'INVALID_CATEGORY']);
     $id=$input['question_id']??null;
     $day=$input['day']??null;
