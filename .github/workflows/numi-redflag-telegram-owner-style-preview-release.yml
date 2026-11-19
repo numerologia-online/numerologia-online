@@ -1,144 +1,113 @@
-name: Publish owner-only new-prompt preview IN Telegram Red Flag
+name: Publish direct Cloud.ru in existing owner Red Flag only
 on:
   push:
     branches: [main]
     paths:
       - .github/workflows/numi-redflag-telegram-owner-style-preview-release.yml
-  workflow_dispatch:
 permissions:
   contents: read
-  statuses: write
 concurrency:
   group: reg-ru-manual-publication
   cancel-in-progress: false
 jobs:
   publish:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - name: Validate isolated owner-only Telegram prompt trial
-        run: |
-          set -euo pipefail
-          php -l redflag-ai-lab/style-test-api.php
-          node --check redflag-feature.js
-          node --check app.js
-          python3 - <<'PY'
-          from pathlib import Path
-          api=Path('redflag-ai-lab/style-test-api.php').read_text()
-          feature=Path('redflag-feature.js').read_text()
-          assert 'naTestOwner(naCurrent(naDB()))' in api
-          assert 'naAllowedOrigins()' in api
-          assert "/v1/redflag-style-test" in api
-          assert "'draft_only'=>true" in api
-          assert "'published'=>false" in api
-          assert "wallet" not in api.lower()
-          assert "numi-account" in api
-          assert "style-test-api.php" in feature
-          assert "if(question.isFree&&question.id===\"say-no\"&&ownerDraftAccess" in feature
-          assert "addOwnerStyleTrial(answer)" in feature
-          assert "const task=Promise.resolve().then(()=>question.answer(profile));" in feature
-          assert "showInlinePurchase(item,target," in feature
-          assert "redflag-feature.js?v=telegram-owner-style-trial-20261117" in Path('app.js').read_text()
-          assert "app.js?v=telegram-owner-style-trial-20261117" in Path('index.html').read_text()
-          print('OWNER_TELEGRAM_TRIAL_UI_ISOLATED_OK')
-          PY
-      - name: Backup and publish narrowly, verify guest denied and frontend live
+          fetch-depth: 2
+      - name: Validate and publish two existing Red Flag files only
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+          CLOUD_RU_API_KEY: ${{ secrets.CLOUD_RU_API_KEY_2 }}
         run: |
-          set -euo pipefail
           python3 - <<'PY'
+          import os,io,ssl,ftplib,json,subprocess,time,secrets,hashlib,base64,urllib.request,urllib.error
           from pathlib import Path
-          import ftplib,ssl,os,io,hashlib,subprocess,urllib.request,urllib.error,time
-          paths=['redflag-ai-lab/style-test-api.php','redflag-feature.js','app.js','index.html']
-          data={p:Path(p).read_bytes() for p in paths}
-          sha=lambda b:hashlib.sha256(b).hexdigest()
-          known={}
-          for p in paths:
-              revs=subprocess.check_output(['git','log','--format=%H','-n','280','--',p],text=True).splitlines()
-              known[p]={sha(subprocess.check_output(['git','show',rev+':'+p])) for rev in revs}
-          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
+          api='redflag-ai-lab/style-test-api.php'
+          front='redflag-feature.js'
+          paths=[api,front]
+          guarded=['index.html','app.js','api/numi-account.php','api/numi-owner-access.php']
+          site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          key=os.environ['CLOUD_RU_API_KEY'].strip()
+          if not key:raise SystemExit('CLOUD_RU_API_KEY_2_MISSING')
+          encoded=base64.b64encode(key.encode()).decode()
+          print('::add-mask::'+encoded)
+          desired={p:Path(p).read_bytes() for p in paths}
+          expected={p:subprocess.check_output(['git','show','HEAD^:'+p]) for p in paths}
+          if desired[api].count(b'__CLOUDRU_KEY_BASE64__')!=1:raise SystemExit('INVALID_KEY_TEMPLATE')
+          desired[api]=desired[api].replace(b'__CLOUDRU_KEY_BASE64__',encoded.encode())
+          token=secrets.token_hex(32)
+          health="""if(time()<__DEADLINE__ && hash_equals('__HASH__',hash('sha256',(string)($_SERVER['HTTP_X_NUMI_DEPLOYMENT']??'')))){
+              $answer=rfCloudCall([['role'=>'user','content'=>'Ответь одним словом: работает']],20);
+              rfPreviewReply(200,['ok'=>true,'direct_cloudru'=>true,'response_received'=>$answer!=='']);
+          }"""
+          health=health.replace('__DEADLINE__',str(int(time.time())+240)).replace('__HASH__',hashlib.sha256(token.encode()).hexdigest())
+          probe=desired[api].replace(b'// DEPLOYMENT_HEALTH_SLOT',health.encode())
+          for body in [desired[api],probe]:
+              lint=subprocess.run(['php','-l'],input=body,capture_output=True)
+              if lint.returncode:raise SystemExit('PHP_SYNTAX_FAILED')
+          lint=subprocess.run(['node','--input-type=module','--check'],input=desired[front],capture_output=True)
+          if lint.returncode:raise SystemExit('JS_SYNTAX_FAILED')
+          assert b'naTestOwner(naCurrent(naDB()))' in desired[api]
+          assert b'naAllowedOrigins()' in desired[api]
+          assert b'ownerDraftInScope(question,state)' in desired[front]
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
           ftp.prot_p();ftp.set_pasv(True)
-          home=ftp.pwd().rstrip('/')
-          prefix=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          root=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
           def read(p):
-              buf=io.BytesIO()
-              try:ftp.retrbinary('RETR '+prefix+p,buf.write)
-              except ftplib.error_perm as e:
-                  if str(e).startswith('550'):return None
-                  raise
-              return buf.getvalue()
+              b=io.BytesIO()
+              ftp.retrbinary('RETR '+root+p,b.write)
+              return b.getvalue()
           def put(p,b):
-              ftp.storbinary('STOR '+prefix+p,io.BytesIO(b))
-              if read(p)!=b:raise RuntimeError('FTP_READBACK_MISMATCH_'+p)
-          old={};modified=[]
-          try:
-              old={p:read(p) for p in paths}
-              for p in paths:
-                  if p=='redflag-ai-lab/style-test-api.php' and old[p] is not None:
-                      raise RuntimeError('API_PREEXISTS_REFUSE_OVERWRITE')
-                  if p!='redflag-ai-lab/style-test-api.php' and old[p] is None:
-                      raise RuntimeError('EXISTING_FILE_MISSING_'+p)
-                  if old[p] is not None and sha(old[p]) not in known[p]:
-                      raise RuntimeError('UNRECOGNIZED_LIVE_FILE_'+p)
-              backdir=home+'/site-safeguard-backups'
-              try:ftp.mkd(backdir)
-              except ftplib.error_perm as e:
-                  if not str(e).startswith('550'):raise
-              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
-              for p in paths:
-                  if old[p] is None:continue
-                  backup=backdir+'/redflag-owner-telegram-'+stamp+'-'+p.replace('/','-')+'.bak'
-                  ftp.storbinary('STOR '+backup,io.BytesIO(old[p]))
-                  buf=io.BytesIO();ftp.retrbinary('RETR '+backup,buf.write)
-                  if buf.getvalue()!=old[p]:raise RuntimeError('BACKUP_FAILED_'+p)
-              for p in paths:
-                  if read(p)!=old[p]:raise RuntimeError('CONCURRENT_EDIT_'+p)
-                  if old[p]!=data[p]:modified.append(p);put(p,data[p])
-              site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
-              for p in ['redflag-feature.js','app.js','index.html']:
-                  url=site+p+'?telegram_style_v='+str(time.time_ns())
-                  req=urllib.request.Request(url,headers={'Cache-Control':'no-store'})
-                  with urllib.request.urlopen(req,timeout=25) as res:
-                      content=res.read(200000)
-                  if sha(content)!=sha(data[p]):raise RuntimeError('LIVE_FRONTEND_HASH_MISMATCH_'+p)
-              url=site+'redflag-ai-lab/style-test-api.php'
-              # API cannot give a test without an authenticated owner session.
-              req=urllib.request.Request(url,data=b'{"question_id":"say-no","day":31,"month":10}',
-                  headers={'Content-Type':'application/json','Origin':site.rstrip('/')},method='POST')
+              ftp.storbinary('STOR '+root+p,io.BytesIO(b))
+              if read(p)!=b:raise RuntimeError('READBACK_FAILED_'+p)
+          def request(p,data=None,headers=None):
+              req=urllib.request.Request(site+p,data=data,headers={'Cache-Control':'no-cache',**(headers or {})})
               try:
-                  with urllib.request.urlopen(req,timeout=18) as res:
-                      raise RuntimeError('DANGEROUS_PUBLIC_TEST_ACCESS_'+str(res.status))
-              except urllib.error.HTTPError as e:
-                  if e.code!=403:raise RuntimeError('OWNER_GUARD_FAILED_HTTP_'+str(e.code))
-              print('TELEGRAM_OWNER_NEW_STYLE_PREVIEW_LIVE VERIFIED_SHA and owner_only_403',flush=True)
+                  with urllib.request.urlopen(req,timeout=65) as r:return r.status,r.read(300000)
+              except urllib.error.HTTPError as e:return e.code,e.read(10000)
+          original={};modified=[]
+          try:
+              original={p:read(p) for p in paths}
+              unchanged={p:read(p) for p in guarded}
+              catalog=read('redflag-ai-lab/catalog.json')
+              if catalog!=Path('redflag-ai-lab/catalog.json').read_bytes():raise RuntimeError('CATALOG_MISMATCH')
+              for p in paths:
+                  if original[p]!=expected[p]:raise RuntimeError('LIVE_DIFFERS_FROM_BASELINE_'+p)
+              if request('')[0]!=200:raise RuntimeError('HOMEPAGE_UNAVAILABLE_BEFORE_CHANGE')
+              modified.append(api);put(api,probe)
+              code,body=request(api,headers={'X-Numi-Deployment':token})
+              data=json.loads(body)
+              if code!=200 or data.get('direct_cloudru') is not True or data.get('response_received') is not True:
+                  raise RuntimeError('DIRECT_REGRU_CLOUDRU_PROBE_FAILED_HTTP_'+str(code))
+              print('DIRECT_REGRU_TO_CLOUDRU_RESPONSE_OK inference_calls=1 max_tokens=20',flush=True)
+              put(api,desired[api])
+              for payload in [None,b'{"category":"flags","question_id":"care-or-control","day":9,"month":9}']:
+                  code,body=request(api,data=payload,headers={'Content-Type':'application/json','Origin':site.rstrip('/')})
+                  if code!=403 or json.loads(body).get('error')!='OWNER_ONLY':raise RuntimeError('OWNER_GUARD_FAILED')
+              if read(front)!=original[front]:raise RuntimeError('FRONTEND_CHANGED_CONCURRENTLY')
+              modified.append(front);put(front,desired[front])
+              code,body=request(front+'?cloudru_verify='+str(time.time_ns()))
+              if code!=200 or body!=desired[front]:raise RuntimeError('PUBLIC_FRONTEND_MISMATCH')
+              for p in guarded:
+                  if read(p)!=unchanged[p]:raise RuntimeError('GUARDED_FILE_CHANGED_'+p)
+              if request('')[0]!=200:raise RuntimeError('HOMEPAGE_UNAVAILABLE_AFTER_CHANGE')
+              code,body=request('api/numi-account.php?action=session')
+              if code not in (200,401):raise RuntimeError('ACCOUNT_ENDPOINT_CHECK_FAILED_'+str(code))
+              try:json.loads(body)
+              except ValueError:raise RuntimeError('ACCOUNT_ENDPOINT_NOT_JSON')
+              print('REDFLAG_DIRECT_CLOUDRU_LIVE owner_guard_get_post=403 homepage=200 account_json=true other_files_identical=true frontend_hash_verified=true auto_generations=0',flush=True)
           except BaseException:
               for p in reversed(modified):
-                  try:
-                      if old[p] is None:ftp.delete(prefix+p)
-                      else:put(p,old[p])
-                      print('ROLLBACK_OK',p,flush=True)
-                  except BaseException:print('ROLLBACK_FAILED',p,flush=True)
+                  try:put(p,original[p]);print('ROLLBACK_OK '+p,flush=True)
+                  except BaseException:print('ROLLBACK_FAILED '+p,flush=True)
               raise
           finally:
               try:ftp.quit()
-              except BaseException:ftp.close()
+              except Exception:ftp.close()
           PY
-      - name: Confirm owner-only Telegram trial
-        if: success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-owner-telegram-new-style-live" -f description="Owner-only preview in Telegram first free question; customers unchanged" >/dev/null
-      - name: Record owner-only preview failure
-        if: failure()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-owner-telegram-new-style-live" -f description="Owner-only Telegram preview release unverified; see rollback" >/dev/null

@@ -37,10 +37,33 @@ const collapseOtherCategories = (keepId) => {
 let activeProfile;
 let formattedDate;
 
-// Red Flag's automated model previews are disconnected. Unfinished questions stay marked "Скоро".
-const ownerDraftInScope=()=>false;
-const ownerDraftAccess=false;
+// Owner access comes only from the existing first-party server session.
+let ownerDraftAccess=false;
+let ownerPreviewEpoch=0;
+let ownerDraftCatalog=new Set();
+const ownerDraftInScope=(question,state)=>{
+  const category=[...categoryStates].find(([,value])=>value===state)?.[0];
+  return ownerDraftAccess&&question.isComingSoon&&ownerDraftCatalog.has(category+":"+question.id);
+};
+const refreshOwnerDraftAccess=async()=>{
+  const epoch=++ownerPreviewEpoch;
+  ownerDraftAccess=false;ownerDraftCatalog=new Set();
+  try{
+    const response=await fetch("/redflag-ai-lab/style-test-api.php",{
+      credentials:"same-origin",cache:"no-store",signal:AbortSignal.timeout(12000)
+    });
+    const data=await response.json();
+    if(epoch!==ownerPreviewEpoch)return;
+    if(response.ok&&data.ok===true&&data.owner===true&&data.generation_enabled===true){
+      ownerDraftAccess=true;
+      ownerDraftCatalog=new Set(data.catalog.categories.flatMap(c=>c.questions.map(q=>c.id+":"+q.id)));
+    }
+  }catch(_){}
+  if(epoch===ownerPreviewEpoch&&redFlag.classList.contains("is-active"))renderCategories();
+};
+void refreshOwnerDraftAccess();
 window.addEventListener("numi:account-session-changed",()=>{
+  void refreshOwnerDraftAccess();
   for(const state of categoryStates.values()){
     for(const [id,response] of state.answers)
       if(response?.isDraft)state.answers.delete(id);
@@ -291,6 +314,34 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
   const profile=activeProfile;
   if(!profile)return;
   state.answerErrors.delete(id);
+  if(ownerDraftInScope(question,state)){
+    const category=[...categoryStates].find(([,value])=>value===state)?.[0];
+    const epoch=ownerPreviewEpoch;
+    const date=profile.classic.birthDate;
+    const task=fetch("/redflag-ai-lab/style-test-api.php",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({category,question_id:id,day:date.day,month:date.month}),
+      signal:AbortSignal.timeout(65000)
+    }).then(async response=>{
+      const data=await response.json();
+      if(!response.ok||data.ok!==true||data.owner!==true||data.draft_only!==true||
+         data.published!==false||typeof data.answer!=="string"||!data.answer.trim())
+        throw Error(data.error||"INVALID_PREVIEW");
+      if(activeProfile===profile&&epoch===ownerPreviewEpoch&&ownerDraftAccess)
+        state.answers.set(id,{answer:data.answer,isDraft:true,isSaved:false});
+    }).catch(error=>{
+      if(activeProfile===profile&&epoch===ownerPreviewEpoch)
+        state.answerErrors.set(id,error.message==="WAIT_15_SECONDS"
+          ?"Подожди 15 секунд и открой вопрос ещё раз."
+          :"Не удалось получить ответ ИИ. Попробуй открыть вопрос ещё раз.");
+    }).finally(()=>{
+      if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
+      if(activeProfile===profile)renderCategories({type:"question",id});
+    });
+    state.answerRequests.set(id,task);
+    return;
+  }
   // The first free Red Flag question remains visible but has no live generator.
   if(question.isFree&&id==="say-no"){
     state.answerErrors.set(id,"Ответ пока в разработке.");
@@ -415,7 +466,7 @@ const fillQuestionButton = (button, question, showExpand = false, state = null) 
     const badge = document.createElement("span");
     badge.className = "redflag-question-price";
     badge.style.alignSelf = "flex-start";
-    badge.textContent = "Скоро";
+    badge.textContent = ownerDraftInScope(question,state) ? "Тест ИИ · только тебе" : "Скоро";
     button.append(badge);
     return;
   }
