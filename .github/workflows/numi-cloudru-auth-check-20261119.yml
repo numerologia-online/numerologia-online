@@ -1,4 +1,4 @@
-name: Read existing Red Flag endpoint baseline without changes
+name: Diagnose Red Flag request paths without generation or writes
 on:
   push:
     branches: [main]
@@ -6,34 +6,41 @@ on:
 permissions:
   contents: read
 jobs:
-  read:
+  inspect:
     runs-on: ubuntu-24.04
-    timeout-minutes: 3
+    timeout-minutes: 4
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Read two existing files without modifying server
+      - name: Read request statuses and redacted Red Flag error codes
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
-          python3 - <<'PY'
-          import ftplib,ssl,os,io,hashlib,json,subprocess,re
-          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
-          ftp.connect('server172.hosting.reg.ru',21);ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p()
-          root=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
-          for p in ['redflag-ai-lab/style-test-api.php','redflag-feature.js']:
-              b=io.BytesIO();ftp.retrbinary('RETR '+root+p,b.write);s=b.getvalue()
-              print('BASELINE '+json.dumps({'path':p,'sha256':hashlib.sha256(s).hexdigest(),'bytes':len(s)}),flush=True)
-              matches=[]
-              for rev in subprocess.check_output(['git','log','--format=%H','--',p],text=True).splitlines():
-                  try:past=subprocess.check_output(['git','show',rev+':'+p],stderr=subprocess.DEVNULL)
-                  except subprocess.CalledProcessError:continue
-                  if past==s:matches.append(rev)
-              print('MATCHED_REVISIONS '+json.dumps({'path':p,'revs':matches[:4]}),flush=True)
-              if p.endswith('.php'):
-                  safe=re.sub(r'[A-Za-z0-9_+=/-]{24,}','[long-value-redacted]',s.decode())
-                  print('API_SOURCE_REDACTED '+safe,flush=True)
-          ftp.quit()
+          python3 -u - <<'PY'
+          import os,ssl,ftplib,io,re,json,hashlib
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
+          home=f.pwd().rstrip('/');host='xn--c1adkkdfjbp1a4l.online'
+          def read(p):
+              b=io.BytesIO()
+              try:f.retrbinary('RETR '+home+'/'+p,b.write)
+              except ftplib.error_perm:return b''
+              return b.getvalue()
+          for p in ['redflag-feature.js','redflag-ai-lab/draft.php']:
+              b=read('www/'+host+'/'+p)
+              print('LIVE_ROUTE '+json.dumps({'file':p,'sha256':hashlib.sha256(b).hexdigest(),'old_route_mentions':b.count(b'/redflag-ai-lab/draft.php'),'direct_route_mentions':b.count(b'/redflag-ai-lab/style-test-api.php'),'old_worker_mentions':b.count(b'workers.dev')}))
+          access=read('logs/'+host+'.access.log').decode('utf-8','replace')
+          rows=[]
+          for row in access.splitlines():
+              m=re.search(r'\\[([^\\]]+)\\].*?"(GET|POST) (/redflag-ai-lab/(?:draft|style-test-api)\\.php)(?:\\?[^ ]*)? HTTP/[^"]+" (\\d{3})',row)
+              if m:rows.append(m.groups())
+          print('RECENT_REDFLAG_REQUESTS '+json.dumps(rows[-30:]))
+          errors=read('logs/'+host+'.error.log').decode('utf-8','replace')
+          found=[]
+          for row in errors.splitlines():
+              if 'REDFLAG_CLOUDRU:' in row:
+                  m=re.search(r'REDFLAG_CLOUDRU:([A-Za-z0-9_: -]{1,180})',row)
+                  if m:found.append(m.group(1))
+          print('REDFLAG_ERROR_CODES '+json.dumps(found[-10:]))
+          f.quit()
+          print('READ_ONLY no_model_calls=true')
           PY
