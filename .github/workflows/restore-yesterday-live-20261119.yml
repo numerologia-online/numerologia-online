@@ -1,0 +1,110 @@
+name: Restore whole live REG.RU site to November 18 snapshot
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/restore-yesterday-live-20261119.yml']
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  restore:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Prepare exact yesterday source, validate syntax
+        run: |
+          python3 - <<'PY'
+          import subprocess,pathlib
+          base='c98df6b145ad6341cbf98394542cf45c2b9856cf'
+          paths=['index.html','app.js','redflag-feature.js','api/redflag-free-ai.php',
+            'redflag-ai-lab/draft.php','redflag-ai-lab/style-test-api.php',
+            'redflag-ai-lab/index.html','moment/owner-ai.php']
+          root=pathlib.Path('/tmp/numi-yesterday-restore')
+          for p in paths:
+              data=subprocess.check_output(['git','show',base+':'+p])
+              dest=root/p;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
+              print('PREPARED',p,len(data))
+          PY
+          php -l /tmp/numi-yesterday-restore/api/redflag-free-ai.php
+          php -l /tmp/numi-yesterday-restore/redflag-ai-lab/draft.php
+          php -l /tmp/numi-yesterday-restore/redflag-ai-lab/style-test-api.php
+          php -l /tmp/numi-yesterday-restore/moment/owner-ai.php
+          node --input-type=module --check < /tmp/numi-yesterday-restore/redflag-feature.js
+          node --input-type=module --check < /tmp/numi-yesterday-restore/app.js
+      - name: Safely restore only changed live code; never modify database, payments or customer files
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,io,ftplib,ssl,pathlib,hashlib,time,urllib.request,urllib.error,subprocess,json
+          root=pathlib.Path('/tmp/numi-yesterday-restore')
+          paths=['index.html','app.js','redflag-feature.js','api/redflag-free-ai.php',
+            'redflag-ai-lab/draft.php','redflag-ai-lab/style-test-api.php',
+            'redflag-ai-lab/index.html','moment/owner-ai.php']
+          desired={p:(root/p).read_bytes() for p in paths}
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          webroot=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          backupdir=home+'/site-safeguard-backups'
+          def read(p):
+              b=io.BytesIO()
+              try:ftp.retrbinary('RETR '+webroot+p,b.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              return b.getvalue()
+          def write(p,data):
+              ftp.storbinary('STOR '+webroot+p,io.BytesIO(data))
+              if read(p)!=data:raise RuntimeError('READBACK_FAILED:'+p)
+          previous={};changed=[]
+          try:
+              try:ftp.mkd(backupdir)
+              except ftplib.error_perm as e:
+                  if not str(e).startswith('550'):raise
+              for p in paths: previous[p]=read(p)
+              # No blind restoration of finance, session, database, cron or user files.
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              for p in paths:
+                  if previous[p] is None or previous[p]==desired[p]:continue
+                  bak=backupdir+'/yesterday-restoration-'+stamp+'-'+p.replace('/','-')+'.bak'
+                  ftp.storbinary('STOR '+bak,io.BytesIO(previous[p]))
+                  b=io.BytesIO();ftp.retrbinary('RETR '+bak,b.write)
+                  if b.getvalue()!=previous[p]:raise RuntimeError('BACKUP_VERIFY_FAILED:'+p)
+              for p in paths:
+                  if previous[p]!=desired[p]:
+                      changed.append(p)
+                      write(p,desired[p])
+                      print('RESTORED_LIVE_FILE',p,flush=True)
+              public='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+              for p in ['index.html','app.js','redflag-feature.js']:
+                  request=urllib.request.Request(public+p+'?yesterday_restore='+str(time.time_ns()),
+                      headers={'Cache-Control':'no-cache','User-Agent':'NumiSnapshotRestore/1.0'})
+                  with urllib.request.urlopen(request,timeout=30) as response:
+                      body=response.read(500000)
+                      if response.status!=200 or sha(body)!=sha(desired[p]):
+                          raise RuntimeError('PUBLIC_SOURCE_HASH_MISMATCH:'+p)
+              with urllib.request.urlopen(urllib.request.Request(public,headers={'Cache-Control':'no-cache'}),timeout=30) as res:
+                  if res.status!=200:raise RuntimeError('HOMEPAGE_UNAVAILABLE')
+              print('YESTERDAY_SITE_FILES_RESTORED_AND_VERIFIED homepage=200; finance_and_db_unchanged=true; inference_calls=0',flush=True)
+          except BaseException:
+              for p in reversed(changed):
+                  try:
+                      if previous[p] is None:ftp.delete(webroot+p)
+                      else:write(p,previous[p])
+                      print('RESTORE_ROLLED_BACK',p,flush=True)
+                  except BaseException:print('ROLLBACK_ERROR',p,flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except Exception:ftp.close()
+          PY
