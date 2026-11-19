@@ -10,20 +10,30 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Read two existing files without modifying server
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 - <<'PY'
-          import ftplib,ssl,os,io,hashlib,json
+          import ftplib,ssl,os,io,hashlib,json,subprocess,re
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
           ftp.connect('server172.hosting.reg.ru',21);ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p()
           root=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
           for p in ['redflag-ai-lab/style-test-api.php','redflag-feature.js']:
               b=io.BytesIO();ftp.retrbinary('RETR '+root+p,b.write);s=b.getvalue()
               print('BASELINE '+json.dumps({'path':p,'sha256':hashlib.sha256(s).hexdigest(),'bytes':len(s)}),flush=True)
-              if p.endswith('.php') and len(s)<1500 and b'REDFLAG_GENERATION_REMOVED' in s and b'curl_' not in s and b'base64' not in s:
-                  print('DISABLED_STUB '+s.decode(),flush=True)
+              matches=[]
+              for rev in subprocess.check_output(['git','log','--format=%H','--',p],text=True).splitlines():
+                  try:past=subprocess.check_output(['git','show',rev+':'+p],stderr=subprocess.DEVNULL)
+                  except subprocess.CalledProcessError:continue
+                  if past==s:matches.append(rev)
+              print('MATCHED_REVISIONS '+json.dumps({'path':p,'revs':matches[:4]}),flush=True)
+              if p.endswith('.php'):
+                  safe=re.sub(r'[A-Za-z0-9_+=/-]{24,}','[long-value-redacted]',s.decode())
+                  print('API_SOURCE_REDACTED '+safe,flush=True)
           ftp.quit()
           PY
