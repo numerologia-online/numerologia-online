@@ -1,4 +1,4 @@
-name: Refine conversational tone and remove long dashes in owner Red Flag
+name: Use plain direct language without flattering Red Flag interpretations
 on:
   push:
     branches: [main]
@@ -33,7 +33,7 @@ jobs:
           old_start=previous.index(start);old_end=previous.index(finish,old_start)
           filter_block="    // Enforce the requested punctuation without another model call.\n    $answer=preg_replace('/\\\\h*[–—―]\\\\h*/u', ', ', $answer)??$answer;\n    $answer=preg_replace('/([,.;:!?])\\\\h*,\\\\h*/u', '$1 ', $answer)??$answer;\n".encode()
           assert desired.count(filter_block)==1
-          comparable=desired.replace(filter_block,b'')
+          comparable=desired
           new_start=comparable.index(start);new_end=comparable.index(finish,new_start)
           assert previous[:old_start]==comparable[:new_start] and previous[old_end:]==comparable[new_end:]
           sample="<?php $answer='Пример — без – длинных ― тире.';\n"+filter_block.decode()+"echo $answer;"
@@ -71,7 +71,7 @@ jobs:
               for x in guard:
                   if read(x)!=before[x]:raise RuntimeError('OTHER_FILE_CHANGED_'+x)
               if get('')[0]!=200:raise RuntimeError('HOMEPAGE_FAILED')
-              print('REDFLAG_TONE_AND_PUNCTUATION_UPDATED model_unchanged=claude-haiku-4.5 owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
+              print('REDFLAG_PLAIN_DIRECT_TONE_UPDATED model_unchanged=claude-haiku-4.5 owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
           except BaseException:
               if changed:put(p,old);print('MODEL_SWITCH_ROLLED_BACK')
               raise
