@@ -1,4 +1,4 @@
-name: Bound Telegram cabinet connection wait without changing identity checks
+name: Give day and month equal weight in owner Red Flag instruction
 on:
   push:
     branches: [main]
@@ -14,18 +14,26 @@ jobs:
     timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
-      - name: Publish only existing auth-profile client and verify readback
+        with:
+          fetch-depth: 2
+      - name: Publish revised instruction without generating answers
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           python3 -u - <<'PY'
-          import os,ssl,ftplib,io,json,hashlib,subprocess,time,urllib.request,urllib.error
+          import os,ssl,ftplib,io,json,re,subprocess,urllib.request,urllib.error
           from pathlib import Path
-          p='auth-profile.js';desired=Path(p).read_bytes()
-          if subprocess.run(['node','--check'],input=desired,capture_output=True).returncode:raise SystemExit('JS_SYNTAX_FAILED')
-          assert b'signal: controller.signal' in desired and b'controller.abort(), 12000' in desired
-          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          p='redflag-ai-lab/style-test-api.php'
+          previous=subprocess.check_output(['git','show','HEAD^:'+p])
+          desired=Path(p).read_bytes()
+          assert previous.count(b'anthropic/claude-haiku-4.5')==2 and desired.count(b'anthropic/claude-haiku-4.5')==2
+          start='Основа внутреннего'.encode()
+          finish=b'\n\n'
+          old_start=previous.index(start);old_end=previous.index(finish,old_start)
+          new_start=desired.index(start);new_end=desired.index(finish,new_start)
+          assert previous[:old_start]==desired[:new_start] and previous[old_end:]==desired[new_end:]
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
           f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
           root=f.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
           def read(p):
@@ -33,23 +41,33 @@ jobs:
           def put(p,b):
               f.storbinary('STOR '+root+p,io.BytesIO(b))
               if read(p)!=b:raise RuntimeError('READBACK_MISMATCH')
+          site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          def get(p,data=None):
+              req=urllib.request.Request(site+p,data=data,headers={'Origin':site.rstrip('/'),'Content-Type':'application/json','Cache-Control':'no-cache'})
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as r:return r.status,r.read(10000)
+              except urllib.error.HTTPError as e:return e.code,e.read(10000)
           old=read(p);changed=False
           try:
-              if hashlib.sha256(old).hexdigest()!='692e190335497d565fe30375d2883e02470a4b184ff8d5bbf4c0191b95a6fc9f':raise RuntimeError('CLIENT_BASELINE_CHANGED')
-              guard=['api/profile.php','api/numi-account.php','api/numi-miniapp.php','index.html','app.js','redflag-ai-lab/style-test-api.php']
+              start=b"base64_decode('"
+              offset=old.index(start)+len(start);end=old.index(b"'",offset)
+              encoded=old[offset:end]
+              if old[:offset]+b'__CLOUDRU_KEY_BASE64__'+old[end:]!=previous:raise RuntimeError('LIVE_API_DIFFERS_FROM_EXPECTED')
+              target=desired.replace(b'__CLOUDRU_KEY_BASE64__',encoded)
+              if subprocess.run(['php','-l'],input=target,capture_output=True).returncode:raise RuntimeError('SYNTAX_FAILED')
+              guard=['redflag-ai-lab/draft.php','redflag-feature.js','index.html','app.js','api/numi-account.php']
               before={x:read(x) for x in guard}
-              changed=True;put(p,desired)
-              site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
-              req=urllib.request.Request(site+p+'?verify='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
-              with urllib.request.urlopen(req,timeout=25) as response:
-                  if response.status!=200 or response.read(100000)!=desired:raise RuntimeError('PUBLIC_CLIENT_HASH_MISMATCH')
+              changed=True;put(p,target)
+              for route in [p,'redflag-ai-lab/draft.php']:
+                  for data in [None,b'{"category":"flags","question_id":"care-or-control","day":9,"month":9}']:
+                      code,body=get(route,data)
+                      if code!=403 or json.loads(body).get('error')!='OWNER_ONLY':raise RuntimeError('OWNER_GUARD_FAILED')
               for x in guard:
-                  if read(x)!=before[x]:raise RuntimeError('GUARDED_FILE_CHANGED_'+x)
-              with urllib.request.urlopen(site,timeout=25) as response:
-                  if response.status!=200:raise RuntimeError('HOME_UNAVAILABLE')
-              print('CABINET_WAIT_FIXED timeout_12s=true button_reenabled=true live_js_verified=true auth_backend_unchanged=true redflag_unchanged=true model_calls=0')
+                  if read(x)!=before[x]:raise RuntimeError('OTHER_FILE_CHANGED_'+x)
+              if get('')[0]!=200:raise RuntimeError('HOMEPAGE_FAILED')
+              print('REDFLAG_EQUAL_DAY_MONTH_INSTRUCTION_UPDATED model_unchanged=claude-haiku-4.5 owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
           except BaseException:
-              if changed:put(p,old);print('CLIENT_ROLLED_BACK')
+              if changed:put(p,old);print('MODEL_SWITCH_ROLLED_BACK')
               raise
           finally:
               try:f.quit()
