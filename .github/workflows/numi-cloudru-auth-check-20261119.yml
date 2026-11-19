@@ -1,4 +1,4 @@
-name: Update only owner Red Flag instruction, no generation
+name: Refine only second-paragraph recommendation in owner Red Flag
 on:
   push:
     branches: [main]
@@ -28,8 +28,8 @@ jobs:
           previous=subprocess.check_output(['git','show','HEAD^:'+p])
           desired=Path(p).read_bytes()
           assert previous.count(b'anthropic/claude-haiku-4.5')==2 and desired.count(b'anthropic/claude-haiku-4.5')==2
-          start=b'    $system='
-          finish=b'    $answer=rfCloudCall'
+          start='Во втором абзаце'.encode()
+          finish=b'\n\n'
           old_start=previous.index(start);old_end=previous.index(finish,old_start)
           new_start=desired.index(start);new_end=desired.index(finish,new_start)
           assert previous[:old_start]==desired[:new_start] and previous[old_end:]==desired[new_end:]
@@ -65,7 +65,7 @@ jobs:
               for x in guard:
                   if read(x)!=before[x]:raise RuntimeError('OTHER_FILE_CHANGED_'+x)
               if get('')[0]!=200:raise RuntimeError('HOMEPAGE_FAILED')
-              print('REDFLAG_PROMPT_UPDATED model_unchanged=claude-haiku-4.5 owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
+              print('REDFLAG_SECOND_PARAGRAPH_UPDATED model_unchanged=claude-haiku-4.5 owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
           except BaseException:
               if changed:put(p,old);print('MODEL_SWITCH_ROLLED_BACK')
               raise
