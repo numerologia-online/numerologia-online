@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
     paths:
+      - .github/workflows/numi-moment-cloudflare-ai-deploy.yml
       - cloudflare/moment-300-ai/src/index.js
       - cloudflare/moment-300-ai/tests/love001-full-birthdate-monthly.mjs
       - cloudflare/moment-300-ai/wrangler.jsonc
@@ -135,10 +136,11 @@ jobs:
         run: |
           php -l moment/owner-ai.php
           python3 - <<'PY'
-          import ftplib,hashlib,io,os,pathlib,ssl,time
-          desired=pathlib.Path('moment/owner-ai.php').read_bytes()
-          previous=desired.replace(b"header('X-Numi-Moment-AI: groq');",b"header('X-Numi-Moment-AI: cloudflare');").replace(b"'provider'=>'groq'",b"'provider'=>'cloudflare'")
-          if desired==previous:raise RuntimeError('MOMENT_PROVIDER_LABEL_MISSING')
+          import ftplib,hashlib,io,os,ssl,time
+          patches=[
+            (b"header('X-Numi-Moment-AI: cloudflare');",b"header('X-Numi-Moment-AI: groq');"),
+            (b"'provider'=>'cloudflare'",b"'provider'=>'groq'")
+          ]
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
           def read(path):
             stream=io.BytesIO()
@@ -154,10 +156,15 @@ jobs:
             home=ftp.pwd().rstrip('/')
             target=home+'/www/xn--c1adkkdfjbp1a4l.online/moment/owner-ai.php'
             original=read(target)
+            desired=original
+            for before,after in patches:
+              if desired.count(before)==1 and after not in desired:
+                desired=desired.replace(before,after,1)
+              elif desired.count(after)!=1 or before in desired:
+                raise RuntimeError('MOMENT_LIVE_PROVIDER_LABEL_UNRECOGNIZED_NO_UPLOAD')
             if original==desired:
               print('MOMENT_GROQ_PROVIDER_LABEL_ALREADY_CURRENT',flush=True)
             else:
-              if original!=previous:raise RuntimeError('MOMENT_LIVE_HANDLER_CHANGED_NO_UPLOAD')
               backup=home+'/site-safeguard-backups'
               try:ftp.mkd(backup)
               except ftplib.error_perm:
