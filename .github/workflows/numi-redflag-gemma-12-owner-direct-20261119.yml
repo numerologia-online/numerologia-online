@@ -27,7 +27,7 @@ jobs:
           proof=hmac.new(key.encode(),b"numi-moment-cloudflare-bridge-v1",hashlib.sha256).hexdigest()
           folder=pathlib.Path("private-gemma-12-redflag")
           folder.mkdir(exist_ok=True)
-          title="Уважает женское «нет» или начинает давить?"
+          title="Скромный мужчина или считает себя подарком судьбы?"
           endpoint="http://127.0.0.1:8787/v1/redflag-owner-question"
           log=folder/"wrangler-dev.log"
           env=os.environ.copy()
@@ -55,7 +55,7 @@ jobs:
                       print("WRANGLER_LOCAL_START_RESULT",reason,flush=True)
                       raise RuntimeError(reason)
                   def check(month):
-                      data={"category":"flags","question_id":"say-no","title":title,
+                      data={"category":"flags","question_id":"hero","title":title,
                         "day":9,"month":month,"followups":[]}
                       code=0;message="";answer=""
                       for attempt in range(3):
@@ -137,3 +137,5 @@ jobs:
 # energy-lens-editorial-20261119: evaluate specific month/day shadow interactions
 
 # day-motive-month-behavior-test-20261119: repeat private equal-weight QA
+
+# owner-only-quality-check-20261119: 12 actual dates with a catalog question; local Wrangler, no deploy
