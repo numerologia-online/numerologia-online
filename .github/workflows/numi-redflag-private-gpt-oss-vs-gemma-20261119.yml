@@ -124,3 +124,5 @@ jobs:
             -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >/dev/null
 
 # energy-lens-editorial-20261119: evaluate specific month/day shadow interactions
+
+# day-motive-month-behavior-test-20261119: repeat private equal-weight QA
