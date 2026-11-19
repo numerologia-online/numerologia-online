@@ -16,7 +16,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Check independent draft-only target and syntax
@@ -147,6 +147,88 @@ jobs:
               if ex.code!=403:raise
           print('REDFLAG_DRAFT_AI_LIVE_VERIFIED only_owner=true buyers_unchanged=true',flush=True)
           PY
+      - name: Generate 12 REAL private Gemma draft answers for 09.01 through 09.12
+        id: qa
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request,urllib.error,hashlib,hmac,time,datetime,difflib,pathlib,concurrent.futures
+          key=os.environ.get("GROQ_API_KEY","")
+          if not key.startswith("gsk_"):raise RuntimeError("TEST_PROOF_NOT_CONFIGURED")
+          proof=hmac.new(key.encode(),b"numi-moment-cloudflare-bridge-v1",hashlib.sha256).hexdigest()
+          endpoint="https://numerologia-redflag-draft-ai.tankraft431.workers.dev/v1/redflag-owner-question"
+          title="Уважает женское «нет» или начинает давить?"
+          def check(month):
+              data={"category":"flags","question_id":"say-no","title":title,
+                    "day":9,"month":month,"followups":[]}
+              for attempt in range(3):
+                  req=urllib.request.Request(endpoint,data=json.dumps(data,ensure_ascii=False).encode(),
+                    headers={"Content-Type":"application/json","Accept":"application/json",
+                    "X-Numi-Moment-Proof":proof,"User-Agent":"NumiOwnerPrivate12DateQA/1.0"},method="POST")
+                  try:
+                      with urllib.request.urlopen(req,timeout=130) as response:
+                          code=response.status;result=json.load(response)
+                  except urllib.error.HTTPError as e:
+                      code=e.code
+                      try:result=json.loads(e.read(1800))
+                      except Exception:result={}
+                  except Exception as e:
+                      code=0;result={"error":type(e).__name__}
+                  answer=result.get("answer","")
+                  valid=(code==200 and result.get("ok") is True and
+                    result.get("draft_only") is True and result.get("published") is False and
+                    result.get("model")=="@cf/google/gemma-4-26b-a4b-it" and
+                    result.get("style_version")=="flags-free-voice-equal-day-month-20261119" and
+                    result.get("date_key")=="9-"+str(month) and
+                    isinstance(answer,str) and len(answer)>=380)
+                  if valid or code in (401,403,404,409):break
+                  time.sleep(4*(attempt+1))
+              return {"date":f"09.{month:02d}","http":code,"ok":bool(valid),
+                "error":result.get("error"),"answer":answer if valid else "",
+                "chars":len(answer) if isinstance(answer,str) else 0}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+              answers=sorted(executor.map(check,range(1,13)),key=lambda item:item["date"])
+          for item in answers:
+              print("PRIVATE_GEMMA_12",item["date"],"http",item["http"],"ok",item["ok"],
+                "characters",item["chars"],"error",item["error"],flush=True)
+          valid=[item for item in answers if item["ok"]]
+          similarities=[]
+          for i,a in enumerate(valid):
+              for b in valid[i+1:]:
+                  firstA=a["answer"].split("\n\n")[0]
+                  firstB=b["answer"].split("\n\n")[0]
+                  ratio=difflib.SequenceMatcher(None,firstA,firstB).ratio()
+                  if ratio>=0.75: similarities.append({"a":a["date"],"b":b["date"],"similarity":round(ratio,3)})
+          result={"generated_at_utc":datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "question":title,"model":"@cf/google/gemma-4-26b-a4b-it","published":False,
+            "dates":answers,"high_similarity_pairs":similarities}
+          folder=pathlib.Path("redflag-9-12-private-results")
+          folder.mkdir(exist_ok=True)
+          (folder/"private-gemma-9-1-to-9-12.json").write_text(
+            json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
+          print("PRIVATE_GEMMA_12_SUMMARY",len(valid),"/12; high_similarity_pairs",len(similarities),flush=True)
+          if len(valid)!=12:
+              raise RuntimeError("PRIVATE_12_DATE_QA_INCOMPLETE")
+          PY
+      - name: Store private owner-only Red Flag responses for manual editorial comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: private-redflag-9-1-through-9-12-gemma
+          path: redflag-9-12-private-results/
+          retention-days: 3
+          if-no-files-found: warn
+      - name: Record link to private 12-date test results
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ steps.qa.outcome }}" = "success" ]; then result=success; else result=failure; fi
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -f state="$result" -f context="numi/redflag-12-real-gemma-qa" \
+            -f description="See private owner-only 12-date Gemma test artifact" \
+            -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >/dev/null
       - name: Record success
         if: success()
         env:
