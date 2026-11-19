@@ -15,11 +15,14 @@ const end=source.indexOf("    const styleTest=url.pathname",start);
 assert.ok(start>0&&end>start);
 const route=source.slice(start,end);
 assert.match(route,/flagsSystem/);
-assert.match(route,/50 процентов в дне, на 50 процентов в месяце/);
-assert.match(route,/Используй оба ориентира с равным весом/);
+assert.match(route,/энергии даты рождения, день и месяц/);
+assert.match(route,/каждая имеет одинаковую значимость/);
 assert.match(route,/input\.day/);
 assert.match(route,/input\.month/);
 assert.match(route,/env\.AI\.run\(MODEL/);
+assert.equal((route.match(/env\.AI\.run\(MODEL/g)||[]).length,1,"No editorial retry or second generation");
+assert.doesNotMatch(route,/openArchetypes|ENERGY_SHADOWS|ownerAnswerOK|Редакторская правка/);
+assert.match(route,/readyQuestionTitles/);
 assert.match(route,/FLAGS_NOT_PUBLISHED/);
 assert.doesNotMatch(route,/ENERGY_SHADOWS|CATEGORY_RULES|ensureReadyFollowup/);
 
@@ -54,10 +57,13 @@ for(let month=1;month<=12;month++){
   assert.equal(d.style_version,"flags-free-voice-equal-day-month-20261119");
   assert.ok(d.answer.length>=380);
   const messages=calls.at(-1).messages;
-  assert.match(messages[0].content,/50 процентов в дне, на 50 процентов в месяце/);
+  assert.match(messages[0].content,/энергии дня и месяца/);
+  assert.equal(messages.length,2,"One system and one user prompt only");
   assert.match(messages[1].content,new RegExp("Месяц рождения мужчины: "+month+";"));
   assert.match(messages[1].content,/День рождения мужчины: 9;/);
+  assert.match(messages[1].content,/Заботится или будет контролировать каждый твой шаг/);
 }
+assert.equal(calls.length,12,"One generation per tested month");
 const consumer=await worker.fetch(req("/v1/redflag-draft","flags","say-no",
   "Уважает женское «нет» или начинает давить?"),env);
 assert.equal(consumer.status,409);
