@@ -1,243 +1,61 @@
-name: Deploy isolated Red Flag draft-only AI service
+name: Remove retired Red Flag inference Worker only
 on:
-  workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - cloudflare/redflag-draft-ai/src/index.js
-      - tests/redflag-owner-direct-question.test.mjs
       - .github/workflows/numi-redflag-draft-ai-deploy-20261117.yml
 permissions:
   contents: read
   statuses: write
-concurrency:
-  group: cloudflare-numerologia-redflag-draft-ai
-  cancel-in-progress: false
 jobs:
-  deploy:
+  retire:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - name: Check independent draft-only target and syntax
-        run: |
-          node --check cloudflare/redflag-draft-ai/src/index.js
-          node tests/redflag-owner-direct-question.test.mjs
-          node - <<'JS'
-          const fs=require('fs');
-          const cfg=JSON.parse(fs.readFileSync('cloudflare/redflag-draft-ai/wrangler.jsonc','utf8'));
-          if(cfg.name!=='numerologia-redflag-draft-ai'||cfg.main!=='src/index.js'||cfg.ai?.binding!=='AI')throw Error('WRONG_TARGET');
-          const src=fs.readFileSync('cloudflare/redflag-draft-ai/src/index.js','utf8');
-          for(const needle of ['serverProofValid(', 'X-Numi-Moment-Proof', 'owner_drafts_only:true', 'live_answers_enabled:false', 'day+month', 'CATALOG_NOT_USED']){
-            if(needle==='CATALOG_NOT_USED'||needle==='day+month')continue;
-            if(!src.includes(needle))throw Error('REQUIRED_GUARD_MISSING '+needle);
-          }
-          if(src.includes('wallet')||src.includes('storbinary')||/\b(?:charge|refund|deduct)\s*\(/i.test(src))throw Error('UNEXPECTED_PAYMENT_OR_PUBLICATION_CODE');
-          console.log('REDFLAG_OWNER_DRAFT_ONLY_SOURCE_OK');
-          JS
-      - name: Mark Red Flag draft preflight complete
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-draft-preflight" -f description="Isolated Red Flag draft preflight stage succeeded" >/dev/null
-      - name: Deploy ONLY Red Flag draft worker
-        uses: cloudflare/wrangler-action@v4
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: de77758c4b3efd26fef26ab600cb02a2
-          workingDirectory: cloudflare/redflag-draft-ai
-          command: deploy
-      - name: Mark Red Flag draft uploaded complete
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-draft-uploaded" -f description="Isolated Red Flag draft uploaded stage succeeded" >/dev/null
-      - name: Diagnose Red Flag worker.dev route
+      - name: Remove exactly the dedicated Red Flag script (not Moment 300 or REG.RU)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          GH_SHA: ${{ github.sha }}
         run: |
           python3 - <<'PY'
           import os,json,urllib.request,urllib.error
-          base='https://api.cloudflare.com/client/v4/accounts/de77758c4b3efd26fef26ab600cb02a2/workers/scripts/numerologia-redflag-draft-ai/subdomain'
-          headers={'Authorization':'Bearer '+os.environ['CLOUDFLARE_API_TOKEN'],'Content-Type':'application/json'}
-          kind='unknown'
+          name="numerologia-redflag-draft-ai"
+          account="de77758c4b3efd26fef26ab600cb02a2"
+          assert name=="numerologia-redflag-draft-ai"
+          assert name!="numerologia-300-ai"
+          token=os.environ.get("CLOUDFLARE_API_TOKEN","")
+          if not token:raise RuntimeError("CLOUDFLARE_TOKEN_NOT_CONFIGURED")
+          url=f"https://api.cloudflare.com/client/v4/accounts/{account}/workers/scripts/{name}"
+          headers={"Authorization":"Bearer "+token,"Accept":"application/json"}
           try:
-              req=urllib.request.Request(base,headers=headers)
-              with urllib.request.urlopen(req,timeout=20) as response:info=json.load(response)
-              if info.get('success') and isinstance(info.get('result'),dict):
-                  kind='enabled' if info['result'].get('enabled') is True else 'disabled'
-              else:kind='unexpected-response'
-          except urllib.error.HTTPError as error:kind='api-http-'+str(error.code)
-          except Exception:kind='unreachable'
-          url=f"https://api.github.com/repos/{os.environ['GH_REPO']}/statuses/{os.environ['GH_SHA']}"
-          body=json.dumps({'state':'success','context':'numi/redflag-route-'+kind,
-            'description':'Cloudflare route configuration diagnostic: '+kind}).encode()
-          req=urllib.request.Request(url,data=body,method='POST',headers={
-              'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json',
-              'Content-Type':'application/json'})
-          with urllib.request.urlopen(req,timeout=15):pass
-          print('REDFLAG_DRAFT_ROUTE_DIAG',kind,flush=True)
-          PY
-      - name: Record nonsecret live health diagnostics
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          GH_SHA: ${{ github.sha }}
-        run: |
-          python3 - <<'PY'
-          import json,os,urllib.request,urllib.error
-          base='https://numerologia-redflag-draft-ai.tankraft431.workers.dev'
-          health_kind='unavailable'
-          for i in range(3):
-              try:
-                  req=urllib.request.Request(base+'/health?probe='+str(i),headers={'Cache-Control':'no-cache'})
-                  with urllib.request.urlopen(req,timeout=15) as res:
-                      body=json.load(res)
-                  if body.get('version')=='redflag-owner-drafts-v3-no-numbers-ready-cta-20261117' and body.get('ai_bound') is True:
-                      health_kind='verified';break
-                  health_kind='binding' if body.get('ai_bound') is not True else 'body'
-              except urllib.error.HTTPError as ex:
-                  health_kind='http-'+str(ex.code)
-              except Exception:
-                  health_kind='unavailable'
-          post_kind='unavailable'
+              req=urllib.request.Request(url,headers=headers,method="DELETE")
+              with urllib.request.urlopen(req,timeout=40) as response:
+                  body=json.load(response)
+              if body.get("success") is not True:
+                  raise RuntimeError("CLOUDFLARE_DELETE_NOT_CONFIRMED")
+              print("REDFLAG_DEDICATED_SCRIPT_DELETED",name,flush=True)
+          except urllib.error.HTTPError as e:
+              if e.code==404:
+                  print("REDFLAG_ALREADY_ABSENT",name,flush=True)
+              else:
+                  print("REDFLAG_DELETE_HTTP",e.code,flush=True)
+                  raise
           try:
-              req=urllib.request.Request(base+'/v1/draft',data=b'{}',
-                  method='POST',headers={'Content-Type':'application/json'})
-              with urllib.request.urlopen(req,timeout=15) as res:
-                  post_kind='http-'+str(res.status)
-          except urllib.error.HTTPError as ex:
-              post_kind='http-'+str(ex.code)
-          except Exception:
-              post_kind='unavailable'
-          for context in ['health-'+health_kind,'anonymous-'+post_kind]:
-              endpoint=f"https://api.github.com/repos/{os.environ['GH_REPO']}/statuses/{os.environ['GH_SHA']}"
-              body=json.dumps({'state':'success','context':'numi/redflag-draft-'+context,
-                  'description':'Diagnostic only: '+context}).encode()
-              req=urllib.request.Request(endpoint,data=body,method='POST',headers={
-                  'Authorization':'Bearer '+os.environ['GH_TOKEN'],
-                  'Accept':'application/vnd.github+json','Content-Type':'application/json'})
-              with urllib.request.urlopen(req,timeout=12):pass
-          print('REDFLAG_WORKER_DIAGNOSIS',health_kind,post_kind)
+              with urllib.request.urlopen(urllib.request.Request(url,headers=headers,method="GET"),timeout=20) as response:
+                  print("REDFLAG_STILL_PRESENT",response.status,flush=True)
+                  raise RuntimeError("CLOUDFLARE_SCRIPT_NOT_REMOVED")
+          except urllib.error.HTTPError as e:
+              if e.code!=404:
+                  print("REDFLAG_VERIFY_HTTP",e.code,flush=True)
+                  raise
+              print("REDFLAG_SCRIPT_NOT_FOUND_VERIFIED",flush=True)
           PY
-      - name: Verify live isolated service and uncredentialed request denied
-        run: |
-          python3 - <<'PY'
-          import json,urllib.request,urllib.error,time
-          base='https://numerologia-redflag-draft-ai.tankraft431.workers.dev'
-          desired='redflag-owner-drafts-v3-no-numbers-ready-cta-20261117'
-          health=None
-          for i in range(6):
-              try:
-                  req=urllib.request.Request(base+'/health?verify='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
-                  with urllib.request.urlopen(req,timeout=20) as res:health=json.load(res)
-                  if health.get('version')==desired and health.get('ai_bound') is True:break
-              except Exception:pass
-              time.sleep(3)
-          if not health or health.get('service')!='numerologia-redflag-draft-ai' or health.get('version')!=desired or health.get('ai_bound') is not True or health.get('owner_drafts_only') is not True or health.get('live_answers_enabled') is not False:
-              raise RuntimeError('REDFLAG_DRAFT_CLOUDFLARE_LIVE_NOT_VERIFIED')
-          body=json.dumps({'category':'flags','question_id':'hero','title':'Скромный мужчина или считает себя подарком судьбы?','day':10,'month':11,'followups':[]}).encode()
-          req=urllib.request.Request(base+'/v1/draft',body,headers={'Content-Type':'application/json'},method='POST')
-          try:
-              with urllib.request.urlopen(req,timeout=20) as response:raise RuntimeError('PUBLIC_DRAFT_ENDPOINT_ACCESSIBLE')
-          except urllib.error.HTTPError as ex:
-              if ex.code!=403:raise
-          print('REDFLAG_DRAFT_AI_LIVE_VERIFIED only_owner=true buyers_unchanged=true',flush=True)
-          PY
-      - name: Generate 12 REAL private Gemma draft answers for 09.01 through 09.12
-        id: qa
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-        run: |
-          python3 - <<'PY'
-          import json,os,urllib.request,urllib.error,hashlib,hmac,time,datetime,difflib,pathlib,concurrent.futures
-          key=os.environ.get("GROQ_API_KEY","")
-          if not key.startswith("gsk_"):raise RuntimeError("TEST_PROOF_NOT_CONFIGURED")
-          proof=hmac.new(key.encode(),b"numi-moment-cloudflare-bridge-v1",hashlib.sha256).hexdigest()
-          endpoint="https://numerologia-redflag-draft-ai.tankraft431.workers.dev/v1/redflag-owner-question"
-          title="Уважает женское «нет» или начинает давить?"
-          def check(month):
-              data={"category":"flags","question_id":"say-no","title":title,
-                    "day":9,"month":month,"followups":[]}
-              for attempt in range(3):
-                  req=urllib.request.Request(endpoint,data=json.dumps(data,ensure_ascii=False).encode(),
-                    headers={"Content-Type":"application/json","Accept":"application/json",
-                    "X-Numi-Moment-Proof":proof,"User-Agent":"NumiOwnerPrivate12DateQA/1.0"},method="POST")
-                  try:
-                      with urllib.request.urlopen(req,timeout=130) as response:
-                          code=response.status;result=json.load(response)
-                  except urllib.error.HTTPError as e:
-                      code=e.code
-                      try:result=json.loads(e.read(1800))
-                      except Exception:result={}
-                  except Exception as e:
-                      code=0;result={"error":type(e).__name__}
-                  answer=result.get("answer","")
-                  valid=(code==200 and result.get("ok") is True and
-                    result.get("draft_only") is True and result.get("published") is False and
-                    result.get("model")=="@cf/google/gemma-4-26b-a4b-it" and
-                    result.get("style_version")=="flags-free-voice-equal-day-month-20261119" and
-                    result.get("date_key")=="9-"+str(month) and
-                    isinstance(answer,str) and len(answer)>=380)
-                  if valid or code in (401,403,404,409):break
-                  time.sleep(4*(attempt+1))
-              return {"date":f"09.{month:02d}","http":code,"ok":bool(valid),
-                "error":result.get("error"),"answer":answer if valid else "",
-                "chars":len(answer) if isinstance(answer,str) else 0}
-          with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-              answers=sorted(executor.map(check,range(1,13)),key=lambda item:item["date"])
-          for item in answers:
-              print("PRIVATE_GEMMA_12",item["date"],"http",item["http"],"ok",item["ok"],
-                "characters",item["chars"],"error",item["error"],flush=True)
-          valid=[item for item in answers if item["ok"]]
-          similarities=[]
-          for i,a in enumerate(valid):
-              for b in valid[i+1:]:
-                  firstA=a["answer"].split("\n\n")[0]
-                  firstB=b["answer"].split("\n\n")[0]
-                  ratio=difflib.SequenceMatcher(None,firstA,firstB).ratio()
-                  if ratio>=0.75: similarities.append({"a":a["date"],"b":b["date"],"similarity":round(ratio,3)})
-          result={"generated_at_utc":datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "question":title,"model":"@cf/google/gemma-4-26b-a4b-it","published":False,
-            "dates":answers,"high_similarity_pairs":similarities}
-          folder=pathlib.Path("redflag-9-12-private-results")
-          folder.mkdir(exist_ok=True)
-          (folder/"private-gemma-9-1-to-9-12.json").write_text(
-            json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
-          print("PRIVATE_GEMMA_12_SUMMARY",len(valid),"/12; high_similarity_pairs",len(similarities),flush=True)
-          if len(valid)!=12:
-              raise RuntimeError("PRIVATE_12_DATE_QA_INCOMPLETE")
-          PY
-      - name: Store private owner-only Red Flag responses for manual editorial comparison
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: private-redflag-9-1-through-9-12-gemma
-          path: redflag-9-12-private-results/
-          retention-days: 3
-          if-no-files-found: warn
-      - name: Record link to private 12-date test results
+      - name: Record verified removal
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${{ steps.qa.outcome }}" = "success" ]; then result=success; else result=failure; fi
+          if [ "${{ job.status }}" = "success" ]; then outcome=success; else outcome=failure; fi
           gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" \
-            -f state="$result" -f context="numi/redflag-12-real-gemma-qa" \
-            -f description="See private owner-only 12-date Gemma test artifact" \
+            -f state="$outcome" -f context="numi/retired-redflag-worker-deleted" \
+            -f description="Dedicated Red Flag Worker deletion: $outcome" \
             -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >/dev/null
-      - name: Record success
-        if: success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context="numi/redflag-draft-worker-live" -f description="Draft-only Cloudflare Red Flag worker is live and rejects public generation" >/dev/null
-      - name: Record failure
-        if: failure()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context="numi/redflag-draft-worker-live" -f description="Red Flag draft-only Cloudflare deployment not verified" >/dev/null
