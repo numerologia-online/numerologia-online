@@ -17,7 +17,7 @@ function rfCloudCall(array $messages,int $tokens): string {
         CURLOPT_POST=>true,CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,
         CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>55,
         CURLOPT_HTTPHEADER=>['Content-Type: application/json','Authorization: Bearer '.$key],
-        CURLOPT_POSTFIELDS=>json_encode(['model'=>'anthropic/claude-opus-4.8',
+        CURLOPT_POSTFIELDS=>json_encode(['model'=>'deepseek-ai/DeepSeek-V4-Flash',
             'messages'=>$messages,'max_tokens'=>$tokens,'stream'=>false],
             JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)
     ]);
@@ -105,7 +105,7 @@ try {
     session_write_close();
     rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
         'category'=>$category['id'],'question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
-        'answer'=>$answer,'model'=>'anthropic/claude-opus-4.8']);
+        'answer'=>$answer,'model'=>'deepseek-ai/DeepSeek-V4-Flash']);
 } catch(Throwable $e) {
     if(session_status()===PHP_SESSION_ACTIVE)session_write_close();
     error_log('REDFLAG_CLOUDRU:'.get_class($e).':'.$e->getMessage());

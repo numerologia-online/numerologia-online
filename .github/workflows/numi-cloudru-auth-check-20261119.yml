@@ -1,4 +1,4 @@
-name: Publish 700 and 150 character limits for Red Flag
+name: Switch owner Red Flag to DeepSeek V4 Flash
 on:
   push:
     branches: [main]
@@ -25,24 +25,12 @@ jobs:
           import os,ssl,ftplib,io,json,re,subprocess,urllib.request,urllib.error
           from pathlib import Path
           p='redflag-ai-lab/style-test-api.php'
-          previous=subprocess.check_output(['git','show','HEAD~2:'+p])
+          previous=subprocess.check_output(['git','show','HEAD^:'+p])
           desired=Path(p).read_bytes()
-          assert previous.count(b'anthropic/claude-opus-4.8')==2 and desired.count(b'anthropic/claude-opus-4.8')==2
-          start='Выдай ровно два абзаца на русском языке'.encode()
-          end=' Уже первая фраза отвечает'.encode()
-          pa=previous.index(start);pb=previous.index(end,pa)
-          da=desired.index(start);db=desired.index(end,da)
-          old_no_prompt=previous[:pa]+previous[pb:]
-          new_no_prompt=desired[:da]+desired[db:]
-          cap=b'    // Keep the displayed draft within the editorial character limits without another API call.'
-          ci=new_no_prompt.index(cap);cj=new_no_prompt.index(b'    session_write_close();',ci)
-          new_no_prompt=new_no_prompt[:ci]+new_no_prompt[cj:]
-          old_call=b']],1100);'
-          new_call=b']],750);'
-          assert old_no_prompt.count(old_call)==1 and new_no_prompt.count(new_call)==1
-          assert new_no_prompt==old_no_prompt.replace(old_call,new_call)
-          assert 'не более 700 символов'.encode() in desired[da:db] and 'не более 150 символов'.encode() in desired[da:db]
-          assert '1000 до 1200'.encode() in previous[pa:pb]
+          old_model=b'anthropic/claude-opus-4.8'
+          new_model=b'deepseek-ai/DeepSeek-V4-Flash'
+          assert previous.count(old_model)==2 and desired.count(new_model)==2
+          assert desired==previous.replace(old_model,new_model), 'ONLY_TEST_MODEL_MAY_CHANGE'
           f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
           f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
           root=f.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
@@ -75,7 +63,7 @@ jobs:
               for x in guard:
                   if read(x)!=before[x]:raise RuntimeError('OTHER_FILE_CHANGED_'+x)
               if get('')[0]!=200:raise RuntimeError('HOMEPAGE_FAILED')
-              print('REDFLAG_700_150_PUBLISHED model=claude-opus-4.8 owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
+              print('REDFLAG_DEEPSEEK_V4_FLASH model=deepseek-ai/DeepSeek-V4-Flash owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
           except BaseException:
               if changed:put(p,old);print('MODEL_SWITCH_ROLLED_BACK')
               raise
