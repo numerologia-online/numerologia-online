@@ -1,4 +1,4 @@
-name: Restore stable Claude Opus 4.8 owner preview
+name: Test Gemini 3 Flash Preview in owner Red Flag
 on:
   push:
     branches: [main]
@@ -27,8 +27,8 @@ jobs:
           p='redflag-ai-lab/style-test-api.php'
           previous=subprocess.check_output(['git','show','HEAD^:'+p])
           desired=Path(p).read_bytes()
-          old_model=b'deepseek-ai/DeepSeek-V4-Flash'
-          new_model=b'anthropic/claude-opus-4.8'
+          old_model=b'anthropic/claude-opus-4.8'
+          new_model=b'google/gemini-3-flash-preview'
           assert previous.count(old_model)==2 and desired.count(new_model)==2
           assert desired==previous.replace(old_model,new_model), 'ONLY_TEST_MODEL_MAY_CHANGE'
           f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
@@ -63,7 +63,7 @@ jobs:
               for x in guard:
                   if read(x)!=before[x]:raise RuntimeError('OTHER_FILE_CHANGED_'+x)
               if get('')[0]!=200:raise RuntimeError('HOMEPAGE_FAILED')
-              print('REDFLAG_CLAUDE_OPUS_48_RESTORED model=anthropic/claude-opus-4.8 owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
+              print('REDFLAG_GEMINI_3_FLASH_PREVIEW model=google/gemini-3-flash-preview owner_routes_403=true other_files_identical=true homepage_200=true model_calls=0')
           except BaseException:
               if changed:put(p,old);print('MODEL_SWITCH_ROLLED_BACK')
               raise
