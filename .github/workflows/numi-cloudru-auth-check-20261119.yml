@@ -1,4 +1,4 @@
-name: Publish sharper Red Flag hero language only
+name: Publish approved jealousy thesis preview; preserve hero gold baseline
 on:
   push:
     branches: [main]
@@ -39,8 +39,8 @@ jobs:
           js_path='redflag-feature.js'
           app_path='app.js'
           index_path='index.html'
-          php_previous_ref='7a6040c0c2b39f05d64300cdcb1e9e8b37aa8168'
-          php_current_ref='769d503ede81889cae0b70b59d8850db5981e41e'
+          php_previous_ref='769d503ede81889cae0b70b59d8850db5981e41e'
+          php_current_ref='48e3b389fac01ba26ea85235df701439951037c7'
           bank_published_ref='748f68c0e3b3ade60afa90ced42858af5897a9dc'
           js_previous_ref='0760bd4c9ff1dd9c60d98e62a4bcfd6c6dcbb5e7'
           js_current_ref='ca91f360dbac350733964bda23d0341a41e8cd03'
@@ -84,8 +84,20 @@ jobs:
           assert wanted_php_template.count(b'function rfHeroTheses(')==1,'HERO_THESIS_FUNCTION_MISSING'
           assert 'нумерологические_тезисы_не_раскрывать_как_расчёт'.encode('utf-8') in wanted_php_template,'HERO_MODEL_CONTEXT_MISSING'
           assert wanted_php_template.count(b"($category['id']==='flags'&&$question['id']==='hero')")>=1,'HERO_SCOPE_MISSING'
-          hero_entries=re.findall(rb"(?m)^\s*'[0-9]{2}\.[0-9]{2}'=>\[",wanted_php_template)
+          jealousy_boundary=b'/** Owner-only editorial jealousy thesis bank:'
+          hero_boundary=b'/** Owner-only editorial notes for all 366 valid day/month pairs'
+          assert wanted_php_template.count(jealousy_boundary)==1,'JEALOUSY_BANK_MISSING'
+          jealousy_data=wanted_php_template.split(jealousy_boundary,1)[1].split(hero_boundary,1)[0]
+          hero_data=wanted_php_template.split(hero_boundary,1)[1].split(b'/** Fixed editorial conclusion',1)[0]
+          hero_entries=re.findall(rb"(?m)^\s*'[0-9]{2}\.[0-9]{2}'=>\[",hero_data)
+          jealousy_entries=re.findall(rb"(?m)^\s*'[0-9]{2}\.[0-9]{2}'=>\[",jealousy_data)
           assert len(hero_entries)==366,'HERO_THESIS_COUNT_NOT_366'
+          assert len(jealousy_entries)==366,'JEALOUSY_THESIS_COUNT_NOT_366'
+          assert b'function rfJealousyTheses(' in wanted_php_template,'JEALOUSY_FUNCTION_MISSING'
+          assert b"($category['id']==='flags'&&$question['id']==='jealousy')" in wanted_php_template,'JEALOUSY_SCOPE_MISSING'
+          assert 'готовые_тезисы_для_интерпретации'.encode('utf-8') in wanted_php_template,'JEALOUSY_CONTEXT_MISSING'
+          assert 'Склонен выискивать несостыковки'.encode('utf-8') in jealousy_data,'FOUR_THIRTYONE_FOCUS_MISSING'
+          assert 'Главная тема не обычная ревность, а потребность в поклонении'.encode('utf-8') in jealousy_data,'FIFTEEN_FOCUS_MISSING'
           assert 'Тон живой, цепкий, смелый'.encode('utf-8') in wanted_php_template,'SHARP_TONE_MISSING'
           assert 'Второй абзац, максимум одно-два коротких предложения'.encode('utf-8') in wanted_php_template,'SHORT_FOLLOWUP_MISSING'
           assert all(("'"+name+"'").encode('utf-8') in wanted_php_template for name in ('flags','infidelity','intimacy','family','language','verdict')),'CATEGORY_FOCUS_INCOMPLETE'
@@ -135,9 +147,34 @@ jobs:
           progress('STATIC_CHECKS_PASSED')
           # Run every possible day-energy / month combination in PHP before touching REG.RU.
           code=wanted_php_template.decode('utf-8')
-          fn_start=code.index('/** Owner-only editorial notes for all 366 valid day/month pairs')
+          fn_start=code.index('/** Owner-only editorial jealousy thesis bank:')
           fn_end=code.index('try {',fn_start)
           test_php=code[fn_start:fn_end]+"""
+          $jealousyCount=0;
+          for($m=1;$m<=12;$m++){
+              for($d=1;$d<=31;$d++){
+                  if(!checkdate($m,$d,2024))continue;
+                  $notes=rfJealousyTheses($d,$m);
+                  foreach(['главный_вывод','проявление','тень_и_риск'] as $key){
+                      if(!isset($notes[$key])||strlen($notes[$key])<70)throw new Exception('INCOMPLETE_JEALOUSY_'.$d.'_'.$m);
+                  }
+                  $jealousyCount++;
+              }
+          }
+          if($jealousyCount!==366)throw new Exception('JEALOUSY_DATE_COUNT_'.$jealousyCount);
+          foreach([
+              [31,10,'Склонен выискивать несостыковки'],
+              [15,7,'Его задевает прежде всего не лайк'],
+              [9,9,'Сильная настороженность и собственничество'],
+              [6,6,'Семейность и доверчивость'],
+              [5,6,'Не ревнив и предпочитает доверие'],
+              [3,6,'Это не ревнивый надзиратель'],
+              [2,6,'Ревнует в душе']
+          ] as $sample){
+              $notes=rfJealousyTheses($sample[0],$sample[1]);
+              if(!str_starts_with($notes['главный_вывод'],$sample[2]))throw new Exception('BAD_JEALOUSY_SAMPLE_'.$sample[0].'_'.$sample[1]);
+          }
+          echo "JEALOUSY_366_THESIS_OK data_only=true\\n";
           $heroCount=0;
           for($m=1;$m<=12;$m++){
               for($d=1;$d<=31;$d++){
@@ -272,7 +309,7 @@ jobs:
               assert read_abs(target_index)==wanted_index,'FINAL_HTML_CONTENT_MISMATCH'
               # Private bank must not be served through the public website.
               assert http('private/numi-account-20261031/redflag-question-banks/care-or-control.json') in (403,404),'PRIVATE_BANK_PUBLICLY_ACCESSIBLE'
-              print('SONNET_HERO_SHARPER_TONE_PUBLISHED php_only=true hero_366_preserved=true owner_only=true first_question_unchanged=true other_52_ai_questions_unchanged=true key_preserved=true payments_untouched=true homepage_200=true inference_calls=0',flush=True)
+              print('SONNET_JEALOUSY_366_PUBLISHED php_only=true jealousy_question_only=true hero_366_and_prompt_preserved=true owner_only=true first_question_unchanged=true other_questions_unchanged=true key_preserved=true payments_untouched=true homepage_200=true inference_calls=0',flush=True)
           except BaseException as exc:
               # Expose a short safe failure code in GitHub commit status, no secrets or logs.
               match=re.search(r'[A-Z][A-Z0-9_]{5,}',str(exc))
@@ -303,5 +340,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${{ job.status }}" = "success" ]; then outcome=success; message="Sharper owner-only Red Flag hero wording active; all 366 theses preserved"; else outcome=failure; message="Hero tone deployment failed; old PHP rolled back"; fi
+          if [ "${{ job.status }}" = "success" ]; then outcome=success; message="Jealousy 366 day-month theses live for owner preview; hero gold preserved"; else outcome=failure; message="Jealousy preview deployment blocked and prior PHP restored"; fi
           gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state="$outcome" -f context="numi/care-control-bank-regru" -f description="$message" >/dev/null
