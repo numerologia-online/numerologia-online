@@ -2,12 +2,16 @@
   "version": 1,
   "mode": "owner_draft_only",
   "keyRule": "day-month",
-  "questions": 54,
+  "questions": 55,
   "categories": [
     {
       "id": "flags",
       "title": "Красные флаги",
       "questions": [
+        {
+          "id": "say-no",
+          "title": "Уважает женское «нет» или начинает давить?"
+        },
         {
           "id": "care-or-control",
           "title": "Заботится или будет контролировать каждый твой шаг?"
