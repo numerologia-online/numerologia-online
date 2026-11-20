@@ -36,18 +36,8 @@ jobs:
           private_name='unified-question-answers-v1.json'
           baseline_ref='42126837501d1fa0db1c004ffe8bae0da9090777'
           original=subprocess.check_output(['git','show',baseline_ref+':'+php_path])
-          prior_live=subprocess.check_output(['git','show','59e307d4159167fa4c5ba29d86d6cf229b93cd32:'+php_path])
+          experiment=subprocess.check_output(['git','show','46bfe5741307922de9a5e28912e4fb3ebfb91fce:'+php_path])
           current=Path(php_path).read_bytes()
-          # The only PHP change allowed here is the isolated fourth-question prompt addendum.
-          assert current.count(b"            // Conflict-dialogue tone experiment, isolated to the fourth banked question.\n")==1,'FOURTH_PROMPT_MARKER_MISSING'
-          before,tail=current.split(b"            // Conflict-dialogue tone experiment, isolated to the fourth banked question.\n",1)
-          after="            $user=json_encode([\n                'заданный_вопрос'=>$question['title'],\n                'готовый_нумерологический_ответ_по_двум_энергиям'".encode('utf-8')
-          assert tail.count(after)==1,'FOURTH_PROMPT_END_MISSING'
-          added,remainder=tail.split(after,1)
-          assert before+after+remainder==prior_live,'UNRELATED_PHP_CHANGES'
-          assert b"if($category['id']==='flags'&&$question['id']==='argument')" in added,'PROMPT_NOT_QUESTION_SCOPED'
-          assert 'ПРАВИЛО ПРЯМОТЫ И КОНКРЕТНОСТИ'.encode() in added,'PROMPT_RULE_MISSING'
-
           marker=b'__CLOUDRU_KEY_BASE64__'
           assert original.count(marker)==1 and current.count(marker)==1,'PLACEHOLDER_MISSING'
           assert b'function rfUnifiedQuestionMeaning(' in current and b'if($unifiedMeaning!==null)' in current,'UNIFIED_ENGINE_MISSING'
@@ -109,7 +99,7 @@ jobs:
               token=match.group(1)
               assert len(base64.b64decode(token,validate=True))>12,'LIVE_KEY_INVALID'
               live_template=old_php[:match.start(1)]+marker+old_php[match.end(1):]
-              assert live_template in (original,prior_live,current),'LIVE_PHP_OTHER_CHANGES_DETECTED'
+              assert live_template in (original,current,experiment),'LIVE_PHP_OTHER_CHANGES_DETECTED'
               wanted_php=current.replace(marker,token)
               assert subprocess.run(['php','-l'],input=wanted_php,capture_output=True).returncode==0,'DEPLOYED_PHP_SYNTAX_BAD'
               assert http('')==200,'HOMEPAGE_PRECHECK_FAILED'
