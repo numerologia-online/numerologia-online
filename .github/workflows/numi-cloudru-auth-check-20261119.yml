@@ -66,7 +66,7 @@ jobs:
           assert b'QUESTION_REFERENCE_NOT_DEPLOYED' in wanted_php_template
           assert b'RELATED_QUESTION_MISSING_FROM_CATALOG' in wanted_php_template,'FOLLOWUP_SELECTION_MISSING'
           assert b'function rfCareControlMeaning' in wanted_php_template,'COMBINATION_ENGINE_MISSING'
-          assert b"$autonomousMode=!($category" not in previous_php_template,'SHARED_AUTONOMY_ALREADY_ENABLED'
+          assert b"$autonomousMode=!($category" in previous_php_template,'PREVIOUS_AUTONOMY_MISSING'
           assert b"$autonomousMode=!($category" in wanted_php_template,'SHARED_AUTONOMY_MISSING'
           assert b"if($autonomousMode){" in wanted_php_template,'SHARED_PROMPT_MISSING'
           assert 'полная_дата_рождения_мужчины'.encode('utf-8') in wanted_php_template,'FULL_DATE_NOT_SENT'
