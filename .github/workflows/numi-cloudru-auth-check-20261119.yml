@@ -74,7 +74,7 @@ jobs:
           assert sections[0]['questions'][0]['id']=='care-or-control','FIRST_EDITORIAL_QUESTION_CHANGED'
           assert len({(sec['id'],q['id']) for sec in sections for q in sec['questions']})==54,'CATALOG_DUPLICATE_QUESTIONS'
           assert all(('"'+sec['id']+'"').encode() in wanted_js for sec in sections),'OWNER_SECTION_NOT_COVERED'
-          assert wanted_php_template.count('Ты опытный нумеролог, глубоко знаешь Матрицу судьбы')==1,'SHARED_PROMPT_NOT_UNIQUE'
+          assert wanted_php_template.count('Ты опытный нумеролог, глубоко знаешь Матрицу судьбы'.encode('utf-8'))==1,'SHARED_PROMPT_NOT_UNIQUE'
 
           assert b"'calendar_day'" in wanted_php_template,'EXACT_DAY_OVERRIDE_MISSING'
           assert 'Не используй длинное или среднее тире'.encode('utf-8') in wanted_php_template,'DASH_PROMPT_MISSING'
