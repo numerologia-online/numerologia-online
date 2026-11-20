@@ -122,8 +122,11 @@ try {
     $birthYear=null;
     if($autonomousMode){
         $birthYear=$input['year']??null;
-        if(!is_int($birthYear)||$birthYear<1900||$birthYear>(int)gmdate('Y')||
-           !checkdate($month,$day,$birthYear))
+        // Existing older Telegram clients submit only day/month. Accept them
+        // without inventing a year; modern clients still send a full date.
+        if($birthYear!==null &&
+           (!is_int($birthYear)||$birthYear<1900||$birthYear>(int)gmdate('Y')||
+            !checkdate($month,$day,$birthYear)))
             rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_FULL_BIRTH_DATE']);
     }
     // Session lock prevents concurrent model requests from repeated taps.
@@ -214,6 +217,8 @@ try {
 Пиши живо и легко, словно наблюдательная и остроумная подруга говорит с другой женщиной. Можно немного пошутить, быть смелой и дерзкой, но не грубой. Избегай воды, повторения одной мысли, назидательности и одинаковых шаблонов. Дай узнаваемые вероятные проявления именно ответа на этот вопрос. Два абзаца на русском языке, всего примерно 1000–1200 знаков. Основной разбор в первом; во втором непринуждённо и с интересом предложи ровно один следующий вопрос из переданного списка, назвав его точно. Не рекламируй механически и не повторяй одинаковые начала.
 
 Никаких расчётов, названий энергий и арканов, формул или объяснения методики в готовом ответе. Не упоминай год, день или месяц рождения. Никаких заголовков, списков, Markdown и длинных тире. Верни только два абзаца.';
+        if($birthYear===null)
+            $system.=' В этом запросе указан только день и месяц рождения. Опирайся на их сочетание в системе 22 энергий, не придумывай отсутствующий год.';
         $nextTitles=[];
         foreach($catalog['categories'] as $section){
             foreach($section['questions'] as $candidate){
@@ -223,7 +228,8 @@ try {
         }
         $user=json_encode([
             'заданный_вопрос'=>$question['title'],
-            'полная_дата_рождения_мужчины'=>sprintf('%02d.%02d.%04d',$day,$month,$birthYear),
+            ($birthYear===null?'день_и_месяц_рождения_мужчины':'полная_дата_рождения_мужчины')=>
+                ($birthYear===null?sprintf('%02d.%02d',$day,$month):sprintf('%02d.%02d.%04d',$day,$month,$birthYear)),
             'другие_вопросы_для_одной_рекомендации'=>$nextTitles
         ],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
     }elseif($careMeaning!==null){
