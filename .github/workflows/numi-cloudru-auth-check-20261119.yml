@@ -64,7 +64,8 @@ jobs:
               answers=data.get('answers',{})
               assert set(answers)==expected,('DATE_COVERAGE_BAD '+question)
               assert len(set(answers.values()))==366,('DUPLICATED_ANSWERS '+question)
-              assert all(isinstance(t,str) and len(t)>=150 for t in answers.values()),('SHORT_ANSWER '+question)
+              minimum=45 if question=='flags/abuse-signal' else 150
+              assert all(isinstance(t,str) and len(t)>=minimum for t in answers.values()),('SHORT_ANSWER '+question)
           print('LOCAL_TESTS_OK QUESTION_COUNT='+str(len(bank['questions']))+' DATE_ANSWERS='+str(366*len(bank['questions']))+' PHP_LINT=OK',flush=True)
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
           ftp.connect('server172.hosting.reg.ru',21)

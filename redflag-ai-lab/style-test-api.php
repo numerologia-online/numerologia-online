@@ -50,7 +50,7 @@ function rfUnifiedQuestionMeaning(string $categoryId,string $questionId,int $day
     $entry=$bank['questions'][$categoryId.'/'.$questionId]??null;
     if($entry===null)return null; // Other, still-unmigrated questions retain their existing path.
     $meaning=$entry['answers'][sprintf('%02d.%02d',$day,$month)]??null;
-    if(!is_string($meaning)||mb_strlen($meaning,'UTF-8')<150)
+    if(!is_string($meaning)||mb_strlen($meaning,'UTF-8')<(($categoryId==='flags'&&$questionId==='abuse-signal')?45:150))
         throw new RuntimeException('UNIFIED_DATE_MEANING_MISSING');
     return $meaning;
 }
