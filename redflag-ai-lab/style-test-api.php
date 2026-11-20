@@ -167,7 +167,7 @@ try {
         $bankPath=dirname(__DIR__,3).'/private/numi-account-20261031/redflag-question-banks/care-or-control.json';
         if(!is_file($bankPath))throw new RuntimeException('QUESTION_REFERENCE_NOT_DEPLOYED');
         $bank=json_decode((string)file_get_contents($bankPath),true,24,JSON_THROW_ON_ERROR);
-        if(($bank['question_id']??'')!=='care-or-control'||($bank['version']??0)!==3)
+        if(($bank['question_id']??'')!=='care-or-control'||($bank['version']??0)!==4)
             throw new RuntimeException('QUESTION_REFERENCE_INVALID');
         $careMeaning=rfCareControlMeaning($bank['combination_rules']??[],$energy,$month,$day);
         $selected=$careMeaning['followup'];
