@@ -110,6 +110,15 @@ try {
     $day=$input['day']??null;$month=$input['month']??null;
     if(!is_int($day)||!is_int($month)||!checkdate($month,$day,2000))
         rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_DATE']);
+    // New owner-only experiment: independent full-birth-date Matrix of Destiny reading.
+    $autonomousHero=$category['id']==='flags'&&$question['id']==='hero';
+    $heroBirthYear=null;
+    if($autonomousHero){
+        $heroBirthYear=$input['year']??null;
+        if(!is_int($heroBirthYear)||$heroBirthYear<1900||$heroBirthYear>(int)gmdate('Y')||
+           !checkdate($month,$day,$heroBirthYear))
+            rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_FULL_BIRTH_DATE']);
+    }
     // Session lock prevents concurrent model requests from repeated taps.
     session_name('numi_redflag_preview');
     session_set_cookie_params(['secure'=>true,'httponly'=>true,'samesite'=>'Strict','path'=>'/redflag-ai-lab/']);
@@ -188,7 +197,27 @@ try {
 
 Во втором абзаце, словно продолжая разговор, тепло и интригующе предложи указанный следующий вопрос. Не рекламируй сухо и не повторяй одну и ту же фразу «На твоём месте я бы» в каждом ответе. Тон лёгкий, естественный, читательнице должно хотеться узнать продолжение. Никаких упоминаний энергий, чисел и методики. Обычная проза без заголовков и Markdown. Не используй длинное или среднее тире, перестраивай фразы с точками и запятыми. Верни только два абзаца.';
     }
-    if($careMeaning!==null){
+    if($autonomousHero){
+        // Unlike care-or-control, there are no hand-authored energy hints, score
+        // tables, pair conclusions, or fixed numerological calculations here.
+        // Sonnet sees the man's full birthday and decides how to interpret it.
+        $system='Ты опытный нумеролог, глубоко знаешь Матрицу судьбы и систему 22 энергий. Ты умеешь самостоятельно рассчитывать и интерпретировать дату рождения, находить сочетания и тонкие нюансы, отвечать как настоящий специалист на самые разные вопросы о человеке. Перед тобой полная дата рождения мужчины. Самостоятельно выбери всё, что считаешь важным для ответа. Не ограничивай свой разбор только днём и месяцем, если другие показатели помогают понять именно этот вопрос.
+
+Твоя задача: ответить одной женщине о мужчине, чья дата указана. Сначала ясно скажи, скромен ли он, или ему нравится считать себя особенным подарком миру. Затем раскрой узнаваемый характер через точные наблюдения, лёгкую иронию и живые примеры возможного поведения. Не нужно обязательно искать в мужчине ни достоинства, ни недостатки. Пусть трактовка следует твоему нумерологическому разбору, а не заранее заданному выводу.
+
+Пиши по-русски как остроумная, наблюдательная женщина другой женщине. Легко, тепло, местами весело и чуть дерзко. Чтобы текст хотелось дочитать и узнать продолжение. Без сухого анализа, занудства, тяжёлых нравоучений и общих штампов. Около 1000–1200 знаков, ровно два абзаца. В первом сам ответ, во втором естественная интригующая рекомендация одного следующего вопроса из списка, с точным его названием. Не повторяй одну и ту же заготовку вступления.
+
+Не рассказывай, как ты считала, не упоминай в готовом ответе числа, арканы, энергии и названия расчётов. Не выдавай воображаемые события за факты из жизни конкретного мужчины: это нумерологическая трактовка, не свидетельство. Без заголовков, списков, Markdown и длинных тире. Верни только два абзаца.';
+        $heroNextTitles=[];
+        foreach($category['questions'] as $related){
+            if($related['id']!==$question['id'])$heroNextTitles[]=$related['title'];
+        }
+        $user=json_encode([
+            'вопрос_о_мужчине'=>$question['title'],
+            'полная_дата_рождения_мужчины'=>sprintf('%02d.%02d.%04d',$day,$month,$heroBirthYear),
+            'вопросы_для_естественного_продолжения'=>$heroNextTitles
+        ],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
+    }elseif($careMeaning!==null){
         $user=json_encode([
             'вопрос_женщины'=>$question['title'],
             'готовый_вывод_двух_энергий'=>$careMeaning['meaning'],
@@ -209,8 +238,8 @@ try {
     $answer=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$user]],1600);
     // Preserve natural punctuation and the complete two-paragraph text.
     $answer=trim(str_replace(['**','__'],'',$answer));
-    if($careMeaning!==null){
-        // Editorial punctuation preference for this question only, no new AI call.
+    if($careMeaning!==null||$autonomousHero){
+        // Editorial punctuation preference for only the two owner-preview questions, no new AI call.
         $answer=preg_replace('/\\h*[—–―]\\h*/u', ', ', $answer)??$answer;
         $answer=preg_replace('/,\\h*,/u', ', ', $answer)??$answer;
     }
