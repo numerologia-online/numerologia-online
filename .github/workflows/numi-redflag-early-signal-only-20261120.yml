@@ -1,0 +1,150 @@
+name: Publish only Red Flag first-dating warning bank (2026-11-20)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-early-signal-only-20261120.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate and publish ONLY 366 fifth-question signals
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib,hashlib,io,json,os,ssl,subprocess,time
+          from pathlib import Path
+
+          source='redflag-ai-lab/banks/unified-question-answers-v1.json'
+          previous_commit='537608adfabd8c1c072b028f3543b79423ffd1c9'
+          approved_commit='1cfbcce0083c0eb12564cd197812afbb6519d4ef'
+          question='flags/abuse-signal'
+          def git_file(commit):
+              return subprocess.check_output(['git','show',commit+':'+source])
+          original=json.loads(git_file(previous_commit))
+          approved_bytes=git_file(approved_commit)
+          approved=json.loads(approved_bytes)
+          if Path(source).read_bytes()!=approved_bytes:
+              raise RuntimeError('APPROVED_GITHUB_SOURCE_HAS_CHANGED')
+          if set(original)!=set(approved) or any(original[k]!=approved[k] for k in original if k!='questions'):
+              raise RuntimeError('TOP_LEVEL_SOURCE_CHANGES')
+          if set(original['questions'])!=set(approved['questions']):
+              raise RuntimeError('QUESTION_LIST_SOURCE_CHANGED')
+          for k in original['questions']:
+              if k!=question and original['questions'][k]!=approved['questions'][k]:
+                  raise RuntimeError('OTHER_QUESTION_SOURCE_CHANGED_'+k)
+          old_question=original['questions'][question]
+          new_question=approved['questions'][question]
+          if old_question['title']!=new_question['title']:
+              raise RuntimeError('QUESTION_TITLE_CHANGED')
+          old_answers=old_question['answers']
+          new_answers=new_question['answers']
+          if len(old_answers)!=366 or len(new_answers)!=366 or set(old_answers)!=set(new_answers):
+              raise RuntimeError('INVALID_366_DAY_STRUCTURE')
+          edits={k:(old_answers[k],new_answers[k]) for k in old_answers if old_answers[k]!=new_answers[k]}
+          if len(edits)!=366:
+              raise RuntimeError('NOT_EXACTLY_366_APPROVED_EDITS')
+          print('SCOPE_VERIFIED 366 dates, one question, no model prompt or site files',flush=True)
+
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          remote=home+'/private/numi-account-20261031/redflag-question-banks/unified-question-answers-v1.json'
+          backup_root=home+'/site-safeguard-backups'
+          def read(remote_path):
+              buf=io.BytesIO()
+              def collect(chunk):
+                  if buf.tell()+len(chunk)>2_500_000:
+                      raise RuntimeError('REMOTE_FILE_TOO_LARGE')
+                  buf.write(chunk)
+              ftp.retrbinary('RETR '+remote_path,collect)
+              return buf.getvalue()
+          def put(remote_path,data):
+              ftp.storbinary('STOR '+remote_path,io.BytesIO(data))
+              if read(remote_path)!=data:
+                  raise RuntimeError('FTPS_POSTUPLOAD_MISMATCH')
+          try:
+              live_before=read(remote)
+              live=json.loads(live_before)
+              if set(live)!=set(original) or any(live[k]!=original[k] for k in original if k!='questions'):
+                  raise RuntimeError('UNEXPECTED_LIVE_TOP_LEVEL_BANK')
+              if set(live.get('questions',{}))!=set(original['questions']):
+                  raise RuntimeError('UNEXPECTED_LIVE_QUESTIONS')
+              live_question=live['questions'][question]
+              if live_question.get('title')!=old_question['title'] or len(live_question.get('answers',{}))!=366 or set(live_question['answers'])!=set(old_answers):
+                  raise RuntimeError('UNEXPECTED_LIVE_DATE_SET')
+              live_text=live_before.decode('utf-8')
+              changed=already=0
+              for key,(old_value,new_value) in edits.items():
+                  value=live_question['answers'][key]
+                  if value==new_value:
+                      already+=1
+                      continue
+                  if value!=old_value:
+                      raise RuntimeError('UNEXPECTED_LIVE_DIFFERENCE_'+key)
+                  needle=json.dumps(key,ensure_ascii=False)+': '+json.dumps(old_value,ensure_ascii=False)
+                  replacement=json.dumps(key,ensure_ascii=False)+': '+json.dumps(new_value,ensure_ascii=False)
+                  if live_text.count(needle)!=1:
+                      raise RuntimeError('UNEXPECTED_LIVE_FORMAT_'+key)
+                  live_text=live_text.replace(needle,replacement,1)
+                  changed+=1
+              if changed==0:
+                  print('ALREADY_PUBLISHED 366 of 366; no remote write',flush=True)
+              else:
+                  live_after=live_text.encode('utf-8')
+                  result=json.loads(live_after)
+                  if set(result)!=set(live) or any(result[k]!=live[k] for k in live if k!='questions'):
+                      raise RuntimeError('UNRELATED_TOP_LEVEL_DATA_CHANGED')
+                  if set(result['questions'])!=set(live['questions']):
+                      raise RuntimeError('UNRELATED_QUESTION_LIST_CHANGED')
+                  for key in live['questions']:
+                      if key!=question and result['questions'][key]!=live['questions'][key]:
+                          raise RuntimeError('UNRELATED_QUESTION_CHANGED_'+key)
+                  if result['questions'][question]['answers']!=new_answers:
+                      raise RuntimeError('APPROVED_366_DATE_CONTENT_MISMATCH')
+                  try:
+                      ftp.mkd(backup_root)
+                  except ftplib.error_perm as e:
+                      if not str(e).startswith('550'):
+                          raise
+                  stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+                  old_hash=hashlib.sha256(live_before).hexdigest()[:12]
+                  backup=backup_root+'/redflag-early-warning-'+stamp+'-'+old_hash+'.json.bak'
+                  put(backup,live_before)
+                  if read(remote)!=live_before:
+                      raise RuntimeError('CONCURRENT_BANK_CHANGE')
+                  attempted=False
+                  try:
+                      attempted=True
+                      put(remote,live_after)
+                      latest=json.loads(read(remote))
+                      if latest!=result:
+                          raise RuntimeError('POST_PUBLISH_BANK_VERIFICATION_FAILED')
+                      print('PUBLISHED_AND_VERIFIED fifth_question=366 updated='+str(changed)+' already='+str(already)+' backup_verified=true other_questions_unchanged=true',flush=True)
+                  except BaseException:
+                      if attempted:
+                          try:
+                              put(remote,live_before)
+                              print('ORIGINAL_BANK_RESTORED',flush=True)
+                          except BaseException as e:
+                              print('CRITICAL_ROLLBACK_FAILED '+type(e).__name__,flush=True)
+                      raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
