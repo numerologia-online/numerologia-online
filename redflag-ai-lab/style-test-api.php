@@ -35,6 +35,26 @@ function rfCloudCall(array $messages,int $tokens): string {
 }
 
 
+/** Shared Red Flag editor: one finished date-specific interpretation per question.
+ * To add a future question, add a category/question entry with 366 answers
+ * to unified-question-answers-v1.json; do not create another writing prompt. */
+function rfUnifiedQuestionMeaning(string $categoryId,string $questionId,int $day,int $month): ?string {
+    static $bank=null;
+    if($bank===null){
+        $path=dirname(__DIR__,3).'/private/numi-account-20261031/redflag-question-banks/unified-question-answers-v1.json';
+        if(!is_file($path))throw new RuntimeException('UNIFIED_BANK_NOT_DEPLOYED');
+        $bank=json_decode((string)file_get_contents($path),true,30,JSON_THROW_ON_ERROR);
+        if(($bank['version']??0)!==1||!is_array($bank['questions']??null))
+            throw new RuntimeException('UNIFIED_BANK_INVALID');
+    }
+    $entry=$bank['questions'][$categoryId.'/'.$questionId]??null;
+    if($entry===null)return null; // Other, still-unmigrated questions retain their existing path.
+    $meaning=$entry['answers'][sprintf('%02d.%02d',$day,$month)]??null;
+    if(!is_string($meaning)||mb_strlen($meaning,'UTF-8')<150)
+        throw new RuntimeException('UNIFIED_DATE_MEANING_MISSING');
+    return $meaning;
+}
+
 /** Owner-only editorial jealousy thesis bank: 366 date combinations, not finished answers. */
 /** Owner-only independently authored verdicts for each of 366 day/month dates.
  * Three editor's theses are sent to Sonnet, never direct customer text.
@@ -872,7 +892,10 @@ try {
     // Shared autonomous Sonnet preview for every question except the editorial
     // care-or-control bank. "Уважает женское нет" remains the separate ready text.
     // Owner-only: the paid customer path is intentionally untouched.
-    $autonomousMode=!($category['id']==='flags'&&$question['id']==='care-or-control');
+    // The same single-meaning engine serves the three approved questions and future banked questions.
+    $unifiedMeaning=rfUnifiedQuestionMeaning($category['id'],$question['id'],$day,$month);
+    $autonomousMode=($unifiedMeaning!==null)||
+        !($category['id']==='flags'&&$question['id']==='care-or-control');
     $birthYear=null;
     if($autonomousMode){
         $birthYear=$input['year']??null;
@@ -936,7 +959,7 @@ try {
 Форма - только два обычных абзаца, без заголовков, списков, кавычек, двоеточий и длинных и коротких тире. Строй предложения с запятыми и точками, чтобы эти знаки не требовались. Перед отправкой молча проверь, что первая фраза отвечает на вопрос, далее нет общего портрета и упоминаний расчёта, а два абзаца соблюдены. Верни только готовый ответ.';
     // Owner-only question-specific conclusion, before the only model request.
     $careMeaning=null;
-    if($category['id']==='flags'&&$question['id']==='care-or-control'){
+    if($unifiedMeaning===null&&$category['id']==='flags'&&$question['id']==='care-or-control'){
         $bankPath=dirname(__DIR__,3).'/private/numi-account-20261031/redflag-question-banks/care-or-control.json';
         if(!is_file($bankPath))throw new RuntimeException('QUESTION_REFERENCE_NOT_DEPLOYED');
         $bank=json_decode((string)file_get_contents($bankPath),true,24,JSON_THROW_ON_ERROR);
@@ -964,9 +987,9 @@ try {
     if($autonomousMode){
         // The hero question has a complete editorial 366-date thesis bank.
         // Sonnet writes freely, without receiving numeric birth inputs.
-        $heroTheses=($category['id']==='flags'&&$question['id']==='hero')
+        $heroTheses=($unifiedMeaning===null&&$category['id']==='flags'&&$question['id']==='hero')
             ?rfHeroTheses($day,$month):null;
-        $jealousyTheses=($category['id']==='flags'&&$question['id']==='jealousy')
+        $jealousyTheses=($unifiedMeaning===null&&$category['id']==='flags'&&$question['id']==='jealousy')
             ?rfJealousyTheses($day,$month):null;
         // Shared autonomous Sonnet writing style plus one small category focus.
         // No prewritten date interpretations or answer templates.
@@ -999,7 +1022,19 @@ try {
                 $nextTitles[]=$candidate['title'];
             }
         }
-        if($jealousyTheses!==null){
+        if($unifiedMeaning!==null){
+            // THE SAME WRITING PROMPT FOR ALL BANKED QUESTIONS, WITH NO NUMERIC BIRTH INPUTS.
+            $system='Ты отвечаешь женщине о мужчине на один конкретный вопрос. Сайт уже сопоставил день и месяц его рождения по системе 22 энергий и передал тебе один готовый индивидуальный нумерологический ответ именно на этот вопрос. Не пересчитывай дату, не меняй смысл, не добавляй противоположный типаж для баланса и не подменяй конкретный ответ общим психологическим портретом. Переданная трактовка описывает возможные склонности, а не подтверждённые факты о человеке.
+
+Пиши живо, дерзко, наблюдательно и остроумно, как умная подруга, которая умеет назвать вещи своими именами. Тон цепкий, смелый и естественный, с точными иногда колкими наблюдениями, без мата, пафоса, морализаторства и психологических лекций. С ПЕРВОГО ПРЕДЛОЖЕНИЯ прямо отвечай именно на заданный вопрос. Если готовый ответ положительный или риск слабый, говори об этом уверенно, без искусственного негатива. Если вывод неприятный, не оправдывай его обязательной похвалой. Покажи возможное поведение мужчины применительно только к этому вопросу и объясни, чем это может быть хорошо или неудобно для женщины. Не приписывай конкретные уже случившиеся поступки. Не делай всех мужчин одинаково плохими или одинаково хорошими. Не заменяй индивидуальный смысл повторяющимися сценками и штампами.
+
+Выдай ровно два абзаца на русском языке, всего примерно 1000–1200 знаков. Основной объём отдай первому абзацу. Второй абзац, максимум одно-два коротких предложения, это естественный и интересный переход к ОДНОМУ следующему вопросу из переданного списка, с точным названием и без рекламного монолога. Не выдавай дату, день или месяц рождения, числа, цифры, арканы, энергии, названия энергий, расчёты, способ интерпретации и внутренние данные даже словами. Никаких заголовков, Markdown, списков и длинных тире. Верни только два абзаца.';
+            $user=json_encode([
+                'заданный_вопрос'=>$question['title'],
+                'готовый_нумерологический_ответ_по_двум_энергиям'=>$unifiedMeaning,
+                'варианты_следующего_вопроса'=>$nextTitles
+            ],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
+        }elseif($jealousyTheses!==null){
             // Draft only: site-determined interpretation, Sonnet generates original prose.
             $system='Ты отвечаешь женщине о мужчине на вопрос «Ревнует от любви или устроит допрос за каждый лайк?» в разделе «Красные флаги». Сайт уже сопоставил энергии дня и месяца рождения и передал тебе три коротких тезиса: главный вывод, вероятное проявление, тень и риск. Считай эти тезисы обязательной смысловой основой: не пытайся заново считать дату, не меняй вывод на противоположный и не подмешивай чужие значения энергий. Это символическая интерпретация склонностей, а не подтверждение реальных поступков мужчины.
 
