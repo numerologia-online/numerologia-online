@@ -1,9 +1,10 @@
-name: Safe publish isolated Red Flag jealousy 366 pair revisions
+name: Publish shared Red Flag meaning banks for all banked questions
 on:
   push:
     branches: [main]
     paths:
       - .github/workflows/numi-cloudru-auth-check-20261119.yml
+      - redflag-ai-lab/banks/unified-question-answers-v1.json
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,12 +13,14 @@ concurrency:
   group: reg-ru-manual-publication
   cancel-in-progress: false
 jobs:
-  publish-jealousy-only:
+  publish-shared-meaning-bank:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-      - name: Validate exact 366 pair bank; update only live owner-preview PHP with rollback
+        with:
+          fetch-depth: 0
+      - name: Lint PHP, audit 1098 answers, guard unrelated files, private FTP publish with rollback
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
@@ -25,104 +28,119 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import ftplib, io, os, ssl, subprocess, re, base64, urllib.request, urllib.error, datetime
+          import ftplib, io, os, ssl, subprocess, re, base64, urllib.request, urllib.error, datetime, json
           from pathlib import Path
-          repo=os.environ.get('GITHUB_REPOSITORY','')
-          path='redflag-ai-lab/style-test-api.php'
-          local=Path(path).read_bytes()
+          repo=os.environ['GITHUB_REPOSITORY']
+          php_path='redflag-ai-lab/style-test-api.php'
+          json_path='redflag-ai-lab/banks/unified-question-answers-v1.json'
+          private_name='unified-question-answers-v1.json'
+          baseline_ref='42126837501d1fa0db1c004ffe8bae0da9090777'
+          original=subprocess.check_output(['git','show',baseline_ref+':'+php_path])
+          current=Path(php_path).read_bytes()
           marker=b'__CLOUDRU_KEY_BASE64__'
-          assert local.count(marker)==1,'LOCAL_KEY_PLACEHOLDER_MISSING'
-          prefix=b'/** Owner-only editorial jealousy thesis bank:'
-          suffix=b'/** Owner-only editorial notes for all 366 valid day/month pairs'
-          def remove_jealousy_bank(blob):
-              a=blob.index(prefix)
-              b=blob.index(suffix,a)
-              return blob[:a]+b'__JEALOUSY_BANK_EXCLUDED__'+blob[b:]
-          a=local.index(prefix)
-          b=local.index(suffix,a)
-          section=local[a:b]
-          found=re.findall(rb"(?m)^\s*'(\d{2}\.\d{2})'=>\[",section)
-          valid=set()
+          assert original.count(marker)==1 and current.count(marker)==1,'PLACEHOLDER_MISSING'
+          assert b'function rfUnifiedQuestionMeaning(' in current and b'if($unifiedMeaning!==null)' in current,'UNIFIED_ENGINE_MISSING'
+          assert b'function rfJealousyTheses(' in current and b'function rfHeroTheses(' in current,'ORIGINAL_BANKS_MISSING'
+          assert b'function rfCareControlMeaning(' in current,'ORIGINAL_CARE_ENGINE_MISSING'
+          assert b'anthropic/claude-sonnet-4.6' in current,'MODEL_CHANGED'
+          assert b'UNIFIED_BANK_NOT_DEPLOYED' in current,'BANK_VALIDATION_MISSING'
+          assert current.count('готовый_нумерологический_ответ_по_двум_энергиям'.encode())==1,'UNIVERSAL_PROMPT_NOT_UNIQUE'
+          assert b'if(!naTestOwner(naCurrent(naDB())))' in current,'PREVIEW_GUARD_MISSING'
+          php_syntax=subprocess.run(['php','-l'],input=current,capture_output=True)
+          assert php_syntax.returncode==0,('PHP_SYNTAX_INVALID '+php_syntax.stderr.decode(errors='replace')[:250])
+          bank_bytes=Path(json_path).read_bytes()
+          bank=json.loads(bank_bytes)
+          assert bank.get('version')==1 and isinstance(bank.get('questions'),dict),'BANK_SCHEMA_INVALID'
+          expected=set()
           for m in range(1,13):
               for d in range(1,32):
-                  try:datetime.date(2000,m,d)
+                  try: datetime.date(2000,m,d)
                   except ValueError:continue
-                  valid.add(f'{d:02}.{m:02}'.encode())
-          assert len(found)==366 and len(set(found))==366 and set(found)==valid,'JEALOUSY_DATE_BANK_INVALID'
-          for key in (b'09.03',b'09.09',b'09.10',b'31.03',b'15.09'):
-              assert b"'"+key+b"'=>[" in section,'KEY_PAIR_MISSING'
-          assert b'function rfHeroTheses(' in local and b'function rfJealousyTheses(' in local,'OTHER_BANK_MISSING'
-          assert b'anthropic/claude-sonnet-4.6' in local,'WRONG_MODEL'
-          assert 'Ты пишешь женщине о мужчине в рамках вопроса'.encode() in local,'HERO_PROMPT_MISSING'
-          assert 'Ты отвечаешь женщине о мужчине на вопрос'.encode() in local,'JEALOUSY_PROMPT_MISSING'
-          assert b'if(!naTestOwner(naCurrent(naDB())))' in local,'OWNER_PROTECTION_MISSING'
-          assert b"if($autonomousMode){" in local,'OTHER_CATEGORIES_MISSING'
-          # Lint before opening any write connection.
-          syntax=subprocess.run(['php','-l'],input=local,capture_output=True)
-          assert syntax.returncode==0,('PHP_SYNTAX_FAILED '+syntax.stderr.decode(errors='replace')[:300])
-          print('LOCAL_PHP_LINT_OK, DATE_PAIRS=366',flush=True)
+                  expected.add(f'{d:02}.{m:02}')
+          assert len(expected)==366
+          assert set(bank['questions'])=={'flags/care-or-control','flags/hero','flags/jealousy'},'THREE_QUESTIONS_EXPECTED'
+          for question,data in bank['questions'].items():
+              answers=data.get('answers',{})
+              assert set(answers)==expected,('DATE_COVERAGE_BAD '+question)
+              assert len(set(answers.values()))==366,('DUPLICATED_ANSWERS '+question)
+              assert all(isinstance(t,str) and len(t)>=150 for t in answers.values()),('SHORT_ANSWER '+question)
+          print('LOCAL_TESTS_OK 3_QUESTIONS=1 TOTAL_DATE_ANSWERS=1098 PHP_LINT=OK',flush=True)
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
-          ftp.prot_p()
-          ftp.set_pasv(True)
+          ftp.prot_p();ftp.set_pasv(True)
           root=ftp.pwd().rstrip('/')
-          file=root+'/www/xn--c1adkkdfjbp1a4l.online/'+path
+          php_target=root+'/www/xn--c1adkkdfjbp1a4l.online/'+php_path
+          bank_target=root+'/private/numi-account-20261031/redflag-question-banks/'+private_name
           def read(p):
-              b=io.BytesIO()
-              ftp.retrbinary('RETR '+p,b.write)
-              return b.getvalue()
+              buffer=io.BytesIO()
+              try:ftp.retrbinary('RETR '+p,buffer.write)
+              except ftplib.error_perm as e:
+                  if str(e).startswith('550'):return None
+                  raise
+              return buffer.getvalue()
           def write(p,data):
               ftp.storbinary('STOR '+p,io.BytesIO(data))
-              assert read(p)==data,'FTP_READBACK_DIFFERS'
-          def http(endpoint):
-              url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'+endpoint
+              assert read(p)==data,'FTP_READBACK_FAILED'
+          def http(path):
+              url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'+path
               req=urllib.request.Request(url,headers={'Cache-Control':'no-store'})
               try:
                   with urllib.request.urlopen(req,timeout=25) as response:return response.status
-              except urllib.error.HTTPError as error:return error.code
-          old=None;changed=False
+              except urllib.error.HTTPError as e:return e.code
+          old_php=None;old_bank=None;php_changed=False;bank_changed=False
           try:
-              old=read(file)
-              match=re.search(rb"base64_decode\('([^']+)'\s*,true\)",old)
-              assert match is not None,'LIVE_AUTH_MARKER_MISSING'
-              original_key=match.group(1)
-              assert len(base64.b64decode(original_key,validate=True))>12,'LIVE_AUTH_KEY_INVALID'
-              live_template=old[:match.start(1)]+marker+old[match.end(1):]
-              # All live PHP outside this one bank must match byte for byte.
-              assert remove_jealousy_bank(live_template)==remove_jealousy_bank(local),'LIVE_OTHER_CHANGES_DETECTED'
-              new=local.replace(marker,original_key)
-              assert new!=old,'NOTHING_TO_PUBLISH'
-              assert subprocess.run(['php','-l'],input=new,capture_output=True).returncode==0,'DEPLOYED_PHP_LINT_FAILED'
+              old_php=read(php_target)
+              assert old_php,'LIVE_PHP_MISSING'
+              match=re.search(rb"base64_decode\('([^']+)',true\)",old_php)
+              assert match is not None,'LIVE_KEY_LOCATION_UNRECOGNISED'
+              token=match.group(1)
+              assert len(base64.b64decode(token,validate=True))>12,'LIVE_KEY_INVALID'
+              live_template=old_php[:match.start(1)]+marker+old_php[match.end(1):]
+              assert live_template in (original,current),'LIVE_PHP_OTHER_CHANGES_DETECTED'
+              wanted_php=current.replace(marker,token)
+              assert subprocess.run(['php','-l'],input=wanted_php,capture_output=True).returncode==0,'DEPLOYED_PHP_SYNTAX_BAD'
               assert http('')==200,'HOMEPAGE_PRECHECK_FAILED'
-              assert http(path)==403,'OWNER_GUARD_PRECHECK_FAILED'
-              changed=True
-              write(file,new)
-              assert http(path)==403,'OWNER_GUARD_POSTCHECK_FAILED'
+              assert http(php_path)==403,'OWNER_GUARD_PRECHECK_FAILED'
+              old_bank=read(bank_target)
+              assert read(root+'/private/numi-account-20261031/core.php') is not None,'PRIVATE_CORE_MISSING'
+              if old_bank!=bank_bytes:
+                  bank_changed=True
+                  write(bank_target,bank_bytes)
+              if old_php!=wanted_php:
+                  php_changed=True
+                  write(php_target,wanted_php)
+              assert read(bank_target)==bank_bytes,'BANK_READBACK_FAILED'
+              assert read(php_target)==wanted_php,'PHP_READBACK_FAILED'
+              assert http(php_path)==403,'OWNER_GUARD_POSTCHECK_FAILED'
               assert http('')==200,'HOMEPAGE_POSTCHECK_FAILED'
-              assert read(file)==new,'FINAL_PHP_NOT_EQUAL'
-              print('JEALOUSY_366_LIVE_VERIFIED PHP_ONLY=1 AUTH_PRESERVED=1 OTHER_CODE_UNTOUCHED=1 SONNET_NOT_CALLED=1',flush=True)
+              assert http('private/numi-account-20261031/redflag-question-banks/'+private_name) in (403,404),'PRIVATE_BANK_PUBLICLY_EXPOSED'
+              print('PUBLISHED_OK PHP_ONLY_PLUS_PRIVATE_BANK=1 OWNER_GUARD=403 HOMEPAGE=200 PAYMENTS_UNTOUCHED=1',flush=True)
           except BaseException:
-              if changed and old is not None:
+              if php_changed and old_php is not None:
+                  try:write(php_target,old_php);print('PHP_ROLLBACK_OK',flush=True)
+                  except BaseException:print('PHP_ROLLBACK_FAILED',flush=True)
+              if bank_changed:
                   try:
-                      write(file,old)
-                      print('ROLLBACK_RESTORED',flush=True)
-                  except BaseException: print('ROLLBACK_FAILED',flush=True)
+                      if old_bank is None:ftp.delete(bank_target)
+                      else:write(bank_target,old_bank)
+                      print('BANK_ROLLBACK_OK',flush=True)
+                  except BaseException:print('BANK_ROLLBACK_FAILED',flush=True)
               raise
           finally:
               try:ftp.quit()
               except BaseException:ftp.close()
           PY
-      - name: Report result without credentials
+      - name: Publish verified result status
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ "${{ job.status }}" = "success" ]; then
             state=success
-            description="Owner-only jealousy 366 revised bank live; all other PHP unchanged"
+            message="Unified 366-answer banks live for three questions"
           else
             state=failure
-            description="Safe jealousy deployment blocked or rolled back"
+            message="Unified bank deployment blocked or rolled back"
           fi
-          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state="$state" -f context="numi/jealousy-366-live" -f description="$description" >/dev/null
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state="$state" -f context="numi/shared-3q-bank-live" -f description="$message" >/dev/null
