@@ -1,4 +1,4 @@
-name: Fix existing Red Flag Sonnet day-month request compatibility
+name: Publish improved existing Sonnet Red Flag owner prompt
 on:
   push:
     branches: [main]
@@ -32,8 +32,8 @@ jobs:
           js_path='redflag-feature.js'
           app_path='app.js'
           index_path='index.html'
-          php_previous_ref='25d4e7c9b0d2d48bf0a91cfa014b65abfe491892'
-          php_current_ref='81d1e8e7a7b3abdefaddde32384dc1287537cd33'
+          php_previous_ref='81d1e8e7a7b3abdefaddde32384dc1287537cd33'
+          php_current_ref='2ac0496db61ea912488a087d21cf53c314e0a6a9'
           bank_published_ref='748f68c0e3b3ade60afa90ced42858af5897a9dc'
           js_previous_ref='0760bd4c9ff1dd9c60d98e62a4bcfd6c6dcbb5e7'
           js_current_ref='ca91f360dbac350733964bda23d0341a41e8cd03'
@@ -70,7 +70,10 @@ jobs:
           assert b"$autonomousMode=!($category" in wanted_php_template,'SHARED_AUTONOMY_MISSING'
           assert b"if($autonomousMode){" in wanted_php_template,'SHARED_PROMPT_MISSING'
           assert 'полная_дата_рождения_мужчины'.encode('utf-8') in wanted_php_template,'FULL_DATE_NOT_SENT'
-          assert 'Отвечай прямо и точно именно на этот вопрос'.encode('utf-8') in wanted_php_template or 'Ответь прямо и точно именно на этот вопрос'.encode('utf-8') in wanted_php_template,'QUESTION_FIRST_INSTRUCTION_MISSING'
+          assert 'С первой фразы прямо ответь именно на него'.encode('utf-8') in wanted_php_template,'QUESTION_FIRST_INSTRUCTION_MISSING'
+          assert 'СТРОГИЙ ЗАПРЕТ НА РАСКРЫТИЕ РАСЧЁТА'.encode('utf-8') in wanted_php_template,'DATE_LEAK_BLOCK_MISSING'
+          assert '$categoryFocus=['.encode('utf-8') in wanted_php_template,'CATEGORY_FOCUS_MISSING'
+          assert all(("'"+name+"'").encode('utf-8') in wanted_php_template for name in ('flags','infidelity','intimacy','family','language','verdict')),'CATEGORY_FOCUS_INCOMPLETE'
           assert b"if($careMeaning!==null||$autonomousMode)" in wanted_php_template,'DASH_FILTER_INCONSISTENT'
           assert b"PROVIDER_NETWORK_ERROR" in wanted_php_template and b"PROVIDER_TIMEOUT" in wanted_php_template,'PROVIDER_DIAGNOSTICS_MISSING'
           assert b'if($birthYear!==null &&' in wanted_php_template,'MISSING_LEGACY_YEAR_COMPATIBILITY'
@@ -226,7 +229,7 @@ jobs:
               assert read_abs(target_index)==wanted_index,'FINAL_HTML_CONTENT_MISMATCH'
               # Private bank must not be served through the public website.
               assert http('private/numi-account-20261031/redflag-question-banks/care-or-control.json') in (403,404),'PRIVATE_BANK_PUBLICLY_ACCESSIBLE'
-              print('SONNET_EXISTING_HANDLER_COMPATIBILITY_PUBLISHED php_only=true older_day_month_allowed=true full_date_supported=true key_preserved=true owner_only=true payments_untouched=true homepage_200=true inference_calls=0',flush=True)
+              print('SONNET_REDFLAG_PROMPT_PUBLISHED php_only=true six_category_notes=true no_date_calculation_leaks_instruction=true key_preserved=true owner_only=true payments_untouched=true homepage_200=true inference_calls=0',flush=True)
           except BaseException:
               if index_changed and old_index is not None:
                   try:write_abs(target_index,old_index);print('INDEX_ROLLBACK_OK',flush=True)
@@ -250,5 +253,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${{ job.status }}" = "success" ]; then outcome=success; message="Existing Sonnet handler accepts older day-month requests without invented years"; else outcome=failure; message="Sonnet handler update failed; existing handler restored"; fi
+          if [ "${{ job.status }}" = "success" ]; then outcome=success; message="Sonnet Red Flag prompt live: deeper reading, strict no-date wording, six category focuses"; else outcome=failure; message="Sonnet prompt deployment failed; existing PHP rolled back"; fi
           gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state="$outcome" -f context="numi/care-control-bank-regru" -f description="$message" >/dev/null
