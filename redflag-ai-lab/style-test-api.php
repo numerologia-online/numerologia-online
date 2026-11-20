@@ -28,6 +28,63 @@ function rfCloudCall(array $messages,int $tokens): string {
     if(!is_string($text)||trim($text)==='')throw new RuntimeException('EMPTY_ANSWER');
     return trim($text);
 }
+
+/** Fixed editorial conclusion assembled by the site, before the single Sonnet call. */
+function rfCareControlMeaning(array $rules,int $dayEnergy,int $monthEnergy): array {
+    $profiles=$rules['signatures']??null;
+    if(!is_array($profiles)||count($profiles)!==22)throw new RuntimeException('COMBINATION_PROFILES_INVALID');
+    $day=$profiles[(string)$dayEnergy]??null;
+    $month=$profiles[(string)$monthEnergy]??null;
+    if(!is_array($day)||!is_array($month))throw new RuntimeException('COMBINATION_ENERGY_MISSING');
+    $key=$dayEnergy.'.'.$monthEnergy;
+    $pair=$rules['pairs'][$key]??null;
+    $followup=null;
+    if(is_array($pair)&&is_string($pair['meaning']??null)){
+        $meaning=$pair['meaning'];
+        $followup=$pair['followup']??null;
+        $source='pair';
+    }elseif($dayEnergy===$monthEnergy){
+        $meaning=$rules['repeats'][(string)$dayEnergy]??null;
+        $source='repeat';
+    }else{
+        // Both energies contribute equally to the editorial score; no AI involved.
+        $care=(int)$day['care']+(int)$month['care'];
+        $control=(int)$day['control']+(int)$month['control'];
+        $freedom=(int)$day['freedom']+(int)$month['freedom'];
+        if($control>=$care+2&&$control>=$freedom+2){
+            $outcome='Главный вектор — контроль, который может маскироваться под заботу. ';
+        }elseif($freedom>=$care+2&&$freedom>=$control+2){
+            $outcome='Главный вектор — собственная свобода, а не забота и не постоянная слежка. ';
+        }elseif($care>=$control+2&&$care>=$freedom+1){
+            $outcome='Главный вектор — забота, которая не всегда оставляет достаточно пространства. ';
+        }elseif($control>=$care&&$freedom>=$care){
+            $outcome='Главный вектор — двойные стандарты: свобода себе, требования к женщине. ';
+        }elseif($care>=$freedom&&$control>=$freedom){
+            $outcome='Главный вектор — смешение заботы и контроля; его вмешательство легко становится лишним. ';
+        }else{
+            $outcome='Главный вектор — неровная вовлечённость: ни постоянная опека, ни постоянный надзор. ';
+        }
+        $meaning=$outcome.$day['drive'].' Влияние месяца меняет этот мотив так: '.$month['modifier'];
+        $source='scores';
+    }
+    if(!is_string($meaning)||mb_strlen($meaning,'UTF-8')<70)
+        throw new RuntimeException('COMBINATION_MEANING_INVALID');
+    $next=[
+        1=>'flags/hero',2=>'infidelity/secrecy',3=>'language/hurt',
+        4=>'family/roles',5=>'family/roles',6=>'language/accept-love',
+        7=>'family/home',8=>'family/plans',9=>'flags/argument',
+        10=>'family/plans',11=>'flags/abuse-signal',12=>'language/hurt',
+        13=>'family/conflict',14=>'language/how-to-talk',
+        15=>'infidelity/options',16=>'flags/abuse-signal',
+        17=>'language/criticism',18=>'flags/jealousy',19=>'flags/hero',
+        20=>'family/roles',21=>'family/home',22=>'family/plans'
+    ];
+    if($dayEnergy===15)$followup='infidelity/options';
+    if(!is_string($followup)||$followup==='')$followup=$next[$dayEnergy]??null;
+    if(!is_string($followup)||$followup==='')throw new RuntimeException('COMBINATION_REFERRAL_INVALID');
+    return ['meaning'=>$meaning,'followup'=>$followup,'source'=>$source];
+}
+
 try {
     // DEPLOYMENT_HEALTH_SLOT
     if(!naTestOwner(naCurrent(naDB())))rfPreviewReply(403,['ok'=>false,'error'=>'OWNER_ONLY']);
@@ -92,47 +149,6 @@ try {
             $otherTitles[]=$candidate['title'];
         }
     }
-    // Preview question only: narrow referrals to the two energies instead of 53 generic options.
-    if($category['id']==='flags'&&$question['id']==='care-or-control'){
-        $relatedByEnergy=[
-            1=>'flags/hero',
-            2=>'infidelity/secrecy',
-            3=>'language/hurt',
-            4=>'family/roles',
-            5=>'family/roles',
-            6=>'language/accept-love',
-            7=>'family/home',
-            8=>'family/plans',
-            9=>'flags/argument',
-            10=>'family/plans',
-            11=>'flags/abuse-signal',
-            12=>'language/hurt',
-            13=>'family/conflict',
-            14=>'language/how-to-talk',
-            15=>'infidelity/options',
-            16=>'flags/abuse-signal',
-            17=>'language/criticism',
-            18=>'flags/jealousy',
-            19=>'flags/hero',
-            20=>'family/roles',
-            21=>'family/home',
-            22=>'family/plans'
-        ];
-        // A man born on the 15th: editorially recommend the existing fidelity question.
-        $preferredKeys=$day===15
-            ? ['infidelity/options']
-            : array_values(array_unique([$relatedByEnergy[$energy],$relatedByEnergy[$month]]));
-        $specificTitles=[];
-        foreach($catalog['categories'] as $section){
-            foreach($section['questions'] as $candidate){
-                if(in_array($section['id'].'/'.$candidate['id'],$preferredKeys,true))
-                    $specificTitles[]=$candidate['title'];
-            }
-        }
-        if(count($specificTitles)!==count($preferredKeys))
-            throw new RuntimeException('RELATED_QUESTION_MISSING_FROM_CATALOG');
-        $otherTitles=$specificTitles;
-    }
     $system='Ты нумеролог, пишешь женщине о мужчине, чью дату она ввела. Это дата мужчины, не читательницы. Твоя задача состоит в ответе на один заданный вопрос, а не в описании личности.
 
 Основа внутреннего разбора это система 22 энергий матрицы судьбы. Энергии дня и месяца влияют на вывод равнозначно. Отдельно осмысли обе применительно к этому вопросу, затем покажи единое поведение, которое рождается из их сочетания. Не выбирай одну главной и не пересказывай трактовки по очереди. Если смена месяца ничего не меняет в выводе, пересмотри сочетание. Не описывай весь психологический портрет в каждом вопросе. В готовом тексте показывай только относящиеся к вопросу поведение, мотив и риск, без упоминания расчётов, энергий, не уточняй когда человек родился, отвечай простым человеческим языком. Не описывай свои внутренние шаги разбора, числа, названия энергий и объяснения методики.
@@ -143,24 +159,40 @@ try {
 Тон яркий, живой, человеческий, дерзкий, цепляющий, местами вызывающий, с лёгкой уместной иронией. Пиши как умная наблюдательная подруга, которая умеет назвать вещи своими именами и заметить смешную нелепость в поступке. Обращайся на ты уважительно, без фамильярности, сюсюканья, обращений «дорогая», «подружка», «девочка» и без мата. Иронизируй над конкретным поведением мужчины, а не над читательницей. Одного точного остроумного наблюдения достаточно, если оно действительно вытекает из ответа. Не вставляй шутку насильно. Сначала смысл и конкретный ответ, затем выразительность. Пиши простыми разговорными словами, чередуй короткие и средние предложения. Вплетай узнаваемые бытовые детали прямо в повествование, без объявления примеров и лекционного тона. Избегай канцелярита и тяжеловесной психологической терминологии. Не повторяй одинаковые остроумные фразы в разных ответах. Никаких чисел, числительных о дате, названий энергий, арканов или описания расчёта в готовом тексте. Не используй обозначения вроде «двойная девятка», «энергия дня», «энергия месяца», «люди такого числа», «его энергия». Не называй себя и методику.
 
 Форма - только два обычных абзаца, без заголовков, списков, кавычек, двоеточий и длинных и коротких тире. Строй предложения с запятыми и точками, чтобы эти знаки не требовались. Перед отправкой молча проверь, что первая фраза отвечает на вопрос, далее нет общего портрета и упоминаний расчёта, а два абзаца соблюдены. Верни только готовый ответ.';
-    // Tight question-only guidance; preserve restored live writing style.
-    // Question-specific reference overrides the generic energy guide ONLY for this question.
-    $dayGuide=$energyDescriptions[$energy];
-    $monthGuide=$energyDescriptions[$month];
+    // Owner-only question-specific conclusion, before the only model request.
+    $careMeaning=null;
     if($category['id']==='flags'&&$question['id']==='care-or-control'){
         $bankPath=dirname(__DIR__,3).'/private/numi-account-20261031/redflag-question-banks/care-or-control.json';
         if(!is_file($bankPath))throw new RuntimeException('QUESTION_REFERENCE_NOT_DEPLOYED');
-        $bank=json_decode((string)file_get_contents($bankPath),true,20,JSON_THROW_ON_ERROR);
-        if(($bank['question_id']??'')!=='care-or-control'||count($bank['energies']??[])!==22)
+        $bank=json_decode((string)file_get_contents($bankPath),true,24,JSON_THROW_ON_ERROR);
+        if(($bank['question_id']??'')!=='care-or-control'||($bank['version']??0)!==3)
             throw new RuntimeException('QUESTION_REFERENCE_INVALID');
-        $dayGuide=$bank['energies'][(string)$energy]??null;
-        $monthGuide=$bank['energies'][(string)$month]??null;
-        if(!is_string($dayGuide)||!is_string($monthGuide)||mb_strlen($dayGuide)<100||mb_strlen($monthGuide)<100)
-            throw new RuntimeException('QUESTION_REFERENCE_INCOMPLETE');
-        $system.='
+        $careMeaning=rfCareControlMeaning($bank['combination_rules']??[],$energy,$month);
+        $selected=$careMeaning['followup'];
+        $matches=[];
+        foreach($catalog['categories'] as $section){
+            foreach($section['questions'] as $candidate){
+                if($section['id'].'/'.$candidate['id']===$selected)$matches[]=$candidate['title'];
+            }
+        }
+        if(count($matches)!==1)throw new RuntimeException('RELATED_QUESTION_MISSING_FROM_CATALOG');
+        $otherTitles=$matches;
+        // Simple original-style instruction: the site determines meaning, Sonnet writes.
+        $system='Ты нумеролог, разговариваешь с женщиной о мужчине, чью дату она ввела. Пиши, как умная, наблюдательная подруга: тепло, живо, с характером и лёгкой дерзостью. Без сухих советов и психологических лекций.
 
-ТОЛЬКО ДЛЯ ВОПРОСА О ЗАБОТЕ И КОНТРОЛЕ. Две краткие трактовки дня и месяца относятся исключительно к этому вопросу. Обе равнозначны: мысленно сопоставь их мотивы и способы проявления, найди, что они усиливают, меняют или ограничивают друг в друге, и сделай один конкретный вывод. Не складывай две готовые фразы и не своди мужчину к одной энергии. Два одинаковых значения усиливают характерную тенденцию, включая тень. Не придумывай биографию, неподтверждённые события, слежку или измены; бытовые детали допускаются как краткие возможные примеры, не как факты. Забота и контроль должны быть рассмотрены именно через границы, самостоятельность и решения женщины. Не подменяй контроль обычным выбором ресторана. Если сочетание показывает слабую вовлечённость, прямо скажи, что он скорее занят собой и не склонен ни опекать, ни следить, вместо искусственной истории о ревнивом допросе. Во втором абзаце выбирай только вопрос из переданного короткого списка, а когда вопрос один, рекомендуй именно его. Не выбирай наказание молчанием просто по привычке. Никаких звёздочек и Markdown-разметки.';
+Сайт уже соединил энергии его дня и месяца и передал тебе единый смысл. Не разбирай числа заново, не исправляй вывод и не подмешивай противоположные черты ради красивого баланса. Раскрой именно этот смысл человеческими словами. Это символическая трактовка возможного поведения, а не достоверное описание поступков.
+
+С первой фразы ответь на вопрос. Потом покажи, что это означает для женщины, через два или три узнаваемых жизненных проявления. Пиши интересно, конкретно, иногда остроумно, без надуманной биографии, длинных поучений и повторения одной мысли. Не используй готовые шаблоны сценок. Два абзаца вместе около 1000–1200 знаков. Большую часть отдай первому.
+
+Во втором абзаце, словно продолжая разговор, тепло и интригующе предложи указанный следующий вопрос. Не рекламируй сухо и не повторяй одну и ту же фразу «На твоём месте я бы» в каждом ответе. Тон лёгкий, естественный, читательнице должно хотеться узнать продолжение. Никаких упоминаний энергий, чисел и методики. Обычная проза без заголовков и Markdown. Верни только два абзаца.';
     }
+    if($careMeaning!==null){
+        $user=json_encode([
+            'вопрос_женщины'=>$question['title'],
+            'готовый_вывод_двух_энергий'=>$careMeaning['meaning'],
+            'следующий_вопрос_для_рекомендации'=>$otherTitles[0]
+        ],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
+    }else{
     $user=json_encode([
         'вопрос_женщины'=>$question['title'],
         'внутренние_данные_о_мужчине_не_повторять_в_ответе'=>[
@@ -171,14 +203,10 @@ try {
         ],
         'варианты_вопроса_для_короткого_продолжения'=>$otherTitles
     ],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
+    }
     $answer=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$user]],1600);
-    // Enforce the requested punctuation without another model call.
-    $answer=preg_replace('/\\h*[–—―]\\h*/u', ', ', $answer)??$answer;
-    $answer=preg_replace('/([,.;:!?])\\h*,\\h*/u', '$1 ', $answer)??$answer;
-    $answer=str_replace(['**','__'],'',$answer); // Remove visible Markdown markers.
-    // Preserve both complete paragraphs. The model owns the 1000–1200-character target;
-    // do not cut mid-thought or remove the warmer recommendation.
-    $answer=trim(preg_replace('/\R{3,}/u',"\n\n",$answer)??$answer);
+    // Preserve natural punctuation and the complete two-paragraph text.
+    $answer=trim(str_replace(['**','__'],'',$answer));
     session_write_close();
     rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
         'category'=>$category['id'],'question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
