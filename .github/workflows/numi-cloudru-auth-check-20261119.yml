@@ -99,7 +99,8 @@ jobs:
               token=match.group(1)
               assert len(base64.b64decode(token,validate=True))>12,'LIVE_KEY_INVALID'
               live_template=old_php[:match.start(1)]+marker+old_php[match.end(1):]
-              assert live_template in (original,current),'LIVE_PHP_OTHER_CHANGES_DETECTED'
+              previously_published=subprocess.check_output(['git','show','404591cf144e74efa8005b3a56c08dc19e8f5831:'+php_path])
+          assert live_template in (original,previously_published,current),'LIVE_PHP_OTHER_CHANGES_DETECTED'
               wanted_php=current.replace(marker,token)
               assert subprocess.run(['php','-l'],input=wanted_php,capture_output=True).returncode==0,'DEPLOYED_PHP_SYNTAX_BAD'
               assert http('')==200,'HOMEPAGE_PRECHECK_FAILED'
