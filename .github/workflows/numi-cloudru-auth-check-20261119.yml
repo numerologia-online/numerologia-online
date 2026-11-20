@@ -1,4 +1,4 @@
-name: Tune Sun-19 care, day-31 October planning and punctuation in Sonnet preview
+name: Publish approved 22 energies for care versus control to REG.RU preview
 on:
   push:
     branches: [main]
@@ -29,9 +29,9 @@ jobs:
           from pathlib import Path
           php_path='redflag-ai-lab/style-test-api.php'
           bank_source='redflag-ai-lab/banks/care-or-control.json'
-          php_previous_ref='8695e177448ba1db29f1d186a2b010e74bd002c8'
-          php_current_ref='2b4061832e96b612dea9e3e0a151829790ba6d0e'
-          bank_previous_ref='c9693bdb1ac762b2826e60c56e6d7863d5611fa5'
+          php_previous_ref='2b4061832e96b612dea9e3e0a151829790ba6d0e'
+          php_current_ref='f2828f4faec57db2fc6233690785317c4cc61cfc'
+          bank_previous_ref='c2e52bc60a20c7848b84f028fe844907de547af4'
           marker=b'__CLOUDRU_KEY_BASE64__'
           previous_php_template=subprocess.check_output(['git','show',php_previous_ref+':'+php_path])
           wanted_php_template=subprocess.check_output(['git','show',php_current_ref+':'+php_path])
@@ -53,12 +53,21 @@ jobs:
           bank_previous_bytes=subprocess.check_output(['git','show',bank_previous_ref+':'+bank_source])
           assert bank_bytes!=bank_previous_bytes,'BANK_NOT_CHANGED'
           bank=json.loads(bank_bytes)
-          assert bank['question_id']=='care-or-control' and bank['category_id']=='flags'
+          assert bank['question_id']=='care-or-control' and bank['category_id']=='flags' and bank['version']==4
           assert len(bank['energies'])==22 and set(bank['energies'].keys())=={str(n) for n in range(1,23)}
           assert all(isinstance(v,str) and len(v)>=140 for v in bank['energies'].values())
           rules=bank['combination_rules']
           assert bank['version']==3 and len(rules['signatures'])==22 and len(rules['repeats'])==12
           assert len(rules['pairs'])>=7
+          assert set(rules['signatures'])=={str(n) for n in range(1,23)}
+          assert set(rules['repeats'])=={str(n) for n in range(1,13)}
+          assert all(0<=v[k]<=4 for v in rules['signatures'].values() for k in ('care','control','freedom'))
+          assert all(v['drive'] and v['modifier'] for v in rules['signatures'].values())
+          assert rules['signatures']['9']['control']>rules['signatures']['9']['care'],'NINE_MUST_CONSIDER_CONTROL_CARE'
+          assert rules['signatures']['19']['care']>rules['signatures']['19']['control'],'SUN_MUST_BE_CARING'
+          assert all(rules['signatures'][str(n)]['care']>rules['signatures'][str(n)]['control'] for n in (1,2,3,4,5,6,8,11,12,14,17,19,20,21,22)),'CARE_BIAS_NOT_FIXED'
+          assert rules['signatures']['7']['freedom']>rules['signatures']['7']['control']
+          assert rules['signatures']['15']['freedom']>rules['signatures']['15']['control']
           assert rules['signatures']['19']['care']==4 and rules['signatures']['19']['control']==1,'SUN_19_NOT_CARING'
           assert rules['pairs']['19.1']['followup']=='language/show-love','SUN_PLUS_ONE_REFERRAL_INCORRECT'
           assert rules['calendar_day_overrides']['31.10']['followup']=='family/roles','CALENDAR_31_10_OVERRIDE_MISSING'
@@ -74,9 +83,9 @@ jobs:
               '9.3'=>['Контроль через опеку','language/hurt'],
               '9.7'=>['Двойные стандарты свободы','family/home'],
               '15.7'=>['Не контролёр и не заботливый опекун','infidelity/options'],
-              '3.6'=>['Тёплая опека становится слишком тесной','language/accept-love'],
+              '3.6'=>['Главная линия сочетания','language/accept-love'],
               '13.6'=>['Потребность в близости сталкивается','family/conflict'],
-              '4.10'=>['Он хочет устанавливать правила','family/roles'],
+              '4.10'=>['Забота через продуманные решения','family/roles'],
               '19.1'=>['Забота у него тёплая','language/show-love']
           ];
           foreach($cases as $key=>$expect){
@@ -100,7 +109,7 @@ jobs:
           }
           if(rfCareControlMeaning($rules,9,9)['source']!=='pair')
               throw new Exception('REPEATED_NINE_MISSING');
-          echo "DAY_MONTH_RULES_OK total=264 priority_cases=8 calendar_31_10=true sun_19_1=true\\n";
+          echo "DAY_MONTH_RULES_OK total=264 approved_energies=22 care_direction_checked=true calendar_31_10=true sun_19_1=true\\n";
           """
           preflight=subprocess.run(['php','-r',test_php],capture_output=True,text=True)
           assert preflight.returncode==0,('PHP_MEANING_TEST_FAILED '+preflight.stderr[:1000])
@@ -165,7 +174,7 @@ jobs:
               assert read_abs(target_bank)==bank_bytes and read_abs(target_php)==wanted_php,'FINAL_CONTENT_MISMATCH'
               # Private bank must not be served through the public website.
               assert http('private/numi-account-20261031/redflag-question-banks/care-or-control.json') in (403,404),'PRIVATE_BANK_PUBLICLY_ACCESSIBLE'
-              print('SUN_19_AND_DAY_31_10_TUNING_PUBLISHED energies=22 day_month_both=true warm_second_paragraph=true full_length=true 15_birth_referral=infidelity_options bank_private=true key_preserved=true owner_only=true other_files_identical=true homepage_200=true inference_calls=0',flush=True)
+              print('APPROVED_22_CARE_CONTROL_ENERGIES_PUBLISHED energies=22 day_month_both=true warm_second_paragraph=true full_length=true 15_birth_referral=infidelity_options bank_private=true key_preserved=true owner_only=true other_files_identical=true homepage_200=true inference_calls=0',flush=True)
           except BaseException:
               if php_changed and old_php is not None:
                   try:write_abs(target_php,old_php);print('PHP_ROLLBACK_OK',flush=True)
@@ -189,5 +198,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${{ job.status }}" = "success" ]; then outcome=success; message="Sun 19 warmth, day 31 October and dash removal released"; else outcome=failure; message="Care-control tuning deployment failed; see logs"; fi
+          if [ "${{ job.status }}" = "success" ]; then outcome=success; message="Approved 22 care/control energies deployed to Sonnet preview"; else outcome=failure; message="Care/control energy bank release failed; see logs"; fi
           gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state="$outcome" -f context="numi/care-control-bank-regru" -f description="$message" >/dev/null
