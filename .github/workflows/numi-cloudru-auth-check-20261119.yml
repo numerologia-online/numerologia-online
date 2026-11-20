@@ -28,6 +28,12 @@ jobs:
           python3 -u - <<'PY'
           import ftplib,io,os,ssl,subprocess,urllib.request,urllib.error,re,base64,json
           from pathlib import Path
+          def progress(stage,success=True):
+              subprocess.run(['gh','api','--method','POST',
+                  'repos/'+os.environ.get('GITHUB_REPOSITORY','')+'/statuses/'+os.environ.get('GITHUB_SHA',''),
+                  '-f','state='+('success' if success else 'failure'),
+                  '-f','context=numi/hero-stage',
+                  '-f','description='+stage],capture_output=True)
           php_path='redflag-ai-lab/style-test-api.php'
           bank_source='redflag-ai-lab/banks/care-or-control.json'
           js_path='redflag-feature.js'
@@ -44,6 +50,7 @@ jobs:
           previous_php_template=subprocess.check_output(['git','show',php_previous_ref+':'+php_path])
           wanted_php_template=subprocess.check_output(['git','show',php_current_ref+':'+php_path])
           assert Path(php_path).read_bytes()==wanted_php_template,'UNEXPECTED_PHP_SOURCE'
+          progress('SOURCE_READY')
           previous_js=subprocess.check_output(['git','show',js_previous_ref+':'+js_path])
           wanted_js=subprocess.check_output(['git','show',js_current_ref+':'+js_path])
           previous_app=subprocess.check_output(['git','show',app_previous_ref+':'+app_path])
@@ -123,6 +130,7 @@ jobs:
           assert rules['signatures']['19']['care']==4 and rules['signatures']['19']['control']==0,'SUN_19_NOT_CARING'
           assert rules['pairs']['19.1']['followup']=='language/show-love','SUN_PLUS_ONE_REFERRAL_INCORRECT'
           assert rules['calendar_day_overrides']['31.10']['followup']=='family/roles','CALENDAR_31_10_OVERRIDE_MISSING'
+          progress('STATIC_CHECKS_PASSED')
           # Run every possible day-energy / month combination in PHP before touching REG.RU.
           code=wanted_php_template.decode('utf-8')
           fn_start=code.index('/** Owner-only editorial notes for all 366 valid day/month pairs')
@@ -186,8 +194,13 @@ jobs:
           echo "DAY_MONTH_RULES_OK total=264 approved_energies=22 care_direction_checked=true calendar_31_10=true sun_19_1=true\\n";
           """
           preflight=subprocess.run(['php','-r',test_php],capture_output=True,text=True)
+          if preflight.returncode!=0:
+              err=preflight.stderr
+              label='PHP_PARSE_ERROR' if 'Parse error' in err else ('PHP_FATAL_ERROR' if 'Fatal error' in err else 'PHP_TEST_FAILED')
+              progress(label,False)
           assert preflight.returncode==0,('PHP_MEANING_TEST_FAILED '+preflight.stderr[:1000])
           print(preflight.stdout.strip(),flush=True)
+          progress('PHP_MEANING_TEST_PASSED')
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
