@@ -366,7 +366,8 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
       const response=await fetch("/redflag-ai-lab/style-test-api.php",{
         method:"POST",credentials:"same-origin",cache:"no-store",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({category,question_id:id,day:birth.day,month:birth.month}),
+        body:JSON.stringify({category,question_id:id,day:birth.day,month:birth.month,
+          ...(category==="flags"&&id==="hero"?{year:birth.year}:{})}),
         signal:AbortSignal.timeout(65000)
       });
       const data=await response.json();
