@@ -21,7 +21,12 @@ function rfCloudCall(array $messages,int $tokens): string {
             'messages'=>$messages,'max_tokens'=>$tokens,'stream'=>false],
             JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)
     ]);
-    $body=curl_exec($ch);$status=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE);curl_close($ch);
+    $body=curl_exec($ch);
+    $status=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE);
+    $curlCode=curl_errno($ch);
+    curl_close($ch);
+    if($curlCode===28)throw new RuntimeException('PROVIDER_TIMEOUT');
+    if($curlCode!==0)throw new RuntimeException('PROVIDER_NETWORK_ERROR');
     if($status!==200||!is_string($body))throw new RuntimeException('PROVIDER_HTTP_'.$status);
     $data=json_decode($body,true,32,JSON_THROW_ON_ERROR);
     $text=$data['choices'][0]['message']['content']??null;
@@ -110,13 +115,15 @@ try {
     $day=$input['day']??null;$month=$input['month']??null;
     if(!is_int($day)||!is_int($month)||!checkdate($month,$day,2000))
         rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_DATE']);
-    // New owner-only experiment: independent full-birth-date Matrix of Destiny reading.
-    $autonomousHero=$category['id']==='flags'&&$question['id']==='hero';
-    $heroBirthYear=null;
-    if($autonomousHero){
-        $heroBirthYear=$input['year']??null;
-        if(!is_int($heroBirthYear)||$heroBirthYear<1900||$heroBirthYear>(int)gmdate('Y')||
-           !checkdate($month,$day,$heroBirthYear))
+    // Shared autonomous Sonnet preview for every question except the editorial
+    // care-or-control bank. "Уважает женское нет" remains the separate ready text.
+    // Owner-only: the paid customer path is intentionally untouched.
+    $autonomousMode=!($category['id']==='flags'&&$question['id']==='care-or-control');
+    $birthYear=null;
+    if($autonomousMode){
+        $birthYear=$input['year']??null;
+        if(!is_int($birthYear)||$birthYear<1900||$birthYear>(int)gmdate('Y')||
+           !checkdate($month,$day,$birthYear))
             rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_FULL_BIRTH_DATE']);
     }
     // Session lock prevents concurrent model requests from repeated taps.
@@ -197,25 +204,27 @@ try {
 
 Во втором абзаце, словно продолжая разговор, тепло и интригующе предложи указанный следующий вопрос. Не рекламируй сухо и не повторяй одну и ту же фразу «На твоём месте я бы» в каждом ответе. Тон лёгкий, естественный, читательнице должно хотеться узнать продолжение. Никаких упоминаний энергий, чисел и методики. Обычная проза без заголовков и Markdown. Не используй длинное или среднее тире, перестраивай фразы с точками и запятыми. Верни только два абзаца.';
     }
-    if($autonomousHero){
-        // Unlike care-or-control, there are no hand-authored energy hints, score
-        // tables, pair conclusions, or fixed numerological calculations here.
-        // Sonnet sees the man's full birthday and decides how to interpret it.
-        $system='Ты опытный нумеролог, глубоко знаешь Матрицу судьбы и систему 22 энергий. Ты умеешь самостоятельно рассчитывать и интерпретировать дату рождения, находить сочетания и тонкие нюансы, отвечать как настоящий специалист на самые разные вопросы о человеке. Перед тобой полная дата рождения мужчины. Самостоятельно выбери всё, что считаешь важным для ответа. Не ограничивай свой разбор только днём и месяцем, если другие показатели помогают понять именно этот вопрос.
+    if($autonomousMode){
+        // One shared, short editorial instruction for all other 53 catalog questions.
+        // No preselected energies, conclusions or topic-specific restrictions.
+        $system='Ты опытный нумеролог, глубоко знаешь Матрицу судьбы и систему 22 энергий. Ты умеешь самостоятельно рассчитывать и интерпретировать полную дату рождения, видеть сочетания и тонкости человека. Используй те показатели даты, которые действительно помогают ответить на поставленный вопрос, и не ограничивайся одним числом.
 
-Твоя задача: ответить одной женщине о мужчине, чья дата указана. Сначала ясно скажи, скромен ли он, или ему нравится считать себя особенным подарком миру. Затем раскрой узнаваемый характер через точные наблюдения, лёгкую иронию и живые примеры возможного поведения. Не нужно обязательно искать в мужчине ни достоинства, ни недостатки. Пусть трактовка следует твоему нумерологическому разбору, а не заранее заданному выводу.
+Перед тобой конкретный вопрос женщины о мужчине, дата рождения которого указана. Ответь прямо и точно именно на этот вопрос с первой фразы. Не описывай его характер целиком, жизнь, судьбу, карьеру, детство или отношения вообще, если это не относится к вопросу. Не придумывай биографию, события и реальные поступки мужчины. Не делай всех мужчин ни прекрасными, ни опасными: вывод зависит от нумерологического прочтения конкретной даты.
 
-Пиши по-русски как остроумная, наблюдательная женщина другой женщине. Легко, тепло, местами весело и чуть дерзко. Чтобы текст хотелось дочитать и узнать продолжение. Без сухого анализа, занудства, тяжёлых нравоучений и общих штампов. Около 1000–1200 знаков, ровно два абзаца. В первом сам ответ, во втором естественная интригующая рекомендация одного следующего вопроса из списка, с точным его названием. Не повторяй одну и ту же заготовку вступления.
+Пиши живо и легко, словно наблюдательная и остроумная подруга говорит с другой женщиной. Можно немного пошутить, быть смелой и дерзкой, но не грубой. Избегай воды, повторения одной мысли, назидательности и одинаковых шаблонов. Дай узнаваемые вероятные проявления именно ответа на этот вопрос. Два абзаца на русском языке, всего примерно 1000–1200 знаков. Основной разбор в первом; во втором непринуждённо и с интересом предложи ровно один следующий вопрос из переданного списка, назвав его точно. Не рекламируй механически и не повторяй одинаковые начала.
 
-Не рассказывай, как ты считала, не упоминай в готовом ответе числа, арканы, энергии и названия расчётов. Не выдавай воображаемые события за факты из жизни конкретного мужчины: это нумерологическая трактовка, не свидетельство. Без заголовков, списков, Markdown и длинных тире. Верни только два абзаца.';
-        $heroNextTitles=[];
-        foreach($category['questions'] as $related){
-            if($related['id']!==$question['id'])$heroNextTitles[]=$related['title'];
+Никаких расчётов, названий энергий и арканов, формул или объяснения методики в готовом ответе. Не упоминай год, день или месяц рождения. Никаких заголовков, списков, Markdown и длинных тире. Верни только два абзаца.';
+        $nextTitles=[];
+        foreach($catalog['categories'] as $section){
+            foreach($section['questions'] as $candidate){
+                if($section['id']===$category['id']&&$candidate['id']===$question['id'])continue;
+                $nextTitles[]=$candidate['title'];
+            }
         }
         $user=json_encode([
-            'вопрос_о_мужчине'=>$question['title'],
-            'полная_дата_рождения_мужчины'=>sprintf('%02d.%02d.%04d',$day,$month,$heroBirthYear),
-            'вопросы_для_естественного_продолжения'=>$heroNextTitles
+            'заданный_вопрос'=>$question['title'],
+            'полная_дата_рождения_мужчины'=>sprintf('%02d.%02d.%04d',$day,$month,$birthYear),
+            'другие_вопросы_для_одной_рекомендации'=>$nextTitles
         ],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
     }elseif($careMeaning!==null){
         $user=json_encode([
@@ -238,8 +247,8 @@ try {
     $answer=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$user]],1600);
     // Preserve natural punctuation and the complete two-paragraph text.
     $answer=trim(str_replace(['**','__'],'',$answer));
-    if($careMeaning!==null||$autonomousHero){
-        // Editorial punctuation preference for only the two owner-preview questions, no new AI call.
+    if($careMeaning!==null||$autonomousMode){
+        // Editorial punctuation preference for all owner-preview questions, no new AI call.
         $answer=preg_replace('/\\h*[—–―]\\h*/u', ', ', $answer)??$answer;
         $answer=preg_replace('/,\\h*,/u', ', ', $answer)??$answer;
     }
@@ -249,6 +258,15 @@ try {
         'answer'=>$answer,'model'=>'anthropic/claude-sonnet-4.6']);
 } catch(Throwable $e) {
     if(session_status()===PHP_SESSION_ACTIVE)session_write_close();
-    error_log('REDFLAG_CLOUDRU:'.get_class($e).':'.$e->getMessage());
-    rfPreviewReply(503,['ok'=>false,'error'=>'GENERATION_UNAVAILABLE']);
+    $reason=$e->getMessage();
+    error_log('REDFLAG_CLOUDRU:'.get_class($e).':'.$reason);
+    // Only well-defined error codes are exposed to this verified owner.
+    // Do not echo raw provider messages or any private configuration values.
+    $safeReasons=[
+        'PROVIDER_TIMEOUT','PROVIDER_NETWORK_ERROR','KEY_NOT_CONFIGURED',
+        'EMPTY_ANSWER','INVALID_FULL_BIRTH_DATE','QUESTION_REFERENCE_INVALID'
+    ];
+    $ownerError=in_array($reason,$safeReasons,true)||preg_match('/^PROVIDER_HTTP_[0-9]{3}$/D',$reason)===1
+        ?$reason:'GENERATION_UNAVAILABLE';
+    rfPreviewReply(503,['ok'=>false,'error'=>$ownerError]);
 }
