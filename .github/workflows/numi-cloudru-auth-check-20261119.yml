@@ -22,6 +22,7 @@ jobs:
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python3 -u - <<'PY'
@@ -257,7 +258,14 @@ jobs:
               # Private bank must not be served through the public website.
               assert http('private/numi-account-20261031/redflag-question-banks/care-or-control.json') in (403,404),'PRIVATE_BANK_PUBLICLY_ACCESSIBLE'
               print('SONNET_HERO_366_THESIS_PUBLISHED php_only=true owner_only=true first_question_unchanged=true other_52_ai_questions_unchanged=true key_preserved=true payments_untouched=true homepage_200=true inference_calls=0',flush=True)
-          except BaseException:
+          except BaseException as exc:
+              # Expose a short safe failure code in GitHub commit status, no secrets or logs.
+              match=re.search(r'[A-Z][A-Z0-9_]{5,}',str(exc))
+              code=(match.group(0) if match else type(exc).__name__.upper())[:70]
+              subprocess.run(['gh','api','--method','POST',
+                  'repos/'+os.environ.get('GITHUB_REPOSITORY','')+'/statuses/'+os.environ.get('GITHUB_SHA',''),
+                  '-f','state=failure','-f','context=numi/hero-preflight',
+                  '-f','description='+code],capture_output=True)
               if index_changed and old_index is not None:
                   try:write_abs(target_index,old_index);print('INDEX_ROLLBACK_OK',flush=True)
                   except BaseException:print('INDEX_ROLLBACK_FAILED',flush=True)
