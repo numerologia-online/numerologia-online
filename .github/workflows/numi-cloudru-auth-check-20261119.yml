@@ -193,7 +193,7 @@ jobs:
               throw new Exception('REPEATED_NINE_MISSING');
           echo "DAY_MONTH_RULES_OK total=264 approved_energies=22 care_direction_checked=true calendar_31_10=true sun_19_1=true\\n";
           """
-          preflight=subprocess.run(['php','-r',test_php],capture_output=True,text=True)
+          preflight=subprocess.run(['php'],input=chr(60)+'?php\n'+test_php,capture_output=True,text=True)
           if preflight.returncode!=0:
               err=preflight.stderr
               label='PHP_PARSE_ERROR' if 'Parse error' in err else ('PHP_FATAL_ERROR' if 'Fatal error' in err else 'PHP_TEST_FAILED')
