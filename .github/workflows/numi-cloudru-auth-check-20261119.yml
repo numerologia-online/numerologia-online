@@ -32,7 +32,7 @@ jobs:
               subprocess.run(['gh','api','--method','POST',
                   'repos/'+os.environ.get('GITHUB_REPOSITORY','')+'/statuses/'+os.environ.get('GITHUB_SHA',''),
                   '-f','state='+('success' if success else 'failure'),
-                  '-f','context=numi/hero-stage',
+                  '-f','context=numi/hero-'+stage,
                   '-f','description='+stage],capture_output=True)
           php_path='redflag-ai-lab/style-test-api.php'
           bank_source='redflag-ai-lab/banks/care-or-control.json'
