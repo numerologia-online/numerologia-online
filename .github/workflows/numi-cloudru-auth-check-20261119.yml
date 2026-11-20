@@ -60,7 +60,7 @@ jobs:
           # Run every possible day-energy / month combination in PHP before touching REG.RU.
           code=wanted_php_template.decode('utf-8')
           fn_start=code.index('/** Fixed editorial conclusion')
-          fn_end=code.index('\\ntry {',fn_start)
+          fn_end=code.index('try {',fn_start)
           test_php=code[fn_start:fn_end]+"""
           $bank=json_decode(file_get_contents('redflag-ai-lab/banks/care-or-control.json'),true);
           $rules=$bank['combination_rules'];
