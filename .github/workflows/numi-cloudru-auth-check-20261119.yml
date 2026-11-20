@@ -42,7 +42,7 @@ jobs:
           assert b'RELATED_QUESTION_MISSING_FROM_CATALOG' in wanted_php_template,'FOLLOWUP_SELECTION_MISSING'
           assert b'function rfCareControlMeaning' in wanted_php_template,'COMBINATION_ENGINE_MISSING'
           assert b"'calendar_day'" in wanted_php_template,'EXACT_DAY_OVERRIDE_MISSING'
-          assert b"preg_replace('/\\\\h*[—–―]" not in wanted_php_template or b'calendar_day' in wanted_php_template
+          assert 'Не используй длинное или среднее тире'.encode('utf-8') in wanted_php_template,'DASH_PROMPT_MISSING'
           assert 'готовый_вывод_двух_энергий'.encode() in wanted_php_template,'COMBINED_RESULT_NOT_PASSED'
           assert b'infidelity/options' in wanted_php_template,'FIDELITY_REFERRAL_MISSING'
           assert '1000–1200 знаков'.encode('utf-8') in wanted_php_template,'OLD_LIVE_STYLE_NOT_RESTORED'
