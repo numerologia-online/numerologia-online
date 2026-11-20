@@ -1,4 +1,4 @@
-name: Publish approved 22 energies for care versus control to REG.RU preview
+name: Deploy autonomous Sonnet numerologist for Red Flag hero owner preview
 on:
   push:
     branches: [main]
@@ -29,18 +29,43 @@ jobs:
           from pathlib import Path
           php_path='redflag-ai-lab/style-test-api.php'
           bank_source='redflag-ai-lab/banks/care-or-control.json'
-          php_previous_ref='2b4061832e96b612dea9e3e0a151829790ba6d0e'
-          php_current_ref='f2828f4faec57db2fc6233690785317c4cc61cfc'
-          bank_previous_ref='c2e52bc60a20c7848b84f028fe844907de547af4'
+          js_path='redflag-feature.js'
+          app_path='app.js'
+          php_previous_ref='f2828f4faec57db2fc6233690785317c4cc61cfc'
+          php_current_ref='8fc0cd2181dd2180b322c3612336299cd13cd3c9'
+          bank_published_ref='748f68c0e3b3ade60afa90ced42858af5897a9dc'
+          js_previous_ref='748f68c0e3b3ade60afa90ced42858af5897a9dc'
+          js_current_ref='0760bd4c9ff1dd9c60d98e62a4bcfd6c6dcbb5e7'
+          app_previous_ref='748f68c0e3b3ade60afa90ced42858af5897a9dc'
+          app_current_ref='d1f0e76468dd74cc58e9c699105a6ac8e38f86c0'
           marker=b'__CLOUDRU_KEY_BASE64__'
           previous_php_template=subprocess.check_output(['git','show',php_previous_ref+':'+php_path])
           wanted_php_template=subprocess.check_output(['git','show',php_current_ref+':'+php_path])
           assert Path(php_path).read_bytes()==wanted_php_template,'UNEXPECTED_PHP_SOURCE'
+          previous_js=subprocess.check_output(['git','show',js_previous_ref+':'+js_path])
+          wanted_js=subprocess.check_output(['git','show',js_current_ref+':'+js_path])
+          previous_app=subprocess.check_output(['git','show',app_previous_ref+':'+app_path])
+          wanted_app=subprocess.check_output(['git','show',app_current_ref+':'+app_path])
+          assert Path(js_path).read_bytes()==wanted_js,'UNEXPECTED_JS_SOURCE'
+          assert Path(app_path).read_bytes()==wanted_app,'UNEXPECTED_APP_SOURCE'
+          assert wanted_js!=previous_js and wanted_app!=previous_app,'OWNER_PREVIEW_NOT_MODIFIED'
+          assert b'category==="flags"&&id==="hero"?{year:birth.year}' in wanted_js,'HERO_BIRTH_YEAR_NOT_TRANSMITTED'
+          assert b'flags-owner-sonnet-hero-20261120' in wanted_app,'FRONTEND_CACHE_NOT_BUSTED'
+          for name,code in [('redflag-feature.js',wanted_js),('app.js',wanted_app)]:
+              js_syntax=subprocess.run(['node','--input-type=module','--check'],input=code,capture_output=True)
+              assert js_syntax.returncode==0,('JS_SYNTAX_FAILED '+name+' '+js_syntax.stderr[:350].decode(errors='replace'))
+
           assert wanted_php_template.count(marker)==1 and previous_php_template.count(marker)==1
           assert b'anthropic/claude-sonnet-4.6' in wanted_php_template
           assert b'QUESTION_REFERENCE_NOT_DEPLOYED' in wanted_php_template
           assert b'RELATED_QUESTION_MISSING_FROM_CATALOG' in wanted_php_template,'FOLLOWUP_SELECTION_MISSING'
           assert b'function rfCareControlMeaning' in wanted_php_template,'COMBINATION_ENGINE_MISSING'
+          assert b"$autonomousHero=$category" not in previous_php_template,'HERO_ALREADY_ENABLED'
+          assert b"$autonomousHero=$category" in wanted_php_template,'HERO_AUTONOMOUS_BRANCH_MISSING'
+          assert 'полная_дата_рождения_мужчины'.encode('utf-8') in wanted_php_template,'FULL_DATE_NOT_SENT'
+          hero_code=wanted_php_template.decode('utf-8').split("    if($autonomousHero){\n        // Unlike",1)[-1]
+          assert "описание_энергии_дня_смысловой_ориентир" not in hero_code.split("    }elseif($careMeaning!==null){",1)[0],'HERO_STILL_USES_ENERGY_CUES'
+
           assert b"'calendar_day'" in wanted_php_template,'EXACT_DAY_OVERRIDE_MISSING'
           assert 'Не используй длинное или среднее тире'.encode('utf-8') in wanted_php_template,'DASH_PROMPT_MISSING'
           assert 'готовый_вывод_двух_энергий'.encode() in wanted_php_template,'COMBINED_RESULT_NOT_PASSED'
@@ -50,8 +75,8 @@ jobs:
           assert b"$monthGuide=$bank['energies'][(string)$month]" not in wanted_php_template,'OLD_MODEL_INTERPRETATION_STILL_ACTIVE'
           assert b"$dayGuide=$bank['energies'][(string)$energy]" not in wanted_php_template,'OLD_MODEL_INTERPRETATION_STILL_ACTIVE'
           bank_bytes=Path(bank_source).read_bytes()
-          bank_previous_bytes=subprocess.check_output(['git','show',bank_previous_ref+':'+bank_source])
-          assert bank_bytes!=bank_previous_bytes,'BANK_NOT_CHANGED'
+          bank_published_bytes=subprocess.check_output(['git','show',bank_published_ref+':'+bank_source])
+          assert bank_bytes==bank_published_bytes,'QUESTION_ONE_BANK_WOULD_CHANGE'
           bank=json.loads(bank_bytes)
           assert bank['question_id']=='care-or-control' and bank['category_id']=='flags' and bank['version']==4
           assert len(bank['energies'])==22 and set(bank['energies'].keys())=={str(n) for n in range(1,23)}
@@ -123,6 +148,8 @@ jobs:
           protected_dir=root+'/private/numi-account-20261031/redflag-question-banks'
           target_bank=protected_dir+'/care-or-control.json'
           target_php=site_dir+php_path
+          target_js=site_dir+js_path
+          target_app=site_dir+app_path
           def read_abs(p):
               buf=io.BytesIO()
               try:ftp.retrbinary('RETR '+p,buf.write)
@@ -139,7 +166,8 @@ jobs:
               try:
                   with urllib.request.urlopen(req,timeout=25) as res:return res.status
               except urllib.error.HTTPError as err:return err.code
-          old_php=None;old_bank=None;php_changed=False;bank_changed=False;created_directory=False
+          old_php=None;old_bank=None;old_js=None;old_app=None
+          php_changed=False;js_changed=False;app_changed=False
           try:
               old_php=read_abs(target_php)
               assert old_php is not None,'LIVE_PHP_NOT_FOUND'
@@ -153,41 +181,43 @@ jobs:
               wanted_php=wanted_php_template.replace(marker,encoded)
               assert subprocess.run(['php','-l'],input=wanted_php,capture_output=True).returncode==0,'PHP_SYNTAX_FAILED'
               assert http('')==200,'HOMEPAGE_PRECHECK_FAILED'
-              unaffected=['redflag-ai-lab/draft.php','redflag-feature.js','index.html','app.js','api/numi-account.php']
+              old_js=read_abs(target_js)
+              old_app=read_abs(target_app)
+              assert old_js==previous_js,'LIVE_REDFLAG_JS_DIFFERS_FROM_EXPECTED'
+              assert old_app==previous_app,'LIVE_APP_JS_DIFFERS_FROM_EXPECTED'
+              unaffected=['redflag-ai-lab/draft.php','index.html','api/numi-account.php']
               untouched={p:read_abs(site_dir+p) for p in unaffected}
               assert all(value is not None for value in untouched.values()),'UNRELATED_FILE_MISSING'
               # Verify root PHP's private include directory exists. Never create unrelated roots.
               assert read_abs(root+'/private/numi-account-20261031/core.php') is not None,'PRIVATE_CORE_NOT_FOUND'
               old_bank=read_abs(target_bank)
-              if old_bank!=bank_previous_bytes and old_bank!=bank_bytes:
-                  raise RuntimeError('LIVE_BANK_CHANGED_REFUSE_OVERWRITE')
-              if old_bank!=bank_bytes:
-                  bank_changed=True
-                  write_abs(target_bank,bank_bytes)
+              assert old_bank==bank_published_bytes,'LIVE_FIRST_QUESTION_BANK_CHANGED'
               php_changed=True
               write_abs(target_php,wanted_php)
+              js_changed=True
+              write_abs(target_js,wanted_js)
+              app_changed=True
+              write_abs(target_app,wanted_app)
               assert http(php_path)==403,'OWNER_GET_GUARD_FAILED'
-              assert http(php_path,b'{"category":"flags","question_id":"care-or-control","day":15,"month":7}')==403,'OWNER_POST_GUARD_FAILED'
+              assert http(php_path,b'{"category":"flags","question_id":"hero","day":15,"month":7,"year":1988}')==403,'OWNER_POST_GUARD_FAILED'
               assert http('')==200,'HOMEPAGE_POSTCHECK_FAILED'
               for p,expected in untouched.items():
                   assert read_abs(site_dir+p)==expected,'UNRELATED_FILE_CHANGED_'+p
               assert read_abs(target_bank)==bank_bytes and read_abs(target_php)==wanted_php,'FINAL_CONTENT_MISMATCH'
+              assert read_abs(target_js)==wanted_js and read_abs(target_app)==wanted_app,'FINAL_JS_CONTENT_MISMATCH'
               # Private bank must not be served through the public website.
               assert http('private/numi-account-20261031/redflag-question-banks/care-or-control.json') in (403,404),'PRIVATE_BANK_PUBLICLY_ACCESSIBLE'
-              print('APPROVED_22_CARE_CONTROL_ENERGIES_PUBLISHED energies=22 day_month_both=true warm_second_paragraph=true full_length=true 15_birth_referral=infidelity_options bank_private=true key_preserved=true owner_only=true other_files_identical=true homepage_200=true inference_calls=0',flush=True)
+              print('HERO_AUTONOMOUS_SONNET_PUBLISHED full_birth_date=true independent_reasoning=true first_question_bank_unchanged=true owner_only=true no_payment_changes=true key_preserved=true homepage_200=true inference_calls=0',flush=True)
           except BaseException:
+              if app_changed and old_app is not None:
+                  try:write_abs(target_app,old_app);print('APP_ROLLBACK_OK',flush=True)
+                  except BaseException:print('APP_ROLLBACK_FAILED',flush=True)
+              if js_changed and old_js is not None:
+                  try:write_abs(target_js,old_js);print('JS_ROLLBACK_OK',flush=True)
+                  except BaseException:print('JS_ROLLBACK_FAILED',flush=True)
               if php_changed and old_php is not None:
                   try:write_abs(target_php,old_php);print('PHP_ROLLBACK_OK',flush=True)
                   except BaseException:print('PHP_ROLLBACK_FAILED',flush=True)
-              if bank_changed:
-                  try:
-                      if old_bank is None:ftp.delete(target_bank)
-                      else:write_abs(target_bank,old_bank)
-                      print('BANK_ROLLBACK_OK',flush=True)
-                  except BaseException:print('BANK_ROLLBACK_FAILED',flush=True)
-              if created_directory:
-                  try:ftp.rmd(protected_dir)
-                  except BaseException:pass
               raise
           finally:
               try:ftp.quit()
@@ -198,5 +228,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${{ job.status }}" = "success" ]; then outcome=success; message="Approved 22 care/control energies deployed to Sonnet preview"; else outcome=failure; message="Care/control energy bank release failed; see logs"; fi
+          if [ "${{ job.status }}" = "success" ]; then outcome=success; message="Independent Sonnet hero preview, full birthday and frontend cache deployed"; else outcome=failure; message="Independent hero preview release failed; see logs"; fi
           gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state="$outcome" -f context="numi/care-control-bank-regru" -f description="$message" >/dev/null
