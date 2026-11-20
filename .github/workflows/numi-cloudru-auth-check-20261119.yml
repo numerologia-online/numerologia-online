@@ -58,13 +58,14 @@ jobs:
                   except ValueError:continue
                   expected.add(f'{d:02}.{m:02}')
           assert len(expected)==366
-          assert set(bank['questions'])=={'flags/care-or-control','flags/hero','flags/jealousy'},'THREE_QUESTIONS_EXPECTED'
+          assert {'flags/care-or-control','flags/hero','flags/jealousy'} <= set(bank['questions']),'BASE_QUESTIONS_MISSING'
+          assert len(bank['questions'])<=100,'UNEXPECTED_BANK_COUNT'
           for question,data in bank['questions'].items():
               answers=data.get('answers',{})
               assert set(answers)==expected,('DATE_COVERAGE_BAD '+question)
               assert len(set(answers.values()))==366,('DUPLICATED_ANSWERS '+question)
               assert all(isinstance(t,str) and len(t)>=150 for t in answers.values()),('SHORT_ANSWER '+question)
-          print('LOCAL_TESTS_OK 3_QUESTIONS=1 TOTAL_DATE_ANSWERS=1098 PHP_LINT=OK',flush=True)
+          print('LOCAL_TESTS_OK QUESTION_COUNT='+str(len(bank['questions']))+' DATE_ANSWERS='+str(366*len(bank['questions']))+' PHP_LINT=OK',flush=True)
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
@@ -138,7 +139,7 @@ jobs:
         run: |
           if [ "${{ job.status }}" = "success" ]; then
             state=success
-            message="Unified 366-answer banks live for three questions"
+            message="Unified per-question 366-answer banks live"
           else
             state=failure
             message="Unified bank deployment blocked or rolled back"
