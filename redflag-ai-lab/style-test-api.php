@@ -30,19 +30,21 @@ function rfCloudCall(array $messages,int $tokens): string {
 }
 
 /** Fixed editorial conclusion assembled by the site, before the single Sonnet call. */
-function rfCareControlMeaning(array $rules,int $dayEnergy,int $monthEnergy): array {
+function rfCareControlMeaning(array $rules,int $dayEnergy,int $monthEnergy,int $calendarDay=0): array {
     $profiles=$rules['signatures']??null;
     if(!is_array($profiles)||count($profiles)!==22)throw new RuntimeException('COMBINATION_PROFILES_INVALID');
     $day=$profiles[(string)$dayEnergy]??null;
     $month=$profiles[(string)$monthEnergy]??null;
     if(!is_array($day)||!is_array($month))throw new RuntimeException('COMBINATION_ENERGY_MISSING');
     $key=$dayEnergy.'.'.$monthEnergy;
-    $pair=$rules['pairs'][$key]??null;
+    $calendarKey=$calendarDay.'.'.$monthEnergy;
+    $calendarPair=$calendarDay>0 ? ($rules['calendar_day_overrides'][$calendarKey]??null) : null;
+    $pair=is_array($calendarPair) ? $calendarPair : ($rules['pairs'][$key]??null);
     $followup=null;
     if(is_array($pair)&&is_string($pair['meaning']??null)){
         $meaning=$pair['meaning'];
         $followup=$pair['followup']??null;
-        $source='pair';
+        $source=is_array($calendarPair)?'calendar_day':'pair';
     }elseif($dayEnergy===$monthEnergy){
         $meaning=$rules['repeats'][(string)$dayEnergy]??null;
         $source='repeat';
@@ -76,7 +78,7 @@ function rfCareControlMeaning(array $rules,int $dayEnergy,int $monthEnergy): arr
         10=>'family/plans',11=>'flags/abuse-signal',12=>'language/hurt',
         13=>'family/conflict',14=>'language/how-to-talk',
         15=>'infidelity/options',16=>'flags/abuse-signal',
-        17=>'language/criticism',18=>'flags/jealousy',19=>'flags/hero',
+        17=>'language/criticism',18=>'flags/jealousy',19=>'language/show-love',
         20=>'family/roles',21=>'family/home',22=>'family/plans'
     ];
     if($dayEnergy===15)$followup='infidelity/options';
@@ -167,7 +169,7 @@ try {
         $bank=json_decode((string)file_get_contents($bankPath),true,24,JSON_THROW_ON_ERROR);
         if(($bank['question_id']??'')!=='care-or-control'||($bank['version']??0)!==3)
             throw new RuntimeException('QUESTION_REFERENCE_INVALID');
-        $careMeaning=rfCareControlMeaning($bank['combination_rules']??[],$energy,$month);
+        $careMeaning=rfCareControlMeaning($bank['combination_rules']??[],$energy,$month,$day);
         $selected=$careMeaning['followup'];
         $matches=[];
         foreach($catalog['categories'] as $section){
@@ -184,7 +186,7 @@ try {
 
 С первой фразы ответь на вопрос. Потом покажи, что это означает для женщины, через два или три узнаваемых жизненных проявления. Пиши интересно, конкретно, иногда остроумно, без надуманной биографии, длинных поучений и повторения одной мысли. Не используй готовые шаблоны сценок. Два абзаца вместе около 1000–1200 знаков. Большую часть отдай первому.
 
-Во втором абзаце, словно продолжая разговор, тепло и интригующе предложи указанный следующий вопрос. Не рекламируй сухо и не повторяй одну и ту же фразу «На твоём месте я бы» в каждом ответе. Тон лёгкий, естественный, читательнице должно хотеться узнать продолжение. Никаких упоминаний энергий, чисел и методики. Обычная проза без заголовков и Markdown. Верни только два абзаца.';
+Во втором абзаце, словно продолжая разговор, тепло и интригующе предложи указанный следующий вопрос. Не рекламируй сухо и не повторяй одну и ту же фразу «На твоём месте я бы» в каждом ответе. Тон лёгкий, естественный, читательнице должно хотеться узнать продолжение. Никаких упоминаний энергий, чисел и методики. Обычная проза без заголовков и Markdown. Не используй длинное или среднее тире, перестраивай фразы с точками и запятыми. Верни только два абзаца.';
     }
     if($careMeaning!==null){
         $user=json_encode([
@@ -207,6 +209,11 @@ try {
     $answer=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$user]],1600);
     // Preserve natural punctuation and the complete two-paragraph text.
     $answer=trim(str_replace(['**','__'],'',$answer));
+    if($careMeaning!==null){
+        // Editorial punctuation preference for this question only, no new AI call.
+        $answer=preg_replace('/\\h*[—–―]\\h*/u', ', ', $answer)??$answer;
+        $answer=preg_replace('/,\\h*,/u', ', ', $answer)??$answer;
+    }
     session_write_close();
     rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
         'category'=>$category['id'],'question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
