@@ -37,6 +37,7 @@ jobs:
           baseline_ref='42126837501d1fa0db1c004ffe8bae0da9090777'
           original=subprocess.check_output(['git','show',baseline_ref+':'+php_path])
           prior_live=subprocess.check_output(['git','show','59e307d4159167fa4c5ba29d86d6cf229b93cd32:'+php_path])
+          current=Path(php_path).read_bytes()
           # The only PHP change allowed here is the isolated fourth-question prompt addendum.
           assert current.count(b"            // Conflict-dialogue tone experiment, isolated to the fourth banked question.\n")==1,'FOURTH_PROMPT_MARKER_MISSING'
           before,tail=current.split(b"            // Conflict-dialogue tone experiment, isolated to the fourth banked question.\n",1)
@@ -47,7 +48,6 @@ jobs:
           assert b"if($category['id']==='flags'&&$question['id']==='argument')" in added,'PROMPT_NOT_QUESTION_SCOPED'
           assert 'ПРАВИЛО ПРЯМОТЫ И КОНКРЕТНОСТИ'.encode() in added,'PROMPT_RULE_MISSING'
 
-          current=Path(php_path).read_bytes()
           marker=b'__CLOUDRU_KEY_BASE64__'
           assert original.count(marker)==1 and current.count(marker)==1,'PLACEHOLDER_MISSING'
           assert b'function rfUnifiedQuestionMeaning(' in current and b'if($unifiedMeaning!==null)' in current,'UNIFIED_ENGINE_MISSING'
