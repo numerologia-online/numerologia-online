@@ -1,0 +1,136 @@
+name: Publish only Red Flag calm-or-swings date bank (2026-11-20)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-redflag-calm-or-swings-only-20261120.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Backup and add exactly one owner-only bank entry, preserving existing site
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,ftplib,io,json,os,ssl,subprocess,time
+          from pathlib import Path
+          source='redflag-ai-lab/banks/unified-question-answers-v1.json'
+          baseline_sha='f7c8ffb530e13c629ef92bfc1d6966f6b509265a'
+          approved_sha='a6018f2ff08651f80b266c6c02b16f74907a27d1'
+          target='flags/calm-or-swings'
+          def show(commit):
+              return subprocess.check_output(['git','show',commit+':'+source])
+          before=json.loads(show(baseline_sha))
+          after_bytes=show(approved_sha)
+          after=json.loads(after_bytes)
+          if Path(source).read_bytes()!=after_bytes:
+              raise RuntimeError('APPROVED_SOURCE_MISMATCH')
+          if set(before)!=set(after) or any(before[k]!=after[k] for k in before if k!='questions'):
+              raise RuntimeError('UNRELATED_TOP_LEVEL_SOURCE_CHANGE')
+          if target in before['questions'] or set(after['questions'])!=set(before['questions'])|{target}:
+              raise RuntimeError('QUESTION_ENTRY_SCOPE_MISMATCH')
+          for key in before['questions']:
+              if after['questions'][key]!=before['questions'][key]:
+                  raise RuntimeError('OTHER_QUESTION_CHANGED_'+key)
+          entry=after['questions'][target]
+          if entry['title']!='С ним спокойно или тебя ждут эмоциональные качели?':
+              raise RuntimeError('CALM_OR_SWINGS_TITLE_MISMATCH')
+          answers=entry['answers']
+          if len(answers)!=366 or len(set(answers.values()))!=366 or any(len(s)<150 for s in answers.values()):
+              raise RuntimeError('DATE_MEANINGS_INVALID')
+          for month in range(1,13):
+              for day in range(1,32):
+                  import calendar
+                  k=f'{day:02d}.{month:02d}'
+                  if day<=calendar.monthrange(2024,month)[1] and k not in answers:
+                      raise RuntimeError('MISSING_DATE_'+k)
+                  if day>calendar.monthrange(2024,month)[1] and k in answers:
+                      raise RuntimeError('IMPOSSIBLE_DATE_'+k)
+          print('GITHUB_SCOPE_OK new=flags/calm-or-swings 366 unique meanings existing_bank_preserved=true',flush=True)
+
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          remote=home+'/private/numi-account-20261031/redflag-question-banks/unified-question-answers-v1.json'
+          backup_root=home+'/site-safeguard-backups'
+          def read(path):
+              buf=io.BytesIO()
+              def append(chunk):
+                  if buf.tell()+len(chunk)>2_500_000:
+                      raise RuntimeError('FILE_TOO_LARGE')
+                  buf.write(chunk)
+              ftp.retrbinary('RETR '+path,append)
+              return buf.getvalue()
+          def put(path,data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              if read(path)!=data:
+                  raise RuntimeError('FTPS_READBACK_MISMATCH')
+          try:
+              original=read(remote)
+              live=json.loads(original)
+              if set(live)!=set(before) or any(live[k]!=before[k] for k in before if k!='questions'):
+                  raise RuntimeError('UNEXPECTED_LIVE_BANK_FORMAT')
+              if target in live['questions']:
+                  if live['questions'][target]==entry and all(live['questions'][k]==before['questions'][k] for k in before['questions']):
+                      print('ALREADY_PUBLISHED 366/366 verified no write',flush=True)
+                  else:
+                      raise RuntimeError('EXISTING_CALM_OR_SWINGS_BANK_CONFLICT')
+              else:
+                  if set(live['questions'])!=set(before['questions']):
+                      raise RuntimeError('UNEXPECTED_LIVE_QUESTION_SET')
+                  for key in before['questions']:
+                      if live['questions'][key]!=before['questions'][key]:
+                          raise RuntimeError('EXISTING_LIVE_QUESTION_DIFFERS_'+key)
+                  live_text=original.decode('utf-8')
+                  closing='\n  }\n}\n'
+                  if not live_text.endswith(closing):
+                      raise RuntimeError('UNEXPECTED_JSON_TRAILING_LAYOUT')
+                  block=json.dumps({target:entry},ensure_ascii=False,indent=2)[2:-2]
+                  block='\n'.join('  '+line for line in block.split('\n'))
+                  desired=(live_text[:-len(closing)]+',\n'+block+closing).encode('utf-8')
+                  parsed=json.loads(desired)
+                  if parsed!=after:
+                      raise RuntimeError('ONE_ENTRY_PATCH_DIFFERENT_FROM_APPROVED_CONTENT')
+                  if len(desired)>2_500_000:
+                      raise RuntimeError('PATCH_TOO_LARGE')
+                  try: ftp.mkd(backup_root)
+                  except ftplib.error_perm as e:
+                      if not str(e).startswith('550'):raise
+                  timestamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+                  stamp=hashlib.sha256(original).hexdigest()[:12]
+                  backup=backup_root+'/redflag-calm-or-swings-only-'+timestamp+'-'+stamp+'.json.bak'
+                  put(backup,original)
+                  if read(remote)!=original:
+                      raise RuntimeError('CONCURRENT_EDIT_CANCELLED')
+                  attempted=False
+                  try:
+                      attempted=True
+                      put(remote,desired)
+                      result=json.loads(read(remote))
+                      if result!=after:
+                          raise RuntimeError('PUBLISHED_BANK_CONTENT_MISMATCH')
+                      print('PUBLISHED_AND_VERIFIED question=flags/calm-or-swings 366 dates backup_verified=true nine_existing_questions_unchanged=true site_files_modified=0 prompt_changed=false',flush=True)
+                  except BaseException:
+                      if attempted:
+                          try:put(remote,original);print('BANK_ROLLBACK_SUCCEEDED',flush=True)
+                          except BaseException as e:print('BANK_ROLLBACK_CRITICAL_FAILED '+type(e).__name__,flush=True)
+                      raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
