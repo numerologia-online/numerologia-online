@@ -40,7 +40,7 @@ jobs:
           # The only PHP change allowed here is the isolated fourth-question prompt addendum.
           assert current.count(b"            // Conflict-dialogue tone experiment, isolated to the fourth banked question.\n")==1,'FOURTH_PROMPT_MARKER_MISSING'
           before,tail=current.split(b"            // Conflict-dialogue tone experiment, isolated to the fourth banked question.\n",1)
-          after=b"            $user=json_encode([\n                'заданный_вопрос'=>$question['title'],\n                'готовый_нумерологический_ответ_по_двум_энергиям'"
+          after="            $user=json_encode([\n                'заданный_вопрос'=>$question['title'],\n                'готовый_нумерологический_ответ_по_двум_энергиям'".encode('utf-8')
           assert tail.count(after)==1,'FOURTH_PROMPT_END_MISSING'
           added,remainder=tail.split(after,1)
           assert before+after+remainder==prior_live,'UNRELATED_PHP_CHANGES'
