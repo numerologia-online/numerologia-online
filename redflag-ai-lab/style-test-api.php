@@ -92,6 +92,47 @@ try {
             $otherTitles[]=$candidate['title'];
         }
     }
+    // Preview question only: narrow referrals to the two energies instead of 53 generic options.
+    if($category['id']==='flags'&&$question['id']==='care-or-control'){
+        $relatedByEnergy=[
+            1=>'flags/hero',
+            2=>'infidelity/secrecy',
+            3=>'language/hurt',
+            4=>'family/roles',
+            5=>'family/roles',
+            6=>'language/accept-love',
+            7=>'family/home',
+            8=>'family/plans',
+            9=>'flags/argument',
+            10=>'family/plans',
+            11=>'flags/abuse-signal',
+            12=>'language/hurt',
+            13=>'family/conflict',
+            14=>'language/how-to-talk',
+            15=>'infidelity/options',
+            16=>'flags/abuse-signal',
+            17=>'language/criticism',
+            18=>'flags/jealousy',
+            19=>'flags/hero',
+            20=>'family/roles',
+            21=>'family/home',
+            22=>'family/plans'
+        ];
+        // A man born on the 15th: editorially recommend the existing fidelity question.
+        $preferredKeys=$day===15
+            ? ['infidelity/options']
+            : array_values(array_unique([$relatedByEnergy[$energy],$relatedByEnergy[$month]]));
+        $specificTitles=[];
+        foreach($catalog['categories'] as $section){
+            foreach($section['questions'] as $candidate){
+                if(in_array($section['id'].'/'.$candidate['id'],$preferredKeys,true))
+                    $specificTitles[]=$candidate['title'];
+            }
+        }
+        if(count($specificTitles)!==count($preferredKeys))
+            throw new RuntimeException('RELATED_QUESTION_MISSING_FROM_CATALOG');
+        $otherTitles=$specificTitles;
+    }
     $system='Ты нумеролог, пишешь женщине о мужчине, чью дату она ввела. Это дата мужчины, не читательницы. Твоя задача состоит в ответе на один заданный вопрос, а не в описании личности.
 
 Основа внутреннего разбора это система 22 энергий матрицы судьбы. Энергии дня и месяца влияют на вывод равнозначно. Отдельно осмысли обе применительно к этому вопросу, затем покажи единое поведение, которое рождается из их сочетания. Не выбирай одну главной и не пересказывай трактовки по очереди. Если смена месяца ничего не меняет в выводе, пересмотри сочетание. Не описывай весь психологический портрет в каждом вопросе. В готовом тексте показывай только относящиеся к вопросу поведение, мотив и риск, без упоминания расчётов, энергий, не уточняй когда человек родился, отвечай простым человеческим языком. Не описывай свои внутренние шаги разбора, числа, названия энергий и объяснения методики.
@@ -118,7 +159,7 @@ try {
             throw new RuntimeException('QUESTION_REFERENCE_INCOMPLETE');
         $system.='
 
-ТОЛЬКО ДЛЯ ВОПРОСА О ЗАБОТЕ И КОНТРОЛЕ. Две краткие трактовки дня и месяца относятся исключительно к этому вопросу. Обе равнозначны: мысленно сопоставь их мотивы и способы проявления, найди, что они усиливают, меняют или ограничивают друг в друге, и сделай один конкретный вывод. Не складывай две готовые фразы и не своди мужчину к одной энергии. Два одинаковых значения усиливают характерную тенденцию, включая тень. Не придумывай биографию, неподтверждённые события, слежку или измены; бытовые детали допускаются как краткие возможные примеры, не как факты. Забота и контроль должны быть рассмотрены именно через границы, самостоятельность и решения женщины. Не подменяй контроль обычным выбором ресторана.';
+ТОЛЬКО ДЛЯ ВОПРОСА О ЗАБОТЕ И КОНТРОЛЕ. Две краткие трактовки дня и месяца относятся исключительно к этому вопросу. Обе равнозначны: мысленно сопоставь их мотивы и способы проявления, найди, что они усиливают, меняют или ограничивают друг в друге, и сделай один конкретный вывод. Не складывай две готовые фразы и не своди мужчину к одной энергии. Два одинаковых значения усиливают характерную тенденцию, включая тень. Не придумывай биографию, неподтверждённые события, слежку или измены; бытовые детали допускаются как краткие возможные примеры, не как факты. Забота и контроль должны быть рассмотрены именно через границы, самостоятельность и решения женщины. Не подменяй контроль обычным выбором ресторана. Если сочетание показывает слабую вовлечённость, прямо скажи, что он скорее занят собой и не склонен ни опекать, ни следить, вместо искусственной истории о ревнивом допросе. Во втором абзаце выбирай только вопрос из переданного короткого списка, а когда вопрос один, рекомендуй именно его. Не выбирай наказание молчанием просто по привычке. Никаких звёздочек и Markdown-разметки.';
     }
     $user=json_encode([
         'вопрос_женщины'=>$question['title'],
@@ -134,6 +175,7 @@ try {
     // Enforce the requested punctuation without another model call.
     $answer=preg_replace('/\\h*[–—―]\\h*/u', ', ', $answer)??$answer;
     $answer=preg_replace('/([,.;:!?])\\h*,\\h*/u', '$1 ', $answer)??$answer;
+    $answer=str_replace(['**','__'],'',$answer); // Remove visible Markdown markers.
     // Preserve both complete paragraphs. The model owns the 1000–1200-character target;
     // do not cut mid-thought or remove the warmer recommendation.
     $answer=trim(preg_replace('/\R{3,}/u',"\n\n",$answer)??$answer);
