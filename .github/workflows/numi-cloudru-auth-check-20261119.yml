@@ -1,4 +1,4 @@
-name: Deploy shared autonomous Sonnet preview across Red Flag categories
+name: Refresh existing Red Flag Sonnet preview script cache
 on:
   push:
     branches: [main]
@@ -31,6 +31,7 @@ jobs:
           bank_source='redflag-ai-lab/banks/care-or-control.json'
           js_path='redflag-feature.js'
           app_path='app.js'
+          index_path='index.html'
           php_previous_ref='8fc0cd2181dd2180b322c3612336299cd13cd3c9'
           php_current_ref='25d4e7c9b0d2d48bf0a91cfa014b65abfe491892'
           bank_published_ref='748f68c0e3b3ade60afa90ced42858af5897a9dc'
@@ -46,6 +47,12 @@ jobs:
           wanted_js=subprocess.check_output(['git','show',js_current_ref+':'+js_path])
           previous_app=subprocess.check_output(['git','show',app_previous_ref+':'+app_path])
           wanted_app=subprocess.check_output(['git','show',app_current_ref+':'+app_path])
+          previous_index=subprocess.check_output(['git','show','15f39b180d5eb7da1ecb589c7716061d4efdfd40:index.html'])
+          wanted_index=Path(index_path).read_bytes()
+          old_cache_tag=b'app.js?v=flags-owner-preview-20261117'
+          new_cache_tag=b'app.js?v=flags-owner-sonnet-shared-20261120'
+          assert previous_index.count(old_cache_tag)==1,'EXPECTED_INDEX_TAG_NOT_FOUND'
+          assert wanted_index==previous_index.replace(old_cache_tag,new_cache_tag),'UNEXPECTED_INDEX_CHANGE'
           assert Path(js_path).read_bytes()==wanted_js,'UNEXPECTED_JS_SOURCE'
           assert Path(app_path).read_bytes()==wanted_app,'UNEXPECTED_APP_SOURCE'
           assert wanted_js!=previous_js and wanted_app!=previous_app,'OWNER_PREVIEW_NOT_MODIFIED'
@@ -160,6 +167,7 @@ jobs:
           target_php=site_dir+php_path
           target_js=site_dir+js_path
           target_app=site_dir+app_path
+          target_index=site_dir+index_path
           def read_abs(p):
               buf=io.BytesIO()
               try:ftp.retrbinary('RETR '+p,buf.write)
@@ -176,8 +184,8 @@ jobs:
               try:
                   with urllib.request.urlopen(req,timeout=25) as res:return res.status
               except urllib.error.HTTPError as err:return err.code
-          old_php=None;old_bank=None;old_js=None;old_app=None
-          php_changed=False;js_changed=False;app_changed=False
+          old_php=None;old_bank=None;old_js=None;old_app=None;old_index=None
+          php_changed=False;js_changed=False;app_changed=False;index_changed=False
           try:
               old_php=read_abs(target_php)
               assert old_php is not None,'LIVE_PHP_NOT_FOUND'
@@ -187,27 +195,26 @@ jobs:
               end=old_php.index(b"'",pos)
               encoded=old_php[pos:end]
               assert len(base64.b64decode(encoded,validate=True))>12,'LIVE_KEY_INVALID'
-              assert old_php[:pos]+marker+old_php[end:]==previous_php_template,'LIVE_PHP_DIFFERS_FROM_EXPECTED'
+              assert old_php[:pos]+marker+old_php[end:]==wanted_php_template,'LIVE_PHP_DIFFERS_FROM_EXPECTED'
               wanted_php=wanted_php_template.replace(marker,encoded)
               assert subprocess.run(['php','-l'],input=wanted_php,capture_output=True).returncode==0,'PHP_SYNTAX_FAILED'
               assert http('')==200,'HOMEPAGE_PRECHECK_FAILED'
               old_js=read_abs(target_js)
               old_app=read_abs(target_app)
-              assert old_js==previous_js,'LIVE_REDFLAG_JS_DIFFERS_FROM_EXPECTED'
-              assert old_app==previous_app,'LIVE_APP_JS_DIFFERS_FROM_EXPECTED'
-              unaffected=['redflag-ai-lab/draft.php','index.html','api/numi-account.php']
+              assert old_js==wanted_js,'LIVE_REDFLAG_JS_DIFFERS_FROM_EXPECTED'
+              assert old_app==wanted_app,'LIVE_APP_JS_DIFFERS_FROM_EXPECTED'
+              old_index=read_abs(target_index)
+              assert old_index==previous_index,'LIVE_INDEX_DIFFERS_FROM_EXPECTED'
+              unaffected=['redflag-ai-lab/draft.php','api/numi-account.php']
               untouched={p:read_abs(site_dir+p) for p in unaffected}
               assert all(value is not None for value in untouched.values()),'UNRELATED_FILE_MISSING'
               # Verify root PHP's private include directory exists. Never create unrelated roots.
               assert read_abs(root+'/private/numi-account-20261031/core.php') is not None,'PRIVATE_CORE_NOT_FOUND'
               old_bank=read_abs(target_bank)
               assert old_bank==bank_published_bytes,'LIVE_FIRST_QUESTION_BANK_CHANGED'
-              php_changed=True
-              write_abs(target_php,wanted_php)
-              js_changed=True
-              write_abs(target_js,wanted_js)
-              app_changed=True
-              write_abs(target_app,wanted_app)
+              # Only refresh the existing HTML script version. PHP, JS and the model key are not written.
+              index_changed=True
+              write_abs(target_index,wanted_index)
               assert http(php_path)==403,'OWNER_GET_GUARD_FAILED'
               assert http(php_path,b'{"category":"flags","question_id":"hero","day":15,"month":7,"year":1988}')==403,'OWNER_POST_GUARD_FAILED'
               assert http('')==200,'HOMEPAGE_POSTCHECK_FAILED'
@@ -215,10 +222,14 @@ jobs:
                   assert read_abs(site_dir+p)==expected,'UNRELATED_FILE_CHANGED_'+p
               assert read_abs(target_bank)==bank_bytes and read_abs(target_php)==wanted_php,'FINAL_CONTENT_MISMATCH'
               assert read_abs(target_js)==wanted_js and read_abs(target_app)==wanted_app,'FINAL_JS_CONTENT_MISMATCH'
+              assert read_abs(target_index)==wanted_index,'FINAL_HTML_CONTENT_MISMATCH'
               # Private bank must not be served through the public website.
               assert http('private/numi-account-20261031/redflag-question-banks/care-or-control.json') in (403,404),'PRIVATE_BANK_PUBLICLY_ACCESSIBLE'
-              print('SONNET_SHARED_53_PREVIEW_PUBLISHED sections=6 full_birth_date=true other_questions=53 first_two_visible_questions_unchanged=true first_question_bank_unchanged=true owner_only=true payments_unchanged=true key_preserved=true homepage_200=true inference_calls=0',flush=True)
+              print('SONNET_PREVIEW_CACHE_REFRESHED index_only=true model_and_keys_untouched=true owner_only=true payments_untouched=true homepage_200=true inference_calls=0',flush=True)
           except BaseException:
+              if index_changed and old_index is not None:
+                  try:write_abs(target_index,old_index);print('INDEX_ROLLBACK_OK',flush=True)
+                  except BaseException:print('INDEX_ROLLBACK_FAILED',flush=True)
               if app_changed and old_app is not None:
                   try:write_abs(target_app,old_app);print('APP_ROLLBACK_OK',flush=True)
                   except BaseException:print('APP_ROLLBACK_FAILED',flush=True)
@@ -238,5 +249,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${{ job.status }}" = "success" ]; then outcome=success; message="Shared Sonnet test for 53 Red Flag questions across six categories deployed"; else outcome=failure; message="Shared Sonnet test release failed; see logs"; fi
+          if [ "${{ job.status }}" = "success" ]; then outcome=success; message="Existing Red Flag preview script cache refreshed on REG.RU"; else outcome=failure; message="Index-only cache refresh failed; live HTML rolled back"; fi
           gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state="$outcome" -f context="numi/care-control-bank-regru" -f description="$message" >/dev/null
