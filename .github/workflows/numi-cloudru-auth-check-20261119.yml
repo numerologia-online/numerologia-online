@@ -1,4 +1,4 @@
-name: Publish 366 editorial hero theses through existing Sonnet handler
+name: Publish sharper Red Flag hero language only
 on:
   push:
     branches: [main]
@@ -39,8 +39,8 @@ jobs:
           js_path='redflag-feature.js'
           app_path='app.js'
           index_path='index.html'
-          php_previous_ref='2ac0496db61ea912488a087d21cf53c314e0a6a9'
-          php_current_ref='7a6040c0c2b39f05d64300cdcb1e9e8b37aa8168'
+          php_previous_ref='7a6040c0c2b39f05d64300cdcb1e9e8b37aa8168'
+          php_current_ref='769d503ede81889cae0b70b59d8850db5981e41e'
           bank_published_ref='748f68c0e3b3ade60afa90ced42858af5897a9dc'
           js_previous_ref='0760bd4c9ff1dd9c60d98e62a4bcfd6c6dcbb5e7'
           js_current_ref='ca91f360dbac350733964bda23d0341a41e8cd03'
@@ -86,6 +86,8 @@ jobs:
           assert wanted_php_template.count(b"($category['id']==='flags'&&$question['id']==='hero')")>=1,'HERO_SCOPE_MISSING'
           hero_entries=re.findall(rb"(?m)^\s*'[0-9]{2}\.[0-9]{2}'=>\[",wanted_php_template)
           assert len(hero_entries)==366,'HERO_THESIS_COUNT_NOT_366'
+          assert 'Тон живой, цепкий, смелый'.encode('utf-8') in wanted_php_template,'SHARP_TONE_MISSING'
+          assert 'Второй абзац, максимум одно-два коротких предложения'.encode('utf-8') in wanted_php_template,'SHORT_FOLLOWUP_MISSING'
           assert all(("'"+name+"'").encode('utf-8') in wanted_php_template for name in ('flags','infidelity','intimacy','family','language','verdict')),'CATEGORY_FOCUS_INCOMPLETE'
           assert b"if($careMeaning!==null||$autonomousMode)" in wanted_php_template,'DASH_FILTER_INCONSISTENT'
           assert b"PROVIDER_NETWORK_ERROR" in wanted_php_template and b"PROVIDER_TIMEOUT" in wanted_php_template,'PROVIDER_DIAGNOSTICS_MISSING'
@@ -270,7 +272,7 @@ jobs:
               assert read_abs(target_index)==wanted_index,'FINAL_HTML_CONTENT_MISMATCH'
               # Private bank must not be served through the public website.
               assert http('private/numi-account-20261031/redflag-question-banks/care-or-control.json') in (403,404),'PRIVATE_BANK_PUBLICLY_ACCESSIBLE'
-              print('SONNET_HERO_366_THESIS_PUBLISHED php_only=true owner_only=true first_question_unchanged=true other_52_ai_questions_unchanged=true key_preserved=true payments_untouched=true homepage_200=true inference_calls=0',flush=True)
+              print('SONNET_HERO_SHARPER_TONE_PUBLISHED php_only=true hero_366_preserved=true owner_only=true first_question_unchanged=true other_52_ai_questions_unchanged=true key_preserved=true payments_untouched=true homepage_200=true inference_calls=0',flush=True)
           except BaseException as exc:
               # Expose a short safe failure code in GitHub commit status, no secrets or logs.
               match=re.search(r'[A-Z][A-Z0-9_]{5,}',str(exc))
@@ -301,5 +303,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${{ job.status }}" = "success" ]; then outcome=success; message="366 hero day-month theses active for owner test, all other modules unchanged"; else outcome=failure; message="Hero thesis deployment failed, existing PHP rolled back"; fi
+          if [ "${{ job.status }}" = "success" ]; then outcome=success; message="Sharper owner-only Red Flag hero wording active; all 366 theses preserved"; else outcome=failure; message="Hero tone deployment failed; old PHP rolled back"; fi
           gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state="$outcome" -f context="numi/care-control-bank-regru" -f description="$message" >/dev/null
