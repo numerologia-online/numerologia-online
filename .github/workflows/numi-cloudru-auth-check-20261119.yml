@@ -68,7 +68,7 @@ jobs:
           assert all(rules['signatures'][str(n)]['care']>rules['signatures'][str(n)]['control'] for n in (1,2,3,4,5,6,8,11,12,14,17,19,20,21,22)),'CARE_BIAS_NOT_FIXED'
           assert rules['signatures']['7']['freedom']>rules['signatures']['7']['control']
           assert rules['signatures']['15']['freedom']>rules['signatures']['15']['control']
-          assert rules['signatures']['19']['care']==4 and rules['signatures']['19']['control']==1,'SUN_19_NOT_CARING'
+          assert rules['signatures']['19']['care']==4 and rules['signatures']['19']['control']==0,'SUN_19_NOT_CARING'
           assert rules['pairs']['19.1']['followup']=='language/show-love','SUN_PLUS_ONE_REFERRAL_INCORRECT'
           assert rules['calendar_day_overrides']['31.10']['followup']=='family/roles','CALENDAR_31_10_OVERRIDE_MISSING'
           # Run every possible day-energy / month combination in PHP before touching REG.RU.
