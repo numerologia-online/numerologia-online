@@ -367,19 +367,33 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
         method:"POST",credentials:"same-origin",cache:"no-store",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({category,question_id:id,day:birth.day,month:birth.month,
-          ...(category==="flags"&&id==="hero"?{year:birth.year}:{})}),
-        signal:AbortSignal.timeout(65000)
+          ...(category==="flags"&&id==="care-or-control"?{}:{year:birth.year})}),
+        signal:AbortSignal.timeout(95000)
       });
-      const data=await response.json();
-      if(!response.ok||data?.ok!==true||data?.draft_only!==true||
-         data?.category!==category||data?.question_id!==id||
-         data?.date_key!==birth.day+"-"+birth.month||typeof data?.answer!=="string")
+      const data=await response.json().catch(()=>null);
+      if(!response.ok||data?.ok!==true)
+        throw new Error(String(data?.error||"SERVICE_UNAVAILABLE"));
+      if(data?.draft_only!==true||data?.category!==category||
+         data?.question_id!==id||data?.date_key!==birth.day+"-"+birth.month||
+         typeof data?.answer!=="string")
         throw new Error("DRAFT_UNAVAILABLE");
       if(profile!==activeProfile||!ownerDraftAccess)return;
       state.answers.set(id,{answer:data.answer,isDraft:true,isSaved:false});
-    })().catch(()=>{
-      if(profile===activeProfile&&ownerDraftAccess)
-        state.answerErrors.set(id,"ИИ-ответ не загрузился. Закрой вопрос и открой снова.");
+    })().catch(error=>{
+      if(profile===activeProfile&&ownerDraftAccess){
+        const code=String(error?.message||"");
+        const message=code==="WAIT_15_SECONDS"
+          ?"Повторный запрос пока рано. Подожди 15 секунд и открой вопрос снова."
+          :code==="INVALID_FULL_BIRTH_DATE"?"Не удалось передать дату рождения. Проверь дату."
+          :code==="PROVIDER_TIMEOUT"||error?.name==="TimeoutError"
+            ?"Соннет не успела ответить. Деньги не списаны. Попробуй снова."
+          :code.startsWith("PROVIDER_HTTP_")
+            ?"Cloud.ru вернул ошибку "+code.replace("PROVIDER_HTTP_","HTTP ")+". Деньги не списаны."
+          :code==="KEY_NOT_CONFIGURED"?"Ключ Cloud.ru не настроен. Нужна проверка подключения."
+          :code==="PROVIDER_NETWORK_ERROR"?"Cloud.ru сейчас недоступен по сети. Попробуй снова."
+          :"ИИ-ответ не загрузился ("+(code||"SERVICE_UNAVAILABLE")+"). Деньги не списаны.";
+        state.answerErrors.set(id,message);
+      }
     }).finally(()=>{
       if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
       if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
