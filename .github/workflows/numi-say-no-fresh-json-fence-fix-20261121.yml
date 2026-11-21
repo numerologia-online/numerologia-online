@@ -28,9 +28,10 @@ jobs:
           python3 - <<'PY'
           import subprocess,pathlib,io,os,ssl,ftplib,base64,urllib.request,urllib.error,time,json
           path='redflag-ai-lab/style-test-api.php'
-          revision='fa8b1de18420f4235863e8974db1f98b51cfd914'
-          old=subprocess.check_output(['git','show',revision+'^:'+path])
-          new=subprocess.check_output(['git','show',revision+':'+path])
+          before_revision='fa8b1de18420f4235863e8974db1f98b51cfd914'
+          after_revision='966ebac7eb14c8bebde1e507dc8924f80e279299'
+          old=subprocess.check_output(['git','show',before_revision+':'+path])
+          new=subprocess.check_output(['git','show',after_revision+':'+path])
           if pathlib.Path(path).read_bytes()!=new:raise RuntimeError('SOURCE_CHANGED_AFTER_REVIEW')
           marker=b'__CLOUDRU_KEY_BASE64__'
           if old.count(marker)!=1 or new.count(marker)!=1:raise RuntimeError('MODEL_KEY_TEMPLATE_INVALID')
@@ -41,6 +42,10 @@ jobs:
               raise RuntimeError('OWNER_RED_FLAG_ROUTE_MISSING')
           if b"'model'=>'zai-org/GLM-5.1'" not in new or b"rfUnifiedQuestionMeaning($category['id'],$question['id'],$day,$month)" not in new:
               raise RuntimeError('MODEL_OR_LEGACY_FALLBACK_MISSING')
+          if b"'value'=>$n,'name'=>$a['name']" in new or b"$relevantArcana[(string)$n]=$a" in new:
+              raise RuntimeError('ARCANA_NAMES_STILL_SENT_TO_MODEL')
+          if b"preg_replace('/[ \\t]*[—–―][ \\t]*/u'" not in new:
+              raise RuntimeError('DASH_NORMALIZER_NOT_FOUND')
           # Make sure existing paid customer endpoints are not in the deployment set.
           protected=['redflag-feature.js','index.html','api/numi-account.php','api/redflag-free-ai.php']
           kpath='redflag-ai-lab/intimacy-knowledge-v1.json'
@@ -94,7 +99,7 @@ jobs:
               for name,blob in untouched.items():
                   if read(name)!=blob:raise RuntimeError('PROTECTED_FILE_CHANGED_'+name)
               if request('')[0]!=200:raise RuntimeError('HOME_AFTER_NOT_200')
-              print('PUBLISHED_AND_VERIFIED existing_Telegram_owner_RedFlags=10 model=GLM-5.1 full_matrix=31 arcana=22 preset_banks_skipped=true public_prices_unchanged=true payment_files_unchanged=true customer_answers_unchanged=true inference_calls=0',flush=True)
+              print('PUBLISHED_AND_VERIFIED Telegram_owner_GLМ_format_patch=true 10_questions=true model=GLM-5.1 no_arcana_names_passed=true long_dashes_removed=true payment_files_unchanged=true customer_answers_unchanged=true inference_calls=0',flush=True)
           except BaseException:
               if modified:
                   try:write(path,before);print('ROLLBACK_OK',flush=True)
