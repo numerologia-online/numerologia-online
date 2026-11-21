@@ -49,7 +49,7 @@ jobs:
           params=json.dumps({
             'model':'anthropic/claude-sonnet-4.6',
             'messages':[{'role':'system','content':system},{'role':'user','content':message}],
-            'max_tokens':1750,'stream':False},ensure_ascii=False).encode('utf-8')
+            'max_tokens':2350,'stream':False},ensure_ascii=False).encode('utf-8')
           req=urllib.request.Request('https://foundation-models.api.cloud.ru/v1/chat/completions',
              data=params,method='POST',headers={
               'Authorization':'Bearer '+os.environ['CLOUD_RU_API_KEY'],
@@ -58,7 +58,12 @@ jobs:
               obj=json.load(response)
           raw=obj['choices'][0]['message']['content']
           print('MODEL_RESPONSE_PREFIX '+repr(str(raw)[:450]),flush=True)
-          data=json.loads(raw)
+          fenced=str(raw).strip()
+          if fenced.startswith(chr(96)*3):
+              fenced=fenced[3:].strip()
+              if fenced.startswith('json'):fenced=fenced[4:].strip()
+              if fenced.endswith(chr(96)*3):fenced=fenced[:-3].strip()
+          data=json.loads(fenced)
           a=data['analysis'];s=data['answer']
           points=a['points']
           assert len(points)>=3
