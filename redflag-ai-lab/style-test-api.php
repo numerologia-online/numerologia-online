@@ -17,9 +17,14 @@ function rfCloudCall(array $messages,int $tokens,string $model='anthropic/claude
         CURLOPT_POST=>true,CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,
         CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>$model==='zai-org/GLM-5.1'?82:55,
         CURLOPT_HTTPHEADER=>['Content-Type: application/json','Authorization: Bearer '.$key],
-        CURLOPT_POSTFIELDS=>json_encode(['model'=>$model,
-            'messages'=>$messages,'max_tokens'=>$tokens,'stream'=>false],
-            JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)
+        CURLOPT_POSTFIELDS=>json_encode(array_merge(
+            ['model'=>$model,'messages'=>$messages,'max_tokens'=>$tokens,'stream'=>false],
+            // GLM-5.1 can exhaust a short answer budget in reasoning_content.
+            // Avoid billed hidden reasoning; keep the complete authoring prompt.
+            $model==='zai-org/GLM-5.1'
+                ? ['chat_template_kwargs'=>['enable_thinking'=>false]]
+                : []
+          ),JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)
     ]);
     $body=curl_exec($ch);
     $status=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE);
@@ -30,7 +35,16 @@ function rfCloudCall(array $messages,int $tokens,string $model='anthropic/claude
     if($status!==200||!is_string($body))throw new RuntimeException('PROVIDER_HTTP_'.$status);
     $data=json_decode($body,true,32,JSON_THROW_ON_ERROR);
     $text=$data['choices'][0]['message']['content']??null;
-    if(!is_string($text)||trim($text)==='')throw new RuntimeException('EMPTY_ANSWER');
+    if(!is_string($text)||trim($text)===''){
+        // Log ONLY non-sensitive provider metadata to diagnose billed empty outputs.
+        $finish=(string)($data['choices'][0]['finish_reason']??'unknown');
+        $totalOut=(int)($data['usage']['completion_tokens']??0);
+        $reasoning=(int)($data['usage']['completion_tokens_details']['reasoning_tokens']??0);
+        error_log('REDFLAG_EMPTY_META model='.($model==='zai-org/GLM-5.1'?'GLM_5_1':'other')
+          .' finish='.preg_replace('/[^a-z_]/i','',$finish)
+          .' output_tokens='.$totalOut.' reasoning_tokens='.$reasoning);
+        throw new RuntimeException('EMPTY_ANSWER');
+    }
     return trim($text);
 }
 
