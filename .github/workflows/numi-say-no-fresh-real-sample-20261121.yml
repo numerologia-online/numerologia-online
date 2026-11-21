@@ -22,7 +22,7 @@ jobs:
           import json,os,pathlib,re,urllib.request
           text=pathlib.Path('redflag-ai-lab/say-no-fresh-api.php').read_text('utf-8')
           system=text.split("$system=<<<'INSTRUCTION'\n",1)[1].split("\nINSTRUCTION;",1)[0]
-          if 'НЕТ заранее написанной трактовки' not in system or 'готовых' not in system:
+          if 'НЕТ заранее написанной трактовки' not in system or 'НЕТ готового вывода' not in system:
               raise RuntimeError('NOT_NEW_PROMPT')
           kb=json.loads(pathlib.Path('redflag-ai-lab/intimacy-knowledge-v1.json').read_text('utf-8'))
           cat=json.loads(pathlib.Path('redflag-ai-lab/catalog.json').read_text('utf-8'))
