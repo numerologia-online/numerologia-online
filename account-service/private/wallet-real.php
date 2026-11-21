@@ -202,6 +202,8 @@ function naRealWalletInvariant(PDO $db,string $accountId): void {
     if((int)$q->fetchColumn()!==$balance)throw new RuntimeException('REAL_WALLET_LEDGER_MISMATCH');
 }
 function naRealWalletHasAccess(PDO $db,array $account,string $code,string $resource): bool {
+    if($code==='club_month'&&$resource==='club'
+       &&naGiftClubExpiry($db,(string)$account['id'])!==null)return true;
     // Sandbox payments, including previous club subscriptions, NEVER count as real.
     $q=$db->prepare("SELECT 1 FROM numi_entitlements e
         JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
