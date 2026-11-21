@@ -85,6 +85,31 @@ def main():
             targets[path]=destination
             previous=read(destination)
             original[path]=previous
+            # Live analytics HTML contains an independently added partner link.
+            # Its exact public SHA was inspected read-only on 2026-11-21.
+            # Preserve it by inserting only the gift panel into the known
+            # inspected version; any other drift aborts.
+            if path=="insights/public/index.html" and previous!=expected[path]:
+                if previous is None or digest(previous)!="3709182ef1f545f9876364c1f38b35d1496241c1f652ff6bb0d7935b8d18599b":
+                    raise RuntimeError("UNREVIEWED_ANALYTICS_HTML_DRIFT")
+                original_source=desired[path]
+                marker=b'<section id="gift-panel"'
+                nav=b'<nav class="tabs"'
+                start=original_source.find(marker);end=original_source.find(nav,start)
+                if start<0 or end<=start or original_source.count(marker)!=1:
+                    raise RuntimeError("GIFT_PANEL_SOURCE_MISSING")
+                extra=original_source[start:end]
+                if previous.count(nav)!=1 or b'/insights/partners/' not in previous:
+                    raise RuntimeError("AUDITED_PARTNER_LINK_MISSING")
+                new_html=previous.replace(nav,extra+nav,1)
+                for filename in (b'insights.css',b'insights.js'):
+                    old=b'./'+filename+b'?v=2.1.0'
+                    new=b'./'+filename+b'?v=2.2.0'
+                    if new_html.count(old)!=1:
+                        raise RuntimeError("ANALYTICS_CACHE_VERSION_DRIFT")
+                    new_html=new_html.replace(old,new,1)
+                desired[path]=new_html
+                expected[path]=previous
             if path in NEW_FILES:
                 if previous is not None and previous!=desired[path]:
                     raise RuntimeError("NEW_ENDPOINT_EXISTS_WITH_UNKNOWN_CONTENT: "+path)
