@@ -367,7 +367,7 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
         method:"POST",credentials:"same-origin",cache:"no-store",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({category,question_id:id,day:birth.day,month:birth.month,
-          ...(category==="flags"&&id==="care-or-control"?{}:{year:birth.year})}),
+          year:birth.year}),
         signal:AbortSignal.timeout(125000)
       });
       const data=await response.json().catch(()=>null);
