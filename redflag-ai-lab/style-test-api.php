@@ -1012,6 +1012,102 @@ PROMPT;
 }
 
 
+function rfOwnerSharpInfidelity(array $question,int $day,int $month,int $year,array $catalog): string {
+   $maps=[
+     'options'=>['loveHeart','tailFirst','center','top','right'],
+     'flirt'=>['left','loveHeart','top','center','tailSecond'],
+     'trust'=>['center','right','loveHeart','bottom','left'],
+     'ex'=>['loveHeart','tailFirst','bottom','center','right'],
+     'temptation'=>['center','top','loveHeart','tailFirst','right'],
+     'physical-or-emotional'=>['loveHeart','tailSecond','center','top','bottom'],
+     'secrecy'=>['left','center','right','tailSecond','top'],
+     'return'=>['tailFirst','tailSecond','loveHeart','bottom','center'],
+     'after-mistake'=>['center','bottom','left','right','tailSecond'],
+   ];
+   $id=$question['id']??null;
+   if(!is_string($id)||!isset($maps[$id]))throw new RuntimeException('OWNER_Q_MAP_MISSING');
+   $kb=json_decode((string)file_get_contents(__DIR__.'/intimacy-knowledge-v1.json'),true,25,JSON_THROW_ON_ERROR);
+   if(($kb['schema']??null)!=='numi-owner-intimacy-matrix-knowledge-v1'
+     ||count($kb['arcana']??[])!==22)throw new RuntimeException('OWNER_KB_UNAVAILABLE');
+   $calculated=rfOwner31($day,$month,$year);
+   $positionData=[];
+   foreach($maps[$id] as $key){
+      $n=$calculated[$key];$a=$kb['arcana'][(string)$n]??null;
+      if(!is_array($a)||!is_string($kb['pointDescriptions'][$key]??null))
+         throw new RuntimeException('OWNER_KB_POSITION_UNAVAILABLE');
+      // Model gets only human-readable traits, never arcana names or numbers.
+      $positionData[]=[
+        'роль_точки'=>$kb['pointDescriptions'][$key],
+        'ведущий_мотив'=>$a['core'],
+        'сильная_сторона'=>$a['plus'],
+        'теневая_сторона'=>$a['minus'],
+        'в_отношениях'=>$a['love']
+      ];
+   }
+   $followups=[];
+   foreach(($catalog['categories']??[]) as $group){
+      if(($group['id']??null)!=='infidelity')continue;
+      foreach(($group['questions']??[]) as $next){
+        if(($next['id']??null)!==$id)$followups[]=$next['title'];
+      }
+   }
+   if(count($followups)<8)throw new RuntimeException('OWNER_FOLLOWUPS_NOT_READY');
+   $system=<<<'PROMPT'
+Ты опытный нумеролог Матрицы судьбы (22 Старших аркана), пишешь женщине о мужчине, чью полную дату рождения она ввела. Раздел «Измены и флирт». Ответь только на ОДИН заданный вопрос, а не на всю личную жизнь мужчины.
+
+Сайт уже рассчитал полную матрицу и передал тебе человеческие характеристики пяти значимых точек, а также точный фокус вопроса. Сопоставь минимум три позиции и их взаимодействие, а не перечисляй пять независимых качеств. Не пересчитывай матрицу. Измены, флирт, доверие, бывшие, соблазны, фантазии, скрытность, возвращение и поведение после раскрытия измены — РАЗНЫЕ темы. В каждом ответе нужно конкретно раскрыть именно заданный вопрос, не сводить всё к одному портрету неверного мужчины. Если качества зрелые и надёжные, отвечай так же прямо и уверенно, без обязательного негативного вывода.
+
+Пиши как умная, дерзкая, наблюдательная подруга: точные, живые, иногда колкие формулировки без пафоса и морализаторства. ПЕРВАЯ ФРАЗА — прямой ответ. Далее два-три РАЗНЫХ возможных проявления, мотив и последствия для женщины. Не выдавай символическую трактовку за факт: по дате рождения нельзя установить, что мужчина уже изменял, лгал, вёл тайную переписку или непременно изменит. Отличай фантазию от поступка, флирт от дружелюбия, личное пространство от намеренного обмана, разрыв от измены. Не оправдывай опасные проявления, не обвиняй женщину в поступках мужчины, не делай всех одинаковыми. Не повторяй одну метафору из ответа в ответ, не злоупотребляй одними и теми же судебными образами.
+
+ФОРМАТ. Ровно два абзаца на русском языке, ориентировочно 950–1200 знаков всего. Первый абзац основной: вывод, два-три узнаваемых проявления, конкретный риск или достоинство без воды и повторов. Второй абзац — цепкая, содержательная подводка (примерно 150–230 знаков) к одному ДРУГОМУ реальному вопросу, завершённая его ТОЧНЫМ названием из переданного списка. Не пересказывай ответ на следующий вопрос и не повторяй шаблонные вводные. Не называй арканы, энергии, числа, дату, матрицу, позиции, расчёты или источники трактовок в готовом ответе. Без заголовков, списков, Markdown, грубости к женщине, длинного или среднего тире. Верни только два обычных абзаца.
+PROMPT;
+   $focus=[
+     'options'=>'Верность одному человеку или сохранение запасных вариантов. Общительность не равна измене.',
+     'flirt'=>'Флирт ради внимания, игра на чужом интересе или умение держать границы.',
+     'trust'=>'Надёжность, честность, совпадение слов и поступков, риск двойных стандартов.',
+     'ex'=>'Границы с бывшей, незавершённая привязанность или умение закрыть прошлую историю.',
+     'temptation'=>'Импульс, самоконтроль и выбор перед соблазном. Отличай желание от поступка.',
+     'physical-or-emotional'=>'Фантазии о тайных романах, эмоциональная вовлечённость или умение отделять воображение от измены.',
+     'secrecy'=>'Честность, здоровая приватность или сознательное сокрытие важных фактов.',
+     'return'=>'Привязанность к бывшим, незавершённые истории, повторный контакт или умение уйти окончательно.',
+     'after-mistake'=>'Гипотетическая реакция, если измена вскрылась: ответственность, признание или обвинение партнёрши. Не утверждай, что измена уже была.',
+   ];
+   $data=json_encode([
+      'вопрос'=>$question['title'],
+      'смысл_этого_вопроса'=>$focus[$id],
+      'трактовки_значимых_позиций_полной_матрицы'=>$positionData,
+      'допустимые_точные_названия_следующего_вопроса'=>$followups
+   ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
+   $text=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$data]],2800,'google/gemini-3-flash-preview');
+   $text=trim(str_replace(["\r\n","\r"],"\n",$text));
+   $fence=str_repeat(chr(96),3);
+   if(str_starts_with($text,$fence)){
+      $text=trim(substr($text,3));
+      if(str_starts_with($text,'text'))$text=ltrim(substr($text,4));
+      if(str_ends_with($text,$fence))$text=trim(substr($text,0,-3));
+   }
+   $text=trim(str_replace(['**','__'],'',$text));
+   // Always remove typography banned by the owner's editorial style.
+   // The model gets no tarot names/numbers, so accidental name leakage is rare.
+   $text=preg_replace('/[ \t]*[—–―][ \t]*/u', ': ', $text)??$text;
+   $text=preg_replace('/:[ \t]*:/u', ':', $text);
+   $text=preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
+   if(mb_strlen($text)<450)
+     throw new RuntimeException('OWNER_TEXT_LENGTH_INVALID');
+   $paras=preg_split('/\n\s*\n/u',$text);
+   if(is_array($paras)&&count($paras)===1){
+      // Preserve both paragraphs if the provider used a single newline.
+      $lines=explode("\n",$text);
+      if(count($lines)===2&&trim($lines[0])!==''&&trim($lines[1])!==''){
+          $text=trim($lines[0])."\n\n".trim($lines[1]);
+          $paras=[$lines[0],$lines[1]];
+      }
+   }
+   if(!is_array($paras)||count($paras)!==2)
+     throw new RuntimeException('OWNER_TEXT_PARAGRAPHS_INVALID');
+   return $text;
+}
+
 try {
     // DEPLOYMENT_HEALTH_SLOT
     if(!naTestOwner(naCurrent(naDB())))rfPreviewReply(403,['ok'=>false,'error'=>'OWNER_ONLY']);
@@ -1054,6 +1150,27 @@ try {
            'category'=>'flags','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
            'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);
     }
+
+    // Owner-only Gemini draft for all nine "Измены и флирт" questions.
+    // The existing Red Flags and paid customer routes are unchanged.
+    if($category['id']==='infidelity'){
+        if(function_exists('set_time_limit')){@set_time_limit(125);}
+        $y=$input['year']??null;
+        if(!is_int($y)||$y<1900||$y>(int)gmdate('Y')||!checkdate($month,$day,$y))
+           rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_FULL_BIRTH_DATE']);
+        session_name('numi_redflag_preview');
+        session_set_cookie_params(['secure'=>true,'httponly'=>true,'samesite'=>'Strict','path'=>'/redflag-ai-lab/']);
+        if(!session_start())throw new RuntimeException('PREVIEW_SESSION_FAILED');
+        if(time()-(int)($_SESSION['last_generation']??0)<15)
+           rfPreviewReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
+        $_SESSION['last_generation']=time();
+        $answer=rfOwnerSharpInfidelity($question,$day,$month,$y,$catalog);
+        session_write_close();
+        rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
+           'category'=>'infidelity','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
+           'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);
+    }
+
 
     // Shared autonomous Sonnet preview for every question except the editorial
     // care-or-control bank. "Уважает женское нет" remains the separate ready text.
