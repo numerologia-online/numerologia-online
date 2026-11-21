@@ -46,3 +46,5 @@ jobs:
         run: python3 -u insights/deploy-gifts.py
 
 # Release only when the exact audited source matches all live baselines.
+
+# Use the exact audited 2026-11-21 live analytics HTML, retaining partner link.
