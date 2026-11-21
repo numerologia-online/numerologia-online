@@ -28,8 +28,8 @@ jobs:
           python3 - <<'PY'
           import subprocess,pathlib,io,os,ssl,ftplib,base64,urllib.request,urllib.error,time,json
           path='redflag-ai-lab/style-test-api.php'
-          before_revision='966ebac7eb14c8bebde1e507dc8924f80e279299'
-          after_revision='62ee85e9cec3c24a4b3736f637c9d59ff583f154'
+          before_revision='62ee85e9cec3c24a4b3736f637c9d59ff583f154'
+          after_revision='2b0ebe365c976a0eae5b15bc9a225dafab87a14f'
           old=subprocess.check_output(['git','show',before_revision+':'+path])
           new=subprocess.check_output(['git','show',after_revision+':'+path])
           if pathlib.Path(path).read_bytes()!=new:raise RuntimeError('SOURCE_CHANGED_AFTER_REVIEW')
@@ -46,21 +46,20 @@ jobs:
               raise RuntimeError('ARCANA_NAMES_STILL_SENT_TO_MODEL')
           if "preg_replace('/[ \\t]*[—–―][ \\t]*/u'".encode('utf-8') not in new:
               raise RuntimeError('DASH_NORMALIZER_NOT_FOUND')
-          # The change may modify the owner-only writing prompt, and nothing else.
-          boundary=b"function rfOwnerSharpFlags("
-          opening=b"$system=<<<'PROMPT'\n"
-          ending=b"\nPROMPT;"
-          def without_owner_prompt(buf):
-              part=buf.index(boundary)
-              start=buf.index(opening,part)+len(opening)
+          # Only the shared provider-call helper changes; the user-facing
+          # GLM prompt and all business logic must be byte-identical.
+          beginning=b'function rfCloudCall('
+          ending=b'\n\n/** Shared Red Flag editor:'
+          def without_provider_helper(buf):
+              start=buf.index(beginning)
               stop=buf.index(ending,start)
-              return buf[:start]+b'<OWNER_SYSTEM_PROMPT>'+buf[stop:]
-          if without_owner_prompt(old)!=without_owner_prompt(new):
-              raise RuntimeError('MODIFICATION_OUTSIDE_OWNER_PROMPT')
-          if 'Второй, примерно 150–230 знаков'.encode('utf-8') not in new:
-              raise RuntimeError('SECOND_PARAGRAPH_RULE_NOT_FOUND')
-          if 'заметно острее'.encode('utf-8') not in new:
-              raise RuntimeError('SHARPER_STYLE_RULE_NOT_FOUND')
+              return buf[:start]+b'<CLOUD_CALL_HELPER>'+buf[stop:]
+          if without_provider_helper(old)!=without_provider_helper(new):
+              raise RuntimeError('MODIFICATION_OUTSIDE_PROVIDER_HELPER')
+          if b"'chat_template_kwargs'=>['enable_thinking'=>false]" not in new:
+              raise RuntimeError('GLM_THINKING_BUDGET_FIX_NOT_FOUND')
+          if b'REDFLAG_EMPTY_META' not in new:
+              raise RuntimeError('SAFE_EMPTY_LOGGING_MISSING')
           # Make sure existing paid customer endpoints are not in the deployment set.
           protected=['redflag-feature.js','index.html','api/numi-account.php','api/redflag-free-ai.php']
           kpath='redflag-ai-lab/intimacy-knowledge-v1.json'
@@ -114,7 +113,7 @@ jobs:
               for name,blob in untouched.items():
                   if read(name)!=blob:raise RuntimeError('PROTECTED_FILE_CHANGED_'+name)
               if request('')[0]!=200:raise RuntimeError('HOME_AFTER_NOT_200')
-              print('PUBLISHED_AND_VERIFIED owner_GLМ_sharper_style=true next_question_hook_150_to_230_chars=true no_other_code_changed=true payment_files_unchanged=true customer_answers_unchanged=true inference_calls=0',flush=True)
+              print('PUBLISHED_AND_VERIFIED owner_GLМ_thinking_disabled=true empty_metadata_logging=true prompt_unchanged=true protected_payments_unchanged=true customer_answers_unchanged=true inference_calls=0',flush=True)
           except BaseException:
               if modified:
                   try:write(path,before);print('ROLLBACK_OK',flush=True)
