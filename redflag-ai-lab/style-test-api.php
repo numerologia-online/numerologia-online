@@ -9,15 +9,15 @@ function rfPreviewReply(int $status,array $body): never {
     echo json_encode($body,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
     exit;
 }
-function rfCloudCall(array $messages,int $tokens): string {
+function rfCloudCall(array $messages,int $tokens,string $model='anthropic/claude-sonnet-4.6'): string {
     $key=base64_decode('__CLOUDRU_KEY_BASE64__',true);
     if(!is_string($key)||$key==='')throw new RuntimeException('KEY_NOT_CONFIGURED');
     $ch=curl_init('https://foundation-models.api.cloud.ru/v1/chat/completions');
     curl_setopt_array($ch,[
         CURLOPT_POST=>true,CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,
-        CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>55,
+        CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>$model==='zai-org/GLM-5.1'?82:55,
         CURLOPT_HTTPHEADER=>['Content-Type: application/json','Authorization: Bearer '.$key],
-        CURLOPT_POSTFIELDS=>json_encode(['model'=>'anthropic/claude-sonnet-4.6',
+        CURLOPT_POSTFIELDS=>json_encode(['model'=>$model,
             'messages'=>$messages,'max_tokens'=>$tokens,'stream'=>false],
             JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)
     ]);
@@ -866,6 +866,112 @@ function rfCareControlMeaning(array $rules,int $dayEnergy,int $monthEnergy,int $
     return ['meaning'=>$meaning,'followup'=>$followup,'source'=>$source];
 }
 
+
+/* New owner-only Red Flag authoring: full-date matrix and existing 22-arcana KB. */
+function rfOwner22(int $v): int {
+    $v=abs($v);
+    while($v>22)$v=array_sum(array_map('intval',str_split((string)$v)));
+    return $v?:22;
+}
+function rfOwner31(int $d,int $m,int $y): array {
+    $r='rfOwner22';
+    $left=$r($d);$top=$m;$right=$r(array_sum(array_map('intval',str_split((string)$y))));
+    $bottom=$r($left+$top+$right);$center=$r($left+$top+$right+$bottom);
+    $tl=$r($left+$top);$tr=$r($top+$right);$br=$r($right+$bottom);$bl=$r($bottom+$left);
+    $nt=$r($top+$center);$nl=$r($left+$center);$nr=$r($right+$center);
+    $tail=$r($center+$bottom);$cash=$r($right+$center);$bal=$r($cash+$tail);
+    $p=[
+      'left'=>$left,'top'=>$top,'right'=>$right,'bottom'=>$bottom,'center'=>$center,
+      'topLeft'=>$tl,'topRight'=>$tr,'bottomRight'=>$br,'bottomLeft'=>$bl,
+      'topOuter'=>$r($top+$nt),'topNear'=>$nt,'topCore'=>$r($nt+$center),
+      'leftOuter'=>$r($left+$nl),'leftNear'=>$nl,'leftCore'=>$r($nl+$center),
+      'rightOuter'=>$r($right+$nr),'rightNear'=>$cash,'rightCore'=>$r($nr+$center),
+      'tailFirst'=>$tail,'tailSecond'=>$r($bottom+$tail),
+      'loveHeart'=>$r($tail+$bal),'wellbeing'=>$bal,'moneyPoint'=>$r($cash+$bal)
+    ];
+    foreach(['topLeft'=>$tl,'topRight'=>$tr,'bottomRight'=>$br,'bottomLeft'=>$bl] as $k=>$v){
+       $n=$r($v+$center);$p[$k.'Outer']=$r($v+$n);$p[$k.'Near']=$n;
+    }
+    if(count($p)!==31)throw new RuntimeException('OWNER_MATRIX_POINTS_INVALID');
+    return $p;
+}
+function rfOwnerSharpFlags(array $question,int $day,int $month,int $year,array $catalog): string {
+   $maps=[
+     'say-no'=>['left','center','loveHeart','right','tailFirst'],
+     'care-or-control'=>['left','center','right','top','loveHeart'],
+     'hero'=>['left','center','right','top','bottom'],
+     'jealousy'=>['loveHeart','tailFirst','center','bottom','left'],
+     'argument'=>['center','left','tailSecond','top','loveHeart'],
+     'abuse-signal'=>['center','left','tailFirst','bottom','right'],
+     'support-or-cause'=>['loveHeart','center','left','right','top'],
+     'apology'=>['center','bottom','tailSecond','left','right'],
+     'weak-place'=>['bottom','center','tailFirst','right','loveHeart'],
+     'calm-or-swings'=>['center','left','bottom','loveHeart','tailSecond']
+   ];
+   $id=$question['id']??null;
+   if(!is_string($id)||!isset($maps[$id]))throw new RuntimeException('OWNER_Q_MAP_MISSING');
+   $kb=json_decode((string)file_get_contents(__DIR__.'/intimacy-knowledge-v1.json'),true,25,JSON_THROW_ON_ERROR);
+   if(($kb['schema']??null)!=='numi-owner-intimacy-matrix-knowledge-v1'
+     ||count($kb['arcana']??[])!==22)throw new RuntimeException('OWNER_KB_UNAVAILABLE');
+   $calculated=rfOwner31($day,$month,$year);
+   $positionData=[];$relevantArcana=[];
+   foreach($maps[$id] as $key){
+      $n=$calculated[$key];$a=$kb['arcana'][(string)$n]??null;
+      if(!is_array($a)||!is_string($kb['pointDescriptions'][$key]??null))
+         throw new RuntimeException('OWNER_KB_POSITION_UNAVAILABLE');
+      $positionData[]=['key'=>$key,'role'=>$kb['pointDescriptions'][$key],
+        'value'=>$n,'name'=>$a['name']];
+      $relevantArcana[(string)$n]=$a;
+   }
+   $followups=[];
+   foreach(($catalog['categories']??[]) as $group){
+      if(($group['id']??null)!=='flags')continue;
+      foreach(($group['questions']??[]) as $next){
+        if(($next['id']??null)!==$id)$followups[]=$next['title'];
+      }
+   }
+   if(count($followups)<8)throw new RuntimeException('OWNER_FOLLOWUPS_NOT_READY');
+   $system=<<<'PROMPT'
+Ты опытный нумеролог Матрицы судьбы (22 Старших аркана), пишешь женщине о мужчине. Это раздел «Красные флаги». Отвечай на ОДИН заданный вопрос, не на всю жизнь мужчины.
+
+У тебя НЕТ готовых выводов или банка трактовок. Сайт уже математически рассчитал полную матрицу мужчины по дню, месяцу и году рождения, выбрал относящиеся к этому вопросу позиции и передал значения арканов ИЗ НАШЕЙ БАЗЫ ЗНАНИЙ. Используй эти знания в прямом смысле, не придумывай новые позиции, не пересчитывай. Перед тем как писать, самостоятельно сопоставь минимум три переданные точки, выбери одну ведущую конкретную реакцию и уточни, как другие энергии изменяют её форму. Не превращай противоречие в бессмысленную золотую середину. Для разных вопросов меняй сам вывод, а не только слова.
+
+Не дипломатничай там, где нумерологические тени указывают на конкретную слабость. 15-й Дьявол на релевантной позиции может означать жажду власти, вспышки злости, ревность, манипуляции, борьбу с возражениями; НЕ выдавай это за безобидные переговоры или «темперамент». 9-й Отшельник в тени может дать холодное превосходство, придирчивость, обесценивание чужих доводов, дистанцию. 4-й Император в тени — «я знаю лучше», властность. 16-я Башня — резкий конфликт и обострение. Но никто не становится агрессором автоматически из-за одного аркана; учитывай положение и другие влияния. Если сочетание указывает на зрелое уважение и надёжность, говори так же уверенно, не выдумывая отрицательный типаж. Это символические возможные склонности, не проверенные факты.
+
+Пиши как умная, дерзкая, наблюдательная подруга. Чётко, ярко, нормальными словами, чуть колко, с узнаваемыми поступками. В ПЕРВОЙ ФРАЗЕ прямой ответ на вопрос. Затем два-три конкретных проявления и чем это оборачивается для женщины. Никакой воды, пафоса, нравоучений, повторов или необязательных похвал. Не смягчай жёсткий вывод и не заставляй женщину отвечать за мужское поведение. Нельзя: «он не со зла», «это не злой умысел», «он просто такой», «ему нужно понять», «не про истерики, а про темп», «если ты умеешь объяснять», «на самом деле ему важно», «в целом», «зато». Не выдумывай уже совершённых поступков. Нарушение согласия не оправдывает никакой аркан.
+
+Три коротких ОБРАЗЦА только уровня языка, НЕ для копирования и НЕ для обязательного распределения дат:
+Властный: «Ему мало высказать своё мнение. Ему нужно, чтобы ты признала его правоту. И спор быстро перестаёт быть разговором».
+Холодный: «Вместо скандала устроит тебе экзамен на право иметь своё мнение. Даже твой отказ он сначала захочет проверить на ошибки».
+Уважительный: «Сказала нет — он остановился. Без обиженного спектакля и комиссии по пересмотру твоего решения».
+Это примеры интонации, а не автоматические трактовки арканов. Выбирай проявление по реальному символическому сочетанию.
+
+ФОРМАТ: первый абзац — почти весь текст, главный вывод, два-три разных признака и конкретный риск или достоинство. Второй абзац — одно-два коротких предложения с естественным переходом к одному ТОЧНОМУ следующему вопросу из переданного списка. Всего примерно 750–1100 знаков, не растягивай ради цифры. Не называй в тексте покупательнице арканы, числа, энергию, дату, методику, внутренние расчёты. Без заголовков, списков и Markdown. Верни только два русских абзаца.
+PROMPT;
+   $data=json_encode([
+      'вопрос'=>$question['title'],
+      'точки_матрицы_уже_рассчитанные'=>$positionData,
+      'трактовки_арканов_из_нашей_базы'=>$relevantArcana,
+      'допустимые_точные_названия_следующего_вопроса'=>$followups
+   ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
+   $text=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$data]],1850,'zai-org/GLM-5.1');
+   $text=trim(str_replace(["\r\n","\r"],"\n",$text));
+   $fence=str_repeat(chr(96),3);
+   if(str_starts_with($text,$fence)){
+      $text=trim(substr($text,3));
+      if(str_starts_with($text,'text'))$text=ltrim(substr($text,4));
+      if(str_ends_with($text,$fence))$text=trim(substr($text,0,-3));
+   }
+   $text=trim(str_replace(['**','__'],'',$text));
+   if(mb_strlen($text)<450||mb_strlen($text)>1750)
+     throw new RuntimeException('OWNER_TEXT_LENGTH_INVALID');
+   $paras=preg_split('/\n\s*\n/u',$text);
+   if(!is_array($paras)||count($paras)!==2)
+     throw new RuntimeException('OWNER_TEXT_PARAGRAPHS_INVALID');
+   return $text;
+}
+
+
 try {
     // DEPLOYMENT_HEALTH_SLOT
     if(!naTestOwner(naCurrent(naDB())))rfPreviewReply(403,['ok'=>false,'error'=>'OWNER_ONLY']);
@@ -889,6 +995,25 @@ try {
     $day=$input['day']??null;$month=$input['month']??null;
     if(!is_int($day)||!is_int($month)||!checkdate($month,$day,2000))
         rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_DATE']);
+
+    // Existing owner Telegram Red Flag cards only. No paid customer path changes.
+    if($category['id']==='flags'){
+        $y=$input['year']??null;
+        if(!is_int($y)||$y<1900||$y>(int)gmdate('Y')||!checkdate($month,$day,$y))
+           rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_FULL_BIRTH_DATE']);
+        session_name('numi_redflag_preview');
+        session_set_cookie_params(['secure'=>true,'httponly'=>true,'samesite'=>'Strict','path'=>'/redflag-ai-lab/']);
+        if(!session_start())throw new RuntimeException('PREVIEW_SESSION_FAILED');
+        if(time()-(int)($_SESSION['last_generation']??0)<15)
+           rfPreviewReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
+        $_SESSION['last_generation']=time();
+        $answer=rfOwnerSharpFlags($question,$day,$month,$y,$catalog);
+        session_write_close();
+        rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
+           'category'=>'flags','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
+           'model'=>'zai-org/GLM-5.1','answer'=>$answer]);
+    }
+
     // Shared autonomous Sonnet preview for every question except the editorial
     // care-or-control bank. "Уважает женское нет" remains the separate ready text.
     // Owner-only: the paid customer path is intentionally untouched.
