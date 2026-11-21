@@ -44,7 +44,8 @@ const redflagDraftSections = new Set(["flags","infidelity","intimacy","family","
 let ownerDraftAccess=false,ownerDraftAccessChecked=false;
 const ownerDraftInScope=(question,state)=>{
   const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
-  return Boolean(question.isComingSoon&&ownerDraftAccess&&redflagDraftSections.has(section));
+  return Boolean(ownerDraftAccess&&redflagDraftSections.has(section)&&
+    (question.isComingSoon||(section==="infidelity"&&question.id==="faithful"&&question.isFree)));
 };
 async function verifyOwnerDraftAccess(){
   if(ownerDraftAccessChecked)return;
@@ -533,7 +534,7 @@ const fillQuestionButton = (button, question, showExpand = false, state = null) 
   if (question.isFree) {
     const free = document.createElement("span");
     free.className = "redflag-question-price is-free";
-    free.textContent = "БЕСПЛАТНО";
+    free.textContent = ownerDraftInScope(question,state) ? "ИИ · тест" : "БЕСПЛАТНО";
     button.append(free);
   } else if (Number.isInteger(question.priceRub)) {
     const rates = REDFLAG_PRICE_PAIRS[question.priceRub];
@@ -1024,6 +1025,10 @@ categoriesRoot.addEventListener("click",(event)=>{
   const shouldOpen=entry.activeQuestionId!==questionId;
   entry.activeQuestionId=shouldOpen?questionId:null;
   clearError();
+  if(shouldOpen&&ownerDraftInScope(question,entry)){
+    entry.answers.delete(questionId);
+    entry.answerErrors.delete(questionId);
+  }
   if(shouldOpen)ensureAnswer(question,entry);
   renderCategories({type:"question",id:questionId});
 },true);
