@@ -1,0 +1,98 @@
+name: Surgical owner-only say-no JSON fence fix, strict rollback
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-say-no-fresh-json-fence-fix-20261121.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Update only isolated owner-only PHP API with readback and rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+          CLOUD_RU_API_KEY: ${{ secrets.CLOUD_RU_API_KEY_2 }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import subprocess,pathlib,io,os,ssl,ftplib,base64,urllib.request,urllib.error,time
+          path='redflag-ai-lab/say-no-fresh-api.php'
+          prev='269af0b23e58d4c904026c2a1e0c80d40d87a138'
+          current='986beed0b60ff2e9c37470fe8f0b175a83a427b2'
+          old=subprocess.check_output(['git','show',prev+':'+path])
+          new=subprocess.check_output(['git','show',current+':'+path])
+          if pathlib.Path(path).read_bytes()!=new:
+              raise RuntimeError('TARGET_SOURCE_CHANGED')
+          marker=b'__SAY_NO_FRESH_CLOUD_KEY__'
+          if old.count(marker)!=1 or new.count(marker)!=1:
+              raise RuntimeError('CREDENTIAL_MARKER_ERROR')
+          if new.count(b'naTestOwner(naCurrent(naDB()))')!=1:
+              raise RuntimeError('OWNER_AUTH_NOT_PRESENT')
+          if b'naAllowedOrigins()' not in new or b"'published'=>false" not in new:
+              raise RuntimeError('OWNER_DRAFT_GUARD_MISSING')
+          if b"str_repeat(chr(96),3)" not in new:
+              raise RuntimeError('CLOUD_FENCE_FIX_MISSING')
+          key=os.environ['CLOUD_RU_API_KEY'].strip()
+          if len(key)<15:raise RuntimeError('KEY_MISSING')
+          key64=base64.b64encode(key.encode())
+          print('::add-mask::'+key64.decode(),flush=True)
+          before=old.replace(marker,key64)
+          desired=new.replace(marker,key64)
+          for blob in [old,new,before,desired]:
+              result=subprocess.run(['php','-l'],input=blob,capture_output=True)
+              if result.returncode:raise RuntimeError('PHP_SYNTAX_INVALID_'+result.stderr.decode(errors='replace')[:300])
+          site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          def get(p,method='GET',body=None):
+              req=urllib.request.Request(site+p+'?json_fix='+str(time.time_ns()),
+                  method=method,data=body,
+                  headers={'Content-Type':'application/json','Origin':site.rstrip('/'),'Cache-Control':'no-store'})
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as r:return r.status,r.read(4000)
+              except urllib.error.HTTPError as e:return e.code,e.read(4000)
+          if get('')[0]!=200:raise RuntimeError('HOME_NOT_READY')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          prefix=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
+          def read(p):
+              bio=io.BytesIO();ftp.retrbinary('RETR '+prefix+p,bio.write);return bio.getvalue()
+          def write(p,b):
+              ftp.storbinary('STOR '+prefix+p,io.BytesIO(b))
+              if read(p)!=b:raise RuntimeError('READBACK_MISMATCH_'+p)
+          modified=False
+          try:
+              if read(path)!=before:raise RuntimeError('LIVE_API_NOT_EXPECTED_BASELINE')
+              other=['redflag-ai-lab/say-no-fresh.php','redflag-ai-lab/intimacy-knowledge-v1.json']
+              protected={p:read(p) for p in other}
+              modified=True;write(path,desired)
+              for p in [path,'redflag-ai-lab/say-no-fresh.php']:
+                  status,body=get(p)
+                  if status!=403:raise RuntimeError('OWNER_GET_GUARD_FAILED_'+p)
+                  if key.encode() in body or key64 in body:raise RuntimeError('KEY_EXPOSED')
+              status,_=get(path,'POST',b'{"day":9,"month":9,"year":1986}')
+              if status!=403:raise RuntimeError('OWNER_POST_GUARD_FAILED')
+              for p,original in protected.items():
+                  if read(p)!=original:raise RuntimeError('RELATED_FILE_CHANGED_'+p)
+              if get('')[0]!=200:raise RuntimeError('HOMEPAGE_CHANGED')
+              print('SAY_NO_FRESH_JSON_FIX_PUBLISHED owner_guard_get_post=true model_key_hidden=true other_files_unchanged=true payments_unchanged=true old_redflags_unchanged=true',flush=True)
+          except BaseException:
+              if modified:
+                  try:write(path,before);print('ROLLBACK_OK',flush=True)
+                  except BaseException:print('ROLLBACK_FAILED',flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
