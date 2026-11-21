@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 3
+          fetch-depth: 0
       - name: Free PHP and JavaScript syntax and safe-scope verification
         run: |
           set -euo pipefail
