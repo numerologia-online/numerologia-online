@@ -44,7 +44,7 @@ jobs:
               raise RuntimeError('MODEL_OR_LEGACY_FALLBACK_MISSING')
           if b"'value'=>$n,'name'=>$a['name']" in new or b"$relevantArcana[(string)$n]=$a" in new:
               raise RuntimeError('ARCANA_NAMES_STILL_SENT_TO_MODEL')
-          if b"preg_replace('/[ \\t]*[—–―][ \\t]*/u'" not in new:
+          if "preg_replace('/[ \\t]*[—–―][ \\t]*/u'".encode('utf-8') not in new:
               raise RuntimeError('DASH_NORMALIZER_NOT_FOUND')
           # Make sure existing paid customer endpoints are not in the deployment set.
           protected=['redflag-feature.js','index.html','api/numi-account.php','api/redflag-free-ai.php']
