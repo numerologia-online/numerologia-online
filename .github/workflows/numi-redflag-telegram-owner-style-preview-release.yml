@@ -48,7 +48,7 @@ jobs:
           js='redflag-feature.js'
           targets=[api,js]
           guarded=['index.html','app.js','api/numi-account.php','api/redflag-free-ai.php','redflag-ai-lab/intimacy-knowledge-v1.json']
-          parent='2ac15f9d9305d1f5486223075bb27dcb8c10b033'
+          parent='25159e1518c7ea2eb59cbc0254bc502048637426'
           original_source={p:subprocess.check_output(['git','show',parent+':'+p]) for p in targets}
           target_source={p:Path(p).read_bytes() for p in targets}
           assert target_source[api].count(b'__CLOUDRU_KEY_BASE64__')==1
