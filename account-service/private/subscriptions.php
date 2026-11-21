@@ -43,7 +43,7 @@ function naSubscriptionList(PDO $db,array $account,array $config): array {
           $providerOnly GROUP BY e.product_code");
     $q->execute([$account['id']]);$periods=$q->fetchAll();
     // An activated one-day gift is visible as non-recurring club access.
-    $giftUntil=naGiftClubExpiry($db,(string)$account['id']);
+    $giftUntil=function_exists('naGiftClubExpiry')?naGiftClubExpiry($db,(string)$account['id']):null;
     if($giftUntil!==null) {
         $found=false;
         foreach($periods as &$period)if($period['product_code']==='club_month'){
