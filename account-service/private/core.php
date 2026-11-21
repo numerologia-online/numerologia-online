@@ -433,6 +433,13 @@ function naMergeTelegramEmail(PDO $db,array $body): never {
             }
             $db->prepare('UPDATE numi_orders SET account_id=? WHERE account_id=?')->execute([$targetId,$fromId]);
             $db->prepare('UPDATE numi_entitlements SET account_id=? WHERE account_id=?')->execute([$targetId,$fromId]);
+            // Gift offers follow the account after an authenticated identity merge.
+            try {
+                $db->prepare('UPDATE numi_gift_club SET account_id=? WHERE account_id=?')
+                   ->execute([$targetId,$fromId]);
+            } catch(PDOException $e) {
+                if((string)$e->getCode()!=='42S02')throw $e;
+            }
             $db->prepare('UPDATE numi_checkouts SET account_id=? WHERE account_id=?')->execute([$targetId,$fromId]);
             naSubscriptionMergeAccounts($db,$fromId,$targetId);
             if(naLiveWalletModeSelected())naRealWalletMergeAccounts($db,$fromId,$targetId);
@@ -602,8 +609,27 @@ function naCatalogDate(mixed $input): ?string {
     [$year,$month,$day]=array_map('intval',explode('-',$input));
     return checkdate($month,$day,$year) ? $input : null;
 }
+/**
+ * A gift is NOT a fake paid order. Access is true only after the customer
+ * voluntarily activates a time-limited club gift; missing optional table
+ * leaves existing paid access unchanged.
+ */
+function naGiftClubExpiry(PDO $db,string $accountId): ?string {
+    try {
+        $q=$db->prepare("SELECT MAX(expires_at) FROM numi_gift_club
+          WHERE account_id=? AND activated_at IS NOT NULL
+            AND expires_at>UTC_TIMESTAMP()");
+        $q->execute([$accountId]);
+        $value=$q->fetchColumn();
+        return is_string($value)&&$value!==''?$value:null;
+    } catch(PDOException $e) {
+        if((string)$e->getCode()==='42S02')return null;
+        throw $e;
+    }
+}
 function naCatalogHasAccess(PDO $db, ?array $account, string $code, string $resource): bool {
     if ($account===null) return false;
+    if($code==='club_month'&&$resource==='club'&&naGiftClubExpiry($db,(string)$account['id'])!==null)return true;
     $providerOnly=naLiveWalletModeSelected()?" AND o.provider IN ('real_wallet','real_subscription')":"";
     $stmt=$db->prepare("SELECT 1 FROM numi_entitlements e
         INNER JOIN numi_orders o ON o.id=e.order_id
