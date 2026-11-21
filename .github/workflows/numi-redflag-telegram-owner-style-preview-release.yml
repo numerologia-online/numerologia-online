@@ -1,9 +1,10 @@
-name: Publish direct Cloud.ru in existing owner Red Flag only
+name: Safely publish existing owner Red Flag Gemini stability, zero inference
 on:
   push:
     branches: [main]
     paths:
       - .github/workflows/numi-redflag-telegram-owner-style-preview-release.yml
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
@@ -12,102 +13,114 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
-      - name: Validate and publish two existing Red Flag files only
+          fetch-depth: 3
+      - name: Free PHP and JavaScript syntax and safe-scope verification
+        run: |
+          set -euo pipefail
+          php -l redflag-ai-lab/style-test-api.php
+          node --check redflag-feature.js
+          python3 - <<'PY'
+          from pathlib import Path
+          a=Path('redflag-ai-lab/style-test-api.php').read_text()
+          b=Path('redflag-feature.js').read_text()
+          for needle in ['naTestOwner(naCurrent(naDB()))',"if($category['id']==='flags')",'google/gemini-3-flash-preview','WAIT_15_SECONDS','PROVIDER_OUTPUT_LIMIT','PROVIDER_INVALID_JSON','__CLOUDRU_KEY_BASE64__']:
+              assert needle in a,needle
+          assert a.count('__CLOUDRU_KEY_BASE64__')==1
+          assert 'AbortSignal.timeout(125000)' in b
+          assert 'ownerDraftInScope(question,state)' in b
+          assert '"/api/redflag-free-ai.php"' in b
+          print('EDITOR_ONLY_SYNTAX_OK charged_inference=0',flush=True)
+          PY
+      - name: Protected FTPS readback and automatic rollback, no model calls
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
-          CLOUD_RU_API_KEY: ${{ secrets.CLOUD_RU_API_KEY_2 }}
         run: |
+          set -euo pipefail
           python3 - <<'PY'
-          import os,io,ssl,ftplib,json,subprocess,time,secrets,hashlib,base64,urllib.request,urllib.error
+          import ftplib,ssl,os,io,re,subprocess,time,urllib.request,urllib.error
           from pathlib import Path
           api='redflag-ai-lab/style-test-api.php'
-          front='redflag-feature.js'
-          paths=[api,front]
-          guarded=['index.html','app.js','api/numi-account.php','api/numi-owner-access.php']
+          js='redflag-feature.js'
+          targets=[api,js]
+          guarded=['index.html','app.js','api/numi-account.php','api/redflag-free-ai.php','redflag-ai-lab/intimacy-knowledge-v1.json']
+          parent='2ac15f9d9305d1f5486223075bb27dcb8c10b033'
+          original_source={p:subprocess.check_output(['git','show',parent+':'+p]) for p in targets}
+          target_source={p:Path(p).read_bytes() for p in targets}
+          assert target_source[api].count(b'__CLOUDRU_KEY_BASE64__')==1
+          assert original_source[api].count(b'__CLOUDRU_KEY_BASE64__')==1
+          def check(url):
+              req=urllib.request.Request(url,headers={'Cache-Control':'no-cache','User-Agent':'NumiOwnerSafeRelease/1.0'})
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as res:return res.status
+              except urllib.error.HTTPError as e:return e.code
           site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
-          key=os.environ['CLOUD_RU_API_KEY'].strip()
-          if not key:raise SystemExit('CLOUD_RU_API_KEY_2_MISSING')
-          encoded=base64.b64encode(key.encode()).decode()
-          print('::add-mask::'+encoded)
-          desired={p:Path(p).read_bytes() for p in paths}
-          expected_hashes={api:'5712dd71351e918fd284d263fbbba773f289e1bb1c8c5add621ea6885cad8e01',front:'4a3877f1154ad4199506bddb367ce607006a7859950c2c1e96d68f0aa9a3cb41'}
-          if desired[api].count(b'__CLOUDRU_KEY_BASE64__')!=1:raise SystemExit('INVALID_KEY_TEMPLATE')
-          desired[api]=desired[api].replace(b'__CLOUDRU_KEY_BASE64__',encoded.encode())
-          token=secrets.token_hex(32)
-          health="""if(time()<__DEADLINE__ && hash_equals('__HASH__',hash('sha256',(string)($_SERVER['HTTP_X_NUMI_DEPLOYMENT']??'')))){
-              $answer=rfCloudCall([['role'=>'user','content'=>'Ответь одним словом: работает']],20);
-              rfPreviewReply(200,['ok'=>true,'direct_cloudru'=>true,'response_received'=>$answer!=='']);
-          }"""
-          health=health.replace('__DEADLINE__',str(int(time.time())+240)).replace('__HASH__',hashlib.sha256(token.encode()).hexdigest())
-          probe=desired[api].replace(b'// DEPLOYMENT_HEALTH_SLOT',health.encode())
-          for body in [desired[api],probe]:
-              lint=subprocess.run(['php','-l'],input=body,capture_output=True)
-              if lint.returncode:raise SystemExit('PHP_SYNTAX_FAILED')
-          lint=subprocess.run(['node','--input-type=module','--check'],input=desired[front],capture_output=True)
-          if lint.returncode:raise SystemExit('JS_SYNTAX_FAILED')
-          assert b'naTestOwner(naCurrent(naDB()))' in desired[api]
-          assert b'naAllowedOrigins()' in desired[api]
-          assert b'ownerDraftInScope(question,state)' in desired[front]
+          if check(site)!=200:raise RuntimeError('HOME_BEFORE_NOT_200')
+          if check(site+'api/numi-account.php')>=500:raise RuntimeError('ACCOUNT_BEFORE_SERVER_ERROR')
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
           ftp.prot_p();ftp.set_pasv(True)
-          root=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
-          def read(p):
-              b=io.BytesIO()
-              ftp.retrbinary('RETR '+root+p,b.write)
-              return b.getvalue()
-          def put(p,b):
-              ftp.storbinary('STOR '+root+p,io.BytesIO(b))
-              if read(p)!=b:raise RuntimeError('READBACK_FAILED_'+p)
-          def request(p,data=None,headers=None):
-              req=urllib.request.Request(site+p,data=data,headers={'Cache-Control':'no-cache',**(headers or {})})
-              try:
-                  with urllib.request.urlopen(req,timeout=65) as r:return r.status,r.read(300000)
-              except urllib.error.HTTPError as e:return e.code,e.read(10000)
-          original={};modified=[]
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          def retrieve(path):
+              output=io.BytesIO();ftp.retrbinary('RETR '+path,output.write);return output.getvalue()
+          def read(path):return retrieve(root+path)
+          def store(path,payload):
+              ftp.storbinary('STOR '+path,io.BytesIO(payload))
+              if retrieve(path)!=payload:raise RuntimeError('FTPS_READBACK_MISMATCH')
+          previous={}
+          changed=[]
           try:
-              original={p:read(p) for p in paths}
-              unchanged={p:read(p) for p in guarded}
-              catalog=read('redflag-ai-lab/catalog.json')
-              if catalog!=Path('redflag-ai-lab/catalog.json').read_bytes():raise RuntimeError('CATALOG_MISMATCH')
-              for p in paths:
-                  if hashlib.sha256(original[p]).hexdigest()!=expected_hashes[p]:raise RuntimeError('LIVE_DIFFERS_FROM_BASELINE_'+p)
-              if request('')[0]!=200:raise RuntimeError('HOMEPAGE_UNAVAILABLE_BEFORE_CHANGE')
-              modified.append(api);put(api,probe)
-              code,body=request(api,headers={'X-Numi-Deployment':token})
-              data=json.loads(body)
-              if code!=200 or data.get('direct_cloudru') is not True or data.get('response_received') is not True:
-                  raise RuntimeError('DIRECT_REGRU_CLOUDRU_PROBE_FAILED_HTTP_'+str(code))
-              print('DIRECT_REGRU_TO_CLOUDRU_RESPONSE_OK inference_calls=1 max_tokens=20',flush=True)
-              put(api,desired[api])
-              for payload in [None,b'{"category":"flags","question_id":"care-or-control","day":9,"month":9}']:
-                  code,body=request(api,data=payload,headers={'Content-Type':'application/json','Origin':site.rstrip('/')})
-                  if code!=403 or json.loads(body).get('error')!='OWNER_ONLY':raise RuntimeError('OWNER_GUARD_FAILED')
-              if read(front)!=original[front]:raise RuntimeError('FRONTEND_CHANGED_CONCURRENTLY')
-              modified.append(front);put(front,desired[front])
-              code,body=request(front+'?cloudru_verify='+str(time.time_ns()))
-              if code!=200 or body!=desired[front]:raise RuntimeError('PUBLIC_FRONTEND_MISMATCH')
-              for p in guarded:
-                  if read(p)!=unchanged[p]:raise RuntimeError('GUARDED_FILE_CHANGED_'+p)
-              if request('')[0]!=200:raise RuntimeError('HOMEPAGE_UNAVAILABLE_AFTER_CHANGE')
-              code,body=request('api/numi-account.php',data=b'{"action":"session"}',headers={'Content-Type':'application/json','Origin':site.rstrip('/')})
-              if code not in (200,401):raise RuntimeError('ACCOUNT_ENDPOINT_CHECK_FAILED_'+str(code))
-              try:json.loads(body)
-              except ValueError:raise RuntimeError('ACCOUNT_ENDPOINT_NOT_JSON')
-              print('REDFLAG_DIRECT_CLOUDRU_LIVE owner_guard_get_post=403 homepage=200 account_json=true other_files_identical=true frontend_hash_verified=true auto_generations=0',flush=True)
+              previous={p:read(p) for p in targets}
+              match=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",previous[api]))
+              if len(match)!=1:raise RuntimeError('LIVE_API_SECRET_LAYOUT_UNKNOWN')
+              found=match[0];secret=found.group(2)
+              if len(secret)<16 or not re.fullmatch(rb'[A-Za-z0-9+/=]+',secret) or secret==b'__CLOUDRU_KEY_BASE64__':
+                  raise RuntimeError('LIVE_API_SECRET_NOT_SET')
+              sanitized=previous[api][:found.start(2)]+b'__CLOUDRU_KEY_BASE64__'+previous[api][found.end(2):]
+              if sanitized not in (original_source[api],target_source[api]):
+                  raise RuntimeError('LIVE_PHP_DIFFERS_FROM_KNOWN_GOOD_NO_CHANGE')
+              if previous[js] not in (original_source[js],target_source[js]):
+                  raise RuntimeError('LIVE_JS_DIFFERS_FROM_KNOWN_GOOD_NO_CHANGE')
+              desired={api:target_source[api].replace(b'__CLOUDRU_KEY_BASE64__',secret),js:target_source[js]}
+              protect={p:read(p) for p in guarded}
+              backupdir=home+'/site-safeguard-backups'
+              try:ftp.mkd(backupdir)
+              except ftplib.error_perm as e:
+                  if not str(e).startswith('550'):raise
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              for p in targets:
+                  if desired[p]!=previous[p]:
+                      store(backupdir+'/gemini-owner-'+stamp+'-'+p.replace('/','-')+'.bak',previous[p])
+              if any(read(p)!=previous[p] for p in targets):
+                  raise RuntimeError('CONCURRENT_LIVE_FILE_CHANGE')
+              for p in targets:
+                  if desired[p]!=previous[p]:
+                      changed.append(p)
+                      store(root+p,desired[p])
+              if check(site)!=200:raise RuntimeError('HOME_AFTER_NOT_200')
+              if check(site+'redflag-ai-lab/style-test-api.php')!=403:
+                  raise RuntimeError('ANONYMOUS_OWNER_GET_NOT_DENIED')
+              if check(site+'api/numi-account.php')>=500:
+                  raise RuntimeError('ACCOUNT_AFTER_SERVER_ERROR')
+              if any(read(p)!=protect[p] for p in guarded):
+                  raise RuntimeError('GUARDED_SITE_FILE_CHANGED')
+              if any(read(p)!=desired[p] for p in targets):
+                  raise RuntimeError('AFTER_WRITE_MISMATCH')
+              print('PUBLISHED_AND_VERIFIED changed='+str(changed)+' home=200 owner_get=403 account_no_5xx=true model_prompt_matrix_payment_unchanged=true charged_inference_calls=0',flush=True)
           except BaseException:
-              for p in reversed(modified):
-                  try:put(p,original[p]);print('ROLLBACK_OK '+p,flush=True)
-                  except BaseException:print('ROLLBACK_FAILED '+p,flush=True)
+              for p in reversed(changed):
+                  try:
+                      store(root+p,previous[p]);print('ROLLBACK_OK '+p,flush=True)
+                  except BaseException as err:
+                      print('ROLLBACK_FAILED '+p+' '+type(err).__name__,flush=True)
               raise
           finally:
               try:ftp.quit()
-              except Exception:ftp.close()
+              except BaseException:ftp.close()
           PY

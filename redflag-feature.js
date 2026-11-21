@@ -368,7 +368,7 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({category,question_id:id,day:birth.day,month:birth.month,
           ...(category==="flags"&&id==="care-or-control"?{}:{year:birth.year})}),
-        signal:AbortSignal.timeout(95000)
+        signal:AbortSignal.timeout(125000)
       });
       const data=await response.json().catch(()=>null);
       if(!response.ok||data?.ok!==true)
@@ -386,7 +386,7 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
           ?"Повторный запрос пока рано. Подожди 15 секунд и открой вопрос снова."
           :code==="INVALID_FULL_BIRTH_DATE"?"Не удалось передать дату рождения. Проверь дату."
           :code==="PROVIDER_TIMEOUT"||error?.name==="TimeoutError"
-            ?"Соннет не успела ответить. Деньги не списаны. Попробуй снова."
+            ?"Gemini не успела ответить. Деньги не списаны. Попробуй снова."
           :code.startsWith("PROVIDER_HTTP_")
             ?"Cloud.ru вернул ошибку "+code.replace("PROVIDER_HTTP_","HTTP ")+". Деньги не списаны."
           :code==="KEY_NOT_CONFIGURED"?"Ключ Cloud.ru не настроен. Нужна проверка подключения."

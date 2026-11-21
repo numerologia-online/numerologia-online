@@ -33,8 +33,17 @@ function rfCloudCall(array $messages,int $tokens,string $model='anthropic/claude
     if($curlCode===28)throw new RuntimeException('PROVIDER_TIMEOUT');
     if($curlCode!==0)throw new RuntimeException('PROVIDER_NETWORK_ERROR');
     if($status!==200||!is_string($body))throw new RuntimeException('PROVIDER_HTTP_'.$status);
-    $data=json_decode($body,true,32,JSON_THROW_ON_ERROR);
+    try {
+        $data=json_decode($body,true,32,JSON_THROW_ON_ERROR);
+    } catch(JsonException $e) {
+        throw new RuntimeException('PROVIDER_INVALID_JSON');
+    }
     $text=$data['choices'][0]['message']['content']??null;
+    if(is_array($text)){
+        $parts=[];
+        foreach($text as $part)if(is_array($part)&&is_string($part['text']??null))$parts[]=$part['text'];
+        $text=implode('',$parts);
+    }
     if(!is_string($text)||trim($text)===''){
         // Log ONLY non-sensitive provider metadata to diagnose billed empty outputs.
         $finish=(string)($data['choices'][0]['finish_reason']??'unknown');
@@ -43,7 +52,7 @@ function rfCloudCall(array $messages,int $tokens,string $model='anthropic/claude
         error_log('REDFLAG_EMPTY_META model='.($model==='zai-org/GLM-5.1'?'GLM_5_1':($model==='google/gemini-3-flash-preview'?'GEMINI_3_FLASH':'other'))
           .' finish='.preg_replace('/[^a-z_]/i','',$finish)
           .' output_tokens='.$totalOut.' reasoning_tokens='.$reasoning);
-        throw new RuntimeException('EMPTY_ANSWER');
+        throw new RuntimeException($finish==='length'?'PROVIDER_OUTPUT_LIMIT':'EMPTY_ANSWER');
     }
     return trim($text);
 }
@@ -972,7 +981,7 @@ PROMPT;
       'трактовки_значимых_позиций_полной_матрицы'=>$positionData,
       'допустимые_точные_названия_следующего_вопроса'=>$followups
    ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
-   $text=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$data]],1850,'google/gemini-3-flash-preview');
+   $text=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$data]],2800,'google/gemini-3-flash-preview');
    $text=trim(str_replace(["\r\n","\r"],"\n",$text));
    $fence=str_repeat(chr(96),3);
    if(str_starts_with($text,$fence)){
@@ -989,6 +998,14 @@ PROMPT;
    if(mb_strlen($text)<450)
      throw new RuntimeException('OWNER_TEXT_LENGTH_INVALID');
    $paras=preg_split('/\n\s*\n/u',$text);
+   if(is_array($paras)&&count($paras)===1){
+      // Preserve both paragraphs if the provider used a single newline.
+      $lines=explode("\n",$text);
+      if(count($lines)===2&&trim($lines[0])!==''&&trim($lines[1])!==''){
+          $text=trim($lines[0])."\n\n".trim($lines[1]);
+          $paras=[$lines[0],$lines[1]];
+      }
+   }
    if(!is_array($paras)||count($paras)!==2)
      throw new RuntimeException('OWNER_TEXT_PARAGRAPHS_INVALID');
    return $text;
@@ -1021,6 +1038,7 @@ try {
 
     // Existing owner Telegram Red Flag cards only. No paid customer path changes.
     if($category['id']==='flags'){
+        if(function_exists('set_time_limit')){@set_time_limit(125);}
         $y=$input['year']??null;
         if(!is_int($y)||$y<1900||$y>(int)gmdate('Y')||!checkdate($month,$day,$y))
            rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_FULL_BIRTH_DATE']);
@@ -1254,7 +1272,8 @@ try {
     $safeReasons=[
         'PROVIDER_TIMEOUT','PROVIDER_NETWORK_ERROR','KEY_NOT_CONFIGURED',
         'EMPTY_ANSWER','INVALID_FULL_BIRTH_DATE','QUESTION_REFERENCE_INVALID',
-        'OWNER_TEXT_LENGTH_INVALID','OWNER_TEXT_PARAGRAPHS_INVALID'
+        'OWNER_TEXT_LENGTH_INVALID','OWNER_TEXT_PARAGRAPHS_INVALID',
+        'PROVIDER_INVALID_JSON','PROVIDER_OUTPUT_LIMIT'
     ];
     $ownerError=in_array($reason,$safeReasons,true)||preg_match('/^PROVIDER_HTTP_[0-9]{3}$/D',$reason)===1
         ?$reason:'GENERATION_UNAVAILABLE';
