@@ -22,6 +22,13 @@ function ngOrigin(): bool {
     return in_array($host,$allowed,true)&&$origin==='https://'.$host;
 }
 function ngSchema(PDO $db): void {
+    try {
+        $db->query('SELECT id FROM numi_gift_club LIMIT 0');
+        $db->query('SELECT id FROM numi_gift_batches LIMIT 0');
+        return;
+    } catch(PDOException $e) {
+        if((string)$e->getCode()!=='42S02')throw $e;
+    }
     $db->exec("CREATE TABLE IF NOT EXISTS numi_gift_batches (
       id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
       request_key CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
@@ -164,7 +171,7 @@ function ngIssue(PDO $db,array $payload): array {
 }
 function ngActivate(PDO $db,array $user,array $payload): array {
     $id=$payload['gift_id']??null;
-    if(!is_string($id)||!preg_match('/^[0-9a-f]{8}-[0-9a-f-]{27}$/Di',$id))
+    if(!is_string($id)||!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/Di',$id))
        throw new InvalidArgumentException('BAD_GIFT_ID');
     $db->beginTransaction();
     try{
