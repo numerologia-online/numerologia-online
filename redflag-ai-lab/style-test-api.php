@@ -972,7 +972,7 @@ PROMPT;
       'трактовки_значимых_позиций_полной_матрицы'=>$positionData,
       'допустимые_точные_названия_следующего_вопроса'=>$followups
    ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
-   $text=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$data]],1850,'zai-org/GLM-5.1');
+   $text=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$data]],1850,'google/gemini-3-flash-preview');
    $text=trim(str_replace(["\r\n","\r"],"\n",$text));
    $fence=str_repeat(chr(96),3);
    if(str_starts_with($text,$fence)){
@@ -1034,7 +1034,7 @@ try {
         session_write_close();
         rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
            'category'=>'flags','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
-           'model'=>'zai-org/GLM-5.1','answer'=>$answer]);
+           'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);
     }
 
     // Shared autonomous Sonnet preview for every question except the editorial
