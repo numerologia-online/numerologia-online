@@ -72,6 +72,16 @@
     dialog.append(legalStyle);
   }
 
+  // Optional gift program: safe link only, independent of login/payments.
+  if (!overview.querySelector("#numi-cabinet-gifts")) {
+    const giftLink=document.createElement("a");
+    giftLink.id="numi-cabinet-gifts";
+    giftLink.href="/gifts/";
+    giftLink.textContent="🎁 Проверить мои подарки";
+    giftLink.style.cssText="display:block;margin:12px auto;max-width:320px;padding:12px 16px;border:1px solid #cbbf9f;border-radius:10px;background:#faf8ee;color:#375541;text-align:center;font:600 13px/1.35 system-ui,sans-serif;text-decoration:none";
+    overview.append(giftLink);
+  }
+
   const signedTelegram = () => {
     const init = window.Telegram?.WebApp?.initData;
     if (typeof init === "string" && init) return init;

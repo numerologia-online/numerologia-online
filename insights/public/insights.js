@@ -46,6 +46,50 @@
     try{data=await response.json();}catch(_){throw Error('Сервер вернул страницу вместо данных. Код '+response.status+'.');}
     if(!response.ok||!data.ok){const e=Error(({OWNER_LOGIN_REQUIRED:'Нужен вход с подтверждённой почтой владельца.',INSIGHTS_UNAVAILABLE:'Сервер аналитики временно недоступен.',INVALID_CREDENTIALS:'Проверьте почту и пароль.',EMAIL_NOT_VERIFIED:'Подтвердите почту по ссылке из письма.',TOO_MANY_ATTEMPTS:'Слишком много попыток входа. Попробуйте позже.',BAD_RANGE:'Выберите период до одного года, без будущих дат.'})[data.error]||'Не удалось получить данные. Код '+response.status+'.');e.code=data.error;throw e;}return data;
   }
+  let giftRequestKey=null,giftEligible=0;
+  const giftStatus=(message,error=false)=>{const el=$('gift-message');el.textContent=message;el.classList.toggle('error',error);};
+  async function refreshGifts(){
+    try{
+      const data=await api('/api/numi-gifts.php?action=overview');
+      const accounts=data.accounts||{},gifts=data.gifts||{};
+      for(const [element,key] of [['gift-without','without_paid_club'],['gift-never','never_purchased'],['gift-expired','previously_paid_club'],['gift-eligible','eligible']])
+        $(element).textContent=number.format(accounts[key]||0);
+      $('gift-conversion').textContent='Выдано '+number.format(gifts.issued||0)+
+        ' · активировано '+number.format(gifts.activated||0)+
+        ' · ожидают активации '+number.format(gifts.pending||0)+
+        ' · покупателей после активации '+number.format(gifts.buyers_after_activation||0)+
+        ' · дарили за 30 дней '+number.format(accounts.gifted_last_30_days||0);
+      giftEligible=Number(accounts.eligible)||0;
+      $('gift-issue').disabled=giftEligible<1;
+      const history=$('gift-history');history.replaceChildren();
+      for(const batch of (data.batches||[])){
+        const p=document.createElement('p');
+        const when=new Date(String(batch.created_at).replace(' ','T')+'Z');
+        p.textContent=(isNaN(when.getTime())?'Дата неизвестна':when.toLocaleString('ru-RU',{timeZone:'Europe/Samara'}))+
+          ' · подарено '+number.format(batch.issued_count)+' из '+number.format(batch.requested_count);
+        history.append(p);
+      }
+      if(!history.childElementCount)history.textContent='Выдач пока не было.';
+      giftStatus('');
+    }catch(e){giftEligible=0;$('gift-issue').disabled=true;giftStatus('Подарки пока недоступны: '+e.message,true);}
+  }
+  $('gift-quantity').addEventListener('input',()=>{giftRequestKey=null;});
+  $('gift-form').addEventListener('submit',async event=>{
+    event.preventDefault();
+    const amount=Number($('gift-quantity').value);
+    if(!Number.isInteger(amount)||amount<1||amount>50)return giftStatus('Укажи число от 1 до 50.',true);
+    if(!window.confirm('Подарить 24 часа клуба '+amount+' случайным пользователям без подписки? Действие нельзя отменить одной кнопкой.'))return;
+    if(!giftRequestKey)giftRequestKey=crypto.randomUUID();
+    const button=$('gift-issue');button.disabled=true;giftStatus('Выдаём подарки…');
+    try{
+      const response=await api('/api/numi-gifts.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'issue',count:amount,request_key:giftRequestKey})});
+      giftRequestKey=null;
+      giftStatus('Подарки выданы: '+response.issued+'. Получатели увидят их в личных кабинетах.');
+      await refreshGifts();
+      giftStatus('Подарки выданы: '+response.issued+'. Получатели могут активировать их в течение 7 дней.');
+    }catch(e){giftStatus('Выдача не подтверждена. Повторите с тем же количеством: '+e.message,true);}
+    finally{button.disabled=giftEligible<1;}
+  });
   function loginVisible(){$('login-panel').hidden=false;$('dashboard').hidden=true;$('refresh').hidden=true;}
   function dashboardVisible(){$('login-panel').hidden=true;$('dashboard').hidden=false;$('refresh').hidden=false;}
   function setDates(days){const end=new Date(),start=new Date(end);start.setUTCDate(start.getUTCDate()-days+1);$('date-from').value=dateISO(start);$('date-to').value=dateISO(end);document.querySelectorAll('[data-days]').forEach(b=>b.classList.toggle('selected',Number(b.dataset.days)===days));}
@@ -74,7 +118,7 @@
     try{const data=await api('/api/numi-insights.php?from='+encodeURIComponent($('date-from').value)+'&to='+encodeURIComponent($('date-to').value),{signal:controller.signal});if(id!==requestId)return;report=data;dashboardVisible();
       $('total-sessions').textContent=number.format(data.totals.sessions);$('total-clicks').textContent=number.format(data.rows.reduce((n,r)=>n+r.clicks,0));$('total-orders').textContent=number.format(data.totals.orders);$('total-club').textContent='из них подписок — '+number.format(data.totals.subscriptions);$('total-revenue').textContent=money.format(data.totals.revenue);
       $('updated').textContent='Обновлено '+new Date(data.generated_at).toLocaleString('ru-RU',{timeZone:'Europe/Samara'})+' · Самара · Оплат без связи с вопросом: '+data.totals.unattributed+'.';
-      setStatus('');render();
+      setStatus('');render();void refreshGifts();
     }catch(e){if(id!==requestId)return;if(e.code==='OWNER_LOGIN_REQUIRED')loginVisible();setStatus(e.name==='AbortError'?'Сервер не ответил за 15 секунд. Можно повторить кнопкой «Обновить».':e.message,true);}
     finally{clearTimeout(timeout);if(id===requestId)$('refresh').disabled=false;}
   }

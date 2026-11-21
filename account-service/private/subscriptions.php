@@ -42,6 +42,18 @@ function naSubscriptionList(PDO $db,array $account,array $config): array {
           AND e.status='active' AND o.status='paid' AND o.verified_at IS NOT NULL
           $providerOnly GROUP BY e.product_code");
     $q->execute([$account['id']]);$periods=$q->fetchAll();
+    // An activated one-day gift is visible as non-recurring club access.
+    $giftUntil=function_exists('naGiftClubExpiry')?naGiftClubExpiry($db,(string)$account['id']):null;
+    if($giftUntil!==null) {
+        $found=false;
+        foreach($periods as &$period)if($period['product_code']==='club_month'){
+            if($period['expires_at']===null||$period['expires_at']<$giftUntil)
+                $period['expires_at']=$giftUntil;
+            $found=true;
+        }
+        unset($period);
+        if(!$found)$periods[]=['product_code'=>'club_month','expires_at'=>$giftUntil];
+    }
     naSubscriptionSchema($db);$prefs=$db->prepare('SELECT product_code,auto_renew,cancelled_at FROM numi_subscription_settings WHERE account_id=?');$prefs->execute([$account['id']]);$by=[];foreach($prefs->fetchAll()as$p)$by[$p['product_code']]=$p;
     return array_map(function($p)use($by,$config,$live){
         $setting=$by[$p['product_code']]??[];

@@ -1,0 +1,65 @@
+name: Inspect gift release baselines without changes
+on:
+  push:
+    branches: [feature/analytics-gift-club-day-20261121]
+    paths: [.github/workflows/numi-gifts-baseline-audit.yml]
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.event.head_commit.message == 'Audit gifts baseline read only'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compare live bytes with audited GitHub revision (READ ONLY)
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os,ftplib,ssl,io,subprocess,hashlib,difflib,pathlib
+          BASE='25159e1518c7ea2eb59cbc0254bc502048637426'
+          D='xn--c1adkkdfjbp1a4l.online'
+          mapping={
+            'account-service/private/core.php':'priv/core.php',
+            'account-service/private/wallet-real.php':'priv/wallet-real.php',
+            'account-service/private/subscriptions.php':'priv/subscriptions.php',
+            'account-browser.js':'pub/account-browser.js',
+            'insights/public/index.html':'pub/insights/index.html',
+            'insights/public/insights.js':'pub/insights/insights.js',
+            'insights/public/insights.css':'pub/insights/insights.css'}
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          f.connect('server172.hosting.reg.ru',21);f.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);f.prot_p()
+          home=f.pwd().rstrip('/')
+          def get(path):
+            out=io.BytesIO();f.retrbinary('RETR '+path,out.write);return out.getvalue()
+          for path,remote in mapping.items():
+            base=subprocess.check_output(['git','show',BASE+':'+path])
+            dest=home+('/private/numi-account-20261031/' if remote.startswith('priv/') else '/www/'+D+'/')+remote.split('/',1)[1]
+            live=get(dest)
+            same=base==live
+            print('BASELINE',path,'MATCH' if same else 'DRIFT','bytes',len(live),'sha256',hashlib.sha256(live).hexdigest(),flush=True)
+            if not same and remote.startswith('pub/'):
+              text=live.decode('utf-8','replace')
+              if path.endswith('index.html'):
+                for key in ['insights.css?v=','insights.js?v=','Подарочные','Посещения страниц','Сеансы','<nav class="tabs"']:
+                  print('HTML_MARKER',key, key in text)
+              elif path.endswith('insights.js'):
+                for key in ['function loginVisible()','setStatus(\'\');render();','const columns=','Подарочные сутки']:
+                  print('JS_MARKER',key,key in text)
+              elif path.endswith('insights.css'):
+                print('CSS_MARKERS','gift-panel' in text,'@media' in text)
+              print('DIFF_START',path)
+              left=base.decode('utf-8','replace').splitlines()
+              right=text.splitlines()
+              count=0
+              for line in difflib.unified_diff(left,right,n=1):
+                if line.startswith(('@@','+','-')):
+                  print('DIFF',line[:220])
+                  count+=1
+                  if count>=20:break
+          f.quit()
+          PY

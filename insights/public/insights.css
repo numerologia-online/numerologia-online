@@ -30,3 +30,30 @@ main,.heading,.heading>div,.workspace,.table-heading,.table-heading>div,.filters
 /* Give the final column breathing room inside the table edge. */
 .full-metrics th:last-child,.full-metrics td:last-child{padding-right:10px}
 @media(max-width:700px){.table-scroll{padding-right:8px}.full-metrics th:last-child,.full-metrics td:last-child{padding-right:5px}}
+
+
+/* Isolated gift campaign controls. Never affects checkout or existing cards. */
+.gift-panel{background:#fff;border:1px solid #dce1d6;border-radius:14px;padding:22px;margin:0 0 27px}
+.gift-head{display:flex;justify-content:space-between;align-items:start;gap:15px}
+.gift-head h2{font:normal 28px/1.2 Georgia,serif;color:#1b4937;margin:0 0 7px}
+.gift-head p:not(.eyebrow){font-size:13px;color:#627368;margin:0 0 18px}
+.gift-anchor{color:#255942;font-size:12px;text-decoration:underline;white-space:nowrap}
+.gift-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}
+.gift-stats article{border:1px solid #e0e5d9;background:#f9faf7;border-radius:10px;padding:12px;display:grid;gap:8px}
+.gift-stats span{font-size:11px;line-height:1.3;color:#5e7262}
+.gift-stats strong{font:normal 28px Georgia,serif;color:#1e4635;font-variant-numeric:tabular-nums}
+.gift-line{font-size:12px;line-height:1.65;color:#3c624c}
+.gift-form{border-top:1px solid #e2e7dc;margin:15px 0 0;padding:17px 0 0}
+.gift-form>label{font-size:13px;font-weight:650;color:#284935}
+.gift-actions{display:flex;gap:10px;margin:11px 0}
+.gift-actions input{width:90px;flex:none}
+.gift-actions button{min-height:42px}
+.gift-form small{display:block;color:#718074;max-width:650px;line-height:1.5}
+.gift-message{color:#38684e;font-size:13px}
+.gift-message.error{color:#9c392b}
+.gift-history{padding:9px 0 3px;color:#4c6354;font-size:12px}
+.gift-history summary{cursor:pointer;font-weight:650}
+.gift-history p{margin:8px 0}
+.gift-caution{border-top:1px solid #e5eae1;padding-top:12px;font-size:11px;color:#718074}
+@media(max-width:780px){.gift-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.gift-head{display:block}.gift-anchor{display:inline-block;margin-bottom:8px}}
+@media(max-width:420px){.gift-panel{padding:15px}.gift-actions{flex-wrap:wrap}.gift-actions button{flex:1}.gift-stats strong{font-size:24px}}
