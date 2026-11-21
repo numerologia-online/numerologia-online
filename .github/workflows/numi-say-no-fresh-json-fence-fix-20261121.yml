@@ -1,4 +1,4 @@
-name: Publish existing Telegram Red Flag owner cards with new GLM style
+name: Publish existing Telegram Red Flag owner cards with Gemini 3 Flash
 on:
   push:
     branches: [main]
@@ -28,8 +28,8 @@ jobs:
           python3 - <<'PY'
           import subprocess,pathlib,io,os,ssl,ftplib,base64,urllib.request,urllib.error,time,json
           path='redflag-ai-lab/style-test-api.php'
-          before_revision='62ee85e9cec3c24a4b3736f637c9d59ff583f154'
-          after_revision='2b0ebe365c976a0eae5b15bc9a225dafab87a14f'
+          before_revision='2b0ebe365c976a0eae5b15bc9a225dafab87a14f'
+          after_revision='4d6a10ad7a5bf7c9605c56568de80a5c6883a21c'
           old=subprocess.check_output(['git','show',before_revision+':'+path])
           new=subprocess.check_output(['git','show',after_revision+':'+path])
           if pathlib.Path(path).read_bytes()!=new:raise RuntimeError('SOURCE_CHANGED_AFTER_REVIEW')
@@ -40,26 +40,25 @@ jobs:
               raise RuntimeError('OWNER_AUTHORIZATION_GUARD_INVALID')
           if b"rfOwnerSharpFlags($question,$day,$month,$y,$catalog)" not in new:
               raise RuntimeError('OWNER_RED_FLAG_ROUTE_MISSING')
-          if b"'model'=>'zai-org/GLM-5.1'" not in new or b"rfUnifiedQuestionMeaning($category['id'],$question['id'],$day,$month)" not in new:
+          if b"'model'=>'google/gemini-3-flash-preview'" not in new or b"rfUnifiedQuestionMeaning($category['id'],$question['id'],$day,$month)" not in new:
               raise RuntimeError('MODEL_OR_LEGACY_FALLBACK_MISSING')
           if b"'value'=>$n,'name'=>$a['name']" in new or b"$relevantArcana[(string)$n]=$a" in new:
               raise RuntimeError('ARCANA_NAMES_STILL_SENT_TO_MODEL')
           if "preg_replace('/[ \\t]*[—–―][ \\t]*/u'".encode('utf-8') not in new:
               raise RuntimeError('DASH_NORMALIZER_NOT_FOUND')
-          # Only the shared provider-call helper changes; the user-facing
-          # GLM prompt and all business logic must be byte-identical.
-          beginning=b'function rfCloudCall('
-          ending=b'\n\n/** Shared Red Flag editor:'
-          def without_provider_helper(buf):
-              start=buf.index(beginning)
-              stop=buf.index(ending,start)
-              return buf[:start]+b'<CLOUD_CALL_HELPER>'+buf[stop:]
-          if without_provider_helper(old)!=without_provider_helper(new):
-              raise RuntimeError('MODIFICATION_OUTSIDE_PROVIDER_HELPER')
+          # Only change the owner's Red Flag generation model and its response label.
+          old_call=b"$text=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$data]],1850,'zai-org/GLM-5.1');"
+          new_call=b"$text=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$data]],1850,'google/gemini-3-flash-preview');"
+          old_label=b"'model'=>'zai-org/GLM-5.1','answer'=>$answer"
+          new_label=b"'model'=>'google/gemini-3-flash-preview','answer'=>$answer"
+          if old.count(old_call)!=1 or old.count(old_label)!=1:
+              raise RuntimeError('OWNER_MODEL_REPLACEMENT_NOT_UNIQUE')
+          if old.replace(old_call,new_call).replace(old_label,new_label)!=new:
+              raise RuntimeError('MODIFICATION_OUTSIDE_OWNER_MODEL_AND_LABEL')
           if b"'chat_template_kwargs'=>['enable_thinking'=>false]" not in new:
-              raise RuntimeError('GLM_THINKING_BUDGET_FIX_NOT_FOUND')
+              raise RuntimeError('PRESERVE_OTHER_MODELS_SETTINGS')
           if b'REDFLAG_EMPTY_META' not in new:
-              raise RuntimeError('SAFE_EMPTY_LOGGING_MISSING')
+              raise RuntimeError('PRESERVE_EMPTY_LOGGING')
           # Make sure existing paid customer endpoints are not in the deployment set.
           protected=['redflag-feature.js','index.html','api/numi-account.php','api/redflag-free-ai.php']
           kpath='redflag-ai-lab/intimacy-knowledge-v1.json'
@@ -75,7 +74,7 @@ jobs:
           for body in (old,new,before,desired):
               php=subprocess.run(['php','-l'],input=body,capture_output=True)
               if php.returncode:raise RuntimeError('PHP_SYNTAX_FAILED_'+php.stderr.decode(errors='replace')[:300])
-          print('PHP_LINT_OK model=zai-org/GLM-5.1 owner_only=true cost_tests=0',flush=True)
+          print('PHP_LINT_OK model=google/gemini-3-flash-preview owner_only=true cost_tests=0',flush=True)
           site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
           def request(p,method='GET',body=None):
               req=urllib.request.Request(site+p+'?owner_flags_release='+str(time.time_ns()),
@@ -113,7 +112,7 @@ jobs:
               for name,blob in untouched.items():
                   if read(name)!=blob:raise RuntimeError('PROTECTED_FILE_CHANGED_'+name)
               if request('')[0]!=200:raise RuntimeError('HOME_AFTER_NOT_200')
-              print('PUBLISHED_AND_VERIFIED owner_GLМ_thinking_disabled=true empty_metadata_logging=true prompt_unchanged=true protected_payments_unchanged=true customer_answers_unchanged=true inference_calls=0',flush=True)
+              print('PUBLISHED_AND_VERIFIED owner_Gemini3Flash=true prompt_unchanged=true matrix_unchanged=true protected_payments_unchanged=true customer_answers_unchanged=true inference_calls=0',flush=True)
           except BaseException:
               if modified:
                   try:write(path,before);print('ROLLBACK_OK',flush=True)
