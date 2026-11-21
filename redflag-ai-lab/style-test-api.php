@@ -15,7 +15,7 @@ function rfCloudCall(array $messages,int $tokens,string $model='anthropic/claude
     $ch=curl_init('https://foundation-models.api.cloud.ru/v1/chat/completions');
     curl_setopt_array($ch,[
         CURLOPT_POST=>true,CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,
-        CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>$model==='zai-org/GLM-5.1'?82:55,
+        CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>$model==='zai-org/GLM-5.1'?82:($model==='google/gemini-3-flash-preview'?95:55),
         CURLOPT_HTTPHEADER=>['Content-Type: application/json','Authorization: Bearer '.$key],
         CURLOPT_POSTFIELDS=>json_encode(array_merge(
             ['model'=>$model,'messages'=>$messages,'max_tokens'=>$tokens,'stream'=>false],
@@ -40,7 +40,7 @@ function rfCloudCall(array $messages,int $tokens,string $model='anthropic/claude
         $finish=(string)($data['choices'][0]['finish_reason']??'unknown');
         $totalOut=(int)($data['usage']['completion_tokens']??0);
         $reasoning=(int)($data['usage']['completion_tokens_details']['reasoning_tokens']??0);
-        error_log('REDFLAG_EMPTY_META model='.($model==='zai-org/GLM-5.1'?'GLM_5_1':'other')
+        error_log('REDFLAG_EMPTY_META model='.($model==='zai-org/GLM-5.1'?'GLM_5_1':($model==='google/gemini-3-flash-preview'?'GEMINI_3_FLASH':'other'))
           .' finish='.preg_replace('/[^a-z_]/i','',$finish)
           .' output_tokens='.$totalOut.' reasoning_tokens='.$reasoning);
         throw new RuntimeException('EMPTY_ANSWER');
@@ -986,7 +986,7 @@ PROMPT;
    $text=preg_replace('/[ \t]*[—–―][ \t]*/u', ': ', $text)??$text;
    $text=preg_replace('/:[ \t]*:/u', ':', $text);
    $text=preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
-   if(mb_strlen($text)<450||mb_strlen($text)>1750)
+   if(mb_strlen($text)<450)
      throw new RuntimeException('OWNER_TEXT_LENGTH_INVALID');
    $paras=preg_split('/\n\s*\n/u',$text);
    if(!is_array($paras)||count($paras)!==2)
@@ -1253,7 +1253,8 @@ try {
     // Do not echo raw provider messages or any private configuration values.
     $safeReasons=[
         'PROVIDER_TIMEOUT','PROVIDER_NETWORK_ERROR','KEY_NOT_CONFIGURED',
-        'EMPTY_ANSWER','INVALID_FULL_BIRTH_DATE','QUESTION_REFERENCE_INVALID'
+        'EMPTY_ANSWER','INVALID_FULL_BIRTH_DATE','QUESTION_REFERENCE_INVALID',
+        'OWNER_TEXT_LENGTH_INVALID','OWNER_TEXT_PARAGRAPHS_INVALID'
     ];
     $ownerError=in_array($reason,$safeReasons,true)||preg_match('/^PROVIDER_HTTP_[0-9]{3}$/D',$reason)===1
         ?$reason:'GENERATION_UNAVAILABLE';
