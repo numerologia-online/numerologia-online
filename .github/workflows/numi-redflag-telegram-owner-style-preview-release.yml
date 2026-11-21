@@ -1,4 +1,4 @@
-name: Safely publish existing owner Red Flag Gemini stability, zero inference
+name: Publish owner Red Flag Telegram cache refresh
 on:
   push:
     branches: [main]
@@ -18,107 +18,92 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Free PHP and JavaScript syntax and safe-scope verification
+      - name: Validate exact two static asset-version changes
         run: |
           set -euo pipefail
-          php -l redflag-ai-lab/style-test-api.php
-          node --check redflag-feature.js
+          node --check app.js
           python3 - <<'PY'
-          from pathlib import Path
-          a=Path('redflag-ai-lab/style-test-api.php').read_text()
-          b=Path('redflag-feature.js').read_text()
-          for needle in ['naTestOwner(naCurrent(naDB()))',"if($category['id']==='flags')",'google/gemini-3-flash-preview','WAIT_15_SECONDS','PROVIDER_OUTPUT_LIMIT','PROVIDER_INVALID_JSON','__CLOUDRU_KEY_BASE64__']:
-              assert needle in a,needle
-          assert a.count('__CLOUDRU_KEY_BASE64__')==1
-          assert 'AbortSignal.timeout(125000)' in b
-          assert 'ownerDraftInScope(question,state)' in b
-          assert '"/api/redflag-free-ai.php"' in b
-          print('EDITOR_ONLY_SYNTAX_OK charged_inference=0',flush=True)
+          import subprocess,pathlib
+          baseline='a3370ba7045625c14f255866e439e8f7d2ecd7a9'
+          replacements={
+            'app.js':(b'./redflag-feature.js?v=flags-owner-sonnet-shared-20261120',b'./redflag-feature.js?v=flags-owner-fullbirth-20261121-2'),
+            'index.html':(b'app.js?v=flags-owner-sonnet-shared-20261120',b'app.js?v=flags-owner-fullbirth-20261121-2')
+          }
+          for p,(old,new) in replacements.items():
+              original=subprocess.check_output(['git','show',baseline+':'+p])
+              current=pathlib.Path(p).read_bytes()
+              assert original.count(old)==1,'BASELINE_VERSION_NOT_UNIQUE_'+p
+              assert original.replace(old,new)==current,'UNREVIEWED_DIFF_'+p
+          js=pathlib.Path('redflag-feature.js').read_text()
+          assert 'year:birth.year})' in js and 'care-or-control"?{}:{year:birth.year}' not in js
+          print('CACHE_REFRESH_SCOPE_VERIFIED no_inference=1',flush=True)
           PY
-      - name: Protected FTPS readback and automatic rollback, no model calls
+      - name: Publish only app.js and index.html via protected FTPS without model calls
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import ftplib,ssl,os,io,re,subprocess,time,urllib.request,urllib.error
-          from pathlib import Path
-          api='redflag-ai-lab/style-test-api.php'
-          js='redflag-feature.js'
-          targets=[api,js]
-          guarded=['index.html','app.js','api/numi-account.php','api/redflag-free-ai.php','redflag-ai-lab/intimacy-knowledge-v1.json']
-          parent='25159e1518c7ea2eb59cbc0254bc502048637426'
-          original_source={p:subprocess.check_output(['git','show',parent+':'+p]) for p in targets}
-          target_source={p:Path(p).read_bytes() for p in targets}
-          assert target_source[api].count(b'__CLOUDRU_KEY_BASE64__')==1
-          assert original_source[api].count(b'__CLOUDRU_KEY_BASE64__')==1
-          def check(url):
-              req=urllib.request.Request(url,headers={'Cache-Control':'no-cache','User-Agent':'NumiOwnerSafeRelease/1.0'})
-              try:
-                  with urllib.request.urlopen(req,timeout=25) as res:return res.status
-              except urllib.error.HTTPError as e:return e.code
+          import ftplib,ssl,os,io,time,subprocess,pathlib,urllib.request,urllib.error
+          targets=['app.js','index.html']
+          guarded=['redflag-feature.js','redflag-ai-lab/style-test-api.php','redflag-ai-lab/intimacy-knowledge-v1.json','api/numi-account.php','api/redflag-free-ai.php']
+          baseline='a3370ba7045625c14f255866e439e8f7d2ecd7a9'
+          original_source={p:subprocess.check_output(['git','show',baseline+':'+p]) for p in targets}
+          desired={p:pathlib.Path(p).read_bytes() for p in targets}
           site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
-          if check(site)!=200:raise RuntimeError('HOME_BEFORE_NOT_200')
-          if check(site+'api/numi-account.php')>=500:raise RuntimeError('ACCOUNT_BEFORE_SERVER_ERROR')
-          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          def http_status(path):
+              req=urllib.request.Request(site+path+'?static_cache_release='+str(time.time_ns()),headers={'Cache-Control':'no-store','User-Agent':'NumiSafeStaticCachePatch/1.0'})
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as r:return r.status
+              except urllib.error.HTTPError as e:return e.code
+          if http_status('')!=200:raise RuntimeError('HOME_BEFORE_NOT_200')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
           ftp.prot_p();ftp.set_pasv(True)
           home=ftp.pwd().rstrip('/')
           root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
-          def retrieve(path):
-              output=io.BytesIO();ftp.retrbinary('RETR '+path,output.write);return output.getvalue()
-          def read(path):return retrieve(root+path)
-          def store(path,payload):
-              ftp.storbinary('STOR '+path,io.BytesIO(payload))
-              if retrieve(path)!=payload:raise RuntimeError('FTPS_READBACK_MISMATCH')
-          previous={}
-          changed=[]
+          def read(p):
+              buf=io.BytesIO();ftp.retrbinary('RETR '+root+p,buf.write);return buf.getvalue()
+          def put(p,data):
+              ftp.storbinary('STOR '+root+p,io.BytesIO(data))
+              if read(p)!=data:raise RuntimeError('FTPS_READBACK_FAILED_'+p)
+          previous={};changed=[]
           try:
               previous={p:read(p) for p in targets}
-              match=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",previous[api]))
-              if len(match)!=1:raise RuntimeError('LIVE_API_SECRET_LAYOUT_UNKNOWN')
-              found=match[0];secret=found.group(2)
-              if len(secret)<16 or not re.fullmatch(rb'[A-Za-z0-9+/=]+',secret) or secret==b'__CLOUDRU_KEY_BASE64__':
-                  raise RuntimeError('LIVE_API_SECRET_NOT_SET')
-              sanitized=previous[api][:found.start(2)]+b'__CLOUDRU_KEY_BASE64__'+previous[api][found.end(2):]
-              if sanitized not in (original_source[api],target_source[api]):
-                  raise RuntimeError('LIVE_PHP_DIFFERS_FROM_KNOWN_GOOD_NO_CHANGE')
-              if previous[js] not in (original_source[js],target_source[js]):
-                  raise RuntimeError('LIVE_JS_DIFFERS_FROM_KNOWN_GOOD_NO_CHANGE')
-              desired={api:target_source[api].replace(b'__CLOUDRU_KEY_BASE64__',secret),js:target_source[js]}
-              protect={p:read(p) for p in guarded}
-              backupdir=home+'/site-safeguard-backups'
-              try:ftp.mkd(backupdir)
+              for p in targets:
+                  if previous[p] not in (original_source[p],desired[p]):
+                      raise RuntimeError('LIVE_STATIC_DIFFERS_FROM_REVIEWED_BASELINE_'+p)
+              unchanged={p:read(p) for p in guarded}
+              backups=home+'/site-safeguard-backups'
+              try:ftp.mkd(backups)
               except ftplib.error_perm as e:
                   if not str(e).startswith('550'):raise
               stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
               for p in targets:
-                  if desired[p]!=previous[p]:
-                      store(backupdir+'/gemini-owner-'+stamp+'-'+p.replace('/','-')+'.bak',previous[p])
+                  if previous[p]!=desired[p]:
+                      ftp.storbinary('STOR '+backups+'/redflag-static-'+stamp+'-'+p+'.bak',io.BytesIO(previous[p]))
               if any(read(p)!=previous[p] for p in targets):
-                  raise RuntimeError('CONCURRENT_LIVE_FILE_CHANGE')
+                  raise RuntimeError('CONCURRENT_LIVE_STATIC_CHANGE')
               for p in targets:
-                  if desired[p]!=previous[p]:
+                  if previous[p]!=desired[p]:
                       changed.append(p)
-                      store(root+p,desired[p])
-              if check(site)!=200:raise RuntimeError('HOME_AFTER_NOT_200')
-              if check(site+'redflag-ai-lab/style-test-api.php')!=403:
-                  raise RuntimeError('ANONYMOUS_OWNER_GET_NOT_DENIED')
-              if check(site+'api/numi-account.php')>=500:
-                  raise RuntimeError('ACCOUNT_AFTER_SERVER_ERROR')
-              if any(read(p)!=protect[p] for p in guarded):
-                  raise RuntimeError('GUARDED_SITE_FILE_CHANGED')
+                      put(p,desired[p])
+              if http_status('')!=200:raise RuntimeError('HOME_AFTER_NOT_200')
+              if http_status('redflag-ai-lab/style-test-api.php')!=403:
+                  raise RuntimeError('OWNER_ACCESS_GUARD_FAILED')
+              if http_status('api/numi-account.php')>=500:
+                  raise RuntimeError('ACCOUNT_ENDPOINT_SERVER_ERROR')
+              if any(read(p)!=unchanged[p] for p in guarded):
+                  raise RuntimeError('PROTECTED_FILE_CHANGED')
               if any(read(p)!=desired[p] for p in targets):
-                  raise RuntimeError('AFTER_WRITE_MISMATCH')
-              print('PUBLISHED_AND_VERIFIED changed='+str(changed)+' home=200 owner_get=403 account_no_5xx=true model_prompt_matrix_payment_unchanged=true charged_inference_calls=0',flush=True)
+                  raise RuntimeError('REMOTE_CONTENT_NOT_UPDATED')
+              print('PUBLISHED_AND_VERIFIED cache_bust=true changed='+str(changed)+' homepage=200 owner_guard=403 payments_and_model_unchanged=true inference_calls=0',flush=True)
           except BaseException:
               for p in reversed(changed):
-                  try:
-                      store(root+p,previous[p]);print('ROLLBACK_OK '+p,flush=True)
-                  except BaseException as err:
-                      print('ROLLBACK_FAILED '+p+' '+type(err).__name__,flush=True)
+                  try:put(p,previous[p]);print('ROLLBACK_OK '+p,flush=True)
+                  except BaseException:print('ROLLBACK_FAILED '+p,flush=True)
               raise
           finally:
               try:ftp.quit()
