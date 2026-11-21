@@ -57,6 +57,7 @@ jobs:
           with urllib.request.urlopen(req,timeout=100) as response:
               obj=json.load(response)
           raw=obj['choices'][0]['message']['content']
+          print('MODEL_RESPONSE_PREFIX '+repr(str(raw)[:450]),flush=True)
           data=json.loads(raw)
           a=data['analysis'];s=data['answer']
           points=a['points']
