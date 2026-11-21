@@ -103,7 +103,7 @@ INSTRUCTION;
     'exact_followup_titles'=>$followups
   ],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)]
  ],
- 'max_tokens'=>1750,'stream'=>false
+ 'max_tokens'=>2350,'stream'=>false
  ];
  $key=base64_decode('__SAY_NO_FRESH_CLOUD_KEY__',true);
  if(!is_string($key)||$key==='')throw new RuntimeException('MODEL_CREDENTIAL_NOT_CONFIGURED');
@@ -118,6 +118,14 @@ INSTRUCTION;
  $obj=json_decode($response,true,30,JSON_THROW_ON_ERROR);
  $content=$obj['choices'][0]['message']['content']??null;
  if(!is_string($content)||trim($content)==='')throw new RuntimeException('EMPTY_RESULT');
+ $content=trim($content);
+ // Accept code-fenced JSON while validating every source point as before.
+ $fence=str_repeat(chr(96),3);
+ if(str_starts_with($content,$fence)){
+  $content=trim(substr($content,3));
+  if(str_starts_with($content,'json'))$content=ltrim(substr($content,4));
+  if(str_ends_with($content,$fence))$content=trim(substr($content,0,-3));
+ }
  $parsed=json_decode(trim($content),true,30,JSON_THROW_ON_ERROR);
  $analysis=$parsed['analysis']??null;$answer=$parsed['answer']??null;
  if(!is_array($analysis)||!is_array($analysis['points']??null)||!is_string($answer)
