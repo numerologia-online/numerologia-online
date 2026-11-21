@@ -1,4 +1,4 @@
-name: Publish owner-only Gemini Infidelity 9 question previews
+name: Publish owner preview for first free Infidelity question
 on:
   push:
     branches: [main]
@@ -17,35 +17,64 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Free PHP syntax and exact insert-only scope checks
+      - name: Free syntax and exact five-file patch verification
         run: |
           set -euo pipefail
           php -l redflag-ai-lab/style-test-api.php
+          node --check redflag-feature.js
+          node --check app.js
           python3 - <<'PY'
-          import subprocess,pathlib,difflib,json
-          p='redflag-ai-lab/style-test-api.php'
-          before=subprocess.check_output(['git','show','8886d623ad65b53cefb66236672298a517f15de3:'+p])
-          after=subprocess.check_output(['git','show','7e0bb15a0fbd9eef7ab7a87f7f3fd2b9d44150b0:'+p])
-          assert after==pathlib.Path(p).read_bytes(),'SOURCE_DIFFERS_FROM_REVIEWED_RELEASE'
-          a=before.splitlines(keepends=True)
-          b=after.splitlines(keepends=True)
-          modifications=[(tag,a0,a1,b0,b1) for tag,a0,a1,b0,b1 in difflib.SequenceMatcher(None,a,b,autojunk=False).get_opcodes() if tag!='equal']
-          assert len(modifications)==2 and all(x[0]=='insert' for x in modifications),'UNAPPROVED_CHANGE_TO_EXISTING_CODE'
-          assert after.count(b'function rfOwnerSharpFlags(')==1
-          assert after.count(b'function rfOwnerSharpInfidelity(')==1
-          assert after.count(b"if($category['id']==='infidelity')")==1
-          assert after.count(b"if($category['id']==='flags')")==1
-          assert b"'model'=>'google/gemini-3-flash-preview'" in after
-          assert b'__CLOUDRU_KEY_BASE64__' in after and after.count(b'__CLOUDRU_KEY_BASE64__')==1
-          catalog=json.loads(pathlib.Path('redflag-ai-lab/catalog.json').read_bytes())
-          ids=[q['id'] for category in catalog['categories'] if category['id']=='infidelity' for q in category['questions']]
-          assert len(ids)==9 and len(set(ids))==9
-          section=after[after.index(b'function rfOwnerSharpInfidelity('):after.index(b'\ntry {\n    // DEPLOYMENT_HEALTH_SLOT')]
-          for qid in ids:
-              assert ("'"+qid+"'=>[").encode() in section,'MISSING_QUESTION_'+qid
-          print('SAFE_INFidelity_OWNER_ONLY_STATIC_CHECK_OK prompts_flags_unchanged=true billable_calls=0',flush=True)
+          import subprocess,pathlib,json
+          base='8409315b9e2a557bf8cc8d28b4c3c2383bd3d90b'
+          target='e009bf5bfe7778995a5ce006a8e5137b0d7083a4'
+          patches={
+            'redflag-ai-lab/catalog.json':[
+              ('      "id": "infidelity",\n      "title": "Измены и флирт",\n      "questions": [',
+               '      "id": "infidelity",\n      "title": "Измены и флирт",\n      "questions": [\n        {\n          "id": "faithful",\n          "title": "Верный или у него каждая вторая «просто подруга»?"\n        },')],
+            'redflag-ai-lab/style-test-api.php':[
+              ("function rfOwnerSharpInfidelity(array $question,int $day,int $month,int $year,array $catalog): string {\n   $maps=[\n",
+               "function rfOwnerSharpInfidelity(array $question,int $day,int $month,int $year,array $catalog): string {\n   $maps=[\n     'faithful'=>['loveHeart','left','center','top','tailSecond'],\n"),
+              ("   $focus=[\n     'options'=>",
+               "   $focus=[\n     'faithful'=>'Как мужчина относится к дружбе с женщинами: открытое общение, флирт под видом дружбы или уважение границ пары. Не объявляй измену фактом.',\n     'options'=>")],
+            'redflag-feature.js':[
+              ('  return Boolean(question.isComingSoon&&ownerDraftAccess&&redflagDraftSections.has(section));',
+               '  return Boolean(ownerDraftAccess&&redflagDraftSections.has(section)&&\n    (question.isComingSoon||(section==="infidelity"&&question.id==="faithful"&&question.isFree)));'),
+              ('    free.textContent = "БЕСПЛАТНО";',
+               '    free.textContent = ownerDraftInScope(question,state) ? "ИИ · тест" : "БЕСПЛАТНО";'),
+              ('  if(shouldOpen)ensureAnswer(question,entry);',
+               '  if(shouldOpen&&ownerDraftInScope(question,entry)){\n    entry.answers.delete(questionId);\n    entry.answerErrors.delete(questionId);\n  }\n  if(shouldOpen)ensureAnswer(question,entry);')],
+            'app.js':[
+              ('./redflag-feature.js?v=flags-owner-fullbirth-20261121-2',
+               './redflag-feature.js?v=infidelity-faithful-owner-20261121')],
+            'index.html':[
+              ('app.js?v=flags-owner-fullbirth-20261121-2',
+               'app.js?v=infidelity-faithful-owner-20261121')]
+          }
+          for path,replacements in patches.items():
+              before=subprocess.check_output(['git','show',base+':'+path]).decode()
+              approved=before
+              for old,new in replacements:
+                  assert approved.count(old)==1,'PATCH_BASELINE_NOT_UNIQUE_'+path
+                  approved=approved.replace(old,new)
+              actual=pathlib.Path(path).read_text()
+              assert approved==actual,'UNAPPROVED_DIFF_'+path
+              assert subprocess.check_output(['git','show',target+':'+path]).decode()==actual,'TARGET_COMMIT_MISMATCH_'+path
+          pub=json.loads(pathlib.Path('redflag-ai-lab/catalog.json').read_text())
+          questions=next(x['questions'] for x in pub['categories'] if x['id']=='infidelity')
+          assert len(questions)==10 and len(set(x['id'] for x in questions))==10
+          assert questions[0]['id']=='faithful'
+          js=pathlib.Path('redflag-feature.js').read_text()
+          assert 'section==="infidelity"&&question.id==="faithful"&&question.isFree' in js
+          assert '"/api/redflag-free-ai.php"' in js
+          php=pathlib.Path('redflag-ai-lab/style-test-api.php').read_text()
+          assert php.count('__CLOUDRU_KEY_BASE64__')==1
+          assert php.count('function rfOwnerSharpFlags(')==1
+          assert php.count('function rfOwnerSharpInfidelity(')==1
+          assert php.count("if($category['id']==='flags')")==1
+          assert php.count("if($category['id']==='infidelity')")==1
+          print('EXACT_FIVE_FILE_PATCH_SAFE NO_MODEL_CALLS',flush=True)
           PY
-      - name: Encrypted publish of existing owner API with backup and rollback, zero inference
+      - name: Backup and upload exactly five approved files with readback and rollback
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
@@ -53,61 +82,78 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import os,subprocess,pathlib,io,ssl,ftplib,re,urllib.request,urllib.error,time
-          p='redflag-ai-lab/style-test-api.php'
-          before=subprocess.check_output(['git','show','8886d623ad65b53cefb66236672298a517f15de3:'+p])
-          after=subprocess.check_output(['git','show','7e0bb15a0fbd9eef7ab7a87f7f3fd2b9d44150b0:'+p])
-          assert pathlib.Path(p).read_bytes()==after,'SOURCE_CHANGED_AFTER_REVIEW'
+          baseline='8409315b9e2a557bf8cc8d28b4c3c2383bd3d90b'
+          target='e009bf5bfe7778995a5ce006a8e5137b0d7083a4'
+          paths=['redflag-ai-lab/catalog.json','redflag-ai-lab/style-test-api.php','redflag-feature.js','app.js','index.html']
+          original_source={p:subprocess.check_output(['git','show',baseline+':'+p]) for p in paths}
+          approved_source={p:subprocess.check_output(['git','show',target+':'+p]) for p in paths}
+          assert all(pathlib.Path(p).read_bytes()==approved_source[p] for p in paths),'RELEASE_SOURCE_DRIFT'
           site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
-          def request(path):
-              req=urllib.request.Request(site+path+'?infidelity_owner_release='+str(time.time_ns()),headers={'Cache-Control':'no-store','User-Agent':'NumiInfidelityOwnerRelease/1.0'})
+          def status(path):
+              req=urllib.request.Request(site+path+'?owner_free_refresh='+str(time.time_ns()),
+                headers={'Cache-Control':'no-store','User-Agent':'NumiEditorOnlyFreePreview/1.0'})
               try:
-                  with urllib.request.urlopen(req,timeout=28) as resp:return resp.status
+                  with urllib.request.urlopen(req,timeout=28) as res:return res.status
               except urllib.error.HTTPError as e:return e.code
-          assert request('')==200,'HOME_BEFORE_NOT_200'
+          if status('')!=200:raise RuntimeError('HOME_NOT_200_BEFORE')
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
           ftp.prot_p();ftp.set_pasv(True)
           home=ftp.pwd().rstrip('/')
           root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
-          def read(n):
-              out=io.BytesIO();ftp.retrbinary('RETR '+root+n,out.write);return out.getvalue()
-          def write(n,data):
-              ftp.storbinary('STOR '+root+n,io.BytesIO(data))
-              if read(n)!=data:raise RuntimeError('FTPS_READBACK_MISMATCH')
-          original=None;modified=False
-          guard=['index.html','app.js','redflag-feature.js','redflag-ai-lab/intimacy-knowledge-v1.json','api/numi-account.php','api/redflag-free-ai.php']
+          def retrieve(path):
+              output=io.BytesIO();ftp.retrbinary('RETR '+path,output.write);return output.getvalue()
+          def read(p):return retrieve(root+p)
+          def write(p,content):
+              ftp.storbinary('STOR '+root+p,io.BytesIO(content))
+              if read(p)!=content:raise RuntimeError('FTPS_READBACK_FAILED_'+p)
+          prev={};changed=[]
+          guarded=['api/numi-account.php','api/redflag-free-ai.php','redflag-ai-lab/intimacy-knowledge-v1.json','redflag-public-catalog.js','redflag-text-bank.js']
           try:
-              original=read(p)
-              matches=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",original))
-              if len(matches)!=1:raise RuntimeError('LIVE_SECRET_LAYOUT_UNKNOWN')
-              match=matches[0]; secret=match.group(2)
+              prev={p:read(p) for p in paths}
+              api='redflag-ai-lab/style-test-api.php'
+              secret_match=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",prev[api]))
+              if len(secret_match)!=1:raise RuntimeError('LIVE_SECRET_LAYOUT_NOT_UNIQUE')
+              match=secret_match[0];secret=match.group(2)
               if len(secret)<16 or not re.fullmatch(rb'[A-Za-z0-9+/=]+',secret) or secret==b'__CLOUDRU_KEY_BASE64__':
-                  raise RuntimeError('LIVE_API_KEY_UNAVAILABLE')
-              redacted=original[:match.start(2)]+b'__CLOUDRU_KEY_BASE64__'+original[match.end(2):]
-              if redacted!=before:raise RuntimeError('LIVE_API_NOT_APPROVED_BASELINE_NO_CHANGE')
-              desired=after.replace(b'__CLOUDRU_KEY_BASE64__',secret)
-              protected={k:read(k) for k in guard}
-              if subprocess.run(['php','-l'],input=desired,capture_output=True).returncode:
-                  raise RuntimeError('PHP_SYNTAX_FAIL')
+                  raise RuntimeError('LIVE_SECRET_NOT_SET')
+              redacted=prev[api][:match.start(2)]+b'__CLOUDRU_KEY_BASE64__'+prev[api][match.end(2):]
+              if redacted!=original_source[api]:raise RuntimeError('LIVE_API_NOT_BASELINE')
+              for p in paths:
+                  if p!=api and prev[p]!=original_source[p]:
+                      raise RuntimeError('LIVE_FILE_NOT_BASELINE_'+p)
+              desired=dict(approved_source)
+              desired[api]=approved_source[api].replace(b'__CLOUDRU_KEY_BASE64__',secret)
+              protected={p:read(p) for p in guarded}
+              assert subprocess.run(['php','-l'],input=desired[api],capture_output=True).returncode==0,'PHP_SYNTAX_FAIL'
               backup=home+'/site-safeguard-backups'
               try:ftp.mkd(backup)
               except ftplib.error_perm as e:
                   if not str(e).startswith('550'):raise
               stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
-              ftp.storbinary('STOR '+backup+'/owner-infidelity-'+stamp+'.bak',io.BytesIO(original))
-              if read(p)!=original:raise RuntimeError('CONCURRENT_EDIT_DETECTED')
-              modified=True;write(p,desired)
-              if request('')!=200:raise RuntimeError('HOME_AFTER_NOT_200')
-              if request(p)!=403:raise RuntimeError('OWNER_ACCESS_NOT_RESTRICTED')
-              if request('api/numi-account.php')>=500:raise RuntimeError('ACCOUNT_SERVER_ERROR')
-              if any(read(k)!=v for k,v in protected.items()):
-                  raise RuntimeError('PROTECTED_FILES_CHANGED')
-              print('PUBLISHED_AND_VERIFIED infidelity_questions=9 existing_flags_prompt_unchanged=true customer_payments_unchanged=true owner_guard_403=true homepage_200=true charged_inference_calls=0',flush=True)
+              for p in paths:
+                  if desired[p]!=prev[p]:
+                      ftp.storbinary('STOR '+backup+'/owner-free-'+stamp+'-'+p.replace('/','-')+'.bak',io.BytesIO(prev[p]))
+              if any(read(p)!=prev[p] for p in paths):
+                  raise RuntimeError('LIVE_FILES_CONCURRENTLY_CHANGED')
+              for p in paths:
+                  if desired[p]!=prev[p]:
+                      changed.append(p);write(p,desired[p])
+              if status('')!=200:raise RuntimeError('HOME_NOT_200_AFTER')
+              if status('redflag-ai-lab/style-test-api.php')!=403:
+                  raise RuntimeError('EDITOR_AUTH_NOT_PROTECTED')
+              if status('api/numi-account.php')>=500:
+                  raise RuntimeError('ACCOUNT_API_5XX')
+              for p,data in protected.items():
+                  if read(p)!=data:raise RuntimeError('GUARDED_FILE_CHANGED_'+p)
+              if any(read(p)!=desired[p] for p in paths):
+                  raise RuntimeError('TARGET_FILE_READBACK_CHANGED')
+              print('PUBLISHED_AND_VERIFIED owner_infidelity_faithful=true ten_editor_questions=true public_free_unchanged=true payments_unchanged=true flags_prompt_unchanged=true charged_inference_calls=0 files='+str(changed),flush=True)
           except BaseException:
-              if modified and original is not None:
-                  try:write(p,original);print('ROLLBACK_OK',flush=True)
-                  except BaseException:print('ROLLBACK_FAILED',flush=True)
+              for p in reversed(changed):
+                  try:write(p,prev[p]);print('ROLLBACK_OK '+p,flush=True)
+                  except BaseException:print('ROLLBACK_FAILED '+p,flush=True)
               raise
           finally:
               try:ftp.quit()
