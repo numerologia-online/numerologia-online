@@ -46,7 +46,7 @@
     try{data=await response.json();}catch(_){throw Error('Сервер вернул страницу вместо данных. Код '+response.status+'.');}
     if(!response.ok||!data.ok){const e=Error(({OWNER_LOGIN_REQUIRED:'Нужен вход с подтверждённой почтой владельца.',INSIGHTS_UNAVAILABLE:'Сервер аналитики временно недоступен.',INVALID_CREDENTIALS:'Проверьте почту и пароль.',EMAIL_NOT_VERIFIED:'Подтвердите почту по ссылке из письма.',TOO_MANY_ATTEMPTS:'Слишком много попыток входа. Попробуйте позже.',BAD_RANGE:'Выберите период до одного года, без будущих дат.'})[data.error]||'Не удалось получить данные. Код '+response.status+'.');e.code=data.error;throw e;}return data;
   }
-  let giftRequestKey=null;
+  let giftRequestKey=null,giftEligible=0;
   const giftStatus=(message,error=false)=>{const el=$('gift-message');el.textContent=message;el.classList.toggle('error',error);};
   async function refreshGifts(){
     try{
@@ -59,7 +59,8 @@
         ' · ожидают активации '+number.format(gifts.pending||0)+
         ' · покупателей после активации '+number.format(gifts.buyers_after_activation||0)+
         ' · дарили за 30 дней '+number.format(accounts.gifted_last_30_days||0);
-      $('gift-issue').disabled=!(Number(accounts.eligible)>0);
+      giftEligible=Number(accounts.eligible)||0;
+      $('gift-issue').disabled=giftEligible<1;
       const history=$('gift-history');history.replaceChildren();
       for(const batch of (data.batches||[])){
         const p=document.createElement('p');
@@ -70,7 +71,7 @@
       }
       if(!history.childElementCount)history.textContent='Выдач пока не было.';
       giftStatus('');
-    }catch(e){$('gift-issue').disabled=true;giftStatus('Подарки пока недоступны: '+e.message,true);}
+    }catch(e){giftEligible=0;$('gift-issue').disabled=true;giftStatus('Подарки пока недоступны: '+e.message,true);}
   }
   $('gift-quantity').addEventListener('input',()=>{giftRequestKey=null;});
   $('gift-form').addEventListener('submit',async event=>{
@@ -87,7 +88,7 @@
       await refreshGifts();
       giftStatus('Подарки выданы: '+response.issued+'. Получатели могут активировать их в течение 7 дней.');
     }catch(e){giftStatus('Выдача не подтверждена. Повторите с тем же количеством: '+e.message,true);}
-    finally{button.disabled=false;}
+    finally{button.disabled=giftEligible<1;}
   });
   function loginVisible(){$('login-panel').hidden=false;$('dashboard').hidden=true;$('refresh').hidden=true;}
   function dashboardVisible(){$('login-panel').hidden=true;$('dashboard').hidden=false;$('refresh').hidden=false;}
