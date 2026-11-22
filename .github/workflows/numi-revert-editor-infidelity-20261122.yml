@@ -1,4 +1,4 @@
-name: Restore original high-quality Gemini Infidelity prompt
+name: Rebuild owner Infidelity from independent 22-energy source
 on:
   push:
     branches: [main]
@@ -10,107 +10,200 @@ concurrency:
   group: reg-ru-manual-publication
   cancel-in-progress: false
 jobs:
-  release:
+  rebuild:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Verify rollback scope and free PHP lint
+      - name: Prove exact editor-only changes and PHP syntax
         run: |
           set -euo pipefail
           php -l redflag-ai-lab/style-test-api.php
           python3 - <<'PY'
-          import subprocess,pathlib
+          import pathlib,subprocess,json
+          old='46d9303fc889f83cc55a724747187ae127e6021f'
+          target='e81514c04ff88e7deb56c710b0b4784ee5285f92'
           p='redflag-ai-lab/style-test-api.php'
-          old='f3097a5cd958196073429be4926562d65a2341e3'
-          good='52b556612a659dc167cb65213158305b1757f62e'
-          old_bytes=subprocess.check_output(['git','show',old+':'+p])
-          good_bytes=subprocess.check_output(['git','show',good+':'+p])
-          assert pathlib.Path(p).read_bytes()==good_bytes,'RESTORED_GITHUB_VERSION_CHANGED'
+          b=subprocess.check_output(['git','show',old+':'+p])
+          a=subprocess.check_output(['git','show',target+':'+p])
+          assert pathlib.Path(p).read_bytes()==a,'UNAPPROVED_PHP_SOURCE'
           opener=b'function rfOwnerSharpInfidelity('
           closer=b'\ntry {\n    // DEPLOYMENT_HEALTH_SLOT'
-          assert old_bytes.split(opener,1)[0]==good_bytes.split(opener,1)[0],'FLAGS_OR_OTHER_API_CHANGED'
-          assert old_bytes.split(closer,1)[1]==good_bytes.split(closer,1)[1],'OTHER_ENDPOINTS_CHANGED'
-          assert b'RF_OWNER_INF_SHORT_PREVIEW' in good_bytes,'SHORT_RESPONSE_DIAGNOSTIC_MISSING'
-          assert b"unset($_SESSION['last_generation'])" in good_bytes,'FAILED_GENERATION_COOLDOWN_MISSING'
-          assert good_bytes.count(b"2800,'google/gemini-3-flash-preview'")==2,'MODEL_OR_TOKEN_BUDGET_CHANGED'
-          assert good_bytes.count(b'__CLOUDRU_KEY_BASE64__')==1,'SECRET_LAYOUT_CHANGED'
-          assert 'Сопоставь минимум три позиции' in good_bytes.decode('utf-8') and 'Из пяти переданных позиций выбери две-три' in old_bytes.decode('utf-8'),'ORIGINAL_PROMPT_NOT_RESTORED'
-          print('RESTORE_EXACT_PRE_LENGTH_FIX_ORIGINAL_PROMPT no_inference_queries=true',flush=True)
+          assert all(x.count(opener)==1 and x.count(closer)==1 for x in [a,b]),'FUNCTION_BOUNDARIES_CHANGED'
+          assert b.split(opener,1)[0]==a.split(opener,1)[0],'FLAGS_OR_OTHER_SOURCE_CHANGED'
+          assert b.split(closer,1)[1]==a.split(closer,1)[1],'ACCOUNT_OR_OTHER_ENDPOINTS_CHANGED'
+          inf=a.split(opener,1)[1].split(closer,1)[0]
+          assert a.count(b"2800,'google/gemini-3-flash-preview'")==2,'MODEL_OR_BUDGET_CHANGED'
+          assert b'RF_OWNER_INF_SHORT_PREVIEW' in inf,'SHORT_RESPONSE_DIAGNOSTICS_LOST'
+          assert b"unset($_SESSION['last_generation'])" in a,'FAILED_COOLDOWN_FIX_LOST'
+          assert a.count(b'__CLOUDRU_KEY_BASE64__')==1,'SECRET_LAYOUT_CHANGED'
+          assert b"infidelity-knowledge-v1.json" in inf,'NEW_KNOWLEDGE_NOT_CONNECTED'
+          kb_path='redflag-ai-lab/infidelity-knowledge-v1.json'
+          kb=pathlib.Path(kb_path).read_bytes()
+          assert kb==subprocess.check_output(['git','show',target+':'+kb_path]),'UNAPPROVED_NEW_KB'
+          parsed=json.loads(kb)
+          assert parsed['schema']=='numi-owner-infidelity-knowledge-v1' and parsed['version']==1
+          assert list(map(int,parsed['arcana'].keys()))==list(range(1,23)),'ENERGIES_NOT_COMPLETE'
+          assert len(parsed['questions'])==10,'QUESTIONS_INCOMPLETE'
+          for key,item in parsed['arcana'].items():
+              assert 50<=len(item['mature'])<=450 and 50<=len(item['shadow'])<=550,('BAD_KB_LENGTH',key)
+          assert any('искушен' in x for x in parsed['arcana']['15'].values()),'FIFTEENTH_NOT_CONTEXTUALIZED'
+          common=json.loads(pathlib.Path('redflag-ai-lab/catalog.json').read_text())
+          ids=[q['id'] for group in common['categories'] if group['id']=='infidelity' for q in group['questions']]
+          assert set(ids)==set(parsed['questions']),'QUESTION_IDS_DO_NOT_MATCH_CATALOG'
+          print('ONLY_INF_EDITOR_CHANGED: 22_Energies 10_Questions model_2800_unchanged shared_KB_unchanged',flush=True)
           PY
-      - name: Restore only editor PHP through secure FTPS with backup and rollback
+      - name: Test 366 dates x 10 questions with local fake model only
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('redflag-ai-lab/style-test-api.php').read_text()
+          opener=src.index('function rfOwner22(')
+          mid=src.index('function rfOwnerSharpFlags(',opener)
+          inf=src.index('function rfOwnerSharpInfidelity(')
+          end=src.index('\ntry {\n    // DEPLOYMENT_HEALTH_SLOT',inf)
+          prefix=r'''<?php
+          function rfCloudCall(array $messages,int $tokens,string $model):string {
+             if($tokens!==2800||$model!=='google/gemini-3-flash-preview')throw new RuntimeException('TEST_PROVIDER_CHANGED');
+             $GLOBALS['lastMockMessages']=$messages;
+             return str_repeat('Это только локальный тест без обращения к нейросети. ',15)."\n\n"
+                   .str_repeat('Проверка второго абзаца. ',8);
+          }
+          '''
+          test=r'''
+          $catalog=json_decode(file_get_contents(__DIR__.'/catalog.json'),true,30,JSON_THROW_ON_ERROR);
+          $questions=[];
+          foreach($catalog['categories'] as $category)if($category['id']==='infidelity')$questions=$category['questions'];
+          if(count($questions)!==10)throw new RuntimeException('QUESTION_COUNT_TEST');
+          $tested=0;$dates=0;
+          $check=function(int $day,int $month,int $year)use(&$tested,$questions,$catalog):void {
+              foreach($questions as $question) {
+                  $out=rfOwnerSharpInfidelity($question,$day,$month,$year,$catalog);
+                  if(!is_string($out)||!str_contains($out,"\n\n"))throw new RuntimeException('LOCAL_OUTPUT_BAD');
+                  $data=json_decode($GLOBALS['lastMockMessages'][1]['content'],true,32,JSON_THROW_ON_ERROR);
+                  $main=$data['две_равноправные_основные_позиции'];
+                  $additional=$data['три_уточняющие_позиции'];
+                  if(count($main)!==2||count($additional)!==3)throw new RuntimeException('POSITIONS_COUNT');
+                  if($main[0]['роль_точки']!=='День рождения, внешняя манера проявления'
+                     ||$main[1]['роль_точки']!=='Месяц рождения, изначальные стремления')
+                     throw new RuntimeException('DAY_MONTH_MAIN_ROLES_INVALID');
+                  foreach(array_merge($main,$additional) as $point)
+                      if(!isset($point['в_теме_верности_риск'],$point['в_теме_верности_зрелое']))
+                          throw new RuntimeException('POINT_KB_INCOMPLETE');
+                  if($day===15&&$month===7&&$year===1987
+                    &&!str_contains($main[0]['в_теме_верности_риск'],'искушений'))
+                     throw new RuntimeException('FIFTEENTH_TEMPTATION_MISSING');
+                  if($data['суть_этого_вопроса']===''||count($data['точные_названия_следующих_вопросов'])!==9)
+                     throw new RuntimeException('PER_QUESTION_FOCUS_INVALID');
+                  $tested++;
+              }
+          };
+          $check(15,7,1987);$check(31,10,1988);$check(9,9,1986);
+          for($month=1;$month<=12;$month++)
+            for($day=1;$day<=31;$day++){
+                if(!checkdate($month,$day,2000))continue;
+                $check($day,$month,2000);
+                $dates++;
+            }
+          if($dates!==366||$tested!==3690)throw new RuntimeException('UNEXPECTED_COVERAGE '.$dates.' '.$tested);
+          echo "OFFLINE_APPROVED dates=366 scenarios=3690 model_network_calls=0 billed_generations=0\n";
+          '''
+          Path('redflag-ai-lab/_qa_infidelity_no_ai.php').write_text(prefix+src[opener:mid]+"\n"+src[inf:end]+"\n"+test)
+          PY
+          php -l redflag-ai-lab/_qa_infidelity_no_ai.php
+          php redflag-ai-lab/_qa_infidelity_no_ai.php
+          rm redflag-ai-lab/_qa_infidelity_no_ai.php
+      - name: Guarded FTPS backup and two-file publication with rollback
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import os,ssl,io,ftplib,re,subprocess,pathlib,urllib.request,urllib.error,time
-          path='redflag-ai-lab/style-test-api.php'
-          old='f3097a5cd958196073429be4926562d65a2341e3'
-          good='52b556612a659dc167cb65213158305b1757f62e'
-          old_code=subprocess.check_output(['git','show',old+':'+path])
-          good_code=subprocess.check_output(['git','show',good+':'+path])
-          assert pathlib.Path(path).read_bytes()==good_code,'SOURCE_CODE_MISMATCH'
-          base_url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
-          def status(route):
-              req=urllib.request.Request(base_url+route+'?editor_restore='+str(time.time_ns()),
-                headers={'Cache-Control':'no-store','User-Agent':'NumiEditorRollback/1.0'})
+          import io,ssl,os,re,ftplib,subprocess,pathlib,time,urllib.request,urllib.error
+          old='46d9303fc889f83cc55a724747187ae127e6021f'
+          target='e81514c04ff88e7deb56c710b0b4784ee5285f92'
+          php='redflag-ai-lab/style-test-api.php'
+          kb='redflag-ai-lab/infidelity-knowledge-v1.json'
+          previous=subprocess.check_output(['git','show',old+':'+php])
+          approved=subprocess.check_output(['git','show',target+':'+php])
+          approved_kb=subprocess.check_output(['git','show',target+':'+kb])
+          assert pathlib.Path(php).read_bytes()==approved,'PHP_CHANGED_BETWEEN_CHECKS'
+          assert pathlib.Path(kb).read_bytes()==approved_kb,'KB_CHANGED_BETWEEN_CHECKS'
+          site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          def status(path):
+              req=urllib.request.Request(site+path+'?editor_infidelity_newkb='+str(time.time_ns()),
+                 headers={'Cache-Control':'no-store','User-Agent':'NumiEditorInfidelityRebuild/1.0'})
               try:
-                  with urllib.request.urlopen(req,timeout=25) as res:return res.status
+                  with urllib.request.urlopen(req,timeout=27) as res:return res.status
               except urllib.error.HTTPError as e:return e.code
           if status('')!=200:raise RuntimeError('HOME_NOT_200_BEFORE')
-          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=38)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
           ftp.prot_p();ftp.set_pasv(True)
           home=ftp.pwd().rstrip('/')
           root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
-          def read(p):
-              b=io.BytesIO();ftp.retrbinary('RETR '+root+p,b.write);return b.getvalue()
-          def write(p,content):
-              ftp.storbinary('STOR '+root+p,io.BytesIO(content))
-              if read(p)!=content:raise RuntimeError('READBACK_FAILED_'+p)
-          guarded=['redflag-ai-lab/catalog.json','redflag-ai-lab/intimacy-knowledge-v1.json',
-             'redflag-feature.js','app.js','index.html','redflag-public-catalog.js',
-             'redflag-text-bank.js','api/numi-account.php','api/redflag-free-ai.php']
-          changed=False
+          def get(path):
+              data=io.BytesIO();ftp.retrbinary('RETR '+root+path,data.write);return data.getvalue()
+          def put(path,data):
+              ftp.storbinary('STOR '+root+path,io.BytesIO(data))
+              if get(path)!=data:raise RuntimeError('READBACK_FAIL_'+path)
+          protected=['redflag-ai-lab/catalog.json','redflag-ai-lab/intimacy-knowledge-v1.json',
+                     'redflag-feature.js','app.js','index.html','api/numi-account.php',
+                     'api/redflag-free-ai.php','redflag-public-catalog.js']
+          php_changed=False;kb_created=False
           try:
-              live=read(path)
-              matches=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",live))
-              if len(matches)!=1:raise RuntimeError('LIVE_KEY_FORMAT_CHANGED')
-              match=matches[0];secret=match.group(2)
+              live=get(php)
+              ms=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",live))
+              if len(ms)!=1:raise RuntimeError('SERVER_SECRET_FORMAT_DRIFT')
+              m=ms[0];secret=m.group(2)
               if len(secret)<16 or secret==b'__CLOUDRU_KEY_BASE64__' or not re.fullmatch(rb'[A-Za-z0-9+/=]+',secret):
-                  raise RuntimeError('LIVE_KEY_UNAVAILABLE')
-              redacted=live[:match.start(2)]+b'__CLOUDRU_KEY_BASE64__'+live[match.end(2):]
-              if redacted!=old_code:raise RuntimeError('SERVER_CODE_NO_LONGER_EXPECTED_VERSION')
-              desired=good_code.replace(b'__CLOUDRU_KEY_BASE64__',secret)
+                  raise RuntimeError('SECRET_NOT_PRESERVABLE')
+              masked=live[:m.start(2)]+b'__CLOUDRU_KEY_BASE64__'+live[m.end(2):]
+              if masked!=previous:raise RuntimeError('LIVE_PHP_NOT_APPROVED_PREVIOUS_VERSION')
+              desired=approved.replace(b'__CLOUDRU_KEY_BASE64__',secret)
               if subprocess.run(['php','-l'],input=desired,capture_output=True).returncode!=0:
-                  raise RuntimeError('RESTORED_PHP_SYNTAX_FAILED')
-              untouched={p:read(p) for p in guarded}
-              folder=home+'/site-safeguard-backups'
-              try:ftp.mkd(folder)
+                  raise RuntimeError('REAL_KEY_PHP_NOT_VALID')
+              try:
+                  old_kb=get(kb)
+                  if old_kb!=approved_kb:raise RuntimeError('UNEXPECTED_EXISTING_DOMAIN_KB')
               except ftplib.error_perm as e:
                   if not str(e).startswith('550'):raise
-              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
-              ftp.storbinary('STOR '+folder+'/restore-previous-editor-style-'+stamp+'.php.bak',io.BytesIO(live))
-              if read(path)!=live:raise RuntimeError('CONCURRENT_SITE_CHANGE')
-              changed=True
-              write(path,desired)
+                  old_kb=None
+              snapshots={path:get(path) for path in protected}
+              backup=home+'/site-safeguard-backups'
+              try:ftp.mkd(backup)
+              except ftplib.error_perm as e:
+                  if not str(e).startswith('550'):raise
+              ts=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              ftp.storbinary('STOR '+backup+'/infidelity-before-clean-rebuild-'+ts+'.php.bak',io.BytesIO(live))
+              if get(php)!=live:raise RuntimeError('CONCURRENT_PHP_CHANGE')
+              if old_kb is None:
+                  put(kb,approved_kb);kb_created=True
+              else:
+                  if get(kb)!=approved_kb:raise RuntimeError('CONCURRENT_KB_CHANGE')
+              php_changed=True
+              put(php,desired)
               if status('')!=200:raise RuntimeError('HOME_NOT_200_AFTER')
               if status('redflag-ai-lab/style-test-api.php')!=403:
-                  raise RuntimeError('OWNER_ROUTE_NOT_PROTECTED')
-              if status('api/numi-account.php')>=500:raise RuntimeError('ACCOUNT_ROUTE_ERROR')
-              if read(path)!=desired:raise RuntimeError('SITE_ROLLBACK_NOT_VERIFIED')
-              for p,data in untouched.items():
-                  if read(p)!=data:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
-              print('PUBLISHED_AND_VERIFIED original_pre_length_edit_prompt_restored=true redflags_unchanged=true payment_unchanged=true model_2800_unchanged=true short_error_diagnostics_preserved=true inference_calls=0',flush=True)
+                  raise RuntimeError('EDITOR_ONLY_GUARD_NOT_403')
+              if status('api/numi-account.php')>=500:raise RuntimeError('ACCOUNT_ROUTE_UNHEALTHY')
+              if get(php)!=desired or get(kb)!=approved_kb:
+                  raise RuntimeError('FINAL_READBACK_BAD')
+              for p,old_content in snapshots.items():
+                  if get(p)!=old_content:raise RuntimeError('PROTECTED_FILE_DRIFT_'+p)
+              print('PUBLISHED_AND_VERIFIED editor_infidelity_rebuilt=true independent_22_energy_kb=true all_366_dates_offline_pass=true flags_frozen=true shared_kb_frozen=true model_2800_unchanged=true payments_unchanged=true inference_calls=0 backup_saved=true',flush=True)
           except BaseException:
-              if changed:
-                  try:write(path,live);print('ROLLBACK_OK',flush=True)
-                  except BaseException:print('ROLLBACK_FAILED',flush=True)
+              if php_changed:
+                  try:put(php,live);print('ROLLBACK_PHP_OK',flush=True)
+                  except BaseException:print('ROLLBACK_PHP_FAILED',flush=True)
+              if kb_created:
+                  try:ftp.delete(root+kb);print('ROLLBACK_NEW_KB_OK',flush=True)
+                  except BaseException:print('ROLLBACK_NEW_KB_FAILED',flush=True)
               raise
           finally:
               try:ftp.quit()
