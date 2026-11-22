@@ -1,4 +1,4 @@
-name: Guarded publish of arcana 15 in shared 22-energy knowledge
+name: Guarded Flags five-point matrix mapping, prompts unchanged
 on:
   push:
     branches: [main]
@@ -17,53 +17,128 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Verify exactly one shared arcana entry changed
+      - name: Verify only the Flags point map changed
+        run: |
+          set -euo pipefail
+          php -l redflag-ai-lab/style-test-api.php
+          python3 - <<'PY'
+          import pathlib,subprocess,re,json
+          old='389f20105a5bf9da0537a5b1bab9a31ec373edb2'
+          target='f4f150a0cc4feac800e8729c57539a6b0f38f63e'
+          path='redflag-ai-lab/style-test-api.php'
+          before=subprocess.check_output(['git','show',old+':'+path])
+          after=subprocess.check_output(['git','show',target+':'+path])
+          assert pathlib.Path(path).read_bytes()==after,'UNAPPROVED_PHP_VERSION'
+          assert after.count(b'__CLOUDRU_KEY_BASE64__')==1,'SECRET_PLACEHOLDER_CHANGED'
+          def map_section(src):
+              i=src.index(b'function rfOwnerSharpFlags(')
+              a=src.index(b'   $maps=[',i)
+              b=src.index(b'   ];',a)+len(b'   ];')
+              assert b<src.index(b'function rfOwnerSharpInfidelity(',i)
+              return a,b
+          b1,b2=map_section(before)
+          a1,a2=map_section(after)
+          assert before[:b1]==after[:a1],'CODE_BEFORE_FLAGS_MAP_CHANGED'
+          assert before[b2:]==after[a2:],'CODE_AFTER_FLAGS_MAP_CHANGED'
+          assert before[b1:b2]!=after[a1:a2],'NO_MAPPING_CHANGE'
+          raw=after[a1:a2]
+          rows=re.findall(rb"'([a-z-]+)'=>\[([^\]\n]+)\]",raw)
+          assert len(rows)==10,'QUESTION_MAP_COUNT_INVALID'
+          maps={}
+          for question,items in rows:
+              pts=re.findall(rb"'([a-zA-Z]+)'",items)
+              assert len(pts)==5 and len(set(pts))==5,'FIVE_DISTINCT_POINTS_REQUIRED'
+              assert pts[:3]==[b'left',b'top',b'right'],'BIRTH_DAY_MONTH_YEAR_NOT_FIRST'
+              maps[question.decode()]=[p.decode() for p in pts]
+          assert len({tuple(v[3:]) for v in maps.values()})==10,'DUPLICATE_TOPIC_PAIR'
+          catalog=json.loads(pathlib.Path('redflag-ai-lab/catalog.json').read_text())
+          ids={q['id'] for c in catalog['categories'] if c['id']=='flags' for q in c['questions']}
+          assert set(maps)==ids,'FLAGS_QUESTION_IDS_CHANGED'
+          kb=json.loads(pathlib.Path('redflag-ai-lab/intimacy-knowledge-v1.json').read_text())
+          assert len(kb['arcana'])==22,'KNOWLEDGE_MISSING'
+          assert all(k in kb['pointDescriptions'] for pts in maps.values() for k in pts),'UNKNOWN_MATRIX_POINT'
+          for frozen in ['redflag-ai-lab/intimacy-knowledge-v1.json',
+              'redflag-ai-lab/infidelity-knowledge-v1.json','redflag-ai-lab/catalog.json']:
+              assert subprocess.check_output(['git','show',old+':'+frozen])==subprocess.check_output(['git','show',target+':'+frozen]),'OTHER_FILE_CHANGED_'+frozen
+          print('OFFLINE_GUARD_OK only_flags_point_map_changed prompts_byte_identical all_10_first_3_birth_positions other_sections_unchanged paid_calls=0',flush=True)
+          PY
+      - name: Offline date and question coverage with fake no-cost model
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import pathlib,subprocess,json,copy
-          old='e6438f33e8719df4b0fadbe1700fab060a9f7f91'
-          target='8eb929d4fabe3e92bab4c067869e9e3e750501db'
-          path='redflag-ai-lab/intimacy-knowledge-v1.json'
-          before=subprocess.check_output(['git','show',old+':'+path])
-          after=subprocess.check_output(['git','show',target+':'+path])
-          assert pathlib.Path(path).read_bytes()==after,'UNAPPROVED_KB_VERSION'
-          b=json.loads(before);a=json.loads(after)
-          assert len(b['arcana'])==len(a['arcana'])==22,'ARCANA_COUNT_CHANGED'
-          assert b['arcana']['15']['name']==a['arcana']['15']['name']=='Дьявол','ARCANA_NAME_CHANGED'
-          assert set(b['arcana']['15'])==set(a['arcana']['15']),'ARCANA_FIELDS_CHANGED'
-          assert b['arcana']['15']!=a['arcana']['15'],'NOTHING_TO_PUBLISH'
-          b['arcana']['15']=copy.deepcopy(a['arcana']['15'])
-          assert b==a,'OTHER_KNOWLEDGE_CHANGED'
-          assert 'Соблазнение' in a['arcana']['15']['core'],'SEDUCTION_MISSING'
-          assert 'бывшими' in a['arcana']['15']['minus'],'EXES_MISSING'
-          assert 'страсть' in a['arcana']['15']['love'],'PASSION_MISSING'
-          protected=['redflag-ai-lab/style-test-api.php','redflag-ai-lab/catalog.json',
-            'redflag-ai-lab/infidelity-knowledge-v1.json']
-          for item in protected:
-              assert subprocess.check_output(['git','show',old+':'+item])==subprocess.check_output(['git','show',target+':'+item]),'OTHER_SOURCE_CHANGED_'+item
-          print('OFFLINE_GUARD_OK only_arcana_15_changed other_21_energies_unchanged flags_prompt_unchanged infidelity_prompt_unchanged paid_calls=0',flush=True)
+          from pathlib import Path
+          src=Path('redflag-ai-lab/style-test-api.php').read_text()
+          start=src.index('function rfOwner22(')
+          flags=src.index('function rfOwnerSharpFlags(',start)
+          inf=src.index('function rfOwnerSharpInfidelity(',flags)
+          end=src.index('\ntry {\n    // DEPLOYMENT_HEALTH_SLOT',inf)
+          fake="""<?php
+          function rfCloudCall(array $messages,int $tokens,string $model):string {
+             if($tokens!==2800||$model!=='google/gemini-3-flash-preview')throw new RuntimeException('PROVIDER_CHANGED');
+             $GLOBALS['testMessages']=$messages;
+             return str_repeat('Проверка без платной нейросети и без внешнего обращения. ',16)
+                    ."\\n\\n".str_repeat('Второй абзац локальной проверки. ',7);
+          }
+          """
+          checks=r"""
+          $catalog=json_decode(file_get_contents(__DIR__.'/catalog.json'),true,20,JSON_THROW_ON_ERROR);
+          $questions=[];
+          foreach($catalog['categories'] as $group)if($group['id']==='flags')$questions=$group['questions'];
+          if(count($questions)!==10)throw new RuntimeException('BAD_QUESTION_COUNT');
+          $tested=0;$dates=0;
+          for($month=1;$month<=12;$month++)
+            for($day=1;$day<=31;$day++){
+              if(!checkdate($month,$day,2000))continue;
+              $dates++;
+              foreach($questions as $q) {
+                $answer=rfOwnerSharpFlags($q,$day,$month,2000,$catalog);
+                if(!is_string($answer)||!str_contains($answer,"\n\n"))throw new RuntimeException('BAD_MOCK_OUTPUT');
+                $data=json_decode($GLOBALS['testMessages'][1]['content'],true,24,JSON_THROW_ON_ERROR);
+                $points=$data['трактовки_значимых_позиций_полной_матрицы']??[];
+                if(count($points)!==5||count($data['допустимые_точные_названия_следующего_вопроса']??[])!==9)
+                    throw new RuntimeException('FLAGS_FIVE_POINTS_INVALID');
+                if(!is_array($points[2]))throw new RuntimeException('POINT_COUNT_INVALID');
+                if($points[0]['роль_точки']!=='День рождения, внешняя манера проявления'
+                  ||$points[1]['роль_точки']!=='Месяц рождения, изначальные стремления'\n                  ||$points[2]['роль_точки']!=='Год рождения, способ действия')
+                  throw new RuntimeException('DAY_MONTH_ROLES_MISSING');
+                foreach($points as $point)
+                  if(!isset($point['ведущий_мотив'],$point['сильная_сторона'],$point['теневая_сторона'],$point['в_отношениях']))
+                    throw new RuntimeException('POINT_DETAILS_MISSING');
+                if(isset($data['суть_этого_вопроса'])||isset($data['три_уточняющие_позиции']))
+                  throw new RuntimeException('OLD_THEMATIC_INPUT_REMAINS');
+
+                $tested++;
+              }
+            }
+          if($dates!==366||$tested!==3660)throw new RuntimeException('COVERAGE_INCOMPLETE');
+          echo "OFFLINE_PASSED flags_dates=366 questions=10 scenarios=3660 paid_calls=0\n";
+          """
+          p=Path('redflag-ai-lab/_qa_flags_five_points_no_ai.php')
+          p.write_text(fake+src[start:inf]+"\n"+checks)
           PY
-          php -r '$d=json_decode(file_get_contents("redflag-ai-lab/intimacy-knowledge-v1.json"),true,25,JSON_THROW_ON_ERROR); if(count($d["arcana"])!==22)exit(1); echo "PHP_JSON_READ_OK energies=22 paid_calls=0\n";'
-      - name: Backup and publish only shared knowledge JSON with rollback
+          php -l redflag-ai-lab/_qa_flags_five_points_no_ai.php
+          php redflag-ai-lab/_qa_flags_five_points_no_ai.php
+          rm -f redflag-ai-lab/_qa_flags_five_points_no_ai.php
+      - name: Guarded single-PHP backup publish and rollback on REG.RU
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import io,ssl,os,json,re,copy,ftplib,subprocess,pathlib,time,urllib.request,urllib.error
-          previous_ref='e6438f33e8719df4b0fadbe1700fab060a9f7f91'
-          desired_ref='8eb929d4fabe3e92bab4c067869e9e3e750501db'
-          path='redflag-ai-lab/intimacy-knowledge-v1.json'
-          before=subprocess.check_output(['git','show',previous_ref+':'+path])
-          approved=subprocess.check_output(['git','show',desired_ref+':'+path])
-          assert pathlib.Path(path).read_bytes()==approved,'KB_CHANGED_AFTER_QA'
-          assert len(json.loads(approved)['arcana'])==22,'KB_INVALID'
+          import io,ssl,os,re,ftplib,subprocess,pathlib,time,urllib.request,urllib.error
+          previous_ref='389f20105a5bf9da0537a5b1bab9a31ec373edb2'
+          desired_ref='f4f150a0cc4feac800e8729c57539a6b0f38f63e'
+          php='redflag-ai-lab/style-test-api.php'
+          before=subprocess.check_output(['git','show',previous_ref+':'+php])
+          approved=subprocess.check_output(['git','show',desired_ref+':'+php])
+          assert pathlib.Path(php).read_bytes()==approved,'PHP_CHANGED_AFTER_QA'
+          marker=b'__CLOUDRU_KEY_BASE64__'
+          assert approved.count(marker)==before.count(marker)==1
           base='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
-          def status(p):
-              req=urllib.request.Request(base+p+'?arcana15_verify='+str(time.time_ns()),
-                  headers={'Cache-Control':'no-store','User-Agent':'NumiOwnerSharedArcana15/1.0'})
+          def status(path):
+              req=urllib.request.Request(base+path+'?editor_flags_five_points='+str(time.time_ns()),
+                 headers={'Cache-Control':'no-store','User-Agent':'NumiOwnerFlagsFivePoints/1.0'})
               try:
                   with urllib.request.urlopen(req,timeout=26) as res:return res.status
               except urllib.error.HTTPError as err:return err.code
@@ -74,70 +149,53 @@ jobs:
           ftp.prot_p();ftp.set_pasv(True)
           home=ftp.pwd().rstrip('/')
           root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
-          def read(p):
-              b=io.BytesIO();ftp.retrbinary('RETR '+root+p,b.write);return b.getvalue()
-          def write(p,content):
-              ftp.storbinary('STOR '+root+p,io.BytesIO(content))
-              if read(p)!=content:raise RuntimeError('READBACK_FAILED')
+          def read(path):
+              b=io.BytesIO();ftp.retrbinary('RETR '+root+path,b.write);return b.getvalue()
+          def write(path,content):
+              ftp.storbinary('STOR '+root+path,io.BytesIO(content))
+              if read(path)!=content:raise RuntimeError('READBACK_FAILED')
           protected=[
-              'redflag-ai-lab/style-test-api.php','redflag-ai-lab/catalog.json',
               'redflag-ai-lab/infidelity-knowledge-v1.json',
-              'redflag-feature.js','redflag-engine.js','redflag-public-catalog.js',
+              'redflag-ai-lab/intimacy-knowledge-v1.json',
+              'redflag-ai-lab/catalog.json','redflag-feature.js','redflag-engine.js',
+              'redflag-public-catalog.js','app.js','index.html',
               'api/numi-account.php','api/redflag-free-ai.php'
           ]
           changed=False
           try:
-              live=read(path)
-              # The live knowledge file has drifted from GitHub. Preserve all
-              # live content except arcana 15, rather than overwriting the file.
-              raw=live.decode('utf-8')
-              current=json.loads(raw)
-              baseline=json.loads(before)
-              target=json.loads(approved)
-              if current.get('schema')!=baseline.get('schema'):
-                  raise RuntimeError('LIVE_KB_SCHEMA_DRIFT')
-              live_ar=current.get('arcana',{})
-              if not isinstance(live_ar,dict) or set(live_ar)!=set(baseline['arcana']):
-                  raise RuntimeError('LIVE_ARCANA_SET_DRIFT')
-              if not isinstance(live_ar.get('15'),dict) or set(live_ar['15'])!=set(target['arcana']['15']):
-                  raise RuntimeError('LIVE_15_FIELDS_DRIFT')
-              pattern=re.compile(r'(?m)^([ \\t]*)"15"[ \\t]*:[ \\t]*')
-              matches=list(pattern.finditer(raw))
-              if len(matches)!=1:raise RuntimeError('LIVE_15_TEXT_PATTERN_DRIFT')
-              match=matches[0]
-              parsed,size=json.JSONDecoder().raw_decode(raw[match.end():])
-              if parsed!=live_ar['15']:raise RuntimeError('LIVE_15_POSITION_DRIFT')
-              replacement=json.dumps(target['arcana']['15'],ensure_ascii=False,indent=2).replace('\\n','\\n'+match.group(1))
-              merged_raw=raw[:match.end()]+replacement+raw[match.end()+size:]
-              merged_doc=json.loads(merged_raw)
-              expected=copy.deepcopy(current)
-              expected['arcana']['15']=target['arcana']['15']
-              if merged_doc!=expected:raise RuntimeError('ONLY_15_MERGE_GUARD_FAILED')
-              merged=merged_raw.encode('utf-8')
-              if merged==live:raise RuntimeError('LIVE_15_ALREADY_UPDATED')
-              print('LIVE_DRIFT_SAFELY_PRESERVED other_21_energies_and_all_other_fields',flush=True)
-              unchanged={p:read(p) for p in protected}
+              live=read(php)
+              matches=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",live))
+              if len(matches)!=1:raise RuntimeError('LIVE_KEY_LAYOUT_CHANGED')
+              m=matches[0];secret=m.group(2)
+              if len(secret)<16 or not re.fullmatch(rb'[A-Za-z0-9+/=]+',secret):
+                  raise RuntimeError('SERVER_KEY_INVALID')
+              masked=live[:m.start(2)]+marker+live[m.end(2):]
+              if masked!=before:raise RuntimeError('LIVE_SOURCE_DRIFT_REFUSE_OVERWRITE')
+              desired=approved.replace(marker,secret)
+              if subprocess.run(['php','-l'],input=desired,capture_output=True).returncode!=0:
+                  raise RuntimeError('LIVE_PHP_LINT_FAILED')
+              unchanged={path:read(path) for path in protected}
               backup_folder=home+'/site-safeguard-backups'
               try:ftp.mkd(backup_folder)
               except ftplib.error_perm as ex:
                   if not str(ex).startswith('550'):raise
               stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
-              backup_path=backup_folder+'/shared-arcana15-before-'+stamp+'.json.bak'
+              backup_path=backup_folder+'/flags-before-five-points-'+stamp+'.php.bak'
               ftp.storbinary('STOR '+backup_path,io.BytesIO(live))
-              if read(path)!=live:raise RuntimeError('CONCURRENT_KB_CHANGE')
+              if read(php)!=live:raise RuntimeError('CONCURRENT_SOURCE_CHANGE')
               changed=True
-              write(path,merged)
+              write(php,desired)
               if status('')!=200:raise RuntimeError('HOME_NOT_200_AFTER')
-              if status('redflag-ai-lab/style-test-api.php')!=403:raise RuntimeError('EDITOR_ROUTE_NOT_PROTECTED')
+              if status(php)!=403:raise RuntimeError('EDITOR_ROUTE_NOT_PROTECTED')
               if status('api/numi-account.php')>=500:raise RuntimeError('ACCOUNT_ROUTE_NOT_HEALTHY')
-              if read(path)!=merged:raise RuntimeError('PUBLISHED_KB_DRIFT')
-              for p,original in unchanged.items():
-                  if read(p)!=original:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
-              print('PUBLISHED_AND_VERIFIED shared_arcana_15_updated=true all_other_live_knowledge_preserved=true other_21_energies_unchanged=true flags_code_and_prompt_unchanged=true infidelity_code_and_prompt_unchanged=true payments_unchanged=true backup_saved=true billable_generations=0',flush=True)
+              if read(php)!=desired:raise RuntimeError('PUBLISHED_PHP_DRIFT')
+              for path,original in unchanged.items():
+                  if read(path)!=original:raise RuntimeError('PROTECTED_FILE_CHANGED_'+path)
+              print('PUBLISHED_AND_VERIFIED flags_all10_five_points=true day_month_year_first=true five_points_topic_specific=true flags_prompt_unchanged=true infidelity_code_unchanged=true shared_KB_untouched=true payments_unchanged=true backup_saved=true billable_generations=0',flush=True)
           except BaseException:
               if changed:
-                  try:write(path,live);print('ROLLED_BACK_JSON_OK',flush=True)
-                  except BaseException:print('CRITICAL_JSON_ROLLBACK_FAILED',flush=True)
+                  try:write(php,live);print('ROLLED_BACK_PHP_OK',flush=True)
+                  except BaseException:print('CRITICAL_ROLLBACK_FAILED',flush=True)
               raise
           finally:
               try:ftp.quit()
