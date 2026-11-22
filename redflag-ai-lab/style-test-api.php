@@ -1460,7 +1460,7 @@ try {
     error_log('REDFLAG_CLOUDRU:'.get_class($e).':'.$reason);
     if($reason==='OWNER_TEXT_LENGTH_INVALID'
        &&($input['category']??null)==='infidelity'
-       &&in_array(($input['question_id']??null),['options','faithful'],true)
+       &&in_array(($input['question_id']??null),['faithful','options','flirt','trust','ex','temptation','physical-or-emotional','secrecy','return','after-mistake'],true)
        &&is_string($GLOBALS['RF_OWNER_INF_PILOT_SHORT_PREVIEW']??null)){
         $short=$GLOBALS['RF_OWNER_INF_PILOT_SHORT_PREVIEW'];
         rfPreviewReply(422,['ok'=>false,'error'=>'OWNER_TEXT_LENGTH_INVALID',
