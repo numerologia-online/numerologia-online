@@ -158,7 +158,7 @@ jobs:
           def write(p,content,absolute=False):
               ftp.storbinary('STOR '+(p if absolute else root+p),io.BytesIO(content))
               if read(p,absolute)!=content:raise RuntimeError('FTPS_READBACK_CHANGED_'+p)
-          before={};written=[];created=False
+          before={};written=[];new_file_preexists=False;new_file_written=False
           try:
               before={p:read(p) for p in originals}
               old_mask,key=mask(before[api])
@@ -171,8 +171,8 @@ jobs:
                   reference=subprocess.check_output(['git','show','cabd9fedf8b1afab4fac6938b0b811db20130010:'+p])
                   if before[p]!=reference:raise RuntimeError('LIVE_FILE_CHANGED_REFUSE_'+p)
               try:
-                  read(new_file)
-                  raise RuntimeError('NEW_KB_ALREADY_EXISTS_REFUSE_OVERWRITE')
+                  before[new_file]=read(new_file)
+                  new_file_preexists=True
               except ftplib.error_perm as e:
                   if not str(e).startswith('550'):raise
               protected=['api/numi-account.php','api/redflag-free-ai.php','redflag-engine.js',
@@ -187,11 +187,13 @@ jobs:
               except ftplib.error_perm as e:
                   if not str(e).startswith('550'):raise
               stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+uuid.uuid4().hex[:8]
-              for p in originals:
+              for p in before:
                   write(backup+'/before-infidelity-exact-clone-'+stamp+'-'+p.replace('/','-')+'.bak',before[p],True)
-              for p in originals:
+              for p in before:
                   if read(p)!=before[p]:raise RuntimeError('CONCURRENT_LIVE_EDIT_'+p)
-              write(new_file,desired[new_file]);created=True
+              if desired[new_file]!=before.get(new_file):
+                  new_file_written=True
+                  write(new_file,desired[new_file])
               for p in originals:
                   if desired[p]!=before[p]:
                       written.append(p)
@@ -209,8 +211,14 @@ jobs:
               for p in reversed(written):
                   try:write(p,before[p]);print('ROLLBACK_OK '+p,flush=True)
                   except BaseException:failed.append(p)
-              if created:
-                  try:ftp.delete(root+new_file);print('ROLLBACK_REMOVED_NEW_KB',flush=True)
+              if new_file_written:
+                  try:
+                      if new_file_preexists:
+                          write(new_file,before[new_file])
+                          print('ROLLBACK_RESTORED_EXISTING_KB',flush=True)
+                      else:
+                          ftp.delete(root+new_file)
+                          print('ROLLBACK_REMOVED_NEW_KB',flush=True)
                   except BaseException:failed.append(new_file)
               if failed:print('CRITICAL_ROLLBACK_FAILED '+','.join(failed),flush=True)
               raise
