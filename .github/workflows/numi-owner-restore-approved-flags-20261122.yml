@@ -1,0 +1,181 @@
+name: Restore approved Red Flags editor from guarded REG.RU backups
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-owner-restore-approved-flags-20261122.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  restore-editor-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify approved pre-regression snapshots and no-cost flags
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import subprocess,pathlib,re,json
+          repo='redflag-ai-lab/'
+          def old(ref,name):
+              return subprocess.check_output(['git','show',ref+':'+repo+name])
+          approved=old('389f20105a5bf9da0537a5b1bab9a31ec373edb2','style-test-api.php')
+          before_map_change=old('64a812219fc94e8207e893aae7bb6ca54a09eea2','style-test-api.php')
+          modified=old('a32a4a78a4e4a3dfa478d6decd872b341e32a9c3','style-test-api.php')
+          def without_map(s):
+              a=s.index(b'function rfOwnerSharpFlags(')
+              i=s.index(b'   $maps=[',a)
+              j=s.index(b'   ];',i)+len(b'   ];')
+              return s[:i]+b'__MAP__'+s[j:]
+          assert without_map(approved)==without_map(before_map_change),'APPROVED_PHP_DIFF_BEYOND_QUESTION_MAP'
+          i=approved.index(b'function rfOwnerSharpFlags(')
+          j=approved.index(b'function rfOwnerSharpInfidelity(',i)
+          flags=approved[i:j]
+          assert flags.count(b"'google/gemini-3-flash-preview'")==1,'MODEL_DRIFT'
+          assert flags.count(b"$system=<<<'PROMPT'")==1,'PROMPT_MISSING'
+          assert b"'care-or-control'=>['left','center','right','top','loveHeart']" in flags,'APPROVED_MAP_MISSING'
+          assert approved.count(b'__CLOUDRU_KEY_BASE64__')==1,'API_MARKER_MISSING'
+          assert modified.count(b'__CLOUDRU_KEY_BASE64__')==1,'UNIFIED_API_MARKER_MISSING'
+          knowledge=json.loads(old('64a812219fc94e8207e893aae7bb6ca54a09eea2','intimacy-knowledge-v1.json'))
+          assert len(knowledge['arcana'])==22 and len(knowledge['arcana']['15']['minus'])>300,'APPROVED_ARCANA_15_MISSING'
+          catalog=json.loads(old('64a812219fc94e8207e893aae7bb6ca54a09eea2','catalog.json'))
+          assert sum(len(c['questions']) for c in catalog['categories'])==56,'CATALOG_CHANGED'
+          pathlib.Path('/tmp/numi_approved_flags.php').write_bytes(approved)
+          print('RESTORE_PREFLIGHT_OK approved_sharp_prompt_byte_identical flags_original_point_map restored_arcana_15 56_questions paid_calls=0',flush=True)
+          PY
+          php -l /tmp/numi_approved_flags.php
+      - name: Restore only three owner-editor files with backup verification and rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib, ssl, os, io, re, time, uuid, json, pathlib, subprocess, hashlib, urllib.request, urllib.error
+          root_path='redflag-ai-lab/'
+          paths=[root_path+'intimacy-knowledge-v1.json',root_path+'catalog.json',root_path+'style-test-api.php']
+          kb,cat,php=paths
+          def historical(ref,path):
+              return subprocess.check_output(['git','show',ref+':'+path])
+          approved=historical('389f20105a5bf9da0537a5b1bab9a31ec373edb2',php)
+          expected_previous_php=historical('64a812219fc94e8207e893aae7bb6ca54a09eea2',php)
+          unified=historical('a32a4a78a4e4a3dfa478d6decd872b341e32a9c3',php)
+          old_catalog=json.loads(historical('64a812219fc94e8207e893aae7bb6ca54a09eea2',cat))
+          new_catalog=json.loads(historical('cb9e5a1349a18c78751626ab28f52664a5d06cd7',cat))
+          new_kb=json.loads(historical('99afdd547c3a08bb0e6f1accc98bcd73c1b2b5c2',kb))
+          old_kb=json.loads(historical('64a812219fc94e8207e893aae7bb6ca54a09eea2',kb))
+          marker=b'__CLOUDRU_KEY_BASE64__'
+          def mask_php(src):
+              matches=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",src))
+              if len(matches)!=1:raise RuntimeError('LIVE_SECRET_LAYOUT_UNRECOGNIZED')
+              m=matches[0]; secret=m.group(2)
+              if len(secret)<16 or not re.fullmatch(rb'[A-Za-z0-9+/=]+',secret):raise RuntimeError('LIVE_SECRET_BAD')
+              return src[:m.start(2)]+marker+src[m.end(2):],secret
+          urlbase='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          def status(path):
+              req=urllib.request.Request(urlbase+path+'?restore_approved_flags='+str(time.time_ns()),headers={'Cache-Control':'no-store','User-Agent':'NumiApprovedFlagsRestore/1.0'})
+              try:
+                  with urllib.request.urlopen(req,timeout=28) as res:return res.status
+              except urllib.error.HTTPError as ex:return ex.code
+          if status('')!=200:raise RuntimeError('HOME_UNHEALTHY_BEFORE')
+          if status(php)!=403:raise RuntimeError('EDITOR_EXPOSED_BEFORE')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          backup_dir=home+'/site-safeguard-backups'
+          def retrieve(path,absolute=False):
+              b=io.BytesIO();ftp.retrbinary('RETR '+(path if absolute else root+path),b.write);return b.getvalue()
+          def store(path,data,absolute=False):
+              ftp.storbinary('STOR '+(path if absolute else root+path),io.BytesIO(data))
+              if retrieve(path,absolute)!=data:raise RuntimeError('RESTORE_READBACK_MISMATCH_'+path)
+          before={};written=[]
+          try:
+              before={p:retrieve(p) for p in paths}
+              cur_mask,secret=mask_php(before[php])
+              if cur_mask!=unified:raise RuntimeError('LIVE_PHP_NOT_UNIFIED_REFUSE_UNRELATED_OVERWRITE')
+              if json.loads(before[cat])!=new_catalog:raise RuntimeError('LIVE_CATALOG_CHANGED')
+              actual_kb=json.loads(before[kb])
+              if set(actual_kb.get('arcana',{}))!=set(new_kb['arcana']):raise RuntimeError('LIVE_KB_ARCANA_DRIFT')
+              for id,energy in new_kb['arcana'].items():
+                  for field in ('name','core','plus','minus','love'):
+                      if actual_kb['arcana'][id].get(field)!=energy[field]:raise RuntimeError('LIVE_KB_ARCANA_FIELD_DRIFT_'+id+'_'+field)
+              # Last deployment saved byte-for-byte copies of all three files with
+              # one shared stamped prefix. Do not reconstruct the live knowledge base,
+              # since the server may have valid unrelated editorial metadata.
+              items=ftp.nlst(backup_dir)
+              groups={}
+              prefix='owner-unified-before-'
+              for raw in items:
+                  name=raw.rsplit('/',1)[-1]
+                  if not name.startswith(prefix):continue
+                  for p in paths:
+                      suffix='-'+p.replace('/','-')+'.bak'
+                      if name.endswith(suffix):
+                          stamp=name[len(prefix):-len(suffix)]
+                          groups.setdefault(stamp,{})[p]=raw
+              candidates=[(stamp,match) for stamp,match in groups.items() if set(match)==set(paths)]
+              if not candidates:raise RuntimeError('PREVIOUS_RELEASE_3_BACKUPS_NOT_FOUND')
+              stamp,backup_paths=sorted(candidates,key=lambda row:row[0])[-1]
+              backups={p:retrieve(backup_paths[p],absolute=True) for p in paths}
+              backup_mask,old_secret=mask_php(backups[php])
+              if backup_mask!=expected_previous_php:raise RuntimeError('PREVIOUS_BACKUP_PHP_DRIFT')
+              if old_secret!=secret:raise RuntimeError('SECRET_CHANGED_SINCE_BACKUP')
+              if json.loads(backups[cat])!=old_catalog:raise RuntimeError('PREVIOUS_BACKUP_CATALOG_DRIFT')
+              previous_kb=json.loads(backups[kb])
+              if set(previous_kb['arcana'])!=set(old_kb['arcana']):raise RuntimeError('PREVIOUS_BACKUP_KB_STRUCTURE_DRIFT')
+              if previous_kb['arcana']['15']!=old_kb['arcana']['15']:
+                  raise RuntimeError('PREVIOUS_BACKUP_APPROVED_15_DRIFT')
+              # New deployment must have preserved every other KB field exactly.
+              for field in previous_kb:
+                  if field!='arcana' and actual_kb.get(field)!=previous_kb[field]:
+                      raise RuntimeError('LIVE_KB_NON_ARCANA_FIELD_DRIFT_'+field)
+              for id in previous_kb['arcana']:
+                  for field in previous_kb['arcana'][id]:
+                      if field not in ('name','core','plus','minus','love'):
+                          if actual_kb['arcana'][id].get(field)!=previous_kb['arcana'][id][field]:
+                              raise RuntimeError('LIVE_ARCANA_EXTRA_FIELD_DRIFT_'+id)
+              desired={kb:backups[kb],cat:backups[cat],php:approved.replace(marker,secret)}
+              if subprocess.run(['php','-l'],input=desired[php],capture_output=True).returncode!=0:
+                  raise RuntimeError('APPROVED_RESTORED_PHP_LINT_FAILED')
+              protected=['redflag-ai-lab/style-test.php','redflag-ai-lab/infidelity-knowledge-v1.json','redflag-ai-lab/draft.php','redflag-feature.js','redflag-engine.js','redflag-public-catalog.js','index.html','api/numi-account.php','api/redflag-free-ai.php']
+              protected_hash={p:hashlib.sha256(retrieve(p)).digest() for p in protected}
+              try:ftp.mkd(backup_dir)
+              except ftplib.error_perm as exc:
+                  if not str(exc).startswith('550'):raise
+              restore_stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+uuid.uuid4().hex[:8]
+              for p in paths:
+                  dest=backup_dir+'/before-approved-flags-restore-'+restore_stamp+'-'+p.replace('/','-')+'.bak'
+                  store(dest,before[p],absolute=True)
+              for p in paths:
+                  if retrieve(p)!=before[p]:raise RuntimeError('CONCURRENT_EDIT_RESTORE_REFUSED_'+p)
+              for p in paths:
+                  if desired[p]!=before[p]:
+                      written.append(p);store(p,desired[p])
+              if status('')!=200:raise RuntimeError('HOME_UNHEALTHY_AFTER')
+              if status(php)!=403:raise RuntimeError('EDITOR_AUTH_FAILED_AFTER')
+              if status('redflag-ai-lab/style-test.php')!=403:raise RuntimeError('EDITOR_PAGE_AUTH_FAILED_AFTER')
+              if status('api/numi-account.php')>=500:raise RuntimeError('ACCOUNT_UNHEALTHY_AFTER')
+              for p in paths:
+                  if retrieve(p)!=desired[p]:raise RuntimeError('RESTORED_FILE_DRIFT_'+p)
+              for p,old_hash in protected_hash.items():
+                  if hashlib.sha256(retrieve(p)).digest()!=old_hash:
+                      raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
+              print('RESTORED_AND_VERIFIED approved_flags_original_point_map=true perfect_prompt_unchanged=true legacy_catalog_restored=true live_KB_pre_unification_restored=true arcana_15_preserved=true payments_and_customer_routes_untouched=true backup_saved=true paid_generations=0',flush=True)
+          except BaseException:
+              for p in reversed(written):
+                  try:store(p,before[p]);print('ROLLBACK_SUCCESS '+p,flush=True)
+                  except BaseException:print('CRITICAL_ROLLBACK_FAILED '+p,flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
