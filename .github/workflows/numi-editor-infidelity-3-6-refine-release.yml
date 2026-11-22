@@ -52,7 +52,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import io,ssl,os,json,ftplib,subprocess,pathlib,time,urllib.request,urllib.error
+          import io,ssl,os,json,re,copy,ftplib,subprocess,pathlib,time,urllib.request,urllib.error
           previous_ref='e6438f33e8719df4b0fadbe1700fab060a9f7f91'
           desired_ref='8eb929d4fabe3e92bab4c067869e9e3e750501db'
           path='redflag-ai-lab/intimacy-knowledge-v1.json'
@@ -88,7 +88,34 @@ jobs:
           changed=False
           try:
               live=read(path)
-              if live!=before:raise RuntimeError('LIVE_KB_DRIFT_REFUSE_OVERWRITE')
+              # The live knowledge file has drifted from GitHub. Preserve all
+              # live content except arcana 15, rather than overwriting the file.
+              raw=live.decode('utf-8')
+              current=json.loads(raw)
+              baseline=json.loads(before)
+              target=json.loads(approved)
+              if current.get('schema')!=baseline.get('schema'):
+                  raise RuntimeError('LIVE_KB_SCHEMA_DRIFT')
+              live_ar=current.get('arcana',{})
+              if not isinstance(live_ar,dict) or set(live_ar)!=set(baseline['arcana']):
+                  raise RuntimeError('LIVE_ARCANA_SET_DRIFT')
+              if not isinstance(live_ar.get('15'),dict) or set(live_ar['15'])!=set(target['arcana']['15']):
+                  raise RuntimeError('LIVE_15_FIELDS_DRIFT')
+              pattern=re.compile(r'(?m)^([ \\t]*)"15"[ \\t]*:[ \\t]*')
+              matches=list(pattern.finditer(raw))
+              if len(matches)!=1:raise RuntimeError('LIVE_15_TEXT_PATTERN_DRIFT')
+              match=matches[0]
+              parsed,size=json.JSONDecoder().raw_decode(raw[match.end():])
+              if parsed!=live_ar['15']:raise RuntimeError('LIVE_15_POSITION_DRIFT')
+              replacement=json.dumps(target['arcana']['15'],ensure_ascii=False,indent=2).replace('\\n','\\n'+match.group(1))
+              merged_raw=raw[:match.end()]+replacement+raw[match.end()+size:]
+              merged_doc=json.loads(merged_raw)
+              expected=copy.deepcopy(current)
+              expected['arcana']['15']=target['arcana']['15']
+              if merged_doc!=expected:raise RuntimeError('ONLY_15_MERGE_GUARD_FAILED')
+              merged=merged_raw.encode('utf-8')
+              if merged==live:raise RuntimeError('LIVE_15_ALREADY_UPDATED')
+              print('LIVE_DRIFT_SAFELY_PRESERVED other_21_energies_and_all_other_fields',flush=True)
               unchanged={p:read(p) for p in protected}
               backup_folder=home+'/site-safeguard-backups'
               try:ftp.mkd(backup_folder)
@@ -99,14 +126,14 @@ jobs:
               ftp.storbinary('STOR '+backup_path,io.BytesIO(live))
               if read(path)!=live:raise RuntimeError('CONCURRENT_KB_CHANGE')
               changed=True
-              write(path,approved)
+              write(path,merged)
               if status('')!=200:raise RuntimeError('HOME_NOT_200_AFTER')
               if status('redflag-ai-lab/style-test-api.php')!=403:raise RuntimeError('EDITOR_ROUTE_NOT_PROTECTED')
               if status('api/numi-account.php')>=500:raise RuntimeError('ACCOUNT_ROUTE_NOT_HEALTHY')
-              if read(path)!=approved:raise RuntimeError('PUBLISHED_KB_DRIFT')
+              if read(path)!=merged:raise RuntimeError('PUBLISHED_KB_DRIFT')
               for p,original in unchanged.items():
                   if read(p)!=original:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
-              print('PUBLISHED_AND_VERIFIED shared_arcana_15_updated=true other_21_energies_unchanged=true flags_code_and_prompt_unchanged=true infidelity_code_and_prompt_unchanged=true payments_unchanged=true backup_saved=true billable_generations=0',flush=True)
+              print('PUBLISHED_AND_VERIFIED shared_arcana_15_updated=true all_other_live_knowledge_preserved=true other_21_energies_unchanged=true flags_code_and_prompt_unchanged=true infidelity_code_and_prompt_unchanged=true payments_unchanged=true backup_saved=true billable_generations=0',flush=True)
           except BaseException:
               if changed:
                   try:write(path,live);print('ROLLED_BACK_JSON_OK',flush=True)
