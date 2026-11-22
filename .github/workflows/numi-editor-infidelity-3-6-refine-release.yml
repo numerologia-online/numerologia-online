@@ -41,7 +41,7 @@ jobs:
           assert b'RF_OWNER_INF_SHORT_PREVIEW' in inf,'DIAGNOSTICS_LOST'
           assert b'file_get_contents(__DIR__.\'/intimacy-knowledge-v1.json\')' in inf,'NEUTRAL_KB_MISSING'
           assert b'file_get_contents(__DIR__.\'/infidelity-knowledge-v1.json\')' not in inf,'THEMATIC_KB_STILL_ACTIVE'
-          assert b"'две_равноправные_основные_позиции'" in inf and b"'одна_дополнительная_позиция'" in inf,'THREE_POINT_DATA_MISSING'
+          assert "'две_равноправные_основные_позиции'".encode() in inf and "'одна_дополнительная_позиция'".encode() in inf,'THREE_POINT_DATA_MISSING'
           maps=re.findall(rb"'([a-z-]+)'=>\['left','top','([a-zA-Z]+)'\]",inf)
           assert len(maps)==10 and len(set(t for _,t in maps))>=6,'QUESTION_POINT_MAP_INVALID'
           assert b"count($positionData)!==3" in inf,'POINT_COUNT_GUARD_LOST'
