@@ -1,4 +1,4 @@
-name: Publish distinct editor Infidelity question focuses
+name: Diagnose Telegram section loading read-only
 on:
   push:
     branches: [main]
@@ -6,130 +6,85 @@ on:
       - .github/workflows/numi-redflag-telegram-owner-style-preview-release.yml
 permissions:
   contents: read
-concurrency:
-  group: reg-ru-manual-publication
-  cancel-in-progress: false
 jobs:
-  release:
+  inspect:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Verify exact editor-only patch and free PHP syntax
-        run: |
-          set -euo pipefail
-          php -l redflag-ai-lab/style-test-api.php
-          python3 - <<'PY'
-          import pathlib,subprocess,re
-          p='redflag-ai-lab/style-test-api.php'
-          base='f3097a5cd958196073429be4926562d65a2341e3'
-          target='a67b1a7b156448252f46a201bf9c8a0135ab3dcd'
-          before=subprocess.check_output(['git','show',base+':'+p]).decode()
-          after=subprocess.check_output(['git','show',target+':'+p]).decode()
-          actual=pathlib.Path(p).read_text()
-          assert actual==after,'UNAPPROVED_SOURCE'
-          opener='function rfOwnerSharpInfidelity('
-          closer='\ntry {\n    // DEPLOYMENT_HEALTH_SLOT'
-          assert before.count(opener)==1 and after.count(opener)==1
-          assert before.count(closer)==1 and after.count(closer)==1
-          assert before.split(opener,1)[0]==after.split(opener,1)[0],'FROZEN_FLAGS_AND_EARLY_API_CHANGED'
-          assert before.split(closer,1)[1]==after.split(closer,1)[1],'OWNER_PAYMENT_OR_LATE_API_CHANGED'
-          x=after.split(opener,1)[1].split(closer,1)[0]
-          y=before.split(opener,1)[1].split(closer,1)[0]
-          assert x.count("'faithful'=>")==2 and x.count("'after-mistake'=>")==2,'FOCUS_AND_POSITION_MAP_MISSING'
-          assert sum(x.count("'"+q+"'=>") for q in ['faithful','options','flirt','trust','ex','temptation','physical-or-emotional','secrecy','return','after-mistake'])==20,'FOCUS_OR_MAP_MISSING'
-          assert "ориентир 1200–1500 знаков ВСЕГО" in x,'TARGET_MISSING'
-          assert 'Вместо судебных и бюрократических метафор' in x
-          assert 'не более 1250 знаков' not in x
-          assert x.count("]],2800,'google/gemini-3-flash-preview');")==1
-          assert y.count("]],2800,'google/gemini-3-flash-preview');")==1
-          assert "if($outLen<450||$outLen>1600)" in x
-          assert after.count('__CLOUDRU_KEY_BASE64__')==1
-          assert 'RF_OWNER_INF_SHORT_PREVIEW' in x
-          assert 'OWNER_TEXT_LENGTH_INVALID' in x
-          print('APPROVED_INF_EDITOR_ONLY_PATCH_TRUE ZERO_BILLED_GENERATIONS',flush=True)
-          PY
-      - name: Upload only approved PHP file to REG.RU with backup and rollback
+      - name: Read only public asset checks and sanitized site errors
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
-          set -euo pipefail
           python3 - <<'PY'
-          import os,ssl,io,ftplib,re,subprocess,pathlib,time,urllib.request,urllib.error
-          p='redflag-ai-lab/style-test-api.php'
-          base='f3097a5cd958196073429be4926562d65a2341e3'
-          target='a67b1a7b156448252f46a201bf9c8a0135ab3dcd'
-          before=subprocess.check_output(['git','show',base+':'+p])
-          after=subprocess.check_output(['git','show',target+':'+p])
-          assert pathlib.Path(p).read_bytes()==after,'UNAPPROVED_LOCAL_SOURCE'
+          import urllib.request,urllib.error,ssl,time,pathlib,hashlib,collections,ftplib,io,os,re
           site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
-          def status(route):
-              req=urllib.request.Request(site+route+'?owner_inf_focus='+str(time.time_ns()),
-                headers={'Cache-Control':'no-store','User-Agent':'NumiEditorInfidelityFocus/1.0'})
+          paths=[
+           '','?view=redflag','app.js?v=infidelity-shortpreview-20261122',
+           'redflag-feature.js?v=infidelity-shortpreview-20261122',
+           'redflag-engine.js?v=4','redflag-categories.js?v=flags-owner-preview-20261117',
+           'redflag-public-catalog.js','redflag-polish.css?v=20261105scrollfit1',
+           'year-feature.js?v=owner-access-20261116','year-content.js?v=4','year-polish.css?v=year-pdf-view-20261113',
+           'matrix-feature.js?v=36','numerology-core.js?v=5',
+           'compatibility-feature.js?v=compatibility-cards-20261116',
+           'personal-day-feature.js?v=20261115-day-source-unified',
+           'destiny-code-feature.js?v=wallet-direct1',
+           'auth-profile.js','account-browser.js','telegram-scroll-guard.js?v=1',
+           'api/profile.php','api/numi-account.php','redflag-ai-lab/style-test-api.php'
+          ]
+          for path in paths:
+              url=site+path
+              req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0 Numi read-only diagnostics','Cache-Control':'no-cache','Pragma':'no-cache'})
               try:
-                  with urllib.request.urlopen(req,timeout=28) as r:return r.status
-              except urllib.error.HTTPError as e:return e.code
-          if status('')!=200:raise RuntimeError('HOME_NOT_200_BEFORE')
-          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
-          ftp.connect('server172.hosting.reg.ru',21)
-          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
-          ftp.prot_p();ftp.set_pasv(True)
-          home=ftp.pwd().rstrip('/')
-          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
-          def read(path):
-              b=io.BytesIO()
-              ftp.retrbinary('RETR '+root+path,b.write)
-              return b.getvalue()
-          def write(path,data):
-              ftp.storbinary('STOR '+root+path,io.BytesIO(data))
-              if read(path)!=data:raise RuntimeError('READBACK_FAILED_'+path)
-          protected=['redflag-ai-lab/catalog.json','redflag-ai-lab/intimacy-knowledge-v1.json',
-            'redflag-feature.js','app.js','index.html','redflag-public-catalog.js',
-            'api/numi-account.php','api/redflag-free-ai.php']
-          changed=False
+                  with urllib.request.urlopen(req,timeout=17) as resp:
+                      b=resp.read()
+                      code=resp.status;typ=resp.headers.get('content-type','')
+                      sha=hashlib.sha256(b).hexdigest()[:14]
+                      name=path.split('?')[0]
+                      expected=pathlib.Path(name) if name else None
+                      match=(expected.exists() and expected.is_file() and expected.read_bytes()==b) if expected else None
+                      print('ASSET',repr(path),code,len(b),typ[:60], 'sha='+sha,'matches_github='+str(match),flush=True)
+                      if name.endswith('.js') and b'<html' in b[:500].lower():print('WARNING_JS_HTML_BODY',name,flush=True)
+              except urllib.error.HTTPError as e:
+                  print('ASSET',repr(path),e.code,'http_error',e.headers.get('content-type','')[:50],flush=True)
+              except Exception as e:
+                  print('ASSET',repr(path),'FAIL',type(e).__name__,str(e)[:130],flush=True)
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
           try:
-              live=read(p)
-              matches=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",live))
-              if len(matches)!=1:raise RuntimeError('LIVE_KEY_LAYOUT_UNEXPECTED')
-              m=matches[0];secret=m.group(2)
-              if len(secret)<16 or secret==b'__CLOUDRU_KEY_BASE64__' or not re.fullmatch(rb'[A-Za-z0-9+/=]+',secret):
-                  raise RuntimeError('LIVE_KEY_MISSING')
-              masked=live[:m.start(2)]+b'__CLOUDRU_KEY_BASE64__'+live[m.end(2):]
-              if masked!=before:raise RuntimeError('LIVE_API_DIFFERS_FROM_APPROVED_BASELINE')
-              desired=after.replace(b'__CLOUDRU_KEY_BASE64__',secret)
-              if subprocess.run(['php','-l'],input=desired,capture_output=True).returncode!=0:
-                  raise RuntimeError('LIVE_PHP_LINT_FAILED')
-              fingerprints={path:read(path) for path in protected}
-              backup=home+'/site-safeguard-backups'
-              try:ftp.mkd(backup)
-              except ftplib.error_perm as e:
-                  if not str(e).startswith('550'):raise
-              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
-              ftp.storbinary('STOR '+backup+'/editor-infidelity-focus-'+stamp+'.php.bak',io.BytesIO(live))
-              if read(p)!=live:raise RuntimeError('LIVE_API_CHANGED_CONCURRENTLY')
-              changed=True
-              write(p,desired)
-              if status('')!=200:raise RuntimeError('HOME_NOT_200_AFTER')
-              if status('redflag-ai-lab/style-test-api.php')!=403:
-                  raise RuntimeError('OWNER_SECURITY_CHECK_FAILED')
-              if status('api/numi-account.php')>=500:
-                  raise RuntimeError('ACCOUNT_API_ERROR')
-              if read(p)!=desired:raise RuntimeError('FINAL_API_READBACK_FAILED')
-              for path,previous in fingerprints.items():
-                  if read(path)!=previous:raise RuntimeError('GUARDED_FILE_CHANGED_'+path)
-              print('PUBLISHED_AND_VERIFIED infidelity_focus_10=true editor_only=true redflags_prompt_frozen=true gemini_2800_unchanged=true payments_unchanged=true backups_ready=true billable_inference_calls=0',flush=True)
-          except BaseException:
-              if changed:
+              ftp.connect('server172.hosting.reg.ru',21)
+              ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+              ftp.prot_p();ftp.set_pasv(True);ftp.voidcmd('TYPE I')
+              root=ftp.pwd().rstrip('/')
+              for typ in ['error','access']:
+                  p=root+'/logs/xn--c1adkkdfjbp1a4l.online.'+typ+'.log'
                   try:
-                      write(p,live)
-                      print('ROLLBACK_OK',flush=True)
-                  except BaseException:
-                      print('ROLLBACK_FAILED',flush=True)
-              raise
-          finally:
-              try:ftp.quit()
-              except BaseException:ftp.close()
+                      if ftp.size(p)>2000000:print('SITE_LOG_TOO_LARGE',typ,flush=True);continue
+                      out=io.BytesIO();ftp.retrbinary('RETR '+p,out.write)
+                      raw=out.getvalue().decode('utf-8','replace')
+                      print('SITE_LOG_SIZE',typ,len(raw),flush=True)
+                      if typ=='error':
+                          counts=collections.Counter()
+                          for line in raw.splitlines():
+                              if 'PHP Fatal error' in line:counts['PHP_FATAL']+=1
+                              if 'REDFLAG_CLOUDRU:' in line:counts['REDFLAG_CLOUDRU']+=1
+                              if 'auth' in line.lower():counts['AUTH_ERROR_RELATED']+=1
+                              if 'Uncaught' in line:counts['UNCAUGHT']+=1
+                          print('SITE_ERROR_COUNTS',dict(counts),flush=True)
+                      else:
+                          counts=collections.Counter()
+                          for line in raw.splitlines()[-1000:]:
+                              m=re.search(r' "(?:GET|POST|HEAD) ([^ ?"]+)[^"]* HTTP/[^"]+" (\d{3}) ',line)
+                              if m:
+                                  ep,status=m.groups()
+                                  if status.startswith('4') or status.startswith('5'):
+                                      if ep.endswith(('.js','.css')):cat='ASSET_'+status
+                                      elif '/api/' in ep:cat='API_'+status
+                                      else:cat='OTHER_'+status
+                                      counts[cat]+=1
+                          print('SITE_RECENT_HTTP_ERROR_COUNTS',dict(counts),flush=True)
+                  except Exception as e:print('SITE_LOG_UNAVAILABLE',typ,type(e).__name__,str(e)[:100],flush=True)
+              ftp.quit()
+          except Exception as e:
+              print('FTPS_DIAGNOSTIC_UNAVAILABLE',type(e).__name__,str(e)[:100],flush=True)
           PY
