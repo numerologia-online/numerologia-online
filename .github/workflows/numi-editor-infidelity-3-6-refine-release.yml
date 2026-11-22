@@ -37,8 +37,8 @@ jobs:
           assert before['questions']==after['questions'] and list(before['arcana'])==list(after['arcana'])==list(map(str,range(1,23)))
           assert [k for k in before['arcana'] if before['arcana'][k]!=after['arcana'][k]]==['3','6'],'ONLY_3_AND_6_ALLOWED'
           assert 'окружить себя подругами' in after['arcana']['3']['mature']
-          assert 'домашнему теплу' in after['arcana']['6']['mature']
-          assert 'эмоциональная привязанность' in after['arcana']['6']['shadow']
+          assert 'домашнему душевному теплу' in after['arcana']['6']['mature']
+          assert 'затем привязанность' in after['arcana']['6']['shadow']
           for key,item in after['arcana'].items():
               assert 50<=len(item['mature'])<=450 and 50<=len(item['shadow'])<=550,('BAD_DESCRIPTION',key)
           print('OFFLINE_APPROVED all_22_preserved 3_and_6_refined php_unchanged billable_calls=0',flush=True)
