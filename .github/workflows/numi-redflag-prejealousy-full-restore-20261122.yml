@@ -93,6 +93,8 @@ jobs:
                   digest=subprocess.run(['git','hash-object','--stdin'],input=body,capture_output=True,check=True).stdout.decode().strip()
                   history=subprocess.check_output(['git','log','--format=%H','--',p],text=True).splitlines()
                   for h in history:
+                      has=subprocess.run(['git','cat-file','-e',h+':'+p],capture_output=True)
+                      if has.returncode!=0:continue
                       blob=subprocess.check_output(['git','rev-parse',h+':'+p],text=True).strip()
                       if digest==blob:
                           print('LIVE_HISTORY_MATCH '+p+' '+h[:14]+' blob='+digest,flush=True)
