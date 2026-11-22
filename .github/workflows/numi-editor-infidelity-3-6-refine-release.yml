@@ -1,0 +1,120 @@
+name: Refine owner-only Infidelity 3 and 6 energies
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-editor-infidelity-3-6-refine-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify exact 3 and 6 edits, intact 20 other energies and PHP
+        run: |
+          set -euo pipefail
+          php -l redflag-ai-lab/style-test-api.php
+          python3 - <<'PY'
+          import json,subprocess,pathlib
+          old='6d3ed9c7beeb019e2ce0c31b14cf65063dbf57f1'
+          new='f17578a78ed7f26cdcb1709e3df5783d2765defc'
+          p='redflag-ai-lab/infidelity-knowledge-v1.json'
+          q='redflag-ai-lab/style-test-api.php'
+          a=subprocess.check_output(['git','show',old+':'+p])
+          b=subprocess.check_output(['git','show',new+':'+p])
+          assert pathlib.Path(p).read_bytes()==b,'KB_CHANGED_AFTER_APPROVAL'
+          assert pathlib.Path(q).read_bytes()==subprocess.check_output(['git','show',new+':'+q]),'PHP_CHANGED'
+          assert subprocess.check_output(['git','show',old+':'+q])==subprocess.check_output(['git','show',new+':'+q]),'PHP_WAS_CHANGED'
+          before=json.loads(a);after=json.loads(b)
+          assert before.keys()==after.keys() and before['schema']==after['schema']=='numi-owner-infidelity-knowledge-v1'
+          assert before['questions']==after['questions'] and list(before['arcana'])==list(after['arcana'])==list(map(str,range(1,23)))
+          assert [k for k in before['arcana'] if before['arcana'][k]!=after['arcana'][k]]==['3','6'],'ONLY_3_AND_6_ALLOWED'
+          assert 'окружить себя подругами' in after['arcana']['3']['mature']
+          assert 'домашнему теплу' in after['arcana']['6']['mature']
+          assert 'эмоциональная привязанность' in after['arcana']['6']['shadow']
+          for key,item in after['arcana'].items():
+              assert 50<=len(item['mature'])<=450 and 50<=len(item['shadow'])<=550,('BAD_DESCRIPTION',key)
+          print('OFFLINE_APPROVED all_22_preserved 3_and_6_refined php_unchanged billable_calls=0',flush=True)
+          PY
+      - name: Back up and deploy only thematic JSON on REG.RU
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import io,ssl,os,re,ftplib,subprocess,pathlib,time,urllib.request,urllib.error
+          old='6d3ed9c7beeb019e2ce0c31b14cf65063dbf57f1'
+          new='f17578a78ed7f26cdcb1709e3df5783d2765defc'
+          kb='redflag-ai-lab/infidelity-knowledge-v1.json'
+          php='redflag-ai-lab/style-test-api.php'
+          previous=subprocess.check_output(['git','show',old+':'+kb])
+          desired=subprocess.check_output(['git','show',new+':'+kb])
+          phpcode=subprocess.check_output(['git','show',new+':'+php])
+          assert pathlib.Path(kb).read_bytes()==desired
+          base='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          def status(route):
+              req=urllib.request.Request(base+route+'?owner3_6_refine='+str(time.time_ns()),
+                headers={'Cache-Control':'no-store','User-Agent':'NumiInfidelityKBOnly/1.0'})
+              try:
+                  with urllib.request.urlopen(req,timeout=26) as r:return r.status
+              except urllib.error.HTTPError as e:return e.code
+          if status('')!=200:raise RuntimeError('HOME_NOT_200_BEFORE')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=38)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          def read(p):
+              o=io.BytesIO();ftp.retrbinary('RETR '+root+p,o.write);return o.getvalue()
+          def write(p,data):
+              ftp.storbinary('STOR '+root+p,io.BytesIO(data))
+              if read(p)!=data:raise RuntimeError('READBACK_FAILED_'+p)
+          protected=['redflag-ai-lab/catalog.json','redflag-ai-lab/intimacy-knowledge-v1.json',
+            'redflag-feature.js','app.js','index.html','api/numi-account.php','api/redflag-free-ai.php']
+          changed=False
+          try:
+              live=read(kb)
+              if live!=previous:raise RuntimeError('LIVE_KB_NOT_EXPECTED_APPROVED_PREVIOUS')
+              livephp=read(php)
+              keys=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",livephp))
+              if len(keys)!=1:raise RuntimeError('PHP_SECRET_LAYOUT_CHANGED')
+              k=keys[0]
+              if len(k.group(2))<16 or not re.fullmatch(rb'[A-Za-z0-9+/=]+',k.group(2)):
+                  raise RuntimeError('PHP_KEY_UNAVAILABLE')
+              masked=livephp[:k.start(2)]+b'__CLOUDRU_KEY_BASE64__'+livephp[k.end(2):]
+              if masked!=phpcode:raise RuntimeError('LIVE_PHP_DRIFT')
+              untouched={p:read(p) for p in protected}
+              folder=home+'/site-safeguard-backups'
+              try:ftp.mkd(folder)
+              except ftplib.error_perm as e:
+                  if not str(e).startswith('550'):raise
+              ts=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+              ftp.storbinary('STOR '+folder+'/infidelity-kb-before-3-6-'+ts+'.json.bak',io.BytesIO(live))
+              if read(kb)!=previous:raise RuntimeError('CONCURRENT_KB_EDIT')
+              changed=True
+              write(kb,desired)
+              if status('')!=200:raise RuntimeError('HOME_NOT_200_AFTER')
+              if status(php)!=403:raise RuntimeError('OWNER_ROUTE_NOT_PROTECTED')
+              if status('api/numi-account.php')>=500:raise RuntimeError('ACCOUNT_ROUTE_ERROR')
+              if read(kb)!=desired or read(php)!=livephp:raise RuntimeError('POST_PUBLICATION_DRIFT')
+              for p,c in untouched.items():
+                  if read(p)!=c:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
+              print('PUBLISHED_AND_VERIFIED infidelity_3_6_context_refined=true 20_other_energies_unchanged=true 10_questions_unchanged=true flags_unchanged=true php_unchanged=true payments_unchanged=true billable_inference_calls=0 backup_saved=true',flush=True)
+          except BaseException:
+              if changed:
+                  try:write(kb,previous);print('ROLLBACK_KB_OK',flush=True)
+                  except BaseException:print('ROLLBACK_KB_FAILED',flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
