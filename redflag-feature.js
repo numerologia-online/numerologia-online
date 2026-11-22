@@ -307,6 +307,35 @@ const clearError = () => {
   birthDateInput.removeAttribute("aria-invalid");
 };
 
+function ownerGenerationError(error) {
+  const code = error?.message;
+  if (code === "WAIT_15_SECONDS")
+    return "Подожди 15 секунд и открой вопрос снова.";
+  if (code === "INVALID_FULL_BIRTH_DATE" || code === "INVALID_DATE")
+    return "Проверь дату рождения и открой вопрос снова.";
+  if (code === "KEY_NOT_CONFIGURED")
+    return "Нужно проверить подключение к Cloud.ru. Разбор не готов.";
+
+  const retry = " Открой вопрос ещё раз, чтобы повторить.";
+  if (code === "PROVIDER_TIMEOUT" || error?.name === "TimeoutError")
+    return "Сервис не успел подготовить разбор." + retry;
+  if (/^PROVIDER_HTTP_\d{3}$/.test(code))
+    return "Cloud.ru вернул ошибку HTTP " + code.slice(-3) + "." + retry;
+
+  const messages = {
+    PROVIDER_MODEL_UNAVAILABLE: "Сервис сообщил, что модель недоступна. Разбор не готов.",
+    PROVIDER_NETWORK_ERROR: "Не удалось связаться с Cloud.ru.",
+    PROVIDER_SERVICE_MESSAGE: "Сервис вернул служебное сообщение. Разбор не готов.",
+    PROVIDER_OUTPUT_LIMIT: "Ответ прервался на лимите длины.",
+    PROVIDER_REFUSAL: "Сервис отклонил запрос на разбор.",
+    OWNER_TEXT_LENGTH_INVALID: "Разбор получился слишком коротким.",
+    OWNER_TEXT_PARAGRAPHS_INVALID: "Ответ пришёл без двух отдельных абзацев.",
+    OWNER_TEXT_LANGUAGE_INVALID: "Сервис не вернул разбор на русском языке.",
+    EMPTY_ANSWER: "Сервис вернул пустой ответ."
+  };
+  return (Object.hasOwn(messages, code) ? messages[code] : "Разбор не загрузился.") + retry;
+}
+
 // Resolve only the opened question. Cache its result for this calculated date.
 // Paid questions are opened IN PLACE; never send the reader into a cart.
 // Publication state comes from the approved material catalogue, not a per-section switch.
@@ -372,15 +401,8 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
         signal:AbortSignal.timeout(125000)
       });
       const data=await response.json().catch(()=>null);
-      if(!response.ok||data?.ok!==true){
-        const failure=new Error(String(data?.error||"SERVICE_UNAVAILABLE"));
-        if((category==="flags"||category==="infidelity")&&failure.message==="OWNER_TEXT_LENGTH_INVALID"
-          &&typeof data?.short_preview==="string"){
-          failure.editorPreview=data.short_preview;
-          failure.editorChars=Number(data.short_chars)||data.short_preview.length;
-        }
-        throw failure;
-      }
+      if(!response.ok||data?.ok!==true)
+        throw new Error(String(data?.error||"SERVICE_UNAVAILABLE"));
       if(data?.draft_only!==true||data?.category!==category||
          data?.question_id!==id||data?.date_key!==birth.day+"-"+birth.month||
          typeof data?.answer!=="string")
@@ -388,22 +410,8 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
       if(profile!==activeProfile||!ownerDraftAccess)return;
       state.answers.set(id,{answer:data.answer,isDraft:true,isSaved:false});
     })().catch(error=>{
-      if(profile===activeProfile&&ownerDraftAccess){
-        const code=String(error?.message||"");
-        const message=code==="OWNER_TEXT_LENGTH_INVALID"&&typeof error?.editorPreview==="string"
-          ?"Gemini завершила ответ слишком рано ("+error.editorChars+" символов). Вот что она написала:\n\n"+error.editorPreview+"\n\nЭто ещё не готовый разбор. Можешь повторить запрос без дополнительного ожидания."
-          :code==="WAIT_15_SECONDS"
-          ?"Повторный запрос пока рано. Подожди 15 секунд и открой вопрос снова."
-          :code==="INVALID_FULL_BIRTH_DATE"?"Не удалось передать дату рождения. Проверь дату."
-          :code==="PROVIDER_TIMEOUT"||error?.name==="TimeoutError"
-            ?"Gemini не успела ответить. Деньги не списаны. Попробуй снова."
-          :code.startsWith("PROVIDER_HTTP_")
-            ?"Cloud.ru вернул ошибку "+code.replace("PROVIDER_HTTP_","HTTP ")+". Деньги не списаны."
-          :code==="KEY_NOT_CONFIGURED"?"Ключ Cloud.ru не настроен. Нужна проверка подключения."
-          :code==="PROVIDER_NETWORK_ERROR"?"Cloud.ru сейчас недоступен по сети. Попробуй снова."
-          :"ИИ-ответ не загрузился ("+(code||"SERVICE_UNAVAILABLE")+"). Деньги не списаны.";
-        state.answerErrors.set(id,message);
-      }
+      if(profile===activeProfile&&ownerDraftAccess)
+        state.answerErrors.set(id,ownerGenerationError(error));
     }).finally(()=>{
       if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
       if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)

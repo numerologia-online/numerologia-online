@@ -9,14 +9,122 @@ function rfPreviewReply(int $status,array $body): never {
     echo json_encode($body,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
     exit;
 }
+function rfProviderTag(mixed $value): ?string {
+    return is_string($value)&&preg_match('~\A[A-Za-z0-9_.:/-]{1,128}\z~',$value)===1
+        ?$value:null;
+}
+
+function rfCloudFailure(string $reason,string $model,int $status,array $data=[],?string $requestId=null): never {
+    $usage=$data['usage']??[];
+    $tokens=static fn(mixed $value): ?int=>is_int($value)&&$value>=0?$value:null;
+    error_log('REDFLAG_PROVIDER '.json_encode([
+        'error'=>$reason,
+        'http_status'=>$status,
+        'requested_model'=>$model,
+        'returned_model'=>rfProviderTag($data['model']??null),
+        'request_id'=>$requestId??rfProviderTag($data['request_id']??$data['id']??null),
+        'finish_reason'=>rfProviderTag($data['choices'][0]['finish_reason']??null),
+        'prompt_tokens'=>$tokens($usage['prompt_tokens']??null),
+        'completion_tokens'=>$tokens($usage['completion_tokens']??null),
+        'reasoning_tokens'=>$tokens($usage['completion_tokens_details']['reasoning_tokens']??null)
+    ],JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR));
+    throw new RuntimeException($reason);
+}
+
+function rfProviderNotice(string $text): ?string {
+    $text=trim($text);
+    // Some providers put infrastructure failures in message.content with HTTP 200.
+    if(preg_match('/\A(?:error:\s*)?(?:model|gemini|claude|glm)\b[^\r\n]{0,120}?\b(?:no longer available|not available|unavailable|not found|not supported|deprecated|retired|discontinued)\b/i',$text)===1
+       ||preg_match('/\A(?:ошибка:\s*)?модель[ \t]+[^\r\n]{0,100}?(?:недоступна|не найдена|больше не поддерживается)/iu',$text)===1)
+        return 'PROVIDER_MODEL_UNAVAILABLE';
+
+    if(preg_match('/\A(?:\[\s*error\s*\]|(?:error|api error|upstream error)(?: \d{3})?:|service (?:temporarily )?unavailable\b|internal server error\b|bad gateway\b|rate limit exceeded\b|too many requests\b|сервис временно недоступен|слишком много запросов)/iu',$text)===1)
+        return 'PROVIDER_SERVICE_MESSAGE';
+    return null;
+}
+
+function rfValidateGeneratedText(string $text,string $finish): string {
+    $text=trim(str_replace(["\r\n","\r"],"\n",$text));
+    $fence=str_repeat(chr(96),3);
+    if(str_starts_with($text,$fence)&&str_ends_with($text,$fence)){
+        $text=trim(substr($text,3,-3));
+        if(str_starts_with($text,"text\n"))$text=ltrim(substr($text,5));
+    }
+    $text=trim(str_replace(['**','__'],'',$text));
+    $notice=rfProviderNotice($text);
+    if($notice!==null)throw new RuntimeException($notice);
+    if(in_array($finish,['length','max_tokens'],true))
+        throw new RuntimeException('PROVIDER_OUTPUT_LIMIT');
+    if($text==='')throw new RuntimeException('EMPTY_ANSWER');
+    if(preg_match('/[а-яё]/iu',$text)!==1)
+        throw new RuntimeException('OWNER_TEXT_LANGUAGE_INVALID');
+    if(mb_strlen($text,'UTF-8')<450)
+        throw new RuntimeException('OWNER_TEXT_LENGTH_INVALID');
+
+    $paragraphs=preg_split('/\n\s*\n/u',$text);
+    if(is_array($paragraphs)&&count($paragraphs)===1)$paragraphs=explode("\n",$text);
+    if(!is_array($paragraphs)||count($paragraphs)!==2)throw new RuntimeException('OWNER_TEXT_PARAGRAPHS_INVALID');
+    foreach($paragraphs as $paragraph){
+        $letters=preg_match_all('/\p{L}/u',$paragraph);
+        $russian=preg_match_all('/[а-яё]/iu',$paragraph);
+        if($russian===0||$russian<=$letters/2)
+            throw new RuntimeException('OWNER_TEXT_LANGUAGE_INVALID');
+    }
+    return implode("\n\n",array_map('trim',$paragraphs));
+}
+
+function rfCloudAnswer(mixed $body,int $status,string $model,?string $requestId=null): string {
+    $data=is_string($body)?json_decode($body,true,32):null;
+    try {
+        $error=$data['error']??null;
+        $code=is_array($error)&&is_string($error['code']??null)?strtolower($error['code']):'';
+        if(in_array($code,['model_not_found','model_not_available','model_unavailable','model_not_supported','model_deprecated','model_retired'],true))
+            throw new RuntimeException('PROVIDER_MODEL_UNAVAILABLE');
+        $message=is_string($error)?$error:($error['message']??null);
+        if(!is_array($data)&&is_string($body))$message=is_string($data)?$data:$body;
+        $notice=is_string($message)?rfProviderNotice($message):null;
+        if($notice!==null)throw new RuntimeException($notice);
+        if($status!==200)throw new RuntimeException('PROVIDER_HTTP_'.$status);
+        if(!is_array($data))throw new RuntimeException('PROVIDER_INVALID_JSON');
+        if($error!==null)throw new RuntimeException('PROVIDER_SERVICE_MESSAGE');
+
+        $choice=$data['choices'][0]??[];
+        $finish=$choice['finish_reason']??null;
+        $finish=is_string($finish)?strtolower($finish):'';
+        $answer=$choice['message']??[];
+        if(!empty($answer['refusal'])||in_array($finish,['content_filter','safety','blocked','refusal'],true))
+            throw new RuntimeException('PROVIDER_REFUSAL');
+        $text=$answer['content']??null;
+        if(is_array($text)){
+            $parts=[];
+            foreach($text as $part){
+                if(!is_array($part))continue;
+                if(($part['type']??null)==='refusal')throw new RuntimeException('PROVIDER_REFUSAL');
+                if(is_string($part['text']??null))$parts[]=$part['text'];
+            }
+            $text=implode('',$parts);
+        }
+        return rfValidateGeneratedText(is_string($text)?$text:'',$finish);
+    } catch(RuntimeException $e) {
+        rfCloudFailure($e->getMessage(),$model,$status,is_array($data)?$data:[],$requestId);
+    }
+}
+
 function rfCloudCall(array $messages,int $tokens,string $model='anthropic/claude-sonnet-4.6'): string {
     $key=base64_decode('__CLOUDRU_KEY_BASE64__',true);
     if(!is_string($key)||$key==='')throw new RuntimeException('KEY_NOT_CONFIGURED');
     $ch=curl_init('https://foundation-models.api.cloud.ru/v1/chat/completions');
+    if($ch===false)rfCloudFailure('PROVIDER_NETWORK_ERROR',$model,0);
+    $requestId=null;
     curl_setopt_array($ch,[
         CURLOPT_POST=>true,CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,
         CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>$model==='zai-org/GLM-5.1'?82:($model==='google/gemini-3-flash-preview'?95:55),
         CURLOPT_HTTPHEADER=>['Content-Type: application/json','Authorization: Bearer '.$key],
+        CURLOPT_HEADERFUNCTION=>static function($handle,string $header)use(&$requestId): int {
+            if(strncasecmp($header,'x-request-id:',13)===0)
+                $requestId=rfProviderTag(trim(substr($header,13)));
+            return strlen($header);
+        },
         CURLOPT_POSTFIELDS=>json_encode(array_merge(
             ['model'=>$model,'messages'=>$messages,'max_tokens'=>$tokens,'stream'=>false],
             // GLM-5.1 can exhaust a short answer budget in reasoning_content.
@@ -30,31 +138,9 @@ function rfCloudCall(array $messages,int $tokens,string $model='anthropic/claude
     $status=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE);
     $curlCode=curl_errno($ch);
     curl_close($ch);
-    if($curlCode===28)throw new RuntimeException('PROVIDER_TIMEOUT');
-    if($curlCode!==0)throw new RuntimeException('PROVIDER_NETWORK_ERROR');
-    if($status!==200||!is_string($body))throw new RuntimeException('PROVIDER_HTTP_'.$status);
-    try {
-        $data=json_decode($body,true,32,JSON_THROW_ON_ERROR);
-    } catch(JsonException $e) {
-        throw new RuntimeException('PROVIDER_INVALID_JSON');
-    }
-    $text=$data['choices'][0]['message']['content']??null;
-    if(is_array($text)){
-        $parts=[];
-        foreach($text as $part)if(is_array($part)&&is_string($part['text']??null))$parts[]=$part['text'];
-        $text=implode('',$parts);
-    }
-    if(!is_string($text)||trim($text)===''){
-        // Log ONLY non-sensitive provider metadata to diagnose billed empty outputs.
-        $finish=(string)($data['choices'][0]['finish_reason']??'unknown');
-        $totalOut=(int)($data['usage']['completion_tokens']??0);
-        $reasoning=(int)($data['usage']['completion_tokens_details']['reasoning_tokens']??0);
-        error_log('REDFLAG_EMPTY_META model='.($model==='zai-org/GLM-5.1'?'GLM_5_1':($model==='google/gemini-3-flash-preview'?'GEMINI_3_FLASH':'other'))
-          .' finish='.preg_replace('/[^a-z_]/i','',$finish)
-          .' output_tokens='.$totalOut.' reasoning_tokens='.$reasoning);
-        throw new RuntimeException($finish==='length'?'PROVIDER_OUTPUT_LIMIT':'EMPTY_ANSWER');
-    }
-    return trim($text);
+    if($curlCode===28)rfCloudFailure('PROVIDER_TIMEOUT',$model,$status,[],$requestId);
+    if($curlCode!==0)rfCloudFailure('PROVIDER_NETWORK_ERROR',$model,$status,[],$requestId);
+    return rfCloudAnswer($body,$status,$model,$requestId);
 }
 
 
@@ -982,37 +1068,10 @@ PROMPT;
       'допустимые_точные_названия_следующего_вопроса'=>$followups
    ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
    $text=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$data]],2800,'google/gemini-3-flash-preview');
-   $text=trim(str_replace(["\r\n","\r"],"\n",$text));
-   $fence=str_repeat(chr(96),3);
-   if(str_starts_with($text,$fence)){
-      $text=trim(substr($text,3));
-      if(str_starts_with($text,'text'))$text=ltrim(substr($text,4));
-      if(str_ends_with($text,$fence))$text=trim(substr($text,0,-3));
-   }
-   $text=trim(str_replace(['**','__'],'',$text));
-   // Always remove typography banned by the owner's editorial style.
-   // The model gets no tarot names/numbers, so accidental name leakage is rare.
+   // Preserve the editorial typography used by these cards.
    $text=preg_replace('/[ \t]*[—–―][ \t]*/u', ': ', $text)??$text;
-   $text=preg_replace('/:[ \t]*:/u', ':', $text);
-   $text=preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
-   if(mb_strlen($text)<450){
-     // Preserve provider's original short reply for verified owner's diagnostics only.
-     // Never publish a partial result as an approved interpretation.
-     $GLOBALS['RF_OWNER_FLAGS_SHORT_PREVIEW']=$text;
-     throw new RuntimeException('OWNER_TEXT_LENGTH_INVALID');
-   }
-   $paras=preg_split('/\n\s*\n/u',$text);
-   if(is_array($paras)&&count($paras)===1){
-      // Preserve both paragraphs if the provider used a single newline.
-      $lines=explode("\n",$text);
-      if(count($lines)===2&&trim($lines[0])!==''&&trim($lines[1])!==''){
-          $text=trim($lines[0])."\n\n".trim($lines[1]);
-          $paras=[$lines[0],$lines[1]];
-      }
-   }
-   if(!is_array($paras)||count($paras)!==2)
-     throw new RuntimeException('OWNER_TEXT_PARAGRAPHS_INVALID');
-   return $text;
+   $text=preg_replace('/:[ \t]*:/u', ':', $text)??$text;
+   return preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
 }
 
 
@@ -1080,40 +1139,14 @@ PROMPT;
       'допустимые_точные_названия_следующего_вопроса'=>$followups
    ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
    $text=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$data]],2800,'google/gemini-3-flash-preview');
-   $text=trim(str_replace(["\r\n","\r"],"\n",$text));
-   $fence=str_repeat(chr(96),3);
-   if(str_starts_with($text,$fence)){
-      $text=trim(substr($text,3));
-      if(str_starts_with($text,'text'))$text=ltrim(substr($text,4));
-      if(str_ends_with($text,$fence))$text=trim(substr($text,0,-3));
-   }
-   $text=trim(str_replace(['**','__'],'',$text));
-   // Always remove typography banned by the owner's editorial style.
-   // The model gets no tarot names/numbers, so accidental name leakage is rare.
+   // Preserve the editorial typography used by these cards.
    $text=preg_replace('/[ \t]*[—–―][ \t]*/u', ': ', $text)??$text;
-   $text=preg_replace('/:[ \t]*:/u', ':', $text);
-   $text=preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
-   if(mb_strlen($text)<450){
-     // Preserve provider's original short reply for verified owner's diagnostics only.
-     // Never publish a partial result as an approved interpretation.
-     $GLOBALS['RF_OWNER_INF_SHORT_PREVIEW']=$text;
-     throw new RuntimeException('OWNER_TEXT_LENGTH_INVALID');
-   }
-   $paras=preg_split('/\n\s*\n/u',$text);
-   if(is_array($paras)&&count($paras)===1){
-      // Preserve both paragraphs if the provider used a single newline.
-      $lines=explode("\n",$text);
-      if(count($lines)===2&&trim($lines[0])!==''&&trim($lines[1])!==''){
-          $text=trim($lines[0])."\n\n".trim($lines[1]);
-          $paras=[$lines[0],$lines[1]];
-      }
-   }
-   if(!is_array($paras)||count($paras)!==2)
-     throw new RuntimeException('OWNER_TEXT_PARAGRAPHS_INVALID');
-   return $text;
+   $text=preg_replace('/:[ \t]*:/u', ':', $text)??$text;
+   return preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
 }
 
 
+$generationStarted=false;
 try {
     // DEPLOYMENT_HEALTH_SLOT
     if(!naTestOwner(naCurrent(naDB())))rfPreviewReply(403,['ok'=>false,'error'=>'OWNER_ONLY']);
@@ -1150,14 +1183,8 @@ try {
         if(time()-(int)($_SESSION['last_generation']??0)<15)
            rfPreviewReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
         $_SESSION['last_generation']=time();
-        try {
-            $answer=rfOwnerSharpFlags($question,$day,$month,$y,$catalog);
-        } catch(Throwable $e) {
-            // Owner-only: a failed Gemini request must not block the next manual try.
-            // One request per tap; no automatic retry or paid extra generation.
-            unset($_SESSION['last_generation']);
-            throw $e;
-        }
+        $generationStarted=true;
+        $answer=rfOwnerSharpFlags($question,$day,$month,$y,$catalog);
         session_write_close();
         rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
            'category'=>'flags','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
@@ -1177,12 +1204,8 @@ try {
         if(time()-(int)($_SESSION['last_generation']??0)<15)
            rfPreviewReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
         $_SESSION['last_generation']=time();
-        try {
-            $answer=rfOwnerSharpInfidelity($question,$day,$month,$y,$catalog);
-        } catch(Throwable $e) {
-            unset($_SESSION['last_generation']);
-            throw $e;
-        }
+        $generationStarted=true;
+        $answer=rfOwnerSharpInfidelity($question,$day,$month,$y,$catalog);
         session_write_close();
         rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
            'category'=>'infidelity','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
@@ -1213,6 +1236,7 @@ try {
     $last=(int)($_SESSION['last_generation']??0);
     if(time()-$last<15)rfPreviewReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
     $_SESSION['last_generation']=time();
+    $generationStarted=true;
     $energy=$day;
     while($energy>22)$energy=array_sum(str_split((string)$energy));
     // Editorial reference only. Send exactly the two relevant energies to Cloud.ru.
@@ -1386,8 +1410,7 @@ try {
     ],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
     }
     $answer=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$user]],1600);
-    // Preserve natural punctuation and the complete two-paragraph text.
-    $answer=trim(str_replace(['**','__'],'',$answer));
+    // Preserve the punctuation preference for these previews.
     if($careMeaning!==null||$autonomousMode){
         // Editorial punctuation preference for all owner-preview questions, no new AI call.
         $answer=preg_replace('/\\h*[—–―]\\h*/u', ', ', $answer)??$answer;
@@ -1398,33 +1421,25 @@ try {
         'category'=>$category['id'],'question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
         'answer'=>$answer,'model'=>'anthropic/claude-sonnet-4.6']);
 } catch(Throwable $e) {
-    if(session_status()===PHP_SESSION_ACTIVE)session_write_close();
+    if(session_status()===PHP_SESSION_ACTIVE){
+        // A failure allows a fresh manual attempt in every preview category.
+        if($generationStarted)unset($_SESSION['last_generation']);
+        session_write_close();
+    }
     $reason=$e->getMessage();
-    error_log('REDFLAG_CLOUDRU:'.get_class($e).':'.$reason);
-    if($reason==='OWNER_TEXT_LENGTH_INVALID'
-       &&($input['category']??null)==='flags'
-       &&is_string($GLOBALS['RF_OWNER_FLAGS_SHORT_PREVIEW']??null)){
-       // This endpoint is verified-owner-only. No client content changes.
-       $short=$GLOBALS['RF_OWNER_FLAGS_SHORT_PREVIEW'];
-       rfPreviewReply(422,['ok'=>false,'error'=>'OWNER_TEXT_LENGTH_INVALID',
-          'short_preview'=>$short,'short_chars'=>mb_strlen($short,'UTF-8')]);
-    }
-    if($reason==='OWNER_TEXT_LENGTH_INVALID'
-       &&($input['category']??null)==='infidelity'
-       &&is_string($GLOBALS['RF_OWNER_INF_SHORT_PREVIEW']??null)){
-       $short=$GLOBALS['RF_OWNER_INF_SHORT_PREVIEW'];
-       rfPreviewReply(422,['ok'=>false,'error'=>'OWNER_TEXT_LENGTH_INVALID',
-          'short_preview'=>$short,'short_chars'=>mb_strlen($short,'UTF-8')]);
-    }
-    // Only well-defined error codes are exposed to this verified owner.
-    // Do not echo raw provider messages or any private configuration values.
-    $safeReasons=[
-        'PROVIDER_TIMEOUT','PROVIDER_NETWORK_ERROR','KEY_NOT_CONFIGURED',
-        'EMPTY_ANSWER','INVALID_FULL_BIRTH_DATE','QUESTION_REFERENCE_INVALID',
-        'OWNER_TEXT_LENGTH_INVALID','OWNER_TEXT_PARAGRAPHS_INVALID',
-        'PROVIDER_INVALID_JSON','PROVIDER_OUTPUT_LIMIT'
+    $formatErrors=['OWNER_TEXT_LENGTH_INVALID','OWNER_TEXT_PARAGRAPHS_INVALID','OWNER_TEXT_LANGUAGE_INVALID'];
+    $providerErrors=[
+        'PROVIDER_TIMEOUT','PROVIDER_NETWORK_ERROR','EMPTY_ANSWER',
+        'PROVIDER_INVALID_JSON','PROVIDER_OUTPUT_LIMIT','PROVIDER_MODEL_UNAVAILABLE',
+        'PROVIDER_SERVICE_MESSAGE','PROVIDER_REFUSAL'
     ];
-    $ownerError=in_array($reason,$safeReasons,true)||preg_match('/^PROVIDER_HTTP_[0-9]{3}$/D',$reason)===1
-        ?$reason:'GENERATION_UNAVAILABLE';
-    rfPreviewReply(503,['ok'=>false,'error'=>$ownerError]);
+    $providerError=in_array($reason,$providerErrors,true)||in_array($reason,$formatErrors,true)
+        ||preg_match('/^PROVIDER_HTTP_[0-9]{3}$/D',$reason)===1;
+    if(!$providerError){
+        $logCode=preg_match('/\A[A-Z][A-Z0-9_]{0,80}\z/',$reason)===1?$reason:'INTERNAL_ERROR';
+        error_log('REDFLAG_PREVIEW_FAILED error='.$logCode);
+    }
+    $safeReasons=['KEY_NOT_CONFIGURED','INVALID_FULL_BIRTH_DATE','QUESTION_REFERENCE_INVALID'];
+    $ownerError=$providerError||in_array($reason,$safeReasons,true)?$reason:'GENERATION_UNAVAILABLE';
+    rfPreviewReply(in_array($reason,$formatErrors,true)?422:503,['ok'=>false,'error'=>$ownerError]);
 }
