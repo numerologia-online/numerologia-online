@@ -1145,6 +1145,75 @@ PROMPT;
    return preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
 }
 
+function rfOwnerSharpIntimacy(array $question,int $day,int $month,int $year,array $catalog): string {
+   $maps=[
+     'her-pleasure'=>['left','loveHeart','center','top','tailFirst'],
+     'pace'=>['left','right','center','tailFirst','loveHeart'],
+     'desire-talk'=>['top','center','left','loveHeart','tailSecond'],
+     'tenderness'=>['loveHeart','top','center','left','bottom'],
+     'boundaries'=>['center','left','right','top','loveHeart'],
+     'closeness'=>['loveHeart','center','left','tailFirst','top'],
+     'initiative'=>['left','right','center','top','loveHeart'],
+     'compatibility'=>['left','top','loveHeart','tailFirst','tailSecond'],
+     'after'=>['loveHeart','center','bottom','left','tailSecond']
+   ];
+   $id=$question['id']??null;
+   if(!is_string($id)||!isset($maps[$id]))throw new RuntimeException('OWNER_Q_MAP_MISSING');
+   $kb=json_decode((string)file_get_contents(__DIR__.'/sexuality-knowledge-v1.json'),true,25,JSON_THROW_ON_ERROR);
+   if(($kb['schema']??null)!=='numi-owner-sexuality-matrix-knowledge-v1'
+     ||count($kb['arcana']??[])!==22)throw new RuntimeException('OWNER_KB_UNAVAILABLE');
+   $calculated=rfOwner31($day,$month,$year);
+   $positionData=[];
+   foreach($maps[$id] as $key){
+      $n=$calculated[$key];$a=$kb['arcana'][(string)$n]??null;
+      if(!is_array($a)||!is_string($kb['pointDescriptions'][$key]??null))
+         throw new RuntimeException('OWNER_KB_POSITION_UNAVAILABLE');
+      // Model gets only human-readable traits, never arcana names or numbers.
+      $positionData[]=[
+        'роль_точки'=>$kb['pointDescriptions'][$key],
+        'ведущий_мотив'=>$a['core'],
+        'сильная_сторона'=>$a['plus'],
+        'теневая_сторона'=>$a['minus'],
+        'в_отношениях'=>$a['love']
+      ];
+   }
+   $followups=[];
+   foreach(($catalog['categories']??[]) as $group){
+      if(($group['id']??null)!=='intimacy')continue;
+      foreach(($group['questions']??[]) as $next){
+        if(($next['id']??null)!==$id)$followups[]=$next['title'];
+      }
+   }
+   if(count($followups)<8)throw new RuntimeException('OWNER_FOLLOWUPS_NOT_READY');
+   $system=<<<'PROMPT'
+Ты опытный нумеролог Матрицы судьбы (22 Старших аркана), пишешь женщине о мужчине. Это раздел «Секс и близость». Отвечай на ОДИН заданный вопрос, не на всю жизнь мужчины.
+
+У тебя НЕТ готовых выводов или банка трактовок. Сайт уже математически рассчитал полную матрицу мужчины по дню, месяцу и году рождения. Ты получаешь только ПОНЯТНЫЕ СЛОВЕСНЫЕ ХАРАКТЕРИСТИКИ значимых для вопроса позиций из нашей базы знаний, без номеров и названий арканов. Объединяй именно эти характеристики, ничего не пересчитывай. Нельзя переносить формулировки из технических данных в клиентский текст. Перед тем как писать, самостоятельно сопоставь минимум три переданные точки, выбери одну ведущую конкретную реакцию и уточни, как другие энергии изменяют её форму. Не превращай противоречие в бессмысленную золотую середину. Для разных вопросов меняй сам вывод, а не только слова.
+
+Не дипломатничай там, где переданные теневые характеристики указывают на конкретную слабость. Жажда власти, вспышки злости, ревность, манипуляции и борьба с возражениями не становятся безобидными переговорами или просто «темпераментом». Холодное превосходство, придирчивость и обесценивание чужого мнения тоже называй прямо. Если основной риск — резкая реакция на несогласие, так и пиши. Но не делай мужчину агрессивным автоматически: сопоставляй значимые позиции и их противоречия. Если сочетание указывает на зрелое уважение и надёжность, говори это уверенно, не выдумывая отрицательный типаж. Это символические возможные склонности, не проверенные факты.
+
+Пиши как умная, дерзкая, наблюдательная подруга. Чётко, ярко, нормальными словами, заметно острее и смелее, чем вежливый психолог, с узнаваемыми поступками. В ПЕРВОЙ ФРАЗЕ прямой ответ на вопрос. Затем два-три РАЗНЫХ конкретных проявления и чем это оборачивается для женщины. Не бойся назвать высокомерие высокомерием, манипуляции манипуляциями, давление давлением, если это вытекает из переданных характеристик. Одна меткая, неожиданная формулировка лучше трёх дипломатичных объяснений. Но никакой грубости к женщине, искусственного драматизма и обвинений без оснований. Никакой воды, пафоса, нравоучений, повторов или необязательных похвал. Не смягчай жёсткий вывод и не заставляй женщину отвечать за мужское поведение. Нельзя: «он не со зла», «это не злой умысел», «он просто такой», «ему нужно понять», «не про истерики, а про темп», «если ты умеешь объяснять», «на самом деле ему важно», «в целом», «зато». Не выдумывай уже совершённых поступков. Нарушение согласия не оправдывает никакой аркан.
+
+Три коротких ОБРАЗЦА только уровня языка, НЕ для копирования и НЕ для обязательного распределения дат:
+Властный: «Ему мало высказать своё мнение. Ему нужно, чтобы ты признала его правоту. И спор быстро перестаёт быть разговором».
+Холодный: «Вместо скандала устроит тебе экзамен на право иметь своё мнение. Даже твой отказ он сначала захочет проверить на ошибки».
+Уважительный: «Сказала нет — он остановился. Без обиженного спектакля и комиссии по пересмотру твоего решения».
+Это примеры интонации, а не автоматические трактовки арканов. Выбирай проявление по реальному символическому сочетанию.
+
+ФОРМАТ. Ровно два абзаца, вместе ориентировочно 950–1200 знаков. Первый, основной, примерно 730–950 знаков: главный вывод, два-три РАЗНЫХ признака и конкретный риск или достоинство, без воды и повторов. Второй, примерно 150–230 знаков, это НЕ голая ссылка и НЕ пересказ названия. Он должен оставить лёгкое напряжение и вызвать желание открыть следующий вопрос. Напиши две-три живые фразы: сначала конкретная неожиданная зацепка, вытекающая именно из вывода ПЕРВОГО абзаца, затем поверни разговор к ДРУГОЙ стороне отношений, закончите ОДНИМ ТОЧНЫМ названием следующего вопроса из переданного списка. Не отвечай на следующий вопрос вместо того, чтобы заинтересовать. Не называй следующий вопрос случайно, выбирай содержательную связь. Избегай шаблонов «раз уж мы разобрались», «а теперь давай узнаем», «интересно, что будет дальше», «не менее важный вопрос», «следующий вопрос», «логично спросить». Каждая подводка должна быть самостоятельной, цепкой и отличаться от подводок к другим ответам. Если текст уже насыщен, не растягивай его ради количества знаков. Не называй в тексте покупательнице арканы, числа, энергию, дату, методику, внутренние расчёты. В ГОТОВОМ ТЕКСТЕ НЕЛЬЗЯ УПОМИНАТЬ НИ ОДНОГО НАЗВАНИЯ АРКАНА, НИ ЕГО НОМЕРА, НИ НАЗВАНИЯ ТОЧКИ РАСЧЁТА. НЕЛЬЗЯ ИСПОЛЬЗОВАТЬ СЛОВА «энергия», «аркан» И «матрица» ВМЕСТО ОПИСАНИЯ ПОСТУПКОВ. Объясняй только по-человечески: что он склонен делать, как реагировать и что это значит для женщины. Нужны исключительно человеческие черты и поступки. НЕЛЬЗЯ ИСПОЛЬЗОВАТЬ ДЛИННОЕ ИЛИ СРЕДНЕЕ ТИРЕ: «—», «–», «―». Перестрой предложения через точку, двоеточие или союз. Вычитай собственный ответ на эти два запрета перед отправкой. Без заголовков, списков и Markdown. Верни только два русских абзаца.
+PROMPT;
+   $data=json_encode([
+      'вопрос'=>$question['title'],
+      'трактовки_значимых_позиций_полной_матрицы'=>$positionData,
+      'допустимые_точные_названия_следующего_вопроса'=>$followups
+   ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
+   $text=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$data]],2800,'google/gemini-3-flash-preview');
+   // Preserve the editorial typography used by these cards.
+   $text=preg_replace('/[ \t]*[—–―][ \t]*/u', ': ', $text)??$text;
+   $text=preg_replace('/:[ \t]*:/u', ':', $text)??$text;
+   return preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
+}
+
 
 $generationStarted=false;
 try {
@@ -1209,6 +1278,26 @@ try {
         session_write_close();
         rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
            'category'=>'infidelity','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
+           'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);
+    }
+
+    // Isolated owner Gemini preview for Sex and Intimacy; other routes unchanged.
+    if($category['id']==='intimacy'){
+        if(function_exists('set_time_limit')){@set_time_limit(125);}
+        $y=$input['year']??null;
+        if(!is_int($y)||$y<1900||$y>(int)gmdate('Y')||!checkdate($month,$day,$y))
+           rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_FULL_BIRTH_DATE']);
+        session_name('numi_redflag_preview');
+        session_set_cookie_params(['secure'=>true,'httponly'=>true,'samesite'=>'Strict','path'=>'/redflag-ai-lab/']);
+        if(!session_start())throw new RuntimeException('PREVIEW_SESSION_FAILED');
+        if(time()-(int)($_SESSION['last_generation']??0)<15)
+           rfPreviewReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
+        $_SESSION['last_generation']=time();
+        $generationStarted=true;
+        $answer=rfOwnerSharpIntimacy($question,$day,$month,$y,$catalog);
+        session_write_close();
+        rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
+           'category'=>'intimacy','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
            'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);
     }
 
