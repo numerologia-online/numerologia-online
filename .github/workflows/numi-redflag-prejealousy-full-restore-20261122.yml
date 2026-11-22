@@ -95,8 +95,8 @@ jobs:
             b'return Boolean(ownerDraftAccess&&redflagDraftSections.has(section)&&\n    (question.isComingSoon||(section==="infidelity"&&question.id==="faithful")));'),
            (b'if(category==="flags"&&failure.message==="OWNER_TEXT_LENGTH_INVALID"',
             b'if((category==="flags"||category==="infidelity")&&failure.message==="OWNER_TEXT_LENGTH_INVALID"'),
-           (b'free.textContent = "БЕСПЛАТНО";',
-            b'free.textContent = state!==null&&ownerDraftInScope(question,state)?"ИИ · тест":"БЕСПЛАТНО";')
+           ('free.textContent = "БЕСПЛАТНО";'.encode('utf-8'),
+            'free.textContent = state!==null&&ownerDraftInScope(question,state)?"ИИ · тест":"БЕСПЛАТНО";'.encode('utf-8'))
           ]
           for before,after in switches:
               assert old_js.count(before)==1 and new_js.count(after)==1,'JS_OWNER_SCOPE_MISMATCH'
