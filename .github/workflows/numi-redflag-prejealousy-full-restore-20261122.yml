@@ -97,8 +97,8 @@ jobs:
           assert len(focus)==2,'QUESTION_SPECIFIC_FOCUSES_MISSING'
           focusIds={x.decode() for x in re.findall(rb"\s*'([a-z-]+)'=>",focus[1].split(b'\n   ];',1)[0])}
           assert focusIds==ids-{'faithful','options'},'QUESTION_FOCUS_NOT_COVERING_EIGHT'
-          assert body.count(b"'ведущая_энергия_дня_вес_50_процентов'")==1,'DAY_MISSING'
-          assert body.count(b"'ведущая_энергия_месяца_вес_50_процентов'")==1,'MONTH_MISSING'
+          assert body.count("'ведущая_энергия_дня_вес_50_процентов'".encode())==1,'DAY_MISSING'
+          assert body.count("'ведущая_энергия_месяца_вес_50_процентов'".encode())==1,'MONTH_MISSING'
           assert new.count(b"rfOwnerSharpInfidelityPilot($question,$day,$month,$y,$catalog)")==1,'WRONG_OWNER_GEMINI_INVOCATION'
           assert b"($id==='options'&&($next['id']??null)==='faithful')" in new,'APPROVED_OPTIONS_FOLLOWUPS_CHANGED'
           assert new.count(b'rfOwnerSharpInfidelityPilot($question,$day,$month,$y,$catalog)')==1,'OWNER_FIDELITY_ROUTE_MISSING'
