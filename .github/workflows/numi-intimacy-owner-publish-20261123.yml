@@ -49,8 +49,8 @@ jobs:
           # Only isolated function and route are allowed differences from historical API.
           stem=base
           fnMarker=b'function rfOwnerSharpInfidelity('
-          fnPos=stem.index(fnMarker)
-          stem=stem[:fnPos]+fn+b'\n'+stem[fnPos:]
+          fnEnd=stem.index(b'\n}\n',stem.index(fnMarker))+3
+          stem=stem[:fnEnd]+b'\n'+fn+stem[fnEnd:]
           routePos=stem.index(routeEnd)
           stem=stem[:routePos]+route+stem[routePos:]
           assert stem==target,'UNEXPECTED_API_CHANGE_FROM_APPROVED_BASE'
@@ -90,7 +90,9 @@ jobs:
                   if oldKB!=kb:raise RuntimeError('EXISTING_SEXUALITY_KB_DRIFT')
               except ftplib.error_perm as e:
                   if not str(e).startswith('550'):raise
-              desired=oldPhp.replace(fnMarker,fn+b'\n'+fnMarker,1).replace(routeEnd,route+routeEnd,1)
+              infEnd=oldPhp.index(b'\n}\n',oldPhp.index(fnMarker))+3
+              desired=oldPhp[:infEnd]+b'\n'+fn+oldPhp[infEnd:]
+              desired=desired.replace(routeEnd,route+routeEnd,1)
               syntax=subprocess.run(['php','-l'],input=desired,capture_output=True)
               if syntax.returncode:raise RuntimeError('NEW_PHP_SYNTAX_INVALID_'+syntax.stderr.decode(errors='replace')[:200])
               protected=['redflag-ai-lab/intimacy-knowledge-v1.json','redflag-ai-lab/infidelity-knowledge-v1.json','redflag-ai-lab/catalog.json','redflag-ai-lab/style-test.php','redflag-feature.js','redflag-public-catalog.js','redflag-engine.js','app.js','index.html','api/redflag-free-ai.php','wallet-client.js']
