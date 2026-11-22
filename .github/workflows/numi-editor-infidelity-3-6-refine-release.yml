@@ -1,4 +1,4 @@
-name: Refine owner-only Infidelity 3 and 6 energies
+name: Refine owner-only Infidelity 9 energy
 on:
   push:
     branches: [main]
@@ -17,14 +17,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Verify exact 3 and 6 edits, intact 20 other energies and PHP
+      - name: Verify exact 9 edit, intact 21 other energies and PHP
         run: |
           set -euo pipefail
           php -l redflag-ai-lab/style-test-api.php
           python3 - <<'PY'
           import json,subprocess,pathlib
-          old='f17578a78ed7f26cdcb1709e3df5783d2765defc'
-          new='ed0972174f7f81a8cb8824104aa4c418e548fb47'
+          old='ed0972174f7f81a8cb8824104aa4c418e548fb47'
+          new='150df77ca1d4fda9a021bc2fb4222da95ef6b354'
           p='redflag-ai-lab/infidelity-knowledge-v1.json'
           q='redflag-ai-lab/style-test-api.php'
           a=subprocess.check_output(['git','show',old+':'+p])
@@ -35,15 +35,15 @@ jobs:
           before=json.loads(a);after=json.loads(b)
           assert before.keys()==after.keys() and before['schema']==after['schema']=='numi-owner-infidelity-knowledge-v1'
           assert before['questions']==after['questions'] and list(before['arcana'])==list(after['arcana'])==list(map(str,range(1,23)))
-          assert [k for k in before['arcana'] if before['arcana'][k]!=after['arcana'][k]]==['3','6'],'ONLY_3_AND_6_ALLOWED'
-          assert 'окружить себя подругами' in after['arcana']['3']['mature']
-          assert 'домашнему душевному теплу' in after['arcana']['6']['mature']
-          assert 'затем привязанность' in after['arcana']['6']['shadow']
+          assert [k for k in before['arcana'] if before['arcana'][k]!=after['arcana'][k]]==['9'],'ONLY_9_ALLOWED'
+          assert 'не стремится окружить себя многочисленными подругами' in after['arcana']['9']['mature']
+          assert 'широкому кругу друзей' in after['arcana']['9']['shadow']
+          assert 'общительные или страстные позиции' in after['arcana']['9']['shadow']
           for key,item in after['arcana'].items():
               assert 50<=len(item['mature'])<=450 and 50<=len(item['shadow'])<=550,('BAD_DESCRIPTION',key)
-          print('OFFLINE_APPROVED all_22_preserved 3_and_6_refined php_unchanged billable_calls=0',flush=True)
+          print('OFFLINE_APPROVED all_22_preserved only_9_refined php_unchanged billable_calls=0',flush=True)
           PY
-      - name: Back up and deploy only thematic JSON on REG.RU
+      - name: Back up and deploy only ninth-energy thematic JSON on REG.RU
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
@@ -51,8 +51,8 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import io,ssl,os,re,ftplib,subprocess,pathlib,time,urllib.request,urllib.error
-          old='f17578a78ed7f26cdcb1709e3df5783d2765defc'
-          new='ed0972174f7f81a8cb8824104aa4c418e548fb47'
+          old='ed0972174f7f81a8cb8824104aa4c418e548fb47'
+          new='150df77ca1d4fda9a021bc2fb4222da95ef6b354'
           kb='redflag-ai-lab/infidelity-knowledge-v1.json'
           php='redflag-ai-lab/style-test-api.php'
           previous=subprocess.check_output(['git','show',old+':'+kb])
@@ -61,7 +61,7 @@ jobs:
           assert pathlib.Path(kb).read_bytes()==desired
           base='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
           def status(route):
-              req=urllib.request.Request(base+route+'?owner3_6_refine='+str(time.time_ns()),
+              req=urllib.request.Request(base+route+'?owner9_refine='+str(time.time_ns()),
                 headers={'Cache-Control':'no-store','User-Agent':'NumiInfidelityKBOnly/1.0'})
               try:
                   with urllib.request.urlopen(req,timeout=26) as r:return r.status
@@ -98,7 +98,7 @@ jobs:
               except ftplib.error_perm as e:
                   if not str(e).startswith('550'):raise
               ts=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
-              ftp.storbinary('STOR '+folder+'/infidelity-kb-before-3-6-'+ts+'.json.bak',io.BytesIO(live))
+              ftp.storbinary('STOR '+folder+'/infidelity-kb-before-9-'+ts+'.json.bak',io.BytesIO(live))
               if read(kb)!=previous:raise RuntimeError('CONCURRENT_KB_EDIT')
               changed=True
               write(kb,desired)
@@ -108,7 +108,7 @@ jobs:
               if read(kb)!=desired or read(php)!=livephp:raise RuntimeError('POST_PUBLICATION_DRIFT')
               for p,c in untouched.items():
                   if read(p)!=c:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
-              print('PUBLISHED_AND_VERIFIED infidelity_3_6_context_refined=true 20_other_energies_unchanged=true 10_questions_unchanged=true flags_unchanged=true php_unchanged=true payments_unchanged=true billable_inference_calls=0 backup_saved=true',flush=True)
+              print('PUBLISHED_AND_VERIFIED infidelity_9_introvert_refined=true 21_other_energies_unchanged=true 10_questions_unchanged=true flags_unchanged=true php_unchanged=true payments_unchanged=true billable_inference_calls=0 backup_saved=true',flush=True)
           except BaseException:
               if changed:
                   try:write(kb,previous);print('ROLLBACK_KB_OK',flush=True)
