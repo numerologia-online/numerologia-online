@@ -36,7 +36,7 @@ jobs:
           assert before.keys()==after.keys() and before['schema']==after['schema']=='numi-owner-infidelity-knowledge-v1'
           assert before['questions']==after['questions'] and list(before['arcana'])==list(after['arcana'])==list(map(str,range(1,23)))
           assert [k for k in before['arcana'] if before['arcana'][k]!=after['arcana'][k]]==['9'],'ONLY_9_ALLOWED'
-          assert 'не стремится окружить себя многочисленными подругами' in after['arcana']['9']['mature']
+          assert 'Не стремится окружить себя многочисленными подругами' in after['arcana']['9']['mature']
           assert 'широкому кругу друзей' in after['arcana']['9']['shadow']
           assert 'общительные или страстные позиции' in after['arcana']['9']['shadow']
           for key,item in after['arcana'].items():
