@@ -371,8 +371,15 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
         signal:AbortSignal.timeout(125000)
       });
       const data=await response.json().catch(()=>null);
-      if(!response.ok||data?.ok!==true)
-        throw new Error(String(data?.error||"SERVICE_UNAVAILABLE"));
+      if(!response.ok||data?.ok!==true){
+        const failure=new Error(String(data?.error||"SERVICE_UNAVAILABLE"));
+        if(category==="flags"&&failure.message==="OWNER_TEXT_LENGTH_INVALID"
+          &&typeof data?.short_preview==="string"){
+          failure.editorPreview=data.short_preview;
+          failure.editorChars=Number(data.short_chars)||data.short_preview.length;
+        }
+        throw failure;
+      }
       if(data?.draft_only!==true||data?.category!==category||
          data?.question_id!==id||data?.date_key!==birth.day+"-"+birth.month||
          typeof data?.answer!=="string")
@@ -382,7 +389,9 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
     })().catch(error=>{
       if(profile===activeProfile&&ownerDraftAccess){
         const code=String(error?.message||"");
-        const message=code==="WAIT_15_SECONDS"
+        const message=code==="OWNER_TEXT_LENGTH_INVALID"&&typeof error?.editorPreview==="string"
+          ?"Gemini завершила ответ слишком рано ("+error.editorChars+" символов). Вот что она написала:\n\n"+error.editorPreview+"\n\nЭто ещё не готовый разбор. Можешь повторить запрос без дополнительного ожидания."
+          :code==="WAIT_15_SECONDS"
           ?"Повторный запрос пока рано. Подожди 15 секунд и открой вопрос снова."
           :code==="INVALID_FULL_BIRTH_DATE"?"Не удалось передать дату рождения. Проверь дату."
           :code==="PROVIDER_TIMEOUT"||error?.name==="TimeoutError"

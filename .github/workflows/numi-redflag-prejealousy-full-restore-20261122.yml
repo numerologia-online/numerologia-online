@@ -1,157 +1,153 @@
-name: Restore approved Gemini Red Flags editor before Infidelity 21 Nov
+name: Guarded owner Red Flags Gemini errors-only release
 on:
   push:
     branches: [main]
     paths:
-      - redflag-ai-lab/style-test-api.php
-      - redflag-ai-lab/catalog.json
-      - redflag-feature.js
-      - redflag-ai-lab/intimacy-knowledge-v1.json
-      - redflag-ai-lab/banks/unified-question-answers-v1.json
       - .github/workflows/numi-redflag-prejealousy-full-restore-20261122.yml
+      - redflag-ai-lab/style-test-api.php
+      - redflag-feature.js
+      - app.js
+      - index.html
 permissions:
   contents: read
 concurrency:
   group: reg-ru-manual-publication
   cancel-in-progress: false
 jobs:
-  restore:
+  approved-owner-errors-only:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Validate exact 21 Nov files no model calls
+      - name: Validate unchanged approved Gemini answers and exact 4-file patch
         run: |
           set -euo pipefail
           php -l redflag-ai-lab/style-test-api.php
           node --check redflag-feature.js
+          node --check app.js
           python3 - <<'PY'
-          import subprocess,pathlib,json
-          ref='8886d623ad65b53cefb66236672298a517f15de3'
-          paths=['redflag-ai-lab/style-test-api.php','redflag-ai-lab/catalog.json','redflag-feature.js','redflag-ai-lab/intimacy-knowledge-v1.json','redflag-ai-lab/banks/unified-question-answers-v1.json','redflag-ai-lab/banks/care-or-control.json']
-          for p in paths:
-              assert pathlib.Path(p).read_bytes()==subprocess.check_output(['git','show',ref+':'+p]),'SNAPSHOT_DRIFT_'+p
-          php=pathlib.Path(paths[0]).read_bytes()
-          assert b'function rfHeroTheses(' in php and b'function rfCareControlMeaning(' in php
-          assert b'function rfOwnerSharpFlags(' in php and b'function rfOwnerUnifiedAnswer(' not in php
-          assert b'google/gemini-3-flash-preview' in php and b'function rfOwnerSharpInfidelity(' not in php
-          assert php.count(b'__CLOUDRU_KEY_BASE64__')==1
-          assert sum(len(g['questions']) for g in json.loads(pathlib.Path(paths[1]).read_text())['categories'])==55
-          assert len(json.loads(pathlib.Path(paths[3]).read_text())['arcana'])==22
-          assert json.loads(pathlib.Path(paths[5]).read_text())['version']==4
-          print('PREFLIGHT_OK correct Gemini snapshot before Infidelity; no inference')
+          import subprocess,pathlib
+          baseline='62ab9a73e04aa500e2a3bb607a4a45fea0544aba'
+          target={
+            'redflag-ai-lab/style-test-api.php':'179747e1d537cd5421c976cbaf658268e231dcdc',
+            'redflag-feature.js':'f692e86466e014e6659c0a0b3f5d9b3bbd094c5f',
+            'app.js':'67b3d1ec7a0f52a5d916d3d7742595b533d563ab',
+            'index.html':'a7ee8a0a9607b9ac2d6d8b69618f02629423599e'
+          }
+          def git(p):return subprocess.check_output(['git','show',baseline+':'+p])
+          for p,expected_sha in target.items():
+              data=pathlib.Path(p).read_bytes()
+              actual_sha=subprocess.check_output(['git','hash-object','--stdin'],input=data).decode().strip()
+              assert actual_sha==expected_sha,'TARGET_DRIFT_'+p
+          for p in ['redflag-ai-lab/catalog.json','redflag-ai-lab/intimacy-knowledge-v1.json',
+                    'redflag-ai-lab/banks/care-or-control.json',
+                    'redflag-ai-lab/banks/unified-question-answers-v1.json']:
+              assert pathlib.Path(p).read_bytes()==git(p),'APPROVED_KNOWLEDGE_DRIFT_'+p
+          old=git('redflag-ai-lab/style-test-api.php')
+          new=pathlib.Path('redflag-ai-lab/style-test-api.php').read_bytes()
+          def approved_prompt(s):
+              p=s.index(b'function rfOwnerSharpFlags(')
+              a=s.index(b"$system=<<<'PROMPT'",p)
+              z=s.index(b'\nPROMPT;',a)
+              return s[a:z]
+          assert approved_prompt(old)==approved_prompt(new),'APPROVED_PROMPT_ALTERED'
+          assert old.count(b'__CLOUDRU_KEY_BASE64__')==new.count(b'__CLOUDRU_KEY_BASE64__')==1,'SECRET_SLOT_DRIFT'
+          for token in [b"2800,'google/gemini-3-flash-preview'",b"if(mb_strlen($text)<450)",
+                        b"OWNER_TEXT_LENGTH_INVALID",b"unset($_SESSION['last_generation'])",
+                        b"RF_OWNER_FLAGS_SHORT_PREVIEW"]:
+              assert token in new,'ERROR_HANDLER_MISSING'
+          assert b'AbortSignal.timeout(125000)' in pathlib.Path('redflag-feature.js').read_bytes(),'FRONT_TIMEOUT_CHANGED'
+          assert b'redflag-owner-errorfix-20261122' in pathlib.Path('app.js').read_bytes(),'CACHE_MISSING_APP'
+          assert b'redflag-owner-errorfix-20261122' in pathlib.Path('index.html').read_bytes(),'CACHE_MISSING_INDEX'
+          print('APPROVED_GEMINI_PROMPT_UNCHANGED; exact 4-file patch; no paid requests',flush=True)
           PY
-      - name: Safely publish owner editor snapshot on REG.RU, backup and rollback
+      - name: Back up current REG.RU files, publish exact patch, verify and rollback if needed
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import os,ftplib,ssl,io,re,uuid,time,hashlib,pathlib,subprocess,urllib.request,urllib.error
-          ref='8886d623ad65b53cefb66236672298a517f15de3'
-          prior='6e6b65a554f6b449be0338c86e13f38085f936e9'
-          patched='340561ed7d35d81596cd6dfbf30dcb332c1ca6c8'
-          files=['redflag-ai-lab/style-test-api.php','redflag-ai-lab/catalog.json','redflag-feature.js','redflag-ai-lab/intimacy-knowledge-v1.json']
-          php=files[0];marker=b'__CLOUDRU_KEY_BASE64__'
-          def git(r,p):return subprocess.check_output(['git','show',r+':'+p])
-          def redact(s):
-              m=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",s))
-              if len(m)!=1:raise RuntimeError('KEY_LAYOUT_UNKNOWN')
-              a=m[0];key=a.group(2)
-              if key==marker:return s,key
-              if len(key)<16 or not re.fullmatch(rb'[A-Za-z0-9+/=]+',key):raise RuntimeError('KEY_INVALID')
-              return s[:a.start(2)]+marker+s[a.end(2):],key
-          def status(p):
-              u='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'+p+'?prejealousy='+str(time.time_ns())
-              req=urllib.request.Request(u,headers={'Cache-Control':'no-store'})
+          import subprocess,pathlib,ftplib,ssl,io,os,hashlib,re,time,uuid,urllib.request,urllib.error
+          ref='62ab9a73e04aa500e2a3bb607a4a45fea0544aba'
+          paths=['redflag-ai-lab/style-test-api.php','redflag-feature.js','app.js','index.html']
+          php=paths[0]
+          marker=b'__CLOUDRU_KEY_BASE64__'
+          def source(p):return subprocess.check_output(['git','show',ref+':'+p])
+          def mask(s):
+              found=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",s))
+              if len(found)!=1:raise RuntimeError('LIVE_API_KEY_LAYOUT_UNKNOWN')
+              m=found[0];secret=m.group(2)
+              if len(secret)<16 or not re.fullmatch(rb'[A-Za-z0-9+/=]+',secret):
+                  raise RuntimeError('LIVE_API_KEY_BAD')
+              return s[:m.start(2)]+marker+s[m.end(2):],secret
+          host='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          def status(path):
+              req=urllib.request.Request(host+path+'?owner_err_fix='+str(time.time_ns()),
+                headers={'Cache-Control':'no-store','User-Agent':'NumiOwnerErrorGuard/1.0'})
               try:
-                  with urllib.request.urlopen(req,timeout=24) as x:return x.status
-              except urllib.error.HTTPError as e:return e.code
-          if status('')!=200 or status(php)!=403:raise RuntimeError('LIVE_HEALTH_AUTH_BEFORE')
+                  with urllib.request.urlopen(req,timeout=25) as resp:return resp.status
+              except urllib.error.HTTPError as exc:return exc.code
+          if status('')!=200 or status(php)!=403:raise RuntimeError('LIVE_SITE_AUTH_UNHEALTHY_BEFORE')
+          if status('api/numi-account.php')>=500:raise RuntimeError('LIVE_ACCOUNT_UNHEALTHY_BEFORE')
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
           ftp.prot_p();ftp.set_pasv(True)
           home=ftp.pwd().rstrip('/')
           root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
-          backup=home+'/site-safeguard-backups'
-          def get(p,absolute=False):
+          backup_dir=home+'/site-safeguard-backups'
+          def read(path,absolute=False):
               buf=io.BytesIO()
-              ftp.retrbinary('RETR '+(p if absolute else root+p),buf.write)
+              ftp.retrbinary('RETR '+(path if absolute else root+path),buf.write)
               return buf.getvalue()
-          def put(p,data,absolute=False):
-              ftp.storbinary('STOR '+(p if absolute else root+p),io.BytesIO(data))
-              if get(p,absolute)!=data:raise RuntimeError('READBACK_FAILED_'+p)
+          def write(path,payload,absolute=False):
+              ftp.storbinary('STOR '+(path if absolute else root+path),io.BytesIO(payload))
+              if read(path,absolute)!=payload:raise RuntimeError('READBACK_MISMATCH_'+path)
           before={};written=[]
           try:
-              before={p:get(p) for p in files}
-              masked,key=redact(before[php])
-              def historical_match(p,body):
-                  digest=subprocess.run(['git','hash-object','--stdin'],input=body,capture_output=True,check=True).stdout.decode().strip()
-                  history=subprocess.check_output(['git','log','--format=%H','--',p],text=True).splitlines()
-                  for h in history:
-                      has=subprocess.run(['git','cat-file','-e',h+':'+p],capture_output=True)
-                      if has.returncode!=0:continue
-                      blob=subprocess.check_output(['git','rev-parse',h+':'+p],text=True).strip()
-                      if digest==blob:
-                          print('LIVE_HISTORY_MATCH '+p+' '+h[:14]+' blob='+digest,flush=True)
-                          return True
-                  print('LIVE_HISTORY_NOT_FOUND '+p+' masked_blob='+digest+' history_count='+str(len(history)),flush=True)
-                  return False
-              if not historical_match(php,masked):
-                  raise RuntimeError('UNKNOWN_LIVE_PHP_REFUSE_TO_OVERWRITE')
-              for p in files[1:]:
-                  if p=='redflag-ai-lab/intimacy-knowledge-v1.json':
-                      # Editorial knowledge was edited on the live host independently.
-                      # Preserve it byte-for-byte in the mandatory backup, and verify
-                      # all 22 source entries before restoring the requested snapshot.
-                      import json
-                      try:
-                          live_kb=json.loads(before[p].decode('utf-8'))
-                          desired_kb=json.loads(pathlib.Path(p).read_text())
-                      except (ValueError,UnicodeError) as exc:
-                          raise RuntimeError('LIVE_KNOWLEDGE_INVALID_REFUSE_RESTORE') from exc
-                      if live_kb.get('schema')!='numi-owner-intimacy-matrix-knowledge-v1' or desired_kb.get('schema')!=live_kb.get('schema'):
-                          raise RuntimeError('LIVE_KNOWLEDGE_SCHEMA_UNRECOGNIZED')
-                      if set(live_kb.get('arcana',{}))!={str(i) for i in range(1,23)} or set(desired_kb.get('arcana',{}))!={str(i) for i in range(1,23)}:
-                          raise RuntimeError('LIVE_KNOWLEDGE_22_ENERGIES_MISSING')
-                      if set(live_kb.get('pointDescriptions',{}))!=set(desired_kb.get('pointDescriptions',{})):
-                          raise RuntimeError('LIVE_KNOWLEDGE_POINT_MAPPING_CHANGED')
-                      print('LIVE_KNOWLEDGE_FULL_BACKUP_REQUIRED source_count=22 unknown_revisions=true',flush=True)
-                      continue
-                  if not historical_match(p,before[p]):
-                      raise RuntimeError('UNKNOWN_LIVE_FILE_REFUSE_TO_OVERWRITE_'+p)
-              wanted={p:pathlib.Path(p).read_bytes() for p in files}
-              wanted[php]=wanted[php].replace(marker,key)
-              if subprocess.run(['php','-l'],input=wanted[php],capture_output=True).returncode:
-                  raise RuntimeError('PHP_LINT_FAILED')
-              protected=['index.html','api/numi-account.php','api/redflag-free-ai.php','redflag-engine.js','redflag-public-catalog.js','redflag-ai-lab/style-test.php']
-              hashes={p:hashlib.sha256(get(p)).digest() for p in protected}
-              try:ftp.mkd(backup)
+              before={p:read(p) for p in paths}
+              previous_mask,key=mask(before[php])
+              if previous_mask!=source(php):raise RuntimeError('LIVE_API_NOT_APPROVED_BASELINE_REFUSE')
+              for p in paths[1:]:
+                  if before[p]!=source(p):raise RuntimeError('LIVE_CHANGED_REFUSE_'+p)
+              protected=['api/numi-account.php','api/redflag-free-ai.php','redflag-engine.js',
+                         'redflag-public-catalog.js','redflag-ai-lab/catalog.json',
+                         'redflag-ai-lab/intimacy-knowledge-v1.json','redflag-ai-lab/style-test.php']
+              protected_hash={p:hashlib.sha256(read(p)).digest() for p in protected}
+              desired={p:pathlib.Path(p).read_bytes() for p in paths}
+              if desired[php].count(marker)!=1:raise RuntimeError('SOURCE_API_KEY_SLOT_BAD')
+              desired[php]=desired[php].replace(marker,key)
+              if subprocess.run(['php','-l'],input=desired[php],capture_output=True).returncode:
+                  raise RuntimeError('LIVE_PATCH_PHP_SYNTAX_INVALID')
+              try:ftp.mkd(backup_dir)
               except ftplib.error_perm as e:
                   if not str(e).startswith('550'):raise
               stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+uuid.uuid4().hex[:8]
-              for p in files:put(backup+'/before-prejealousy-'+stamp+'-'+p.replace('/','-')+'.bak',before[p],True)
-              for p in files:
-                  if get(p)!=before[p]:raise RuntimeError('CONCURRENT_MODIFICATION_'+p)
-              for p in files:
-                  if wanted[p]!=before[p]:
-                      written.append(p);put(p,wanted[p])
-              if status('')!=200 or status(php)!=403 or status('redflag-ai-lab/style-test.php')!=403:
-                  raise RuntimeError('LIVE_HEALTH_AUTH_AFTER')
-              if status('api/numi-account.php')>=500:raise RuntimeError('ACCOUNT_HEALTH_FAILED_AFTER')
-              for p in files:
-                  if get(p)!=wanted[p]:raise RuntimeError('POST_DEPLOY_DIFF_'+p)
-              for p,h in hashes.items():
-                  if hashlib.sha256(get(p)).digest()!=h:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
-              print('PUBLISHED_VERIFIED exact_nov21_gemini_flags=true payments_untouched=true backups=true no_paid_inference=true')
+              for p in paths:
+                  write(backup_dir+'/before-owner-errorfix-'+stamp+'-'+p.replace('/','-')+'.bak',before[p],True)
+              for p in paths:
+                  if read(p)!=before[p]:raise RuntimeError('CONCURRENT_LIVE_EDIT_'+p)
+              for p in paths:
+                  if desired[p]!=before[p]:
+                      written.append(p)
+                      write(p,desired[p])
+              if status('')!=200 or status(php)!=403:raise RuntimeError('SITE_OWNER_AUTH_AFTER')
+              if status('api/numi-account.php')>=500:raise RuntimeError('ACCOUNT_FAILED_AFTER')
+              if status('redflag-ai-lab/style-test.php')!=403:raise RuntimeError('OWNER_EDITOR_PAGE_EXPOSED')
+              for p in paths:
+                  if read(p)!=desired[p]:raise RuntimeError('POST_RELEASE_CHANGED_'+p)
+              for p,h in protected_hash.items():
+                  if hashlib.sha256(read(p)).digest()!=h:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
+              print('OWNER_FLAGS_ERRORFIX_PUBLISHED_VERIFIED model_gemini_unchanged=true prompt_unchanged=true numeric_base_untouched=true client_payments_untouched=true backups=true inference_calls=0',flush=True)
           except BaseException:
+              errors=[]
               for p in reversed(written):
-                  try:put(p,before[p]);print('ROLLBACK_OK_'+p)
-                  except BaseException:print('CRITICAL_ROLLBACK_FAILED_'+p)
+                  try:write(p,before[p]);print('ROLLBACK_OK '+p,flush=True)
+                  except BaseException:errors.append(p)
+              if errors:print('CRITICAL_ROLLBACK_FAILED '+','.join(errors),flush=True)
               raise
           finally:
               try:ftp.quit()

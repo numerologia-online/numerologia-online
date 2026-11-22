@@ -995,8 +995,12 @@ PROMPT;
    $text=preg_replace('/[ \t]*[—–―][ \t]*/u', ': ', $text)??$text;
    $text=preg_replace('/:[ \t]*:/u', ':', $text);
    $text=preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
-   if(mb_strlen($text)<450)
+   if(mb_strlen($text)<450){
+     // Preserve provider's original short reply for verified owner's diagnostics only.
+     // Never publish a partial result as an approved interpretation.
+     $GLOBALS['RF_OWNER_FLAGS_SHORT_PREVIEW']=$text;
      throw new RuntimeException('OWNER_TEXT_LENGTH_INVALID');
+   }
    $paras=preg_split('/\n\s*\n/u',$text);
    if(is_array($paras)&&count($paras)===1){
       // Preserve both paragraphs if the provider used a single newline.
@@ -1048,7 +1052,14 @@ try {
         if(time()-(int)($_SESSION['last_generation']??0)<15)
            rfPreviewReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
         $_SESSION['last_generation']=time();
-        $answer=rfOwnerSharpFlags($question,$day,$month,$y,$catalog);
+        try {
+            $answer=rfOwnerSharpFlags($question,$day,$month,$y,$catalog);
+        } catch(Throwable $e) {
+            // Owner-only: a failed Gemini request must not block the next manual try.
+            // One request per tap; no automatic retry or paid extra generation.
+            unset($_SESSION['last_generation']);
+            throw $e;
+        }
         session_write_close();
         rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
            'category'=>'flags','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
@@ -1267,6 +1278,14 @@ try {
     if(session_status()===PHP_SESSION_ACTIVE)session_write_close();
     $reason=$e->getMessage();
     error_log('REDFLAG_CLOUDRU:'.get_class($e).':'.$reason);
+    if($reason==='OWNER_TEXT_LENGTH_INVALID'
+       &&($input['category']??null)==='flags'
+       &&is_string($GLOBALS['RF_OWNER_FLAGS_SHORT_PREVIEW']??null)){
+       // This endpoint is verified-owner-only. No client content changes.
+       $short=$GLOBALS['RF_OWNER_FLAGS_SHORT_PREVIEW'];
+       rfPreviewReply(422,['ok'=>false,'error'=>'OWNER_TEXT_LENGTH_INVALID',
+          'short_preview'=>$short,'short_chars'=>mb_strlen($short,'UTF-8')]);
+    }
     // Only well-defined error codes are exposed to this verified owner.
     // Do not echo raw provider messages or any private configuration values.
     $safeReasons=[
