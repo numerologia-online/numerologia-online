@@ -99,7 +99,8 @@ jobs:
                     throw new RuntimeException('FLAGS_FIVE_POINTS_INVALID');
                 if(!is_array($points[2]))throw new RuntimeException('POINT_COUNT_INVALID');
                 if($points[0]['роль_точки']!=='День рождения, внешняя манера проявления'
-                  ||$points[1]['роль_точки']!=='Месяц рождения, изначальные стремления'\n                  ||$points[2]['роль_точки']!=='Год рождения, способ действия')
+                  ||$points[1]['роль_точки']!=='Месяц рождения, изначальные стремления'
+                  ||$points[2]['роль_точки']!=='Год рождения, способ действия')
                   throw new RuntimeException('DAY_MONTH_ROLES_MISSING');
                 foreach($points as $point)
                   if(!isset($point['ведущий_мотив'],$point['сильная_сторона'],$point['теневая_сторона'],$point['в_отношениях']))
