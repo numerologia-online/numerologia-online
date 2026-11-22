@@ -50,6 +50,8 @@ jobs:
                     'PROVIDER_OUTPUT_LIMIT','PROVIDER_TIMEOUT','EMPTY_ANSWER'
                   ]})
                   print('ERROR_CODES_COUNTS '+str(dict(err)),flush=True)
+                  empties=re.findall(r'REDFLAG_EMPTY_META model=([A-Za-z0-9_]+) finish=([A-Za-z_]+) output_tokens=(\d+) reasoning_tokens=(\d+)',s)
+                  print('EMPTY_PROVIDER_METRICS '+str(collections.Counter((model,finish) for model,finish,_,_ in empties))+' recent='+str(empties[-10:]),flush=True)
               except ftplib.all_errors as e:
                   print('LOG_READ_UNAVAILABLE '+suffix+' '+type(e).__name__,flush=True)
               except Exception as e:
