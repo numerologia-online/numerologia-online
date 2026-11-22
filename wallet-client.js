@@ -1,10 +1,15 @@
 /* Direct paid access to one selected digital item. There is no cart. */
 const API="/api/numi-account.php";
 const pending=new Map();
+const failedConnections=new WeakSet();
 const rub=kopeks=>(Number(kopeks)/100).toLocaleString("ru-RU",{maximumFractionDigits:2})+" ₽";
 export async function walletRequest(action,payload={}){
   const response=await fetch(API,{method:"POST",credentials:"same-origin",cache:"no-store",
-    headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...payload})});
+    headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...payload})})
+    .catch(error=>{
+      if(error instanceof Error)failedConnections.add(error);
+      throw error;
+    });
   let data;try{data=await response.json();}catch(_){throw new Error("SERVICE_UNAVAILABLE");}
   if(!response.ok||data.ok!==true)throw new Error(data.error||"SERVICE_UNAVAILABLE");
   return data;
@@ -65,7 +70,7 @@ function action(container,label,callback){
 function note(container,message){container.replaceChildren(el("p",message));}
 function openAccount(){const button=document.querySelector('[data-account-open="profile"]');if(button)button.click();else location.assign("/?account=1");}
 function openWalletTopup(){location.assign("/?account=1&wallet_add=1");}
-function explain(container,err){
+function explain(container,err,onLoadError,notCharged=false){
   const error=String(err?.message||"");
   if(error==="LOGIN_REQUIRED"){
     note(container,"Войдите в личный кабинет, чтобы открыть ответ.");
@@ -78,13 +83,17 @@ function explain(container,err){
   if(error==="ITEM_ALREADY_OWNED"||error==="REAL_ALREADY_PURCHASED"){
     note(container,"Ответ уже куплен. Нажмите на вопрос ещё раз.");return;
   }
+  if(typeof onLoadError==="function"){
+    onLoadError({connectionFailed:failedConnections.has(err),notCharged});
+    return;
+  }
   if(["MATERIAL_NOT_READY","REAL_MATERIAL_NOT_READY","ITEM_NOT_READY","UNKNOWN_QUESTION"].includes(error)){
     note(container,"Этот ответ сейчас недоступен для покупки. Деньги не списаны.");return;
   }
   note(container,"Не получилось открыть ответ. Повторите попытку: повторное нажатие не создаст новое списание.");
 }
 // A comparison price is marketing information only; wallet_buy prices independently.
-function clubOffer(container,quote,item,onMaterial){
+function clubOffer(container,quote,item,onMaterial,onLoadError){
   const regular=Number(quote.regular_price_kopeks);
   const club=Number(quote.club_price_kopeks);
   const yesNoIncluded=item?.product_code==="yesno_question"&&club===0;
@@ -112,11 +121,11 @@ function clubOffer(container,quote,item,onMaterial){
   join.style.cssText="background:transparent;border:0;padding:3px 0;color:#245f47;text-decoration:underline;font:600 13px system-ui;cursor:pointer";
   // Reprice only after the subscription was confirmed, without closing this question.
   window.addEventListener("numi:club-activated",()=>{
-    if(container.isConnected)void showInlinePurchase(item,container,onMaterial);
+    if(container.isConnected)void showInlinePurchase(item,container,onMaterial,onLoadError);
   },{once:true});
 }
 function keyFor(item){return JSON.stringify(item);}
-export async function showInlinePurchase(item,container,onMaterial){
+export async function showInlinePurchase(item,container,onMaterial,onLoadError){
   if(!container||typeof onMaterial!=="function")throw new Error("INVALID_PURCHASE_TARGET");
   if(item?.product_code!=="club_month" && item?.product_code!=="school_week"){
     try{
@@ -139,10 +148,16 @@ export async function showInlinePurchase(item,container,onMaterial){
   }
   note(container,"Проверяем доступ и баланс…");
   let quote;
-  try{quote=await walletRequest("wallet_quote",{item});}catch(e){explain(container,e);return;}
+  try{quote=await walletRequest("wallet_quote",{item});}catch(e){
+    // The quote checks access and price. An earlier purchase may still be pending.
+    const notCharged=typeof onLoadError==="function"&&!pending.has(keyFor(item));
+    explain(container,e,onLoadError,notCharged);
+    return;
+  }
   if(typeof quote.test!=="boolean"){note(container,"Покупка пока недоступна.");return;}
   if(quote.owned===true&&quote.entitlement_id){
-    try{const material=await walletMaterial(quote.entitlement_id);onMaterial(material,quote.entitlement_id);}catch(e){explain(container,e);}
+    try{const material=await walletMaterial(quote.entitlement_id);onMaterial(material,quote.entitlement_id);}
+    catch(e){explain(container,e,onLoadError);}
     return;
   }
   if(quote.member_included===true){
@@ -155,7 +170,7 @@ export async function showInlinePurchase(item,container,onMaterial){
   if(Number(quote.balance_kopeks)<amount){
     note(container,"Недостаточно средств на балансе. Для ответа нужно "+rub(amount)+", сейчас на балансе "+rub(quote.balance_kopeks)+".");
     action(container,"Пополнить баланс",openWalletTopup);
-    clubOffer(container,quote,item,onMaterial);
+    clubOffer(container,quote,item,onMaterial,onLoadError);
     return;
   }
   const regular=Number(quote.regular_price_kopeks);
@@ -166,11 +181,14 @@ export async function showInlinePurchase(item,container,onMaterial){
   const buyButton=action(container,(quote.kind==="subscription"?"Подключить подписку за "+rub(amount):"Списать "+rub(amount)+" и открыть ответ"),async function(){
     this.disabled=true;
     const id=keyFor(item);
-    let key=pending.get(id);
+    const previousKey=pending.get(id);
+    let key=previousKey;
     if(!key){key=crypto.randomUUID();pending.set(id,key);}
     note(container,"Открываем оплаченный ответ…");
+    let purchaseReturned=false;
     try{
       const result=await walletRequest("wallet_buy",{item,request_key:key});
+      purchaseReturned=true;
       if(result.test!==quote.test||!result.entitlement_id)throw new Error("INVALID_PURCHASE_RESULT");
       window.dispatchEvent(new Event("numi:wallet-updated"));
       // Subscription entitlements activate a paid period; they are not PDF
@@ -184,14 +202,16 @@ export async function showInlinePurchase(item,container,onMaterial){
       pending.delete(id);
       onMaterial(material,result.entitlement_id);
     }catch(e){
-      explain(container,e);
+      // These server refusals happen before a first purchase can debit the balance.
+      const notCharged=!purchaseReturned&&!previousKey&&["REAL_MATERIAL_NOT_READY","ITEM_NOT_READY"].includes(e?.message);
+      explain(container,e,onLoadError,notCharged);
       // On ambiguous failure, preserve idempotency key to prevent duplicate charges.
       if(e.message==="SERVICE_UNAVAILABLE"||e.message==="MATERIAL_NOT_READY"){
-        action(container,"Повторить без нового списания",()=>showInlinePurchase(item,container,onMaterial));
+        action(container,"Повторить без нового списания",()=>showInlinePurchase(item,container,onMaterial,onLoadError));
       }
     }
   });
-  clubOffer(container,quote,item,onMaterial);
+  clubOffer(container,quote,item,onMaterial,onLoadError);
 }
 export function renderInlineMaterial(container,material){
   container.replaceChildren();
