@@ -926,27 +926,22 @@ function rfOwner31(int $d,int $m,int $y): array {
     if(count($p)!==31)throw new RuntimeException('OWNER_MATRIX_POINTS_INVALID');
     return $p;
 }
-function rfOwnerSharpFlags(array $question,int $day,int $month,int $year,array $catalog): string {
-   $maps=[
-     'say-no'=>['left','top','right','loveHeart','tailFirst'],
-     'care-or-control'=>['left','top','right','center','loveHeart'],
-     'hero'=>['left','top','right','bottom','center'],
-     'jealousy'=>['left','top','right','loveHeart','tailSecond'],
-     'argument'=>['left','top','right','center','tailSecond'],
-     'abuse-signal'=>['left','top','right','tailFirst','bottom'],
-     'support-or-cause'=>['left','top','right','loveHeart','bottom'],
-     'apology'=>['left','top','right','bottom','tailSecond'],
-     'weak-place'=>['left','top','right','center','tailFirst'],
-     'calm-or-swings'=>['left','top','right','center','wellbeing']
-   ];
+function rfOwnerUnifiedAnswer(array $category,array $question,int $day,int $month,int $year,array $catalog): string {
+   // Shared owner-only engine for EVERY catalogued question. The catalogue chooses
+   // two topical matrix points; date/day/month/year reduction is never redefined.
    $id=$question['id']??null;
-   if(!is_string($id)||!isset($maps[$id]))throw new RuntimeException('OWNER_Q_MAP_MISSING');
+   $categoryId=$category['id']??null;
+   $keys=$question['matrix_points']??null;
+   if(!is_string($id)||!is_string($categoryId)||!is_array($keys)
+     ||count($keys)!==5||array_slice($keys,0,3)!==['left','top','right']
+     ||count(array_unique($keys))!==5)
+       throw new RuntimeException('OWNER_UNIFIED_FIVE_POINT_MAP_MISSING');
    $kb=json_decode((string)file_get_contents(__DIR__.'/intimacy-knowledge-v1.json'),true,25,JSON_THROW_ON_ERROR);
    if(($kb['schema']??null)!=='numi-owner-intimacy-matrix-knowledge-v1'
      ||count($kb['arcana']??[])!==22)throw new RuntimeException('OWNER_KB_UNAVAILABLE');
    $calculated=rfOwner31($day,$month,$year);
    $positionData=[];
-   foreach($maps[$id] as $key){
+   foreach($keys as $key){
       $n=$calculated[$key];$a=$kb['arcana'][(string)$n]??null;
       if(!is_array($a)||!is_string($kb['pointDescriptions'][$key]??null))
          throw new RuntimeException('OWNER_KB_POSITION_UNAVAILABLE');
@@ -961,12 +956,23 @@ function rfOwnerSharpFlags(array $question,int $day,int $month,int $year,array $
    }
    $followups=[];
    foreach(($catalog['categories']??[]) as $group){
-      if(($group['id']??null)!=='flags')continue;
+      if(($group['id']??null)!==$categoryId)continue;
       foreach(($group['questions']??[]) as $next){
         if(($next['id']??null)!==$id)$followups[]=$next['title'];
       }
    }
-   if(count($followups)<8)throw new RuntimeException('OWNER_FOLLOWUPS_NOT_READY');
+   // A new block may start with just one question. Suggest a related catalogue
+   // question rather than inventing a title or blocking a future section.
+   if(count($followups)===0){
+      foreach(($catalog['categories']??[]) as $group){
+         foreach(($group['questions']??[]) as $next){
+            if(($group['id']??null)===$categoryId&&($next['id']??null)===$id)continue;
+            if(is_string($next['title']??null))$followups[]=$next['title'];
+            if(count($followups)>=9)break 2;
+         }
+      }
+   }
+   if(count($followups)===0)throw new RuntimeException('OWNER_FOLLOWUPS_NOT_READY');
    $system=<<<'PROMPT'
 Ты опытный нумеролог Матрицы судьбы (22 Старших аркана), пишешь женщине о мужчине. Это раздел «Красные флаги». Отвечай на ОДИН заданный вопрос, не на всю жизнь мужчины.
 
@@ -984,6 +990,13 @@ function rfOwnerSharpFlags(array $question,int $day,int $month,int $year,array $
 
 ФОРМАТ. Ровно два абзаца, вместе ориентировочно 950–1200 знаков. Первый, основной, примерно 730–950 знаков: главный вывод, два-три РАЗНЫХ признака и конкретный риск или достоинство, без воды и повторов. Второй, примерно 150–230 знаков, это НЕ голая ссылка и НЕ пересказ названия. Он должен оставить лёгкое напряжение и вызвать желание открыть следующий вопрос. Напиши две-три живые фразы: сначала конкретная неожиданная зацепка, вытекающая именно из вывода ПЕРВОГО абзаца, затем поверни разговор к ДРУГОЙ стороне отношений, закончите ОДНИМ ТОЧНЫМ названием следующего вопроса из переданного списка. Не отвечай на следующий вопрос вместо того, чтобы заинтересовать. Не называй следующий вопрос случайно, выбирай содержательную связь. Избегай шаблонов «раз уж мы разобрались», «а теперь давай узнаем», «интересно, что будет дальше», «не менее важный вопрос», «следующий вопрос», «логично спросить». Каждая подводка должна быть самостоятельной, цепкой и отличаться от подводок к другим ответам. Если текст уже насыщен, не растягивай его ради количества знаков. Не называй в тексте покупательнице арканы, числа, энергию, дату, методику, внутренние расчёты. В ГОТОВОМ ТЕКСТЕ НЕЛЬЗЯ УПОМИНАТЬ НИ ОДНОГО НАЗВАНИЯ АРКАНА, НИ ЕГО НОМЕРА, НИ НАЗВАНИЯ ТОЧКИ РАСЧЁТА. НЕЛЬЗЯ ИСПОЛЬЗОВАТЬ СЛОВА «энергия», «аркан» И «матрица» ВМЕСТО ОПИСАНИЯ ПОСТУПКОВ. Объясняй только по-человечески: что он склонен делать, как реагировать и что это значит для женщины. Нужны исключительно человеческие черты и поступки. НЕЛЬЗЯ ИСПОЛЬЗОВАТЬ ДЛИННОЕ ИЛИ СРЕДНЕЕ ТИРЕ: «—», «–», «―». Перестрой предложения через точку, двоеточие или союз. Вычитай собственный ответ на эти два запрета перед отправкой. Без заголовков, списков и Markdown. Верни только два русских абзаца.
 PROMPT;
+   // Keep the approved sharp Flags prompt byte-for-byte; only substitute the
+   // catalogue's section title when handling another question block.
+   if($categoryId!=='flags'){
+      $categoryTitle=$category['title']??null;
+      if(!is_string($categoryTitle)||$categoryTitle==='')throw new RuntimeException('OWNER_CATEGORY_TITLE_MISSING');
+      $system=str_replace('Это раздел «Красные флаги».','Это раздел «'.$categoryTitle.'».',$system);
+   }
    $data=json_encode([
       'вопрос'=>$question['title'],
       'трактовки_значимых_позиций_полной_матрицы'=>$positionData,
@@ -1175,51 +1188,30 @@ try {
     if(!is_int($day)||!is_int($month)||!checkdate($month,$day,2000))
         rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_DATE']);
 
-    // Existing owner Telegram Red Flag cards only. No paid customer path changes.
-    if($category['id']==='flags'){
-        if(function_exists('set_time_limit')){@set_time_limit(125);}
-        $y=$input['year']??null;
-        if(!is_int($y)||$y<1900||$y>(int)gmdate('Y')||!checkdate($month,$day,$y))
-           rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_FULL_BIRTH_DATE']);
-        session_name('numi_redflag_preview');
-        session_set_cookie_params(['secure'=>true,'httponly'=>true,'samesite'=>'Strict','path'=>'/redflag-ai-lab/']);
-        if(!session_start())throw new RuntimeException('PREVIEW_SESSION_FAILED');
-        if(time()-(int)($_SESSION['last_generation']??0)<15)
-           rfPreviewReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
-        $_SESSION['last_generation']=time();
-        $answer=rfOwnerSharpFlags($question,$day,$month,$y,$catalog);
-        session_write_close();
-        rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
-           'category'=>'flags','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
-           'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);
+    // Universal OWNER-ONLY preview. This route never serves paid customer orders.
+    // All catalogue blocks share the same 31-point calculator, five chosen points,
+    // 22-energy knowledge and the exact approved Flags writing instructions.
+    if(function_exists('set_time_limit')){@set_time_limit(125);}
+    $y=$input['year']??null;
+    if(!is_int($y)||$y<1900||$y>(int)gmdate('Y')||!checkdate($month,$day,$y))
+       rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_FULL_BIRTH_DATE']);
+    session_name('numi_redflag_preview');
+    session_set_cookie_params(['secure'=>true,'httponly'=>true,'samesite'=>'Strict','path'=>'/redflag-ai-lab/']);
+    if(!session_start())throw new RuntimeException('PREVIEW_SESSION_FAILED');
+    if(time()-(int)($_SESSION['last_generation']??0)<15)
+       rfPreviewReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
+    $_SESSION['last_generation']=time();
+    try {
+       $answer=rfOwnerUnifiedAnswer($category,$question,$day,$month,$y,$catalog);
+    } catch(Throwable $e) {
+       unset($_SESSION['last_generation']);
+       session_write_close();
+       throw $e;
     }
-
-    // Owner-only Gemini draft for all nine "Измены и флирт" questions.
-    // The existing Red Flags and paid customer routes are unchanged.
-    if($category['id']==='infidelity'){
-        if(function_exists('set_time_limit')){@set_time_limit(125);}
-        $y=$input['year']??null;
-        if(!is_int($y)||$y<1900||$y>(int)gmdate('Y')||!checkdate($month,$day,$y))
-           rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_FULL_BIRTH_DATE']);
-        session_name('numi_redflag_preview');
-        session_set_cookie_params(['secure'=>true,'httponly'=>true,'samesite'=>'Strict','path'=>'/redflag-ai-lab/']);
-        if(!session_start())throw new RuntimeException('PREVIEW_SESSION_FAILED');
-        if(time()-(int)($_SESSION['last_generation']??0)<15)
-           rfPreviewReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
-        $_SESSION['last_generation']=time();
-        try {
-            $answer=rfOwnerSharpInfidelity($question,$day,$month,$y,$catalog);
-        } catch(Throwable $e) {
-            // A failed generation must not add an extra 15-second block for the verified editor.
-            unset($_SESSION['last_generation']);
-            throw $e;
-        }
-        session_write_close();
-        rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
-           'category'=>'infidelity','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
-           'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);
-    }
-
+    session_write_close();
+    rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
+       'category'=>$category['id'],'question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
+       'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);
 
     // Shared autonomous Sonnet preview for every question except the editorial
     // care-or-control bank. "Уважает женское нет" remains the separate ready text.
