@@ -24,7 +24,7 @@ jobs:
           python3 - <<'PY'
           import json,pathlib,subprocess
           base='45a9a258783be35a761a0097113e3c7b41c8482d'
-          reference='45a9a258783be35a761a0097113e3c7b41c8482d'
+          reference='532b6d6fb488007675e6971723b2a3bfc5348495'
           kb='redflag-ai-lab/infidelity-knowledge-v1.json'
           wf='.github/workflows/numi-infidelity-15-only-restore-20261122.yml'
           changed=set(subprocess.check_output(['git','diff','--name-only',base,'HEAD']).decode().splitlines())
