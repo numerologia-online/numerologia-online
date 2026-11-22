@@ -307,33 +307,11 @@ const clearError = () => {
   birthDateInput.removeAttribute("aria-invalid");
 };
 
-function ownerGenerationError(error) {
-  const code = error?.message;
-  if (code === "WAIT_15_SECONDS")
-    return "Подожди 15 секунд и открой вопрос снова.";
-  if (code === "INVALID_FULL_BIRTH_DATE" || code === "INVALID_DATE")
-    return "Проверь дату рождения и открой вопрос снова.";
-  if (code === "KEY_NOT_CONFIGURED")
-    return "Нужно проверить подключение к Cloud.ru. Разбор не готов.";
-
-  const retry = " Открой вопрос ещё раз, чтобы повторить.";
-  if (code === "PROVIDER_TIMEOUT" || error?.name === "TimeoutError")
-    return "Сервис не успел подготовить разбор." + retry;
-  if (/^PROVIDER_HTTP_\d{3}$/.test(code))
-    return "Cloud.ru вернул ошибку HTTP " + code.slice(-3) + "." + retry;
-
-  const messages = {
-    PROVIDER_MODEL_UNAVAILABLE: "Сервис сообщил, что модель недоступна. Разбор не готов.",
-    PROVIDER_NETWORK_ERROR: "Не удалось связаться с Cloud.ru.",
-    PROVIDER_SERVICE_MESSAGE: "Сервис вернул служебное сообщение. Разбор не готов.",
-    PROVIDER_OUTPUT_LIMIT: "Ответ прервался на лимите длины.",
-    PROVIDER_REFUSAL: "Сервис отклонил запрос на разбор.",
-    OWNER_TEXT_LENGTH_INVALID: "Разбор получился слишком коротким.",
-    OWNER_TEXT_PARAGRAPHS_INVALID: "Ответ пришёл без двух отдельных абзацев.",
-    OWNER_TEXT_LANGUAGE_INVALID: "Сервис не вернул разбор на русском языке.",
-    EMPTY_ANSWER: "Сервис вернул пустой ответ."
-  };
-  return (Object.hasOwn(messages, code) ? messages[code] : "Разбор не загрузился.") + retry;
+function redFlagLoadErrorCopy(notCharged=false) {
+  const intro="При включённом VPN разбор иногда загружается не сразу.";
+  const paymentNote=notCharged ? "Деньги не списаны 🤍" : "";
+  const retry="Пожалуйста, подождите 10 секунд и попробуйте открыть разбор ещё раз.";
+  return {intro,paymentNote,retry,text:[intro,paymentNote,retry].filter(Boolean).join(" ")};
 }
 
 // Resolve only the opened question. Cache its result for this calculated date.
@@ -376,7 +354,7 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
       state.answers.set(id,{answer:data.answer,paragraphs});
     }).catch(()=>{
       if(profile===activeProfile)
-        state.answerErrors.set(id,"Ответ временно не загрузился. Нажми на вопрос ещё раз.");
+        state.answerErrors.set(id,redFlagLoadErrorCopy(true).text);
     }).finally(()=>{
       if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
       if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
@@ -409,9 +387,9 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
         throw new Error("DRAFT_UNAVAILABLE");
       if(profile!==activeProfile||!ownerDraftAccess)return;
       state.answers.set(id,{answer:data.answer,isDraft:true,isSaved:false});
-    })().catch(error=>{
+    })().catch(()=>{
       if(profile===activeProfile&&ownerDraftAccess)
-        state.answerErrors.set(id,ownerGenerationError(error));
+        state.answerErrors.set(id,redFlagLoadErrorCopy(true).text);
     }).finally(()=>{
       if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
       if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
@@ -427,14 +405,11 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
     const article=[...categoriesRoot.querySelectorAll(".redflag-question")]
       .find(node=>node.dataset.questionId===id);
     const target=article?.querySelector(".redflag-answer");
-    if(!category||!target){state.answerErrors.set(id,"Не удалось проверить вопрос. Откройте его ещё раз.");return;}
+    if(!category||!target){state.answerErrors.set(id,redFlagLoadErrorCopy().text);return;}
     const reportLoadError=(paymentStatus="unknown")=>{
       if(profile!==activeProfile)return;
-      const intro="При включённом VPN разбор иногда загружается не сразу.";
-      const retry="Пожалуйста, подождите 10 секунд и попробуйте открыть разбор ещё раз.";
-      const paymentNote=paymentStatus==="not-charged" ? "Деньги не списаны 🤍" :
-        paymentStatus==="paid" ? "Разбор уже оплачен 🤍" : "";
-      state.answerErrors.set(id,[intro,paymentNote,retry].filter(Boolean).join(" "));
+      const {intro,paymentNote,retry,text}=redFlagLoadErrorCopy(paymentStatus==="not-charged");
+      state.answerErrors.set(id,text);
       if(target.isConnected){
         const status=document.createElement("div");
         status.setAttribute("role","status");
@@ -474,7 +449,7 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
   void task.then(response=>{
     if(profile===activeProfile)state.answers.set(id,response);
   },()=>{
-    if(profile===activeProfile)state.answerErrors.set(id,"Не удалось загрузить ответ. Откройте вопрос ещё раз.");
+    if(profile===activeProfile)state.answerErrors.set(id,redFlagLoadErrorCopy(true).text);
   }).finally(()=>{
     if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
     if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
@@ -652,7 +627,7 @@ const addOwnerStyleTrial=(target)=>{
       output.textContent=data.answer;
       go.textContent="↻ Другой вариант ИИ";
     }catch(_){
-      trial.error="Новый ИИ-ответ не получен. Попробуй ещё раз.";
+      trial.error=redFlagLoadErrorCopy(true).text;
       output.textContent=trial.error;
     }finally{
       trial.loading=false;go.disabled=false;

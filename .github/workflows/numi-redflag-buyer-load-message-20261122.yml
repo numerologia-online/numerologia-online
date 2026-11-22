@@ -1,4 +1,4 @@
-name: Guarded Red Flag buyer loading message release
+name: Guarded Red Flag loading message release
 on:
   push:
     branches: [main]
@@ -20,7 +20,6 @@ jobs:
       - name: Check the three browser modules
         run: |
           set -euo pipefail
-          node --input-type=module --check < wallet-client.js
           node --input-type=module --check < redflag-feature.js
           node --input-type=module --check < app.js
       - name: Back up, publish and verify the buyer message on REG.RU
@@ -42,10 +41,10 @@ jobs:
           import uuid
           from pathlib import Path
 
-          targets = ('wallet-client.js', 'redflag-feature.js', 'app.js', 'index.html')
-          protected = ('api/numi-account.php', 'redflag-ai-lab/style-test-api.php')
+          targets = ('redflag-feature.js', 'app.js', 'index.html')
+          protected = ('api/numi-account.php', 'redflag-ai-lab/style-test-api.php', 'wallet-client.js')
           workflow = '.github/workflows/numi-redflag-buyer-load-message-20261122.yml'
-          version = 'redflag-buyer-message-20261122-v2'
+          version = 'redflag-retry-message-20261122'
           site = 'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
 
           def git(*args):
@@ -60,7 +59,7 @@ jobs:
           original_sources = {path: git('show', f'{base}:{path}') for path in targets}
           desired = {path: Path(path).read_bytes() for path in targets}
           for path, asset in (('app.js', 'redflag-feature.js'), ('index.html', 'app.js')):
-              before = f'{asset}?v=redflag-buyer-message-20261122'.encode()
+              before = f'{asset}?v=redflag-buyer-message-20261122-v2'.encode()
               after = f'{asset}?v={version}'.encode()
               if original_sources[path].count(before) != 1 or desired[path] != original_sources[path].replace(before, after):
                   raise RuntimeError('UNEXPECTED_CHANGE_OUTSIDE_ASSET_VERSION_' + path)
