@@ -1,4 +1,4 @@
-name: Publish editor-only Infidelity length stabilization
+name: Inspect existing Gemini response metadata without AI requests
 on:
   push:
     branches: [main]
@@ -6,122 +6,64 @@ on:
       - .github/workflows/numi-redflag-telegram-owner-style-preview-release.yml
 permissions:
   contents: read
-concurrency:
-  group: reg-ru-manual-publication
-  cancel-in-progress: false
 jobs:
-  release:
+  inspect:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 4
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Free syntax and frozen Red Flags checks
-        run: |
-          set -euo pipefail
-          php -l redflag-ai-lab/style-test-api.php
-          python3 - <<'PY'
-          import pathlib,subprocess
-          path='redflag-ai-lab/style-test-api.php'
-          before=subprocess.check_output(['git','show','e009bf5bfe7778995a5ce006a8e5137b0d7083a4:'+path]).decode()
-          approved=subprocess.check_output(['git','show','22305b630d61455829c16adc3bc240afc999df62:'+path]).decode()
-          actual=pathlib.Path(path).read_text()
-          assert actual==approved, 'SOURCE_DRIFT'
-          bflag=before.split('function rfOwnerSharpFlags(',1)[1].split('function rfOwnerSharpInfidelity(',1)[0]
-          aflag=approved.split('function rfOwnerSharpFlags(',1)[1].split('function rfOwnerSharpInfidelity(',1)[0]
-          assert bflag==aflag,'FROZEN_FLAGS_CHANGED'
-          bpart=before.split('function rfOwnerSharpInfidelity(',1)[1]
-          apart=approved.split('function rfOwnerSharpInfidelity(',1)[1]
-          assert bpart.count("]],2800,'google/gemini-3-flash-preview');")==1,'INFIDELITY_TOKENS_CHANGED'
-          assert apart.count("]],2800,'google/gemini-3-flash-preview');")==1,'INFIDELITY_TOKENS_CHANGED'
-          assert "из пяти" in apart.lower() and "1250 знаков" in apart,'LEN_PROMPT_NOT_PRESENT'
-          assert "REDFLAG_INFidelity_LENGTH_META" in apart,'DIAGNOSTIC_MISSING'
-          assert "OWNER_TEXT_LENGTH_INVALID" in apart,'SHORT_RESPONSE_GUARD_MISSING'
-          assert approved.count("__CLOUDRU_KEY_BASE64__")==1,'KEY_LAYOUT_CHANGED'
-          assert approved.count("function rfOwnerSharpInfidelity(")==1
-          assert approved.count("if($category['id']==='infidelity')")==1
-          assert approved.count("if($category['id']==='flags')")==1
-          assert all(x in approved for x in ["'faithful'=>","'options'=>","'after-mistake'=>"])
-          print('EXACT_APPROVED_SINGLE_PHP_FREE_CHECK no_billable_model_tests=true',flush=True)
-          PY
-      - name: Backup single PHP, publish, read back and verify protected files
+      - name: Read only server-side log metadata through FTPS
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import os,ssl,io,ftplib,urllib.request,urllib.error,re,subprocess,pathlib,time
-          path='redflag-ai-lab/style-test-api.php'
-          base='e009bf5bfe7778995a5ce006a8e5137b0d7083a4'
-          target='22305b630d61455829c16adc3bc240afc999df62'
-          before=subprocess.check_output(['git','show',base+':'+path])
-          approved=subprocess.check_output(['git','show',target+':'+path])
-          assert pathlib.Path(path).read_bytes()==approved,'SOURCE_NOT_APPROVED'
-          origin='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
-          def status(route):
-              req=urllib.request.Request(origin+route+'?owner_length_fix='+str(time.time_ns()),
-                headers={'Cache-Control':'no-store','User-Agent':'NumiOwnerInfidelityLength/1.0'})
-              try:
-                  with urllib.request.urlopen(req,timeout=28) as res:return res.status
-              except urllib.error.HTTPError as e:return e.code
-          if status('')!=200:raise RuntimeError('HOME_NOT_200_BEFORE')
-          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
+          import ftplib,ssl,os,re,io,posixpath
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
-          ftp.prot_p();ftp.set_pasv(True)
-          home=ftp.pwd().rstrip('/')
-          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
-          def read(p):
-              out=io.BytesIO()
-              ftp.retrbinary('RETR '+root+p,out.write)
-              return out.getvalue()
-          def write(p,data):
-              ftp.storbinary('STOR '+root+p,io.BytesIO(data))
-              if read(p)!=data:raise RuntimeError('FTPS_VERIFY_FAILED')
-          guarded=['redflag-ai-lab/catalog.json','redflag-feature.js','app.js','index.html',
-                   'redflag-ai-lab/intimacy-knowledge-v1.json','redflag-public-catalog.js',
-                   'redflag-text-bank.js','api/numi-account.php','api/redflag-free-ai.php']
-          backup=None
-          changed=False
-          try:
-              live=read(path)
-              matches=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",live))
-              if len(matches)!=1:raise RuntimeError('LIVE_KEY_LAYOUT_MISMATCH')
-              m=matches[0];secret=m.group(2)
-              if len(secret)<16 or secret==b'__CLOUDRU_KEY_BASE64__' or re.fullmatch(rb'[A-Za-z0-9+/=]+',secret) is None:
-                  raise RuntimeError('LIVE_KEY_UNAVAILABLE')
-              redacted=live[:m.start(2)]+b'__CLOUDRU_KEY_BASE64__'+live[m.end(2):]
-              if redacted!=before:raise RuntimeError('LIVE_BASELINE_CHANGED')
-              desired=approved.replace(b'__CLOUDRU_KEY_BASE64__',secret)
-              if subprocess.run(['php','-l'],input=desired,capture_output=True).returncode!=0:
-                  raise RuntimeError('PHP_SYNTAX_BAD')
-              protected={p:read(p) for p in guarded}
-              backup_dir=home+'/site-safeguard-backups'
-              try:ftp.mkd(backup_dir)
-              except ftplib.error_perm as e:
-                  if not str(e).startswith('550'):raise
-              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
-              backup=backup_dir+'/infidelity-length-'+stamp+'.php.bak'
-              ftp.storbinary('STOR '+backup,io.BytesIO(live))
-              if read(path)!=live:raise RuntimeError('CONCURRENT_SERVER_CHANGE')
-              changed=True
-              write(path,desired)
-              if status('')!=200:raise RuntimeError('HOME_NOT_200_AFTER')
-              if status('redflag-ai-lab/style-test-api.php')!=403:
-                  raise RuntimeError('EDITOR_GUARD_FAILED')
-              if status('api/numi-account.php')>=500:raise RuntimeError('ACCOUNT_API_5XX')
-              for p,data in protected.items():
-                  if read(p)!=data:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
-              if read(path)!=desired:raise RuntimeError('READBACK_MISMATCH')
-              print('PUBLISHED_AND_VERIFIED editor_infidelity_length_stabilization=true flags_prompt_unchanged=true budget_tokens=2800 public_and_payments_unchanged=true paid_inference_tests=0 backup_saved=true',flush=True)
-          except BaseException:
-              if changed:
-                  try:write(path,live);print('ROLLBACK_OK',flush=True)
-                  except BaseException:print('ROLLBACK_FAILED',flush=True)
-              raise
-          finally:
-              try:ftp.quit()
-              except BaseException:ftp.close()
+          ftp.prot_p()
+          ftp.set_pasv(True)
+          root=ftp.pwd().rstrip('/')
+          folders=[
+            root,root+'/logs',root+'/log',root+'/www',
+            root+'/www/xn--c1adkkdfjbp1a4l.online',
+            root+'/www/xn--c1adkkdfjbp1a4l.online/redflag-ai-lab',
+            root+'/logs/xn--c1adkkdfjbp1a4l.online',
+          ]
+          checked=set(); logpaths=[]
+          for folder in folders:
+              if folder in checked:continue
+              checked.add(folder)
+              try:
+                  items=ftp.nlst(folder)
+                  candidates=[posixpath.basename(x.rstrip('/')) for x in items]
+                  print('DIRECTORY_INSPECTED '+(['account_root','logs','log','sites','site','editor','domain_logs'][folders.index(folder)])
+                     +' entries='+str(len(candidates))+' log_candidates='+
+                     ','.join(x for x in candidates if re.search(r'error_log|error\.log|php.*log|logs?',x,re.I))[:350],flush=True)
+                  for item in items:
+                      b=posixpath.basename(item.rstrip('/'))
+                      if re.search(r'^(?:error_log|error\.log|php_errors?\.log|php\.log|error\.log\.[0-9]+)$',b,re.I):
+                          logpaths.append(item if item.startswith('/') else folder+'/'+b)
+              except ftplib.all_errors as e:
+                  print('DIRECTORY_UNAVAILABLE '+str(folders.index(folder))+' type='+type(e).__name__,flush=True)
+          logpaths=list(dict.fromkeys(logpaths))
+          seen=0
+          for path in logpaths[:12]:
+              try:
+                  n=ftp.size(path)
+                  if n is None or n>5000000:
+                      print('LOG_SKIPPED_SIZE '+str(n),flush=True);continue
+                  out=io.BytesIO();ftp.retrbinary('RETR '+path,out.write)
+                  raw=out.getvalue().decode('utf-8','replace')
+                  values=re.findall(r'REDFLAG_INFidelity_LENGTH_META\s+chars=(\d+)\s+finish=([A-Za-z_]*)\s+output_tokens=(\d+)\s+reasoning_tokens=(\d+)',raw)
+                  recent=values[-25:]
+                  print('DIAG_LOG entries='+str(len(values))+' latest='+str(recent),flush=True)
+                  print('DIAG_CODE_ERRORS '+str({v:len(re.findall(v,raw)) for v in ['OWNER_TEXT_LENGTH_INVALID','OWNER_TEXT_PARAGRAPHS_INVALID','PROVIDER_OUTPUT_LIMIT']}),flush=True)
+                  seen+=len(values)
+              except ftplib.all_errors as e:
+                  print('LOG_UNAVAILABLE type='+type(e).__name__,flush=True)
+          if not seen:
+              print('NO_READABLE_LENGTH_METADATA_LOG_FOUND (no claim about model token use)',flush=True)
+          ftp.quit()
           PY
