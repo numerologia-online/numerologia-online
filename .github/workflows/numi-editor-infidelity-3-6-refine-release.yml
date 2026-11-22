@@ -23,8 +23,8 @@ jobs:
           php -l redflag-ai-lab/style-test-api.php
           python3 - <<'PY'
           import json,subprocess,pathlib
-          old='6d3ed9c7beeb019e2ce0c31b14cf65063dbf57f1'
-          new='f17578a78ed7f26cdcb1709e3df5783d2765defc'
+          old='f17578a78ed7f26cdcb1709e3df5783d2765defc'
+          new='ed0972174f7f81a8cb8824104aa4c418e548fb47'
           p='redflag-ai-lab/infidelity-knowledge-v1.json'
           q='redflag-ai-lab/style-test-api.php'
           a=subprocess.check_output(['git','show',old+':'+p])
@@ -51,8 +51,8 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import io,ssl,os,re,ftplib,subprocess,pathlib,time,urllib.request,urllib.error
-          old='6d3ed9c7beeb019e2ce0c31b14cf65063dbf57f1'
-          new='f17578a78ed7f26cdcb1709e3df5783d2765defc'
+          old='f17578a78ed7f26cdcb1709e3df5783d2765defc'
+          new='ed0972174f7f81a8cb8824104aa4c418e548fb47'
           kb='redflag-ai-lab/infidelity-knowledge-v1.json'
           php='redflag-ai-lab/style-test-api.php'
           previous=subprocess.check_output(['git','show',old+':'+kb])
