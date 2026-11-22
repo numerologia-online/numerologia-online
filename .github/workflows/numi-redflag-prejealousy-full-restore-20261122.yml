@@ -1,4 +1,4 @@
-name: Guarded owner Red Flags Gemini errors-only release
+name: Guarded Gemini infidelity owner pilot; approved Red Flags frozen
 on:
   push:
     branches: [main]
@@ -14,14 +14,14 @@ concurrency:
   group: reg-ru-manual-publication
   cancel-in-progress: false
 jobs:
-  approved-owner-errors-only:
+  owner-fidelity-pilot-only:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Validate unchanged approved Gemini answers and exact 4-file patch
+      - name: Validate approved Red Flags frozen and isolated fidelity pilot
         run: |
           set -euo pipefail
           php -l redflag-ai-lab/style-test-api.php
@@ -29,12 +29,12 @@ jobs:
           node --check app.js
           python3 - <<'PY'
           import subprocess,pathlib
-          baseline='62ab9a73e04aa500e2a3bb607a4a45fea0544aba'
+          baseline='2fe9243a85a0b426b053bc305b67e6956cf060f9'
           target={
-            'redflag-ai-lab/style-test-api.php':'179747e1d537cd5421c976cbaf658268e231dcdc',
-            'redflag-feature.js':'f692e86466e014e6659c0a0b3f5d9b3bbd094c5f',
-            'app.js':'67b3d1ec7a0f52a5d916d3d7742595b533d563ab',
-            'index.html':'a7ee8a0a9607b9ac2d6d8b69618f02629423599e'
+            'redflag-ai-lab/style-test-api.php':'3f8be4cec212e42a0ec1af746008f2baaf777c7f',
+            'redflag-feature.js':'b597f3ac49e1ee26c8596918dd14c4827df5f914',
+            'app.js':'bab7eed07c90f32a1ef09930474f041d9a71997e',
+            'index.html':'ba83c2a21c1a16a527185fbb532d884b4d1657fa'
           }
           def git(p):return subprocess.check_output(['git','show',baseline+':'+p])
           for p,expected_sha in target.items():
@@ -53,15 +53,28 @@ jobs:
               z=s.index(b'\nPROMPT;',a)
               return s[a:z]
           assert approved_prompt(old)==approved_prompt(new),'APPROVED_PROMPT_ALTERED'
+          def frozen_flags(s):
+              i=s.index(b'function rfOwnerSharpFlags(')
+              j=s.index(b'\n}',i)+2
+              return s[i:j]
+          assert frozen_flags(old)==frozen_flags(new),'IDEAL_RED_FLAGS_CODE_ALTERED'
+          assert new.count(b'function rfOwnerSharpInfidelityPilot(')==1,'OWNER_FIDELITY_FUNCTION_MISSING'
+          assert new.count(b'rfOwnerSharpInfidelityPilot($question,$day,$month,$y,$catalog)')==1,'OWNER_FIDELITY_ROUTE_MISSING'
+          assert b"'options'=>['loveHeart','tailFirst','center','top','right']" in new,'FIVE_FIDELITY_POINTS_MISSING'
+          assert b"if($category['id']==='infidelity' && $question['id']==='options')" in new,'OWNER_ISOLATION_MISSING'
+          assert b'RF_OWNER_INF_PILOT_SHORT_PREVIEW' in new,'EDITOR_SHORT_PREVIEW_MISSING'
+          js=pathlib.Path('redflag-feature.js').read_bytes()
+          assert b'(category==="flags"||category==="infidelity")' in js,'EDITOR_ERROR_UI_MISSING'
+          assert js.count(b'AbortSignal.timeout(125000)')==1,'APPROVED_TIMEOUT_CHANGED'
           assert old.count(b'__CLOUDRU_KEY_BASE64__')==new.count(b'__CLOUDRU_KEY_BASE64__')==1,'SECRET_SLOT_DRIFT'
           for token in [b"2800,'google/gemini-3-flash-preview'",b"if(mb_strlen($text)<450)",
                         b"OWNER_TEXT_LENGTH_INVALID",b"unset($_SESSION['last_generation'])",
                         b"RF_OWNER_FLAGS_SHORT_PREVIEW"]:
               assert token in new,'ERROR_HANDLER_MISSING'
           assert b'AbortSignal.timeout(125000)' in pathlib.Path('redflag-feature.js').read_bytes(),'FRONT_TIMEOUT_CHANGED'
-          assert b'redflag-owner-errorfix-20261122' in pathlib.Path('app.js').read_bytes(),'CACHE_MISSING_APP'
-          assert b'redflag-owner-errorfix-20261122' in pathlib.Path('index.html').read_bytes(),'CACHE_MISSING_INDEX'
-          print('APPROVED_GEMINI_PROMPT_UNCHANGED; exact 4-file patch; no paid requests',flush=True)
+          assert b'infidelity-options-owner-pilot-20261122' in pathlib.Path('app.js').read_bytes(),'CACHE_MISSING_APP'
+          assert b'infidelity-options-owner-pilot-20261122' in pathlib.Path('index.html').read_bytes(),'CACHE_MISSING_INDEX'
+          print('APPROVED_FLAGS_UNCHANGED; ONE_FIDELITY_OWNER_PILOT; 4 files verified; no paid requests',flush=True)
           PY
       - name: Back up current REG.RU files, publish exact patch, verify and rollback if needed
         env:
@@ -71,7 +84,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import subprocess,pathlib,ftplib,ssl,io,os,hashlib,re,time,uuid,urllib.request,urllib.error
-          ref='62ab9a73e04aa500e2a3bb607a4a45fea0544aba'
+          ref='2fe9243a85a0b426b053bc305b67e6956cf060f9'
           paths=['redflag-ai-lab/style-test-api.php','redflag-feature.js','app.js','index.html']
           php=paths[0]
           marker=b'__CLOUDRU_KEY_BASE64__'
@@ -85,8 +98,8 @@ jobs:
               return s[:m.start(2)]+marker+s[m.end(2):],secret
           host='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
           def status(path):
-              req=urllib.request.Request(host+path+'?owner_err_fix='+str(time.time_ns()),
-                headers={'Cache-Control':'no-store','User-Agent':'NumiOwnerErrorGuard/1.0'})
+              req=urllib.request.Request(host+path+'?owner_fidelity_pilot='+str(time.time_ns()),
+                headers={'Cache-Control':'no-store','User-Agent':'NumiOwnerFidelityPilotGuard/1.0'})
               try:
                   with urllib.request.urlopen(req,timeout=25) as resp:return resp.status
               except urllib.error.HTTPError as exc:return exc.code
@@ -127,7 +140,7 @@ jobs:
                   if not str(e).startswith('550'):raise
               stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+uuid.uuid4().hex[:8]
               for p in paths:
-                  write(backup_dir+'/before-owner-errorfix-'+stamp+'-'+p.replace('/','-')+'.bak',before[p],True)
+                  write(backup_dir+'/before-owner-fidelity-pilot-'+stamp+'-'+p.replace('/','-')+'.bak',before[p],True)
               for p in paths:
                   if read(p)!=before[p]:raise RuntimeError('CONCURRENT_LIVE_EDIT_'+p)
               for p in paths:
@@ -141,7 +154,7 @@ jobs:
                   if read(p)!=desired[p]:raise RuntimeError('POST_RELEASE_CHANGED_'+p)
               for p,h in protected_hash.items():
                   if hashlib.sha256(read(p)).digest()!=h:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
-              print('OWNER_FLAGS_ERRORFIX_PUBLISHED_VERIFIED model_gemini_unchanged=true prompt_unchanged=true numeric_base_untouched=true client_payments_untouched=true backups=true inference_calls=0',flush=True)
+              print('OWNER_INF_OPTIONS_PILOT_PUBLISHED_VERIFIED model_gemini_reused=true approved_flags_unchanged=true numeric_base_untouched=true client_payments_untouched=true backups=true inference_calls=0',flush=True)
           except BaseException:
               errors=[]
               for p in reversed(written):

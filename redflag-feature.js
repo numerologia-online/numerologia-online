@@ -373,7 +373,7 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
       const data=await response.json().catch(()=>null);
       if(!response.ok||data?.ok!==true){
         const failure=new Error(String(data?.error||"SERVICE_UNAVAILABLE"));
-        if(category==="flags"&&failure.message==="OWNER_TEXT_LENGTH_INVALID"
+        if((category==="flags"||category==="infidelity")&&failure.message==="OWNER_TEXT_LENGTH_INVALID"
           &&typeof data?.short_preview==="string"){
           failure.editorPreview=data.short_preview;
           failure.editorChars=Number(data.short_chars)||data.short_preview.length;
