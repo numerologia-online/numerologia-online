@@ -1018,7 +1018,7 @@ PROMPT;
 
 function rfOwnerSharpInfidelity(array $question,int $day,int $month,int $year,array $catalog): string {
    $maps=[
-     'faithful'=>['left','top','loveHeart','center','tailFirst'],
+     'faithful'=>['loveHeart','center','tailFirst','left','top'],
      'options'=>['left','top','loveHeart','tailSecond','center'],
      'flirt'=>['left','top','loveHeart','tailFirst','right'],
      'trust'=>['left','top','center','right','tailSecond'],
@@ -1031,8 +1031,10 @@ function rfOwnerSharpInfidelity(array $question,int $day,int $month,int $year,ar
    ];
    $id=$question['id']??null;
    if(!is_string($id)||!isset($maps[$id]))throw new RuntimeException('OWNER_Q_MAP_MISSING');
-   $kb=json_decode((string)file_get_contents(__DIR__.'/infidelity-knowledge-v1.json'),true,25,JSON_THROW_ON_ERROR);
-   if(($kb['schema']??null)!=='numi-owner-infidelity-matrix-knowledge-v1'
+   $kbFile=$id==='faithful'?'intimacy-knowledge-v1.json':'infidelity-knowledge-v1.json';
+   $kbSchema=$id==='faithful'?'numi-owner-intimacy-matrix-knowledge-v1':'numi-owner-infidelity-matrix-knowledge-v1';
+   $kb=json_decode((string)file_get_contents(__DIR__.'/'.$kbFile),true,25,JSON_THROW_ON_ERROR);
+   if(($kb['schema']??null)!==$kbSchema
      ||count($kb['arcana']??[])!==22)throw new RuntimeException('OWNER_KB_UNAVAILABLE');
    $calculated=rfOwner31($day,$month,$year);
    $positionData=[];
