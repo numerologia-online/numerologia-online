@@ -1,4 +1,4 @@
-name: Restore previous approved Infidelity editor style only
+name: Restore original high-quality Gemini Infidelity prompt
 on:
   push:
     branches: [main]
@@ -24,8 +24,8 @@ jobs:
           python3 - <<'PY'
           import subprocess,pathlib
           p='redflag-ai-lab/style-test-api.php'
-          old='a67b1a7b156448252f46a201bf9c8a0135ab3dcd'
-          good='f3097a5cd958196073429be4926562d65a2341e3'
+          old='f3097a5cd958196073429be4926562d65a2341e3'
+          good='52b556612a659dc167cb65213158305b1757f62e'
           old_bytes=subprocess.check_output(['git','show',old+':'+p])
           good_bytes=subprocess.check_output(['git','show',good+':'+p])
           assert pathlib.Path(p).read_bytes()==good_bytes,'RESTORED_GITHUB_VERSION_CHANGED'
@@ -37,8 +37,8 @@ jobs:
           assert b"unset($_SESSION['last_generation'])" in good_bytes,'FAILED_GENERATION_COOLDOWN_MISSING'
           assert good_bytes.count(b"2800,'google/gemini-3-flash-preview'")==2,'MODEL_OR_TOKEN_BUDGET_CHANGED'
           assert good_bytes.count(b'__CLOUDRU_KEY_BASE64__')==1,'SECRET_LAYOUT_CHANGED'
-          assert b'950' in good_bytes and b'1500' in old_bytes,'RESTORE_TARGET_UNEXPECTED'
-          print('RESTORE_APPROVED_OLD_EDITOR_STYLE no_inference_queries=true',flush=True)
+          assert 'Сопоставь минимум три позиции' in good_bytes.decode('utf-8') and 'Из пяти переданных позиций выбери две-три' in old_bytes.decode('utf-8'),'ORIGINAL_PROMPT_NOT_RESTORED'
+          print('RESTORE_EXACT_PRE_LENGTH_FIX_ORIGINAL_PROMPT no_inference_queries=true',flush=True)
           PY
       - name: Restore only editor PHP through secure FTPS with backup and rollback
         env:
@@ -49,8 +49,8 @@ jobs:
           python3 - <<'PY'
           import os,ssl,io,ftplib,re,subprocess,pathlib,urllib.request,urllib.error,time
           path='redflag-ai-lab/style-test-api.php'
-          old='a67b1a7b156448252f46a201bf9c8a0135ab3dcd'
-          good='f3097a5cd958196073429be4926562d65a2341e3'
+          old='f3097a5cd958196073429be4926562d65a2341e3'
+          good='52b556612a659dc167cb65213158305b1757f62e'
           old_code=subprocess.check_output(['git','show',old+':'+path])
           good_code=subprocess.check_output(['git','show',good+':'+path])
           assert pathlib.Path(path).read_bytes()==good_code,'SOURCE_CODE_MISMATCH'
@@ -106,7 +106,7 @@ jobs:
               if read(path)!=desired:raise RuntimeError('SITE_ROLLBACK_NOT_VERIFIED')
               for p,data in untouched.items():
                   if read(p)!=data:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
-              print('PUBLISHED_AND_VERIFIED previous_editor_infidelity_prompt_restored=true redflags_unchanged=true payment_unchanged=true model_2800_unchanged=true short_error_diagnostics_preserved=true inference_calls=0',flush=True)
+              print('PUBLISHED_AND_VERIFIED original_pre_length_edit_prompt_restored=true redflags_unchanged=true payment_unchanged=true model_2800_unchanged=true short_error_diagnostics_preserved=true inference_calls=0',flush=True)
           except BaseException:
               if changed:
                   try:write(path,live);print('ROLLBACK_OK',flush=True)
