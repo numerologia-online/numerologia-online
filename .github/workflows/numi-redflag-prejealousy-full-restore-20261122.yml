@@ -1,4 +1,4 @@
-name: Restore exact pre-jealousy Red Flag owner editor 20 Nov
+name: Restore approved Gemini Red Flags editor before Infidelity 21 Nov
 on:
   push:
     branches: [main]
@@ -6,6 +6,8 @@ on:
       - redflag-ai-lab/style-test-api.php
       - redflag-ai-lab/catalog.json
       - redflag-feature.js
+      - redflag-ai-lab/intimacy-knowledge-v1.json
+      - redflag-ai-lab/banks/unified-question-answers-v1.json
       - .github/workflows/numi-redflag-prejealousy-full-restore-20261122.yml
 permissions:
   contents: read
@@ -20,24 +22,26 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Validate exact 20 Nov files no model calls
+      - name: Validate exact 21 Nov files no model calls
         run: |
           set -euo pipefail
           php -l redflag-ai-lab/style-test-api.php
           node --check redflag-feature.js
           python3 - <<'PY'
           import subprocess,pathlib,json
-          ref='e5e7a679b7338b5995846b46982503c68af41a10'
-          paths=['redflag-ai-lab/style-test-api.php','redflag-ai-lab/catalog.json','redflag-feature.js','redflag-ai-lab/banks/care-or-control.json']
+          ref='8886d623ad65b53cefb66236672298a517f15de3'
+          paths=['redflag-ai-lab/style-test-api.php','redflag-ai-lab/catalog.json','redflag-feature.js','redflag-ai-lab/intimacy-knowledge-v1.json','redflag-ai-lab/banks/unified-question-answers-v1.json','redflag-ai-lab/banks/care-or-control.json']
           for p in paths:
               assert pathlib.Path(p).read_bytes()==subprocess.check_output(['git','show',ref+':'+p]),'SNAPSHOT_DRIFT_'+p
           php=pathlib.Path(paths[0]).read_bytes()
           assert b'function rfHeroTheses(' in php and b'function rfCareControlMeaning(' in php
-          assert b'function rfJealousyTheses(' not in php and b'function rfOwnerUnifiedAnswer(' not in php
+          assert b'function rfOwnerSharpFlags(' in php and b'function rfOwnerUnifiedAnswer(' not in php
+          assert b'google/gemini-3-flash-preview' in php and b'function rfOwnerSharpInfidelity(' not in php
           assert php.count(b'__CLOUDRU_KEY_BASE64__')==1
-          assert sum(len(g['questions']) for g in json.loads(pathlib.Path(paths[1]).read_text())['categories'])==54
-          assert json.loads(pathlib.Path(paths[3]).read_text())['version']==4
-          print('PREFLIGHT_OK exact snapshot; no inference')
+          assert sum(len(g['questions']) for g in json.loads(pathlib.Path(paths[1]).read_text())['categories'])==55
+          assert len(json.loads(pathlib.Path(paths[3]).read_text())['arcana'])==22
+          assert json.loads(pathlib.Path(paths[5]).read_text())['version']==4
+          print('PREFLIGHT_OK correct Gemini snapshot before Infidelity; no inference')
           PY
       - name: Safely publish owner editor snapshot on REG.RU, backup and rollback
         env:
@@ -47,10 +51,10 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import os,ftplib,ssl,io,re,uuid,time,hashlib,pathlib,subprocess,urllib.request,urllib.error
-          ref='e5e7a679b7338b5995846b46982503c68af41a10'
+          ref='8886d623ad65b53cefb66236672298a517f15de3'
           prior='6e6b65a554f6b449be0338c86e13f38085f936e9'
           patched='340561ed7d35d81596cd6dfbf30dcb332c1ca6c8'
-          files=['redflag-ai-lab/style-test-api.php','redflag-ai-lab/catalog.json','redflag-feature.js']
+          files=['redflag-ai-lab/style-test-api.php','redflag-ai-lab/catalog.json','redflag-feature.js','redflag-ai-lab/intimacy-knowledge-v1.json','redflag-ai-lab/banks/unified-question-answers-v1.json']
           php=files[0];marker=b'__CLOUDRU_KEY_BASE64__'
           def git(r,p):return subprocess.check_output(['git','show',r+':'+p])
           def redact(s):
@@ -123,7 +127,7 @@ jobs:
                   if get(p)!=wanted[p]:raise RuntimeError('POST_DEPLOY_DIFF_'+p)
               for p,h in hashes.items():
                   if hashlib.sha256(get(p)).digest()!=h:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
-              print('PUBLISHED_VERIFIED exact_nov20_editor=true payments_untouched=true backups=true no_paid_inference=true')
+              print('PUBLISHED_VERIFIED exact_nov21_gemini_flags=true payments_untouched=true backups=true no_paid_inference=true')
           except BaseException:
               for p in reversed(written):
                   try:put(p,before[p]);print('ROLLBACK_OK_'+p)
