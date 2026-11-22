@@ -10,43 +10,113 @@
       "questions": [
         {
           "id": "say-no",
-          "title": "Уважает женское «нет» или начинает давить?"
+          "title": "Уважает женское «нет» или начинает давить?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "tailFirst"
+          ]
         },
         {
           "id": "care-or-control",
-          "title": "Заботится или будет контролировать каждый твой шаг?"
+          "title": "Заботится или будет контролировать каждый твой шаг?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "loveHeart"
+          ]
         },
         {
           "id": "hero",
-          "title": "Скромный мужчина или считает себя подарком судьбы?"
+          "title": "Скромный мужчина или считает себя подарком судьбы?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "bottom",
+            "center"
+          ]
         },
         {
           "id": "jealousy",
-          "title": "Ревнует от любви или устроит допрос за каждый лайк?"
+          "title": "Ревнует от любви или устроит допрос за каждый лайк?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "tailSecond"
+          ]
         },
         {
           "id": "argument",
-          "title": "Умеет говорить о проблемах или наказывает молчанием?"
+          "title": "Умеет говорить о проблемах или наказывает молчанием?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "tailSecond"
+          ]
         },
         {
           "id": "abuse-signal",
-          "title": "Какой тревожный сигнал нельзя пропустить в начале знакомства?"
+          "title": "Какой тревожный сигнал нельзя пропустить в начале знакомства?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "tailFirst",
+            "bottom"
+          ]
         },
         {
           "id": "support-or-cause",
-          "title": "Будет твоей опорой или сам доведёт до слёз?"
+          "title": "Будет твоей опорой или сам доведёт до слёз?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "bottom"
+          ]
         },
         {
           "id": "apology",
-          "title": "После ссоры извинится или виноватой сделает тебя?"
+          "title": "После ссоры извинится или виноватой сделает тебя?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "bottom",
+            "tailSecond"
+          ]
         },
         {
           "id": "weak-place",
-          "title": "Какая его слабость может разрушить ваши отношения?"
+          "title": "Какая его слабость может разрушить ваши отношения?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "tailFirst"
+          ]
         },
         {
           "id": "calm-or-swings",
-          "title": "С ним спокойно или тебя ждут эмоциональные качели?"
+          "title": "С ним спокойно или тебя ждут эмоциональные качели?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "wellbeing"
+          ]
         }
       ]
     },
@@ -56,43 +126,113 @@
       "questions": [
         {
           "id": "faithful",
-          "title": "Верный или у него каждая вторая «просто подруга»?"
+          "title": "Верный или у него каждая вторая «просто подруга»?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "tailSecond"
+          ]
         },
         {
           "id": "options",
-          "title": "Верный или постоянно ищет запасные варианты?"
+          "title": "Верный или постоянно ищет запасные варианты?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "tailFirst"
+          ]
         },
         {
           "id": "flirt",
-          "title": "Флиртует по привычке или ему правда важна одна женщина?"
+          "title": "Флиртует по привычке или ему правда важна одна женщина?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "loveHeart"
+          ]
         },
         {
           "id": "trust",
-          "title": "Ему можно доверять или лучше снять розовые очки?"
+          "title": "Ему можно доверять или лучше снять розовые очки?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "bottom"
+          ]
         },
         {
           "id": "ex",
-          "title": "Если напишет бывшая — поставит точку или приоткроет дверь?"
+          "title": "Если напишет бывшая — поставит точку или приоткроет дверь?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "tailFirst",
+            "tailSecond"
+          ]
         },
         {
           "id": "temptation",
-          "title": "Как он ведёт себя, когда появляется соблазн?"
+          "title": "Как он ведёт себя, когда появляется соблазн?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "bottom"
+          ]
         },
         {
           "id": "physical-or-emotional",
-          "title": "Любитель крутить тайные романы в своей голове?"
+          "title": "Любитель крутить тайные романы в своей голове?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "bottomLeftNear"
+          ]
         },
         {
           "id": "secrecy",
-          "title": "Говорит о себе правду или скрывает половину своей жизни?"
+          "title": "Говорит о себе правду или скрывает половину своей жизни?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "tailFirst"
+          ]
         },
         {
           "id": "return",
-          "title": "Уходит навсегда или возвращается ко всем бывшим?"
+          "title": "Уходит навсегда или возвращается ко всем бывшим?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "tailFirst",
+            "bottom"
+          ]
         },
         {
           "id": "after-mistake",
-          "title": "Если поймаешь на измене, признается или сделает виноватой тебя?"
+          "title": "Если поймаешь на измене, признается или сделает виноватой тебя?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "tailSecond"
+          ]
         }
       ]
     },
@@ -102,39 +242,102 @@
       "questions": [
         {
           "id": "her-pleasure",
-          "title": "В близости думает о женщине или только любуется собой?"
+          "title": "В близости думает о женщине или только любуется собой?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "center"
+          ]
         },
         {
           "id": "pace",
-          "title": "Страстный партнёр или быстро начинает скучать?"
+          "title": "Страстный партнёр или быстро начинает скучать?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "tailFirst"
+          ]
         },
         {
           "id": "desire-talk",
-          "title": "Энергия желания есть или разговор про темперамент обречён?"
+          "title": "Энергия желания есть или разговор про темперамент обречён?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "tailSecond"
+          ]
         },
         {
           "id": "tenderness",
-          "title": "Способен к нежности или для него важна только искра?"
+          "title": "Способен к нежности или для него важна только искра?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "topLeft"
+          ]
         },
         {
           "id": "boundaries",
-          "title": "Умеет слышать границы или считает отказ личным оскорблением?"
+          "title": "Умеет слышать границы или считает отказ личным оскорблением?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "bottom"
+          ]
         },
         {
           "id": "closeness",
-          "title": "Близость для любви или для самоутверждения?"
+          "title": "Близость для любви или для самоутверждения?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "wellbeing"
+          ]
         },
         {
           "id": "initiative",
-          "title": "Он внимательный инициатор или ждёт, что женщина всё организует сама?"
+          "title": "Он внимательный инициатор или ждёт, что женщина всё организует сама?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "bottomRight"
+          ]
         },
         {
           "id": "compatibility",
-          "title": "Горячий любовник или секс по праздникам?"
+          "title": "Горячий любовник или секс по праздникам?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "bottomLeftNear"
+          ]
         },
         {
           "id": "after",
-          "title": "После секса привязывается или теряет интерес?"
+          "title": "После секса привязывается или теряет интерес?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "tailFirst",
+            "tailSecond"
+          ]
         }
       ]
     },
@@ -144,39 +347,102 @@
       "questions": [
         {
           "id": "household",
-          "title": "Хозяйственный или из серии «мама всё делала»?"
+          "title": "Хозяйственный или из серии «мама всё делала»?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "bottom",
+            "bottomRight"
+          ]
         },
         {
           "id": "vacation",
-          "title": "С ним в отпуск кайф или нервный квест на выживание?"
+          "title": "С ним в отпуск кайф или нервный квест на выживание?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "bottom",
+            "center"
+          ]
         },
         {
           "id": "plans",
-          "title": "Обещает и делает или просто король планов?"
+          "title": "Обещает и делает или просто король планов?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "bottomRight",
+            "center"
+          ]
         },
         {
           "id": "children",
-          "title": "Готов ли он к ребёнку или пока сам ещё растёт?"
+          "title": "Готов ли он к ребёнку или пока сам ещё растёт?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "topLeft",
+            "bottom"
+          ]
         },
         {
           "id": "roles",
-          "title": "Будет партнёром или начальником в семье?"
+          "title": "Будет партнёром или начальником в семье?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "bottom"
+          ]
         },
         {
           "id": "home",
-          "title": "Семья для него главное или дома его не дождёшься?"
+          "title": "Семья для него главное или дома его не дождёшься?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "topLeft",
+            "tailFirst"
+          ]
         },
         {
           "id": "conflict",
-          "title": "При первых семейных проблемах будет бороться или соберёт чемодан?"
+          "title": "При первых семейных проблемах будет бороться или соберёт чемодан?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "bottom",
+            "tailSecond"
+          ]
         },
         {
           "id": "money-at-home",
-          "title": "Умеет ли он создавать опору для дома, а не только говорить о будущем?"
+          "title": "Умеет ли он создавать опору для дома, а не только говорить о будущем?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "wellbeing",
+            "bottomRight"
+          ]
         },
         {
           "id": "care",
-          "title": "Он заботится в быту или ждёт, что любовь всё сама устроит?"
+          "title": "Он заботится в быту или ждёт, что любовь всё сама устроит?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "bottom",
+            "loveHeart"
+          ]
         }
       ]
     },
@@ -186,39 +452,102 @@
       "questions": [
         {
           "id": "how-to-talk",
-          "title": "Как с ним говорить, чтобы не биться в стену?"
+          "title": "Как с ним говорить, чтобы не биться в стену?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "tailSecond"
+          ]
         },
         {
           "id": "accept-love",
-          "title": "Как он принимает любовь и заботу, чтобы не было мимо?"
+          "title": "Как он принимает любовь и заботу, чтобы не было мимо?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "tailFirst"
+          ]
         },
         {
           "id": "show-love",
-          "title": "Язык любви - как понять по поступкам, что у него есть чувства?"
+          "title": "Язык любви - как понять по поступкам, что у него есть чувства?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "bottom"
+          ]
         },
         {
           "id": "criticism",
-          "title": "Как он реагирует на критику и неудобную правду?"
+          "title": "Как он реагирует на критику и неудобную правду?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "bottom"
+          ]
         },
         {
           "id": "ask",
-          "title": "Как у него лучше просить, а не ждать телепатии?"
+          "title": "Как у него лучше просить, а не ждать телепатии?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "bottomLeftNear"
+          ]
         },
         {
           "id": "distance",
-          "title": "Что делать, когда он отдаляется?"
+          "title": "Что делать, когда он отдаляется?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "tailFirst",
+            "tailSecond"
+          ]
         },
         {
           "id": "hurt",
-          "title": "Что его ранит сильнее всего в отношениях?"
+          "title": "Что его ранит сильнее всего в отношениях?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "center"
+          ]
         },
         {
           "id": "conflict-style",
-          "title": "Как не промахнуться с ним в конфликте?"
+          "title": "Как не промахнуться с ним в конфликте?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "tailFirst"
+          ]
         },
         {
           "id": "compliment",
-          "title": "Какая поддержка для него правда работает?"
+          "title": "Какая поддержка для него правда работает?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "bottomRight"
+          ]
         }
       ]
     },
@@ -228,39 +557,102 @@
       "questions": [
         {
           "id": "worth-it",
-          "title": "С ним вообще стоит связываться или лучше не тратить время?"
+          "title": "С ним вообще стоит связываться или лучше не тратить время?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "loveHeart"
+          ]
         },
         {
           "id": "beauty-and-flag",
-          "title": "Красивый мужчина или Red Flag с красивыми глазами?"
+          "title": "Красивый мужчина или Red Flag с красивыми глазами?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "tailSecond"
+          ]
         },
         {
           "id": "check",
-          "title": "Его ещё проверять поступками или уже всё понятно?"
+          "title": "Его ещё проверять поступками или уже всё понятно?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "bottom",
+            "center"
+          ]
         },
         {
           "id": "main-advice",
-          "title": "Какой главный совет женщине рядом с ним?"
+          "title": "Какой главный совет женщине рядом с ним?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "tailFirst"
+          ]
         },
         {
           "id": "his-need",
-          "title": "Что ему нужно от женщины, чтобы правда раскрыться?"
+          "title": "Что ему нужно от женщины, чтобы правда раскрыться?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "center",
+            "topLeft"
+          ]
         },
         {
           "id": "weak-point",
-          "title": "Где его главный риск в отношениях?"
+          "title": "Где его главный риск в отношениях?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "tailSecond",
+            "bottom"
+          ]
         },
         {
           "id": "best-side",
-          "title": "Чем он способен порадовать в любви?"
+          "title": "Чем он способен порадовать в любви?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "loveHeart",
+            "bottomRight"
+          ]
         },
         {
           "id": "format",
-          "title": "Какой формат отношений с ним будет самым здоровым?"
+          "title": "Какой формат отношений с ним будет самым здоровым?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "wellbeing",
+            "loveHeart"
+          ]
         },
         {
           "id": "bottom-line",
-          "title": "Как понять, что пора выбрать себя, а не ждать его?"
+          "title": "Как понять, что пора выбрать себя, а не ждать его?",
+          "matrix_points": [
+            "left",
+            "top",
+            "right",
+            "tailFirst",
+            "bottom"
+          ]
         }
       ]
     }
