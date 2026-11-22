@@ -928,16 +928,16 @@ function rfOwner31(int $d,int $m,int $y): array {
 }
 function rfOwnerSharpFlags(array $question,int $day,int $month,int $year,array $catalog): string {
    $maps=[
-     'say-no'=>['left','center','loveHeart','right','tailFirst'],
-     'care-or-control'=>['left','center','right','top','loveHeart'],
-     'hero'=>['left','center','right','top','bottom'],
-     'jealousy'=>['loveHeart','tailFirst','center','bottom','left'],
-     'argument'=>['center','left','tailSecond','top','loveHeart'],
-     'abuse-signal'=>['center','left','tailFirst','bottom','right'],
-     'support-or-cause'=>['loveHeart','center','left','right','top'],
-     'apology'=>['center','bottom','tailSecond','left','right'],
-     'weak-place'=>['bottom','center','tailFirst','right','loveHeart'],
-     'calm-or-swings'=>['center','left','bottom','loveHeart','tailSecond']
+     'say-no'=>['left','top','right','loveHeart','tailFirst'],
+     'care-or-control'=>['left','top','right','center','loveHeart'],
+     'hero'=>['left','top','right','bottom','center'],
+     'jealousy'=>['left','top','right','loveHeart','tailSecond'],
+     'argument'=>['left','top','right','center','tailSecond'],
+     'abuse-signal'=>['left','top','right','tailFirst','bottom'],
+     'support-or-cause'=>['left','top','right','loveHeart','bottom'],
+     'apology'=>['left','top','right','bottom','tailSecond'],
+     'weak-place'=>['left','top','right','center','tailFirst'],
+     'calm-or-swings'=>['left','top','right','center','wellbeing']
    ];
    $id=$question['id']??null;
    if(!is_string($id)||!isset($maps[$id]))throw new RuntimeException('OWNER_Q_MAP_MISSING');
