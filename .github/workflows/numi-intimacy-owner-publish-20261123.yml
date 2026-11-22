@@ -15,6 +15,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Validate and publish only added intimacy function, route and knowledge
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
