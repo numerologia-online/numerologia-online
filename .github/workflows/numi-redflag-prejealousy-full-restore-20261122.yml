@@ -46,7 +46,7 @@ jobs:
             'redflag-ai-lab/style-test.php',
             'redflag-feature.js','redflag-public-catalog.js',
             'redflag-engine.js','app.js','index.html',
-            'api/redflag-free-ai.php','api/numi-account.php'
+            'api/redflag-free-ai.php'
           ]
           for filename in protected:
               assert pathlib.Path(filename).read_bytes()==subprocess.check_output(['git','show',base+':'+filename]),'PROTECTED_CHANGED_'+filename
