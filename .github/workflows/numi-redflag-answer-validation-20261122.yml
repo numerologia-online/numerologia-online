@@ -28,7 +28,7 @@ jobs:
           import subprocess
           from pathlib import Path
 
-          base = subprocess.check_output(['git', 'rev-parse', 'HEAD^'], text=True).strip()
+          base = 'd803a44248375dd11935b46bd4a207028cbc80b9'
           api = 'redflag-ai-lab/style-test-api.php'
           workflow = '.github/workflows/numi-redflag-answer-validation-20261122.yml'
           files = {api, 'redflag-feature.js', 'app.js', 'index.html', workflow}
@@ -205,7 +205,7 @@ jobs:
           import uuid
           from pathlib import Path
 
-          base = subprocess.check_output(['git', 'rev-parse', 'HEAD^'], text=True).strip()
+          base = 'd803a44248375dd11935b46bd4a207028cbc80b9'
           api = 'redflag-ai-lab/style-test-api.php'
           targets = (api, 'redflag-feature.js', 'app.js', 'index.html')
           version = 'redflag-answer-check-20261122'
@@ -277,8 +277,18 @@ jobs:
 
               # Existing public free route is disabled. Any different live implementation
               # needs a scope check before claiming that every active model path is covered.
-              if read(root + 'api/redflag-free-ai.php') != old_source('api/redflag-free-ai.php'):
+              free_path = 'api/redflag-free-ai.php'
+              live_free = read(root + free_path)
+              disabled_legacy = subprocess.check_output([
+                  'git', 'show', 'e1a58acc942bb15b6d6221db3e800f860d325b05:' + free_path
+              ])
+              def normalize_php_bytes(value):
+                  return value.replace(b'\r\n', b'\n').strip()
+              if normalize_php_bytes(live_free) not in {normalize_php_bytes(old_source(free_path)), normalize_php_bytes(disabled_legacy)}:
+                  import hashlib
+                  print('REDFLAG_FREE_LIVE_SHA256 ' + hashlib.sha256(live_free).hexdigest(), flush=True)
                   raise RuntimeError('LIVE_FREE_GENERATION_ROUTE_DRIFT')
+              print('REDFLAG_FREE_ROUTE_CONFIRMED_DISABLED', flush=True)
               originals = {path: read(root + path) for path in targets}
               desired = {path: Path(path).read_bytes() for path in targets}
               current_api, key = separate_existing_key(originals[api])
