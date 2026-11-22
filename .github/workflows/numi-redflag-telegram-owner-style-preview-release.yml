@@ -1,4 +1,4 @@
-name: Inspect existing Gemini response metadata without AI requests
+name: Inspect exact domain Gemini errors from REG.RU log read-only
 on:
   push:
     branches: [main]
@@ -11,59 +11,47 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 4
     steps:
-      - name: Read only server-side log metadata through FTPS
+      - name: Parse redacted error metadata only
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import ftplib,ssl,os,re,io,posixpath
-          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          import ftplib,ssl,os,re,io,collections
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=28)
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
-          ftp.prot_p()
-          ftp.set_pasv(True)
+          ftp.prot_p();ftp.set_pasv(True)
           root=ftp.pwd().rstrip('/')
-          folders=[
-            root,root+'/logs',root+'/log',root+'/www',
-            root+'/www/xn--c1adkkdfjbp1a4l.online',
-            root+'/www/xn--c1adkkdfjbp1a4l.online/redflag-ai-lab',
-            root+'/logs/xn--c1adkkdfjbp1a4l.online',
-          ]
-          checked=set(); logpaths=[]
-          for folder in folders:
-              if folder in checked:continue
-              checked.add(folder)
+          base=root+'/logs/xn--c1adkkdfjbp1a4l.online.error.log'
+          for suffix in ['', '.1','.1.gz','.2.gz']:
+              path=base+suffix
               try:
-                  items=ftp.nlst(folder)
-                  candidates=[posixpath.basename(x.rstrip('/')) for x in items]
-                  print('DIRECTORY_INSPECTED '+(['account_root','logs','log','sites','site','editor','domain_logs'][folders.index(folder)])
-                     +' entries='+str(len(candidates))+' log_candidates='+
-                     ','.join(x for x in candidates if re.search(r'error_log|error\.log|php.*log|logs?',x,re.I))[:350],flush=True)
-                  for item in items:
-                      b=posixpath.basename(item.rstrip('/'))
-                      if re.search(r'^(?:error_log|error\.log|php_errors?\.log|php\.log|error\.log\.[0-9]+)$',b,re.I):
-                          logpaths.append(item if item.startswith('/') else folder+'/'+b)
+                  try: n=ftp.size(path)
+                  except ftplib.all_errors: n=None
+                  if n is None:print('MISSING_OR_UNKNOWN_LOG_FILE '+suffix,flush=True);continue
+                  print('ERROR_LOG_BYTES '+suffix+' '+str(n),flush=True)
+                  if n>7000000:print('LOG_SKIPPED_FOR_SIZE',flush=True);continue
+                  b=io.BytesIO();ftp.retrbinary('RETR '+path,b.write)
+                  raw=b.getvalue()
+                  if suffix.endswith('.gz'):
+                      import gzip
+                      raw=gzip.decompress(raw)
+                  s=raw.decode('utf-8','replace')
+                  reg=r'REDFLAG_INFidelity_LENGTH_META chars=(\d+) finish=([A-Za-z_]*) output_tokens=(\d+) reasoning_tokens=(\d+)'
+                  matches=[tuple([int(m[0]),m[1],int(m[2]),int(m[3])]) for m in re.findall(reg,s)]
+                  print('INFIDELITY_LENGTH_EVENTS count='+str(len(matches))+' recent='+str(matches[-24:]),flush=True)
+                  hist=collections.Counter('short' if c<450 else 'long' if c>1250 else 'ok' for c,*_ in matches)
+                  print('LENGTH_BUCKET_COUNTS '+str(dict(hist)),flush=True)
+                  err=collections.Counter({k:len(re.findall(r'REDFLAG_CLOUDRU:.*?'+k,s)) for k in [
+                    'OWNER_TEXT_LENGTH_INVALID','OWNER_TEXT_PARAGRAPHS_INVALID',
+                    'PROVIDER_OUTPUT_LIMIT','PROVIDER_TIMEOUT','EMPTY_ANSWER'
+                  ]})
+                  print('ERROR_CODES_COUNTS '+str(dict(err)),flush=True)
               except ftplib.all_errors as e:
-                  print('DIRECTORY_UNAVAILABLE '+str(folders.index(folder))+' type='+type(e).__name__,flush=True)
-          logpaths=list(dict.fromkeys(logpaths))
-          seen=0
-          for path in logpaths[:12]:
-              try:
-                  n=ftp.size(path)
-                  if n is None or n>5000000:
-                      print('LOG_SKIPPED_SIZE '+str(n),flush=True);continue
-                  out=io.BytesIO();ftp.retrbinary('RETR '+path,out.write)
-                  raw=out.getvalue().decode('utf-8','replace')
-                  values=re.findall(r'REDFLAG_INFidelity_LENGTH_META\s+chars=(\d+)\s+finish=([A-Za-z_]*)\s+output_tokens=(\d+)\s+reasoning_tokens=(\d+)',raw)
-                  recent=values[-25:]
-                  print('DIAG_LOG entries='+str(len(values))+' latest='+str(recent),flush=True)
-                  print('DIAG_CODE_ERRORS '+str({v:len(re.findall(v,raw)) for v in ['OWNER_TEXT_LENGTH_INVALID','OWNER_TEXT_PARAGRAPHS_INVALID','PROVIDER_OUTPUT_LIMIT']}),flush=True)
-                  seen+=len(values)
-              except ftplib.all_errors as e:
-                  print('LOG_UNAVAILABLE type='+type(e).__name__,flush=True)
-          if not seen:
-              print('NO_READABLE_LENGTH_METADATA_LOG_FOUND (no claim about model token use)',flush=True)
+                  print('LOG_READ_UNAVAILABLE '+suffix+' '+type(e).__name__,flush=True)
+              except Exception as e:
+                  print('LOG_PARSE_UNAVAILABLE '+suffix+' '+type(e).__name__,flush=True)
           ftp.quit()
           PY
