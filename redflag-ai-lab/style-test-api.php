@@ -1110,8 +1110,11 @@ PROMPT;
         .' output_tokens='.(int)($m['output_tokens']??0)
         .' reasoning_tokens='.(int)($m['reasoning_tokens']??0));
    }
-   if($outLen<450)
-     throw new RuntimeException('OWNER_TEXT_LENGTH_INVALID');
+   if($outLen<450){
+      // Verified-owner editor can see the provider's actual short output without another paid call.
+      $GLOBALS['RF_OWNER_INF_SHORT_PREVIEW']=$text;
+      throw new RuntimeException('OWNER_TEXT_LENGTH_INVALID');
+   }
    $paras=preg_split('/\n\s*\n/u',$text);
    if(is_array($paras)&&count($paras)===1){
       // Preserve both paragraphs if the provider used a single newline.
@@ -1182,7 +1185,13 @@ try {
         if(time()-(int)($_SESSION['last_generation']??0)<15)
            rfPreviewReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
         $_SESSION['last_generation']=time();
-        $answer=rfOwnerSharpInfidelity($question,$day,$month,$y,$catalog);
+        try {
+            $answer=rfOwnerSharpInfidelity($question,$day,$month,$y,$catalog);
+        } catch(Throwable $e) {
+            // A failed generation must not add an extra 15-second block for the verified editor.
+            unset($_SESSION['last_generation']);
+            throw $e;
+        }
         session_write_close();
         rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
            'category'=>'infidelity','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
@@ -1402,6 +1411,13 @@ try {
     if(session_status()===PHP_SESSION_ACTIVE)session_write_close();
     $reason=$e->getMessage();
     error_log('REDFLAG_CLOUDRU:'.get_class($e).':'.$reason);
+    if($reason==='OWNER_TEXT_LENGTH_INVALID'
+       &&($input['category']??null)==='infidelity'
+       &&is_string($GLOBALS['RF_OWNER_INF_SHORT_PREVIEW']??null)){
+       $preview=$GLOBALS['RF_OWNER_INF_SHORT_PREVIEW'];
+       rfPreviewReply(422,['ok'=>false,'error'=>'OWNER_TEXT_LENGTH_INVALID',
+          'short_preview'=>$preview,'short_chars'=>mb_strlen($preview,'UTF-8')]);
+    }
     // Only well-defined error codes are exposed to this verified owner.
     // Do not echo raw provider messages or any private configuration values.
     $safeReasons=[
