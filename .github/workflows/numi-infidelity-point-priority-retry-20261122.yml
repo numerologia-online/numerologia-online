@@ -1,0 +1,157 @@
+name: Guarded infidelity role priority verified retry (no paid inference)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-infidelity-point-priority-retry-20261122.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify scoped exact change offline, no AI calls
+        run: |
+          set -euo pipefail
+          php -l redflag-ai-lab/style-test-api.php
+          python3 - <<'PY'
+          import subprocess,pathlib,json
+          base='3167d93ce812b4472c7803827f902f093ce6bdcb'
+          api='redflag-ai-lab/style-test-api.php'
+          wf='.github/workflows/numi-infidelity-point-priority-retry-20261122.yml'
+          change_base='02ee748fafd997c2058d2d424f4593b1c61ccb88'
+          changed=set(subprocess.check_output(['git','diff','--name-only',change_base,'HEAD']).decode().splitlines())
+          assert changed=={wf},'EXTRA_FILES_CHANGED_'+repr(changed)
+          before=subprocess.check_output(['git','show',base+':'+api])
+          after=pathlib.Path(api).read_bytes()
+          def prompt_bounds(s):
+              func=s.index(b'function rfOwnerSharpInfidelity(')
+              a=s.index(b"$system=<<<'PROMPT'\n",func)
+              b=s.index(b'\nPROMPT;',a)
+              return a,b
+          a1,b1=prompt_bounds(before);a2,b2=prompt_bounds(after)
+          assert before[:a1]==after[:a2],'CODE_BEFORE_INF_PROMPT_CHANGED'
+          assert before[b1:]==after[b2:],'CODE_AFTER_INF_PROMPT_CHANGED'
+          pp=after[a2:b2].decode('utf-8')
+          assert 'Это раздел «Измены и флирт»' in pp
+          assert '950–1200 знаков' in pp
+          assert 'Различай дружеское общение, флирт' in pp
+          assert 'Если сочетание действительно указывает на соблазны' in pp
+          assert 'Дерзость выражается живой точной формулировкой' in pp
+          assert 'При выборе главного мотива сначала определи' in pp
+          assert 'не назначай ведущей самую резкую характеристику' in pp
+          assert 'Три коротких ОБРАЗЦА' not in pp
+          assert '31.10' not in pp and '1988' not in pp
+          assert after.count(b'__CLOUDRU_KEY_BASE64__')==1
+          protected=[
+            'redflag-ai-lab/infidelity-knowledge-v1.json',
+            'redflag-ai-lab/intimacy-knowledge-v1.json','redflag-ai-lab/catalog.json',
+            'redflag-ai-lab/style-test.php','redflag-feature.js',
+            'redflag-public-catalog.js','redflag-engine.js','app.js',
+            'index.html','api/redflag-free-ai.php']
+          for p in protected:
+              assert pathlib.Path(p).read_bytes()==subprocess.check_output(['git','show',change_base+':'+p]),'PROTECTED_CHANGED_'+p
+          kb=json.loads(pathlib.Path('redflag-ai-lab/infidelity-knowledge-v1.json').read_text())
+          assert kb['arcana']['15']==json.loads(subprocess.check_output(['git','show',base+':redflag-ai-lab/infidelity-knowledge-v1.json']))['arcana']['15']
+          inf=after[after.index(b'function rfOwnerSharpInfidelity('):]
+          assert b"'google/gemini-3-flash-preview'" in inf and b'],2800,' in inf
+          print('OFFLINE_PASS only_infidelity_prompt_changed knowledge_22_unchanged=true energy15_unchanged=true model_unchanged=true paid_calls=0',flush=True)
+          PY
+      - name: Back up and publish guarded one PHP only, restore on errors
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import subprocess,pathlib,ftplib,ssl,io,os,time,uuid,re,hashlib,urllib.request,urllib.error
+          base='3167d93ce812b4472c7803827f902f093ce6bdcb'
+          api='redflag-ai-lab/style-test-api.php'
+          marker=b'__CLOUDRU_KEY_BASE64__'
+          previous_source=subprocess.check_output(['git','show',base+':'+api])
+          desired_source=pathlib.Path(api).read_bytes()
+          def mask_live(value):
+              found=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",value))
+              if len(found)!=1:raise RuntimeError('LIVE_SECRET_LAYOUT_DRIFT')
+              m=found[0];secret=m.group(2)
+              if not re.fullmatch(rb'[A-Za-z0-9+/=]{16,}',secret):raise RuntimeError('LIVE_KEY_BAD')
+              return value[:m.start(2)]+marker+value[m.end(2):],secret
+          site='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          def status(p):
+              req=urllib.request.Request(site+p+'?if_prompt='+str(time.time_ns()),
+                  headers={'Cache-Control':'no-store','User-Agent':'InfidelityPromptScoped/1.0'})
+              try:
+                  with urllib.request.urlopen(req,timeout=28) as res:return res.status
+              except urllib.error.HTTPError as e:return e.code
+          def health():
+              results=[status(''),status('redflag-ai-lab/style-test-api.php'),status('redflag-ai-lab/style-test.php'),status('api/numi-account.php')]
+              print('LIVE_SITE_STATUSES home=%s editor_api=%s editor_page=%s account_api=%s'%tuple(results),flush=True)
+              return results[0]==200 and results[1]==403 and results[2]==403 and results[3]<500
+          def health_retry():
+              for attempt in range(4):
+                  if health():return True
+                  time.sleep(3)
+              return False
+          if not health_retry():raise RuntimeError('SITE_PRECHECK_FAILED')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=44)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          backup=home+'/site-safeguard-backups'
+          def read(p,absolute=False):
+              b=io.BytesIO();ftp.retrbinary('RETR '+(p if absolute else root+p),b.write);return b.getvalue()
+          def write(p,data,absolute=False):
+              ftp.storbinary('STOR '+(p if absolute else root+p),io.BytesIO(data))
+              if read(p,absolute)!=data:raise RuntimeError('FTP_READBACK_BAD_'+p)
+          protected=[
+             'redflag-ai-lab/infidelity-knowledge-v1.json',
+             'redflag-ai-lab/intimacy-knowledge-v1.json',
+             'redflag-ai-lab/catalog.json',
+             'redflag-ai-lab/style-test.php',
+             'redflag-feature.js','redflag-public-catalog.js','redflag-engine.js',
+             'app.js','index.html','api/numi-account.php','api/redflag-free-ai.php']
+          old=None
+          changed=False
+          try:
+              old=read(api)
+              masked,key=mask_live(old)
+              assert previous_source.count(marker)==desired_source.count(marker)==1,'KEY_PLACEHOLDER_INVALID'
+              output=desired_source.replace(marker,key)
+              if masked==desired_source:
+                  print('INFIDELITY_ONLY_PROMPT_ALREADY_LIVE',flush=True)
+              else:
+                  if masked!=previous_source:raise RuntimeError('LIVE_CODE_DRIFT_REFUSE_WRITE')
+                  protected_hashes={p:hashlib.sha256(read(p)).digest() for p in protected}
+                  if subprocess.run(['php','-l'],input=output,capture_output=True).returncode!=0:
+                      raise RuntimeError('PHP_SYNTAX_AFTER_SECRET')
+                  try:ftp.mkd(backup)
+                  except ftplib.error_perm as err:
+                      if not str(err).startswith('550'):raise
+                  stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+uuid.uuid4().hex[:8]
+                  write(backup+'/before-infidelity-prompt-only-'+stamp+'.bak',old,True)
+                  if read(api)!=old:raise RuntimeError('CONCURRENT_CHANGE_REFUSE_WRITE')
+                  changed=True
+                  write(api,output)
+                  if not health_retry():raise RuntimeError('SITE_POSTCHECK_FAILED')
+                  for p,h in protected_hashes.items():
+                      if hashlib.sha256(read(p)).digest()!=h:
+                          raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
+                  print('INFIDELITY_PROMPT_ONLY_PUBLISHED_VERIFIED energy15_unchanged=true matrix_unchanged=true KB_unchanged=true other_sections_unchanged=true paid_calls=0',flush=True)
+          except BaseException:
+              if changed and old is not None:
+                  try:write(api,old);print('ROLLBACK_SCOPED_PHP_OK',flush=True)
+                  except BaseException:print('CRITICAL_ROLLBACK_SCOPED_PHP_FAILED',flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
