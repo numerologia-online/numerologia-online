@@ -1,4 +1,4 @@
-name: Guarded Gemini 50-50 all ten fidelity owner previews; frozen Red Flags
+name: Guarded fidelity 10 questions direct-answer rule; frozen Red Flags
 on:
   push:
     branches: [main]
@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Verify all ten Gemini fidelity routes, 50/50, and frozen approved Red Flags
+      - name: Verify direct-answer-only adjustment within 10 fidelity questions
         run: |
           set -euo pipefail
           php -l redflag-ai-lab/style-test-api.php
@@ -30,9 +30,9 @@ jobs:
           node --check app.js
           python3 - <<'PY'
           import subprocess,pathlib
-          baseline='c9b20e9ffaffdb4b77c701ccfd6fb4b894eaae2c'
+          baseline='d26dde78b1538858ef4f33bb1d3ea17d7ee7b1a6'
           target={
-            'redflag-ai-lab/style-test-api.php':'eecfd616bbf1104cfa326d5438aaf533a35652fa',
+            'redflag-ai-lab/style-test-api.php':'91e48d74c30fa9d31c56b440fc8c18aa5be15676',
             'redflag-feature.js':'f8c1c21a376197aac6cb31335d0b7dbd99ae22cf',
             'app.js':'8df57ceebd66b1640888bfdce1bf1ec72164ff85',
             'index.html':'02bab25a07b70d8c85b2731c32f601c9ce704267',
@@ -80,10 +80,11 @@ jobs:
               i=content.index(b'function rfOwnerSharpInfidelityPilot(')
               j=content.index(b'\n}',i)+2
               return content[i:j]
-          old_route="if($category['id']==='infidelity' && in_array($question['id'],['options','faithful'],true))".encode()
           new_route="if($category['id']==='infidelity' && in_array($question['id'],['faithful','options','flirt','trust','ex','temptation','physical-or-emotional','secrecy','return','after-mistake'],true))".encode()
-          assert old.count(old_route)==1 and new.count(new_route)==1,'FIDELITY_ROUTE_UNEXPECTED'
-          assert new.replace(pilot_body(new),pilot_body(old)).replace(new_route,old_route)==old,'CHANGED_CODE_OUTSIDE_FIDELITY'
+          assert old.count(new_route)==new.count(new_route)==1,'FIDELITY_ROUTE_CHANGED'
+          assert new.replace(pilot_body(new),pilot_body(old))==old,'CODE_CHANGED_OUTSIDE_FIDELITY'
+          assert pilot_body(new).count('ГЛАВНОЕ РЕДАКТОРСКОЕ ПРАВИЛО ДЛЯ ВСЕХ ВОПРОСОВ'.encode('utf-8'))==1,'QUESTION_FOCUS_RULE_MISSING'
+          assert pilot_body(new).count('УДАЛИ любую фразу, которая не помогает ответить'.encode('utf-8'))==1,'DIRECT_ANSWER_RESTRICTION_MISSING'
           import json,re
           catalog=json.loads(pathlib.Path('redflag-ai-lab/catalog.json').read_text())
           ids={q['id'] for group in catalog['categories'] if group['id']=='infidelity' for q in group['questions']}
@@ -118,7 +119,7 @@ jobs:
           assert b'AbortSignal.timeout(125000)' in pathlib.Path('redflag-feature.js').read_bytes(),'FRONT_TIMEOUT_CHANGED'
           assert b'infidelity-faithful-owner-pilot-20261122' in pathlib.Path('app.js').read_bytes(),'CACHE_MISSING_APP'
           assert b'infidelity-faithful-owner-pilot-20261122' in pathlib.Path('index.html').read_bytes(),'CACHE_MISSING_INDEX'
-          print('APPROVED_FLAGS_UNCHANGED; TEN_GEMINI_FIDELITY_QUESTIONS; one PHP file; zero paid calls',flush=True)
+          print('APPROVED_FLAGS_UNCHANGED; TEN_GEMINI_FIDELITY_QUESTIONS; DIRECT_ANSWER_RULE; one PHP file; zero paid calls',flush=True)
           PY
       - name: Back up current REG.RU files, publish exact patch, verify and rollback if needed
         env:
@@ -128,7 +129,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import subprocess,pathlib,ftplib,ssl,io,os,hashlib,re,time,uuid,urllib.request,urllib.error
-          ref='c9b20e9ffaffdb4b77c701ccfd6fb4b894eaae2c'
+          ref='d26dde78b1538858ef4f33bb1d3ea17d7ee7b1a6'
           paths=['redflag-ai-lab/style-test-api.php']
           php=paths[0]
           marker=b'__CLOUDRU_KEY_BASE64__'
@@ -184,7 +185,7 @@ jobs:
                   if not str(e).startswith('550'):raise
               stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+uuid.uuid4().hex[:8]
               for p in paths:
-                  write(backup_dir+'/before-owner-allten-gemini-'+stamp+'-'+p.replace('/','-')+'.bak',before[p],True)
+                  write(backup_dir+'/before-owner-fidelity-question-focus-'+stamp+'-'+p.replace('/','-')+'.bak',before[p],True)
               for p in paths:
                   if read(p)!=before[p]:raise RuntimeError('CONCURRENT_LIVE_EDIT_'+p)
               for p in paths:
@@ -198,7 +199,7 @@ jobs:
                   if read(p)!=desired[p]:raise RuntimeError('POST_RELEASE_CHANGED_'+p)
               for p,h in protected_hash.items():
                   if hashlib.sha256(read(p)).digest()!=h:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
-              print('OWNER_FIDELITY_ALL_TEN_GEMINI_PUBLISHED_VERIFIED model_gemini_reused=true approved_flags_unchanged=true numeric_base_untouched=true client_payments_untouched=true backups=true inference_calls=0',flush=True)
+              print('OWNER_FIDELITY_DIRECT_ANSWER_RULE_PUBLISHED_VERIFIED model_gemini_reused=true approved_flags_unchanged=true numeric_base_untouched=true client_payments_untouched=true backups=true inference_calls=0',flush=True)
           except BaseException:
               errors=[]
               for p in reversed(written):
