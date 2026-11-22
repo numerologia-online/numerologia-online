@@ -54,7 +54,7 @@ jobs:
           ref='8886d623ad65b53cefb66236672298a517f15de3'
           prior='6e6b65a554f6b449be0338c86e13f38085f936e9'
           patched='340561ed7d35d81596cd6dfbf30dcb332c1ca6c8'
-          files=['redflag-ai-lab/style-test-api.php','redflag-ai-lab/catalog.json','redflag-feature.js','redflag-ai-lab/intimacy-knowledge-v1.json','redflag-ai-lab/banks/unified-question-answers-v1.json']
+          files=['redflag-ai-lab/style-test-api.php','redflag-ai-lab/catalog.json','redflag-feature.js','redflag-ai-lab/intimacy-knowledge-v1.json']
           php=files[0];marker=b'__CLOUDRU_KEY_BASE64__'
           def git(r,p):return subprocess.check_output(['git','show',r+':'+p])
           def redact(s):
