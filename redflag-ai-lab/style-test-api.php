@@ -1027,7 +1027,7 @@ function rfOwnerSharpInfidelity(array $question,int $day,int $month,int $year,ar
    // Birth day, birth month and the question-specific third point carry equal interpretive weight.
    // Separate infidelity-knowledge-v1.json is retained for archival use, never used as input.
    $maps=[
-      'faithful'=>['left','top','loveHeart'],
+      'faithful'=>['left','top','loveHeart','center','tailSecond'],
       'options'=>['left','top','tailFirst'],
       'flirt'=>['left','top','center'],
       'trust'=>['left','top','right'],
@@ -1057,7 +1057,7 @@ function rfOwnerSharpInfidelity(array $question,int $day,int $month,int $year,ar
          'в_отношениях'=>$a['love'],
       ];
    }
-   if(count($positionData)!==3||$maps[$id][0]!=='left'||$maps[$id][1]!=='top')
+   if(count($positionData)!==($id==='faithful'?5:3)||$maps[$id][0]!=='left'||$maps[$id][1]!=='top')
       throw new RuntimeException('OWNER_INF_PRIMARY_POSITIONS_MISSING');
    $followups=[];
    foreach(($catalog['categories']??[]) as $group){
@@ -1067,6 +1067,22 @@ function rfOwnerSharpInfidelity(array $question,int $day,int $month,int $year,ar
       }
    }
    if(count($followups)<8)throw new RuntimeException('OWNER_FOLLOWUPS_NOT_READY');
+   // Isolated return to the successful «Красные флаги» approach for ONE question only.
+   // Five meaningful points, only common 22-energy knowledge, no thematic verdicts.
+   if($id==='faithful'){
+      $system=<<<'PROMPT'
+Ты опытный нумеролог Матрицы судьбы (22 энергии). Пишешь женщине о мужчине по его дате рождения. Ответь именно на заданный вопрос, а не описывай весь его характер.
+
+Сайт уже рассчитал матрицу и передал значения пяти значимых для вопроса точек из общей базы. Не пересчитывай их. Самостоятельно сопоставь сильные и теневые черты, выбери один конкретный вывод по вопросу и объясни его узнаваемыми поступками. Не смягчай реальные теневые проявления красивыми качествами и не делай мужчину верным или изменщиком автоматически. Не выдумывай совершённую измену: это нумерологическая интерпретация склонностей, а не доказательство поведения.
+
+Пиши живо, прямо, дерзко, как наблюдательная подруга. С первой фразы ответь на вопрос, затем раскрой мотив и два-три конкретных проявления. Ровно два абзаца, ориентир 950–1200 знаков: первый основной, второй короткая интригующая подводка в трёх предложениях к одному из точных названий других вопросов из списка. Не называй в готовом тексте энергии, числа, арканы, точки или расчёты. Без длинных тире, заголовков и списков.
+PROMPT;
+      $data=json_encode([
+         'вопрос'=>$question['title'],
+         'трактовки_значимых_позиций_полной_матрицы'=>$positionData,
+         'допустимые_точные_названия_следующего_вопроса'=>$followups,
+      ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
+   }else{
    $system=<<<'PROMPT'
 Ты опытный нумеролог Матрицы судьбы (22 энергии), пишешь женщине о мужчине по его дате рождения. Отвечай на ОДИН конкретный заданный вопрос «Измены и флирт», а не описывай мужчину целиком.
 
@@ -1083,6 +1099,7 @@ PROMPT;
       'три_равноправные_позиции'=>$positionData,
       'точные_названия_следующих_вопросов'=>$followups
    ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
+   }
    $text=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$data]],2800,'google/gemini-3-flash-preview');
    $text=trim(str_replace(["\r\n","\r"],"\n",$text));
    $fence=str_repeat(chr(96),3);
