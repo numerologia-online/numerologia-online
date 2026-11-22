@@ -1,0 +1,208 @@
+name: Guarded REG.RU unified owner matrix preview release
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-owner-unified-reg-ru-publish.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish-owner-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preflight approved exact source and no-cost full coverage
+        run: |
+          set -euo pipefail
+          php -l redflag-ai-lab/style-test-api.php
+          python3 - <<'PY'
+          import json, pathlib, subprocess
+          root=pathlib.Path('redflag-ai-lab')
+          wanted={'style-test-api.php':'8812e932389719ee88ef9b88d157663595404afb',
+                  'catalog.json':'744a97e088f1203926997387ee2d3c0d2d0de974',
+                  'intimacy-knowledge-v1.json':'115917109477fe5e6a75db4c79795e51777a9470'}
+          for name,sha in wanted.items():
+              actual=subprocess.check_output(['git','hash-object',str(root/name)],text=True).strip()
+              assert sha==actual,'SOURCE_CHANGED_REFUSE_TO_DEPLOY_'+name
+          php=(root/'style-test-api.php').read_text()
+          old=subprocess.check_output(['git','show','64a812219fc94e8207e893aae7bb6ca54a09eea2:redflag-ai-lab/style-test-api.php'],text=True)
+          opener="   $system=<<<'PROMPT'\n"
+          closer="\nPROMPT;"
+          def prompt(x):
+              i=x.index(opener,x.index('function rfOwner'))
+              j=x.index(closer,i)+len(closer)
+              return x[i:j]
+          assert prompt(old)==prompt(php),'APPROVED_PROMPT_CHANGED'
+          assert php.count('__CLOUDRU_KEY_BASE64__')==1,'API_KEY_MARKER_INVALID'
+          assert php.count('function rfOwnerUnifiedAnswer(')==1,'NO_SINGLE_ENGINE'
+          assert php.count('$answer=rfOwnerUnifiedAnswer(')==1,'NO_SINGLE_ROUTER'
+          assert "['left','top','right']" in php,'PRIMARY_POINT_GUARD_MISSING'
+          assert 'google/gemini-3-flash-preview' in php,'MODEL_INVALID'
+          assert "file_get_contents(__DIR__.'/intimacy-knowledge-v1.json')" in php,'KB_PATH_CHANGED'
+          kb=json.loads((root/'intimacy-knowledge-v1.json').read_text())
+          cat=json.loads((root/'catalog.json').read_text())
+          assert len(kb['arcana'])==22 and kb['mode']=='owner_draft_only','KB_INVALID'
+          assert cat['mode']=='owner_draft_only','CATALOG_MODE_CHANGED'
+          qs=[q for c in cat['categories'] for q in c['questions']]
+          assert len(cat['categories'])==6 and len(qs)==56,'QUESTION_COUNT_WRONG'
+          for q in qs:
+              p=q['matrix_points']
+              assert len(p)==5 and p[:3]==['left','top','right'] and len(set(p))==5,'POINT_MAP_INVALID'
+              assert all(x in kb['pointDescriptions'] for x in p),'POINT_DESCRIPTION_MISSING'
+          oldcat=json.loads(subprocess.check_output(['git','show','64a812219fc94e8207e893aae7bb6ca54a09eea2:redflag-ai-lab/catalog.json'],text=True))
+          for c in cat['categories']:
+              for q in c['questions']: q.pop('matrix_points')
+          assert cat==oldcat,'OTHER_CATALOG_DATA_CHANGED'
+          print('PREFLIGHT_OK approved_prompt_exact source_hashes_verified 56_questions 22_energies customer_routes_untouched paid_calls=0',flush=True)
+          PY
+      - name: Safeguarded 3-file FTP publish with backup and full rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib, ssl, os, io, re, time, uuid, json, copy, pathlib, subprocess, urllib.request, urllib.error, hashlib
+          paths=[
+              'redflag-ai-lab/intimacy-knowledge-v1.json',
+              'redflag-ai-lab/catalog.json',
+              'redflag-ai-lab/style-test-api.php',
+          ]
+          php,cat,kb=paths[2],paths[1],paths[0]
+          source={p:pathlib.Path(p).read_bytes() for p in paths}
+          expected_php=subprocess.check_output(['git','show','64a812219fc94e8207e893aae7bb6ca54a09eea2:'+php])
+          base='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          def http_status(path):
+              url=base+path+'?unified_owner_verify='+str(time.time_ns())
+              req=urllib.request.Request(url,headers={'Cache-Control':'no-store','User-Agent':'NumiOwnerUnifiedGuard/1.0'})
+              try:
+                  with urllib.request.urlopen(req,timeout=30) as res:return res.status
+              except urllib.error.HTTPError as ex:return ex.code
+          if http_status('')!=200:raise RuntimeError('HOME_NOT_200_BEFORE')
+          if http_status(php)!=403:raise RuntimeError('EDITOR_NOT_PRIVATE_BEFORE')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          def get(p):
+              b=io.BytesIO();ftp.retrbinary('RETR '+root+p,b.write);return b.getvalue()
+          def put(p,data):
+              ftp.storbinary('STOR '+root+p,io.BytesIO(data))
+              if get(p)!=data:raise RuntimeError('READBACK_MISMATCH_'+p)
+          written=[]
+          before={}
+          try:
+              before={p:get(p) for p in paths}
+              # Preserve the live API key: never upload the placeholder nor print the secret.
+              marker=b'__CLOUDRU_KEY_BASE64__'
+              matches=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",before[php]))
+              if len(matches)!=1:raise RuntimeError('LIVE_KEY_LAYOUT_CHANGED')
+              m=matches[0];secret=m.group(2)
+              if len(secret)<16 or not re.fullmatch(rb'[A-Za-z0-9+/=]+',secret):
+                  raise RuntimeError('LIVE_KEY_INVALID')
+              masked=before[php][:m.start(2)]+marker+before[php][m.end(2):]
+              if masked!=expected_php:raise RuntimeError('LIVE_PHP_DRIFT_REFUSE_OVERWRITE')
+              if source[php].count(marker)!=1:raise RuntimeError('SOURCE_KEY_MARKER_MISSING')
+              new_php=source[php].replace(marker,secret)
+              if subprocess.run(['php','-l'],input=new_php,capture_output=True).returncode!=0:
+                  raise RuntimeError('PHP_WITH_SERVER_KEY_SYNTAX_INVALID')
+              # Only add 5-point mappings to the current server catalogue.
+              current_catalog=json.loads(before[cat].decode('utf-8'))
+              target_catalog=json.loads(source[cat].decode('utf-8'))
+              assert current_catalog['mode']==target_catalog['mode']=='owner_draft_only','CATALOG_MODE_CHANGED'
+              assert [c['id'] for c in current_catalog['categories']]==[c['id'] for c in target_catalog['categories']],'LIVE_CATALOG_CATEGORIES_DRIFT'
+              assert [(c['id'],q['id'],q['title']) for c in current_catalog['categories'] for q in c['questions']]==[
+                  (c['id'],q['id'],q['title']) for c in target_catalog['categories'] for q in c['questions']],'LIVE_CATALOG_QUESTION_DRIFT'
+              stripped=copy.deepcopy(target_catalog)
+              for c in stripped['categories']:
+                  for q in c['questions']:q.pop('matrix_points')
+              # Strictly prevent silently overwriting custom live catalogue metadata.
+              if stripped!=current_catalog:raise RuntimeError('LIVE_CATALOG_OTHER_DATA_DRIFT')
+              new_catalog=source[cat]
+              # The previous server knowledge file had independent edits outside arcana 15.
+              # Replace only the approved four interpretation fields (and name) per arcana.
+              # Preserve all other live JSON keys and any extra per-energy fields.
+              live_kb=json.loads(before[kb].decode('utf-8'))
+              target_kb=json.loads(source[kb].decode('utf-8'))
+              if live_kb.get('schema')!='numi-owner-intimacy-matrix-knowledge-v1' or live_kb.get('mode')!='owner_draft_only':
+                  raise RuntimeError('LIVE_KB_SCHEMA_DRIFT')
+              if set(live_kb.get('arcana',{}))!=set(target_kb['arcana']) or len(live_kb['arcana'])!=22:
+                  raise RuntimeError('LIVE_KB_ENERGY_COUNT_DRIFT')
+              if not isinstance(live_kb.get('pointDescriptions'),dict):
+                  raise RuntimeError('LIVE_KB_POINT_DESCRIPTIONS_MISSING')
+              required={x for c in target_catalog['categories'] for q in c['questions'] for x in q['matrix_points']}
+              if not all(isinstance(live_kb['pointDescriptions'].get(x),str) and live_kb['pointDescriptions'][x].strip() for x in required):
+                  raise RuntimeError('LIVE_KB_REQUIRED_POINT_DESCRIPTION_MISSING')
+              merged=copy.deepcopy(live_kb)
+              fields=('name','core','plus','minus','love')
+              for id in target_kb['arcana']:
+                  existing=merged['arcana'][id]
+                  if not isinstance(existing,dict) or not all(x in existing for x in fields):
+                      raise RuntimeError('LIVE_KB_ARCANA_SHAPE_CHANGED_'+id)
+                  if existing['name']!=target_kb['arcana'][id]['name']:
+                      raise RuntimeError('LIVE_KB_ARCANA_NAME_DRIFT_'+id)
+                  for field in fields:existing[field]=target_kb['arcana'][id][field]
+              new_kb=(json.dumps(merged,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
+              assert set(merged)==set(live_kb),'LIVE_METADATA_WOULD_CHANGE'
+              for field in live_kb:
+                  if field!='arcana':assert merged[field]==live_kb[field],'NON_ARCANA_DRIFT'
+              protected=[
+                  'redflag-ai-lab/style-test.php',
+                  'redflag-ai-lab/infidelity-knowledge-v1.json',
+                  'redflag-ai-lab/draft.php',
+                  'redflag-feature.js','redflag-engine.js',
+                  'redflag-public-catalog.js','index.html',
+                  'api/numi-account.php','api/redflag-free-ai.php'
+              ]
+              protected_before={p:hashlib.sha256(get(p)).digest() for p in protected}
+              desired={kb:new_kb,cat:new_catalog,php:new_php}
+              backup_dir=home+'/site-safeguard-backups'
+              try:ftp.mkd(backup_dir)
+              except ftplib.error_perm as ex:
+                  if not str(ex).startswith('550'):raise
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+uuid.uuid4().hex[:8]
+              for p in paths:
+                  dest=backup_dir+'/owner-unified-before-'+stamp+'-'+p.replace('/','-')+'.bak'
+                  ftp.storbinary('STOR '+dest,io.BytesIO(before[p]))
+                  b=io.BytesIO();ftp.retrbinary('RETR '+dest,b.write)
+                  if b.getvalue()!=before[p]:raise RuntimeError('BACKUP_VERIFY_FAILED_'+p)
+              for p in paths:
+                  if get(p)!=before[p]:raise RuntimeError('CONCURRENT_LIVE_FILE_CHANGE_'+p)
+              # JSON first; PHP last, so new code cannot run against missing point maps.
+              for p in paths:
+                  if desired[p]!=before[p]:
+                      written.append(p)
+                      put(p,desired[p])
+              if http_status('')!=200:raise RuntimeError('HOME_NOT_200_AFTER')
+              if http_status(php)!=403:raise RuntimeError('OWNER_ENDPOINT_NOT_PRIVATE_AFTER')
+              if http_status('redflag-ai-lab/style-test.php')!=403:raise RuntimeError('EDITOR_PAGE_NOT_PRIVATE_AFTER')
+              if http_status('api/numi-account.php')>=500:raise RuntimeError('ACCOUNT_ENDPOINT_UNHEALTHY')
+              for p in paths:
+                  if get(p)!=desired[p]:raise RuntimeError('VERIFIED_LIVE_DRIFT_'+p)
+              for p,before_hash in protected_before.items():
+                  if hashlib.sha256(get(p)).digest()!=before_hash:
+                      raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
+              assert len(json.loads(get(kb).decode())['arcana'])==22,'LIVE_KB_INCOMPLETE'
+              assert sum(len(c['questions']) for c in json.loads(get(cat).decode())['categories'])==56,'LIVE_CATALOG_INCOMPLETE'
+              print('PUBLISHED_AND_VERIFIED owner_unified=true six_sections=6 questions=56 arcana=22 five_points=true perfect_prompt_preserved=true provider_unchanged=true customer_routes_untouched=true live_secrets_preserved=true backups_verified=true paid_generations=0',flush=True)
+          except BaseException:
+              for p in reversed(written):
+                  try:
+                      put(p,before[p])
+                      print('ROLLBACK_OK '+p,flush=True)
+                  except BaseException:
+                      print('CRITICAL_ROLLBACK_FAILED '+p,flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
