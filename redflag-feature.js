@@ -44,8 +44,7 @@ const redflagDraftSections = new Set(["flags","infidelity","intimacy","family","
 let ownerDraftAccess=false,ownerDraftAccessChecked=false;
 const ownerDraftInScope=(question,state)=>{
   const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
-  return Boolean(ownerDraftAccess&&redflagDraftSections.has(section)&&
-    (question.isComingSoon||(section==="infidelity"&&question.id==="faithful"&&question.isFree)));
+  return Boolean(question.isComingSoon&&ownerDraftAccess&&redflagDraftSections.has(section));
 };
 async function verifyOwnerDraftAccess(){
   if(ownerDraftAccessChecked)return;
@@ -368,19 +367,12 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
         method:"POST",credentials:"same-origin",cache:"no-store",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({category,question_id:id,day:birth.day,month:birth.month,
-          year:birth.year}),
-        signal:AbortSignal.timeout(125000)
+          ...(category==="flags"&&id==="care-or-control"?{}:{year:birth.year})}),
+        signal:AbortSignal.timeout(95000)
       });
       const data=await response.json().catch(()=>null);
-      if(!response.ok||data?.ok!==true){
-        const failure=new Error(String(data?.error||"SERVICE_UNAVAILABLE"));
-        if(category==="infidelity"&&failure.message==="OWNER_TEXT_LENGTH_INVALID"
-          &&typeof data?.short_preview==="string"){
-          failure.editorPreview=data.short_preview;
-          failure.editorChars=Number(data.short_chars)||data.short_preview.length;
-        }
-        throw failure;
-      }
+      if(!response.ok||data?.ok!==true)
+        throw new Error(String(data?.error||"SERVICE_UNAVAILABLE"));
       if(data?.draft_only!==true||data?.category!==category||
          data?.question_id!==id||data?.date_key!==birth.day+"-"+birth.month||
          typeof data?.answer!=="string")
@@ -390,13 +382,11 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
     })().catch(error=>{
       if(profile===activeProfile&&ownerDraftAccess){
         const code=String(error?.message||"");
-        const message=code==="OWNER_TEXT_LENGTH_INVALID"&&typeof error?.editorPreview==="string"
-          ?"Gemini завершила ответ слишком рано ("+error.editorChars+" символов). Вот что она написала:\n\n"+error.editorPreview+"\n\nЭто не готовый разбор. Можешь повторить запрос без дополнительного ожидания."
-          :code==="WAIT_15_SECONDS"
+        const message=code==="WAIT_15_SECONDS"
           ?"Повторный запрос пока рано. Подожди 15 секунд и открой вопрос снова."
           :code==="INVALID_FULL_BIRTH_DATE"?"Не удалось передать дату рождения. Проверь дату."
           :code==="PROVIDER_TIMEOUT"||error?.name==="TimeoutError"
-            ?"Gemini не успела ответить. Деньги не списаны. Попробуй снова."
+            ?"Соннет не успела ответить. Деньги не списаны. Попробуй снова."
           :code.startsWith("PROVIDER_HTTP_")
             ?"Cloud.ru вернул ошибку "+code.replace("PROVIDER_HTTP_","HTTP ")+". Деньги не списаны."
           :code==="KEY_NOT_CONFIGURED"?"Ключ Cloud.ru не настроен. Нужна проверка подключения."
@@ -543,7 +533,7 @@ const fillQuestionButton = (button, question, showExpand = false, state = null) 
   if (question.isFree) {
     const free = document.createElement("span");
     free.className = "redflag-question-price is-free";
-    free.textContent = ownerDraftInScope(question,state) ? "ИИ · тест" : "БЕСПЛАТНО";
+    free.textContent = "БЕСПЛАТНО";
     button.append(free);
   } else if (Number.isInteger(question.priceRub)) {
     const rates = REDFLAG_PRICE_PAIRS[question.priceRub];
@@ -1034,10 +1024,6 @@ categoriesRoot.addEventListener("click",(event)=>{
   const shouldOpen=entry.activeQuestionId!==questionId;
   entry.activeQuestionId=shouldOpen?questionId:null;
   clearError();
-  if(shouldOpen&&ownerDraftInScope(question,entry)){
-    entry.answers.delete(questionId);
-    entry.answerErrors.delete(questionId);
-  }
   if(shouldOpen)ensureAnswer(question,entry);
   renderCategories({type:"question",id:questionId});
 },true);
