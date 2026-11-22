@@ -71,11 +71,11 @@ jobs:
           assert pilot_prompt(old)==pilot_prompt(new),'APPROVED_OPTIONS_PROMPT_CHANGED'
           assert b"'faithful'=>['left','top','loveHeart','center','tailSecond']" in new,'FAITHFUL_FIVE_POINTS_MISSING'
           assert b"if($id==='faithful')" in new,'FAITHFUL_FOCUS_MISSING'
-          for token in [b"'ведущая_энергия_дня_вес_50_процентов'",b"'ведущая_энергия_месяца_вес_50_процентов'",
-                        b"'дополнительные_точки_матрицы_только_уточняют'",b"$fidelityTopic=[",
-                        b"15=>'Дьявол.",b"7=>'Колесница.",b"3=>'Императрица.",
-                        b"6=>'Влюблённые.",b"строго 50/50"]:
-              assert token in new,'DAY_MONTH_MEANING_MISSING'
+          for token in ["'ведущая_энергия_дня_вес_50_процентов'","'ведущая_энергия_месяца_вес_50_процентов'",
+                        "'дополнительные_точки_матрицы_только_уточняют'","$fidelityTopic=[",
+                        "15=>'Дьявол.","7=>'Колесница.","3=>'Императрица.",
+                        "6=>'Влюблённые.","строго 50/50"]:
+              assert token.encode('utf-8') in new,'DAY_MONTH_MEANING_MISSING'
           def pilot_body(content):
               i=content.index(b'function rfOwnerSharpInfidelityPilot(')
               j=content.index(b'\n}',i)+2
