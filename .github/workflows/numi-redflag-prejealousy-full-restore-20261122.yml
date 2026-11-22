@@ -47,9 +47,10 @@ jobs:
               assert actual==sha,'APPROVED_SNAPSHOT_SHA_MISMATCH_'+path
               assert data==git(approved,path),'NOT_APPROVED_SNAPSHOT_'+path
           # Explicitly preserve other published content, customer files and matrix.
+          # Real-wallet PHP endpoints exist only on REG.RU. They are checked and protected
+          # against modification in the live FTPS deployment step, not in Git checkout.
           protected=['redflag-public-catalog.js','redflag-engine.js',
                      'redflag-ai-lab/intimacy-knowledge-v1.json',
-                     'api/numi-account.php','api/redflag-free-ai.php',
                      'redflag-ai-lab/style-test.php']
           for path in protected:
               assert pathlib.Path(path).read_bytes()==git(previous,path),'UNRELATED_FILE_MODIFIED_'+path
