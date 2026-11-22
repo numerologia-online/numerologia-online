@@ -1,4 +1,4 @@
-name: Guarded publish of three equally weighted Infidelity points
+name: Guarded clone of approved Flags prompt for owner-only faithful question
 on:
   push:
     branches: [main]
@@ -23,8 +23,8 @@ jobs:
           php -l redflag-ai-lab/style-test-api.php
           python3 - <<'PY'
           import pathlib,subprocess,re,json
-          old='fe768e8ae96b88281b686486e20a9a20c7d0db70'
-          target='e22927bf11d8be70521019fc8e19286e0d9963e6'
+          old='e22927bf11d8be70521019fc8e19286e0d9963e6'
+          target='943c68569981fd6bf2ba9e1da2579e0f30516a7f'
           path='redflag-ai-lab/style-test-api.php'
           before=subprocess.check_output(['git','show',old+':'+path])
           after=subprocess.check_output(['git','show',target+':'+path])
@@ -45,14 +45,28 @@ jobs:
           assert 'Каждая в равной мере (примерно 1/3)'.encode() in inf,'EQUAL_WEIGHT_INSTRUCTION_MISSING'
           assert 'РОВНО ТРИ КОРОТКИХ ПРЕДЛОЖЕНИЯ'.encode() in inf,'SHORT_FOLLOWUP_MISSING'
           maps=re.findall(rb"'([a-z-]+)'=>\['left','top','([a-zA-Z]+)'\]",inf)
-          assert len(maps)==10 and len(set(t for _,t in maps))>=6,'QUESTION_POINT_MAP_INVALID'
-          assert b"count($positionData)!==3" in inf,'POINT_COUNT_GUARD_LOST'
+          assert len(maps)==9 and len(set(t for _,t in maps))>=5,'OTHER_NINE_POINT_MAP_CHANGED'
+          assert b"'faithful'=>['left','top','loveHeart','center','tailSecond']" in inf,'FAITHFUL_FIVE_POINTS_MISSING'
+          assert b"count($positionData)!==($id==='faithful'?5:3)" in inf,'POINT_COUNT_GUARD_LOST'
+          assert b"if($id==='faithful'){" in inf,'FAITHFUL_BRANCH_MISSING'
+          assert "'трактовки_значимых_позиций_полной_матрицы'".encode() in inf,'FIVE_POINT_DATA_MISSING'
+          old_inf=before.split(opener,1)[1].split(closer,1)[0]
+          old_prompt=old_inf.split(b"   $system=<<<'PROMPT'",1)[1].split(b"   $text=rfCloudCall(",1)[0]
+          new_prompt=inf.split(b"   }else{\n   $system=<<<'PROMPT'",1)[1].split(b"   }\n   $text=rfCloudCall(",1)[0]
+          assert old_prompt==new_prompt,'OTHER_NINE_QUESTION_PROMPT_CHANGED'
+          start=b"   if($id==='faithful'){\n"
+          assert inf.count(start)==1 and inf.count(b"   }else{\n")==1,'FAITHFUL_CONDITIONAL_INVALID'
+          five=inf.split(start,1)[1].split(b"   }else{\n",1)[0].lstrip()
+          flags=after.split(b"function rfOwnerSharpFlags(",1)[1].split(opener,1)[0]
+          flags_body=flags.split(b"   $system=<<<'PROMPT'",1)[1].split(b"   $text=rfCloudCall(",1)[0]
+          adapted=flags_body.replace('Это раздел «Красные флаги».'.encode(),'Это раздел «Измены и флирт».'.encode())
+          assert five==b"$system=<<<'PROMPT'"+adapted,'APPROVED_FLAGS_PROMPT_NOT_COPIED_EXACTLY'
           catalog=json.loads(pathlib.Path('redflag-ai-lab/catalog.json').read_text())
           ids={q['id'] for section in catalog['categories'] if section['id']=='infidelity' for q in section['questions']}
-          assert {a.decode() for a,_ in maps}==ids,'CATALOG_MISMATCH'
+          assert ({a.decode() for a,_ in maps}|{'faithful'})==ids,'CATALOG_MISMATCH'
           assert pathlib.Path('redflag-ai-lab/infidelity-knowledge-v1.json').read_bytes()==subprocess.check_output(['git','show',old+':redflag-ai-lab/infidelity-knowledge-v1.json']),'ARCHIVE_ALTERED'
           assert pathlib.Path('redflag-ai-lab/intimacy-knowledge-v1.json').read_bytes()==subprocess.check_output(['git','show',old+':redflag-ai-lab/intimacy-knowledge-v1.json']),'SHARED_KB_ALTERED'
-          print('OFFLINE_GUARD_OK only_infidelity_editor_changed 10_questions 3_equal_points 6_third_points existing_model_and_others_unchanged',flush=True)
+          print('OFFLINE_GUARD_OK flags_prompt_cloned_for_faithful 5_points 9_other_questions_unchanged existing_model_and_others_unchanged',flush=True)
           PY
       - name: Offline date and question coverage with fake no-cost model
         run: |
@@ -86,9 +100,16 @@ jobs:
                 $answer=rfOwnerSharpInfidelity($q,$day,$month,2000,$catalog);
                 if(!is_string($answer)||!str_contains($answer,"\n\n"))throw new RuntimeException('BAD_MOCK_OUTPUT');
                 $data=json_decode($GLOBALS['testMessages'][1]['content'],true,24,JSON_THROW_ON_ERROR);
-                $points=$data['три_равноправные_позиции']??[];
-                if(count($points)!==3||!is_array($points[2]))
-                  throw new RuntimeException('POINT_COUNT_INVALID');
+                if($q['id']==='faithful'){
+                  $points=$data['трактовки_значимых_позиций_полной_матрицы']??[];
+                  if(count($points)!==5||count($data['допустимые_точные_названия_следующего_вопроса']??[])!==9)
+                    throw new RuntimeException('FAITHFUL_FIVE_POINTS_INVALID');
+                }else{
+                  $points=$data['три_равноправные_позиции']??[];
+                  if(count($points)!==3||count($data['точные_названия_следующих_вопросов']??[])!==9)
+                    throw new RuntimeException('OTHER_NINE_CHANGED');
+                }
+                if(!is_array($points[2]))throw new RuntimeException('POINT_COUNT_INVALID');
                 if($points[0]['роль_точки']!=='День рождения, внешняя манера проявления'
                   ||$points[1]['роль_точки']!=='Месяц рождения, изначальные стремления')
                   throw new RuntimeException('DAY_MONTH_ROLES_MISSING');
@@ -97,8 +118,7 @@ jobs:
                     throw new RuntimeException('POINT_DETAILS_MISSING');
                 if(isset($data['суть_этого_вопроса'])||isset($data['три_уточняющие_позиции']))
                   throw new RuntimeException('OLD_THEMATIC_INPUT_REMAINS');
-                if(count($data['точные_названия_следующих_вопросов']??[])!==9)
-                  throw new RuntimeException('FOLLOWUPS_BAD');
+
                 $tested++;
               }
             }
@@ -119,8 +139,8 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import io,ssl,os,re,ftplib,subprocess,pathlib,time,urllib.request,urllib.error
-          previous_ref='fe768e8ae96b88281b686486e20a9a20c7d0db70'
-          desired_ref='e22927bf11d8be70521019fc8e19286e0d9963e6'
+          previous_ref='e22927bf11d8be70521019fc8e19286e0d9963e6'
+          desired_ref='943c68569981fd6bf2ba9e1da2579e0f30516a7f'
           php='redflag-ai-lab/style-test-api.php'
           before=subprocess.check_output(['git','show',previous_ref+':'+php])
           approved=subprocess.check_output(['git','show',desired_ref+':'+php])
@@ -183,7 +203,7 @@ jobs:
               if read(php)!=desired:raise RuntimeError('PUBLISHED_PHP_DRIFT')
               for path,original in unchanged.items():
                   if read(path)!=original:raise RuntimeError('PROTECTED_FILE_CHANGED_'+path)
-              print('PUBLISHED_AND_VERIFIED owner_infidelity_three_equal_points=true three_sentence_followups_prompted=true different_question_point_map=true flags_unchanged=true independent_infidelity_knowledge_archived=true shared_KB_unchanged=true php_other_functions_unchanged=true payments_unchanged=true backup_saved=true billable_generations=0',flush=True)
+              print('PUBLISHED_AND_VERIFIED faithful_approved_flags_prompt_cloned=true faithful_five_points=true others_nine_unchanged=true different_question_point_map=true flags_unchanged=true independent_infidelity_knowledge_archived=true shared_KB_unchanged=true php_other_functions_unchanged=true payments_unchanged=true backup_saved=true billable_generations=0',flush=True)
           except BaseException:
               if changed:
                   try:write(php,live);print('ROLLED_BACK_PHP_OK',flush=True)
