@@ -23,6 +23,7 @@ jobs:
           ftp.connect('server172.hosting.reg.ru',21)
           ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
           ftp.prot_p();ftp.set_pasv(True)
+          ftp.voidcmd('TYPE I')
           root=ftp.pwd().rstrip('/')
           base=root+'/logs/xn--c1adkkdfjbp1a4l.online.error.log'
           for suffix in ['', '.1','.1.gz','.2.gz']:
