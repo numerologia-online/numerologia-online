@@ -62,7 +62,7 @@ jobs:
           assert kb['arcana']['15']==json.loads(subprocess.check_output(['git','show',base+':redflag-ai-lab/infidelity-knowledge-v1.json']))['arcana']['15']
           inf=after[after.index(b'function rfOwnerSharpInfidelity('):]
           assert b"'google/gemini-3-flash-preview'" in inf and b'],2800,' in inf
-          assert after==subprocess.check_output(['git','show','d18882ac4d94a899635e9916864b69747a27cf56':'+api]),'NOT_EXACT_ROLLBACK_TARGET'
+          assert after==subprocess.check_output(['git','show','d18882ac4d94a899635e9916864b69747a27cf56:'+api]),'NOT_EXACT_ROLLBACK_TARGET'
           print('OFFLINE_ROLLBACK_OK exact_prior_infidelity_prompt restored energy15_and_knowledge_untouched=true other_sections_untouched=true paid_calls=0',flush=True)
           PY
       - name: Back up and publish guarded one PHP only, restore on errors
