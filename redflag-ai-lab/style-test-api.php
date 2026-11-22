@@ -1077,7 +1077,7 @@ PROMPT;
 
 function rfOwnerSharpInfidelity(array $question,int $day,int $month,int $year,array $catalog): string {
    $maps=[
-     'faithful'=>['loveHeart','left','top','tailSecond','bottom'],
+     'faithful'=>['left','top','loveHeart','center','tailFirst'],
      'options'=>['left','top','loveHeart','tailSecond','center'],
      'flirt'=>['left','top','loveHeart','tailFirst','right'],
      'trust'=>['left','top','center','right','tailSecond'],
@@ -1139,10 +1139,37 @@ PROMPT;
       'допустимые_точные_названия_следующего_вопроса'=>$followups
    ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
    $text=rfCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$data]],2800,'google/gemini-3-flash-preview');
-   // Preserve the editorial typography used by these cards.
+   $text=trim(str_replace(["\r\n","\r"],"\n",$text));
+   $fence=str_repeat(chr(96),3);
+   if(str_starts_with($text,$fence)){
+      $text=trim(substr($text,3));
+      if(str_starts_with($text,'text'))$text=ltrim(substr($text,4));
+      if(str_ends_with($text,$fence))$text=trim(substr($text,0,-3));
+   }
+   $text=trim(str_replace(['**','__'],'',$text));
+   // Always remove typography banned by the owner's editorial style.
+   // The model gets no tarot names/numbers, so accidental name leakage is rare.
    $text=preg_replace('/[ \t]*[—–―][ \t]*/u', ': ', $text)??$text;
-   $text=preg_replace('/:[ \t]*:/u', ':', $text)??$text;
-   return preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
+   $text=preg_replace('/:[ \t]*:/u', ':', $text);
+   $text=preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
+   if(mb_strlen($text)<450){
+     // Preserve provider's original short reply for verified owner's diagnostics only.
+     // Never publish a partial result as an approved interpretation.
+     $GLOBALS['RF_OWNER_INF_SHORT_PREVIEW']=$text;
+     throw new RuntimeException('OWNER_TEXT_LENGTH_INVALID');
+   }
+   $paras=preg_split('/\n\s*\n/u',$text);
+   if(is_array($paras)&&count($paras)===1){
+      // Preserve both paragraphs if the provider used a single newline.
+      $lines=explode("\n",$text);
+      if(count($lines)===2&&trim($lines[0])!==''&&trim($lines[1])!==''){
+          $text=trim($lines[0])."\n\n".trim($lines[1]);
+          $paras=[$lines[0],$lines[1]];
+      }
+   }
+   if(!is_array($paras)||count($paras)!==2)
+     throw new RuntimeException('OWNER_TEXT_PARAGRAPHS_INVALID');
+   return $text;
 }
 
 

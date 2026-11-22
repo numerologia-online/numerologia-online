@@ -1,0 +1,168 @@
+name: Restore historical infidelity owner engine and 22 energies (no inference)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-infidelity-historical-full-restore-20261122.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  restore-verified:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify exact historical restoration and isolation without AI calls
+        run: |
+          set -euo pipefail
+          php -l redflag-ai-lab/style-test-api.php
+          python3 - <<'PY'
+          import pathlib,subprocess,json
+          base='49663c38cf02ab826e08f96cee29ede54a18da82'
+          history='f96422af435330d151b733549e9feac2157c5bb1'
+          ap='redflag-ai-lab/style-test-api.php'
+          kp='redflag-ai-lab/infidelity-knowledge-v1.json'
+          wf='.github/workflows/numi-infidelity-historical-full-restore-20261122.yml'
+          changed=set(subprocess.check_output(['git','diff','--name-only',base,'HEAD']).decode().splitlines())
+          assert changed=={ap,kp,wf},'CHANGED_FILES_OUTSIDE_SCOPE_'+repr(changed)
+          before=subprocess.check_output(['git','show',base+':'+ap])
+          after=pathlib.Path(ap).read_bytes()
+          historical=subprocess.check_output(['git','show',history+':'+ap])
+          def frame(b):
+              start=b.index(b'function rfOwnerSharpInfidelity(')
+              end=b.index(b'\n}\n',start)+2
+              return b[:start],b[start:end],b[end:]
+          oldBefore,oldF,oldAfter=frame(before)
+          newBefore,newF,newAfter=frame(after)
+          _,historicalF,_=frame(historical)
+          assert oldBefore==newBefore and oldAfter==newAfter,'OTHER_API_CODE_CHANGED'
+          assert newF==historicalF,'NOT_EXACT_HISTORICAL_INFIDELITY_ENGINE'
+          prevKb=subprocess.check_output(['git','show',base+':'+kp])
+          restoredKb=pathlib.Path(kp).read_bytes()
+          histKb=subprocess.check_output(['git','show',history+':'+kp])
+          assert restoredKb==histKb,'NOT_EXACT_HISTORICAL_KB'
+          assert prevKb!=restoredKb,'NOT_REAL_KB_ROLLBACK'
+          kb=json.loads(restoredKb)
+          assert set(kb['arcana'])==set(str(n) for n in range(1,23)),'MISSING_22_ENERGIES'
+          assert b"'faithful'=>['left','top','loveHeart','center','tailFirst']" in newF,'FIRST_QUESTION_NOT_RESTORED'
+          assert b"'google/gemini-3-flash-preview'" in newF,'MODEL_CHANGED'
+          assert b'],2800,' in newF,'MODEL_BUDGET_CHANGED'
+          assert 'Ненасытная страсть' in kb['arcana']['15']['core'],'15_NOT_SHARP'
+          preserve=[
+              'redflag-ai-lab/intimacy-knowledge-v1.json',
+              'redflag-ai-lab/catalog.json','redflag-ai-lab/style-test.php',
+              'redflag-feature.js','redflag-public-catalog.js','redflag-engine.js',
+              'app.js','index.html','api/redflag-free-ai.php','wallet-client.js']
+          for p in preserve:
+              assert pathlib.Path(p).read_bytes()==subprocess.check_output(['git','show',base+':'+p]),'OTHER_FILE_CHANGED_'+p
+          print('HISTORICAL_RESTORE_OFFLINE_OK whole_infidelity_function=true original_22_energy_KB=true outside_unchanged=true paid_calls=0',flush=True)
+          PY
+      - name: Safely back up, publish and verify ONLY historical infidelity PHP function and knowledge
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import subprocess,pathlib,ftplib,ssl,io,os,time,uuid,re,hashlib,urllib.request,urllib.error
+          base='49663c38cf02ab826e08f96cee29ede54a18da82'
+          ap='redflag-ai-lab/style-test-api.php'
+          kp='redflag-ai-lab/infidelity-knowledge-v1.json'
+          marker=b'__CLOUDRU_KEY_BASE64__'
+          beforePhp=subprocess.check_output(['git','show',base+':'+ap])
+          desiredPhp=pathlib.Path(ap).read_bytes()
+          beforeKb=subprocess.check_output(['git','show',base+':'+kp])
+          desiredKb=pathlib.Path(kp).read_bytes()
+          assert beforePhp.count(marker)==desiredPhp.count(marker)==1,'SECRET_MARKER_MISMATCH'
+          def maskSecret(data):
+              hits=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",data))
+              if len(hits)!=1:raise RuntimeError('REMOTE_PHP_SECRET_LAYOUT_DRIFT')
+              m=hits[0];secret=m.group(2)
+              if not re.fullmatch(rb'[A-Za-z0-9+/=]{16,}',secret):
+                  raise RuntimeError('REMOTE_PHP_SECRET_FORMAT_INVALID')
+              return data[:m.start(2)]+marker+data[m.end(2):],secret
+          host='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          def status(path):
+              req=urllib.request.Request(host+path+'?historical_inf_restore='+str(time.time_ns()),headers={
+                'Cache-Control':'no-store','User-Agent':'RestoreInfidelityHistoricalNoInference/1.0'})
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as res:return res.status
+              except urllib.error.HTTPError as e:return e.code
+          def healthy():
+              codes=[status(''),status('redflag-ai-lab/style-test-api.php'),
+                  status('redflag-ai-lab/style-test.php'),status('api/numi-account.php')]
+              print('PUBLIC_HEALTH_CODES home=%s editor_api=%s editor_page=%s account=%s'%tuple(codes),flush=True)
+              return codes[0]==200 and codes[1]==403 and codes[2]==403 and codes[3]<500
+          def healthRetry():
+              for attempt in range(3):
+                  if healthy():return True
+                  time.sleep(3)
+              return False
+          if not healthRetry():raise RuntimeError('SITE_BEFORE_ROLLBACK_UNHEALTHY')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=44)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          backupDir=home+'/site-safeguard-backups'
+          def read(path,abs=False):
+              b=io.BytesIO()
+              ftp.retrbinary('RETR '+(path if abs else root+path),b.write)
+              return b.getvalue()
+          def write(path,data,abs=False):
+              ftp.storbinary('STOR '+(path if abs else root+path),io.BytesIO(data))
+              if read(path,abs)!=data:raise RuntimeError('FTP_READBACK_MISMATCH_'+path)
+          protected=[
+             'redflag-ai-lab/intimacy-knowledge-v1.json','redflag-ai-lab/catalog.json',
+             'redflag-ai-lab/style-test.php','redflag-feature.js','redflag-public-catalog.js',
+             'redflag-engine.js','app.js','index.html','api/numi-account.php',
+             'api/redflag-free-ai.php','wallet-client.js']
+          oldPhp=None;oldKb=None;changesStarted=False
+          try:
+              oldPhp=read(ap)
+              oldKb=read(kp)
+              masked,secret=maskSecret(oldPhp)
+              restoredPhp=desiredPhp.replace(marker,secret)
+              if masked==desiredPhp and oldKb==desiredKb:
+                  print('HISTORICAL_INFIDELITY_ALREADY_LIVE_VERIFIED',flush=True)
+              else:
+                  if masked!=beforePhp or oldKb!=beforeKb:
+                      raise RuntimeError('REMOTE_PREVIOUS_VERSION_DRIFT_ABORT_NO_WRITE')
+                  preserved={p:hashlib.sha256(read(p)).digest() for p in protected}
+                  syntax=subprocess.run(['php','-l'],input=restoredPhp,capture_output=True)
+                  if syntax.returncode:raise RuntimeError('RESTORED_PHP_SYNTAX_INVALID')
+                  try:ftp.mkd(backupDir)
+                  except ftplib.error_perm as e:
+                      if not str(e).startswith('550'):raise
+                  tag=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+uuid.uuid4().hex[:8]
+                  write(backupDir+'/original-infidelity-code-'+tag+'.bak',oldPhp,True)
+                  write(backupDir+'/original-infidelity-knowledge-'+tag+'.bak',oldKb,True)
+                  if read(ap)!=oldPhp or read(kp)!=oldKb:
+                      raise RuntimeError('CONCURRENT_REMOTE_CHANGE_ABORT')
+                  changesStarted=True
+                  write(kp,desiredKb)
+                  write(ap,restoredPhp)
+                  if not healthRetry():raise RuntimeError('SITE_POSTRESTORE_HEALTH_FAILED')
+                  for p,h in preserved.items():
+                      if hashlib.sha256(read(p)).digest()!=h:
+                          raise RuntimeError('UNRELATED_REMOTE_FILE_CHANGED_'+p)
+                  print('HISTORICAL_INFIDELITY_FULL_ROLLBACK_PUBLISHED_VERIFIED engine_exact=true original_22_KB=true other_sections_unchanged=true paid_calls=0',flush=True)
+          except BaseException:
+              if changesStarted and oldPhp is not None and oldKb is not None:
+                  errors=[]
+                  for p,b in ((ap,oldPhp),(kp,oldKb)):
+                      try:write(p,b)
+                      except BaseException:errors.append(p)
+                  if errors:print('CRITICAL_RESTORE_ROLLBACK_FAILED_FILES='+','.join(errors),flush=True)
+                  else:print('RESTORE_ATTEMPT_ROLLBACK_BOTH_FILES_OK',flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
