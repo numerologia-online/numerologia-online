@@ -1103,7 +1103,7 @@ PROMPT;
    $text=preg_replace('/:[ \t]*:/u', ':', $text);
    $text=preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
    $outLen=mb_strlen($text,'UTF-8');
-   if($outLen<450||$outLen>1250){
+   if($outLen<450||$outLen>1600){
       $m=$GLOBALS['RF_OWNER_GEMINI_META']??[];
       error_log('REDFLAG_INFidelity_LENGTH_META chars='.$outLen
         .' finish='.($m['finish']??'unknown')
