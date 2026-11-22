@@ -1032,11 +1032,11 @@ function rfOwnerSharpInfidelity(array $question,int $day,int $month,int $year,ar
       'flirt'=>['left','top','center'],
       'trust'=>['left','top','right'],
       'ex'=>['left','top','bottom'],
-      'temptation'=>['left','top','center'],
+      'temptation'=>['left','top','tailSecond'],
       'physical-or-emotional'=>['left','top','loveHeart'],
-      'secrecy'=>['left','top','right'],
+      'secrecy'=>['left','top','center'],
       'return'=>['left','top','tailFirst'],
-      'after-mistake'=>['left','top','bottom'],
+      'after-mistake'=>['left','top','right'],
    ];
    $id=$question['id']??null;
    if(!is_string($id)||!isset($maps[$id]))throw new RuntimeException('OWNER_Q_MAP_MISSING');
