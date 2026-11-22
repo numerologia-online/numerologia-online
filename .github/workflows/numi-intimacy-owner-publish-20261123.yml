@@ -50,7 +50,7 @@ jobs:
           stem=base
           fnMarker=b'function rfOwnerSharpInfidelity('
           fnEnd=stem.index(b'\n}\n',stem.index(fnMarker))+3
-          stem=stem[:fnEnd]+b'\n'+fn+stem[fnEnd:]
+          stem=stem[:fnEnd]+b'\n'+fn+b'\n'+stem[fnEnd:]
           routePos=stem.index(routeEnd)
           stem=stem[:routePos]+route+stem[routePos:]
           assert stem==target,'UNEXPECTED_API_CHANGE_FROM_APPROVED_BASE'
@@ -91,7 +91,7 @@ jobs:
               except ftplib.error_perm as e:
                   if not str(e).startswith('550'):raise
               infEnd=oldPhp.index(b'\n}\n',oldPhp.index(fnMarker))+3
-              desired=oldPhp[:infEnd]+b'\n'+fn+oldPhp[infEnd:]
+              desired=oldPhp[:infEnd]+b'\n'+fn+b'\n'+oldPhp[infEnd:]
               desired=desired.replace(routeEnd,route+routeEnd,1)
               syntax=subprocess.run(['php','-l'],input=desired,capture_output=True)
               if syntax.returncode:raise RuntimeError('NEW_PHP_SYNTAX_INVALID_'+syntax.stderr.decode(errors='replace')[:200])
