@@ -1,15 +1,10 @@
 /* Direct paid access to one selected digital item. There is no cart. */
 const API="/api/numi-account.php";
 const pending=new Map();
-const failedConnections=new WeakSet();
 const rub=kopeks=>(Number(kopeks)/100).toLocaleString("ru-RU",{maximumFractionDigits:2})+" ₽";
 export async function walletRequest(action,payload={}){
   const response=await fetch(API,{method:"POST",credentials:"same-origin",cache:"no-store",
-    headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...payload})})
-    .catch(error=>{
-      if(error instanceof Error)failedConnections.add(error);
-      throw error;
-    });
+    headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...payload})});
   let data;try{data=await response.json();}catch(_){throw new Error("SERVICE_UNAVAILABLE");}
   if(!response.ok||data.ok!==true)throw new Error(data.error||"SERVICE_UNAVAILABLE");
   return data;
@@ -70,7 +65,7 @@ function action(container,label,callback){
 function note(container,message){container.replaceChildren(el("p",message));}
 function openAccount(){const button=document.querySelector('[data-account-open="profile"]');if(button)button.click();else location.assign("/?account=1");}
 function openWalletTopup(){location.assign("/?account=1&wallet_add=1");}
-function explain(container,err,onLoadError,notCharged=false){
+function explain(container,err,onLoadError,paymentStatus="unknown"){
   const error=String(err?.message||"");
   if(error==="LOGIN_REQUIRED"){
     note(container,"Войдите в личный кабинет, чтобы открыть ответ.");
@@ -84,7 +79,7 @@ function explain(container,err,onLoadError,notCharged=false){
     note(container,"Ответ уже куплен. Нажмите на вопрос ещё раз.");return;
   }
   if(typeof onLoadError==="function"){
-    onLoadError({connectionFailed:failedConnections.has(err),notCharged});
+    onLoadError(paymentStatus);
     return;
   }
   if(["MATERIAL_NOT_READY","REAL_MATERIAL_NOT_READY","ITEM_NOT_READY","UNKNOWN_QUESTION"].includes(error)){
@@ -148,25 +143,32 @@ export async function showInlinePurchase(item,container,onMaterial,onLoadError){
   }
   note(container,"Проверяем доступ и баланс…");
   let quote;
+  const statusBeforePurchase=()=>{
+    if(quote?.owned===true)return quote.entitlement_id?"paid":"unknown";
+    return pending.has(keyFor(item))?"unknown":"not-charged";
+  };
+  const unavailable=(message)=>{
+    if(typeof onLoadError==="function")onLoadError(statusBeforePurchase());
+    else note(container,message);
+  };
   try{quote=await walletRequest("wallet_quote",{item});}catch(e){
-    // The quote checks access and price. An earlier purchase may still be pending.
-    const notCharged=typeof onLoadError==="function"&&!pending.has(keyFor(item));
-    explain(container,e,onLoadError,notCharged);
+    // A failed access check cannot debit the balance, but an earlier attempt may have.
+    explain(container,e,onLoadError,typeof onLoadError==="function"?statusBeforePurchase():undefined);
     return;
   }
-  if(typeof quote.test!=="boolean"){note(container,"Покупка пока недоступна.");return;}
+  if(typeof quote.test!=="boolean"){unavailable("Покупка пока недоступна.");return;}
   if(quote.owned===true&&quote.entitlement_id){
     try{const material=await walletMaterial(quote.entitlement_id);onMaterial(material,quote.entitlement_id);}
-    catch(e){explain(container,e,onLoadError);}
+    catch(e){explain(container,e,onLoadError,"paid");}
     return;
   }
   if(quote.member_included===true){
     note(container,"Ответ включён в подписку. Откройте вопрос через раздел «Да или нет».");
     return;
   }
-  if(quote.ready!==true){note(container,"Этот ответ сейчас недоступен для покупки. Деньги не списаны.");return;}
+  if(quote.ready!==true){unavailable("Этот ответ сейчас недоступен для покупки. Деньги не списаны.");return;}
   const amount=Number(quote.price_kopeks);
-  if(!Number.isSafeInteger(amount)||amount<=0){note(container,"Не удалось проверить стоимость.");return;}
+  if(!Number.isSafeInteger(amount)||amount<=0){unavailable("Не удалось проверить стоимость.");return;}
   if(Number(quote.balance_kopeks)<amount){
     note(container,"Недостаточно средств на балансе. Для ответа нужно "+rub(amount)+", сейчас на балансе "+rub(quote.balance_kopeks)+".");
     action(container,"Пополнить баланс",openWalletTopup);
@@ -186,10 +188,12 @@ export async function showInlinePurchase(item,container,onMaterial,onLoadError){
     if(!key){key=crypto.randomUUID();pending.set(id,key);}
     note(container,"Открываем оплаченный ответ…");
     let purchaseReturned=false;
+    let paymentConfirmed=false;
     try{
       const result=await walletRequest("wallet_buy",{item,request_key:key});
       purchaseReturned=true;
       if(result.test!==quote.test||!result.entitlement_id)throw new Error("INVALID_PURCHASE_RESULT");
+      paymentConfirmed=true;
       window.dispatchEvent(new Event("numi:wallet-updated"));
       // Subscription entitlements activate a paid period; they are not PDF
       // materials, so do not request a missing material just to confirm payment.
@@ -204,7 +208,8 @@ export async function showInlinePurchase(item,container,onMaterial,onLoadError){
     }catch(e){
       // These server refusals happen before a first purchase can debit the balance.
       const notCharged=!purchaseReturned&&!previousKey&&["REAL_MATERIAL_NOT_READY","ITEM_NOT_READY"].includes(e?.message);
-      explain(container,e,onLoadError,notCharged);
+      const paymentStatus=paymentConfirmed?"paid":notCharged?"not-charged":"unknown";
+      explain(container,e,onLoadError,paymentStatus);
       // On ambiguous failure, preserve idempotency key to prevent duplicate charges.
       if(e.message==="SERVICE_UNAVAILABLE"||e.message==="MATERIAL_NOT_READY"){
         action(container,"Повторить без нового списания",()=>showInlinePurchase(item,container,onMaterial,onLoadError));

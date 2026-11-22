@@ -428,23 +428,22 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
       .find(node=>node.dataset.questionId===id);
     const target=article?.querySelector(".redflag-answer");
     if(!category||!target){state.answerErrors.set(id,"Не удалось проверить вопрос. Откройте его ещё раз.");return;}
-    const reportLoadError=({connectionFailed=false,notCharged=false}={})=>{
+    const reportLoadError=(paymentStatus="unknown")=>{
       if(profile!==activeProfile)return;
-      const intro=connectionFailed
-        ? "При включённом VPN разбор иногда загружается не сразу."
-        : "Разбор пока не загрузился.";
+      const intro="При включённом VPN разбор иногда загружается не сразу.";
       const retry="Пожалуйста, подождите 10 секунд и попробуйте открыть разбор ещё раз.";
-      const detail=notCharged ? "Деньги не списаны 🤍 "+retry : retry;
-      state.answerErrors.set(id,intro+" "+detail);
+      const paymentNote=paymentStatus==="not-charged" ? "Деньги не списаны 🤍" :
+        paymentStatus==="paid" ? "Разбор уже оплачен 🤍" : "";
+      state.answerErrors.set(id,[intro,paymentNote,retry].filter(Boolean).join(" "));
       if(target.isConnected){
         const status=document.createElement("div");
         status.setAttribute("role","status");
         const summary=document.createElement("p");
         summary.textContent=intro;
         const guidance=document.createElement("p");
-        if(notCharged){
+        if(paymentNote){
           const confirmation=document.createElement("strong");
-          confirmation.textContent="Деньги не списаны 🤍";
+          confirmation.textContent=paymentNote;
           guidance.append(confirmation," ");
         }
         guidance.append(retry);
@@ -452,13 +451,13 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
         target.replaceChildren(status);
       }
     };
-    const task=import("./wallet-client.js?v=redflag-buyer-message-20261122").then(({showInlinePurchase})=>
-      showInlinePurchase(item,target,(material)=>{
+    const task=import("./wallet-client.js?v=redflag-buyer-message-20261122-v2").then(({showInlinePurchase})=>
+      showInlinePurchase(item,target,(material,entitlementId)=>{
         if(activeProfile!==profile)return;
         const paragraphs=(material.sections||[]).flatMap(section=>(section.paragraphs||[])
           .flatMap(text=>String(text).split(/\n\s*\n/).map(part=>part.trim()).filter(Boolean)));
         if(!paragraphs.length){
-          reportLoadError();
+          reportLoadError(entitlementId ? "paid" : "not-charged");
           return;
         }
         state.answers.set(id,{answer:paragraphs.join("\n"),paragraphs});
