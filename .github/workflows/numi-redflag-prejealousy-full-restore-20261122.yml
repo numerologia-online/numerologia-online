@@ -6,6 +6,7 @@ on:
       - redflag-ai-lab/style-test-api.php
       - redflag-ai-lab/catalog.json
       - redflag-feature.js
+      - .github/workflows/numi-redflag-prejealousy-full-restore-20261122.yml
 permissions:
   contents: read
 concurrency:
@@ -34,7 +35,7 @@ jobs:
           assert b'function rfHeroTheses(' in php and b'function rfCareControlMeaning(' in php
           assert b'function rfJealousyTheses(' not in php and b'function rfOwnerUnifiedAnswer(' not in php
           assert php.count(b'__CLOUDRU_KEY_BASE64__')==1
-          assert sum(len(g['questions']) for g in json.loads(pathlib.Path(paths[1]).read_text())['categories'])==56
+          assert sum(len(g['questions']) for g in json.loads(pathlib.Path(paths[1]).read_text())['categories'])==54
           assert json.loads(pathlib.Path(paths[3]).read_text())['version']==4
           print('PREFLIGHT_OK exact snapshot; no inference')
           PY
