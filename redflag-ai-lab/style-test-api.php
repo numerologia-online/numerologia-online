@@ -1188,6 +1188,9 @@ try {
     if(!is_int($day)||!is_int($month)||!checkdate($month,$day,2000))
         rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_DATE']);
 
+    // Exact 2026-11-20 pre-jealousy owner baseline, ONLY two approved Flag questions.
+    // All other questions retain the 2026-11-22 unified Gemini engine.
+    if(!($category['id']==='flags' && in_array($question['id'],['care-or-control','hero'],true))){
     // Universal OWNER-ONLY preview. This route never serves paid customer orders.
     // All catalogue blocks share the same 31-point calculator, five chosen points,
     // 22-energy knowledge and the exact approved Flags writing instructions.
@@ -1212,12 +1215,15 @@ try {
     rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
        'category'=>$category['id'],'question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
        'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);
+    }
+
 
     // Shared autonomous Sonnet preview for every question except the editorial
     // care-or-control bank. "Уважает женское нет" remains the separate ready text.
     // Owner-only: the paid customer path is intentionally untouched.
     // The same single-meaning engine serves the three approved questions and future banked questions.
-    $unifiedMeaning=rfUnifiedQuestionMeaning($category['id'],$question['id'],$day,$month);
+    // These two legacy questions must NOT read the later 366-question unified bank.
+    $unifiedMeaning=null;
     $autonomousMode=($unifiedMeaning!==null)||
         !($category['id']==='flags'&&$question['id']==='care-or-control');
     $birthYear=null;
