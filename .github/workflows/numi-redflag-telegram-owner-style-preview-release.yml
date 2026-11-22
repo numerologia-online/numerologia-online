@@ -38,7 +38,7 @@ jobs:
           assert before.split(closer,1)[1]==after.split(closer,1)[1],'OWNER_PAYMENT_OR_LATE_API_CHANGED'
           x=after.split(opener,1)[1].split(closer,1)[0]
           y=before.split(opener,1)[1].split(closer,1)[0]
-          assert x.count("'faithful'=>")==1 and x.count("'after-mistake'=>")==1
+          assert x.count("'faithful'=>")==2 and x.count("'after-mistake'=>")==2,'FOCUS_AND_POSITION_MAP_MISSING'
           assert sum(x.count("'"+q+"'=>") for q in ['faithful','options','flirt','trust','ex','temptation','physical-or-emotional','secrecy','return','after-mistake'])==20,'FOCUS_OR_MAP_MISSING'
           assert "ориентир 1200–1500 знаков ВСЕГО" in x,'TARGET_MISSING'
           assert 'Вместо судебных и бюрократических метафор' in x
