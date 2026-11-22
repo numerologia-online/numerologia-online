@@ -44,8 +44,7 @@ const redflagDraftSections = new Set(["flags","infidelity","intimacy","family","
 let ownerDraftAccess=false,ownerDraftAccessChecked=false;
 const ownerDraftInScope=(question,state)=>{
   const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
-  return Boolean(ownerDraftAccess&&redflagDraftSections.has(section)&&
-    (question.isComingSoon||(section==="infidelity"&&question.id==="faithful")));
+  return Boolean(question.isComingSoon&&ownerDraftAccess&&redflagDraftSections.has(section));
 };
 async function verifyOwnerDraftAccess(){
   if(ownerDraftAccessChecked)return;
@@ -59,8 +58,6 @@ async function verifyOwnerDraftAccess(){
     const data=await response.json();
     if(data?.ok!==true||data?.owner!==true||data?.draft_only!==true)return;
     ownerDraftAccess=true;
-    const first=categoryStates.get("infidelity");
-    if(first?.answers.get("faithful")?.isDraft!==true)first?.answers.delete("faithful");
     if(redFlag.classList.contains("is-active"))renderCategories();
   }catch(_){/* Unverified users never see draft generation. */}
 }
@@ -376,7 +373,7 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
       const data=await response.json().catch(()=>null);
       if(!response.ok||data?.ok!==true){
         const failure=new Error(String(data?.error||"SERVICE_UNAVAILABLE"));
-        if((category==="flags"||category==="infidelity")&&failure.message==="OWNER_TEXT_LENGTH_INVALID"
+        if(category==="flags"&&failure.message==="OWNER_TEXT_LENGTH_INVALID"
           &&typeof data?.short_preview==="string"){
           failure.editorPreview=data.short_preview;
           failure.editorChars=Number(data.short_chars)||data.short_preview.length;
@@ -545,7 +542,7 @@ const fillQuestionButton = (button, question, showExpand = false, state = null) 
   if (question.isFree) {
     const free = document.createElement("span");
     free.className = "redflag-question-price is-free";
-    free.textContent = state!==null&&ownerDraftInScope(question,state)?"ИИ · тест":"БЕСПЛАТНО";
+    free.textContent = "БЕСПЛАТНО";
     button.append(free);
   } else if (Number.isInteger(question.priceRub)) {
     const rates = REDFLAG_PRICE_PAIRS[question.priceRub];

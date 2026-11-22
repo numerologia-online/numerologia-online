@@ -2,7 +2,7 @@
   "version": 1,
   "mode": "owner_draft_only",
   "keyRule": "day-month",
-  "questions": 56,
+  "questions": 55,
   "categories": [
     {
       "id": "flags",
@@ -54,10 +54,6 @@
       "id": "infidelity",
       "title": "Измены и флирт",
       "questions": [
-        {
-          "id": "faithful",
-          "title": "Верный или у него каждая вторая «просто подруга»?"
-        },
         {
           "id": "options",
           "title": "Верный или постоянно ищет запасные варианты?"

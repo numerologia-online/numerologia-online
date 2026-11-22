@@ -1,4 +1,4 @@
-name: Owner Gemini error diagnostics all 10 fidelity; frozen prompts and Red Flags
+name: Restore last approved Gemini Red Flags and remove today's infidelity experiments
 on:
   push:
     branches: [main]
@@ -21,111 +21,50 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - name: Verify one owner-only diagnostic condition; preserve all prompts
+          fetch-depth      - name: Confirm exact approved Red Flags snapshot and no unrelated changes
         run: |
           set -euo pipefail
           php -l redflag-ai-lab/style-test-api.php
           node --check redflag-feature.js
           node --check app.js
           python3 - <<'PY'
-          import subprocess,pathlib
-          baseline='33b71d45f6520244037bdc105ce30fa63a9d69b3'
-          target={
-            'redflag-ai-lab/style-test-api.php':'ad6835628e3fb2658a649204dece090e9f8bdc75',
-            'redflag-feature.js':'f8c1c21a376197aac6cb31335d0b7dbd99ae22cf',
-            'app.js':'8df57ceebd66b1640888bfdce1bf1ec72164ff85',
-            'index.html':'02bab25a07b70d8c85b2731c32f601c9ce704267',
-            'redflag-ai-lab/catalog.json':'d02969788756b44eec307f5a4426514d38393a31'
+          import pathlib,subprocess,json
+          approved='2fe9243a85a0b426b053bc305b67e6956cf060f9'
+          previous='f66b6a3b110350e436ba6e461dcbe7ead89973d4'
+          targets={
+            'redflag-ai-lab/style-test-api.php':'179747e1d537cd5421c976cbaf658268e231dcdc',
+            'redflag-feature.js':'f692e86466e014e6659c0a0b3f5d9b3bbd094c5f',
+            'redflag-ai-lab/catalog.json':'635eb2847bfe3699dc9becfe0f8dbdc168274a3b',
+            'app.js':'67b3d1ec7a0f52a5d916d3d7742595b533d563ab',
+            'index.html':'a7ee8a0a9607b9ac2d6d8b69618f02629423599e'
           }
-          def git(p):return subprocess.check_output(['git','show',baseline+':'+p])
-          for p,expected_sha in target.items():
-              data=pathlib.Path(p).read_bytes()
-              actual_sha=subprocess.check_output(['git','hash-object','--stdin'],input=data).decode().strip()
-              assert actual_sha==expected_sha,'TARGET_DRIFT_'+p
-          for p in ['redflag-ai-lab/intimacy-knowledge-v1.json',
-                    'redflag-ai-lab/banks/care-or-control.json',
-                    'redflag-ai-lab/banks/unified-question-answers-v1.json']:
-              assert pathlib.Path(p).read_bytes()==git(p),'APPROVED_KNOWLEDGE_DRIFT_'+p
-          # The editor catalogue remains byte-for-byte unchanged.
-          assert pathlib.Path('redflag-ai-lab/catalog.json').read_bytes()==git('redflag-ai-lab/catalog.json'),'CATALOG_CHANGED'
-          old=git('redflag-ai-lab/style-test-api.php')
-          new=pathlib.Path('redflag-ai-lab/style-test-api.php').read_bytes()
-          def approved_prompt(s):
-              p=s.index(b'function rfOwnerSharpFlags(')
-              a=s.index(b"$system=<<<'PROMPT'",p)
-              z=s.index(b'\nPROMPT;',a)
-              return s[a:z]
-          assert approved_prompt(old)==approved_prompt(new),'APPROVED_PROMPT_ALTERED'
-          def frozen_flags(s):
-              i=s.index(b'function rfOwnerSharpFlags(')
-              j=s.index(b'\n}',i)+2
-              return s[i:j]
-          assert frozen_flags(old)==frozen_flags(new),'IDEAL_RED_FLAGS_CODE_ALTERED'
-          assert new.count(b'function rfOwnerSharpInfidelityPilot(')==1,'OWNER_FIDELITY_FUNCTION_MISSING'
-          def pilot_prompt(s):
-              p=s.index(b'function rfOwnerSharpInfidelityPilot(')
-              a=s.index(b"$system=<<<'PROMPT'",p)
-              z=s.index(b'\nPROMPT;',a)
-              return s[a:z]
-          assert pilot_prompt(old)==pilot_prompt(new),'APPROVED_OPTIONS_PROMPT_CHANGED'
-          assert b"'faithful'=>['left','top','loveHeart','center','tailSecond']" in new,'FAITHFUL_FIVE_POINTS_MISSING'
-          assert b"if($id==='faithful')" in new,'FAITHFUL_FOCUS_MISSING'
-          for token in ["'ведущая_энергия_дня_вес_50_процентов'","'ведущая_энергия_месяца_вес_50_процентов'",
-                        "'дополнительные_точки_матрицы_только_уточняют'","$fidelityTopic=[",
-                        "15=>'Дьявол.","7=>'Колесница.","3=>'Императрица.",
-                        "6=>'Влюблённые.","строго 50/50"]:
-              assert token.encode('utf-8') in new,'DAY_MONTH_MEANING_MISSING'
-          def pilot_body(content):
-              i=content.index(b'function rfOwnerSharpInfidelityPilot(')
-              j=content.index(b'\n}',i)+2
-              return content[i:j]
-          new_route="if($category['id']==='infidelity' && in_array($question['id'],['faithful','options','flirt','trust','ex','temptation','physical-or-emotional','secrecy','return','after-mistake'],true))".encode()
-          assert old.count(new_route)==new.count(new_route)==1,'FIDELITY_ROUTE_CHANGED'
-          assert pilot_body(new)==pilot_body(old),'FIDELITY_PROMPT_OR_CALC_CHANGED'
-          old_diagnostic=b"&&in_array(($input['question_id']??null),['options','faithful'],true)"
-          new_diagnostic=b"&&in_array(($input['question_id']??null),['faithful','options','flirt','trust','ex','temptation','physical-or-emotional','secrecy','return','after-mistake'],true)"
-          assert old.count(old_diagnostic)==1 and new.count(new_diagnostic)==1,'DIAGNOSTIC_MATCH_FAILED'
-          assert old.replace(old_diagnostic,new_diagnostic)==new,'OTHER_SERVER_CODE_CHANGED'
-          assert pilot_body(new).count('ГЛАВНОЕ РЕДАКТОРСКОЕ ПРАВИЛО ДЛЯ ВСЕХ ВОПРОСОВ'.encode('utf-8'))==1,'QUESTION_FOCUS_RULE_MISSING'
-          assert pilot_body(new).count('УДАЛИ любую фразу, которая не помогает ответить'.encode('utf-8'))==1,'DIRECT_ANSWER_RESTRICTION_MISSING'
-          import json,re
+          def git(ref,path):
+              return subprocess.check_output(['git','show',ref+':'+path])
+          for path,sha in targets.items():
+              data=pathlib.Path(path).read_bytes()
+              actual=subprocess.check_output(['git','hash-object','--stdin'],input=data).decode().strip()
+              assert actual==sha,'APPROVED_SNAPSHOT_SHA_MISMATCH_'+path
+              assert data==git(approved,path),'NOT_APPROVED_SNAPSHOT_'+path
+          # Explicitly preserve other published content, customer files and matrix.
+          protected=['redflag-public-catalog.js','redflag-engine.js',
+                     'redflag-ai-lab/intimacy-knowledge-v1.json',
+                     'api/numi-account.php','api/redflag-free-ai.php',
+                     'redflag-ai-lab/style-test.php']
+          for path in protected:
+              assert pathlib.Path(path).read_bytes()==git(previous,path),'UNRELATED_FILE_MODIFIED_'+path
+          updated=set(subprocess.check_output(['git','diff','--name-only',previous,'HEAD']).decode().splitlines())
+          permitted=set(targets)|{'.github/workflows/numi-redflag-prejealousy-full-restore-20261122.yml'}
+          assert updated==permitted,'UNEXPECTED_RESTORE_SCOPE_'+repr(updated^permitted)
+          api=pathlib.Path('redflag-ai-lab/style-test-api.php').read_bytes()
+          assert api.count(b'function rfOwnerSharpFlags(')==1,'APPROVED_FLAGS_MISSING'
+          assert b'function rfOwnerSharpInfidelityPilot(' not in api,'EXPERIMENTAL_FIDELITY_STILL_PRESENT'
+          assert b'google/gemini-3-flash-preview' in api,'APPROVED_GEMINI_MISSING'
           catalog=json.loads(pathlib.Path('redflag-ai-lab/catalog.json').read_text())
-          ids={q['id'] for group in catalog['categories'] if group['id']=='infidelity' for q in group['questions']}
-          assert len(ids)==10,'EXPECTED_10_FIDELITY_QUESTIONS'
-          body=pilot_body(new)
-          keymap=re.search(rb'\$maps=\[(.*?)\n   \];',body,re.S)
-          assert keymap,'FIVE_POINT_MAP_NOT_FOUND'
-          mapped={x.decode() for x in re.findall(rb"'([a-z-]+)'=>\['left','top',",keymap.group(1))}
-          assert mapped==ids,'MISSING_GEMINI_POINT_MAPS_'+repr(ids-mapped)
-          focus=body.split(b'$fidelityQuestionFocus=[',1)
-          assert len(focus)==2,'QUESTION_SPECIFIC_FOCUSES_MISSING'
-          focusIds={x.decode() for x in re.findall(rb"\s*'([a-z-]+)'=>",focus[1].split(b'\n   ];',1)[0])}
-          assert focusIds==ids-{'faithful','options'},'QUESTION_FOCUS_NOT_COVERING_EIGHT'
-          assert body.count("'ведущая_энергия_дня_вес_50_процентов'".encode())==1,'DAY_MISSING'
-          assert body.count("'ведущая_энергия_месяца_вес_50_процентов'".encode())==1,'MONTH_MISSING'
-          assert new.count(b"rfOwnerSharpInfidelityPilot($question,$day,$month,$y,$catalog)")==1,'WRONG_OWNER_GEMINI_INVOCATION'
-          assert b"($id==='options'&&($next['id']??null)==='faithful')" in new,'APPROVED_OPTIONS_FOLLOWUPS_CHANGED'
-          assert new.count(b'rfOwnerSharpInfidelityPilot($question,$day,$month,$y,$catalog)')==1,'OWNER_FIDELITY_ROUTE_MISSING'
-          assert b"'options'=>['left','top','loveHeart','tailFirst','center']" in new,'FIVE_FIDELITY_POINTS_MISSING'
-          assert new_route in new,'OWNER_ISOLATION_MISSING'
-          assert b'RF_OWNER_INF_PILOT_SHORT_PREVIEW' in new,'EDITOR_SHORT_PREVIEW_MISSING'
-          js=pathlib.Path('redflag-feature.js').read_bytes()
-          assert b'(category==="flags"||category==="infidelity")' in js,'EDITOR_ERROR_UI_MISSING'
-          assert b'(section==="infidelity"&&question.id==="faithful")' in js,'OWNER_ONLY_FIRST_FREE_MISSING'
-          assert b'free.textContent = state!==null&&ownerDraftInScope(question,state)?"' in js,'OWNER_TEST_BADGE_MISSING'
-          assert js.count(b'AbortSignal.timeout(125000)')==1,'APPROVED_TIMEOUT_CHANGED'
-          assert old.count(b'__CLOUDRU_KEY_BASE64__')==new.count(b'__CLOUDRU_KEY_BASE64__')==1,'SECRET_SLOT_DRIFT'
-          for token in [b"2800,'google/gemini-3-flash-preview'",b"if(mb_strlen($text)<450)",
-                        b"OWNER_TEXT_LENGTH_INVALID",b"unset($_SESSION['last_generation'])",
-                        b"RF_OWNER_FLAGS_SHORT_PREVIEW"]:
-              assert token in new,'ERROR_HANDLER_MISSING'
-          assert b'AbortSignal.timeout(125000)' in pathlib.Path('redflag-feature.js').read_bytes(),'FRONT_TIMEOUT_CHANGED'
-          assert b'infidelity-faithful-owner-pilot-20261122' in pathlib.Path('app.js').read_bytes(),'CACHE_MISSING_APP'
-          assert b'infidelity-faithful-owner-pilot-20261122' in pathlib.Path('index.html').read_bytes(),'CACHE_MISSING_INDEX'
-          print('APPROVED_FLAGS_UNCHANGED; TEN_GEMINI_FIDELITY_QUESTIONS; ALL_TEN_ERROR_PREVIEWS; no prompt changes; one PHP file; zero paid calls',flush=True)
+          assert len(next(x for x in catalog['categories'] if x['id']=='infidelity')['questions'])==9,'FIDEO_CATALOG_NOT_RESTORED'
+          print('APPROVED_RED_FLAGS_SNAPSHOT_EXACT; ALL_FIVE_FILES_RESTORED; OTHER_SECTIONS_PROTECTED; ZERO_AI_CALLS',flush=True)
           PY
-      - name: Back up current REG.RU files, publish exact patch, verify and rollback if needed
+ PY
+      - name: Back up live production then restore five approved files with rollback
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
@@ -133,8 +72,8 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import subprocess,pathlib,ftplib,ssl,io,os,hashlib,re,time,uuid,urllib.request,urllib.error
-          ref='33b71d45f6520244037bdc105ce30fa63a9d69b3'
-          paths=['redflag-ai-lab/style-test-api.php']
+          ref='f66b6a3b110350e436ba6e461dcbe7ead89973d4'
+          paths=['redflag-ai-lab/style-test-api.php','redflag-feature.js','redflag-ai-lab/catalog.json','app.js','index.html']
           php=paths[0]
           marker=b'__CLOUDRU_KEY_BASE64__'
           def source(p):return subprocess.check_output(['git','show',ref+':'+p])
@@ -176,7 +115,7 @@ jobs:
               for p in paths[1:]:
                   if before[p]!=source(p):raise RuntimeError('LIVE_CHANGED_REFUSE_'+p)
               protected=['api/numi-account.php','api/redflag-free-ai.php','redflag-engine.js',
-                         'redflag-public-catalog.js','redflag-feature.js','app.js','index.html',
+                         'redflag-public-catalog.js',
                          'redflag-ai-lab/intimacy-knowledge-v1.json','redflag-ai-lab/style-test.php']
               protected_hash={p:hashlib.sha256(read(p)).digest() for p in protected}
               desired={p:pathlib.Path(p).read_bytes() for p in paths}
@@ -189,7 +128,7 @@ jobs:
                   if not str(e).startswith('550'):raise
               stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+uuid.uuid4().hex[:8]
               for p in paths:
-                  write(backup_dir+'/before-owner-infidelity-error-preview-'+stamp+'-'+p.replace('/','-')+'.bak',before[p],True)
+                  write(backup_dir+'/before-restore-approved-redflags-'+stamp+'-'+p.replace('/','-')+'.bak',before[p],True)
               for p in paths:
                   if read(p)!=before[p]:raise RuntimeError('CONCURRENT_LIVE_EDIT_'+p)
               for p in paths:
@@ -203,7 +142,7 @@ jobs:
                   if read(p)!=desired[p]:raise RuntimeError('POST_RELEASE_CHANGED_'+p)
               for p,h in protected_hash.items():
                   if hashlib.sha256(read(p)).digest()!=h:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
-              print('OWNER_FIDELITY_ALL_TEN_DIAGNOSTICS_PUBLISHED_VERIFIED model_gemini_reused=true approved_flags_unchanged=true numeric_base_untouched=true client_payments_untouched=true backups=true inference_calls=0',flush=True)
+              print('APPROVED_RED_FLAGS_AND_FIDELITY_ROLLBACK_PUBLISHED_VERIFIED approved_snapshot=2fe9243 files=5 customer_payments_untouched=true backups=true inference_calls=0',flush=True)
           except BaseException:
               errors=[]
               for p in reversed(written):
