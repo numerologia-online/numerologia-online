@@ -104,6 +104,24 @@ jobs:
               if not historical_match(php,masked):
                   raise RuntimeError('UNKNOWN_LIVE_PHP_REFUSE_TO_OVERWRITE')
               for p in files[1:]:
+                  if p=='redflag-ai-lab/intimacy-knowledge-v1.json':
+                      # Editorial knowledge was edited on the live host independently.
+                      # Preserve it byte-for-byte in the mandatory backup, and verify
+                      # all 22 source entries before restoring the requested snapshot.
+                      import json
+                      try:
+                          live_kb=json.loads(before[p].decode('utf-8'))
+                          desired_kb=json.loads(pathlib.Path(p).read_text())
+                      except (ValueError,UnicodeError) as exc:
+                          raise RuntimeError('LIVE_KNOWLEDGE_INVALID_REFUSE_RESTORE') from exc
+                      if live_kb.get('schema')!='numi-owner-intimacy-matrix-knowledge-v1' or desired_kb.get('schema')!=live_kb.get('schema'):
+                          raise RuntimeError('LIVE_KNOWLEDGE_SCHEMA_UNRECOGNIZED')
+                      if set(live_kb.get('arcana',{}))!={str(i) for i in range(1,23)} or set(desired_kb.get('arcana',{}))!={str(i) for i in range(1,23)}:
+                          raise RuntimeError('LIVE_KNOWLEDGE_22_ENERGIES_MISSING')
+                      if set(live_kb.get('pointDescriptions',{}))!=set(desired_kb.get('pointDescriptions',{})):
+                          raise RuntimeError('LIVE_KNOWLEDGE_POINT_MAPPING_CHANGED')
+                      print('LIVE_KNOWLEDGE_FULL_BACKUP_REQUIRED source_count=22 unknown_revisions=true',flush=True)
+                      continue
                   if not historical_match(p,before[p]):
                       raise RuntimeError('UNKNOWN_LIVE_FILE_REFUSE_TO_OVERWRITE_'+p)
               wanted={p:pathlib.Path(p).read_bytes() for p in files}
