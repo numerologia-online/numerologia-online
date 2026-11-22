@@ -21,7 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth      - name: Confirm exact approved Red Flags snapshot and no unrelated changes
+          fetch-depth: 0
+      - name: Confirm exact approved Red Flags snapshot and no unrelated changes
         run: |
           set -euo pipefail
           php -l redflag-ai-lab/style-test-api.php
@@ -63,7 +64,6 @@ jobs:
           assert len(next(x for x in catalog['categories'] if x['id']=='infidelity')['questions'])==9,'FIDEO_CATALOG_NOT_RESTORED'
           print('APPROVED_RED_FLAGS_SNAPSHOT_EXACT; ALL_FIVE_FILES_RESTORED; OTHER_SECTIONS_PROTECTED; ZERO_AI_CALLS',flush=True)
           PY
- PY
       - name: Back up live production then restore five approved files with rollback
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
