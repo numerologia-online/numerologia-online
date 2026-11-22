@@ -1,0 +1,102 @@
+name: Offline QA - unified owner matrix interpretation (zero paid calls)
+on:
+  push:
+    branches: [main]
+    paths:
+      - redflag-ai-lab/style-test-api.php
+      - redflag-ai-lab/catalog.json
+      - .github/workflows/numi-owner-unified-offline-qa.yml
+permissions:
+  contents: read
+jobs:
+  matrix-preview-no-network:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check production code syntax and immutable ideal prompt
+        run: |
+          set -euo pipefail
+          php -l redflag-ai-lab/style-test-api.php
+          python3 - <<'PY'
+          import json,pathlib,subprocess
+          path='redflag-ai-lab/style-test-api.php'
+          source=pathlib.Path(path).read_text()
+          old=subprocess.check_output(['git','show','64a812219fc94e8207e893aae7bb6ca54a09eea2:'+path]).decode()
+          begin="   $system=<<<'PROMPT'\n"
+          end="\nPROMPT;"
+          def system(text):
+              i=text.index(begin,text.index('function rfOwner'))
+              j=text.index(end,i)
+              return text[i:j+len(end)]
+          assert system(source)==system(old),'APPROVED_FLAGS_PROMPT_CHANGED'
+          assert source.count("file_get_contents(__DIR__.'/intimacy-knowledge-v1.json')")>=1,'KB_PATH_CHANGED'
+          assert "'google/gemini-3-flash-preview'" in source,'MODEL_CHANGED'
+          assert source.count('function rfOwnerUnifiedAnswer(')==1,'SINGLE_UNIFIED_FUNCTION_REQUIRED'
+          assert source.count('$answer=rfOwnerUnifiedAnswer(')==1,'SINGLE_ROUTING_REQUIRED'
+          assert source.count("if($category['id']==='flags'){")==0,'SEPARATE_FLAGS_ROUTE_PRESENT'
+          assert source.count("if($category['id']==='infidelity'){")==0,'SEPARATE_INF_ROUTE_PRESENT'
+          assert "if($question===null)rfPreviewReply(400" in source,'QUESTION_VALIDATION_MISSING'
+          cat=json.loads(pathlib.Path('redflag-ai-lab/catalog.json').read_text())
+          kb=json.loads(pathlib.Path('redflag-ai-lab/intimacy-knowledge-v1.json').read_text())
+          assert len(kb['arcana'])==22,'MISSING_ENERGY'
+          question_count=0
+          for group in cat['categories']:
+              for q in group['questions']:
+                  pts=q.get('matrix_points')
+                  assert isinstance(pts,list) and len(pts)==5,'MISSING_FIVE_POINTS'
+                  assert pts[:3]==['left','top','right'],'PRIMARY_POINTS_CHANGED'
+                  assert len(set(pts))==5,'DUPLICATED_POSITION'
+                  assert all(p in kb['pointDescriptions'] for p in pts),'UNDEFINED_MATRIX_POSITION'
+                  question_count+=1
+          assert question_count>=56,'QUESTION_LOSS'
+          print('GUARD_OK approved_prompt_unchanged categories='+str(len(cat['categories']))+' questions='+str(question_count)+' model_unchanged shared_KB_path_unchanged paid_calls=0')
+          PY
+      - name: Check all 366 birth-day/month combinations for all catalogue questions with fake model
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('redflag-ai-lab/style-test-api.php').read_text()
+          start=src.index('function rfOwner22(')
+          end=src.index('function rfOwnerSharpInfidelity(',start)
+          fake="""<?php
+          function rfCloudCall(array $messages,int $tokens,string $model):string {
+              if($tokens!==2800||$model!=='google/gemini-3-flash-preview')throw new RuntimeException('MODEL_OR_BUDGET_CHANGED');
+              $GLOBALS['capture']=$messages;
+              return str_repeat('Офлайн проверка синтаксиса и формы ответа без платной модели. ',15)
+              ."\\n\\n".str_repeat('Вторая часть офлайн-проверки. ',8);
+          }
+          """
+          checks=r"""
+          $catalog=json_decode(file_get_contents(__DIR__.'/catalog.json'),true,20,JSON_THROW_ON_ERROR);
+          $kb=json_decode(file_get_contents(__DIR__.'/intimacy-knowledge-v1.json'),true,25,JSON_THROW_ON_ERROR);
+          $count=0;$days=0;
+          foreach(range(1,12) as $month)foreach(range(1,31) as $day){
+              if(!checkdate($month,$day,2000))continue;
+              $days++;
+              foreach($catalog['categories'] as $category)foreach($category['questions'] as $q){
+                  $answer=rfOwnerUnifiedAnswer($category,$q,$day,$month,2000,$catalog);
+                  if(!str_contains($answer,"\n\n"))throw new RuntimeException('PARAGRAPHS_MISSING');
+                  $payload=json_decode($GLOBALS['capture'][1]['content'],true,25,JSON_THROW_ON_ERROR);
+                  $pts=$payload['трактовки_значимых_позиций_полной_матрицы']??[];
+                  if(count($pts)!==5)throw new RuntimeException('POINT_COUNT_WRONG');
+                  foreach($q['matrix_points'] as $idx=>$point)
+                      if($pts[$idx]['роль_точки']!==$kb['pointDescriptions'][$point])
+                          throw new RuntimeException('POINT_ROLE_WRONG');
+                  if(($payload['вопрос']??'')!==$q['title'])throw new RuntimeException('WRONG_QUESTION');
+                  if(!isset($payload['допустимые_точные_названия_следующего_вопроса']))
+                      throw new RuntimeException('MISSING_FOLLOWUPS');
+                  $count++;
+              }
+          }
+          if($days!==366||$count<$days*56)throw new RuntimeException('COVERAGE_INCOMPLETE');
+          echo "OFFLINE_PASS days=$days scenarios=$count paid_generations=0\n";
+          """
+          Path('redflag-ai-lab/_local_unified_zero_ai_check.php').write_text(fake+src[start:end]+"\n"+checks)
+          PY
+          php -l redflag-ai-lab/_local_unified_zero_ai_check.php
+          php redflag-ai-lab/_local_unified_zero_ai_check.php
+          rm redflag-ai-lab/_local_unified_zero_ai_check.php
