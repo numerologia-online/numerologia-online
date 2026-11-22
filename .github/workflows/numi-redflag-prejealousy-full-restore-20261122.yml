@@ -1,0 +1,124 @@
+name: Restore exact pre-jealousy Red Flag owner editor 20 Nov
+on:
+  push:
+    branches: [main]
+    paths:
+      - redflag-ai-lab/style-test-api.php
+      - redflag-ai-lab/catalog.json
+      - redflag-feature.js
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  restore:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate exact 20 Nov files no model calls
+        run: |
+          set -euo pipefail
+          php -l redflag-ai-lab/style-test-api.php
+          node --check redflag-feature.js
+          python3 - <<'PY'
+          import subprocess,pathlib,json
+          ref='e5e7a679b7338b5995846b46982503c68af41a10'
+          paths=['redflag-ai-lab/style-test-api.php','redflag-ai-lab/catalog.json','redflag-feature.js','redflag-ai-lab/banks/care-or-control.json']
+          for p in paths:
+              assert pathlib.Path(p).read_bytes()==subprocess.check_output(['git','show',ref+':'+p]),'SNAPSHOT_DRIFT_'+p
+          php=pathlib.Path(paths[0]).read_bytes()
+          assert b'function rfHeroTheses(' in php and b'function rfCareControlMeaning(' in php
+          assert b'function rfJealousyTheses(' not in php and b'function rfOwnerUnifiedAnswer(' not in php
+          assert php.count(b'__CLOUDRU_KEY_BASE64__')==1
+          assert sum(len(g['questions']) for g in json.loads(pathlib.Path(paths[1]).read_text())['categories'])==56
+          assert json.loads(pathlib.Path(paths[3]).read_text())['version']==4
+          print('PREFLIGHT_OK exact snapshot; no inference')
+          PY
+      - name: Safely publish owner editor snapshot on REG.RU, backup and rollback
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,ftplib,ssl,io,re,uuid,time,hashlib,pathlib,subprocess,urllib.request,urllib.error
+          ref='e5e7a679b7338b5995846b46982503c68af41a10'
+          prior='6e6b65a554f6b449be0338c86e13f38085f936e9'
+          patched='340561ed7d35d81596cd6dfbf30dcb332c1ca6c8'
+          files=['redflag-ai-lab/style-test-api.php','redflag-ai-lab/catalog.json','redflag-feature.js']
+          php=files[0];marker=b'__CLOUDRU_KEY_BASE64__'
+          def git(r,p):return subprocess.check_output(['git','show',r+':'+p])
+          def redact(s):
+              m=list(re.finditer(rb"(\$key=base64_decode\(')([^']+)(',true\);)",s))
+              if len(m)!=1:raise RuntimeError('KEY_LAYOUT_UNKNOWN')
+              a=m[0];key=a.group(2)
+              if key==marker:return s,key
+              if len(key)<16 or not re.fullmatch(rb'[A-Za-z0-9+/=]+',key):raise RuntimeError('KEY_INVALID')
+              return s[:a.start(2)]+marker+s[a.end(2):],key
+          def status(p):
+              u='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'+p+'?prejealousy='+str(time.time_ns())
+              req=urllib.request.Request(u,headers={'Cache-Control':'no-store'})
+              try:
+                  with urllib.request.urlopen(req,timeout=24) as x:return x.status
+              except urllib.error.HTTPError as e:return e.code
+          if status('')!=200 or status(php)!=403:raise RuntimeError('LIVE_HEALTH_AUTH_BEFORE')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=40)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          backup=home+'/site-safeguard-backups'
+          def get(p,absolute=False):
+              buf=io.BytesIO()
+              ftp.retrbinary('RETR '+(p if absolute else root+p),buf.write)
+              return buf.getvalue()
+          def put(p,data,absolute=False):
+              ftp.storbinary('STOR '+(p if absolute else root+p),io.BytesIO(data))
+              if get(p,absolute)!=data:raise RuntimeError('READBACK_FAILED_'+p)
+          before={};written=[]
+          try:
+              before={p:get(p) for p in files}
+              masked,key=redact(before[php])
+              if masked not in [git(r,php) for r in (ref,prior,patched)]:
+                  raise RuntimeError('UNKNOWN_LIVE_PHP_REFUSE_TO_OVERWRITE')
+              for p in files[1:]:
+                  if before[p] not in [git(r,p) for r in (ref,prior,patched)]:
+                      raise RuntimeError('UNKNOWN_LIVE_FILE_REFUSE_TO_OVERWRITE_'+p)
+              wanted={p:pathlib.Path(p).read_bytes() for p in files}
+              wanted[php]=wanted[php].replace(marker,key)
+              if subprocess.run(['php','-l'],input=wanted[php],capture_output=True).returncode:
+                  raise RuntimeError('PHP_LINT_FAILED')
+              protected=['index.html','api/numi-account.php','api/redflag-free-ai.php','redflag-engine.js','redflag-public-catalog.js','redflag-ai-lab/style-test.php']
+              hashes={p:hashlib.sha256(get(p)).digest() for p in protected}
+              try:ftp.mkd(backup)
+              except ftplib.error_perm as e:
+                  if not str(e).startswith('550'):raise
+              stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+uuid.uuid4().hex[:8]
+              for p in files:put(backup+'/before-prejealousy-'+stamp+'-'+p.replace('/','-')+'.bak',before[p],True)
+              for p in files:
+                  if get(p)!=before[p]:raise RuntimeError('CONCURRENT_MODIFICATION_'+p)
+              for p in files:
+                  if wanted[p]!=before[p]:
+                      written.append(p);put(p,wanted[p])
+              if status('')!=200 or status(php)!=403 or status('redflag-ai-lab/style-test.php')!=403:
+                  raise RuntimeError('LIVE_HEALTH_AUTH_AFTER')
+              if status('api/numi-account.php')>=500:raise RuntimeError('ACCOUNT_HEALTH_FAILED_AFTER')
+              for p in files:
+                  if get(p)!=wanted[p]:raise RuntimeError('POST_DEPLOY_DIFF_'+p)
+              for p,h in hashes.items():
+                  if hashlib.sha256(get(p)).digest()!=h:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
+              print('PUBLISHED_VERIFIED exact_nov20_editor=true payments_untouched=true backups=true no_paid_inference=true')
+          except BaseException:
+              for p in reversed(written):
+                  try:put(p,before[p]);print('ROLLBACK_OK_'+p)
+                  except BaseException:print('CRITICAL_ROLLBACK_FAILED_'+p)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
