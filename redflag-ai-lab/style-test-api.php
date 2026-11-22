@@ -1077,7 +1077,7 @@ PROMPT;
 
 function rfOwnerSharpInfidelity(array $question,int $day,int $month,int $year,array $catalog): string {
    $maps=[
-     'faithful'=>['left','top','loveHeart','center','tailFirst'],
+     'faithful'=>['loveHeart','left','top','tailSecond','bottom'],
      'options'=>['left','top','loveHeart','tailSecond','center'],
      'flirt'=>['left','top','loveHeart','tailFirst','right'],
      'trust'=>['left','top','center','right','tailSecond'],
