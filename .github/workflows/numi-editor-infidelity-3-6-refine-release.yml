@@ -1,4 +1,4 @@
-name: Guarded publish of three-point owner Infidelity editor
+name: Guarded publish of three equally weighted Infidelity points
 on:
   push:
     branches: [main]
@@ -23,8 +23,8 @@ jobs:
           php -l redflag-ai-lab/style-test-api.php
           python3 - <<'PY'
           import pathlib,subprocess,re,json
-          old='537c56c187200950de97a8917de0e5f8324d6cf2'
-          target='fe768e8ae96b88281b686486e20a9a20c7d0db70'
+          old='fe768e8ae96b88281b686486e20a9a20c7d0db70'
+          target='e22927bf11d8be70521019fc8e19286e0d9963e6'
           path='redflag-ai-lab/style-test-api.php'
           before=subprocess.check_output(['git','show',old+':'+path])
           after=subprocess.check_output(['git','show',target+':'+path])
@@ -41,7 +41,9 @@ jobs:
           assert b'RF_OWNER_INF_SHORT_PREVIEW' in inf,'DIAGNOSTICS_LOST'
           assert b'file_get_contents(__DIR__.\'/intimacy-knowledge-v1.json\')' in inf,'NEUTRAL_KB_MISSING'
           assert b'file_get_contents(__DIR__.\'/infidelity-knowledge-v1.json\')' not in inf,'THEMATIC_KB_STILL_ACTIVE'
-          assert "'две_равноправные_основные_позиции'".encode() in inf and "'одна_дополнительная_позиция'".encode() in inf,'THREE_POINT_DATA_MISSING'
+          assert "'три_равноправные_позиции'".encode() in inf,'EQUAL_THREE_POINT_DATA_MISSING'
+          assert 'Каждая в равной мере (примерно 1/3)'.encode() in inf,'EQUAL_WEIGHT_INSTRUCTION_MISSING'
+          assert 'РОВНО ТРИ КОРОТКИХ ПРЕДЛОЖЕНИЯ'.encode() in inf,'SHORT_FOLLOWUP_MISSING'
           maps=re.findall(rb"'([a-z-]+)'=>\['left','top','([a-zA-Z]+)'\]",inf)
           assert len(maps)==10 and len(set(t for _,t in maps))>=6,'QUESTION_POINT_MAP_INVALID'
           assert b"count($positionData)!==3" in inf,'POINT_COUNT_GUARD_LOST'
@@ -50,7 +52,7 @@ jobs:
           assert {a.decode() for a,_ in maps}==ids,'CATALOG_MISMATCH'
           assert pathlib.Path('redflag-ai-lab/infidelity-knowledge-v1.json').read_bytes()==subprocess.check_output(['git','show',old+':redflag-ai-lab/infidelity-knowledge-v1.json']),'ARCHIVE_ALTERED'
           assert pathlib.Path('redflag-ai-lab/intimacy-knowledge-v1.json').read_bytes()==subprocess.check_output(['git','show',old+':redflag-ai-lab/intimacy-knowledge-v1.json']),'SHARED_KB_ALTERED'
-          print('OFFLINE_GUARD_OK only_infidelity_editor_changed 10_questions 3_points 6_third_points existing_model_and_others_unchanged',flush=True)
+          print('OFFLINE_GUARD_OK only_infidelity_editor_changed 10_questions 3_equal_points 6_third_points existing_model_and_others_unchanged',flush=True)
           PY
       - name: Offline date and question coverage with fake no-cost model
         run: |
@@ -84,15 +86,15 @@ jobs:
                 $answer=rfOwnerSharpInfidelity($q,$day,$month,2000,$catalog);
                 if(!is_string($answer)||!str_contains($answer,"\n\n"))throw new RuntimeException('BAD_MOCK_OUTPUT');
                 $data=json_decode($GLOBALS['testMessages'][1]['content'],true,24,JSON_THROW_ON_ERROR);
-                $main=$data['две_равноправные_основные_позиции']??[];
-                $third=$data['одна_дополнительная_позиция']??null;
-                if(count($main)!==2||!is_array($third)||count($third)!==5)
+                $points=$data['три_равноправные_позиции']??[];
+                if(count($points)!==3||!is_array($points[2]))
                   throw new RuntimeException('POINT_COUNT_INVALID');
-                if($main[0]['роль_точки']!=='День рождения, внешняя манера проявления'
-                  ||$main[1]['роль_точки']!=='Месяц рождения, изначальные стремления')
-                  throw new RuntimeException('DAY_MONTH_POSITION_NOT_PRIMARY');
-                if(!isset($third['ведущий_мотив'],$third['сильная_сторона'],$third['теневая_сторона'],$third['в_отношениях']))
-                  throw new RuntimeException('THIRD_POINT_DETAILS_MISSING');
+                if($points[0]['роль_точки']!=='День рождения, внешняя манера проявления'
+                  ||$points[1]['роль_точки']!=='Месяц рождения, изначальные стремления')
+                  throw new RuntimeException('DAY_MONTH_ROLES_MISSING');
+                foreach($points as $point)
+                  if(!isset($point['ведущий_мотив'],$point['сильная_сторона'],$point['теневая_сторона'],$point['в_отношениях']))
+                    throw new RuntimeException('POINT_DETAILS_MISSING');
                 if(isset($data['суть_этого_вопроса'])||isset($data['три_уточняющие_позиции']))
                   throw new RuntimeException('OLD_THEMATIC_INPUT_REMAINS');
                 if(count($data['точные_названия_следующих_вопросов']??[])!==9)
@@ -117,8 +119,8 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import io,ssl,os,re,ftplib,subprocess,pathlib,time,urllib.request,urllib.error
-          previous_ref='537c56c187200950de97a8917de0e5f8324d6cf2'
-          desired_ref='fe768e8ae96b88281b686486e20a9a20c7d0db70'
+          previous_ref='fe768e8ae96b88281b686486e20a9a20c7d0db70'
+          desired_ref='e22927bf11d8be70521019fc8e19286e0d9963e6'
           php='redflag-ai-lab/style-test-api.php'
           before=subprocess.check_output(['git','show',previous_ref+':'+php])
           approved=subprocess.check_output(['git','show',desired_ref+':'+php])
@@ -181,7 +183,7 @@ jobs:
               if read(php)!=desired:raise RuntimeError('PUBLISHED_PHP_DRIFT')
               for path,original in unchanged.items():
                   if read(path)!=original:raise RuntimeError('PROTECTED_FILE_CHANGED_'+path)
-              print('PUBLISHED_AND_VERIFIED owner_infidelity_three_points=true different_question_point_map=true flags_unchanged=true independent_infidelity_knowledge_archived=true shared_KB_unchanged=true php_other_functions_unchanged=true payments_unchanged=true backup_saved=true billable_generations=0',flush=True)
+              print('PUBLISHED_AND_VERIFIED owner_infidelity_three_equal_points=true three_sentence_followups_prompted=true different_question_point_map=true flags_unchanged=true independent_infidelity_knowledge_archived=true shared_KB_unchanged=true php_other_functions_unchanged=true payments_unchanged=true backup_saved=true billable_generations=0',flush=True)
           except BaseException:
               if changed:
                   try:write(php,live);print('ROLLED_BACK_PHP_OK',flush=True)
