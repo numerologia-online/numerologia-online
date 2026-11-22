@@ -1,4 +1,4 @@
-name: Guarded faithful-only preview broad 22 arcana clone (no paid tests)
+name: Guarded faithful-only fidelity point correction (no paid tests)
 on:
   push:
     branches: [main]
@@ -23,14 +23,14 @@ jobs:
           php -l redflag-ai-lab/style-test-api.php
           python3 - <<'PY'
           import subprocess,pathlib,json
-          base='f4ace88bd4dbbb48f7a3d8f572fe6ae8521fbb8d'
+          base='6c5ad2b2373600634c980a9366fb10c153882a41'
           p='redflag-ai-lab/style-test-api.php'
           old=subprocess.check_output(['git','show',base+':'+p])
           now=pathlib.Path(p).read_bytes()
-          a=b"'faithful'=>['left','top','loveHeart','center','tailFirst'],"
-          b=b"'faithful'=>['loveHeart','center','tailFirst','left','top'],"
-          a2=b"$kb=json_decode((string)file_get_contents(__DIR__.'/infidelity-knowledge-v1.json'),true,25,JSON_THROW_ON_ERROR);\n   if(($kb['schema']??null)!=='numi-owner-infidelity-matrix-knowledge-v1'"
-          b2=b"$kbFile=$id==='faithful'?'intimacy-knowledge-v1.json':'infidelity-knowledge-v1.json';\n   $kbSchema=$id==='faithful'?'numi-owner-intimacy-matrix-knowledge-v1':'numi-owner-infidelity-matrix-knowledge-v1';\n   $kb=json_decode((string)file_get_contents(__DIR__.'/'.$kbFile),true,25,JSON_THROW_ON_ERROR);\n   if(($kb['schema']??null)!==$kbSchema"
+          a=b"'faithful'=>['loveHeart','center','tailFirst','left','top'],"
+          b=b"'faithful'=>['loveHeart','left','top','tailSecond','bottom'],"
+          a2=b"$kbFile=$id==='faithful'?'intimacy-knowledge-v1.json':'infidelity-knowledge-v1.json';\n   $kbSchema=$id==='faithful'?'numi-owner-intimacy-matrix-knowledge-v1':'numi-owner-infidelity-matrix-knowledge-v1';\n   $kb=json_decode((string)file_get_contents(__DIR__.'/'.$kbFile),true,25,JSON_THROW_ON_ERROR);\n   if(($kb['schema']??null)!==$kbSchema"
+          b2=b"$kb=json_decode((string)file_get_contents(__DIR__.'/infidelity-knowledge-v1.json'),true,25,JSON_THROW_ON_ERROR);\n   if(($kb['schema']??null)!=='numi-owner-infidelity-matrix-knowledge-v1'"
           start=old.index(b'function rfOwnerSharpInfidelity(')
           end=old.index(b'\n\ntry {',start)
           before=old[start:end]
@@ -57,7 +57,7 @@ jobs:
           assert len(next(c for c in catalog['categories'] if c['id']=='infidelity')['questions'])==10
           assert len(json.loads(pathlib.Path('redflag-ai-lab/intimacy-knowledge-v1.json').read_text())['arcana'])==22
           assert b"'google/gemini-3-flash-preview'" in now
-          print('GUARD_OK only_faithful_uses_approved_flags_KB approved_prompt_frozen red_flags_frozen other_9_frozen',flush=True)
+          print('GUARD_OK only_faithful_points_and_fidelity_KB approved_prompt_frozen red_flags_frozen other_9_frozen',flush=True)
           PY
       - name: No-cost offline matrix check for all 366 calendar dates
         run: |
@@ -83,8 +83,10 @@ jobs:
             if($group['id']==='infidelity')foreach($group['questions'] as $question)
               if($question['id']==='faithful')$q=$question;
           if(!is_array($q))throw new RuntimeException('FAITHFUL_MISSING');
-          $kb=json_decode(file_get_contents(__DIR__.'/intimacy-knowledge-v1.json'),true,25,JSON_THROW_ON_ERROR);
-          $positions=['loveHeart','center','tailFirst','left','top'];
+          $kb=json_decode(file_get_contents(__DIR__.'/infidelity-knowledge-v1.json'),true,25,JSON_THROW_ON_ERROR);
+          $positions=['loveHeart','left','top','tailSecond','bottom'];
+          $example=rfOwner31(15,7,1987);
+          foreach([5,15,7,8,11] as $i=>$n)if($example[$positions[$i]]!==$n)throw new RuntimeException('FAITHFUL_15071987_POINT_CHECK');
           $count=0;
           for($month=1;$month<=12;$month++)for($day=1;$day<=31;$day++){
             if(!checkdate($month,$day,2000))continue;
@@ -120,7 +122,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import pathlib,subprocess,ftplib,ssl,io,os,re,hashlib,time,uuid,urllib.request,urllib.error
-          base='f4ace88bd4dbbb48f7a3d8f572fe6ae8521fbb8d'
+          base='6c5ad2b2373600634c980a9366fb10c153882a41'
           api='redflag-ai-lab/style-test-api.php'
           marker=b'__CLOUDRU_KEY_BASE64__'
           old=subprocess.check_output(['git','show',base+':'+api])
@@ -165,7 +167,7 @@ jobs:
               masked,key=mask_secret(previous)
               if masked!=old:
                   if masked==desired:
-                      print('ALREADY_PUBLISHED_FAITHFUL_ONLY',flush=True)
+                      print('ALREADY_PUBLISHED_FAITHFUL_CORRECTED',flush=True)
                   else:
                       raise RuntimeError('LIVE_SOURCE_DRIFT_REFUSE_DEPLOYMENT')
               else:
@@ -177,14 +179,14 @@ jobs:
                   except ftplib.error_perm as e:
                       if not str(e).startswith('550'):raise
                   stamp=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+uuid.uuid4().hex[:8]
-                  write(backup+'/before-faithful-flag-broad-'+stamp+'.bak',previous,True)
+                  write(backup+'/before-faithful-fidelity-points-'+stamp+'.bak',previous,True)
                   if read(api)!=previous:raise RuntimeError('CONCURRENT_LIVE_CHANGE')
                   changed=True
                   write(api,patched)
                   if not health():raise RuntimeError('SITE_POSTCHECK_FAILED')
                   for p,h in protected_sha.items():
                       if hashlib.sha256(read(p)).digest()!=h:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
-                  print('FAITHFUL_ONLY_PUBLISHED editor_only=true question=faithful other_9_unchanged=true approved_flags_unchanged=true gemini3_unchanged=true paid_calls=0',flush=True)
+                  print('FAITHFUL_POINTS_PUBLISHED editor_only=true question=faithful other_9_unchanged=true approved_flags_unchanged=true gemini3_unchanged=true paid_calls=0',flush=True)
           except BaseException:
               if changed and previous is not None:
                   try:write(api,previous);print('ROLLBACK_FAITHFUL_API_OK',flush=True)
