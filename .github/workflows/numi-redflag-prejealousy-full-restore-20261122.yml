@@ -85,10 +85,20 @@ jobs:
           try:
               before={p:get(p) for p in files}
               masked,key=redact(before[php])
-              if masked not in [git(r,php) for r in (ref,prior,patched)]:
+              def historical_match(p,body):
+                  digest=subprocess.run(['git','hash-object','--stdin'],input=body,capture_output=True,check=True).stdout.decode().strip()
+                  history=subprocess.check_output(['git','log','--format=%H','--',p],text=True).splitlines()
+                  for h in history:
+                      blob=subprocess.check_output(['git','rev-parse',h+':'+p],text=True).strip()
+                      if digest==blob:
+                          print('LIVE_HISTORY_MATCH '+p+' '+h[:14]+' blob='+digest,flush=True)
+                          return True
+                  print('LIVE_HISTORY_NOT_FOUND '+p+' masked_blob='+digest+' history_count='+str(len(history)),flush=True)
+                  return False
+              if not historical_match(php,masked):
                   raise RuntimeError('UNKNOWN_LIVE_PHP_REFUSE_TO_OVERWRITE')
               for p in files[1:]:
-                  if before[p] not in [git(r,p) for r in (ref,prior,patched)]:
+                  if not historical_match(p,before[p]):
                       raise RuntimeError('UNKNOWN_LIVE_FILE_REFUSE_TO_OVERWRITE_'+p)
               wanted={p:pathlib.Path(p).read_bytes() for p in files}
               wanted[php]=wanted[php].replace(marker,key)
