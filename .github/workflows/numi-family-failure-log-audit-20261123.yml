@@ -1,0 +1,65 @@
+name: Audit REG RU family Gemini failures without API calls
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-family-failure-log-audit-20261123.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Inspect only FTP log directory metadata and redacted error codes
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,re,collections,datetime
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          domain='xn--c1adkkdfjbp1a4l.online'
+          dirs=[('home',home),('logs',home+'/logs'),('private',home+'/private'),('private/app',home+'/private/numi-account-20261031'),
+                ('www',home+'/www'),('webroot',home+'/www/'+domain),('webroot/logs',home+'/www/'+domain+'/logs')]
+          candidates=[]
+          for tag,path in dirs:
+            try:
+              entries=ftp.nlst(path)
+              parts=[x.rstrip('/').rsplit('/',1)[-1] for x in entries]
+              logs=[(part,entry) for part,entry in zip(parts,entries) if re.search(r'error|log|php|audit',part,re.I)]
+              print('LOG_DIR',tag,'entries',len(parts),'candidate_names',[a[:80] for a,_ in logs[:24]],flush=True)
+              for name,entry in logs:
+                if re.search(r'\.log$|error_log$|error\.txt$|php_error',name,re.I):
+                  candidates.append((tag,entry))
+            except ftplib.all_errors as e:
+              print('LOG_DIR_UNAVAILABLE',tag,type(e).__name__,flush=True)
+          for tag,path in candidates[:12]:
+            try:
+              v=io.BytesIO()
+              size=ftp.size(path)
+              if not isinstance(size,int) or size>5_000_000:
+                print('LOG_FILE_SKIPPED',tag,'size_too_large_or_unknown',flush=True)
+                continue
+              ftp.retrbinary('RETR '+path,v.write,blocksize=8192)
+              lines=v.getvalue().decode('utf-8','replace').splitlines()
+              matches=[x for x in lines if re.search(r'INTIMACY_PROVIDER|FAMILY_FREE|NUMI_OWNER_MATERIAL|FAMILY_',x)]
+              def classify(line):
+                m=re.search(r'INTIMACY_PROVIDER.*?"error"\s*:\s*"([A-Z0-9_]+)"',line)
+                if m:return 'provider:'+m.group(1)
+                if 'FAMILY_FREE_UNEXPECTED:' in line:return 'family_free_unexpected'
+                if 'FAMILY_FREE:' in line:
+                  m=re.search(r'FAMILY_FREE:([A-Z0-9_]+)',line)
+                  return 'family_free:'+m.group(1) if m else 'family_free_unclassified'
+                if 'NUMI_OWNER_MATERIAL:' in line:return 'owner_material_failure'
+                return 'other'
+              histogram=collections.Counter(map(classify,matches))
+              print('LOG_COUNTS',tag,'matched',len(matches),'last100',dict(histogram.most_common(20)),flush=True)
+            except ftplib.all_errors as e:
+              print('LOG_FILE_UNAVAILABLE',tag,type(e).__name__,flush=True)
+          ftp.quit()
+          PY
