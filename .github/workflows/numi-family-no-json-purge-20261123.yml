@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/numi-family-no-json-purge-20261123.yml
+      - .github/scripts/numi_family_no_json_purge_20261123.py
 permissions:
   contents: read
 concurrency:
