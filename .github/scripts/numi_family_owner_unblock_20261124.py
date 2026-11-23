@@ -17,7 +17,7 @@ assert b"FAMILY_OWNER_KNOWLEDGE_UNAVAILABLE" in after
 assert b"foKnowledge()" in after
 assert b"google/gemini-3-flash-preview" in after
 assert b"file_put_contents(" not in after and b"rename(" not in after
-assert b"ВТОРОЙ: примерно 600–700 знаков" in after
+assert "ВТОРОЙ: примерно 600–700 знаков".encode() in after
 assert b"function foFormatOwnerAnswer" in after
 lint=subprocess.run(["php","-l",API],capture_output=True)
 if lint.returncode:raise RuntimeError("PHP_LINT_FAILED "+lint.stderr.decode(errors='replace')[:400])
