@@ -62,6 +62,12 @@ function naRedFlagPaidStatus(mixed $status): bool {
     return in_array($status,['ready','complete'],true);
 }
 function naMaterialBuild(string $code,string $resource,?string $root=null): array {
+    // Native, cached, already-generated sexuality answer. Never call Gemini when
+    // displaying paid material; the wallet charge only follows generation success.
+    if($code==='redflag_question' && preg_match('/^redflag:intimacy:/D',$resource)===1){
+        require_once __DIR__.'/intimacy-live.php';
+        return niMaterialFromCache($resource);
+    }
     $sections=[];$title='';$links=[];
     if($code==='year_full'&&preg_match('/^year:(\d{4}):(\d{4}-\d{2}-\d{2})$/D',$resource,$match)){
         $year=(int)$match[1];$date=$match[2];if(!naCatalogDate($date))throw new RuntimeException('MATERIAL_NOT_READY');
