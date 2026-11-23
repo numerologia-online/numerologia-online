@@ -205,39 +205,25 @@ try {
     }
     if($question===null||count($next)<8)foReply(400,['ok'=>false,'error'=>'FAMILY_QUESTION_NOT_FOUND']);
     if(function_exists('set_time_limit'))@set_time_limit(125);
-    session_name('numi_family_owner_preview');
-    session_set_cookie_params(['secure'=>true,'httponly'=>true,'samesite'=>'Strict','path'=>'/redflag-ai-lab/']);
-    if(!session_start())throw new RuntimeException('FAMILY_PREVIEW_SESSION_UNAVAILABLE');
-    if(time()-(int)($_SESSION['last_generation']??0)<15)
-        foReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
-    $_SESSION['last_generation']=time();
-    // Do not hold the PHP session mutex across a slow Cloud.ru model call.
-    // This allows other editor requests to receive a prompt rate-limit result
-    // instead of waiting behind another AI call and timing out in the browser.
-    session_write_close();
+    // Owner-only test runs only when its button is pressed; no PHP session
+    // lock or shared 15s cooldown should block other manually selected questions.
     $payload=json_encode([
         'вопрос'=>$question['title'],
         'точный_фокус'=>foFocus()[$id],
         'пять_обязательных_позиций_по_приоритету'=>foBrief($id,$day,$month,$year),
         'следующие_вопросы_на_выбор'=>$next
     ],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
-    try {
-        $answer=niCloudCall([
-            ['role'=>'system','content'=>foPrompt()],
-            ['role'=>'user','content'=>$payload]
-        ],2800,'google/gemini-3-flash-preview');
-        $answer=foFormatOwnerAnswer($answer,$next);
-    }catch(Throwable $e){
-        unset($_SESSION['last_generation']);
-        throw $e;
-    }finally{if(session_status()===PHP_SESSION_ACTIVE)session_write_close();}
+    $answer=niCloudCall([
+        ['role'=>'system','content'=>foPrompt()],
+        ['role'=>'user','content'=>$payload]
+    ],2800,'google/gemini-3-flash-preview');
+    $answer=foFormatOwnerAnswer($answer,$next);
     foReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
         'category'=>'family','question_id'=>$id,'date_key'=>$day.'-'.$month,
         'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);
 } catch(JsonException|InvalidArgumentException $e) {
     foReply(400,['ok'=>false,'error'=>'INVALID_FAMILY_REQUEST']);
 } catch(Throwable $e) {
-    if(session_status()===PHP_SESSION_ACTIVE){unset($_SESSION['last_generation']);session_write_close();}
     error_log('FAMILY_OWNER_PREVIEW_FAIL '.(preg_match('/\A[A-Z][A-Z0-9_]{2,70}\z/',$e->getMessage())?$e->getMessage():'INTERNAL_ERROR'));
     foReply(503,['ok'=>false,'error'=>'GENERATION_UNAVAILABLE']);
 }
