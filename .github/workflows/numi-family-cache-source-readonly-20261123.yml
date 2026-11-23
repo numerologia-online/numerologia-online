@@ -1,0 +1,54 @@
+name: Audit screenshot Family 15-07-1987 cached answer - READ ONLY
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-family-cache-source-readonly-20261123.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Inspect existing single answer for given screenshot, no writes, no AI
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,json,hashlib
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          private=home+'/private/numi-account-20261031/'
+          base=private+'family-answer-cache/independent-19870715'
+          flavors=['-family-rebuilt-v9.json','-family-precise-v8.json','-family-conversational-v7.json','-family-punch-v6.json','-family-ideal-synthesis-v5.json','-family-focused-v4.json','-family-focused-v3.json','-family-kb-v2.json','-nokb-v1.json']
+          targets=[('live_php',private+'family-live.php')]+[(suffix,base+suffix) for suffix in flavors]
+          try:
+            for label,path in targets:
+              buff=io.BytesIO()
+              try: ftp.retrbinary('RETR '+path,buff.write)
+              except ftplib.error_perm as e:
+                if str(e).startswith('550'):
+                  print('CACHE_AUDIT',label,'MISSING',flush=True)
+                  continue
+                raise
+              body=buff.getvalue()
+              if label=='live_php':
+                print('CACHE_AUDIT',label,'PRESENT','paused=',b"return false;" in body,'has_cache_v9=',b'-family-rebuilt-v9.json' in body,flush=True)
+                continue
+              obj=json.loads(body)
+              ans=obj.get('answer','')
+              phrases=['Перед тобой абсолютно самостоятельный игрок','настоящий достигатор','мощным внутренним ресурсом','расчетливый стратег','расчётливый стратег','предъявить счет','предъявить счёт']
+              print('CACHE_AUDIT',label,'PRESENT','sha256=',hashlib.sha256(body).hexdigest()[:16],
+                'version=',obj.get('version'),'question=',obj.get('question'),
+                'date=',obj.get('date'),'chars=',len(ans),
+                'screenshot_matches=',[(p,p.lower() in ans.lower()) for p in phrases],
+                flush=True)
+          finally:
+            try:ftp.quit()
+            except BaseException:ftp.close()
+          PY
