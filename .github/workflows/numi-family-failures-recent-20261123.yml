@@ -1,0 +1,71 @@
+name: Read-only recent Family failure codes from REG RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-family-failures-recent-20261123.yml
+permissions:
+  contents: read
+jobs:
+  recent-errors:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Read redacted current error and access log counters with zero Gemini calls
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,re,collections,json
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          domain='xn--c1adkkdfjbp1a4l.online'
+          def log(name):
+              p=home+'/logs/'+domain+'.'+name+'.log'
+              ftp.voidcmd('TYPE I')
+              size=ftp.size(p)
+              print('FILE_SIZE',name,size,flush=True)
+              if size>3000000:raise RuntimeError('LOG_TOO_LARGE')
+              buffer=io.BytesIO()
+              ftp.retrbinary('RETR '+p,buffer.write)
+              return buffer.getvalue().decode('utf-8','replace').splitlines()
+          errors=log('error')
+          counts=collections.Counter()
+          recent=[]
+          for line in errors:
+              if not re.search(r'FAMILY_|INTIMACY_PROVIDER|NUMI_OWNER_MATERIAL|REAL_MATERIAL_NOT_READY',line):continue
+              match=re.search(r'FAMILY_PROVIDER\s+(\{.+\})',line)
+              if match:
+                  try:
+                      o=json.loads(match.group(1)); key='FAMILY_PROVIDER_'+str(o.get('error'))
+                      if o.get('error')=='PROVIDER_OUTPUT_LIMIT':
+                          key+='_reasoning_tokens_'+str(o.get('reasoning_tokens'))
+                  except Exception:key='FAMILY_PROVIDER_UNPARSEABLE'
+              else:
+                  m=re.search(r'FAMILY_FREE(?:_UNEXPECTED)?:([A-Z0-9_]+)',line)
+                  if m:key='FAMILY_FREE_'+m.group(1)
+                  elif 'NUMI_OWNER_MATERIAL:' in line:key='OWNER_MATERIAL_EXCEPTION'
+                  elif 'INTIMACY_PROVIDER' in line:
+                      m=re.search(r'"error":"([A-Z0-9_]+)"',line);key='INTIMACY_PROVIDER_'+m.group(1) if m else 'INTIMACY_UNKNOWN'
+                  else:key='OTHER_FAMILY'
+              counts[key]+=1
+              timestamp=re.search(r'\[(.*?)\]',line)
+              recent.append((timestamp.group(1) if timestamp else '?',key))
+          print('FAMILY_ERROR_COUNTS',json.dumps(counts,ensure_ascii=False),flush=True)
+          print('FAMILY_ERROR_LATEST_40',json.dumps(recent[-40:],ensure_ascii=False),flush=True)
+          access=log('access')
+          relevant=[line for line in access if 'numi-family-free.php' in line or 'numi-owner-material.php' in line]
+          tail=relevant[-100:]
+          summary=collections.Counter()
+          for line in tail:
+              m=re.search(r'"(?:GET|POST)\s+(\S+?)\s+HTTP/[^"]+"\s+(\d{3})\s',line)
+              if m:
+                  kind='free' if 'numi-family-free' in m.group(1) else 'owner'
+                  summary[kind+'_'+m.group(2)]+=1
+          print('FAMILY_ACCESS_LATEST_100_COUNTERS',json.dumps(summary),flush=True)
+          ftp.quit()
+          PY
