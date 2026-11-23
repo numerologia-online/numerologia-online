@@ -24,7 +24,7 @@ added={
 paths={**added,**existing}
 # Only the changes in this commit are ever deployed. Never overwrite unrelated live drift.
 new={p:pathlib.Path(p).read_bytes() for p in paths}
-old={p:subprocess.check_output(['git','show','HEAD^:'+p]) for p in existing}
+old={p:subprocess.check_output(['git','show','698271621106775c0a7f19f937ed794e7c2518f7:'+p]) for p in existing}
 for p in [p for p in paths if p.endswith('.php')]:
  proc=subprocess.run(['php','-l'],input=new[p],capture_output=True)
  if proc.returncode:raise RuntimeError('LOCAL_PHP_LINT_FAILED_'+p)
