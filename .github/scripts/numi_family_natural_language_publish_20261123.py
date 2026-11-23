@@ -22,7 +22,7 @@ for item in ['-family-conversational-v7.json','-family-punch-v6.json',
              'google/gemini-3-flash-preview','CURLOPT_TIMEOUT=>95']:
     assert item.encode() in source,'MISSING_PROTECTED_REFERENCE'
 assert source.count(b"'max_tokens'=>$tokens")==1
-assert b"'полная_рассчитанная_матрица_для_контекста'" not in source
+assert 'полная_рассчитанная_матрица_для_контекста'.encode('utf-8') not in source
 assert b'50/50' not in source
 assert b"'-family-conversational-v7.json'" in source
 lint=subprocess.run(['php','-l'],input=source,capture_output=True)

@@ -1,4 +1,4 @@
-name: Publish family natural language and deduped arcana to REG RU
+name: Publish family natural language and deduped arcana to REG RU (fixed Python)
 on:
   push:
     branches: [main]
