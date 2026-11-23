@@ -59,7 +59,19 @@ async function verifyOwnerDraftAccess(){
     const data=await response.json();
     if(data?.ok!==true||data?.owner!==true||data?.draft_only!==true)return;
     ownerDraftAccess=true;
-    if(redFlag.classList.contains("is-active"))renderCategories();
+    // If a free answer loaded before owner verification, discard that static
+    // response and load the same question through the owner Gemini route.
+    const intimacy=categoryStates.get("intimacy");
+    const fireOpen=Boolean(intimacy?.expanded&&intimacy?.activeQuestionId==="fire");
+    intimacy?.answers.delete("fire");
+    intimacy?.answerErrors.delete("fire");
+    if(redFlag.classList.contains("is-active")){
+      renderCategories();
+      if(fireOpen){
+        const fire=intimacy?.questions?.find(item=>item.id==="fire");
+        if(fire)ensureAnswer(fire,intimacy,{forceNew:true});
+      }
+    }
   }catch(_){/* Unverified users never see draft generation. */}
 }
 window.addEventListener("numi:account-session-changed",()=>{
