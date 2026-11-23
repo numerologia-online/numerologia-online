@@ -1,4 +1,4 @@
-name: Targeted Family regression correction - restore humor and clarify arcana 15
+name: Targeted Family regression correction - restore humor and clarify arcana 15 (static fix)
 on:
   push:
     branches: [main]

@@ -29,7 +29,7 @@ for needed in ['-family-precise-v8.json','-family-conversational-v7.json',
     assert needed.encode() in source,needed
 assert b'50/50' not in source
 assert source.count(b"'max_tokens'=>$tokens")==1
-assert b"'полная_рассчитанная_матрица_для_контекста'" not in source
+assert 'полная_рассчитанная_матрица_для_контекста'.encode('utf-8') not in source
 assert b"'-family-precise-v8.json'" in source
 assert b"'independent'=>['left','top','center','bottom']" in source
 assert b"'household'=>['left','top','center','rightNear']" in source
