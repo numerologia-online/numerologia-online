@@ -1,0 +1,47 @@
+name: Publish native full intimacy AI for 10 questions to REG RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-intimacy-full-site-publish-20261123.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate PHP and JS without AI requests
+        run: |
+          set -euo pipefail
+          php -l account-service/private/intimacy-live.php
+          php -l account-service/private/fulfillment.php
+          php -l account-service/private/wallet-real-payment.php
+          php -l account-service/public/numi-intimacy-free.php
+          php -l account-service/public/numi-owner-material.php
+          node --check redflag-feature.js
+          node --check app.js
+          python3 -m py_compile .github/scripts/numi_intimacy_full_site_publish_20261123.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          kb=json.loads(Path('account-service/private/intimacy-live-knowledge.json').read_text())
+          qs=json.loads(Path('account-service/private/intimacy-live-questions.json').read_text())
+          private=json.loads(Path('account-service/private/redflag-catalog.json').read_text())
+          assert len(kb['arcana'])==22 and len(qs['questions'])==10
+          assert [x['id'] for x in qs['questions']]==list(private['questions']['intimacy'])
+          assert private['questions']['intimacy']['fire']['free'] is True
+          assert sum(v['ready'] for v in private['questions']['intimacy'].values())==10
+          print('TEN_QUESTIONS_MAPPED, PAID_AI_CALLS=0',flush=True)
+          PY
+      - name: Guarded REG RU production deployment
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi_intimacy_full_site_publish_20261123.py
