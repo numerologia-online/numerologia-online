@@ -223,47 +223,47 @@
       "her-pleasure": {
         "tier": 10,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "pace": {
         "tier": 10,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "desire-talk": {
         "tier": 29,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "tenderness": {
         "tier": 29,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "boundaries": {
         "tier": 29,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "closeness": {
         "tier": 29,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "initiative": {
         "tier": 49,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "compatibility": {
         "tier": 49,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "after": {
         "tier": 49,
         "free": false,
-        "ready": false
+        "ready": true
       }
     },
     "family": {
