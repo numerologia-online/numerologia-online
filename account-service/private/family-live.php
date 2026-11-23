@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * Family and household: Gemini 3 Flash grounded in an owner-approved short 22-arcana family bank.
+ * Family and household: Gemini 3 Flash: a fresh, question-centered 22-arcana Family bank and dialogue adapted from working Intimacy.
  * Reuses approved 31-point arithmetic and the existing family-only transport/validation.
  */
 require_once __DIR__.'/intimacy-live.php';
@@ -26,7 +26,7 @@ function nfSupportedPaidResource(string $code,string $resource): bool {
 function nfEngineInstalled(): bool {
     if(!is_file(__DIR__.'/family-live.php') || !is_file(__DIR__.'/family-live-questions.json')
        || !is_file(__DIR__.'/family-live-followups.json') || !is_file(__DIR__.'/intimacy-live-config.php')
-       || !is_file(__DIR__.'/family-live-knowledge.txt'))
+       || !is_file(__DIR__.'/family-live-knowledge-v2.json'))
         return false;
     $config=require __DIR__.'/intimacy-live-config.php';
     return is_array($config)&&is_string($config['cloudru_key']??null)
@@ -52,24 +52,23 @@ function nfPointTitles(): array {
     ];
 }
 function nfQuestionPoints(string $id): array {
-    // The whole matrix is calculated, but only four RELEVANT perspectives are
-    // supplied. A conclusion is synthesized rather than listing six types.
+    // Same 31-point calculation as the working Intimacy block.
+    // Five question-specific roles; day and month remain visible as distinct inputs.
     $maps=[
-      'independent'=>['left','top','center','bottom'],
-      'household'=>['left','top','center','rightNear'],
-      'vacation'=>['left','top','topLeft','bottomLeft'],
-      'plans'=>['left','top','right','bottomRight'],
-      'children'=>['left','top','loveHeart','bottom'],
-      'roles'=>['left','top','center','loveHeart'],
-      'home'=>['left','top','loveHeart','bottom'],
-      'conflict'=>['left','top','center','tailFirst'],
-      'money-at-home'=>['left','top','moneyPoint','bottomRight'],
-      'care'=>['left','top','loveHeart','rightNear']
+      'independent'=>['left','top','right','bottom','tailSecond'],
+      'household'=>['left','top','wellbeing','bottom','rightNear'],
+      'vacation'=>['left','top','topLeft','bottomLeft','right'],
+      'plans'=>['left','top','right','bottomRight','tailSecond'],
+      'children'=>['left','top','loveHeart','bottom','tailFirst'],
+      'roles'=>['left','top','center','loveHeart','right'],
+      'home'=>['left','top','loveHeart','bottom','bottomLeft'],
+      'conflict'=>['left','top','center','tailFirst','bottomRight'],
+      'money-at-home'=>['left','top','moneyPoint','rightNear','bottomRight'],
+      'care'=>['left','top','loveHeart','wellbeing','rightNear']
     ];
     if(!isset($maps[$id]))throw new RuntimeException('FAMILY_QUESTION_MAP_MISSING');
     return $maps[$id];
 }
-
 /**
  * Family-only provider transport: accept raw Gemini text before enforcing formatting.
  * Other categories retain their original niCloudCall/niValidateGeneratedText.
@@ -189,24 +188,24 @@ function nfRestoreTwoParagraphs(string $text): string {
 function nfFamilyKnowledge(): array {
     static $knowledge=null;
     if($knowledge!==null)return $knowledge;
-    $raw=@file_get_contents(__DIR__.'/family-live-knowledge.txt');
-    if(!is_string($raw)||mb_strlen($raw,'UTF-8')>5000)
-        throw new RuntimeException('FAMILY_KB_MISSING_OR_TOO_LONG');
-    $lines=preg_split('/\R/u',trim($raw));
-    if(!is_array($lines)||count($lines)!==22)throw new RuntimeException('FAMILY_KB_22_INVALID');
-    $parsed=[];
-    foreach($lines as $line){
-        $fields=explode('|',trim($line));
-        if(count($fields)!==3||!ctype_digit($fields[0])||trim($fields[1])===''||trim($fields[2])==='')
-            throw new RuntimeException('FAMILY_KB_ENTRY_INVALID');
-        $number=(int)$fields[0];
-        if($number<1||$number>22||isset($parsed[(string)$number]))
-            throw new RuntimeException('FAMILY_KB_NUMBER_INVALID');
-        $parsed[(string)$number]=['plus'=>trim($fields[1]),'minus'=>trim($fields[2])];
+    $raw=@file_get_contents(__DIR__.'/family-live-knowledge-v2.json');
+    if(!is_string($raw)||strlen($raw)>32000)
+        throw new RuntimeException('FAMILY_KB_UNAVAILABLE');
+    $data=json_decode($raw,true,30,JSON_THROW_ON_ERROR);
+    if(!is_array($data)||($data['schema']??null)!=='numi-family-question-synthesis-v1'
+       ||count($data['arcana']??[])!==22)
+        throw new RuntimeException('FAMILY_KB_22_INVALID');
+    $items=$data['arcana'];
+    for($i=1;$i<=22;$i++){
+        $a=$items[(string)$i]??null;
+        if(!is_array($a))throw new RuntimeException('FAMILY_KB_INCOMPLETE');
+        foreach(['core','plus','minus','family'] as $field){
+            if(!is_string($a[$field]??null)||trim($a[$field])===''
+               ||mb_strlen($a[$field],'UTF-8')>380)
+                throw new RuntimeException('FAMILY_KB_ENTRY_INVALID');
+        }
     }
-    for($i=1;$i<=22;$i++)if(!isset($parsed[(string)$i]))
-        throw new RuntimeException('FAMILY_KB_INCOMPLETE');
-    return $knowledge=$parsed;
+    return $knowledge=$items;
 }
 
 /**
@@ -241,8 +240,8 @@ function nfFitFamilyAnswerLength(string $text): string {
  */
 function nfQuestionFocus(string $id): string {
     $focus=[
-      'independent'=>'Отвечай: насколько сам принимает решения и умеет себя обеспечивать без маминой опеки и чужого обслуживания. Не делай вывода о бытовой самостоятельности только из напора, сильных желаний или независимого характера. Не выдумывай зависимость от матери без основания. Покажи одну точную форму поведения.',
-      'household'=>'Отвечай: сам готовит, моет, убирает, замечает беспорядок или ждёт обслуживания? Умение организовать ремонт не равно ежедневной хозяйственности.',
+      'independent'=>'Ответь о реальной самостоятельности: решения без маминого согласования, ответственность за повседневную жизнь, способность решить свои вопросы без опеки. Не считай харизму, напор или амбиции доказательством зрелости.',
+      'household'=>'Ответь о регулярных домашних делах: видит ли, что надо сделать, берётся ли сам, или ждёт, что кто-нибудь всё устроит. Не подменяй хозяйственность планами большого ремонта.',
       'vacation'=>'Отвечай: приятно ли именно путешествовать вместе? Кто планирует дорогу, чемоданы, билеты; как переносит задержки, перемены и неудобства.',
       'plans'=>'Отвечай: доводит ли обещанное до результата? Покажи, что происходит от слов и инициативы до выполнения и напоминаний.',
       'children'=>'Отвечай: готов ли участвовать именно в повседневной заботе о ребёнке, а не просто любить детей, развлекать их или зарабатывать.',
@@ -293,20 +292,25 @@ function nfSummarizePointsForQuestion(string $id,array $matrix,array $titles,arr
         if(!isset($matrix[$key],$titles[$key]))
             throw new RuntimeException('FAMILY_MATRIX_POINT_MISSING');
         $code=(string)$matrix[$key];
-        $traits=$kb[$code]??null;
-        if(!is_array($traits))
-            throw new RuntimeException('FAMILY_KB_POSITION_MISSING');
+        $a=$kb[$code]??null;
+        if(!is_array($a))throw new RuntimeException('FAMILY_KB_POSITION_MISSING');
         if(isset($seen[$code])){
-            $selected[$seen[$code]]['роль'].='; '.$titles[$key];
+            // Same symbol at two positions: preserve both roles without repeating
+            // a negative thesis twice or treating it as two different character defects.
+            $selected[$seen[$code]]['роль_точки'].='; '.$titles[$key];
             continue;
         }
         $seen[$code]=count($selected);
-        $selected[]=['роль'=>$titles[$key],
-            'плюс'=>$traits['plus'],'минус'=>$traits['minus']];
+        $selected[]=[
+            'роль_точки'=>$titles[$key],
+            'ведущий_мотив'=>$a['core'],
+            'сильная_сторона'=>$a['plus'],
+            'теневая_сторона'=>$a['minus'],
+            'в_семье'=>$a['family']
+        ];
     }
     return $selected;
 }
-
 function nfGenerateText(array $question,int $day,int $month,int $year): string {
     $id=$question['id'];
     $matrix=ni31($day,$month,$year);
@@ -333,26 +337,24 @@ function nfGenerateText(array $question,int $day,int $month,int $year): string {
     $followups=array_values($unique);
     if(count($followups)<65)throw new RuntimeException('FAMILY_FOLLOWUPS_NOT_READY');
     $system=<<<'PROMPT'
-Ты опытный нумеролог Матрицы судьбы (22 Старших аркана), пишешь женщине о мужчине. Это раздел «Семья и быт». Отвечай на ОДИН заданный вопрос, не на всю жизнь мужчины.
+Ты опытный нумеролог системы 22 энергий. Пишешь женщине о мужчине в разделе «Семья и быт». Отвечай только на один заданный вопрос, не составляй общий портрет его личности.
 
-У тебя НЕТ готовых выводов или банка готовых ответов. Сайт уже математически рассчитал полную матрицу мужчины. Ты получаешь только ПОНЯТНЫЕ СЛОВЕСНЫЕ ХАРАКТЕРИСТИКИ нескольких значимых для этого вопроса позиций из нашей базы знаний, без номеров и названий арканов. Объединяй именно эти характеристики, ничего не пересчитывай. Нельзя переносить формулировки из технических данных в клиентский текст.
+Сайт уже рассчитал полную матрицу по дню, месяцу и году рождения. Тебе переданы словесные трактовки пяти подходящих к вопросу позиций. Сопоставь не менее трёх разных смысловых влияний. Выбери один главный вывод по ЭТОМУ вопросу и покажи, как остальные его усиливают, меняют или ограничивают. Если символ повторяется, это не дополнительное доказательство худшей черты. Это символические возможные склонности, а не установленные поступки человека. Не делай одинаковые выводы для всех дат.
 
-Перед тем как писать, самостоятельно сопоставь полученные характеристики, выбери ОДНУ ведущую склонность именно для этого вопроса и уточни, как остальные действительно меняют её проявление. Одинаковая трактовка в нескольких расчётных позициях уже объединена сайтом: её повторение НЕ даёт основания преувеличивать минус. Не распределяй влияние по процентам, не перечисляй по очереди все плюсы и минусы. Дополнительные позиции нужны для уточнения, а не для навешивания новых ярлыков. Не выбирай самую неприятную характеристику только потому, что она звучит эффектно. Позитивный вывод может быть главным без обязательного «но он всё равно ужасный». Если склонности противоречат, покажи одну понятную вероятную форму поведения, а не выдуманную трагедию. Для разных дат и вопросов меняй сам вывод, а не только слова.
+СТИЛЬ: две взрослые подруги обсуждают мужчину без стеснения, с юмором и характером. Пиши живо, просто, нагло и наблюдательно, как подруга, которая замечает мужские выкрутасы и с удовольствием их разоблачает. Можно быть ехидной, мягкой или восторженной, когда этого заслуживает сочетание. Пусть читательница узнаёт обычные жизненные ситуации и иногда невольно улыбается: «Господи, да это же про него!» Короткая меткая подколка лучше красивой лекции. Не вставляй шутку механически и не превращай мужчину в негодяя ради эффектного финала. Роскошь, комфорт и желание, чтобы его обслуживали, могут быть частью трактовки, если они действительно вытекают из характеристик, но это не универсальный сюжет.
 
-Не дипломатничай там, где характеристики указывают на конкретную бытовую слабость. Лень, безответственность, инфантильность, перекладывание обязанностей, мелочные придирки и стремление распоряжаться чужими делами называй прямо, если это соответствует сочетанию. Но не делай мужчину жёстким, ленивым или властным автоматически. Если сочетание указывает на самостоятельность, заботу, расчётливость, гибкость или хозяйственность, говори это уверенно, не выдумывай недостатки для равновесия. Это символические возможные склонности, не проверенные факты.
+ВАЖНО: исходные трактовки являются смыслами, а не готовыми фразами для ответа. Не повторяй их дословно. Не устраивай театральных монологов и не выдумывай управленческие должности, богатство, зависимость от матери или домашнюю тиранию, если исходные смыслы к этому не ведут. Инициативность не доказывает бытовую зрелость, любовь к порядку не означает лень, сильные желания не означают самостоятельность. Не смешивай разные вопросы в один. Чужую вину и ответственность не перекладывай на женщину.
 
-Пиши как умная, дерзкая, наблюдательная подруга, которая моментально замечает мужские уловки и умеет над ними посмеяться. Живо, остро, иногда едко, как в откровенном разговоре двух подруг, без литературных оборотов и вежливого психологического тумана. В ПЕРВОЙ ФРАЗЕ дай прямой, смелый ответ именно на поставленный вопрос. Затем два-три РАЗНЫХ конкретных поступка или реакции выбранного типажа и чем это оборачивается для женщины. Добавь ОДНУ короткую, неожиданную и смешную бытовую подколку, основанную на этих поступках, а не отдельную шутку ради шутки. В хорошем сочетании тоже шути доброжелательно, не делай мужчину отрицательным ради эффекта. Не переключайся на карьеру, характер вообще, весь жизненный путь или другие темы. Никаких размытых слов «парадоксальная натура», «серьёзный потенциал», «высокий статус» без ответа на вопрос. Не выбирай одну и ту же шутку о мужчине-командире, который сам не убирает: у разных сочетаний должны отличаться и вывод, и ситуация, и юмор.
+С ПЕРВОГО ПРЕДЛОЖЕНИЯ дай прямой ответ на вопрос. Затем покажи два-три разных узнаваемых проявления именно в этой ситуации: что он делает, как реагирует, что может упускать и почему женщине это важно. Если мужчина в этом сочетании заботливый, хозяйственный или надёжный, говори это уверенно и с живым юмором. Если увиливает, капризничает, давит или перекладывает обязанности, называй это прямо. Никакого расплывчатого рассуждения «с одной стороны, с другой стороны».
 
-Не бойся назвать неприятные проявления прямо, если они вытекают из переданных характеристик. Но никакой грубости к женщине, искусственного драматизма и обвинений без оснований. Никакой воды, пафоса, нравоучений, повторов или необязательных похвал. Не смягчай обоснованный вывод и не заставляй женщину отвечать за мужское поведение. Нельзя: «он не со зла», «это не злой умысел», «он просто такой», «ему нужно понять», «если ты умеешь объяснять», «на самом деле ему важно», «в целом», «зато». Не выдумывай уже совершённых поступков.
+ФОРМАТ: ровно два русских абзаца, вместе ориентировочно 850–1050 знаков. Первый, основной, около 680–850 знаков: ясный вывод и два-три конкретных примера, без повторов. Второй около 150–220 знаков: цепкая живая подводка к ОДНОМУ точному названию другого платного вопроса из переданного списка. Не отвечай на него заранее и не пиши рекламные заготовки. Если мысль закончена, не растягивай.
 
-ФОРМАТ. Ровно два абзаца, вместе ориентировочно 950–1200 знаков. Первый, основной, примерно 730–950 знаков: главный вывод, два-три РАЗНЫХ признака и конкретный риск или достоинство, без воды и повторов. Второй, примерно 150–230 знаков, это НЕ голая ссылка и НЕ пересказ названия. Он должен оставить лёгкое напряжение и вызвать желание открыть следующий вопрос. Напиши две-три живые фразы: сначала конкретная неожиданная зацепка, вытекающая именно из вывода ПЕРВОГО абзаца, затем поверни разговор к ДРУГОЙ стороне отношений, закончи ОДНИМ ТОЧНЫМ названием следующего платного вопроса из переданного списка. Не отвечай на следующий вопрос вместо того, чтобы заинтересовать. Не называй следующий вопрос случайно, выбирай содержательную связь. Избегай шаблонов «раз уж мы разобрались», «а теперь давай узнаем», «интересно, что будет дальше», «не менее важный вопрос», «следующий вопрос», «логично спросить». Каждая подводка должна быть самостоятельной, цепкой и отличаться от подводок к другим ответам. Если текст уже насыщен, не растягивай его ради количества знаков.
-
-Не называй покупательнице арканы, числа, энергии, дату, методику, внутренние расчёты или названия технических позиций. Нужны исключительно человеческие черты и поступки. НЕЛЬЗЯ ИСПОЛЬЗОВАТЬ ДЛИННОЕ ИЛИ СРЕДНЕЕ ТИРЕ: «—», «–», «―». Перестрой предложения через точку, двоеточие или союз. Вычитай собственный ответ перед отправкой. Без заголовков, списков и Markdown. Верни только два русских абзаца.
+Не упоминай числа, арканы, энергии, матрицу, названия точек или дату в готовом ответе. Не используй длинное и среднее тире «—», «–», «―». Без заголовков, списков и Markdown. Верни только два абзаца.
 PROMPT;
     $payload=json_encode([
       'вопрос'=>$question['title'],
       'фокус_ответа_не_отклоняться'=>nfQuestionFocus($id),
-      'смысловые_характеристики_без_повторов'=>$selected,
+      'трактовки_пяти_значимых_позиций'=>$selected,
       'точные_названия_для_перехода'=>$followups
     ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
     $text=nfFamilyAnswerCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$payload]],2800);
@@ -371,7 +373,7 @@ function nfCacheDirectory(): string {
 function nfCacheFile(string $id,string $date): string {
     if(!in_array($id,nfQuestionIds(),true)||naCatalogDate($date)===null)
         throw new InvalidArgumentException('FAMILY_INVALID_REQUEST');
-    return nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-family-precise-v8.json';
+    return nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-family-rebuilt-v9.json';
 }
 function nfCachedAnswer(string $id,string $date): ?string {
     return nfReadCachedAnswer(nfCacheFile($id,$date),$id,$date);
@@ -380,7 +382,7 @@ function nfCachedAnswer(string $id,string $date): ?string {
 function nfLegacyCachedAnswer(string $id,string $date): ?string {
     if(!in_array($id,nfQuestionIds(),true)||naCatalogDate($date)===null)return null;
     $prefix=nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date);
-    foreach(['-family-conversational-v7.json','-family-punch-v6.json','-family-ideal-synthesis-v5.json','-family-focused-v4.json','-family-focused-v3.json','-family-kb-v2.json','-nokb-v1.json'] as $suffix){
+    foreach(['-family-precise-v8.json','-family-conversational-v7.json','-family-punch-v6.json','-family-ideal-synthesis-v5.json','-family-focused-v4.json','-family-focused-v3.json','-family-kb-v2.json','-nokb-v1.json'] as $suffix){
         $answer=nfReadCachedAnswer($prefix.$suffix,$id,$date);
         if($answer!==null)return $answer;
     }
