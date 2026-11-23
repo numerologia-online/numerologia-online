@@ -24,7 +24,7 @@ assert b'nfFitFamilyAnswerLength(' in now
 assert b'nfTransientFamilyModelError(' in now
 assert b"'independent'=>['left','top','right','bottom','tailSecond']" in now
 assert b"'household'=>['left','top','wellbeing','bottom','rightNear']" in now
-assert b"'в_семье'=>$a['family']" in now
+assert "'в_семье'=>$a['family']".encode('utf-8') in now
 assert b'50/50' not in now
 assert 'Добавь ОДНУ короткую'.encode('utf-8') not in now
 import json

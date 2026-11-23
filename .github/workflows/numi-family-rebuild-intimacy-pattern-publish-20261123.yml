@@ -1,4 +1,4 @@
-name: Rebuild Family from approved Intimacy style - guarded REG RU release
+name: Rebuild Family from approved Intimacy style - guarded REG RU release (preflight fixed)
 on:
   push:
     branches: [main]
