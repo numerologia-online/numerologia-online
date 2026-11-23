@@ -1,0 +1,24 @@
+name: Publish ideal question-first Family synthesis to REG RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-family-ideal-synthesis-publish-20261123.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate narrow Family rewrite and publish only protected Family PHP
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi_family_ideal_synthesis_publish_20261123.py
