@@ -4,7 +4,7 @@ Remove ineffective session mutex and cooldown (manual owner only).
 """
 import os,ftplib,ssl,io,pathlib,subprocess,hashlib,urllib.request,urllib.error,time,uuid
 API="redflag-ai-lab/family-owner-preview-api.php"
-OLD="c2ff79814452baac4e01de81a9a91406e1ce4f5f^"
+OLD="3880ba51c0adbb5030fb6ceac243389370b363b9"
 before=subprocess.check_output(["git","show",OLD+":"+API])
 after=pathlib.Path(API).read_bytes()
 assert before!=after
