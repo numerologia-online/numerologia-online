@@ -29,7 +29,7 @@ for p in [p for p in paths if p.endswith('.php')]:
  proc=subprocess.run(['php','-l'],input=new[p],capture_output=True)
  if proc.returncode:raise RuntimeError('LOCAL_PHP_LINT_FAILED_'+p)
 for p in [p for p in paths if p.endswith('.js')]:
- proc=subprocess.run(['node','--check'],input=new[p],capture_output=True)
+ proc=subprocess.run(['node','--check','--input-type=module'],input=new[p],capture_output=True)
  if proc.returncode:raise RuntimeError('LOCAL_JS_CHECK_FAILED_'+p)
 for p in [p for p in paths if p.endswith('.json')]:
  json.loads(new[p])
@@ -105,7 +105,7 @@ try:
   proc=subprocess.run(['php','-l'],input=expected[p],capture_output=True)
   if proc.returncode:raise RuntimeError('DEPLOY_PHP_LINT_FAILED_'+p)
  for p in [x for x in paths if x.endswith('.js')]:
-  proc=subprocess.run(['node','--check'],input=expected[p],capture_output=True)
+  proc=subprocess.run(['node','--check','--input-type=module'],input=expected[p],capture_output=True)
   if proc.returncode:raise RuntimeError('DEPLOY_JS_CHECK_FAILED_'+p)
  if not healthy():raise RuntimeError('SITE_UNHEALTHY_PREFLIGHT')
  try:ftp.mkd(backups)
