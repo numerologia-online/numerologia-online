@@ -10,7 +10,7 @@ old=subprocess.check_output(["git","show",PRIOR+":"+TARGET])
 new=pathlib.Path(TARGET).read_bytes()
 a="День и месяц учитывай строго 50/50".encode()
 assert old.count(a)==1 and new.count(a)==0
-assert b"Все четыре остальные позиции" in new and b"Никаких процентов" in new
+assert "Все четыре остальные позиции".encode() in new and "Никаких процентов".encode() in new
 assert len(new)>len(old) and new.count(b"function nlGenerateText")==1
 lint=subprocess.run(["php","-l"],input=new,capture_output=True)
 if lint.returncode:raise RuntimeError("LANGUAGE_SYNTAX_INVALID")
