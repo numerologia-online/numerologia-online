@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 /**
- * Family and household: native Gemini 3 Flash with NO interpretive 22-arcana bank.
- * Reuses the approved private Cloud.ru transport, 31-point arithmetic and validation.
+ * Family and household: Gemini 3 Flash grounded in an owner-approved short 22-arcana family bank.
+ * Reuses approved 31-point arithmetic and the existing family-only transport/validation.
  */
 require_once __DIR__.'/intimacy-live.php';
 
@@ -25,7 +25,8 @@ function nfSupportedPaidResource(string $code,string $resource): bool {
 }
 function nfEngineInstalled(): bool {
     if(!is_file(__DIR__.'/family-live.php') || !is_file(__DIR__.'/family-live-questions.json')
-       || !is_file(__DIR__.'/family-live-followups.json') || !is_file(__DIR__.'/intimacy-live-config.php'))
+       || !is_file(__DIR__.'/family-live-followups.json') || !is_file(__DIR__.'/intimacy-live-config.php')
+       || !is_file(__DIR__.'/family-live-knowledge.txt'))
         return false;
     $config=require __DIR__.'/intimacy-live-config.php';
     return is_array($config)&&is_string($config['cloudru_key']??null)
@@ -181,14 +182,43 @@ function nfRestoreTwoParagraphs(string $text): string {
     return $first."\n\n".trim($last);
 }
 
+
+/** Author-approved plus/minus family tendencies, max 5000 Unicode characters total. */
+function nfFamilyKnowledge(): array {
+    static $knowledge=null;
+    if($knowledge!==null)return $knowledge;
+    $raw=@file_get_contents(__DIR__.'/family-live-knowledge.txt');
+    if(!is_string($raw)||mb_strlen($raw,'UTF-8')>5000)
+        throw new RuntimeException('FAMILY_KB_MISSING_OR_TOO_LONG');
+    $lines=preg_split('/\R/u',trim($raw));
+    if(!is_array($lines)||count($lines)!==22)throw new RuntimeException('FAMILY_KB_22_INVALID');
+    $parsed=[];
+    foreach($lines as $line){
+        $fields=explode('|',trim($line));
+        if(count($fields)!==3||!ctype_digit($fields[0])||trim($fields[1])===''||trim($fields[2])==='')
+            throw new RuntimeException('FAMILY_KB_ENTRY_INVALID');
+        $number=(int)$fields[0];
+        if($number<1||$number>22||isset($parsed[(string)$number]))
+            throw new RuntimeException('FAMILY_KB_NUMBER_INVALID');
+        $parsed[(string)$number]=['plus'=>trim($fields[1]),'minus'=>trim($fields[2])];
+    }
+    for($i=1;$i<=22;$i++)if(!isset($parsed[(string)$i]))
+        throw new RuntimeException('FAMILY_KB_INCOMPLETE');
+    return $knowledge=$parsed;
+}
+
 function nfGenerateText(array $question,int $day,int $month,int $year): string {
     $id=$question['id'];
     $matrix=ni31($day,$month,$year);
     $titles=nfPointTitles();
+    $kb=nfFamilyKnowledge();
     $selected=[];
     foreach(nfQuestionPoints($id) as $key){
         if(!isset($matrix[$key],$titles[$key]))throw new RuntimeException('FAMILY_MATRIX_POINT_MISSING');
-        $selected[]=['роль'=>$titles[$key],'число_аркана'=>$matrix[$key]];
+        $traits=$kb[(string)$matrix[$key]]??null;
+        if(!is_array($traits))throw new RuntimeException('FAMILY_KB_POSITION_MISSING');
+        $selected[]=['роль'=>$titles[$key],'число_аркана'=>$matrix[$key],
+            'плюс'=>$traits['plus'],'минус'=>$traits['minus']];
     }
     $raw=json_decode((string)file_get_contents(__DIR__.'/family-live-followups.json'),true,20,JSON_THROW_ON_ERROR);
     if(($raw['version']??null)!==1||count($raw['questions']??[])<65)
@@ -212,7 +242,7 @@ function nfGenerateText(array $question,int $day,int $month,int $year): string {
     $system=<<<'PROMPT'
 Ты опытный нумеролог, работающий с Матрицей судьбы по системе 22 Старших арканов. Ты говоришь с женщиной о конкретном мужчине. Раздел «Семья и быт»: взрослость, домашние дела, самостоятельность, дети, ответственность, деньги семьи, совместные решения и поведение в трудностях. Отвечай на ОДИН вопрос, а не составляй общий гороскоп или характеристику всей его жизни.
 
-Эксперимент БЕЗ НАШЕЙ БАЗЫ ТРАКТОВОК. Сайт уже математически рассчитал 31 позицию Матрицы судьбы из полной даты рождения. Тебе даны рассчитанные номера и смысл ролей наиболее важных для этого вопроса точек. САМОСТОЯТЕЛЬНО интерпретируй их в привычной системе 22 арканов: 8 это Справедливость, 11 это Сила, 22 это Шут. Никаких готовых авторских характеристик тебе не передано. Не пересчитывай и не изменяй числа; не смешивай с астрологией, жизненным путём из другой школы, MBTI и психологической диагностикой. Сначала сопоставь минимум три точки. ОБЯЗАТЕЛЬНО учитывай И ДЕНЬ, И МЕСЯЦ рождения как равноправные исходные влияния, а остальные точки используй для уточнения: почему он именно так действует. Выбери одну ведущую склонность; не выдавай шаблонный компромисс «может так, а может иначе». Не делай одинаковые выводы для разных дат и разных вопросов.
+Сайт уже рассчитал полную матрицу из 31 точки. Для каждой выбранной позиции переданы НАШИ АВТОРСКИЕ бытовые трактовки «плюс» и «минус». ОПИРАЙСЯ НА НИХ, НЕ подменяй общими или придуманными значениями арканов; не пересчитывай числа. ДЕНЬ и МЕСЯЦ учитывай строго 50/50, затем сопоставь минимум ДВЕ дополнительные точки. Сделай один конкретный вывод именно по заданному вопросу: как энергии взаимодействуют, усиливают, смягчают или меняют проявления друг друга. Плюс и минус не определяются автоматически по дате: покажи основной сценарий и его уязвимость без шаблонного «может так, может иначе». Не приписывай реальных поступков. Отличай руководить делами от делать их своими руками; любовь к детям от ежедневной заботы; грандиозные планы от выполненных обещаний; деньги от бытовой надёжности. Например, 15+7 способны активно руководить, не любя мыть посуду; 4+12 могут дать запущенный быт вопреки тяге четвёрки к порядку. Не делай одинаковых ответов для разных сочетаний.
 
 СТИЛЬ. Пиши как близкая умная подруга, которая видит суть и умеет говорить простым живым языком. Уверенно, наблюдательно, слегка дерзко, иногда с тонкой иронией и бытовым юмором, но не грубо и не зло. Твой ответ должен вызывать узнавание: «Вот это мой муж!», «Вот почему он так делает» или «Как хорошо, что я это узнала». Понятные бытовые поступки сильнее абстрактных черт. Не превращай текст в торжественную речь, литературный рассказ, рекламу или нравоучение. Запрещены завуалированные формулы «его пространство смыслов», «динамика системы», «внутренний ресурс», «путь осознанности», «он проживает сценарий». Говори по-человечески: кто закупает продукты, моет посуду, договаривается, выполняет обещания, не сбегает от трудных решений, участвует в заботе о ребёнке. Но эти примеры не надо перечислять механически, выбирай только действительно относящееся к вопросу.
 
@@ -243,10 +273,18 @@ function nfCacheDirectory(): string {
 function nfCacheFile(string $id,string $date): string {
     if(!in_array($id,nfQuestionIds(),true)||naCatalogDate($date)===null)
         throw new InvalidArgumentException('FAMILY_INVALID_REQUEST');
-    return nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-nokb-v1.json';
+    return nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-family-kb-v2.json';
 }
 function nfCachedAnswer(string $id,string $date): ?string {
-    $path=nfCacheFile($id,$date);
+    return nfReadCachedAnswer(nfCacheFile($id,$date),$id,$date);
+}
+/** Keep previously paid no-bank answers retrievable without re-billing. */
+function nfLegacyCachedAnswer(string $id,string $date): ?string {
+    if(!in_array($id,nfQuestionIds(),true)||naCatalogDate($date)===null)return null;
+    $path=nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-nokb-v1.json';
+    return nfReadCachedAnswer($path,$id,$date);
+}
+function nfReadCachedAnswer(string $path,string $id,string $date): ?string {
     if(!is_file($path))return null;
     $raw=file_get_contents($path);
     if(!is_string($raw)||strlen($raw)>12000)return null;
@@ -294,6 +332,7 @@ function nfMaterialFromCache(string $resource): array {
         throw new RuntimeException('MATERIAL_NOT_READY');
     preg_match('/^redflag:family:([a-z-]+):(\d{4}-\d\d-\d\d)$/D',$resource,$m);
     $answer=nfCachedAnswer($m[1],$m[2]);
+    if($answer===null)$answer=nfLegacyCachedAnswer($m[1],$m[2]);
     if($answer===null)throw new RuntimeException('MATERIAL_NOT_READY');
     $title='';
     foreach(nfQuestions() as $q)if($q['id']===$m[1]){$title=$q['title'];break;}
