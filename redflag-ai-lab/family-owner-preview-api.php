@@ -211,6 +211,10 @@ try {
     if(time()-(int)($_SESSION['last_generation']??0)<15)
         foReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
     $_SESSION['last_generation']=time();
+    // Do not hold the PHP session mutex across a slow Cloud.ru model call.
+    // This allows other editor requests to receive a prompt rate-limit result
+    // instead of waiting behind another AI call and timing out in the browser.
+    session_write_close();
     $payload=json_encode([
         'вопрос'=>$question['title'],
         'точный_фокус'=>foFocus()[$id],
