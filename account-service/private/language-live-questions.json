@@ -1,0 +1,65 @@
+{
+  "id": "language",
+  "questions": [
+    {
+      "id": "love-language",
+      "title": "На каком языке любви он вообще понимает чувства?",
+      "priceRub": 10,
+      "isFree": true
+    },
+    {
+      "id": "how-to-talk",
+      "title": "Как с ним говорить, чтобы не биться в стену?",
+      "priceRub": 10,
+      "isFree": false
+    },
+    {
+      "id": "accept-love",
+      "title": "Как он принимает любовь и заботу, чтобы не было мимо?",
+      "priceRub": 10,
+      "isFree": false
+    },
+    {
+      "id": "show-love",
+      "title": "Язык любви - как понять по поступкам, что у него есть чувства?",
+      "priceRub": 49,
+      "isFree": false
+    },
+    {
+      "id": "criticism",
+      "title": "Как он реагирует на критику и неудобную правду?",
+      "priceRub": 29,
+      "isFree": false
+    },
+    {
+      "id": "ask",
+      "title": "Как у него лучше просить, а не ждать телепатии?",
+      "priceRub": 29,
+      "isFree": false
+    },
+    {
+      "id": "distance",
+      "title": "Что делать, когда он отдаляется?",
+      "priceRub": 29,
+      "isFree": false
+    },
+    {
+      "id": "hurt",
+      "title": "Что его ранит сильнее всего в отношениях?",
+      "priceRub": 49,
+      "isFree": false
+    },
+    {
+      "id": "conflict-style",
+      "title": "Как не промахнуться с ним в конфликте?",
+      "priceRub": 49,
+      "isFree": false
+    },
+    {
+      "id": "compliment",
+      "title": "Какая поддержка для него правда работает?",
+      "priceRub": 49,
+      "isFree": false
+    }
+  ]
+}

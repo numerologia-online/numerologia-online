@@ -67,6 +67,11 @@ function naMaterialBuild(string $code,string $resource,?string $root=null): arra
         require_once __DIR__.'/family-live.php';
         return nfMaterialFromCache($resource);
     }
+    // Language of love is generated before charge; reads only completed cached answers.
+    if($code==='redflag_question' && preg_match('/^redflag:language:/D',$resource)===1){
+        require_once __DIR__.'/language-live.php';
+        return nlMaterialFromCache($resource);
+    }
     // Native, cached, already-generated sexuality answer. Never call Gemini when
     // displaying paid material; the wallet charge only follows generation success.
     if($code==='redflag_question' && preg_match('/^redflag:intimacy:/D',$resource)===1){

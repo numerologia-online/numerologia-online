@@ -327,47 +327,47 @@
       "how-to-talk": {
         "tier": 10,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "accept-love": {
         "tier": 10,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "show-love": {
         "tier": 49,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "criticism": {
         "tier": 29,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "ask": {
         "tier": 29,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "distance": {
         "tier": 29,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "hurt": {
         "tier": 49,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "conflict-style": {
         "tier": 49,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "compliment": {
         "tier": 49,
         "free": false,
-        "ready": false
+        "ready": true
       }
     },
     "verdict": {

@@ -520,55 +520,55 @@ export const PUBLIC_QUESTIONS = {
       "id": "how-to-talk",
       "title": "Как с ним говорить, чтобы не биться в стену?",
       "priceRub": 10,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "accept-love",
       "title": "Как он принимает любовь и заботу, чтобы не было мимо?",
       "priceRub": 10,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "show-love",
       "title": "Язык любви - как понять по поступкам, что у него есть чувства?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "criticism",
       "title": "Как он реагирует на критику и неудобную правду?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "ask",
       "title": "Как у него лучше просить, а не ждать телепатии?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "distance",
       "title": "Что делать, когда он отдаляется?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "hurt",
       "title": "Что его ранит сильнее всего в отношениях?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "conflict-style",
       "title": "Как не промахнуться с ним в конфликте?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "compliment",
       "title": "Какая поддержка для него правда работает?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     }
   ],
   "verdict": [

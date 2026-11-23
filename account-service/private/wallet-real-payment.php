@@ -507,6 +507,13 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     return nfSupportedPaidResource('redflag_question',(string)$item['resource_id'])
                         && nfEngineInstalled();
                 }
+                // Love Languages: quote checks only engine/ID, never calls Gemini.
+                if(($item['product_code']??null)==='redflag_question'
+                  &&str_starts_with((string)($item['resource_id']??''),'redflag:language:')){
+                    require_once __DIR__.'/language-live.php';
+                    return nlSupportedPaidResource('redflag_question',(string)$item['resource_id'])
+                        && nlEngineInstalled();
+                }
                 // Native Gemini fulfillment is generated on wallet_buy only.
                 // Quotes must never trigger a paid provider call.
                 if(($item['product_code']??null)==='redflag_question'
@@ -580,6 +587,13 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     return nfSupportedPaidResource('redflag_question',(string)$item['resource_id'])
                         && nfEngineInstalled();
                 }
+                // Love Languages: quote checks only engine/ID, never calls Gemini.
+                if(($item['product_code']??null)==='redflag_question'
+                  &&str_starts_with((string)($item['resource_id']??''),'redflag:language:')){
+                    require_once __DIR__.'/language-live.php';
+                    return nlSupportedPaidResource('redflag_question',(string)$item['resource_id'])
+                        && nlEngineInstalled();
+                }
                 // Native Gemini fulfillment is generated on wallet_buy only.
                 // Quotes must never trigger a paid provider call.
                 if(($item['product_code']??null)==='redflag_question'
@@ -605,6 +619,19 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     if(naRealWalletBalance($db,$account['id']) >= (int)$resolved['price_kopeks']){
                         if(function_exists('set_time_limit'))@set_time_limit(125);
                         nfEnsurePaidResource((string)$resolved['resource_id']);
+                    }
+                }
+            }
+            if(($resolved['product_code']??null)==='redflag_question'
+              &&str_starts_with((string)($resolved['resource_id']??''),'redflag:language:')){
+                require_once __DIR__.'/language-live.php';
+                naRealWalletRequireLive($config);
+                if(!nlEngineInstalled()||!nlSupportedPaidResource('redflag_question',(string)$resolved['resource_id']))
+                    throw new RuntimeException('REAL_MATERIAL_NOT_READY');
+                if(!naRealWalletHasAccess($db,$account,'redflag_question',(string)$resolved['resource_id'])){
+                    if(naRealWalletBalance($db,$account['id']) >= (int)$resolved['price_kopeks']){
+                        if(function_exists('set_time_limit'))@set_time_limit(125);
+                        nlEnsurePaidResource((string)$resolved['resource_id']);
                     }
                 }
             }

@@ -1,6 +1,6 @@
 // Red Flag deliberately needs only day and month, with no birth-year dependence.
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=family-nokb-live-20261123";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=language-live-20261123";
 
 // Paid content is rendered as text; do not interpret author-controlled paragraphs as HTML.
 const escapeMarkup = value => String(value??"").replace(/[&<>"']/g,char=>({
@@ -363,6 +363,37 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
     state.answerRequests.set(id,task);
     return;
   }
+  // Native FREE Gemini personal answer for Love Languages, including non-owners.
+  // Always return before the old generic public variants or draft-preview route.
+  if(question.isFree&&id==="love-language"&&state===categoryStates.get("language")){
+    const birth=parseRedFlagDate(birthDateInput.value);
+    if(!birth){state.answerErrors.set(id,"Укажи дату рождения мужчины.");return;}
+    const birthday=birth.year+"-"+String(birth.month).padStart(2,"0")+"-"+String(birth.day).padStart(2,"0");
+    const task=fetch("/api/numi-language-free.php",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({question_id:"love-language",birth_date:birthday}),
+      signal:AbortSignal.timeout(125000)
+    }).then(async response=>{
+      const data=await response.json();
+      if(!response.ok||data?.ok!==true||data?.free!==true||
+          data?.ai_generated!==true||data?.question_id!=="love-language"||
+          typeof data?.answer!=="string")throw new Error("LANGUAGE_FREE_UNAVAILABLE");
+      const paragraphs=data.answer.split(/\\n\\s*\\n/).map(part=>part.trim()).filter(Boolean);
+      if(paragraphs.length!==2)throw new Error("LANGUAGE_FREE_SHAPE");
+      if(profile!==activeProfile)return;
+      state.answers.set(id,{answer:data.answer,paragraphs});
+    }).catch(()=>{
+      if(profile===activeProfile)
+        state.answerErrors.set(id,redFlagLoadErrorCopy(true).text);
+    }).finally(()=>{
+      if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
+      if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
+        renderCategories({type:"question",id});
+    });
+    state.answerRequests.set(id,task);
+    return;
+  }
   // Native FREE Gemini answer for the first Family and Household question.
   if(question.isFree&&id==="independent"&&state===categoryStates.get("family")){
     const birth=parseRedFlagDate(birthDateInput.value);
@@ -499,9 +530,9 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
       renderCategories({type:"question",id});
     };
     const task=import("./wallet-client.js?v=redflag-buyer-message-20261122-v2").then(async ({showInlinePurchase,walletOwnerMaterial})=>{
-      // Family-only guard: owner material errors must NEVER be disguised as a wallet paywall.
+      // Family and Love Languages owner errors must NEVER be disguised as a wallet paywall.
       // All authorization still happens in the existing authenticated REG.RU endpoints.
-      if(category==="family"){
+      if(category==="family"||category==="language"){
         try{
           const ownerDoc=await walletOwnerMaterial(item);
           if(ownerDoc){
@@ -515,7 +546,7 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
             return;
           }
         }catch(error){
-          console.warn("Не удалось загрузить владельческий разбор семьи:",error);
+          console.warn("Не удалось загрузить владельческий разбор:",error);
           reportLoadError("not-charged");
           return;
         }
