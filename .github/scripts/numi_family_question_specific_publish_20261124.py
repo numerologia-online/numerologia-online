@@ -22,9 +22,9 @@ assert old_api.count(b"niCloudCall(")==new_api.count(b"niCloudCall(")==1
 assert b"google/gemini-3-flash-preview" in new_api
 assert b"naTestOwner(naCurrent(naDB()))" in new_api
 assert b"function foThemePoint()" in new_api
-assert b"Тематическая опора".decode().encode() in new_api
+assert "Тематическая опора".encode() in new_api
 assert b"FAMILY_OWNER_KNOWLEDGE_UNAVAILABLE" in new_api
-assert b"ВТОРОЙ, примерно 600".decode().encode() in new_api
+assert "ВТОРОЙ, примерно 600".encode() in new_api
 assert b"file_put_contents(" not in new_api and b"fopen(" not in new_api
 assert b"session_start(" not in new_api and b"WAIT_15_SECONDS" not in new_api
 assert "Пиши с эффектом остроумного разоблачения" in src
