@@ -6,7 +6,9 @@ oldrev='d21bfd3efc76302e34dd669866eedc8a14c93d9b^'
 previous=subprocess.check_output(['git','show',oldrev+':'+path])
 desired=pathlib.Path(path).read_bytes()
 def split_parts(raw):
-    pos=raw.index(b'   $followups=[];',raw.index(b'function niGenerateText('))
+    start=raw.index(b'function niGenerateText(')
+    label=b'   // Give Gemini only real catalogue items, not invented or unavailable upsells.'
+    pos=raw.index(label,start) if label in raw[start:] else raw.index(b'   $followups=[];',start)
     sys=raw.index(b"   $system=<<<'PROMPT'\n",pos)
     end=raw.index(b'\nPROMPT;',sys)+len(b'\nPROMPT;')
     return raw[:pos],raw[pos:sys],raw[sys:end],raw[end:]
