@@ -2,7 +2,7 @@
   "version": 1,
   "mode": "owner_draft_only",
   "keyRule": "day-month",
-  "questions": 57,
+  "questions": 56,
   "categories": [
     {
       "id": "flags",
@@ -100,10 +100,6 @@
       "id": "intimacy",
       "title": "Секс и близость",
       "questions": [
-        {
-          "id": "fire",
-          "title": "Сексуальный огонь или пять минут — и спасибо?"
-        },
         {
           "id": "her-pleasure",
           "title": "В близости думает о женщине или только любуется собой?"
