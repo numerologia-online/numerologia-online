@@ -97,8 +97,63 @@ function foPrompt(): string {
 
 С ПЕРВОЙ ФРАЗЫ прямо ответь на заданный вопрос. Затем раскрой 2–3 очень узнаваемых конкретных поступка и необычное противоречие сочетания. НЕ выдавай автоматически любую инициативность, силу, амбиции или любовь к комфорту за бытовую самостоятельность. Не сочиняй доказанные эпизоды из жизни конкретного человека. Пиши как очень умная, меткая и дерзкая подруга после маленького расследования: естественная разговорная речь, уместная ирония, смелость, юмор из реального смысла, никакой сухой методички, театрального выступления, мата и нравоучений. Не делай мужчину хорошим или плохим искусственно.
 
-Ровно два абзаца, вместе ориентировочно 900–1100 знаков. Первый главный, второй короткая естественная интрига к одному точному следующему вопросу из списка, не отвечай на него. Не раскрывай числа, арканы, энергии, дату рождения, расчёты и позиции. Никаких заголовков, списка, Markdown и длинных тире.
+ЖЁСТКИЙ ФОРМАТ: ровно два абзаца. ПЕРВЫЙ: 650–850 знаков, 4–6 коротких предложений. С первой фразы прямо ответь на вопрос, затем 2–3 конкретные бытовые реакции, одно точное остроумное наблюдение. Не повторяй одну мысль разными красивыми словами. ВТОРОЙ: только 130–210 знаков, одно-два коротких предложения. Это НЕ второй разбор и НЕ новый психологический портрет. Только любопытная подводка к одному другому вопросу из списка с его точным названием, без ответа на него. Вместе приблизительно 800–1050 знаков. Пиши простыми, ясными, живыми словами, как меткая подруга, которая с улыбкой раскусила привычку мужчины. Без витиеватых метафор, эпитетов ради эпитетов, канцелярита и бесконечных объяснений. НИКАКИХ длинных тире (—, –, ―): вместо них используй запятую, точку или двоеточие. Не раскрывай числа, арканы, энергии, дату рождения, расчёты и позиции. Никаких заголовков, списка и Markdown.
 PROMPT;
+}
+/**
+ * Only the editor's FAMILY preview is formatted here. It never writes JSON,
+ * does not call Gemini again, and never changes the numerology calculation.
+ */
+function foShortenCompleteSentences(string $paragraph,int $max): string {
+    $clean=trim(preg_replace('/\s+/u',' ',$paragraph)??$paragraph);
+    if(mb_strlen($clean,'UTF-8')<=$max)return $clean;
+    $parts=preg_split('/(?<=[.!?…])\s+/u',$clean,-1,PREG_SPLIT_NO_EMPTY);
+    $result='';
+    foreach(is_array($parts)?$parts:[] as $part){
+        $candidate=$result===''?$part:$result.' '.$part;
+        if(mb_strlen($candidate,'UTF-8')>$max)break;
+        $result=$candidate;
+    }
+    if(mb_strlen($result,'UTF-8')>=(int)($max*0.55))return $result;
+    // Very long single sentences: stop on a word boundary, not inside a word.
+    $slice=mb_substr($clean,0,$max-1,'UTF-8');
+    $space=mb_strrpos($slice,' ',0,'UTF-8');
+    if($space!==false&&$space>(int)($max*0.60))
+        $slice=mb_substr($slice,0,$space,'UTF-8');
+    return rtrim($slice," ,;:-\t\n").'.';
+}
+function foShortenTeaser(string $paragraph,array $next): string {
+    $clean=trim(preg_replace('/\s+/u',' ',$paragraph)??$paragraph);
+    if(mb_strlen($clean,'UTF-8')<=210)return $clean;
+    // Prefer the exact next-question title already chosen by Gemini.
+    $question=null;
+    foreach($next as $title)
+        if(is_string($title)&&mb_stripos($clean,$title,0,'UTF-8')!==false)
+            $question=$title;
+    if($question===null){
+        // Keep a natural question from the end if possible.
+        if(preg_match('/([^.!?]{15,125}\?)\s*$/u',$clean,$m))
+            $question=trim($m[1]);
+        else $question=(string)$next[0];
+    }
+    $sentences=preg_split('/(?<=[.!?…])\s+/u',$clean,-1,PREG_SPLIT_NO_EMPTY);
+    $opening=is_array($sentences)?trim($sentences[0]??''):'';
+    if($opening!=='' && mb_strlen($opening,'UTF-8')<=85 &&
+       !str_contains($opening,'?') &&
+       mb_strlen($opening.' '.$question,'UTF-8')<=210)
+        return $opening.' '.$question;
+    return 'А вот что ещё стоит проверить: '.$question;
+}
+function foFormatOwnerAnswer(string $answer,array $next): string {
+    $answer=trim(str_replace(["\r\n","\r"],"\n",$answer));
+    $paragraphs=preg_split('/\n\s*\n/u',$answer,-1,PREG_SPLIT_NO_EMPTY);
+    if(!is_array($paragraphs)||count($paragraphs)!==2)
+        throw new RuntimeException('FAMILY_PREVIEW_PARAGRAPHS_INVALID');
+    $first=foShortenCompleteSentences($paragraphs[0],850);
+    $second=foShortenTeaser($paragraphs[1],$next);
+    $result=$first."\n\n".$second;
+    // The original model sometimes ignores typography constraints.
+    return str_replace(['—','–','―'],'-',$result);
 }
 try {
     if(!naTestOwner(naCurrent(naDB())))foReply(403,['ok'=>false,'error'=>'OWNER_ONLY']);
@@ -143,6 +198,7 @@ try {
             ['role'=>'system','content'=>foPrompt()],
             ['role'=>'user','content'=>$payload]
         ],2800,'google/gemini-3-flash-preview');
+        $answer=foFormatOwnerAnswer($answer,$next);
     }catch(Throwable $e){
         unset($_SESSION['last_generation']);
         throw $e;
