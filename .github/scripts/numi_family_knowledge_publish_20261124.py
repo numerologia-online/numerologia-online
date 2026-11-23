@@ -19,6 +19,8 @@ assert old!=new
 assert source.count("niCloudCall(")==1
 assert source.count("foBrief(")==2
 assert "function foKnowledge(): array" in source
+assert "if(count($five)!==5||$matrix['left']!==ni22($day)||$matrix['top']!==$month)" in source
+assert "'энергия'=>$n" not in source
 assert "family-owner-knowledge-v1.txt" in source
 assert "ВТОРОЙ: примерно 600–700 знаков" in source
 assert "Пиши с эффектом остроумного разоблачения" in source
