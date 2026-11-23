@@ -500,6 +500,14 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             require_once __DIR__.'/fulfillment.php';
             $ready=static function(array $item):bool{
                 if(($item['kind']??null)==='subscription')return true;
+                // Native Gemini fulfillment is generated on wallet_buy only.
+                // Quotes must never trigger a paid provider call.
+                if(($item['product_code']??null)==='redflag_question'
+                  &&str_starts_with((string)($item['resource_id']??''),'redflag:intimacy:')){
+                    require_once __DIR__.'/intimacy-live.php';
+                    return niSupportedPaidResource('redflag_question',(string)$item['resource_id'])
+                        && niEngineInstalled();
+                }
                 try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}
                 catch(Throwable $e){return false;}
             };
@@ -558,9 +566,34 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             require_once __DIR__.'/fulfillment.php';
             $ready=static function(array $item):bool{
                 if(($item['kind']??null)==='subscription')return true;
+                // Native Gemini fulfillment is generated on wallet_buy only.
+                // Quotes must never trigger a paid provider call.
+                if(($item['product_code']??null)==='redflag_question'
+                  &&str_starts_with((string)($item['resource_id']??''),'redflag:intimacy:')){
+                    require_once __DIR__.'/intimacy-live.php';
+                    return niSupportedPaidResource('redflag_question',(string)$item['resource_id'])
+                        && niEngineInstalled();
+                }
                 try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}
                 catch(Throwable $e){return false;}
             };
+            // The user has pressed purchase. Check real balance and access
+            // before any provider call; generate and cache the finished answer
+            // BEFORE entering the existing atomic wallet debit transaction.
+            $resolved=naCatalogResolve($input,naRealWalletHasAccess($db,$account,'club_month','club'));
+            if(($resolved['product_code']??null)==='redflag_question'
+              &&str_starts_with((string)($resolved['resource_id']??''),'redflag:intimacy:')){
+                require_once __DIR__.'/intimacy-live.php';
+                naRealWalletRequireLive($config);
+                if(!niEngineInstalled()||!niSupportedPaidResource('redflag_question',(string)$resolved['resource_id']))
+                    throw new RuntimeException('REAL_MATERIAL_NOT_READY');
+                if(!naRealWalletHasAccess($db,$account,'redflag_question',(string)$resolved['resource_id'])){
+                    if(naRealWalletBalance($db,$account['id']) >= (int)$resolved['price_kopeks']){
+                        if(function_exists('set_time_limit'))@set_time_limit(125);
+                        niEnsurePaidResource((string)$resolved['resource_id']);
+                    }
+                }
+            }
             $result=naRealWalletBuy($db,$account,$config,$input,$key,$ready);
             naReply(200,array_merge(['ok'=>true,'test'=>false],$result));
         }
