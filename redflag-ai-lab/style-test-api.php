@@ -1147,6 +1147,7 @@ PROMPT;
 
 function rfOwnerSharpIntimacy(array $question,int $day,int $month,int $year,array $catalog): string {
    $maps=[
+     'fire'=>['left','top','loveHeart','center','tailFirst'],
      'her-pleasure'=>['left','loveHeart','center','top','tailFirst'],
      'pace'=>['left','right','center','tailFirst','loveHeart'],
      'desire-talk'=>['top','center','left','loveHeart','tailSecond'],
