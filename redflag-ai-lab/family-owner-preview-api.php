@@ -20,6 +20,7 @@ function foMap(): array {
     // Exactly five relevant matrix positions. First is the LEADING birth-day,
     // second is the birth-month; ALL four other points alter the interpretation.
     return [
+      'independent'=>['left','top','right','bottom','tailSecond'],
       'household'=>['left','top','wellbeing','bottom','rightNear'],
       'vacation'=>['left','top','topLeft','bottomLeft','right'],
       'plans'=>['left','top','right','bottomRight','tailSecond'],
@@ -33,6 +34,7 @@ function foMap(): array {
 }
 function foFocus(): array {
     return [
+      'independent'=>'Отвечай об умении самому решать повседневные вопросы, не зависеть от мамы и отвечать за свои решения. Харизма, сила, деньги, напор и умение добиваться желаемого НЕ доказывают взрослую самостоятельность.',
       'household'=>'Отвечай именно о регулярной личной работе по дому. Не считай разовый ремонт, умение руководить, большой заработок и любовь к комфорту доказательствами хозяйственности.',
       'vacation'=>'Отвечай о поведении в поездке, планировании маршрута, задержках, решении дорожных проблем и умении дать женщине отдохнуть.',
       'plans'=>'Отвечай, доводит ли мужчина обещания до результата, а не насколько красиво он мечтает и убеждает.',
@@ -114,7 +116,8 @@ try {
        $year>(int)gmdate('Y')||!checkdate($month,$day,$year))
         foReply(400,['ok'=>false,'error'=>'INVALID_FAMILY_REQUEST']);
     $catalog=json_decode((string)file_get_contents(__DIR__.'/catalog.json'),true,20,JSON_THROW_ON_ERROR);
-    $question=null;$next=[];
+    $question=$id==='independent'?['id'=>'independent','title'=>'Самостоятельный мужчина или мамина корзиночка?']:null;
+    $next=[];
     foreach($catalog['categories'] as $section){
         foreach($section['questions'] as $q){
             if($section['id']==='family'&&$q['id']===$id)$question=$q;
