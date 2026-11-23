@@ -823,7 +823,9 @@ const createQuestion = (question, state) => {
       const editButton=document.createElement("button");
       editButton.type="button";
       editButton.textContent="Изменить текст";
-      for(const control of [saveButton,otherButton,keptButton,editButton]){
+      // Family editorial answers are ephemeral. No save or reload-from-file controls.
+      const familyEphemeral=state===categoryStates.get("family");
+      for(const control of (familyEphemeral?[otherButton,editButton]:[saveButton,otherButton,keptButton,editButton])){
         control.style.cssText="padding:9px 11px;border-radius:10px;border:1px solid #cdbdc4;background:#fff;color:#583851;font:600 13px/1.4 system-ui;";
         controls.append(control);
       }
