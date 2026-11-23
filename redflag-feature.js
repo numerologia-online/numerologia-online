@@ -46,7 +46,7 @@ const ownerDraftInScope=(question,state)=>{
   const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
   return Boolean(ownerDraftAccess&&redflagDraftSections.has(section)&&
     (question.isComingSoon||(section==="infidelity"&&question.id==="faithful")||
-     (section==="family"&&!question.isFree)));
+     section==="family"));
 };
 async function verifyOwnerDraftAccess(){
   if(ownerDraftAccessChecked)return;
@@ -396,7 +396,7 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
     return;
   }
   // Native FREE Gemini answer for the first Family and Household question.
-  if(question.isFree&&id==="independent"&&state===categoryStates.get("family")){
+  if(question.isFree&&id==="independent"&&!ownerDraftInScope(question,state)&&state===categoryStates.get("family")){
     const birth=parseRedFlagDate(birthDateInput.value);
     if(!birth){state.answerErrors.set(id,"Укажи дату рождения мужчины.");return;}
     const birthday=birth.year+"-"+String(birth.month).padStart(2,"0")+"-"+String(birth.day).padStart(2,"0");
