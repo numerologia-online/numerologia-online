@@ -35,7 +35,7 @@ jobs:
           name=b'rfOwnerSharpIntimacy'
           oldFn=part(oldrepo,name)
           newFn=part(now,name)
-          assert newFn!=oldFn and b'ОСТРОУМНЫЙ' in newFn and b'НО НЕ ЗЛОЙ' in newFn
+          assert newFn!=oldFn and 'ОСТРОУМНЫЙ'.encode('utf-8') in newFn and 'НО НЕ ЗЛОЙ'.encode('utf-8') in newFn
           assert now.replace(newFn,oldFn,1)==oldrepo,'ONLY_PROMPT_FUNCTION_MAY_CHANGE'
           # Formula, all existing categories and original 22-energy KB must remain byte-identical.
           def status(suffix):
