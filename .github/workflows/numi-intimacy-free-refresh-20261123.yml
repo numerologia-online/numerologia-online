@@ -1,0 +1,110 @@
+name: Refresh owner intimacy free AI on Telegram
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-intimacy-free-refresh-20261123.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guarded deploy of HTML entry and verified-owner free-question view
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          node --check redflag-feature.js
+          node --check app.js
+          python3 - <<'PY'
+          import ftplib,ssl,io,os,time,uuid,subprocess,pathlib,hashlib,urllib.request,urllib.error
+          ref='86417f123836dac0058405425ee459f615944a80'
+          js='redflag-feature.js';html='index.html'
+          files=[js,html]
+          desired={p:pathlib.Path(p).read_bytes() for p in files}
+          previous={p:subprocess.check_output(['git','show',ref+':'+p]) for p in files}
+          oldBlock=b'''    ownerDraftAccess=true;
+    if(redFlag.classList.contains("is-active"))renderCategories();'''
+          newBlock=b'''    ownerDraftAccess=true;
+    // If a free answer loaded before owner verification, discard that static
+    // response and load the same question through the owner Gemini route.
+    const intimacy=categoryStates.get("intimacy");
+    const fireOpen=Boolean(intimacy?.expanded&&intimacy?.activeQuestionId==="fire");
+    intimacy?.answers.delete("fire");
+    intimacy?.answerErrors.delete("fire");
+    if(redFlag.classList.contains("is-active")){
+      renderCategories();
+      if(fireOpen){
+        const fire=intimacy?.questions?.find(item=>item.id==="fire");
+        if(fire)ensureAnswer(fire,intimacy,{forceNew:true});
+      }
+    }'''
+          assert desired[js].count(newBlock)==1
+          assert desired[js].replace(newBlock,oldBlock,1)==previous[js],'UNRELATED_JS_DIFFERENCE'
+          assert desired[html].replace(b'app.js?v=intimacy-owner-fire-20261123',b'app.js?v=redflag-retry-message-20261122',1)==previous[html],'UNRELATED_HTML_DIFFERENCE'
+          host='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          def status(p):
+              u=host+p+'?cache_fix='+str(time.time_ns())
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(u,headers={'Cache-Control':'no-store'}),timeout=25) as r:return r.status
+              except urllib.error.HTTPError as e:return e.code
+          def healthy():
+              codes=[status(''),status('redflag-ai-lab/style-test-api.php'),status('redflag-ai-lab/style-test.php')]
+              print('SITE_HEALTH',codes,flush=True)
+              return codes==[200,403,403]
+          if not healthy():raise RuntimeError('PREFLIGHT_SITE_UNHEALTHY')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          backups=home+'/site-safeguard-backups'
+          def read(p,absolute=False):
+              b=io.BytesIO();ftp.retrbinary('RETR '+(p if absolute else root+p),b.write);return b.getvalue()
+          def write(p,v,absolute=False):
+              ftp.storbinary('STOR '+(p if absolute else root+p),io.BytesIO(v))
+              if read(p,absolute)!=v:raise RuntimeError('READBACK_FAILURE_'+p)
+          originals={};changed=[]
+          try:
+              for p in files:
+                  originals[p]=read(p)
+                  if originals[p]!=previous[p]:raise RuntimeError('LIVE_FILE_DRIFT_ABORT_'+p)
+              protected=['app.js','redflag-public-catalog.js','redflag-text-bank.js','redflag-ai-lab/style-test-api.php','redflag-ai-lab/catalog.json','redflag-ai-lab/sexuality-knowledge-v1.json','data/redflag/banks/intimacy.json']
+              hashes={p:hashlib.sha256(read(p)).digest() for p in protected}
+              try:ftp.mkd(backups)
+              except ftplib.error_perm as e:
+                  if not str(e).startswith('550'):raise
+              tag=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+uuid.uuid4().hex[:8]
+              for p in files:write(backups+'/before-intimacy-free-refresh-'+p.replace('/','-')+'-'+tag+'.bak',originals[p],True)
+              for p in files:
+                  if read(p)!=originals[p]:raise RuntimeError('CONCURRENT_FILE_CHANGE_'+p)
+              for p in files:
+                  changed.append(p);write(p,desired[p])
+              if not healthy():raise RuntimeError('SITE_UNHEALTHY_AFTER')
+              for p,d in hashes.items():
+                  if hashlib.sha256(read(p)).digest()!=d:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
+              publicHTML=urllib.request.urlopen(urllib.request.Request(host+'?versioncheck='+str(time.time_ns()),headers={'Cache-Control':'no-cache'}),timeout=25).read()
+              assert b'app.js?v=intimacy-owner-fire-20261123' in publicHTML, 'PUBLIC_SCRIPT_VERSION_MISMATCH'
+              print('OWNER_INTIMACY_FREE_CACHE_REFRESH_PUBLISHED_OK paid_calls=0 protected_unchanged=true',flush=True)
+          except BaseException:
+              if changed:
+                  fail=[]
+                  for p in reversed(changed):
+                      try:write(p,originals[p])
+                      except BaseException:fail.append(p)
+                  print('ROLLBACK_'+('FAILED_'+','.join(fail) if fail else 'SUCCESS'),flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
