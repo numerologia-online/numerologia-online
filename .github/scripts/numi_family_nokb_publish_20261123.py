@@ -41,15 +41,18 @@ assert b'ni31(' in new['account-service/private/family-live.php']
 def patch(live,baseline,desired,label):
  if live==desired:return live
  if live==baseline:return desired
- diff=difflib.SequenceMatcher(None,baseline,desired,autojunk=False)
+ baseline_lines=baseline.splitlines(keepends=True)
+ desired_lines=desired.splitlines(keepends=True)
+ diff=difflib.SequenceMatcher(None,baseline_lines,desired_lines,autojunk=False)
  edits=[(i1,i2,j1,j2) for op,i1,i2,j1,j2 in diff.get_opcodes() if op!='equal']
  if not 1<=len(edits)<=22:raise RuntimeError('EDIT_SHAPE_DRIFT_'+label)
  result=live
  for i1,i2,j1,j2 in edits:
-  left=baseline[max(0,i1-120):i1];right=baseline[i2:min(len(baseline),i2+120)]
-  before=left+baseline[i1:i2]+right
+  left=b''.join(baseline_lines[max(0,i1-4):i1])
+  right=b''.join(baseline_lines[i2:min(len(baseline_lines),i2+4)])
+  before=left+b''.join(baseline_lines[i1:i2])+right
   if result.count(before)!=1:raise RuntimeError('LIVE_ANCHOR_DRIFT_'+label)
-  result=result.replace(before,left+desired[j1:j2]+right,1)
+  result=result.replace(before,left+b''.join(desired_lines[j1:j2])+right,1)
  return result
 def code_status(path):
  req=urllib.request.Request('https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'+path+'?family_v='+str(time.time_ns()),headers={'Cache-Control':'no-store'})

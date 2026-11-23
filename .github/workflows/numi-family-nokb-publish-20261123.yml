@@ -24,3 +24,4 @@ jobs:
         run: python3 -u .github/scripts/numi_family_nokb_publish_20261123.py
 # retry modular JS validation without affecting runtime files
 # compare against original pre-family source baseline
+# efficient line-level drift verification; keep strict FTP lock
