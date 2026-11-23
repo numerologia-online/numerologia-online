@@ -1,0 +1,63 @@
+name: Check accessible Cloud RU model list without AI inference
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-family-provider-model-list-check-20261123.yml
+permissions:
+  contents: read
+jobs:
+  check-model:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Read remote provider config privately and request GET models only
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,tempfile,subprocess,pathlib,urllib.request,urllib.error,json
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          private=ftp.pwd().rstrip('/')+'/private/numi-account-20261031/intimacy-live-config.php'
+          buffer=io.BytesIO()
+          ftp.retrbinary('RETR '+private,buffer.write)
+          ftp.quit()
+          with tempfile.TemporaryDirectory() as temp:
+              path=pathlib.Path(temp)/'config.php'
+              path.write_bytes(buffer.getvalue())
+              path.chmod(0o600)
+              php='\x24c=require '+repr(str(path))+'; if(!is_array(\x24c)||!is_string(\x24c["cloudru_key"]??null)){exit(2);} echo \x24c["cloudru_key"];'
+              process=subprocess.run(['php','-r',php],capture_output=True,check=False)
+              if process.returncode:
+                  raise RuntimeError('REMOTE_CLOUDRU_CONFIG_UNREADABLE')
+              key=process.stdout.decode().strip()
+              if len(key)<12:raise RuntimeError('CLOUDRU_KEY_MISSING')
+              request=urllib.request.Request('https://foundation-models.api.cloud.ru/v1/models',headers={'Authorization':'Bearer '+key,'Accept':'application/json','User-Agent':'NumiModelListDiagnostic/1.0'})
+              try:
+                  with urllib.request.urlopen(request,timeout=30) as response:
+                      code=response.status
+                      payload=response.read(1500000)
+              except urllib.error.HTTPError as e:
+                  code=e.code
+                  payload=e.read(10000)
+              print('MODEL_LIST_HTTP',code,flush=True)
+              if code!=200:
+                  try:
+                      error=json.loads(payload)
+                      err=error.get('error',{})
+                      print('MODEL_LIST_ERROR_TYPE',str(err.get('code','UNKNOWN'))[:75] if isinstance(err,dict) else 'UNKNOWN',flush=True)
+                  except Exception:print('MODEL_LIST_ERROR_TYPE','UNPARSEABLE',flush=True)
+              else:
+                  data=json.loads(payload)
+                  entries=data.get('data',[])
+                  all_ids=[x.get('id') for x in entries if isinstance(x,dict) and isinstance(x.get('id'),str)]
+                  gemini=[x for x in all_ids if 'gemini' in x.lower()]
+                  target='google/gemini-3-flash-preview'
+                  print('MODEL_LIST_COUNT',len(all_ids),flush=True)
+                  print('GEMINI_TARGET_LISTED',target in all_ids,flush=True)
+                  print('GEMINI_MODEL_IDS',json.dumps(gemini[:40],ensure_ascii=False),flush=True)
+          PY
