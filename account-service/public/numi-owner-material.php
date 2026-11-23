@@ -26,6 +26,11 @@ try {
     require_once dirname(__DIR__,3).'/private/numi-account-20261031/fulfillment.php';
     // Same native production generator and answer cache as customers, never
     // the isolated redflag-ai-lab editor. Owner bypasses wallet only after auth.
+    if($code==='redflag_question' && str_starts_with((string)$quote['resource_id'],'redflag:family:')){
+        require_once dirname(__DIR__,3).'/private/numi-account-20261031/family-live.php';
+        if(function_exists('set_time_limit'))@set_time_limit(125);
+        nfEnsurePaidResource((string)$quote['resource_id']);
+    }
     if($code==='redflag_question' && str_starts_with((string)$quote['resource_id'],'redflag:intimacy:')){
         require_once dirname(__DIR__,3).'/private/numi-account-20261031/intimacy-live.php';
         if(function_exists('set_time_limit'))@set_time_limit(125);

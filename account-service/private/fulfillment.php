@@ -62,6 +62,11 @@ function naRedFlagPaidStatus(mixed $status): bool {
     return in_array($status,['ready','complete'],true);
 }
 function naMaterialBuild(string $code,string $resource,?string $root=null): array {
+    // Native family answers are always generated BEFORE wallet payment, never when opened.
+    if($code==='redflag_question' && preg_match('/^redflag:family:/D',$resource)===1){
+        require_once __DIR__.'/family-live.php';
+        return nfMaterialFromCache($resource);
+    }
     // Native, cached, already-generated sexuality answer. Never call Gemini when
     // displaying paid material; the wallet charge only follows generation success.
     if($code==='redflag_question' && preg_match('/^redflag:intimacy:/D',$resource)===1){

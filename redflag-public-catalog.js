@@ -441,55 +441,55 @@ export const PUBLIC_QUESTIONS = {
       "id": "household",
       "title": "Хозяйственный или из серии «мама всё делала»?",
       "priceRub": 10,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "vacation",
       "title": "С ним в отпуск кайф или нервный квест на выживание?",
       "priceRub": 10,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "plans",
       "title": "Обещает и делает или просто король планов?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "children",
       "title": "Готов ли он к ребёнку или пока сам ещё растёт?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "roles",
       "title": "Будет партнёром или начальником в семье?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "home",
       "title": "Семья для него главное или дома его не дождёшься?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "conflict",
       "title": "При первых семейных проблемах будет бороться или соберёт чемодан?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "money-at-home",
       "title": "Умеет ли он создавать опору для дома, а не только говорить о будущем?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "care",
       "title": "Он заботится в быту или ждёт, что любовь всё сама устроит?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     }
   ],
   "language": [

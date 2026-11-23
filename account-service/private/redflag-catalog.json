@@ -275,47 +275,47 @@
       "household": {
         "tier": 10,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "vacation": {
         "tier": 10,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "plans": {
         "tier": 29,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "children": {
         "tier": 29,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "roles": {
         "tier": 29,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "home": {
         "tier": 29,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "conflict": {
         "tier": 49,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "money-at-home": {
         "tier": 49,
         "free": false,
-        "ready": false
+        "ready": true
       },
       "care": {
         "tier": 49,
         "free": false,
-        "ready": false
+        "ready": true
       }
     },
     "language": {

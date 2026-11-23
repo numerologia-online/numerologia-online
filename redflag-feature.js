@@ -1,6 +1,6 @@
 // Red Flag deliberately needs only day and month, with no birth-year dependence.
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=flags-owner-preview-20261117";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=family-nokb-live-20261123";
 
 // Paid content is rendered as text; do not interpret author-controlled paragraphs as HTML.
 const escapeMarkup = value => String(value??"").replace(/[&<>"']/g,char=>({
@@ -350,6 +350,36 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
         throw new Error("FREE_AI_UNAVAILABLE");
       const paragraphs=data.answer.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);
       if(paragraphs.length!==2)throw new Error("INVALID_PARAGRAPHS");
+      if(profile!==activeProfile)return;
+      state.answers.set(id,{answer:data.answer,paragraphs});
+    }).catch(()=>{
+      if(profile===activeProfile)
+        state.answerErrors.set(id,redFlagLoadErrorCopy(true).text);
+    }).finally(()=>{
+      if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
+      if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
+        renderCategories({type:"question",id});
+    });
+    state.answerRequests.set(id,task);
+    return;
+  }
+  // Native FREE Gemini answer for the first Family and Household question.
+  if(question.isFree&&id==="independent"&&state===categoryStates.get("family")){
+    const birth=parseRedFlagDate(birthDateInput.value);
+    if(!birth){state.answerErrors.set(id,"Укажи дату рождения мужчины.");return;}
+    const birthday=birth.year+"-"+String(birth.month).padStart(2,"0")+"-"+String(birth.day).padStart(2,"0");
+    const task=fetch("/api/numi-family-free.php",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({question_id:"independent",birth_date:birthday}),
+      signal:AbortSignal.timeout(125000)
+    }).then(async response=>{
+      const data=await response.json();
+      if(!response.ok||data?.ok!==true||data?.free!==true||
+          data?.ai_generated!==true||data?.question_id!=="independent"||
+          typeof data?.answer!=="string")throw new Error("FAMILY_FREE_UNAVAILABLE");
+      const paragraphs=data.answer.split(/\n\s*\n/).map(part=>part.trim()).filter(Boolean);
+      if(paragraphs.length!==2)throw new Error("FAMILY_FREE_SHAPE");
       if(profile!==activeProfile)return;
       state.answers.set(id,{answer:data.answer,paragraphs});
     }).catch(()=>{

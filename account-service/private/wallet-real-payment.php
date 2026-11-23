@@ -500,6 +500,13 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             require_once __DIR__.'/fulfillment.php';
             $ready=static function(array $item):bool{
                 if(($item['kind']??null)==='subscription')return true;
+                // Native family answers are generated only on wallet_buy, never on quote.
+                if(($item['product_code']??null)==='redflag_question'
+                  &&str_starts_with((string)($item['resource_id']??''),'redflag:family:')){
+                    require_once __DIR__.'/family-live.php';
+                    return nfSupportedPaidResource('redflag_question',(string)$item['resource_id'])
+                        && nfEngineInstalled();
+                }
                 // Native Gemini fulfillment is generated on wallet_buy only.
                 // Quotes must never trigger a paid provider call.
                 if(($item['product_code']??null)==='redflag_question'
@@ -566,6 +573,13 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             require_once __DIR__.'/fulfillment.php';
             $ready=static function(array $item):bool{
                 if(($item['kind']??null)==='subscription')return true;
+                // Native family answers are generated only on wallet_buy, never on quote.
+                if(($item['product_code']??null)==='redflag_question'
+                  &&str_starts_with((string)($item['resource_id']??''),'redflag:family:')){
+                    require_once __DIR__.'/family-live.php';
+                    return nfSupportedPaidResource('redflag_question',(string)$item['resource_id'])
+                        && nfEngineInstalled();
+                }
                 // Native Gemini fulfillment is generated on wallet_buy only.
                 // Quotes must never trigger a paid provider call.
                 if(($item['product_code']??null)==='redflag_question'
@@ -581,6 +595,19 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             // before any provider call; generate and cache the finished answer
             // BEFORE entering the existing atomic wallet debit transaction.
             $resolved=naCatalogResolve($input,naRealWalletHasAccess($db,$account,'club_month','club'));
+            if(($resolved['product_code']??null)==='redflag_question'
+              &&str_starts_with((string)($resolved['resource_id']??''),'redflag:family:')){
+                require_once __DIR__.'/family-live.php';
+                naRealWalletRequireLive($config);
+                if(!nfEngineInstalled()||!nfSupportedPaidResource('redflag_question',(string)$resolved['resource_id']))
+                    throw new RuntimeException('REAL_MATERIAL_NOT_READY');
+                if(!naRealWalletHasAccess($db,$account,'redflag_question',(string)$resolved['resource_id'])){
+                    if(naRealWalletBalance($db,$account['id']) >= (int)$resolved['price_kopeks']){
+                        if(function_exists('set_time_limit'))@set_time_limit(125);
+                        nfEnsurePaidResource((string)$resolved['resource_id']);
+                    }
+                }
+            }
             if(($resolved['product_code']??null)==='redflag_question'
               &&str_starts_with((string)($resolved['resource_id']??''),'redflag:intimacy:')){
                 require_once __DIR__.'/intimacy-live.php';
