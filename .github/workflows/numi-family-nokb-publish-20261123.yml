@@ -8,7 +8,7 @@ permissions:
   contents: read
 concurrency:
   group: reg-ru-manual-publication
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   publish:
     runs-on: ubuntu-24.04
@@ -25,3 +25,4 @@ jobs:
 # retry modular JS validation without affecting runtime files
 # compare against original pre-family source baseline
 # efficient line-level drift verification; keep strict FTP lock
+# supersede stalled preflight before any upload
