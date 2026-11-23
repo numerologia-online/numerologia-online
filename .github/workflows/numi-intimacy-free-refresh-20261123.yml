@@ -33,21 +33,21 @@ jobs:
           desired={p:pathlib.Path(p).read_bytes() for p in files}
           previous={p:subprocess.check_output(['git','show',ref+':'+p]) for p in files}
           oldBlock=b'''    ownerDraftAccess=true;
-    if(redFlag.classList.contains("is-active"))renderCategories();'''
+              if(redFlag.classList.contains("is-active"))renderCategories();'''
           newBlock=b'''    ownerDraftAccess=true;
-    // If a free answer loaded before owner verification, discard that static
-    // response and load the same question through the owner Gemini route.
-    const intimacy=categoryStates.get("intimacy");
-    const fireOpen=Boolean(intimacy?.expanded&&intimacy?.activeQuestionId==="fire");
-    intimacy?.answers.delete("fire");
-    intimacy?.answerErrors.delete("fire");
-    if(redFlag.classList.contains("is-active")){
-      renderCategories();
-      if(fireOpen){
-        const fire=intimacy?.questions?.find(item=>item.id==="fire");
-        if(fire)ensureAnswer(fire,intimacy,{forceNew:true});
-      }
-    }'''
+              // If a free answer loaded before owner verification, discard that static
+              // response and load the same question through the owner Gemini route.
+              const intimacy=categoryStates.get("intimacy");
+              const fireOpen=Boolean(intimacy?.expanded&&intimacy?.activeQuestionId==="fire");
+              intimacy?.answers.delete("fire");
+              intimacy?.answerErrors.delete("fire");
+              if(redFlag.classList.contains("is-active")){
+                renderCategories();
+                if(fireOpen){
+                  const fire=intimacy?.questions?.find(item=>item.id==="fire");
+                  if(fire)ensureAnswer(fire,intimacy,{forceNew:true});
+                }
+              }'''
           assert desired[js].count(newBlock)==1
           assert desired[js].replace(newBlock,oldBlock,1)==previous[js],'UNRELATED_JS_DIFFERENCE'
           assert desired[html].replace(b'app.js?v=intimacy-owner-fire-20261123',b'app.js?v=redflag-retry-message-20261122',1)==previous[html],'UNRELATED_HTML_DIFFERENCE'
