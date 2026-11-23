@@ -33,6 +33,9 @@ try {
         !is_string($id)||!preg_match('/^[a-z][a-z0-9-]{1,70}$/D',$id)||
         !is_int($day)||!is_int($month)||!checkdate($month,$day,2000))
         rfKeepReply(400,['ok'=>false,'error'=>'INVALID_SELECTION']);
+    // Family now uses temporary, unsaved editorial previews only.
+    if ($category==='family')
+        rfKeepReply(410,['ok'=>false,'error'=>'FAMILY_DRAFT_STORAGE_DISABLED']);
     $catalog=json_decode((string)file_get_contents(__DIR__.'/catalog.json'),true,20,JSON_THROW_ON_ERROR);
     if (($catalog['mode']??'')!=='owner_draft_only'||($catalog['questions']??0)!==54)
         rfKeepReply(503,['ok'=>false,'error'=>'DRAFT_CATALOG_UNAVAILABLE']);
