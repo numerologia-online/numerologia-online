@@ -487,18 +487,41 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
         target.replaceChildren(status);
       }
     };
-    const task=import("./wallet-client.js?v=redflag-buyer-message-20261122-v2").then(({showInlinePurchase})=>
-      showInlinePurchase(item,target,(material,entitlementId)=>{
-        if(activeProfile!==profile)return;
-        const paragraphs=(material.sections||[]).flatMap(section=>(section.paragraphs||[])
-          .flatMap(text=>String(text).split(/\n\s*\n/).map(part=>part.trim()).filter(Boolean)));
-        if(!paragraphs.length){
-          reportLoadError(entitlementId ? "paid" : "not-charged");
+    const onMaterial=(material,entitlementId)=>{
+      if(activeProfile!==profile)return;
+      const paragraphs=(material.sections||[]).flatMap(section=>(section.paragraphs||[])
+        .flatMap(text=>String(text).split(/\n\s*\n/).map(part=>part.trim()).filter(Boolean)));
+      if(!paragraphs.length){
+        reportLoadError(entitlementId ? "paid" : "not-charged");
+        return;
+      }
+      state.answers.set(id,{answer:paragraphs.join("\n"),paragraphs});
+      renderCategories({type:"question",id});
+    };
+    const task=import("./wallet-client.js?v=redflag-buyer-message-20261122-v2").then(async ({showInlinePurchase,walletOwnerMaterial})=>{
+      // Family-only guard: owner material errors must NEVER be disguised as a wallet paywall.
+      // All authorization still happens in the existing authenticated REG.RU endpoints.
+      if(category==="family"){
+        try{
+          const ownerDoc=await walletOwnerMaterial(item);
+          if(ownerDoc){
+            onMaterial(ownerDoc,null);
+            return;
+          }
+          // Already verified by the separate editorial owner endpoint:
+          // never turn an inconsistent owner response into an invitation to pay.
+          if(ownerDraftAccess){
+            reportLoadError("not-charged");
+            return;
+          }
+        }catch(error){
+          console.warn("Не удалось загрузить владельческий разбор семьи:",error);
+          reportLoadError("not-charged");
           return;
         }
-        state.answers.set(id,{answer:paragraphs.join("\n"),paragraphs});
-        renderCategories({type:"question",id});
-      },reportLoadError));
+      }
+      return showInlinePurchase(item,target,onMaterial,reportLoadError);
+    });
     state.answerRequests.set(id,task);
     void task.catch(()=>reportLoadError())
       .finally(()=>{if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);});
