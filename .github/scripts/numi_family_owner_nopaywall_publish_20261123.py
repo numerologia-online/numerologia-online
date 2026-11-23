@@ -29,10 +29,12 @@ ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
 ftp.prot_p();ftp.set_pasv(True)
 home=ftp.pwd().rstrip('/')
 backups=home+'/site-safeguard-backups'
+def remote(path):
+ return path if path.startswith(home+'/') else home+'/'+path
 def read(path):
- v=io.BytesIO();ftp.retrbinary('RETR '+home+'/'+path,v.write);return v.getvalue()
+ v=io.BytesIO();ftp.retrbinary('RETR '+remote(path),v.write);return v.getvalue()
 def write(path,data):
- full=home+'/'+path
+ full=remote(path)
  ftp.storbinary('STOR '+full,io.BytesIO(data))
  if read(path)!=data:raise RuntimeError('READBACK_MISMATCH_'+path)
 protected=[
