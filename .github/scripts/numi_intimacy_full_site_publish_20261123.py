@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import ftplib, ssl, io, os, time, uuid, subprocess, pathlib, hashlib, json, urllib.request, urllib.error, re, base64, difflib
 
-baseline='2c25734e0cfa8d285ee2e25ea80bdc0596d86af8'
+baseline='2c25734e0cfa'
 basepaths={
  'account-service/private/fulfillment.php':'private/numi-account-20261031/fulfillment.php',
  'account-service/private/wallet-real-payment.php':'private/numi-account-20261031/wallet-real-payment.php',
