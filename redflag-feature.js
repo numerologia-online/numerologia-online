@@ -363,6 +363,37 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
     state.answerRequests.set(id,task);
     return;
   }
+  // Native FREE Gemini answer for all site users, not an editor/test route.
+  if(question.isFree&&id==="fire"&&[...categoryStates].some(
+    ([category,entry])=>category==="intimacy"&&entry===state)){
+    const birth=parseRedFlagDate(birthDateInput.value);
+    if(!birth){state.answerErrors.set(id,"Укажи дату рождения мужчины.");return;}
+    const birthday=birth.year+"-"+String(birth.month).padStart(2,"0")+"-"+String(birth.day).padStart(2,"0");
+    const task=fetch("/api/numi-intimacy-free.php",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({question_id:"fire",birth_date:birthday}),
+      signal:AbortSignal.timeout(125000)
+    }).then(async response=>{
+      const data=await response.json();
+      if(!response.ok||data?.ok!==true||data?.free!==true||
+          data?.ai_generated!==true||data?.question_id!=="fire"||
+          typeof data?.answer!=="string")throw new Error("INTIMACY_FREE_UNAVAILABLE");
+      const paragraphs=data.answer.split(/\n\s*\n/).map(part=>part.trim()).filter(Boolean);
+      if(paragraphs.length!==2)throw new Error("INTIMACY_FREE_SHAPE");
+      if(profile!==activeProfile)return;
+      state.answers.set(id,{answer:data.answer,paragraphs});
+    }).catch(()=>{
+      if(profile===activeProfile)
+        state.answerErrors.set(id,redFlagLoadErrorCopy(true).text);
+    }).finally(()=>{
+      if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
+      if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
+        renderCategories({type:"question",id});
+    });
+    state.answerRequests.set(id,task);
+    return;
+  }
   if(ownerDraftInScope(question,state)){
     const category=[...categoryStates].find(([,value])=>value===state)?.[0];
     const birth=parseRedFlagDate(birthDateInput.value);
@@ -871,7 +902,8 @@ const ensureQuestions = async (category) => {
     state.questions = content.QUESTIONS.map((question, index) => ({
       ...question, isFree: index === 0,
       priceRub: index === 0 ? 0 : question.priceRub,
-      isComingSoon: question.status !== "ready"
+      // All ten intimacy questions use the native production AI and wallet.
+      isComingSoon: category.id === "intimacy" ? false : question.status !== "ready"
     }));
   } finally {
     state.loading = false;
