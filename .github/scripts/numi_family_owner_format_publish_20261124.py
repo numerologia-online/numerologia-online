@@ -4,11 +4,14 @@ No AI or wallet calls. Verifies 2 paragraphs, cap and dash normalization offline
 """
 import os,subprocess,pathlib,hashlib,ftplib,ssl,io,urllib.request,urllib.error,time,uuid
 TARGET="redflag-ai-lab/family-owner-preview-api.php"
-CHANGE="3ba866cfba97c10b3499bcaa71b52dd020f91b07"
+CHANGE="c3b5a3227dbd1985b39674a562dc31c9e5fc5f3b"
 old=subprocess.check_output(["git","show",CHANGE+"^:"+TARGET])
 new=pathlib.Path(TARGET).read_bytes()
 assert old!=new
 assert b"function foFormatOwnerAnswer(" in new
+assert "Пиши с эффектом остроумного разоблачения".encode() in new
+assert "ВТОРОЙ: 180–300 знаков".encode() in new
+assert b"<=300)return $clean;" in new
 assert b"FAMILY_PREVIEW_PARAGRAPHS_INVALID" in new
 assert new.count(b"niCloudCall(")==old.count(b"niCloudCall(")==1
 assert new.count(b"foBrief(")==old.count(b"foBrief(")
@@ -35,7 +38,7 @@ $text=foFormatOwnerAnswer($first."\n\n".$second,[$question]);
 $parts=preg_split('/\n\s*\n/u',$text);
 if(count($parts)!==2)throw new RuntimeException('NOT_TWO_PARAGRAPHS');
 if(mb_strlen($parts[0])>850)throw new RuntimeException('FIRST_OVERLONG');
-if(mb_strlen($parts[1])>210)throw new RuntimeException('TEASER_OVERLONG');
+if(mb_strlen($parts[1])>300)throw new RuntimeException('TEASER_OVERLONG');
 if(strpos($parts[1],$question)===false)throw new RuntimeException('FOLLOWUP_NOT_PRESERVED');
 if(preg_match('/[—–―]/u',$text))throw new RuntimeException('DASH_NOT_NORMALIZED');
 $short='Прямой ответ. Он умеет взяться за дело.'."\n\n".'Но кто будет отвечать за результат?';
@@ -100,7 +103,7 @@ try:
   if read(remote)!=new:raise RuntimeError("PUBLISHED_BYTES_NOT_VERIFIED")
   for p,h in hashes.items():
     if hashlib.sha256(read(p)).digest()!=h:raise RuntimeError("PROTECTED_FILE_CHANGED")
-  print("FAMILY_OWNER_FORMAT_PUBLISHED first_max_850=true teaser_max_210=true two_paragraphs=true long_dashes_normalized=true other_sections_untouched=true json_caches_still_disabled=true gemini_calls=0",flush=True)
+  print("FAMILY_OWNER_FORMAT_PUBLISHED first_max_850=true teaser_max_300=true two_paragraphs=true long_dashes_normalized=true other_sections_untouched=true json_caches_still_disabled=true gemini_calls=0",flush=True)
 except BaseException:
   if changed:
     try:write(remote,actual);print("ROLLBACK_SUCCESS",flush=True)
