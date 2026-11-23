@@ -4,7 +4,7 @@ Only these old Family cache files and their .lock companions are erased.
 No model calls, customer payments, other product data or other editorial drafts changed.
 """
 import os,ftplib,ssl,io,posixpath,re,hashlib,subprocess,pathlib,urllib.request,urllib.error,time,uuid
-BASE="f72f282a9688ea98db23487500d753f162a4cd8a"
+BASE="e5e831c09e73e472165ee1ecb0e1262ce0f18619"
 FILES=["redflag-ai-lab/family-owner-preview-api.php","redflag-ai-lab/keep.php","redflag-feature.js","app.js","index.html"]
 HOST="https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/"
 QIDS=("independent","household","vacation","plans","children","roles","home","conflict","money-at-home","care")
