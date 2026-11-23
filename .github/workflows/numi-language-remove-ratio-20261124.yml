@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/numi-language-remove-ratio-20261124.yml
+      - .github/scripts/numi_language_remove_ratio_20261124.py
 permissions:
   contents: read
 concurrency:
