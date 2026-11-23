@@ -3,7 +3,7 @@
 import ftplib,ssl,io,os,time,uuid,pathlib,hashlib,subprocess,urllib.request,urllib.error
 root='www/xn--c1adkkdfjbp1a4l.online/'
 paths=['redflag-feature.js','app.js','index.html']
-original={p:subprocess.check_output(['git','show','HEAD^:'+p]) for p in paths}
+original={p:subprocess.check_output(['git','show','b9935b72a98a553f21f3a85bc4faf54050760cd8:'+p]) for p in paths}
 desired={p:pathlib.Path(p).read_bytes() for p in paths}
 assert desired['redflag-feature.js'].count(b'if(category==="family")')>=1
 assert b'walletOwnerMaterial(item)' in desired['redflag-feature.js']
