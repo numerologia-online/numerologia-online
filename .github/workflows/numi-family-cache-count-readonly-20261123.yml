@@ -1,0 +1,62 @@
+name: Count Family cached answers on REG RU - READ ONLY
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-family-cache-count-readonly-20261123.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Read-only FTPS listing of Family answer cache, no text or dates output
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib, ssl, os, posixpath, re, collections
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=60)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          folder=home+'/private/numi-account-20261031/family-answer-cache'
+          qids=['independent','household','vacation','plans','children','roles','home','conflict','money-at-home','care']
+          try:
+              # NLST only. No file contents read, no changes, no personal dates printed.
+              names=[posixpath.basename(x.rstrip('/')) for x in ftp.nlst(folder)]
+              recognized=collections.defaultdict(list)
+              extras=collections.Counter()
+              for name in names:
+                  match=re.fullmatch(r'(.+)-(\d{8})-(family-[A-Za-z0-9-]+|nokb-v\d+)\.json',name)
+                  if match and match.group(1) in qids:
+                      recognized[match.group(1)].append((match.group(2),match.group(3)))
+                  else:
+                      if name.endswith('.json'):extras['other_json']+=1
+                      elif name.endswith('.lock'):extras['lock_files']+=1
+                      elif name.endswith('.quota'):extras['quota_files']+=1
+                      elif name not in ('.','..','family-answer-cache'):extras['other_files']+=1
+              all_keys=set()
+              versions=collections.Counter()
+              for q in qids:
+                  parts=recognized[q]
+                  dates={d for d,_ in parts}
+                  all_keys.update((q,d) for d in dates)
+                  byversion=collections.Counter(ver for _,ver in parts)
+                  versions.update(byversion)
+                  print('QUESTION',q,'json_files',len(parts),'distinct_birthdates',len(dates),
+                        'versions',dict(sorted(byversion.items())),flush=True)
+              print('TOTAL','directory_entries',len(names),
+                    'answer_json_files',sum(len(v) for v in recognized.values()),
+                    'unique_question_date_pairs',len(all_keys),
+                    'unique_questions_with_answers',sum(bool(recognized[q]) for q in qids),
+                    'total_distinct_dates_any_question',len({d for v in recognized.values() for d,_ in v}),
+                    'other',dict(extras),'version_totals',dict(sorted(versions.items())),flush=True)
+          finally:
+              try: ftp.quit()
+              except BaseException: ftp.close()
+          PY
