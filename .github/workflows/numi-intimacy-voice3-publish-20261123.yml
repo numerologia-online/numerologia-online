@@ -1,0 +1,29 @@
+name: Publish clean direct intimacy style to main site
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-intimacy-voice3-publish-20261123.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate narrow production PHP change
+        run: |
+          set -euo pipefail
+          php -l account-service/private/intimacy-live.php
+          python3 -m py_compile .github/scripts/numi_intimacy_voice3_publish_20261123.py
+      - name: Back up and publish existing production engine only
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi_intimacy_voice3_publish_20261123.py
