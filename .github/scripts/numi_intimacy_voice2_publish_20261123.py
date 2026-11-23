@@ -14,7 +14,7 @@ d,newprompt,f=extract(desired)
 oldCache=b"return niCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'.json';"
 newCache=b"// Free test date must receive the new voice; purchased, cached responses remain unchanged.\n    return niCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).($id==='fire'?'-voice2':'').'.json';"
 assert oldCache in previous and newCache in desired
-assert d.replace(newCache,oldCache,1)==a and c==f,'UNRELATED_PRODUCTION_CODE_CHANGE'
+assert a==d and f.replace(newCache,oldCache,1)==c,'UNRELATED_PRODUCTION_CODE_CHANGE'
 assert newprompt.count(b"PROMPT;")==1 and b'gemini-3-flash-preview' in desired
 assert b'intimacy-live-knowledge.json' in desired
 assert b'niEnsurePaidResource' in desired
