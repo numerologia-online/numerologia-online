@@ -35,13 +35,15 @@ jobs:
               print('LOG_DIR',tag,'entries',len(parts),'candidate_names',[a[:80] for a,_ in logs[:24]],flush=True)
               for name,entry in logs:
                 if re.search(r'\.log$|error_log$|error\.txt$|php_error',name,re.I):
-                  candidates.append((tag,entry))
+                  candidates.append((tag,path.rstrip('/')+'/'+name))
             except ftplib.all_errors as e:
               print('LOG_DIR_UNAVAILABLE',tag,type(e).__name__,flush=True)
           for tag,path in candidates[:12]:
             try:
               v=io.BytesIO()
+              ftp.voidcmd('TYPE I')
               size=ftp.size(path)
+              print('LOG_SIZE',tag,round((size or 0)/1024),flush=True)
               if not isinstance(size,int) or size>5_000_000:
                 print('LOG_FILE_SKIPPED',tag,'size_too_large_or_unknown',flush=True)
                 continue
@@ -63,3 +65,4 @@ jobs:
               print('LOG_FILE_UNAVAILABLE',tag,type(e).__name__,flush=True)
           ftp.quit()
           PY
+# Fix remote path: NLST often returns bare basenames, not absolute paths
