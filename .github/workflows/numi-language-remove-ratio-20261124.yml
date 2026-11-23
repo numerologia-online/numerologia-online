@@ -1,0 +1,24 @@
+name: Publish Love Languages rule without 50-50 on REG RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-language-remove-ratio-20261124.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate and publish only Love Languages prompt, no provider requests
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi_language_remove_ratio_20261124.py
