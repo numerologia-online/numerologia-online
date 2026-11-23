@@ -1,0 +1,40 @@
+name: Publish intimacy cross-category followups only
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-intimacy-crosssell-publish-20261123.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate exact scope, PHP and deploy script
+        run: |
+          set -euo pipefail
+          php -l account-service/private/intimacy-live.php
+          python3 -m py_compile .github/scripts/numi_intimacy_crosssell_publish_20261123.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          doc=Path('account-service/private/intimacy-live.php').read_text()
+          catalog=json.loads(Path('account-service/private/redflag-catalog.json').read_text())
+          assert 'Приоритет: платный вопрос в другом разделе' in doc
+          assert "($meta['ready']??false)!==true" in doc
+          assert len(catalog['questions']['intimacy'])==10
+          assert 'google/gemini-3-flash-preview' in doc
+          print('CROSS_SELL_GUARDS_VALIDATED zero_paid_calls=true',flush=True)
+          PY
+      - name: Guarded private-file REG.RU deployment
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi_intimacy_crosssell_publish_20261123.py
