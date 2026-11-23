@@ -56,7 +56,7 @@ function nfhPilotBrief(int $day,int $month,int $year): array {
         if(!isset($dictionary[$n]))throw new RuntimeException('FAMILY_PILOT_ENERGY_MISSING');
         $five[]=[
             'role'=>$role, 'energy'=>$n,
-            'meaning'=>$dictionary[$n][1], 'shadow'=>$dictionary[$n][2]
+            'meaning'=>$dictionary[$n][0], 'shadow'=>$dictionary[$n][1]
         ];
     }
     return [
@@ -72,7 +72,7 @@ function nfhPilotModelData(array $brief): array {
     foreach($brief['five'] as $point){
         $clean[]=['роль'=>$point['role'],'проявление'=>$point['meaning'],'тень'=>$point['shadow']];
     }
-    // Neither model nor customer receives birth numbers or calculation scores.
+    // Never reveal numeric birth details in customer-facing prose.
     return [
       'вопрос'=>$brief['question'],
       'ведущая_энергия_дня'=>$clean[0],
