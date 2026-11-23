@@ -86,3 +86,4 @@ jobs:
           PY
 # Repeat read-only audit for newly failing household requests, zero AI calls.
 # Additional nonsecret metadata: only response status and token counts for diagnostics.
+# Review newest 2026-11-23 evening owner tests. Read-only: no API generation or customer writes.
