@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/numi-intimacy-crosssell-publish-20261123.yml
+      - .github/scripts/numi_intimacy_crosssell_publish_20261123.py
 permissions:
   contents: read
 concurrency:
