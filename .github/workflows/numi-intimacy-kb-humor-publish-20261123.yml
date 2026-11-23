@@ -1,0 +1,89 @@
+name: Publish revised witty intimacy knowledge only to REG RU
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-intimacy-kb-humor-publish-20261123.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Deploy only revised sex-and-intimacy interpretations
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib,ssl,io,os,json,hashlib,subprocess,pathlib,time,uuid,urllib.request,urllib.error
+          path='redflag-ai-lab/sexuality-knowledge-v1.json'
+          target=pathlib.Path(path).read_bytes()
+          oldGit=subprocess.check_output(['git','show','66d9488e5fe9807f488f3db82e3ded1d046c8838:'+path])
+          new=json.loads(target);oldJson=json.loads(oldGit)
+          assert set(new['arcana'])==set(oldJson['arcana'])==set(str(i) for i in range(1,23))
+          for key in ('schema','mode','calculation_source','do_not_assume_actual_behavior','pointDescriptions'):
+              assert new[key]==oldJson[key],key
+          for number in oldJson['arcana']:
+              assert set(new['arcana'][number])==set(oldJson['arcana'][number])
+              assert new['arcana'][number]['name']==oldJson['arcana'][number]['name']
+              for k in ('core','plus','minus','love'):
+                  assert isinstance(new['arcana'][number][k],str) and new['arcana'][number][k].strip()
+          assert 6000<len(target)<18000
+          def status(suffix):
+              url='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'+suffix+'?kb_restore='+str(time.time_ns())
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(url,headers={'Cache-Control':'no-store'}),timeout=25) as r:return r.status
+              except urllib.error.HTTPError as e:return e.code
+          def healthy():
+              codes=[status(''),status('redflag-ai-lab/style-test-api.php'),status('redflag-ai-lab/style-test.php')]
+              print('SITE_HEALTH',codes,flush=True)
+              return codes==[200,403,403]
+          if not healthy():raise RuntimeError('SITE_UNHEALTHY_BEFORE')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=44)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          backups=home+'/site-safeguard-backups'
+          def read(p,absolute=False):
+              v=io.BytesIO();ftp.retrbinary('RETR '+(p if absolute else root+p),v.write);return v.getvalue()
+          def write(p,v,absolute=False):
+              ftp.storbinary('STOR '+(p if absolute else root+p),io.BytesIO(v))
+              if read(p,absolute)!=v:raise RuntimeError('READBACK_MISMATCH')
+          original=None;started=False
+          try:
+              original=read(path)
+              if original!=oldGit:raise RuntimeError('REMOTE_BASELINE_DRIFT_STOP_WITHOUT_WRITING')
+              protected=['redflag-ai-lab/style-test-api.php','redflag-ai-lab/intimacy-knowledge-v1.json','redflag-ai-lab/infidelity-knowledge-v1.json','redflag-ai-lab/catalog.json','redflag-ai-lab/style-test.php']
+              hashes={p:hashlib.sha256(read(p)).hexdigest() for p in protected}
+              try:ftp.mkd(backups)
+              except ftplib.error_perm as e:
+                  if not str(e).startswith('550'):raise
+              tag=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+uuid.uuid4().hex[:8]
+              write(backups+'/before-intimacy-humor-kb-'+tag+'.bak',original,True)
+              if read(path)!=original:raise RuntimeError('CONCURRENT_REMOTE_CHANGE')
+              started=True
+              write(path,target)
+              if not healthy():raise RuntimeError('SITE_HEALTH_FAILED_AFTER')
+              for p,h in hashes.items():
+                  if hashlib.sha256(read(p)).hexdigest()!=h:raise RuntimeError('PROTECTED_FILE_CHANGED_'+p)
+              print('SEX_INTIMACY_HUMOR_KB_PUBLISHED_OK energies=22 paid_calls=0 unrelated_files_unchanged=true',flush=True)
+          except BaseException:
+              if started and original is not None:
+                  try:write(path,original);print('ROLLBACK_SUCCESS',flush=True)
+                  except BaseException:print('ROLLBACK_FAILED',flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
