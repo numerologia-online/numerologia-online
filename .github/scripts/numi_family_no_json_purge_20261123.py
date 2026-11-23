@@ -72,7 +72,7 @@ try:
     for p in FILES:
         remote=root+p
         curr=read(remote)
-        allowed=(git_before(p),local(p)) if p!="redflag-ai-lab/family-owner-preview-api.php" else (local(p),)
+        allowed=(git_before(p),local(p))
         if curr not in allowed:raise RuntimeError("REMOTE_FILE_DRIFT_"+p)
         saved[remote]=curr
     family=read(priv+"family-live.php")
