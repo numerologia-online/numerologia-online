@@ -176,7 +176,7 @@ function niGenerateText(array $question,int $day,int $month,int $year,array $cat
    $maps=[
      'fire'=>['left','top','loveHeart','center','tailFirst'],
      'her-pleasure'=>['left','loveHeart','center','top','tailFirst'],
-     'pace'=>['left','right','center','tailFirst','loveHeart'],
+     'pace'=>['left','tailSecond','center','tailFirst','loveHeart'],
      'desire-talk'=>['top','center','left','loveHeart','tailSecond'],
      'tenderness'=>['loveHeart','top','center','left','bottom'],
      'boundaries'=>['center','left','right','top','loveHeart'],
@@ -275,7 +275,7 @@ function niCacheFile(string $id,string $date): string {
     if(!in_array($id,array_merge(['fire'],niMapIds()),true)||naCatalogDate($date)===null)
         throw new InvalidArgumentException('INVALID_INTIMACY_REQUEST');
     // Free test date must receive the new voice; purchased, cached responses remain unchanged.
-    return niCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).($id==='fire'?'-voice8':'').'.json';
+    return niCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).($id==='fire'?'-kb48-v9':'').'.json';
 }
 function niCachedAnswer(string $id,string $date): ?string {
     $file=niCacheFile($id,$date);
