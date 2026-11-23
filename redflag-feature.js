@@ -379,7 +379,7 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
       if(!response.ok||data?.ok!==true||data?.free!==true||
           data?.ai_generated!==true||data?.question_id!=="love-language"||
           typeof data?.answer!=="string")throw new Error("LANGUAGE_FREE_UNAVAILABLE");
-      const paragraphs=data.answer.split(/\\n\\s*\\n/).map(part=>part.trim()).filter(Boolean);
+      const paragraphs=data.answer.split(/\n\s*\n/).map(part=>part.trim()).filter(Boolean);
       if(paragraphs.length!==2)throw new Error("LANGUAGE_FREE_SHAPE");
       if(profile!==activeProfile)return;
       state.answers.set(id,{answer:data.answer,paragraphs});
