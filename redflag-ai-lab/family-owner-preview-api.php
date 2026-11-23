@@ -101,7 +101,7 @@ function foBrief(string $id,int $day,int $month,int $year): array {
             throw new RuntimeException('FAMILY_OWNER_POINT_MISSING');
         $five[]=['роль'=>$roles[$key]]+$knowledge[$n];
     }
-    if(count($five)!==5||$five[0]['энергия']!==ni22($day)||$five[1]['энергия']!==$month)
+    if(count($five)!==5||$matrix['left']!==ni22($day)||$matrix['top']!==$month)
         throw new RuntimeException('FAMILY_OWNER_FIVE_POINTS_INVALID');
     return $five;
 }
