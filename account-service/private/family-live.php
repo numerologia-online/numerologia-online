@@ -66,6 +66,121 @@ function nfQuestionPoints(string $id): array {
     if(!isset($maps[$id]))throw new RuntimeException('FAMILY_QUESTION_MAP_MISSING');
     return $maps[$id];
 }
+
+/**
+ * Family-only provider transport: accept raw Gemini text before enforcing formatting.
+ * Other categories retain their original niCloudCall/niValidateGeneratedText.
+ * No automatic provider retries or changed model/cost budgets.
+ */
+function nfProviderFailure(string $reason,int $status,array $json=[],string $finish=''): never {
+    $usage=$json['usage']??[];
+    error_log('FAMILY_PROVIDER '.json_encode([
+        'error'=>$reason,'http_status'=>$status,'finish_reason'=>$finish,
+        'prompt_tokens'=>is_int($usage['prompt_tokens']??null)?$usage['prompt_tokens']:null,
+        'completion_tokens'=>is_int($usage['completion_tokens']??null)?$usage['completion_tokens']:null,
+        'reasoning_tokens'=>is_int($usage['completion_tokens_details']['reasoning_tokens']??null)
+            ?$usage['completion_tokens_details']['reasoning_tokens']:null
+    ],JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR));
+    throw new RuntimeException($reason);
+}
+function nfCloudRaw(array $messages,int $tokens=2800): string {
+    $cfg=require __DIR__.'/intimacy-live-config.php';
+    $key=is_array($cfg)?($cfg['cloudru_key']??null):null;
+    if(!is_string($key)||$key==='')nfProviderFailure('KEY_NOT_CONFIGURED',0);
+    $model='google/gemini-3-flash-preview';
+    $ch=curl_init('https://foundation-models.api.cloud.ru/v1/chat/completions');
+    if($ch===false)nfProviderFailure('PROVIDER_NETWORK_ERROR',0);
+    curl_setopt_array($ch,[
+        CURLOPT_POST=>true,CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,
+        CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>95,
+        CURLOPT_HTTPHEADER=>['Content-Type: application/json','Authorization: Bearer '.$key],
+        CURLOPT_POSTFIELDS=>json_encode([
+            'model'=>$model,'messages'=>$messages,'max_tokens'=>$tokens,'stream'=>false
+        ],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)
+    ]);
+    $body=curl_exec($ch);
+    $status=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE);
+    $curlCode=curl_errno($ch);
+    curl_close($ch);
+    if($curlCode===28)nfProviderFailure('PROVIDER_TIMEOUT',$status);
+    if($curlCode!==0)nfProviderFailure('PROVIDER_NETWORK_ERROR',$status);
+    $json=is_string($body)?json_decode($body,true,32):null;
+    if(!is_array($json))nfProviderFailure('PROVIDER_INVALID_JSON',$status);
+    $error=$json['error']??null;
+    $code=is_array($error)&&is_string($error['code']??null)?strtolower($error['code']):'';
+    $message=is_string($error)?$error:($error['message']??null);
+    $modelMissing=in_array($code,[
+        'model_not_found','model_not_available','model_unavailable','model_not_supported',
+        'model_deprecated','model_retired'
+    ],true);
+    if(is_string($message)&&niProviderNotice($message)==='PROVIDER_MODEL_UNAVAILABLE')
+        $modelMissing=true;
+    if($modelMissing)nfProviderFailure('PROVIDER_MODEL_UNAVAILABLE',$status,$json);
+    if($status!==200)nfProviderFailure('PROVIDER_HTTP_'.$status,$status,$json);
+    if($error!==null)nfProviderFailure('PROVIDER_SERVICE_MESSAGE',$status,$json);
+    $choice=$json['choices'][0]??null;
+    if(!is_array($choice))nfProviderFailure('PROVIDER_EMPTY_CHOICES',$status,$json);
+    $finish=is_string($choice['finish_reason']??null)?strtolower($choice['finish_reason']):'';
+    if(in_array($finish,['length','max_tokens'],true))
+        nfProviderFailure('PROVIDER_OUTPUT_LIMIT',$status,$json,$finish);
+    if(in_array($finish,['content_filter','safety','blocked','refusal'],true)
+       || !empty($choice['message']['refusal']))
+        nfProviderFailure('PROVIDER_REFUSAL',$status,$json,$finish);
+    $content=$choice['message']['content']??null;
+    if(is_array($content)){
+        $fragments=[];
+        foreach($content as $part){
+            if(!is_array($part))continue;
+            if(($part['type']??null)==='refusal')
+                nfProviderFailure('PROVIDER_REFUSAL',$status,$json,$finish);
+            if(is_string($part['text']??null))$fragments[]=$part['text'];
+        }
+        $content=implode('',$fragments);
+    }
+    if(!is_string($content)||trim($content)==='')
+        nfProviderFailure('EMPTY_ANSWER',$status,$json,$finish);
+    $notice=niProviderNotice($content);
+    if($notice!==null)nfProviderFailure($notice,$status,$json,$finish);
+    return $content;
+}
+/**
+ * Gemini may write three paragraphs, two with an internal newline, or one
+ * continuous paragraph. Reassemble the SAME WORDS into exactly two paragraphs
+ * instead of discarding a perfectly good completed response.
+ */
+function nfRestoreTwoParagraphs(string $text): string {
+    $text=trim(str_replace(["\r\n","\r"],"\n",$text));
+    $blocks=preg_split('/\n[ \t]*\n+/u',$text);
+    if(!is_array($blocks))return $text;
+    $blocks=array_values(array_filter(array_map('trim',$blocks),static fn($p)=>$p!==''));
+    if(count($blocks)===2)return implode("\n\n",$blocks);
+    if(count($blocks)===1){
+        // Plain newlines with no empty line are also common in model responses.
+        $lines=preg_split('/\n+/u',$blocks[0]);
+        $lines=is_array($lines)?array_values(array_filter(array_map('trim',$lines))):[];
+        if(count($lines)>=2)$blocks=$lines;
+    }
+    if(count($blocks)>2){
+        $last=array_pop($blocks);
+        while(mb_strlen($last,'UTF-8')<100&&count($blocks)>1)
+            $last=array_pop($blocks).' '.$last;
+        $first=trim(implode(' ',array_map('trim',$blocks)));
+        if($first!==''&&trim($last)!=='')return $first."\n\n".trim($last);
+    }
+    if(count($blocks)===2)return implode("\n\n",array_map('trim',$blocks));
+    // Single uninterrupted paragraph: split at a genuine sentence boundary,
+    // keeping the final 1-2 sentences and recommended question intact.
+    $single=trim(preg_replace('/\s+/u',' ',$text)??$text);
+    $sentences=preg_split('/(?<=[.!?…])\s+(?=[А-ЯЁ«„"0-9])/u',$single);
+    if(!is_array($sentences)||count($sentences)<3)return $text;
+    $last=array_pop($sentences);
+    while(mb_strlen($last,'UTF-8')<145&&count($sentences)>1)
+        $last=array_pop($sentences).' '.$last;
+    $first=trim(implode(' ',$sentences));
+    if(mb_strlen($first,'UTF-8')<200||trim($last)==='')return $text;
+    return $first."\n\n".trim($last);
+}
+
 function nfGenerateText(array $question,int $day,int $month,int $year): string {
     $id=$question['id'];
     $matrix=ni31($day,$month,$year);
@@ -113,7 +228,8 @@ PROMPT;
       'полная_рассчитанная_матрица_для_контекста'=>$matrix,
       'точные_названия_для_перехода'=>$followups
     ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
-    $text=niCloudCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$payload]],2800,'google/gemini-3-flash-preview');
+    $text=nfCloudRaw([['role'=>'system','content'=>$system],['role'=>'user','content'=>$payload]],2800);
+    $text=nfRestoreTwoParagraphs($text);
     $text=preg_replace('/[ \t]*[—–―][ \t]*/u',': ',$text)??$text;
     $text=preg_replace('/:[ \t]*:/u',':',$text)??$text;
     return preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
