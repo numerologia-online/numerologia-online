@@ -55,8 +55,8 @@ function nfQuestionPoints(string $id): array {
     // The whole matrix is calculated, but only four RELEVANT perspectives are
     // supplied. A conclusion is synthesized rather than listing six types.
     $maps=[
-      'independent'=>['left','top','center','bottom'],
-      'household'=>['left','top','center','rightNear'],
+      'independent'=>['left','top','topLeft','right'],
+      'household'=>['left','top','topLeft','rightNear'],
       'vacation'=>['left','top','topLeft','bottomLeft'],
       'plans'=>['left','top','right','bottomRight'],
       'children'=>['left','top','loveHeart','bottom'],
@@ -281,19 +281,38 @@ function nfFamilyAnswerCall(array $messages,int $tokens=2800): string {
     }
 }
 
+/**
+ * Identical arcana at several points are ONE set of tendencies, not repeated
+ * rhetorical evidence. Preserve the roles and all distinct point meanings.
+ * Never send numeric arcana codes to the language model.
+ */
+function nfSummarizePointsForQuestion(string $id,array $matrix,array $titles,array $kb): array {
+    $selected=[];
+    $seen=[];
+    foreach(nfQuestionPoints($id) as $key){
+        if(!isset($matrix[$key],$titles[$key]))
+            throw new RuntimeException('FAMILY_MATRIX_POINT_MISSING');
+        $code=(string)$matrix[$key];
+        $traits=$kb[$code]??null;
+        if(!is_array($traits))
+            throw new RuntimeException('FAMILY_KB_POSITION_MISSING');
+        if(isset($seen[$code])){
+            $selected[$seen[$code]]['роль'].='; '.$titles[$key];
+            continue;
+        }
+        $seen[$code]=count($selected);
+        $selected[]=['роль'=>$titles[$key],
+            'плюс'=>$traits['plus'],'минус'=>$traits['minus']];
+    }
+    return $selected;
+}
+
 function nfGenerateText(array $question,int $day,int $month,int $year): string {
     $id=$question['id'];
     $matrix=ni31($day,$month,$year);
     $titles=nfPointTitles();
     $kb=nfFamilyKnowledge();
-    $selected=[];
-    foreach(nfQuestionPoints($id) as $key){
-        if(!isset($matrix[$key],$titles[$key]))throw new RuntimeException('FAMILY_MATRIX_POINT_MISSING');
-        $traits=$kb[(string)$matrix[$key]]??null;
-        if(!is_array($traits))throw new RuntimeException('FAMILY_KB_POSITION_MISSING');
-        $selected[]=['роль'=>$titles[$key],
-            'плюс'=>$traits['plus'],'минус'=>$traits['minus']];
-    }
+    $selected=nfSummarizePointsForQuestion($id,$matrix,$titles,$kb);
     $raw=json_decode((string)file_get_contents(__DIR__.'/family-live-followups.json'),true,20,JSON_THROW_ON_ERROR);
     if(($raw['version']??null)!==1||count($raw['questions']??[])<65)
         throw new RuntimeException('FAMILY_FOLLOWUPS_UNAVAILABLE');
@@ -318,11 +337,13 @@ function nfGenerateText(array $question,int $day,int $month,int $year): string {
 
 У тебя НЕТ готовых выводов или банка готовых ответов. Сайт уже математически рассчитал полную матрицу мужчины. Ты получаешь только ПОНЯТНЫЕ СЛОВЕСНЫЕ ХАРАКТЕРИСТИКИ нескольких значимых для этого вопроса позиций из нашей базы знаний, без номеров и названий арканов. Объединяй именно эти характеристики, ничего не пересчитывай. Нельзя переносить формулировки из технических данных в клиентский текст.
 
-Перед тем как писать, самостоятельно сопоставь полученные характеристики, выбери ОДНУ ведущую конкретную склонность и уточни, как остальные действительно меняют её проявление. Не распределяй влияние по процентам, не перечисляй по очереди все плюсы и минусы. Дополнительные позиции нужны для вывода, а не для новых противоречивых портретов. Не превращай противоречие в бессмысленную золотую середину. Если одна характеристика уточняет или смягчает другую, отрази это в едином сценарии. Для разных дат и разных вопросов меняй сам вывод, а не только слова.
+Перед тем как писать, самостоятельно сопоставь полученные характеристики, выбери ОДНУ ведущую склонность именно для этого вопроса и уточни, как остальные действительно меняют её проявление. Одинаковая трактовка в нескольких расчётных позициях уже объединена сайтом: её повторение НЕ даёт основания преувеличивать минус. Не распределяй влияние по процентам, не перечисляй по очереди все плюсы и минусы. Дополнительные позиции нужны для уточнения, а не для навешивания новых ярлыков. Не выбирай самую неприятную характеристику только потому, что она звучит эффектно. Позитивный вывод может быть главным без обязательного «но он всё равно ужасный». Если склонности противоречат, покажи одну понятную вероятную форму поведения, а не выдуманную трагедию. Для разных дат и вопросов меняй сам вывод, а не только слова.
 
 Не дипломатничай там, где характеристики указывают на конкретную бытовую слабость. Лень, безответственность, инфантильность, перекладывание обязанностей, мелочные придирки и стремление распоряжаться чужими делами называй прямо, если это соответствует сочетанию. Но не делай мужчину жёстким, ленивым или властным автоматически. Если сочетание указывает на самостоятельность, заботу, расчётливость, гибкость или хозяйственность, говори это уверенно, не выдумывай недостатки для равновесия. Это символические возможные склонности, не проверенные факты.
 
-Пиши как умная, дерзкая, наблюдательная подруга, которая моментально замечает мужские уловки и умеет над ними посмеяться. Живо, остро, иногда едко, как в откровенном разговоре двух подруг, без литературных оборотов и вежливого психологического тумана. В ПЕРВОЙ ФРАЗЕ дай прямой, смелый ответ именно на поставленный вопрос. Затем два-три РАЗНЫХ конкретных поступка или реакции выбранного типажа и чем это оборачивается для женщины. Добавь ОДНУ короткую, неожиданную и смешную бытовую подколку, основанную на этих поступках, а не отдельную шутку ради шутки. В хорошем сочетании тоже шути доброжелательно, не делай мужчину отрицательным ради эффекта. Не переключайся на карьеру, характер вообще, весь жизненный путь или другие темы. Никаких размытых слов «парадоксальная натура», «серьёзный потенциал», «высокий статус» без ответа на вопрос. Не выбирай одну и ту же шутку о мужчине-командире, который сам не убирает: у разных сочетаний должны отличаться и вывод, и ситуация, и юмор.
+Пиши просто, как умная и остроумная женщина рассказывает подруге в голосовом сообщении, какой мужчина перед ней. Живо, по-человечески, с характером, без литературного спектакля. В ПЕРВОЙ ФРАЗЕ дай ясный ответ именно на поставленный вопрос. Затем покажи два-три РАЗНЫХ, совершенно обычных жизненных проявления этого вывода и чем это оборачивается для женщины. Если в поведении есть смешная нелепость, можешь коротко над ней подколоть мужчину. НЕ ВСТАВЛЯЙ ШУТКУ НАСИЛЬНО: смысл и нумерологическая точность важнее комедии. Ирония не требует злодея, богатства, слуг и королевских титулов. Хорошего, заботливого или самостоятельного мужчину можно описать уверенно и с тёплым юмором.
+
+Строго обычный разговорный русский язык. Никаких «сибаритов», «придворных», «деспотов», «железной хватки», «глобальных свершений», «люкса», «высокого статуса», «царей», «покорителей мира», «врождённых управленцев», «командиров домашнего фронта» и прочих театральных ярлыков. Не выдумывай человеку карьеру, богатство, характер жены или конкретные уже произошедшие события. Не подменяй вопрос о самостоятельности вопросом о том, любит ли он мыть тарелки: самостоятельность в решениях и привычка обслуживать себя связаны, но не тождественны. Не превращай любой вопрос в историю о мужчине, который командует, пока женщина убирает. Для разных дат должны отличаться сам вывод и бытовые проявления, а не только эпитеты.
 
 Не бойся назвать неприятные проявления прямо, если они вытекают из переданных характеристик. Но никакой грубости к женщине, искусственного драматизма и обвинений без оснований. Никакой воды, пафоса, нравоучений, повторов или необязательных похвал. Не смягчай обоснованный вывод и не заставляй женщину отвечать за мужское поведение. Нельзя: «он не со зла», «это не злой умысел», «он просто такой», «ему нужно понять», «если ты умеешь объяснять», «на самом деле ему важно», «в целом», «зато». Не выдумывай уже совершённых поступков.
 
@@ -333,7 +354,7 @@ PROMPT;
     $payload=json_encode([
       'вопрос'=>$question['title'],
       'фокус_ответа_не_отклоняться'=>nfQuestionFocus($id),
-      'смысловые_характеристики_для_вывода'=>$selected,
+      'смысловые_характеристики_без_повторов'=>$selected,
       'точные_названия_для_перехода'=>$followups
     ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
     $text=nfFamilyAnswerCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$payload]],2800);
@@ -352,7 +373,7 @@ function nfCacheDirectory(): string {
 function nfCacheFile(string $id,string $date): string {
     if(!in_array($id,nfQuestionIds(),true)||naCatalogDate($date)===null)
         throw new InvalidArgumentException('FAMILY_INVALID_REQUEST');
-    return nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-family-punch-v6.json';
+    return nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-family-conversational-v7.json';
 }
 function nfCachedAnswer(string $id,string $date): ?string {
     return nfReadCachedAnswer(nfCacheFile($id,$date),$id,$date);
@@ -361,7 +382,7 @@ function nfCachedAnswer(string $id,string $date): ?string {
 function nfLegacyCachedAnswer(string $id,string $date): ?string {
     if(!in_array($id,nfQuestionIds(),true)||naCatalogDate($date)===null)return null;
     $prefix=nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date);
-    foreach(['-family-ideal-synthesis-v5.json','-family-focused-v4.json','-family-focused-v3.json','-family-kb-v2.json','-nokb-v1.json'] as $suffix){
+    foreach(['-family-punch-v6.json','-family-ideal-synthesis-v5.json','-family-focused-v4.json','-family-focused-v3.json','-family-kb-v2.json','-nokb-v1.json'] as $suffix){
         $answer=nfReadCachedAnswer($prefix.$suffix,$id,$date);
         if($answer!==null)return $answer;
     }
