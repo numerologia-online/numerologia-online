@@ -58,6 +58,18 @@ jobs:
               counts[key]+=1
               timestamp=re.search(r'\[(.*?)\]',line)
               recent.append((timestamp.group(1) if timestamp else '?',key))
+          providers=[]
+          for line in errors:
+              m=re.search(r'FAMILY_PROVIDER\s+(\{.+\})',line)
+              if not m:continue
+              try:
+                  obj=json.loads(m.group(1))
+                  stamp=re.search(r'\[(.*?)\]',line)
+                  providers.append({'time':stamp.group(1) if stamp else '?','error':obj.get('error'),
+                                   'status':obj.get('http_status'),'finish_reason':obj.get('finish_reason'),
+                                   'prompt_tokens':obj.get('prompt_tokens'),'completion_tokens':obj.get('completion_tokens')})
+              except Exception:continue
+          print('FAMILY_PROVIDER_METADATA',json.dumps(providers[-20:],ensure_ascii=False),flush=True)
           print('FAMILY_ERROR_COUNTS',json.dumps(counts,ensure_ascii=False),flush=True)
           print('FAMILY_ERROR_LATEST_60',json.dumps(recent[-60:],ensure_ascii=False),flush=True)
           access=log('access')
@@ -73,3 +85,4 @@ jobs:
           ftp.quit()
           PY
 # Repeat read-only audit for newly failing household requests, zero AI calls.
+# Additional nonsecret metadata: only response status and token counts for diagnostics.
