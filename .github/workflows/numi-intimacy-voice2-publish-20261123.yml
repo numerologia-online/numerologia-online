@@ -27,3 +27,4 @@ jobs:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
         run: python3 -u .github/scripts/numi_intimacy_voice2_publish_20261123.py
+# retry after correcting exact prompt/cache scope assertion
