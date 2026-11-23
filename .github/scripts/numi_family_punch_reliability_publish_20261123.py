@@ -18,7 +18,7 @@ assert after.count(b"'max_tokens'=>$tokens")==1
 assert after.count(b'function nfFamilyAnswerCall(')==1
 assert after.count(b'return nfCloudRaw($messages,$tokens);')==2
 assert after.count(b'$text=nfFamilyAnswerCall(')==1
-assert b"'полная_рассчитанная_матрица_для_контекста'" not in after
+assert 'полная_рассчитанная_матрица_для_контекста'.encode('utf-8') not in after
 assert b'50/50' not in after
 lint=subprocess.run(['php','-l'],input=after,capture_output=True)
 if lint.returncode:raise RuntimeError('PHP_LINT_FAILED_'+lint.stderr.decode(errors='replace')[-300:])

@@ -1,4 +1,4 @@
-name: Publish Family punchy voice and same Gemini retry to REG RU
+name: Publish Family punchy voice and same Gemini retry to REG RU (validated)
 on:
   push:
     branches: [main]
