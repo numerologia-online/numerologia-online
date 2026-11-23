@@ -24,6 +24,13 @@ try {
     if($code==='redflag_question' && ($quote['availability']??'')==='AUTHOR_TEXT_NOT_CONFIRMED')
         naReply(409,['ok'=>false,'error'=>'DRAFT_NOT_PUBLISHED']);
     require_once dirname(__DIR__,3).'/private/numi-account-20261031/fulfillment.php';
+    // Same native production generator and answer cache as customers, never
+    // the isolated redflag-ai-lab editor. Owner bypasses wallet only after auth.
+    if($code==='redflag_question' && str_starts_with((string)$quote['resource_id'],'redflag:intimacy:')){
+        require_once dirname(__DIR__,3).'/private/numi-account-20261031/intimacy-live.php';
+        if(function_exists('set_time_limit'))@set_time_limit(125);
+        niEnsurePaidResource((string)$quote['resource_id']);
+    }
     $document=naMaterialBuild($code,(string)$quote['resource_id']);
     // Do not use genuine entitlement UUIDs or fabricated paid receipts.
     naReply(200,['ok'=>true,'owner_preview'=>true,'charged'=>false,
