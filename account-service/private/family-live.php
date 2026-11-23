@@ -207,6 +207,32 @@ function nfFamilyKnowledge(): array {
     return $knowledge=$parsed;
 }
 
+/**
+ * Family-only length guard: retain the completed provider answer but cut
+ * surplus sentences from the first paragraph, keeping the paid follow-up.
+ * Unlike re-generation, this incurs no additional provider request.
+ */
+function nfFitFamilyAnswerLength(string $text): string {
+    if(mb_strlen($text,'UTF-8')<=1650)return $text;
+    $parts=preg_split('/\n\s*\n/u',trim($text));
+    if(!is_array($parts)||count($parts)!==2)return $text;
+    [$first,$second]=array_map('trim',$parts);
+    $limit=min(1250,max(550,1650-mb_strlen($second,'UTF-8')-2));
+    if(mb_strlen($first,'UTF-8')<=$limit)return $text;
+    $sentences=preg_split('/(?<=[.!?…])\s+(?=[А-ЯЁ«„"0-9])/u',$first);
+    if(!is_array($sentences)||count($sentences)<3)return $text;
+    $kept=[];
+    foreach($sentences as $sentence){
+        $candidate=implode(' ',array_merge($kept,[$sentence]));
+        if(mb_strlen($candidate,'UTF-8')>$limit)break;
+        $kept[]=$sentence;
+    }
+    $newFirst=trim(implode(' ',$kept));
+    if(mb_strlen($newFirst,'UTF-8')<450)return $text;
+    $result=$newFirst."\n\n".$second;
+    return mb_strlen($result,'UTF-8')<=1650?$result:$text;
+}
+
 function nfGenerateText(array $question,int $day,int $month,int $year): string {
     $id=$question['id'];
     $matrix=ni31($day,$month,$year);
@@ -260,6 +286,7 @@ PROMPT;
     ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
     $text=nfCloudRaw([['role'=>'system','content'=>$system],['role'=>'user','content'=>$payload]],2800);
     $text=nfRestoreTwoParagraphs($text);
+    $text=nfFitFamilyAnswerLength($text);
     $text=preg_replace('/[ \t]*[—–―][ \t]*/u',': ',$text)??$text;
     $text=preg_replace('/:[ \t]*:/u',':',$text)??$text;
     return preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
@@ -308,9 +335,20 @@ function nfEnsureAnswer(string $id,string $date): string {
         foreach(nfQuestions() as $candidate)if($candidate['id']===$id){$q=$candidate;break;}
         if($q===null)throw new RuntimeException('FAMILY_QUESTION_NOT_FOUND');
         [$y,$m,$d]=array_map('intval',explode('-',$date));
-        $text=nfGenerateText($q,$d,$m,$y);
-        $text=niValidateGeneratedText($text,'stop');
-        if(mb_strlen($text,'UTF-8')>1800)throw new RuntimeException('FAMILY_TEXT_TOO_LONG');
+        try {
+            $text=nfGenerateText($q,$d,$m,$y);
+            $text=niValidateGeneratedText($text,'stop');
+            if(mb_strlen($text,'UTF-8')>1800)
+                throw new RuntimeException('FAMILY_TEXT_TOO_LONG');
+        }catch(Throwable $e){
+            // Private log records only an allowlisted reason and public question ID.
+            // No customer date, account, AI answer, credentials or provider payload.
+            $reason=$e instanceof RuntimeException?$e->getMessage():get_class($e);
+            if(!is_string($reason)||preg_match('/\\A[A-Z][A-Z0-9_]{2,79}\\z/D',$reason)!==1)
+                $reason='FAMILY_UNEXPECTED';
+            error_log('FAMILY_RESULT_FAIL question='.$id.' reason='.$reason);
+            throw $e;
+        }
         $blob=json_encode(['version'=>1,'question'=>$id,'date'=>$date,'answer'=>$text],
             JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
         $tmp=$path.'.'.bin2hex(random_bytes(6)).'.tmp';
