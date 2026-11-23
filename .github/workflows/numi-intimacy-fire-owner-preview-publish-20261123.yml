@@ -1,0 +1,117 @@
+name: Publish owner-only free intimacy Gemini preview
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-intimacy-fire-owner-preview-publish-20261123.yml
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Publish owner-only fire preview, leave all public answers as-is
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          php -l redflag-ai-lab/style-test-api.php
+          node --check redflag-feature.js
+          node --check app.js
+          python3 - <<'PY'
+          import ftplib,ssl,io,os,time,uuid,subprocess,pathlib,hashlib,json,urllib.request,urllib.error
+          baseline='dfcdcf2424f8162a5209b8741401c0db3de6d599'
+          php='redflag-ai-lab/style-test-api.php'
+          cat='redflag-ai-lab/catalog.json'
+          js='redflag-feature.js'
+          app='app.js'
+          files=[php,cat,js,app]
+          desired={p:pathlib.Path(p).read_bytes() for p in files}
+          previous={p:subprocess.check_output(['git','show',baseline+':'+p]) for p in files}
+          def fn(s,name):
+              i=s.index(b'function '+name+b'(');j=s.index(b'\n}\n',i)+2
+              return s[i:j]
+          oldFn=fn(previous[php],b'rfOwnerSharpIntimacy')
+          newFn=fn(desired[php],b'rfOwnerSharpIntimacy')
+          assert desired[php].replace(newFn,oldFn,1)==previous[php], 'UNRELATED_PHP_CHANGED'
+          assert newFn.replace(b"     'fire'=>['left','top','loveHeart','center','tailFirst'],\n",b'',1)==oldFn
+          oldCatalog=json.loads(previous[cat]);newCatalog=json.loads(desired[cat])
+          oldGroup=next(g for g in oldCatalog['categories'] if g['id']=='intimacy')
+          newGroup=next(g for g in newCatalog['categories'] if g['id']=='intimacy')
+          assert len(newGroup['questions'])==len(oldGroup['questions'])+1
+          assert newGroup['questions'][1:]==oldGroup['questions']
+          assert newGroup['questions'][0]=={'id':'fire','title':'Сексуальный огонь или пять минут — и спасибо?'}
+          newGroup['questions']=oldGroup['questions']
+          newCatalog['questions']=oldCatalog['questions']
+          assert newCatalog==oldCatalog,'UNRELATED_CATALOG_CHANGED'
+          assert desired[js].replace(b'||(section==="intimacy"&&question.id==="fire")',b'',1)==previous[js]
+          assert desired[app].replace(b'intimacy-owner-fire-20261123',b'redflag-retry-message-20261122')==previous[app]
+          host='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          def status(p):
+              url=host+p+'?fire_check='+str(time.time_ns())
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(url,headers={'Cache-Control':'no-store'}),timeout=25) as r:return r.status
+              except urllib.error.HTTPError as e:return e.code
+          def healthy():
+              codes=[status(''),status('redflag-ai-lab/style-test-api.php'),status('redflag-ai-lab/style-test.php')]
+              print('SITE_HEALTH',codes,flush=True)
+              return codes==[200,403,403]
+          if not healthy():raise RuntimeError('SITE_PRECHECK_FAILED')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45)
+          ftp.connect('server172.hosting.reg.ru',21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          backups=home+'/site-safeguard-backups'
+          def read(p,abs=False):
+              o=io.BytesIO();ftp.retrbinary('RETR '+(p if abs else root+p),o.write);return o.getvalue()
+          def write(p,v,abs=False):
+              ftp.storbinary('STOR '+(p if abs else root+p),io.BytesIO(v))
+              if read(p,abs)!=v:raise RuntimeError('REMOTE_READBACK_MISMATCH_'+p)
+          originals={};changed=[]
+          try:
+              for p in files: originals[p]=read(p)
+              if fn(originals[php],b'rfOwnerSharpIntimacy')!=oldFn:raise RuntimeError('LIVE_INTIMACY_DRIFT_NO_WRITE')
+              localPhp=originals[php].replace(oldFn,newFn,1)
+              if localPhp.replace(newFn,oldFn,1)!=originals[php]:raise RuntimeError('PHP_REPLACE_AMBIGUOUS')
+              if subprocess.run(['php','-l'],input=localPhp,capture_output=True).returncode:raise RuntimeError('LIVE_PHP_INVALID')
+              outputs={php:localPhp,cat:desired[cat],js:desired[js],app:desired[app]}
+              for p in (cat,js,app):
+                  if originals[p]!=previous[p]:raise RuntimeError('LIVE_FILE_DRIFT_NO_WRITE_'+p)
+              protected=['redflag-ai-lab/intimacy-knowledge-v1.json','redflag-ai-lab/infidelity-knowledge-v1.json','redflag-ai-lab/sexuality-knowledge-v1.json','data/redflag/banks/intimacy.json','redflag-ai-lab/style-test.php','redflag-public-catalog.js']
+              hashes={p:hashlib.sha256(read(p)).digest() for p in protected}
+              try:ftp.mkd(backups)
+              except ftplib.error_perm as e:
+                  if not str(e).startswith('550'):raise
+              tag=time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())+'-'+uuid.uuid4().hex[:8]
+              for p in files:write(backups+'/fire-owner-before-'+p.replace('/','-')+'-'+tag+'.bak',originals[p],True)
+              for p in files:
+                  if read(p)!=originals[p]:raise RuntimeError('CONCURRENT_REMOTE_CHANGE_'+p)
+              for p in (cat,php,js,app):
+                  changed.append(p)
+                  write(p,outputs[p])
+              if not healthy():raise RuntimeError('HEALTH_FAILED_AFTER')
+              for p,h in hashes.items():
+                  if hashlib.sha256(read(p)).digest()!=h:raise RuntimeError('PROTECTED_CHANGED_'+p)
+              print('OWNER_FREE_INTIMACY_FIRE_PREVIEW_PUBLISHED_OK paid_calls=0 public_static_unchanged=true flags_infidelity_unchanged=true',flush=True)
+          except BaseException:
+              if changed:
+                  fails=[]
+                  for p in reversed(changed):
+                      try:write(p,originals[p])
+                      except BaseException:fails.append(p)
+                  print('ROLLBACK_'+('FAILED_'+','.join(fails) if fails else 'SUCCESS'),flush=True)
+              raise
+          finally:
+              try:ftp.quit()
+              except BaseException:ftp.close()
+          PY
