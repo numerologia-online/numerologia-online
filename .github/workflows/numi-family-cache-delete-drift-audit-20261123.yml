@@ -1,0 +1,46 @@
+name: Family cache deletion preflight diff - READ ONLY
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-family-cache-delete-drift-audit-20261123.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compare five deployed files with current and last pre-change Git code
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,ssl,io,os,subprocess,pathlib,hashlib,difflib
+          base='f72f282a9688ea98db23487500d753f162a4cd8a'
+          paths=['redflag-ai-lab/family-owner-preview-api.php','redflag-ai-lab/keep.php','redflag-feature.js','app.js','index.html']
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=48)
+          ftp.connect('server172.hosting.reg.ru',21);ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p()
+          root=ftp.pwd().rstrip('/')+'/www/xn--c1adkkdfjbp1a4l.online/'
+          try:
+            for path in paths:
+              f=io.BytesIO();ftp.retrbinary('RETR '+root+path,f.write);remote=f.getvalue()
+              original=subprocess.check_output(['git','show',base+':'+path])
+              current=pathlib.Path(path).read_bytes()
+              def short(b):return hashlib.sha256(b).hexdigest()[:12]
+              print('REMOTE_DIFF',path,'old',remote==original,'new',remote==current,
+                'sizes',len(remote),len(original),len(current),
+                'hashes',short(remote),short(original),short(current),flush=True)
+              if path=='redflag-ai-lab/keep.php':
+                old=original.decode('utf-8').splitlines()
+                now=remote.decode('utf-8').splitlines()
+                dif=list(difflib.unified_diff(old,now,fromfile='gitbase',tofile='remote',n=2))
+                print('KEEP_DIFF_LINECOUNT',len(dif),flush=True)
+                for line in dif[:36]:
+                  print('KEEP_DIFF',(line[:160] if line[:1] in '@-+' else '') if line[:1] in '@-+' else '',flush=True)
+          finally:ftp.quit()
+          PY
