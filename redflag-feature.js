@@ -45,7 +45,8 @@ let ownerDraftAccess=false,ownerDraftAccessChecked=false;
 const ownerDraftInScope=(question,state)=>{
   const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
   return Boolean(ownerDraftAccess&&redflagDraftSections.has(section)&&
-    (question.isComingSoon||(section==="infidelity"&&question.id==="faithful")));
+    (question.isComingSoon||(section==="infidelity"&&question.id==="faithful")||
+     (section==="family"&&!question.isFree)));
 };
 async function verifyOwnerDraftAccess(){
   if(ownerDraftAccessChecked)return;
@@ -463,7 +464,10 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
       // Always request a fresh AI response for a test question. Previously
       // kept editor drafts stay safely on the server and can be opened via
       // the separate "Показать сохранённое" control.
-      const response=await fetch("/redflag-ai-lab/style-test-api.php",{
+      const endpoint=category==="family"
+        ?"/redflag-ai-lab/family-owner-preview-api.php"
+        :"/redflag-ai-lab/style-test-api.php";
+      const response=await fetch(endpoint,{
         method:"POST",credentials:"same-origin",cache:"no-store",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({category,question_id:id,day:birth.day,month:birth.month,
