@@ -256,6 +256,31 @@ function nfQuestionFocus(string $id): string {
     return $focus[$id];
 }
 
+/**
+ * Family only: one bounded retry for a QUICK upstream-unavailable reply.
+ * Always retries the SAME Gemini 3 Flash; no alternate models or background jobs.
+ * Does not retry timeouts, valid responses, validation or payment failures.
+ */
+function nfTransientFamilyModelError(Throwable $error): bool {
+    return $error instanceof RuntimeException && in_array($error->getMessage(),[
+        'PROVIDER_MODEL_UNAVAILABLE','PROVIDER_HTTP_429','PROVIDER_HTTP_502',
+        'PROVIDER_HTTP_503','PROVIDER_HTTP_504'
+    ],true);
+}
+function nfFamilyAnswerCall(array $messages,int $tokens=2800): string {
+    $started=microtime(true);
+    try {
+        return nfCloudRaw($messages,$tokens);
+    }catch(Throwable $error){
+        // Keep even two 95-second provider windows inside the frontend's
+        // 125-second timeout: only retry if the FIRST error arrived promptly.
+        if(!nfTransientFamilyModelError($error)||microtime(true)-$started>=20.0)throw $error;
+        error_log('FAMILY_TRANSIENT_UPSTREAM_RETRY same_model=true');
+        usleep(3000000);
+        return nfCloudRaw($messages,$tokens);
+    }
+}
+
 function nfGenerateText(array $question,int $day,int $month,int $year): string {
     $id=$question['id'];
     $matrix=ni31($day,$month,$year);
@@ -297,7 +322,7 @@ function nfGenerateText(array $question,int $day,int $month,int $year): string {
 
 Не дипломатничай там, где характеристики указывают на конкретную бытовую слабость. Лень, безответственность, инфантильность, перекладывание обязанностей, мелочные придирки и стремление распоряжаться чужими делами называй прямо, если это соответствует сочетанию. Но не делай мужчину жёстким, ленивым или властным автоматически. Если сочетание указывает на самостоятельность, заботу, расчётливость, гибкость или хозяйственность, говори это уверенно, не выдумывай недостатки для равновесия. Это символические возможные склонности, не проверенные факты.
 
-Пиши как умная, дерзкая, наблюдательная подруга. Чётко, ярко, нормальными словами, заметно острее и смелее, чем вежливый психолог, с узнаваемыми поступками. В ПЕРВОЙ ФРАЗЕ прямой ответ именно на поставленный вопрос. Затем два-три РАЗНЫХ конкретных проявления выбранного вывода и чем это оборачивается для женщины. Не переключайся на карьеру, характер вообще, весь жизненный путь или другие темы. Одна меткая, неожиданная формулировка лучше трёх дипломатичных объяснений.
+Пиши как умная, дерзкая, наблюдательная подруга, которая моментально замечает мужские уловки и умеет над ними посмеяться. Живо, остро, иногда едко, как в откровенном разговоре двух подруг, без литературных оборотов и вежливого психологического тумана. В ПЕРВОЙ ФРАЗЕ дай прямой, смелый ответ именно на поставленный вопрос. Затем два-три РАЗНЫХ конкретных поступка или реакции выбранного типажа и чем это оборачивается для женщины. Добавь ОДНУ короткую, неожиданную и смешную бытовую подколку, основанную на этих поступках, а не отдельную шутку ради шутки. В хорошем сочетании тоже шути доброжелательно, не делай мужчину отрицательным ради эффекта. Не переключайся на карьеру, характер вообще, весь жизненный путь или другие темы. Никаких размытых слов «парадоксальная натура», «серьёзный потенциал», «высокий статус» без ответа на вопрос. Не выбирай одну и ту же шутку о мужчине-командире, который сам не убирает: у разных сочетаний должны отличаться и вывод, и ситуация, и юмор.
 
 Не бойся назвать неприятные проявления прямо, если они вытекают из переданных характеристик. Но никакой грубости к женщине, искусственного драматизма и обвинений без оснований. Никакой воды, пафоса, нравоучений, повторов или необязательных похвал. Не смягчай обоснованный вывод и не заставляй женщину отвечать за мужское поведение. Нельзя: «он не со зла», «это не злой умысел», «он просто такой», «ему нужно понять», «если ты умеешь объяснять», «на самом деле ему важно», «в целом», «зато». Не выдумывай уже совершённых поступков.
 
@@ -311,7 +336,7 @@ PROMPT;
       'смысловые_характеристики_для_вывода'=>$selected,
       'точные_названия_для_перехода'=>$followups
     ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
-    $text=nfCloudRaw([['role'=>'system','content'=>$system],['role'=>'user','content'=>$payload]],2800);
+    $text=nfFamilyAnswerCall([['role'=>'system','content'=>$system],['role'=>'user','content'=>$payload]],2800);
     $text=nfRestoreTwoParagraphs($text);
     $text=nfFitFamilyAnswerLength($text);
     $text=preg_replace('/[ \t]*[—–―][ \t]*/u',': ',$text)??$text;
@@ -327,7 +352,7 @@ function nfCacheDirectory(): string {
 function nfCacheFile(string $id,string $date): string {
     if(!in_array($id,nfQuestionIds(),true)||naCatalogDate($date)===null)
         throw new InvalidArgumentException('FAMILY_INVALID_REQUEST');
-    return nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-family-ideal-synthesis-v5.json';
+    return nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-family-punch-v6.json';
 }
 function nfCachedAnswer(string $id,string $date): ?string {
     return nfReadCachedAnswer(nfCacheFile($id,$date),$id,$date);
@@ -336,7 +361,7 @@ function nfCachedAnswer(string $id,string $date): ?string {
 function nfLegacyCachedAnswer(string $id,string $date): ?string {
     if(!in_array($id,nfQuestionIds(),true)||naCatalogDate($date)===null)return null;
     $prefix=nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date);
-    foreach(['-family-focused-v4.json','-family-focused-v3.json','-family-kb-v2.json','-nokb-v1.json'] as $suffix){
+    foreach(['-family-ideal-synthesis-v5.json','-family-focused-v4.json','-family-focused-v3.json','-family-kb-v2.json','-nokb-v1.json'] as $suffix){
         $answer=nfReadCachedAnswer($prefix.$suffix,$id,$date);
         if($answer!==null)return $answer;
     }
