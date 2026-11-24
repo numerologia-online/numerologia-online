@@ -1,5 +1,5 @@
 import os,io,ssl,ftplib,pathlib,subprocess,time,urllib.request,urllib.error,hashlib
-base='7b34dcf4a093acae23112320b8cdc8d0e8d47b92'
+base='cc6a325bdd1d483f81100f9d5aa4c7f472037837'
 files=['account-service/private/language-live-knowledge.txt','account-service/private/language-live.php']
 old={p:subprocess.check_output(['git','show',base+':'+p]) for p in files}
 new={p:pathlib.Path(p).read_bytes() for p in files}
@@ -52,7 +52,7 @@ try:
  assert healthy(),'POST_HEALTH'
  for p in files:assert read(remote(p))==new[p],'FINAL_READBACK'
  for p,h in hashes.items():assert hashlib.sha256(read(p)).digest()==h,'PROTECTED_CHANGED'
- print('LANGUAGE_PRACTICAL_WARMTH_LIVE 22x10=true points_unchanged=true old_purchases_preserved=true model_calls=0',flush=True)
+ print('LANGUAGE_FREE_CHOICE_LIVE 22x10=true points_unchanged=true old_purchases_preserved=true model_calls=0',flush=True)
 except BaseException:
  for p in reversed(changed):
   try:write(remote(p),saved[p]);print('ROLLBACK_OK',p,flush=True)
