@@ -40,10 +40,10 @@ function nvCacheFile(string $id,string $date): string {
     if($id==='final'){
         [$y,$m,$d]=array_map('intval',explode('-',$date));
         $matrix=ni31($d,$m,$y);
-        foreach(vpPointMap($id) as $point){
-            if(in_array($matrix[$point],[1,2,3,5],true)){$suffix='-verdict-energies1to5-v3.json';break;}
-            if($matrix[$point]===4)$suffix='-verdict-energy4-v2.json';
-        }
+        $points=array_map(static fn($point)=>$matrix[$point],vpPointMap($id));
+        if(array_intersect($points,[6,7,8,9,10]))$suffix='-verdict-energies6to10-v4.json';
+        elseif(array_intersect($points,[1,2,3,5]))$suffix='-verdict-energies1to5-v3.json';
+        elseif(in_array(4,$points,true))$suffix='-verdict-energy4-v2.json';
     }
     return nvCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).$suffix;
 }
