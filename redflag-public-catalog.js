@@ -133,62 +133,61 @@ export const PUBLIC_QUESTIONS = {
       "id": "first-step",
       "title": "Пишет первым или ждёт инициативы от женщины?",
       "priceRub": 10,
-      "textFile": "love/first-step.json?v=2",
       "status": "ready"
     },
     {
       "id": "romance",
       "title": "Романтик в жизни или только в переписке?",
       "priceRub": 10,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "relationship-or-comfort",
       "title": "Ищет любовь или просто удобную женщину?",
       "priceRub": 10,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "adult-partner",
       "title": "Мужчина для семьи или вечный мальчик?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "near-him",
       "title": "Рядом с ним женщина расцветает или гаснет?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "hard-moment",
       "title": "Поддержит в беде или исчезнет первым?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "relationship-format",
       "title": "Готов к серьёзным отношениям или вечно «я не готов»?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "family-or-triangle",
       "title": "Способен быть с одной женщиной или его тянет в любовные треугольники?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "honest-or-disappear",
       "title": "Почему он исчезает без объяснений?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "love-or-attention",
       "title": "Умеет любить или только позволяет себя любить?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     }
   ],
   "flags": [

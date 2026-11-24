@@ -528,6 +528,12 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     return nvSupportedPaidResource('redflag_question',(string)$item['resource_id'])
                         && nvEngineInstalled();
                 }
+                if(($item['product_code']??null)==='redflag_question'
+                  &&str_starts_with((string)($item['resource_id']??''),'redflag:love:')){
+                    require_once __DIR__.'/love-live.php';
+                    return lvlSupportedPaidResource('redflag_question',(string)$item['resource_id'])
+                        && lvlEngineInstalled();
+                }
                 try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}
                 catch(Throwable $e){return false;}
             };
@@ -614,6 +620,12 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     return nvSupportedPaidResource('redflag_question',(string)$item['resource_id'])
                         && nvEngineInstalled();
                 }
+                if(($item['product_code']??null)==='redflag_question'
+                  &&str_starts_with((string)($item['resource_id']??''),'redflag:love:')){
+                    require_once __DIR__.'/love-live.php';
+                    return lvlSupportedPaidResource('redflag_question',(string)$item['resource_id'])
+                        && lvlEngineInstalled();
+                }
                 try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}
                 catch(Throwable $e){return false;}
             };
@@ -670,6 +682,19 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     if(naRealWalletBalance($db,$account['id']) >= (int)$resolved['price_kopeks']){
                         if(function_exists('set_time_limit'))@set_time_limit(125);
                         nvEnsurePaidResource((string)$resolved['resource_id']);
+                    }
+                }
+            }
+            if(($resolved['product_code']??null)==='redflag_question'
+              &&str_starts_with((string)($resolved['resource_id']??''),'redflag:love:')){
+                require_once __DIR__.'/love-live.php';
+                naRealWalletRequireLive($config);
+                if(!lvlEngineInstalled()||!lvlSupportedPaidResource('redflag_question',(string)$resolved['resource_id']))
+                    throw new RuntimeException('REAL_MATERIAL_NOT_READY');
+                if(!naRealWalletHasAccess($db,$account,'redflag_question',(string)$resolved['resource_id'])){
+                    if(naRealWalletBalance($db,$account['id']) >= (int)$resolved['price_kopeks']){
+                        if(function_exists('set_time_limit'))@set_time_limit(125);
+                        lvlEnsurePaidResource((string)$resolved['resource_id']);
                     }
                 }
             }

@@ -1,6 +1,6 @@
 // Red Flag deliberately needs only day and month, with no birth-year dependence.
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=language-live-20261123";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=love-live-20261124";
 
 // Paid content is rendered as text; do not interpret author-controlled paragraphs as HTML.
 const escapeMarkup = value => String(value??"").replace(/[&<>"']/g,char=>({
@@ -40,13 +40,13 @@ let formattedDate;
 // The regular Red Flag accordion remains the only interface for answers.
 // Unfinished questions receive an on-demand AI test answer ONLY after verified
 // owner authorization. Neither customer paid access nor published banks change.
-const redflagDraftSections = new Set(["flags","infidelity","intimacy","family","language","verdict"]);
+const redflagDraftSections = new Set(["flags","infidelity","intimacy","family","language","verdict","love"]);
 let ownerDraftAccess=false,ownerDraftAccessChecked=false;
 const ownerDraftInScope=(question,state)=>{
   const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
   return Boolean(ownerDraftAccess&&redflagDraftSections.has(section)&&
     (question.isComingSoon||(section==="infidelity"&&question.id==="faithful")||
-     section==="family"||section==="intimacy"||section==="verdict"));
+     section==="family"||section==="intimacy"||section==="verdict"||section==="love"));
 };
 async function verifyOwnerDraftAccess(){
   if(ownerDraftAccessChecked)return;
@@ -515,6 +515,36 @@ const ensureAnswerResolved = (question, state, {forceNew = false} = {}) => {
     state.answerRequests.set(id,task);
     return;
   }
+  // Native free Love and Relationships for every visitor.
+  if(question.isFree&&id==="first-step"&&!ownerDraftInScope(question,state)&&state===categoryStates.get("love")){
+    const birth=parseRedFlagDate(birthDateInput.value);
+    if(!birth){state.answerErrors.set(id,"Укажи дату рождения мужчины.");return;}
+    const birthday=birth.year+"-"+String(birth.month).padStart(2,"0")+"-"+String(birth.day).padStart(2,"0");
+    const task=fetch("/api/numi-love-free.php",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({question_id:"first-step",birth_date:birthday}),
+      signal:AbortSignal.timeout(125000)
+    }).then(async response=>{
+      const data=await response.json();
+      if(!response.ok||data?.ok!==true||data?.free!==true||
+          data?.ai_generated!==true||data?.question_id!=="first-step"||
+          typeof data?.answer!=="string")throw new Error("LOVE_FREE_UNAVAILABLE");
+      const paragraphs=data.answer.split(/\n\s*\n/).map(part=>part.trim()).filter(Boolean);
+      if(paragraphs.length!==2)throw new Error("LOVE_FREE_SHAPE");
+      if(profile!==activeProfile)return;
+      state.answers.set(id,{answer:data.answer,paragraphs});
+    }).catch(()=>{
+      if(profile===activeProfile)
+        state.answerErrors.set(id,redFlagLoadErrorCopy(true).text);
+    }).finally(()=>{
+      if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
+      if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
+        renderCategories({type:"question",id});
+    });
+    state.answerRequests.set(id,task);
+    return;
+  }
   // Native FREE Gemini answer for all site users, not an editor/test route.
   if(question.isFree&&id==="fire"&&!ownerDraftInScope(question,state)&&[...categoryStates].some(
     ([category,entry])=>category==="intimacy"&&entry===state)){
@@ -558,6 +588,7 @@ const ensureAnswerResolved = (question, state, {forceNew = false} = {}) => {
         ?"/redflag-ai-lab/family-owner-preview-api.php"
         :category==="intimacy"?"/redflag-ai-lab/intimacy-practical-preview-api.php"
          :category==="verdict"?"/redflag-ai-lab/verdict-owner-preview-api.php"
+         :category==="love"?"/redflag-ai-lab/love-owner-preview-api.php"
         :"/redflag-ai-lab/style-test-api.php";
       const response=await fetch(endpoint,{
         method:"POST",credentials:"same-origin",cache:"no-store",
@@ -1095,7 +1126,7 @@ const ensureQuestions = async (category) => {
       ...question, isFree: index === 0,
       priceRub: index === 0 ? 0 : question.priceRub,
       // All ten intimacy questions use the native production AI and wallet.
-      isComingSoon: ["intimacy","verdict"].includes(category.id) ? false : question.status !== "ready"
+      isComingSoon: ["intimacy","verdict","love"].includes(category.id) ? false : question.status !== "ready"
     }));
   } finally {
     state.loading = false;

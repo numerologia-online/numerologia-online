@@ -84,6 +84,12 @@ function naMaterialBuild(string $code,string $resource,?string $root=null): arra
         try{return nvMaterialFromCache($resource);}
         catch(RuntimeException $e){if($e->getMessage()!=='MATERIAL_NOT_READY')throw $e;}
     }
+    // Newly generated Love and Relationships material; previously purchased static material stays readable.
+    if($code==='redflag_question' && preg_match('/^redflag:love:/D',$resource)===1){
+        require_once __DIR__.'/love-live.php';
+        try{return lvlMaterialFromCache($resource);}
+        catch(RuntimeException $e){if($e->getMessage()!=='MATERIAL_NOT_READY')throw $e;}
+    }
     $sections=[];$title='';$links=[];
     if($code==='year_full'&&preg_match('/^year:(\d{4}):(\d{4}-\d{2}-\d{2})$/D',$resource,$match)){
         $year=(int)$match[1];$date=$match[2];if(!naCatalogDate($date))throw new RuntimeException('MATERIAL_NOT_READY');
