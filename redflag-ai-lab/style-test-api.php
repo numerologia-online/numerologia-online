@@ -1034,7 +1034,7 @@ function rfOwnerSharpFlags(array $question,int $day,int $month,int $year,array $
         'ведущий_мотив'=>$a['core'],
         'сильная_сторона'=>$a['plus'],
         'теневая_сторона'=>$a['minus'],
-        'в_отношениях'=>$a['love']
+        'в_отношениях'=>$a['question_traits'][$id]??$a['love']
       ];
    }
    $followups=[];
@@ -1105,7 +1105,7 @@ function rfOwnerSharpInfidelity(array $question,int $day,int $month,int $year,ar
         'ведущий_мотив'=>$a['core'],
         'сильная_сторона'=>$a['plus'],
         'теневая_сторона'=>$a['minus'],
-        'в_отношениях'=>$a['love']
+        'в_отношениях'=>$a['question_traits'][$id]??$a['love']
       ];
    }
    $followups=[];
