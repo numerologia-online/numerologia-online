@@ -85,6 +85,18 @@ try:
             else:raise RuntimeError("REMOTE_INTIMACY_ANCHOR_UNVERIFIED")
             subprocess.run(["php","-l"],input=new[p],check=True)
             print("SHARED_ENDPOINT_INTIMACY_ONLY_PATCH",flush=True)
+        elif p=='redflag-ai-lab/intimacy-pilot-api.php' and saved[p] not in (old[p],new[p]):
+            # This isolated obsolete preview is explicitly retired; preserve its remote bytes except for the authenticated early exit.
+            anchor=b" if(!naTestOwner(naCurrent(naDB())))ipReply(403,['ok'=>false,'error'=>'OWNER_ONLY']);"
+            exit_line=b"\n ipReply(410,['ok'=>false,'error'=>'LEGACY_INTIMACY_PREVIEW_RETIRED']);"
+            if saved[p].count(anchor+exit_line)==1:
+                new[p]=saved[p]
+            elif saved[p].count(anchor)==1 and b'LEGACY_INTIMACY_PREVIEW_RETIRED' not in saved[p]:
+                new[p]=saved[p].replace(anchor,anchor+exit_line,1)
+            else:
+                raise RuntimeError("REMOTE_PILOT_AUTH_ANCHOR_UNVERIFIED")
+            subprocess.run(["php","-l"],input=new[p],check=True)
+            print("LEGACY_PILOT_RETIREMENT_ONLY_PATCH",flush=True)
         elif saved[p] not in (old[p],new[p]):raise RuntimeError("REMOTE_DRIFT_"+p)
     hashes={p:hashlib.sha256(read(p)).digest() for p in protected}
     for n in ['intimacy-practical-knowledge.txt']:
