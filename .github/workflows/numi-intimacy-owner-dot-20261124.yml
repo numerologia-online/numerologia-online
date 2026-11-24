@@ -1,4 +1,4 @@
-name: Publish temporary owner-only intimacy dot marker
+name: Publish revised owner-only intimacy conversational voice
 on:
   push:
     branches: [main]

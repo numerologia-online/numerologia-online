@@ -1,11 +1,14 @@
 import os,io,ssl,ftplib,pathlib,subprocess,time,urllib.request,urllib.error,hashlib
 P='redflag-ai-lab/intimacy-practical-preview-api.php'
 E='account-service/private/intimacy-practical-engine.php'
-old=subprocess.check_output(['git','show','2010f3cd656025bdcc835cedd28c7a26c7774777:'+P])
+old=subprocess.check_output(['git','show','460e18f26781850586723b1592cee17986122452:'+P])
 new=pathlib.Path(P).read_bytes()
 engine=pathlib.Path(E).read_bytes()
 assert hashlib.sha1(b'blob '+str(len(engine)).encode()+b'\x00'+engine).hexdigest()=='e3f9e609c59db32bf8d056cf02b003b5eb614a3b'
-assert new.count(b'INTIMACY_PREVIEW_ENGINE_VERSION_MISMATCH')==1
+assert new.count(b'OWNER_VOICE')==2
+assert b'INTIMACY_PREVIEW_ENGINE_VERSION_MISMATCH' not in new
+assert b'ipFollowups($id)' in new
+assert b'unset($payload[' in new
 subprocess.run(['php','-l',P],check=True)
 def status(p):
     try:
@@ -35,12 +38,12 @@ try:
         try:ftp.mkd(backup)
         except ftplib.error_perm as e:
             if not str(e).startswith('550'):raise
-        write(backup+'/before-intimacy-owner-dot-'+str(time.time_ns())+'.bak',saved)
+        write(backup+'/before-intimacy-owner-voice-'+str(time.time_ns())+'.bak',saved)
         assert read(remote)==saved,'CONCURRENT_EDIT'
         changed=True;write(remote,new)
     assert healthy(),'POST_HEALTH'
     assert read(remote)==new and read(remote_engine)==engine,'FINAL_READBACK'
-    print('OWNER_DOT_LIVE engine_verified=true owner_only=true model_calls=0',flush=True)
+    print('OWNER_VOICE_LIVE engine_verified=true owner_only=true second_paragraph_restored=true model_calls=0',flush=True)
 except BaseException:
     if changed:write(remote,saved)
     raise
