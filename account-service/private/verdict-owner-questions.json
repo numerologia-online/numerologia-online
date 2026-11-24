@@ -1,0 +1,65 @@
+{
+  "id": "verdict",
+  "questions": [
+    {
+      "id": "final",
+      "title": "Какой финальный вердикт по этому мужчине без розовых очков?",
+      "priceRub": 10,
+      "isFree": true
+    },
+    {
+      "id": "worth-it",
+      "title": "С ним вообще стоит связываться или лучше не тратить время?",
+      "priceRub": 10,
+      "isFree": false
+    },
+    {
+      "id": "beauty-and-flag",
+      "title": "Красивый мужчина или Red Flag с красивыми глазами?",
+      "priceRub": 10,
+      "isFree": false
+    },
+    {
+      "id": "check",
+      "title": "Его ещё проверять поступками или уже всё понятно?",
+      "priceRub": 29,
+      "isFree": false
+    },
+    {
+      "id": "main-advice",
+      "title": "Какой главный совет женщине рядом с ним?",
+      "priceRub": 29,
+      "isFree": false
+    },
+    {
+      "id": "his-need",
+      "title": "Что ему нужно от женщины, чтобы правда раскрыться?",
+      "priceRub": 29,
+      "isFree": false
+    },
+    {
+      "id": "weak-point",
+      "title": "Где его главный риск в отношениях?",
+      "priceRub": 29,
+      "isFree": false
+    },
+    {
+      "id": "best-side",
+      "title": "Чем он способен порадовать в любви?",
+      "priceRub": 49,
+      "isFree": false
+    },
+    {
+      "id": "format",
+      "title": "Какой формат отношений с ним будет самым здоровым?",
+      "priceRub": 49,
+      "isFree": false
+    },
+    {
+      "id": "bottom-line",
+      "title": "Как понять, что пора выбрать себя, а не ждать его?",
+      "priceRub": 49,
+      "isFree": false
+    }
+  ]
+}

@@ -46,7 +46,7 @@ const ownerDraftInScope=(question,state)=>{
   const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
   return Boolean(ownerDraftAccess&&redflagDraftSections.has(section)&&
     (question.isComingSoon||(section==="infidelity"&&question.id==="faithful")||
-     section==="family"||section==="intimacy"));
+     section==="family"||section==="intimacy"||section==="verdict"));
 };
 async function verifyOwnerDraftAccess(){
   if(ownerDraftAccessChecked)return;
@@ -527,6 +527,7 @@ const ensureAnswerResolved = (question, state, {forceNew = false} = {}) => {
       const endpoint=category==="family"
         ?"/redflag-ai-lab/family-owner-preview-api.php"
         :category==="intimacy"?"/redflag-ai-lab/intimacy-practical-preview-api.php"
+         :category==="verdict"?"/redflag-ai-lab/verdict-owner-preview-api.php"
         :"/redflag-ai-lab/style-test-api.php";
       const response=await fetch(endpoint,{
         method:"POST",credentials:"same-origin",cache:"no-store",
