@@ -34,13 +34,16 @@ function nvCacheDirectory(): string {
 function nvCacheFile(string $id,string $date): string {
     if(!in_array($id,array_merge(['final'],nvMapIds()),true)||naCatalogDate($date)===null||(int)substr($date,0,4)>(int)gmdate('Y'))
         throw new InvalidArgumentException('INVALID_VERDICT_REQUEST');
-    // Refresh only free answers whose selected matrix positions include energy 4.
+    // Refresh free answers only when a revised energy occurs in the selected positions.
     // Already purchased paid answers retain their existing cache keys.
     $suffix=$id==='beauty-and-flag'?'-verdict-dignity-v2.json':'-verdict-v1.json';
     if($id==='final'){
         [$y,$m,$d]=array_map('intval',explode('-',$date));
         $matrix=ni31($d,$m,$y);
-        foreach(vpPointMap($id) as $point)if($matrix[$point]===4){$suffix='-verdict-energy4-v2.json';break;}
+        foreach(vpPointMap($id) as $point){
+            if(in_array($matrix[$point],[1,2,3,5],true)){$suffix='-verdict-energies1to5-v3.json';break;}
+            if($matrix[$point]===4)$suffix='-verdict-energy4-v2.json';
+        }
     }
     return nvCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).$suffix;
 }
