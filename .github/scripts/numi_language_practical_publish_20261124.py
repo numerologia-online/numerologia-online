@@ -13,6 +13,14 @@ base={ENGINE:"40b86cdd1c2cff4491ee8ed6ca0f7695564ce20f^",
 old={p:subprocess.check_output(["git","show",base[p]+":"+p]) for p in files}
 new={p:pathlib.Path(p).read_bytes() for p in files}
 assert all(old[p]!=new[p] for p in files)
+published_engine=subprocess.check_output(["git","show","40b86cdd1c2cff4491ee8ed6ca0f7695564ce20f:"+ENGINE])
+def without_prompt(b):
+    t=b.decode("utf-8")
+    start=t.index("function nlPrompt(): string {")
+    end=t.index("function nlMessages(",start)
+    return t[:start]+t[end:]
+assert without_prompt(published_engine)==without_prompt(new[ENGINE]), "ONLY_LANGUAGE_PROMPT_MAY_CHANGE"
+assert published_engine!=new[ENGINE]
 engine=new[ENGINE].decode("utf-8")
 assert "require_once __DIR__.'/intimacy-live.php';" in engine
 assert "family-live.php" not in engine and "nfCloudRaw(" not in engine and "nfPointTitles(" not in engine
@@ -139,7 +147,8 @@ try:
     for p in files:
         b=read(remote(p))
         print("LANGUAGE_PREIMAGE",p.rsplit("/",1)[-1],"old",b==old[p],"new",b==new[p],flush=True)
-        if b not in (old[p],new[p]):raise RuntimeError("REMOTE_DRIFT_NO_WRITE_"+p)
+        allowed=(published_engine,new[p]) if p==ENGINE else (new[p],)
+        if b not in allowed:raise RuntimeError("REMOTE_DRIFT_NO_WRITE_"+p)
         saved[p]=b
     protected=[
         private+"family-live.php",private+"family-owner-knowledge-v1.txt",
@@ -184,7 +193,7 @@ try:
         if read(remote(p))!=new[p]:raise RuntimeError("FINAL_BYTES_DIFFER")
     for p,d in hashes.items():
         if hashlib.sha256(read(p)).digest()!=d:raise RuntimeError("PROTECTED_FILE_CHANGED")
-    print("LANGUAGE_PRACTICAL_PUBLISHED 10_ready=true cloudru_gemini=true family_dependency_removed=true four_positions=true 22_traits=true owner_fresh_uncached=true free=1 paid=9 historical_paid_preserved=true cross_section_followups=20 no_payment_changes=true other_sections_unchanged=true paid_ai_calls=0",flush=True)
+    print("LANGUAGE_PROMPT_ONLY_PUBLISHED 10_ready=true cloudru_gemini=true family_dependency_removed=true four_positions=true 22_traits=true owner_fresh_uncached=true free=1 paid=9 historical_paid_preserved=true cross_section_followups=20 no_payment_changes=true other_sections_unchanged=true paid_ai_calls=0",flush=True)
 except BaseException:
     failed=[]
     for p in reversed(modified):
