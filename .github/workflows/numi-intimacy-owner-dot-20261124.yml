@@ -1,4 +1,4 @@
-name: Publish revised owner-only intimacy conversational voice
+name: Publish owner-only intimacy plain spoken Russian
 on:
   push:
     branches: [main]
