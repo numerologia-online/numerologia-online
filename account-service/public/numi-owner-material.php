@@ -34,7 +34,9 @@ try {
     if($code==='redflag_question' && str_starts_with((string)$quote['resource_id'],'redflag:language:')){
         require_once dirname(__DIR__,3).'/private/numi-account-20261031/language-live.php';
         if(function_exists('set_time_limit'))@set_time_limit(125);
-        nlEnsurePaidResource((string)$quote['resource_id']);
+        $document=nlOwnerMaterial((string)$quote['resource_id']);
+        naReply(200,['ok'=>true,'owner_preview'=>true,'charged'=>false,
+            'product_code'=>$code,'material'=>$document]);
     }
     if($code==='redflag_question' && str_starts_with((string)$quote['resource_id'],'redflag:intimacy:')){
         require_once dirname(__DIR__,3).'/private/numi-account-20261031/intimacy-live.php';
