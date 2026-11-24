@@ -1,0 +1,23 @@
+name: Red Flag live sales and Telegram save audit (no purchases)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/numi-redflag-sales-live-audit-20261125.yml'
+      - '.github/scripts/numi_redflag_sales_live_audit_20261125.py'
+      - 'tests/redflag-delivery.test.mjs'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Mock Telegram send, retry and private chat authorization
+        run: node tests/redflag-delivery.test.mjs
+      - name: Check live private banks, wallet flags, direct public access and disposable save ticket
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi_redflag_sales_live_audit_20261125.py
