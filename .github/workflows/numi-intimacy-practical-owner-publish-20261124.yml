@@ -1,0 +1,25 @@
+name: Publish Intimacy practical owner-only 220-key engine
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/numi-intimacy-practical-owner-publish-20261124.yml
+      - .github/scripts/numi_intimacy_practical_owner_publish_20261124.py
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Offline checks and guarded Intimacy owner-only publication
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi_intimacy_practical_owner_publish_20261124.py

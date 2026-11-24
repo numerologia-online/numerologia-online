@@ -46,7 +46,7 @@ const ownerDraftInScope=(question,state)=>{
   const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
   return Boolean(ownerDraftAccess&&redflagDraftSections.has(section)&&
     (question.isComingSoon||(section==="infidelity"&&question.id==="faithful")||
-     section==="family"));
+     section==="family"||section==="intimacy"));
 };
 async function verifyOwnerDraftAccess(){
   if(ownerDraftAccessChecked)return;
@@ -426,7 +426,7 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
     return;
   }
   // Native FREE Gemini answer for all site users, not an editor/test route.
-  if(question.isFree&&id==="fire"&&[...categoryStates].some(
+  if(question.isFree&&id==="fire"&&!ownerDraftInScope(question,state)&&[...categoryStates].some(
     ([category,entry])=>category==="intimacy"&&entry===state)){
     const birth=parseRedFlagDate(birthDateInput.value);
     if(!birth){state.answerErrors.set(id,"Укажи дату рождения мужчины.");return;}
@@ -466,6 +466,7 @@ const ensureAnswer = (question, state, {forceNew = false} = {}) => {
       // the separate "Показать сохранённое" control.
       const endpoint=category==="family"
         ?"/redflag-ai-lab/family-owner-preview-api.php"
+        :category==="intimacy"?"/redflag-ai-lab/intimacy-practical-preview-api.php"
         :"/redflag-ai-lab/style-test-api.php";
       const response=await fetch(endpoint,{
         method:"POST",credentials:"same-origin",cache:"no-store",
