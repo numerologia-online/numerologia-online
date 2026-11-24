@@ -329,7 +329,55 @@ function redFlagLoadErrorCopy(notCharged=false) {
 // Resolve only the opened question. Cache its result for this calculated date.
 // Paid questions are opened IN PLACE; never send the reader into a cart.
 // Publication state comes from the approved material catalogue, not a per-section switch.
-const ensureAnswer = (question, state, {forceNew = false} = {}) => {
+const intimacyRouteChecks=new WeakMap();
+let intimacySessionVersion=0;
+window.addEventListener("numi:account-session-changed",()=>{
+  intimacySessionVersion++;
+  const state=categoryStates.get("intimacy");
+  state.answers.clear();
+  state.answerRequests.clear();
+  state.answerErrors.clear();
+  intimacyRouteChecks.delete(state);
+});
+const ensureAnswer = (question,state,options={}) => {
+  if(state!==categoryStates.get("intimacy"))return ensureAnswerResolved(question,state,options);
+  if(!activeProfile||!intimacyDateAllowed(parseRedFlagDate(birthDateInput.value)))return;
+  const id=question.id;
+  const profile=activeProfile;
+  const version=intimacySessionVersion;
+  const existing=intimacyRouteChecks.get(state);
+  if(existing?.id===id&&existing.profile===profile&&existing.version===version)return;
+  const record={id,profile,version};
+  intimacyRouteChecks.set(state,record);
+  state.answerErrors.delete(id);
+  const current=()=>activeProfile===profile&&intimacySessionVersion===version&&intimacyRouteChecks.get(state)===record;
+  void (async()=>{
+    try{
+      const response=await fetch("/redflag-ai-lab/style-test-api.php",{
+        method:"GET",credentials:"same-origin",cache:"no-store",
+        headers:{"Accept":"application/json"},signal:AbortSignal.timeout(15000)
+      });
+      const data=await response.json();
+      const confirmed=response.ok&&data?.ok===true&&data?.owner===true&&data?.draft_only===true;
+      const visitor=response.status===403&&data?.error==="OWNER_ONLY";
+      if(!confirmed&&!visitor)throw Error("INTIMACY_ROUTE_UNVERIFIED");
+      if(!current())return;
+      ownerDraftAccess=confirmed;
+      if(confirmed){
+        if(!state.answers.get(id)?.isDraft||options.forceNew)state.answers.delete(id);
+      }else if(state.answers.get(id)?.isDraft)state.answers.delete(id);
+      ensureAnswerResolved(question,state,options);
+    }catch(_){
+      if(current())state.answerErrors.set(id,redFlagLoadErrorCopy(true).text);
+    }finally{
+      if(current()){
+        intimacyRouteChecks.delete(state);
+        if(state.expanded&&state.activeQuestionId===id)renderCategories({type:"question",id});
+      }
+    }
+  })();
+};
+const ensureAnswerResolved = (question, state, {forceNew = false} = {}) => {
   if(state===categoryStates.get("intimacy")&&!intimacyDateAllowed(parseRedFlagDate(birthDateInput.value)))return;
   if(question.isComingSoon&&!ownerDraftInScope(question,state))return;
   const id=question.id;

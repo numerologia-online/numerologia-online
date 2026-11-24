@@ -16,6 +16,7 @@ try {
     if($y>(int)gmdate('Y'))naReply(400,['ok'=>false,'error'=>'INVALID_BIRTH_DATE']);
     if(!niAdultBirthDate($date))naReply(400,['ok'=>false,'error'=>'INTIMACY_AGE_RESTRICTED']);
     $db=naDB();$account=naCurrent($db);
+    if($account!==null&&naTestOwner($account))naReply(409,['ok'=>false,'error'=>'OWNER_PREVIEW_REQUIRED']);
     $answer=niPermitFree($date,$account,static fn():string=>niEnsureAnswer('fire',$date));
     naReply(200,['ok'=>true,'free'=>true,'ai_generated'=>true,
         'question_id'=>'fire','date_key'=>$d.'-'.$m,'answer'=>$answer]);
