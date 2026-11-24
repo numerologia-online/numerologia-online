@@ -63,6 +63,55 @@ function foThemePoint(): array {
       'care'=>'rightNear'
     ];
 }
+function foCrossBlockCandidates(): array {
+    // Two distinct 49-ruble questions from OTHER categories for each Family
+    // question. All 20 targets are distinct, so two Family questions cannot
+    // end with the same recommendation for a given date.
+    return [
+      'independent'=>[['love','love-or-attention'],['flags','abuse-signal']],
+      'household'=>[['money','responsibility'],['intimacy','initiative']],
+      'vacation'=>[['flags','calm-or-swings'],['money','celebration']],
+      'plans'=>[['money','solve-or-create'],['love','honest-or-disappear']],
+      'children'=>[['verdict','format'],['language','hurt']],
+      'roles'=>[['flags','apology'],['language','conflict-style']],
+      'home'=>[['love','family-or-triangle'],['infidelity','return']],
+      'conflict'=>[['infidelity','after-mistake'],['verdict','bottom-line']],
+      'money-at-home'=>[['flags','support-or-cause'],['verdict','best-side']],
+      'care'=>[['language','show-love'],['intimacy','after']]
+    ];
+}
+function foCrossBlockFollowup(string $questionId,int $day,int $month,int $year): array {
+    $options=foCrossBlockCandidates()[$questionId]??null;
+    if(!is_array($options)||count($options)!==2)
+        throw new RuntimeException('FAMILY_CROSS_FOLLOWUP_INVALID');
+    $hash=sprintf('%u',crc32($questionId.'|'.$day.'|'.$month.'|'.$year));
+    [$category,$questionIdNext]=$options[(int)($hash%count($options))];
+    $sections=[
+      'money'=>'Деньги и щедрость',
+      'love'=>'Любовь и отношения',
+      'flags'=>'Красные флаги',
+      'infidelity'=>'Измены и флирт',
+      'intimacy'=>'Секс и близость',
+      'language'=>'Язык любви мужчины',
+      'verdict'=>'Итоговый вердикт'
+    ];
+    if(!isset($sections[$category]))
+        throw new RuntimeException('FAMILY_CROSS_FOLLOWUP_CATEGORY_INVALID');
+    $filename=$category==='money'?'money-questions.json':$category.'.json';
+    $file=dirname(__DIR__).'/data/redflag/banks/'.$filename;
+    $bank=json_decode((string)file_get_contents($file),true,20,JSON_THROW_ON_ERROR);
+    foreach(($bank['questions']??[]) as $question) {
+        if(($question['id']??null)!==$questionIdNext)continue;
+        if(($question['priceRub']??null)!==49||
+           ($question['isFree']??false)!==false||
+           !is_string($question['title']??null))
+            throw new RuntimeException('FAMILY_CROSS_FOLLOWUP_PRICE_INVALID');
+        // A future/soon question may be suggested in editorial copy, but
+        // this does not claim that checkout or generation is available.
+        return ['раздел'=>$sections[$category],'вопрос'=>$question['title']];
+    }
+    throw new RuntimeException('FAMILY_CROSS_FOLLOWUP_NOT_FOUND');
+}
 function foKnowledge(): array {
     static $bank=null;
     if($bank!==null)return $bank;
@@ -135,7 +184,7 @@ function foPrompt(): string {
 
 Пиши с эффектом остроумного разоблачения. Будто две близкие подруги обсуждают мужчину и одна вдруг замечает то, что другая раньше не видела. Подмечай смешные противоречия между тем, каким он хочет казаться, и тем, как может вести себя в обычной жизни. Юмор должен рождаться из точного наблюдения, а не из специально придуманных шуток. Используй простые, живые, современные слова. Читательнице должно быть интересно, немного смешно и очень понятно, о каком поведении идёт речь. Не завуалируй неприятные выводы красивыми формулировками. Не делай мужчину искусственно хорошим или плохим и не описывай выдуманные свершившиеся события. Не используй пышные метафоры и высокопарные обороты.
 
-ФОРМАТ. Ровно два абзаца. ПЕРВЫЙ, 650–850 знаков: первая же фраза отвечает на вопрос, затем два-три различимых, конкретных проявления именно этого качества и одна меткая деталь, без повторов. ВТОРОЙ, примерно 600–700 знаков: не второй полный разбор и не повтор первого. Разверни одну неожиданную грань первого вывода, смени угол наблюдения и создай интерес к ОДНОМУ другому вопросу из переданного списка. Заверши его ТОЧНЫМ названием следующего вопроса, но не отвечай на него. Если мысль раскрыта, не придумывай новую проблему только ради объёма. Вместе ориентировочно 1250–1550 знаков. Нельзя длинные или средние тире (—, –, ―), вместо них точки, запятые и союзы. Не упоминай арканы, энергии, номера, даты, расчёт, методику или названия позиций. Без заголовков, списков и Markdown. Только два живых русских абзаца.
+ФОРМАТ. Ровно два абзаца. ПЕРВЫЙ, 650–850 знаков: первая же фраза отвечает на вопрос, затем два-три различимых, конкретных проявления именно этого качества и одна меткая деталь, без повторов. ВТОРОЙ, примерно 600–700 знаков: не второй полный разбор и не повтор первого. Разверни одну неожиданную грань первого вывода, смени угол наблюдения и естественно подведи к ЕДИНСТВЕННОМУ переданному вопросу из ДРУГОГО тематического раздела. Это новая сторона мужчины, а не повтор только что обсуждённого. Заверши абзац ТОЧНЫМ названием этого вопроса, но не отвечай на него. Не перечисляй другие вопросы, не упоминай цену и готовность к покупке. Если мысль раскрыта, не придумывай новую проблему только ради объёма. Вместе ориентировочно 1250–1550 знаков. Нельзя длинные или средние тире (—, –, ―), вместо них точки, запятые и союзы. Не упоминай арканы, энергии, номера, даты, расчёт, методику или названия позиций. Без заголовков, списков и Markdown. Только два живых русских абзаца.
 PROMPT;
 }
 /**
@@ -162,6 +211,13 @@ function foShortenCompleteSentences(string $paragraph,int $max): string {
 }
 function foShortenTeaser(string $paragraph,array $next): string {
     $clean=trim(preg_replace('/\s+/u',' ',$paragraph)??$paragraph);
+    $required=(string)($next[0]??'');
+    if($required==='')throw new RuntimeException('FAMILY_CROSS_FOLLOWUP_REQUIRED');
+    if(mb_stripos($clean,$required,0,'UTF-8')===false){
+        $bridge=' И вот что стоит проверить с другой стороны: '.$required;
+        $opening=foShortenCompleteSentences($clean,700-mb_strlen($bridge,'UTF-8'));
+        return rtrim($opening).' '.$bridge;
+    }
     if(mb_strlen($clean,'UTF-8')<=700)return $clean;
     // Prefer the exact next-question title already chosen by Gemini.
     $question=null;
@@ -214,14 +270,14 @@ try {
         foReply(400,['ok'=>false,'error'=>'INVALID_FAMILY_REQUEST']);
     $catalog=json_decode((string)file_get_contents(__DIR__.'/catalog.json'),true,20,JSON_THROW_ON_ERROR);
     $question=$id==='independent'?['id'=>'independent','title'=>'Самостоятельный мужчина или мамина корзиночка?']:null;
-    $next=[];
-    foreach($catalog['categories'] as $section){
-        foreach($section['questions'] as $q){
-            if($section['id']==='family'&&$q['id']===$id)$question=$q;
-            if($section['id']==='family'&&$q['id']!==$id)$next[]=$q['title'];
-        }
+    foreach(($catalog['categories']??[]) as $section) {
+        if(($section['id']??null)!=='family')continue;
+        foreach(($section['questions']??[]) as $q)
+            if(($q['id']??null)===$id)$question=$q;
     }
-    if($question===null||count($next)<8)foReply(400,['ok'=>false,'error'=>'FAMILY_QUESTION_NOT_FOUND']);
+    if($question===null)foReply(400,['ok'=>false,'error'=>'FAMILY_QUESTION_NOT_FOUND']);
+    $followup=foCrossBlockFollowup($id,$day,$month,$year);
+    $next=[$followup['вопрос']];
     if(function_exists('set_time_limit'))@set_time_limit(125);
     // Owner-only test runs only when its button is pressed; no PHP session
     // lock or shared 15s cooldown should block other manually selected questions.
@@ -229,7 +285,7 @@ try {
         'вопрос'=>$question['title'],
         'точный_фокус'=>foFocus()[$id],
         'пять_обязательных_позиций_по_приоритету'=>foBrief($id,$day,$month,$year),
-        'следующие_вопросы_на_выбор'=>$next
+        'один_рекомендуемый_вопрос_из_другого_раздела'=>$followup
     ],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
     $answer=niCloudCall([
         ['role'=>'system','content'=>foPrompt()],
