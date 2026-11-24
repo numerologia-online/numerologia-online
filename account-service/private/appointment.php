@@ -13,6 +13,9 @@ function apWindow(?DateTimeImmutable $now=null): array {
     $now=($now??new DateTimeImmutable('now',$tz))->setTimezone($tz)->setTime(0,0);
     return [max('2026-12-08',$now->modify('+1 day')->format('Y-m-d')),$now->modify('+90 days')->format('Y-m-d')];
 }
+function apWeekend(string $date): bool {
+    return (int)(new DateTimeImmutable($date,new DateTimeZone('Europe/Samara')))->format('N')>=6;
+}
 function apConfig(): array {
     $path=dirname(__DIR__).'/numi-appointment/config.local.php';
     $c=is_file($path)?require $path:[];
@@ -158,7 +161,7 @@ function apServe(): never {
         $s=$b['service']??null;$date=$b['date']??null;$email=naEmail($b['email']??null);
         if(!is_string($s)||!isset(apServices()[$s])||!is_string($date)||!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$date)||!checkdate((int)substr($date,5,2),(int)substr($date,8,2),(int)substr($date,0,4))||!$email||($b['accepted']??null)!==true)
             naReply(400,['ok'=>false,'error'=>'INVALID_BOOKING']);
-        if($date<$first||$date>$last)naReply(409,['ok'=>false,'error'=>'SLOT_UNAVAILABLE']);
+        if($date<$first||$date>$last||apWeekend($date))naReply(409,['ok'=>false,'error'=>'SLOT_UNAVAILABLE']);
         // Serialize per account and let the unique active date enforce one reservation per day.
         $db->beginTransaction();
         try{
