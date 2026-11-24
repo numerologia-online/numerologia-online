@@ -67,10 +67,24 @@ function apNextSlot(array $rows,string $service): ?int {
     foreach($rows as $r)if($r['service']!=='year')return null;
     return (int)$rows[0]['slot_no']===1?2:1;
 }
-function apCalendarDay(array $rows): array {
+// Author's actual capacity restrictions, separate from customer orders and payment records.
+function apPlannedWork(): array {
+    return ['2026-12-01'=>['life'],'2026-12-02'=>['child'],'2026-12-03'=>['couple'],
+        '2026-12-04'=>['year','year'],'2026-12-07'=>['life'],'2026-12-08'=>['year']];
+}
+function apNextForDate(string $date,array $rows,string $service): ?int {
+    $plan=apPlannedWork()[$date]??[];
+    if(!$plan)return apNextSlot($rows,$service);
+    // The author reserves one year-report workload unit on 8 Dec. No full report or second external order.
+    if($plan===['year']&&$service==='year'&&!$rows)return 1;
+    return null;
+}
+function apCalendarDay(array $rows,string $date=''): array {
     $paid=[];$pending=0;
     foreach($rows as $r){if($r['status']==='paid')$paid[]=$r['service'];else $pending++;}
-    return ['paid'=>$paid,'pending'=>$pending,'year_only'=>apNextSlot($rows,'year')!==null&&count($rows)>0];
+    $planned=apPlannedWork()[$date]??[];
+    return ['paid'=>$paid,'pending'=>$pending,'planned'=>$planned,
+        'year_only'=>apNextForDate($date,$rows,'year')!==null&&(count($rows)>0||count($planned)>0)];
 }
 function apRow(PDO $db,string $id): ?array {
     $q=$db->prepare('SELECT * FROM numi_appointments WHERE id=?');
@@ -154,11 +168,12 @@ function apServe(): never {
         [$first,$last]=apWindow();
         if($action==='calendar'){
             $slots=[];$owner=false;
+            foreach(apPlannedWork() as $day=>$plan)$slots[$day]=apCalendarDay([],$day);
             if($enabled){
                 $db=naDB();apSchema($db);$owner=naTestOwner(naCurrent($db));
                 $q=$db->prepare('SELECT slot_date,slot_no,service,status FROM numi_appointments WHERE active_date BETWEEN ? AND ? ORDER BY slot_no');$q->execute([$first,$last]);
                 $groups=[];foreach($q as $r)$groups[$r['slot_date']][]=$r;
-                foreach($groups as $day=>$rows)$slots[$day]=apCalendarDay($rows);
+                foreach($groups as $day=>$rows)$slots[$day]=apCalendarDay($rows,$day);
             }
             naReply(200,['ok'=>true,'enabled'=>$enabled,'first'=>$first,'last'=>$last,'slots'=>(object)$slots,'owner'=>$owner]);
         }
@@ -210,7 +225,7 @@ function apServe(): never {
                 $db->prepare('INSERT IGNORE INTO numi_appointment_days(slot_date) VALUES(?)')->execute([$date]);
                 $q=$db->prepare('SELECT slot_date FROM numi_appointment_days WHERE slot_date=? FOR UPDATE');$q->execute([$date]);$q->fetch();
                 $q=$db->prepare('SELECT slot_no,service,status FROM numi_appointments WHERE active_date=? FOR UPDATE');$q->execute([$date]);
-                $slot=apNextSlot($q->fetchAll(),$s);
+                $slot=apNextForDate($date,$q->fetchAll(),$s);
                 if($slot===null){$db->rollBack();naReply(409,['ok'=>false,'error'=>'SLOT_UNAVAILABLE']);}
                 $id=naUuid();$q=$db->prepare('INSERT INTO numi_appointments(id,account_id,slot_date,active_date,slot_no,service,kopeks,email,telegram,vat_code) VALUES(?,?,?,?,?,?,?,?,?,?)');
                 $q->execute([$id,$account['id'],$date,$date,$slot,$s,apServices()[$s][1],$email,$telegram,$a['vat_code']]);$r=apRow($db,$id);
