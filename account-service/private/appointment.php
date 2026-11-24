@@ -33,7 +33,7 @@ function apSchema(PDO $db): void {
       id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
       account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
       slot_date DATE NOT NULL, active_date DATE NULL, service VARCHAR(16) NOT NULL,
-      kopeks INT UNSIGNED NOT NULL, email VARCHAR(191) NOT NULL,
+      kopeks INT UNSIGNED NOT NULL, email VARCHAR(191) NOT NULL, telegram VARCHAR(33) NULL,
       vat_code TINYINT UNSIGNED NOT NULL,
       status VARCHAR(16) NOT NULL DEFAULT 'pending',
       provider_payment_id VARCHAR(191) CHARACTER SET ascii COLLATE ascii_bin NULL,
@@ -42,10 +42,21 @@ function apSchema(PDO $db): void {
       UNIQUE KEY ap_one_slot(active_date), UNIQUE KEY ap_payment(provider_payment_id),
       KEY ap_account(account_id,status)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $q=$db->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='numi_appointments' AND COLUMN_NAME='telegram'");
+    if(!(int)$q->fetchColumn()){
+        try{$db->exec("ALTER TABLE numi_appointments ADD COLUMN telegram VARCHAR(33) NULL AFTER email");}
+        catch(PDOException $e){if((int)($e->errorInfo[1]??0)!==1060)throw $e;}
+    }
 }
 function apRow(PDO $db,string $id): ?array {
     $q=$db->prepare('SELECT * FROM numi_appointments WHERE id=?');
     $q->execute([$id]);return $q->fetch()?:null;
+}
+function apTelegram(mixed $input): ?string {
+    if(!is_string($input))return null;
+    $input=trim($input);
+    if(!preg_match('/^@?[A-Za-z][A-Za-z0-9_]{3,30}[A-Za-z0-9]$/D',$input))return null;
+    return '@'.strtolower(ltrim($input,'@'));
 }
 function apAmount(int $k): string {return sprintf('%d.%02d',intdiv($k,100),$k%100);}
 function apPayload(array $r): array {
@@ -89,7 +100,7 @@ function apApply(PDO $db,array $r,array $p,array $cfg): array {
         $q=$db->prepare('UPDATE numi_appointments SET notified_at=UTC_TIMESTAMP() WHERE id=? AND notified_at IS NULL');
         $q->execute([$r['id']]);
         if($q->rowCount()===1){
-            $text=apServices()[$fresh['service']][0]."\nДата: ".$fresh['slot_date']."\nEmail: ".$fresh['email']."\nОплата: ".apAmount((int)$fresh['kopeks'])." RUB\nID: ".$fresh['provider_payment_id']."\nПосле оказания услуги оформите чек зачета предоплаты.";
+            $text=apServices()[$fresh['service']][0]."\nДата: ".$fresh['slot_date']."\nEmail: ".$fresh['email']."\nTelegram: ".($fresh['telegram']??'Не указан')."\nОплата: ".apAmount((int)$fresh['kopeks'])." RUB\nID: ".$fresh['provider_payment_id']."\nПосле оказания услуги оформите чек зачета предоплаты.";
             if(!naMail($cfg['owner_email'],'Новая оплаченная личная запись',$text)){
                 $db->prepare('UPDATE numi_appointments SET notified_at=NULL WHERE id=?')->execute([$r['id']]);
             }
@@ -145,7 +156,7 @@ function apServe(): never {
         if(!$account)naReply(401,['ok'=>false,'error'=>'LOGIN_REQUIRED']);
         if($action==='owner'){
             if(!naTestOwner($account))naReply(403,['ok'=>false]);
-            $rows=$db->query('SELECT slot_date AS date,service,status,email,provider_payment_id AS payment_id FROM numi_appointments ORDER BY slot_date DESC LIMIT 200')->fetchAll();
+            $rows=$db->query('SELECT slot_date AS date,service,status,email,telegram,provider_payment_id AS payment_id FROM numi_appointments ORDER BY slot_date DESC LIMIT 200')->fetchAll();
             naReply(200,['ok'=>true,'bookings'=>$rows]);
         }
         $b=naReadPost();
@@ -158,8 +169,8 @@ function apServe(): never {
             naReply(200,apPublic(apSync($db,$r,$w,$a,true)));
         }
         if($action!=='create')naReply(404,['ok'=>false]);
-        $s=$b['service']??null;$date=$b['date']??null;$email=naEmail($b['email']??null);
-        if(!is_string($s)||!isset(apServices()[$s])||!is_string($date)||!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$date)||!checkdate((int)substr($date,5,2),(int)substr($date,8,2),(int)substr($date,0,4))||!$email||($b['accepted']??null)!==true)
+        $s=$b['service']??null;$date=$b['date']??null;$email=naEmail($b['email']??null);$telegram=apTelegram($b['telegram']??null);
+        if(!is_string($s)||!isset(apServices()[$s])||!is_string($date)||!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$date)||!checkdate((int)substr($date,5,2),(int)substr($date,8,2),(int)substr($date,0,4))||!$email||!$telegram||($b['accepted']??null)!==true)
             naReply(400,['ok'=>false,'error'=>'INVALID_BOOKING']);
         if($date<$first||$date>$last||apWeekend($date))naReply(409,['ok'=>false,'error'=>'SLOT_UNAVAILABLE']);
         // Serialize per account and let the unique active date enforce one reservation per day.
@@ -167,12 +178,12 @@ function apServe(): never {
         try{
             $q=$db->prepare('SELECT id FROM numi_accounts WHERE id=? FOR UPDATE');$q->execute([$account['id']]);
             $q=$db->prepare("SELECT * FROM numi_appointments WHERE account_id=? AND status='pending' LIMIT 1 FOR UPDATE");$q->execute([$account['id']]);$r=$q->fetch();
-            if($r&&($r['slot_date']!==$date||$r['service']!==$s||$r['email']!==$email)){
+            if($r&&($r['slot_date']!==$date||$r['service']!==$s||$r['email']!==$email||($r['telegram']!==null&&$r['telegram']!==$telegram))){
                 $db->rollBack();naReply(409,['ok'=>false,'error'=>'PENDING_LIMIT']);
             }
             if(!$r){
-                $id=naUuid();$q=$db->prepare('INSERT INTO numi_appointments(id,account_id,slot_date,active_date,service,kopeks,email,vat_code) VALUES(?,?,?,?,?,?,?,?)');
-                $q->execute([$id,$account['id'],$date,$date,$s,apServices()[$s][1],$email,$a['vat_code']]);$r=apRow($db,$id);
+                $id=naUuid();$q=$db->prepare('INSERT INTO numi_appointments(id,account_id,slot_date,active_date,service,kopeks,email,telegram,vat_code) VALUES(?,?,?,?,?,?,?,?,?)');
+                $q->execute([$id,$account['id'],$date,$date,$s,apServices()[$s][1],$email,$telegram,$a['vat_code']]);$r=apRow($db,$id);
             }
             $db->commit();
         }catch(PDOException $e){if($db->inTransaction())$db->rollBack();if($e->getCode()==='23000')naReply(409,['ok'=>false,'error'=>'SLOT_UNAVAILABLE']);throw $e;}
