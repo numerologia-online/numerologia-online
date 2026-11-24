@@ -975,6 +975,16 @@ const createQuestion = (question, state) => {
     if (!opened) ensureAnswer(question, state, {forceNew:ownerDraftInScope(question,state)});
   });
 
+  // Show the same calculated birth date as the existing Telegram report.
+  // All categories, saved answers and owner drafts use this common card.
+  if (opened && response && formattedDate) {
+    const dateLabel = document.createElement("p");
+    dateLabel.className = "redflag-answer-birth-date";
+    dateLabel.textContent = "Дата рождения: " + formattedDate;
+    dateLabel.style.cssText = "margin:0 0 12px;font:600 14px/1.4 system-ui;color:#76576b;";
+    answer.prepend(dateLabel);
+  }
+
   article.append(button, answer);
   return article;
 };
