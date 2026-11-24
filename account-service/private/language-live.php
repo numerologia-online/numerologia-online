@@ -2,11 +2,11 @@
 declare(strict_types=1);
 /**
  * Native production Gemini 3 Flash for "Языки любви мужчины".
- * Uses the existing, fixed family transport and 31-point matrix; separate short
- * language-specific 22 energy bank, cache and one-free-question quota.
+ * Independent language prompt; reuses the existing Cloud.ru transport and
+ * 31-point arithmetic. Only day, month, year and a topical point reach Gemini.
  * No requests to the provider except user-initiated free/owner/buy generation.
  */
-require_once __DIR__.'/family-live.php';
+require_once __DIR__.'/intimacy-live.php';
 
 function nlQuestionIds(): array {
     return ['love-language','how-to-talk','accept-love','show-love','criticism','ask',
@@ -29,8 +29,7 @@ function nlSupportedPaidResource(string $code,string $resource): bool {
 function nlEngineInstalled(): bool {
     if(!is_file(__DIR__.'/language-live-questions.json')
        ||!is_file(__DIR__.'/language-live-knowledge.txt')
-       ||!is_file(__DIR__.'/family-live-followups.json')
-       ||!is_file(__DIR__.'/family-live.php')
+       ||!is_file(__DIR__.'/intimacy-live.php')
        ||!is_file(__DIR__.'/intimacy-live-config.php'))return false;
     $cfg=require __DIR__.'/intimacy-live-config.php';
     return is_array($cfg)&&is_string($cfg['cloudru_key']??null)
@@ -48,104 +47,192 @@ function nlKnowledge(): array {
     $found=[];
     foreach($lines as $line){
         $parts=explode('|',$line);
-        if(count($parts)!==3||!ctype_digit(trim($parts[0]))
-           ||trim($parts[1])===''||trim($parts[2])==='')
+        if(count($parts)!==4||!ctype_digit(trim($parts[0]))
+           ||trim($parts[1])===''||trim($parts[2])===''||trim($parts[3])==='')
             throw new RuntimeException('LANGUAGE_KB_ENTRY_INVALID');
         $number=(int)$parts[0];
         if($number<1||$number>22||isset($found[$number]))
             throw new RuntimeException('LANGUAGE_KB_NUMBER_INVALID');
-        $found[$number]=['plus'=>trim($parts[1]),'minus'=>trim($parts[2])];
+        $found[$number]=['core'=>trim($parts[1]),'plus'=>trim($parts[2]),'minus'=>trim($parts[3])];
     }
     for($i=1;$i<=22;$i++)if(!isset($found[$i]))
         throw new RuntimeException('LANGUAGE_KB_INCOMPLETE');
     return $all=$found;
 }
 function nlPointMap(string $id): array {
-    $maps=[
-      'love-language'=>['left','top','loveHeart','center','bottomLeft','topLeft'],
-      'how-to-talk'=>['left','top','center','topLeft','tailFirst','bottomLeft'],
-      'accept-love'=>['left','top','loveHeart','center','tailSecond','bottomLeft'],
-      'show-love'=>['left','top','loveHeart','center','rightNear','tailFirst'],
-      'criticism'=>['left','top','center','tailFirst','bottomRight','bottomLeft'],
-      'ask'=>['left','top','center','topLeft','rightNear','tailSecond'],
-      'distance'=>['left','top','loveHeart','center','tailFirst','bottomLeft'],
-      'hurt'=>['left','top','loveHeart','center','tailFirst','tailSecond'],
-      'conflict-style'=>['left','top','center','tailFirst','bottomLeft','bottomRight'],
-      'compliment'=>['left','top','center','loveHeart','topLeft','bottomLeft']
+    // Three stable birth-date positions plus ONE topical aspect.
+    // Use the established matrix arithmetic; do not assign weights or recount.
+    $themes=[
+      'love-language'=>'loveHeart',
+      'how-to-talk'=>'center',
+      'accept-love'=>'bottomLeft',
+      'show-love'=>'rightNear',
+      'criticism'=>'bottomRight',
+      'ask'=>'topLeft',
+      'distance'=>'tailFirst',
+      'hurt'=>'tailSecond',
+      'conflict-style'=>'bottom',
+      'compliment'=>'topRight'
     ];
-    if(!isset($maps[$id]))throw new RuntimeException('LANGUAGE_POINT_MAP_MISSING');
-    return $maps[$id];
+    if(!isset($themes[$id]))throw new RuntimeException('LANGUAGE_POINT_MAP_MISSING');
+    return ['left','top','right',$themes[$id]];
+}
+function nlPointTitles(): array {
+    return [
+      'left'=>'День рождения: привычная манера проявляться',
+      'top'=>'Месяц рождения: потребности и эмоциональные мотивы',
+      'right'=>'Год рождения: стиль действий и решений',
+      'loveHeart'=>'Отношение к близкому союзу',
+      'center'=>'Базовая реакция личности',
+      'bottomLeft'=>'Эмоциональные привычки',
+      'rightNear'=>'Воплощение решений в действия',
+      'bottomRight'=>'Практическое действие в сложных обстоятельствах',
+      'topLeft'=>'Соединение характера и потребностей',
+      'tailFirst'=>'Повторяющийся сценарий в отношениях',
+      'tailSecond'=>'Способ изменения прежних привычек',
+      'bottom'=>'Задачи взросления и ответственности',
+      'topRight'=>'Соединение потребностей и способа действия'
+    ];
 }
 function nlQuestionFocus(string $id): string {
     $focus=[
-      'love-language'=>'Назови ведущий способ, которым мужчина считывает любовь: слова, поступки, время, прикосновения, подарки или уважение к пространству. Приведи два конкретных сигнала. Не перечисляй всё подряд.',
-      'how-to-talk'=>'КАК именно построить разговор, чтобы он услышал: тон, момент, конкретные слова и что вызывает защитную реакцию. Не пиши общий портрет.',
-      'accept-love'=>'КАК он воспринимает заботу, ласку и внимание. Что радует, что воспринимает как контроль, какое проявление любви проходит мимо?',
-      'show-love'=>'КАК по повторяющимся поступкам увидеть его чувства: действия, инициатива, время, поддержка. Не выдавай единичный жест за доказательство любви.',
-      'criticism'=>'ЧТО делает, услышав неприятную правду: слушает, оправдывается, замыкается, спорит? Как лучше донести замечание без унижения?',
-      'ask'=>'КАК сформулировать просьбу о конкретном действии и договориться о сроке. Что помогает, а что вызывает сопротивление? Никакой телепатии.',
-      'distance'=>'ЧТО делать женщине, когда он закрывается: когда оставить пространство, когда вернуться к разговору и как распознать отказ обсуждать проблему.',
-      'hurt'=>'КАКИЕ слова или поступки ранят его сильнее всего в близости, почему именно они и по каким признакам заметна обида. Не оправдывай давление.',
-      'conflict-style'=>'КАК вести конфликт: когда говорить, что не делать, где границы. Не описывай его жизнь и не возлагай на женщину ответственность за его поведение.',
-      'compliment'=>'КАКАЯ конкретная поддержка и признание ему понятны: за что похвалить, когда дать пространство, какой комплимент звучит фальшиво.'
+      'love-language'=>'С первой фразы назови конкретный главный способ, через который он скорее почувствует любовь, а при необходимости второй, дополняющий. Объясни, какие действия женщины дадут ему ощущение близости и какой знак внимания может пройти мимо. Не своди все даты к стандартным пяти категориям и не перечисляй их.',
+      'how-to-talk'=>'Начни с инструкции, КАК с ним разговаривать: с чего начать, какой тон и форма разговора подходят. Дай одну конкретную короткую реплику женщины, объясни вероятную реакцию на неё и на неподходящий подход. Не описывай общий характер.',
+      'accept-love'=>'Начни с конкретного проявления заботы, которое он скорее оценит. Раскрой, как отличить желанную заботу от лишней опеки, когда он отвечает теплом, когда может отстраниться. Подскажи одно посильное действие, не требующее угождать.',
+      'show-love'=>'Сразу назови, по какому конкретному повторяющемуся поведению можно заметить его привязанность. Различай инициативу, внимание, уважение и привлекательные слова. Не выдавай отдельный жест или расчёт за доказательство чувств. Ответ именно о его действиях, не инструкция, как его завоевать.',
+      'criticism'=>'Начни с вероятной первой реакции на критику, затем покажи, что он может сделать после неё. Объясни, при каком способе обратной связи легче обсудить проблему, а при каком разговор может зайти в тупик. Дай одну естественную реплику о конкретном замечании. Не оправдывай оскорбления.',
+      'ask'=>'Сразу объясни, в какой форме ему проще понять просьбу и договориться о действии. Дай одну живую фразу с конкретной просьбой; объясни, на какую реакцию рассчитывать и что мешает услышать просьбу. Не своди любой ответ к приказам или похвале и не советуй хитрить.',
+      'distance'=>'Начни с того, что можно сделать, когда он отдаляется. Различи потребность в паузе и повторяющийся отказ от общения. Предложи один конкретный способ выйти на разговор без преследования, и объясни, как оценить отклик. Не обещай, что он обязательно вернётся.',
+      'hurt'=>'Сразу назови, какая форма слов или поведения может особенно задеть его и почему. Объясни, как это можно заметить по реакции, и как обсуждать то же разногласие без намеренного унижения. Не заставляй женщину обходить каждую его эмоцию.',
+      'conflict-style'=>'С первой фразы предложи понятную тактику разрешения разногласия именно для этого сочетания. Покажи порядок действий: начало разговора, реакция при напряжении, возвращение к теме. Укажи границу, за которой диалог прекращают ради безопасности. Не обещай, что удачная фраза исправит чужое поведение.',
+      'compliment'=>'Назови конкретную форму поддержки, которую он скорее заметит: слова, внимание, практическое участие, время или пространство по смыслу сочетания. Объясни, что поддерживает его и что может звучать фальшиво. Приведи короткую естественную фразу или действие, не требуя восхищаться им.'
     ];
     if(!isset($focus[$id]))throw new RuntimeException('LANGUAGE_FOCUS_INVALID');
     return $focus[$id];
 }
-function nlGenerateText(array $question,int $day,int $month,int $year): string {
+function nlFollowups(string $id): array {
+    // Distinct 49-ruble topics from other sections. Select for semantic fit,
+    // not by a fixed date hash. These are editorial titles, not checkout promises.
+    $m=[
+      'love-language'=>[
+        ['Любовь и отношения','Умеет любить или только позволяет себя любить?'],
+        ['Секс и близость','После секса привязывается или теряет интерес?']],
+      'how-to-talk'=>[
+        ['Красные флаги','После ссоры извинится или виноватой сделает тебя?'],
+        ['Итоговый вердикт','Какой формат отношений с ним будет самым здоровым?']],
+      'accept-love'=>[
+        ['Красные флаги','Будет твоей опорой или сам доведёт до слёз?'],
+        ['Итоговый вердикт','Чем он способен порадовать в любви?']],
+      'show-love'=>[
+        ['Измены и флирт','Говорит о себе правду или скрывает половину своей жизни?'],
+        ['Семья и быт','Он заботится в быту или ждёт, что любовь всё сама устроит?']],
+      'criticism'=>[
+        ['Красные флаги','Какая его слабость может разрушить ваши отношения?'],
+        ['Красные флаги','С ним спокойно или тебя ждут эмоциональные качели?']],
+      'ask'=>[
+        ['Секс и близость','Он внимательный инициатор или ждёт, что женщина всё организует сама?'],
+        ['Деньги и щедрость','Будет ли мужчина жить за твой счёт?']],
+      'distance'=>[
+        ['Любовь и отношения','Почему он исчезает без объяснений?'],
+        ['Измены и флирт','Уходит навсегда или возвращается ко всем бывшим?']],
+      'hurt'=>[
+        ['Красные флаги','Какой тревожный сигнал нельзя пропустить в начале знакомства?'],
+        ['Итоговый вердикт','Как понять, что пора выбрать себя, а не ждать его?']],
+      'conflict-style'=>[
+        ['Семья и быт','При первых семейных проблемах будет бороться или соберёт чемодан?'],
+        ['Измены и флирт','Если поймаешь на измене, признается или сделает виноватой тебя?']],
+      'compliment'=>[
+        ['Деньги и щедрость','Есть ли у него потенциал стать богатым мужчиной?'],
+        ['Семья и быт','Умеет ли он создавать опору для дома, а не только говорить о будущем?']]
+    ];
+    if(!isset($m[$id]))throw new RuntimeException('LANGUAGE_FOLLOWUPS_MISSING');
+    return array_map(static fn(array $v):array=>['раздел'=>$v[0],'вопрос'=>$v[1]],$m[$id]);
+}
+function nlPrompt(): string {
+    return <<<'PROMPT'
+Ты опытный нумеролог Матрицы судьбы и очень наблюдательная, остроумная подруга. Раздел «Язык любви мужчины» существует для практической пользы: женщина открыла конкретный вопрос и хочет получить понятный ответ, а не красивый психологический портрет. Пиши только об ОДНОЙ заданной теме. Не рассказывай обо всей личности, судьбе и отношениях. Это символические склонности, а не установленные факты о реальном мужчине.
+
+КАК ДУМАТЬ. Полная матрица уже рассчитана сайтом. Ты получаешь только словесные характеристики четырёх значимых позиций: день раскрывает манеру поведения, месяц раскрывает потребности, год помогает понять способ действия. Последняя позиция уточняет именно тему вопроса. День и месяц обязательны в синтезе, год и тематическая позиция могут существенно изменить вывод. Сопоставь их, чтобы выбрать один ведущий способ общения, реакцию или действие по теме, а затем конкретные нюансы. Не пересчитывай значения, не вводи проценты, не подсчитывай плюсы и минусы и не перечисляй четыре характеристики в тексте. Повтор одного значения в разных позициях не означает четыре независимых доказательства. Не превращай теневые качества в обязательный сценарий. Если вывод благоприятный, так и скажи, не выдумывай подвох. Разные вопросы к одной дате должны различаться предметом ответа; разные сочетания могут менять саму инструкцию, а не только слова.
+
+КАК ОТВЕЧАТЬ. Самая первая фраза отвечает на вопрос: конкретный способ говорить, просьба, форма заботы, реакция или поведение. Затем объясни, как это выглядит на практике. Если женщина спрашивает «как», дай ей понятную, выполнимую инструкцию: что сказать или сделать, когда и в какой форме, какой отклик может последовать, как заметить, что подход не работает. Если спрашивает «как он реагирует» или «что его ранит», сначала назови его вероятную реакцию, а уже потом полезный способ разговора. Если спрашивает «по каким поступкам понять», говори именно о поступках. Не выдавай гипотезу за уже случившийся факт. По необходимости вплети одну-две короткие естественные реплики, которые можно сказать вслух в конкретной ситуации; придумывай их по смыслу сочетания, не используй универсальный шаблон для всех дат. Не превращай рекомендацию в манипуляцию мужчиной, не перекладывай ответственность за его давление, оскорбления или молчание на женщину. Отказ, границы и собственные потребности женщины важны.
+
+ЯЗЫК. Пиши будто близкая умная подруга объясняет что-то за кофе. Нормальный современный разговорный русский, короткие и средние предложения, ясные глаголы, понятные слова. Можно остро, смешно, тепло или неожиданно, если это рождается из наблюдения, а не из обязательной шутки. Не делай театральное разоблачение из любого характера. Честный прямой вывод, без завуалированности, моралей, комплиментов ради комплиментов и литературных украшений. Не начинай с вступления и не заканчивай общим «важно наладить диалог». Не повторяй одну мысль под разными метафорами. Не используй «в глубине души», «ключ к его сердцу», «зеркало его души», «сложный внутренний мир», «танец двух душ», «этот мужчина представляет собой». Не вставляй в каждую трактовку одно и то же предупреждение или одинаковое вступление. Обычная человеческая фраза лучше умной абстракции.
+
+ФОРМАТ. Ровно два абзаца на русском. Первый ориентировочно 700–950 знаков, раскрывает конкретный ответ и практический смысл. Второй ориентировочно 150–230 знаков, меняет угол и естественно подводит к ОДНОМУ из двух предложенных вопросов другого раздела. Выбери его по связи с первым абзацем, не отвечай на него заранее, закончи точным названием вопроса. Не обещай его доступность для покупки и не упоминай цену. Если ответ уже полноценный, не растягивай его ради знаков. Без заголовков, списков, Markdown, смайликов, длинных тире, названий арканов, цифр расчёта, дат рождения и упоминаний ИИ. Только готовый живой текст.
+PROMPT;
+}
+function nlMessages(array $question,int $day,int $month,int $year): array {
     $id=$question['id'];
+    if(!checkdate($month,$day,$year))throw new InvalidArgumentException('LANGUAGE_INVALID_DATE');
     $matrix=ni31($day,$month,$year);
-    $names=nfPointTitles();
+    $titles=nlPointTitles();
     $knowledge=nlKnowledge();
     $selected=[];
-    foreach(nlPointMap($id) as $point){
-        if(!isset($matrix[$point],$names[$point],$knowledge[$matrix[$point]]))
+    foreach(nlPointMap($id) as $i=>$point){
+        if(!isset($matrix[$point],$titles[$point],$knowledge[$matrix[$point]]))
             throw new RuntimeException('LANGUAGE_POINT_MISSING');
         $traits=$knowledge[$matrix[$point]];
-        $selected[]=['роль'=>$names[$point],'число_аркана'=>$matrix[$point],
-            'плюс'=>$traits['plus'],'минус'=>$traits['minus']];
+        $selected[]=['роль'=>$titles[$point],
+            'значение'=>$traits['core'],'ресурс'=>$traits['plus'],'тень'=>$traits['minus'],
+            'назначение'=>$i===3?'Тематическое уточнение именно этого вопроса':'Исходная характеристика'];
     }
-    $follow=[];
-    foreach(nlQuestions() as $item){
-        if($item['id']!==$id&&!($item['isFree']??false))
-            $follow[]=['раздел'=>'Языки любви мужчины','вопрос'=>$item['title'],'тип'=>'платный'];
-    }
-    $other=json_decode((string)file_get_contents(__DIR__.'/family-live-followups.json'),
-        true,20,JSON_THROW_ON_ERROR);
-    if(($other['version']??null)!==1||count($other['questions']??[])<65)
-        throw new RuntimeException('LANGUAGE_FOLLOWUPS_MISSING');
-    foreach($other['questions'] as $item){
-        if(!is_string($item['вопрос']??null)||!is_string($item['раздел']??null))continue;
-        if($item['раздел']==='Языки любви мужчины'&&$item['вопрос']===$question['title'])continue;
-        $follow[]=$item;
-    }
-    $unique=[];
-    foreach($follow as $item)$unique[$item['раздел'].'|'.$item['вопрос']]=$item;
-    $follow=array_values($unique);
-    $system=<<<'PROMPT'
-Ты нумеролог и наблюдательная, немного дерзкая подруга. Отвечай на ОДИН конкретный вопрос блока «Языки любви мужчины». Не составляй общий психологический портрет, не перечисляй черты ради черт. В запросе есть узкий фокус вопроса: следуй ему строго. Женщина должна узнать, что мужчина чувствует, как общается или что делает именно в этой ситуации.
-
-Матрица из 31 точки уже рассчитана. Для шести нужных точек есть короткие авторские плюсы и минусы 22 энергий именно о языке любви. Используй ИХ, а не свои универсальные трактовки. День рождения и месяц задают два исходных ведущих смысла: день раскрывает характер проявления, месяц привычные потребности и реакции. Все четыре остальные позиции полной матрицы обязательно участвующие части единого расчёта: сопоставь каждую с днём и месяцем и друг с другом. Они могут усиливать, смягчать, противоречить исходной паре и существенно менять конкретный вывод. Никаких процентов, фиксированных весов и механического подсчёта. Сочетание должно менять результат для разных полных дат, а не только заменять слова. Не выбирай автоматом ни плюс, ни минус; покажи ведущую склонность и одну существенную тень без расплывчатого «может так или иначе».
-
-Первое предложение СРАЗУ отвечает на вопрос. Первый абзац: только 2–3 узнаваемых поступка, реакции или реплики в рамках конкретного вопроса. Например, при вопросе о критике не рассказывай о подарках, а при вопросе о просьбе не анализируй весь его характер. Никаких романтических сказок, бездоказательных диагнозов, нравоучений и клише «в глубине души», «особый внутренний мир», «невероятное сочетание». Живой, разговорный, прямой язык, немного остроты, но без унижений. Сохраняй различия между чувствами, вниманием, манипуляциями и готовностью отвечать за поступки. Это символический расчёт, не утверждай, будто поступки достоверно известны.
-
-ВТОРОЙ абзац: короткая естественная интригующая подводка к одному ДРУГОМУ платному вопросу из списка. Дай точное название этого вопроса в конце, не отвечай на него заранее и не обещай, что он уже опубликован.
-
-РОВНО два русских абзаца, суммарно примерно 750–1050 знаков: первый 570–820, второй 130–210. Без заголовков, списков, markdown, смайликов, дат, расчётов, упоминаний арканов, энергий или искусственного интеллекта. Не используй длинные тире. Выдай только текст.
-PROMPT;
     $payload=json_encode([
       'вопрос'=>$question['title'],
-      'фокус_ответа_не_отклоняться'=>nlQuestionFocus($id),
-      'важные_точки_с_авторскими_трактовками'=>$selected,
-      'полная_рассчитанная_матрица_для_контекста'=>$matrix,
-      'названия_вопросов_для_перехода'=>$follow
+      'точная_задача'=>nlQuestionFocus($id),
+      'четыре_значимые_позиции'=>$selected,
+      'два_вопроса_для_подводки'=>nlFollowups($id)
     ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
-    // Reuse the working no-fallback Gemini 3 Flash transport; no automatic retries.
-    $text=nfCloudRaw([['role'=>'system','content'=>$system],['role'=>'user','content'=>$payload]],2800);
-    $text=nfRestoreTwoParagraphs($text);
-    $text=nfFitFamilyAnswerLength($text);
-    $text=preg_replace('/[ \t]*[—–―][ \t]*/u',': ',$text)??$text;
-    return preg_replace('/[ \t]{2,}/u',' ',$text)??$text;
+    return [['role'=>'system','content'=>nlPrompt()],['role'=>'user','content'=>$payload]];
+}
+function nlFormatAnswer(string $text,string $id): string {
+    $text=niValidateGeneratedText($text,'stop');
+    $paragraphs=explode("\n\n",$text);
+    $first=trim(preg_replace('/[ \t]*[—–―][ \t]*/u',', ',$paragraphs[0])??$paragraphs[0]);
+    $second=trim(preg_replace('/[ \t]*[—–―][ \t]*/u',', ',$paragraphs[1])??$paragraphs[1]);
+    // Verify exact title without adding a second paid request. If a title was
+    // omitted, supply one permitted continuation; do not invent a purchase link.
+    $follow=nlFollowups($id);
+    $found=false;
+    foreach($follow as $item)if(mb_stripos($second,$item['вопрос'],0,'UTF-8')!==false){$found=true;break;}
+    if(!$found)$second.=' Ещё один интересный вопрос: '.$follow[0]['вопрос'];
+    $out=niValidateGeneratedText($first."\n\n".$second,'stop');
+    if(mb_strlen($out,'UTF-8')>1800)throw new RuntimeException('LANGUAGE_TEXT_TOO_LONG');
+    return $out;
+}
+function nlGenerateText(array $question,int $day,int $month,int $year): string {
+    // One request through the existing Cloud.ru Gemini transport; no fallback,
+    // automatic retries, Family dependencies or ready-made answers.
+    $text=niCloudCall(nlMessages($question,$day,$month,$year),2800,'google/gemini-3-flash-preview');
+    return nlFormatAnswer($text,$question['id']);
+}
+function nlFreshAnswer(string $id,string $date): string {
+    if(!nlEngineInstalled())throw new RuntimeException('LANGUAGE_ENGINE_UNAVAILABLE');
+    if(!in_array($id,nlQuestionIds(),true)||naCatalogDate($date)===null)
+        throw new InvalidArgumentException('LANGUAGE_INVALID_REQUEST');
+    $question=null;
+    foreach(nlQuestions() as $q)if($q['id']===$id){$question=$q;break;}
+    if($question===null)throw new RuntimeException('LANGUAGE_QUESTION_NOT_FOUND');
+    [$year,$month,$day]=array_map('intval',explode('-',$date));
+    try {
+        return nlGenerateText($question,$day,$month,$year);
+    }catch(Throwable $e){
+        $reason=$e instanceof RuntimeException?$e->getMessage():get_class($e);
+        if(!is_string($reason)||preg_match('/\A[A-Z][A-Z0-9_]{2,79}\z/D',$reason)!==1)
+            $reason='LANGUAGE_UNEXPECTED';
+        error_log('LANGUAGE_RESULT_FAIL question='.$id.' reason='.$reason);
+        throw $e;
+    }
+}
+function nlOwnerMaterial(string $resource): array {
+    if(!nlSupportedPaidResource('redflag_question',$resource))
+        throw new InvalidArgumentException('INVALID_LANGUAGE_RESOURCE');
+    if(!preg_match('/^redflag:language:([a-z-]+):(\d{4}-\d\d-\d\d)$/D',$resource,$m))
+        throw new RuntimeException('LANGUAGE_RESOURCE_INVALID');
+    $answer=nlFreshAnswer($m[1],$m[2]);
+    $title='';
+    foreach(nlQuestions() as $q)if($q['id']===$m[1]){$title=$q['title'];break;}
+    return ['title'=>$title,'sections'=>[['title'=>$title,
+        'paragraphs'=>preg_split('/\n\s*\n/u',$answer)]],'links'=>[],'pdf_available'=>false];
 }
 function nlCacheDirectory(): string {
     $p=__DIR__.'/language-answer-cache';
@@ -156,7 +243,7 @@ function nlCacheDirectory(): string {
 function nlCacheFile(string $id,string $date): string {
     if(!in_array($id,nlQuestionIds(),true)||naCatalogDate($date)===null)
         throw new InvalidArgumentException('LANGUAGE_INVALID_REQUEST');
-    return nlCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-language-kb-v1.json';
+    return nlCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).($id==='love-language'?'-language-instruction-v2.json':'-language-kb-v1.json');
 }
 function nlCachedAnswer(string $id,string $date): ?string {
     $path=nlCacheFile($id,$date);
@@ -180,21 +267,7 @@ function nlEnsureAnswer(string $id,string $date): string {
         if(!flock($lock,LOCK_EX))throw new RuntimeException('LANGUAGE_LOCK_UNAVAILABLE');
         $cached=nlCachedAnswer($id,$date);
         if($cached!==null)return $cached;
-        $question=null;
-        foreach(nlQuestions() as $q)if($q['id']===$id){$question=$q;break;}
-        if($question===null)throw new RuntimeException('LANGUAGE_QUESTION_NOT_FOUND');
-        [$year,$month,$day]=array_map('intval',explode('-',$date));
-        try {
-            $text=nlGenerateText($question,$day,$month,$year);
-            $text=niValidateGeneratedText($text,'stop');
-            if(mb_strlen($text,'UTF-8')>1800)throw new RuntimeException('LANGUAGE_TEXT_TOO_LONG');
-        }catch(Throwable $e){
-            $reason=$e instanceof RuntimeException?$e->getMessage():get_class($e);
-            if(!is_string($reason)||preg_match('/\A[A-Z][A-Z0-9_]{2,79}\z/D',$reason)!==1)
-                $reason='LANGUAGE_UNEXPECTED';
-            error_log('LANGUAGE_RESULT_FAIL question='.$id.' reason='.$reason);
-            throw $e;
-        }
+        $text=nlFreshAnswer($id,$date);
         $json=json_encode(['version'=>1,'question'=>$id,'date'=>$date,'answer'=>$text],
             JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
         $tmp=$path.'.'.bin2hex(random_bytes(6)).'.tmp';
