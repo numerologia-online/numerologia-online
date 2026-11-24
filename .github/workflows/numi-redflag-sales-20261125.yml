@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/numi-redflag-sales-20261125.yml'
       - '.github/scripts/numi_redflag_sales_20261125.py'
+      - 'account-service/tests/subscriptions.php'
 permissions:
   contents: read
 concurrency:

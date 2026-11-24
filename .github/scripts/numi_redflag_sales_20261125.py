@@ -2,7 +2,8 @@ import os,io,ssl,ftplib,pathlib,subprocess,time,urllib.request,urllib.error,hash
 base='b61ae2b7997a725cb2f8ecef120cb73fcaff4844'
 files=["account-service/private/flags-fidelity-live-questions.json","account-service/private/flags-live-knowledge.json","account-service/private/fidelity-live-knowledge.json","account-service/private/flags-fidelity-live.php","account-service/public/numi-flags-fidelity-free.php","account-service/private/wallet-real-payment.php","account-service/private/wallet-real.php","account-service/private/fulfillment.php","account-service/private/redflag-catalog.json","redflag-public-catalog.js","redflag-feature.js","wallet-client.js","redflag-categories.js","redflag-text-bank.js","app.js","index.html"]
 fresh=["account-service/private/flags-fidelity-live-questions.json","account-service/private/flags-live-knowledge.json","account-service/private/fidelity-live-knowledge.json","account-service/private/flags-fidelity-live.php","account-service/public/numi-flags-fidelity-free.php"]
-new={p:pathlib.Path(p).read_bytes() for p in files}
+release='3364f36053723671b5eaa6664263078dc09cbef0'
+new={p:subprocess.check_output(['git','show',release+':'+p]) for p in files}
 old={p:subprocess.check_output(['git','show',base+':'+p]) for p in files if p not in fresh}
 origin='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
 def status(path,body=None):
@@ -55,7 +56,7 @@ try:
      assert json.loads(saved[p])==json.loads(old[p]),'CATALOG_DRIFT'
     else:
      target=pathlib.Path(d,p);target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(saved[p])
-     patch=subprocess.check_output(['git','diff',base,'HEAD','--',p])
+     patch=subprocess.check_output(['git','diff',base,release,'--',p])
      subprocess.run(['git','apply','--check','--unsafe-paths','-'],input=patch,cwd=d,check=True)
      subprocess.run(['git','apply','--unsafe-paths','-'],input=patch,cwd=d,check=True)
      new[p]=target.read_bytes()
