@@ -15,7 +15,9 @@ try {
     [$year,$month,$day]=array_map('intval',explode('-',$date));
     if($year>(int)gmdate('Y'))naReply(400,['ok'=>false,'error'=>'INVALID_BIRTH_DATE']);
     $db=naDB();$account=naCurrent($db);
-    $answer=nlPermitFree($date,$account,static fn():string=>nlEnsureAnswer('love-language',$date));
+    $answer=$account!==null&&naTestOwner($account)
+        ?nlFreshAnswer('love-language',$date)
+        :nlPermitFree($date,$account,static fn():string=>nlEnsureAnswer('love-language',$date));
     naReply(200,['ok'=>true,'free'=>true,'ai_generated'=>true,
         'question_id'=>'love-language','date_key'=>$day.'-'.$month,'answer'=>$answer]);
 }catch(JsonException|InvalidArgumentException $e){
