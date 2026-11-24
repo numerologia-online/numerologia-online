@@ -11,7 +11,7 @@ function apServices(): array {
 function apWindow(?DateTimeImmutable $now=null): array {
     $tz=new DateTimeZone('Europe/Samara');
     $now=($now??new DateTimeImmutable('now',$tz))->setTimezone($tz)->setTime(0,0);
-    return [max('2026-12-08',$now->modify('+1 day')->format('Y-m-d')),$now->modify('+90 days')->format('Y-m-d')];
+    return [$now->modify('+1 day')->format('Y-m-d'),$now->modify('+90 days')->format('Y-m-d')];
 }
 function apWeekend(string $date): bool {
     return (int)(new DateTimeImmutable($date,new DateTimeZone('Europe/Samara')))->format('N')>=6;
@@ -48,6 +48,10 @@ function apSchema(PDO $db): void {
         catch(PDOException $e){if((int)($e->errorInfo[1]??0)!==1060)throw $e;}
     }
     $db->exec("CREATE TABLE IF NOT EXISTS numi_appointment_days (slot_date DATE PRIMARY KEY) ENGINE=InnoDB");
+    $db->exec("CREATE TABLE IF NOT EXISTS numi_appointment_owner_plan (
+      slot_date DATE PRIMARY KEY, mode VARCHAR(16) NOT NULL,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     // Serialize schema upgrades, including the old unique date constraint.
     if((int)$db->query("SELECT GET_LOCK('numi_appointment_capacity_schema_v2',10)")->fetchColumn()!==1)throw new RuntimeException('AP_SCHEMA_BUSY');
     try{
@@ -72,19 +76,47 @@ function apPlannedWork(): array {
     return ['2026-12-01'=>['life'],'2026-12-02'=>['child'],'2026-12-03'=>['couple'],
         '2026-12-04'=>['year','year'],'2026-12-07'=>['life'],'2026-12-08'=>['year']];
 }
-function apNextForDate(string $date,array $rows,string $service): ?int {
-    $plan=apPlannedWork()[$date]??[];
+function apPlanModes(): array {
+    return ['free'=>[],'closed'=>['closed'],'life'=>['life'],'child'=>['child'],
+        'couple'=>['couple'],'year_one'=>['year'],'year_two'=>['year','year']];
+}
+function apDefaultPlan(string $date): array {
+    if(apWeekend($date))return [];
+    return apPlannedWork()[$date]??($date<'2026-12-08'?['closed']:[]);
+}
+function apTableExists(PDO $db,string $name): bool {
+    $q=$db->prepare("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?");
+    $q->execute([$name]);return (int)$q->fetchColumn()>0;
+}
+function apPlan(PDO $db,string $date): array {
+    $q=$db->prepare('SELECT mode FROM numi_appointment_owner_plan WHERE slot_date=?');
+    $q->execute([$date]);$mode=$q->fetchColumn();
+    if($mode===false)return apDefaultPlan($date);
+    if(!array_key_exists($mode,apPlanModes()))throw new RuntimeException('INVALID_STORED_PLAN');
+    return apPlanModes()[$mode];
+}
+function apDateLock(PDO $db,string $date): void {
+    $db->prepare('INSERT IGNORE INTO numi_appointment_days(slot_date) VALUES(?)')->execute([$date]);
+    $q=$db->prepare('SELECT slot_date FROM numi_appointment_days WHERE slot_date=? FOR UPDATE');
+    $q->execute([$date]);$q->fetch();
+}
+function apActiveRows(PDO $db,string $date): array {
+    $q=$db->prepare('SELECT slot_no,service,status FROM numi_appointments WHERE active_date=? FOR UPDATE');
+    $q->execute([$date]);return $q->fetchAll();
+}
+function apNextForDate(string $date,array $rows,string $service,?array $plan=null): ?int {
+    $plan=$plan??apDefaultPlan($date);
     if(!$plan)return apNextSlot($rows,$service);
     // The author reserves one year-report workload unit on 8 Dec. No full report or second external order.
     if($plan===['year']&&$service==='year'&&!$rows)return 1;
     return null;
 }
-function apCalendarDay(array $rows,string $date=''): array {
+function apCalendarDay(array $rows,string $date='',?array $planned=null): array {
     $paid=[];$pending=0;
     foreach($rows as $r){if($r['status']==='paid')$paid[]=$r['service'];else $pending++;}
-    $planned=apPlannedWork()[$date]??[];
+    $planned=$planned??($date!==''?apDefaultPlan($date):[]);
     return ['paid'=>$paid,'pending'=>$pending,'planned'=>$planned,
-        'year_only'=>apNextForDate($date,$rows,'year')!==null&&(count($rows)>0||count($planned)>0)];
+        'year_only'=>apNextForDate($date,$rows,'year',$planned)!==null&&(count($rows)>0||count($planned)>0)];
 }
 function apRow(PDO $db,string $id): ?array {
     $q=$db->prepare('SELECT * FROM numi_appointments WHERE id=?');
@@ -166,14 +198,52 @@ function apServe(): never {
     try{
         $action=$_GET['action']??'calendar';$a=apConfig();$w=naRealWalletConfig();$enabled=apEnabled($a,$w);
         [$first,$last]=apWindow();
+        // Owner tools are independent of payment launch; every privileged route checks the existing verified owner account.
+        if(in_array($action,['owner','owner_plan'],true)){
+            $db=naDB();$account=naCurrent($db);
+            if(!naTestOwner($account))naReply(403,['ok'=>false,'error'=>'OWNER_ONLY']);
+            if($action==='owner'){
+                if(($_SERVER['REQUEST_METHOD']??'')!=='GET')naReply(405,['ok'=>false]);
+                apSchema($db);
+                $rows=$db->query('SELECT slot_date AS date,service,status,email,telegram,provider_payment_id AS payment_id FROM numi_appointments ORDER BY slot_date DESC LIMIT 200')->fetchAll();
+                naReply(200,['ok'=>true,'bookings'=>$rows]);
+            }
+            $b=naReadPost();$date=$b['date']??null;$mode=$b['mode']??null;
+            if(!is_string($date)||!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/D',$date)||!checkdate((int)substr($date,5,2),(int)substr($date,8,2),(int)substr($date,0,4))||!is_string($mode)||!array_key_exists($mode,apPlanModes()))
+                naReply(400,['ok'=>false,'error'=>'INVALID_PLAN']);
+            if($date<$first||$date>$last||apWeekend($date))naReply(409,['ok'=>false,'error'=>'PLAN_DATE_UNAVAILABLE']);
+            apSchema($db);
+            $db->beginTransaction();
+            try{
+                apDateLock($db,$date);
+                if(apActiveRows($db,$date)){
+                    $db->rollBack();naReply(409,['ok'=>false,'error'=>'ACTIVE_BOOKINGS']);
+                }
+                $q=$db->prepare('INSERT INTO numi_appointment_owner_plan(slot_date,mode) VALUES(?,?) ON DUPLICATE KEY UPDATE mode=VALUES(mode)');
+                $q->execute([$date,$mode]);$db->commit();
+            }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+            naReply(200,['ok'=>true,'date'=>$date,'mode'=>$mode]);
+        }
         if($action==='calendar'){
-            $slots=[];$owner=false;
-            foreach(apPlannedWork() as $day=>$plan)$slots[$day]=apCalendarDay([],$day);
-            if($enabled){
-                $db=naDB();apSchema($db);$owner=naTestOwner(naCurrent($db));
+            $db=naDB();$owner=naTestOwner(naCurrent($db));
+            if($enabled||$owner)apSchema($db);
+            $plans=[];$groups=[];$slots=[];
+            if(apTableExists($db,'numi_appointment_owner_plan')){
+                $q=$db->prepare('SELECT slot_date,mode FROM numi_appointment_owner_plan WHERE slot_date BETWEEN ? AND ?');$q->execute([$first,$last]);
+                foreach($q as $r){
+                    if(!array_key_exists($r['mode'],apPlanModes()))throw new RuntimeException('INVALID_STORED_PLAN');
+                    $plans[$r['slot_date']]=apPlanModes()[$r['mode']];
+                }
+            }
+            if(apTableExists($db,'numi_appointments')){
                 $q=$db->prepare('SELECT slot_date,slot_no,service,status FROM numi_appointments WHERE active_date BETWEEN ? AND ? ORDER BY slot_no');$q->execute([$first,$last]);
-                $groups=[];foreach($q as $r)$groups[$r['slot_date']][]=$r;
-                foreach($groups as $day=>$rows)$slots[$day]=apCalendarDay($rows,$day);
+                foreach($q as $r)$groups[$r['slot_date']][]=$r;
+            }
+            // Preserve labels for earlier closed dates in the displayed month.
+            foreach(apPlannedWork() as $day=>$plan)if($day<$first)$slots[$day]=apCalendarDay([],$day,$plan);
+            for($d=new DateTimeImmutable($first);$d->format('Y-m-d')<=$last;$d=$d->modify('+1 day')){
+                $day=$d->format('Y-m-d');$plan=$plans[$day]??apDefaultPlan($day);$rows=$groups[$day]??[];
+                if($plan||$rows)$slots[$day]=apCalendarDay($rows,$day,$plan);
             }
             naReply(200,['ok'=>true,'enabled'=>$enabled,'first'=>$first,'last'=>$last,'slots'=>(object)$slots,'owner'=>$owner]);
         }
@@ -194,11 +264,6 @@ function apServe(): never {
         }
         $account=naCurrent($db);
         if(!$account)naReply(401,['ok'=>false,'error'=>'LOGIN_REQUIRED']);
-        if($action==='owner'){
-            if(!naTestOwner($account))naReply(403,['ok'=>false]);
-            $rows=$db->query('SELECT slot_date AS date,service,status,email,telegram,provider_payment_id AS payment_id FROM numi_appointments ORDER BY slot_date DESC LIMIT 200')->fetchAll();
-            naReply(200,['ok'=>true,'bookings'=>$rows]);
-        }
         $b=naReadPost();
         if($action==='status'){
             $id=$b['id']??null;
@@ -222,10 +287,8 @@ function apServe(): never {
                 $db->rollBack();naReply(409,['ok'=>false,'error'=>'PENDING_LIMIT']);
             }
             if(!$r){
-                $db->prepare('INSERT IGNORE INTO numi_appointment_days(slot_date) VALUES(?)')->execute([$date]);
-                $q=$db->prepare('SELECT slot_date FROM numi_appointment_days WHERE slot_date=? FOR UPDATE');$q->execute([$date]);$q->fetch();
-                $q=$db->prepare('SELECT slot_no,service,status FROM numi_appointments WHERE active_date=? FOR UPDATE');$q->execute([$date]);
-                $slot=apNextForDate($date,$q->fetchAll(),$s);
+                apDateLock($db,$date);
+                $slot=apNextForDate($date,apActiveRows($db,$date),$s,apPlan($db,$date));
                 if($slot===null){$db->rollBack();naReply(409,['ok'=>false,'error'=>'SLOT_UNAVAILABLE']);}
                 $id=naUuid();$q=$db->prepare('INSERT INTO numi_appointments(id,account_id,slot_date,active_date,slot_no,service,kopeks,email,telegram,vat_code) VALUES(?,?,?,?,?,?,?,?,?,?)');
                 $q->execute([$id,$account['id'],$date,$date,$slot,$s,apServices()[$s][1],$email,$telegram,$a['vat_code']]);$r=apRow($db,$id);
