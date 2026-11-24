@@ -190,7 +190,7 @@ export async function showInlinePurchase(item,container,onMaterial,onLoadError){
     let purchaseReturned=false;
     let paymentConfirmed=false;
     try{
-      const result=await walletRequest("wallet_buy",{item,request_key:key});
+      const result=await walletRequest("wallet_buy",{item,request_key:key,expected_price_kopeks:amount});
       purchaseReturned=true;
       if(result.test!==quote.test||!result.entitlement_id)throw new Error("INVALID_PURCHASE_RESULT");
       paymentConfirmed=true;
@@ -202,12 +202,14 @@ export async function showInlinePurchase(item,container,onMaterial,onLoadError){
         await onMaterial({sections:[]},result.entitlement_id);
         return;
       }
-      const material=await walletMaterial(result.entitlement_id);
+      const material=Array.isArray(result.material?.sections)&&result.material.sections.length?result.material:await walletMaterial(result.entitlement_id);
       pending.delete(id);
       onMaterial(material,result.entitlement_id);
     }catch(e){
       // These server refusals happen before a first purchase can debit the balance.
-      const notCharged=!purchaseReturned&&!previousKey&&["REAL_MATERIAL_NOT_READY","ITEM_NOT_READY"].includes(e?.message);
+      if(e.message==="REAL_PRICE_CHANGED"){pending.delete(id);note(container,"Цена изменилась. Подтвердите актуальную стоимость.");action(container,"Проверить новую цену",()=>showInlinePurchase(item,container,onMaterial,onLoadError));return;}
+      if(e.message==="REAL_ALREADY_PURCHASED"){pending.delete(id);return showInlinePurchase(item,container,onMaterial,onLoadError);}
+      const notCharged=!purchaseReturned&&!previousKey&&["REAL_MATERIAL_NOT_READY","ITEM_NOT_READY","REAL_INSUFFICIENT_BALANCE"].includes(e?.message);
       const paymentStatus=paymentConfirmed?"paid":notCharged?"not-charged":"unknown";
       explain(container,e,onLoadError,paymentStatus);
       // On ambiguous failure, preserve idempotency key to prevent duplicate charges.

@@ -62,6 +62,10 @@ function naRedFlagPaidStatus(mixed $status): bool {
     return in_array($status,['ready','complete'],true);
 }
 function naMaterialBuild(string $code,string $resource,?string $root=null): array {
+    if($code==='redflag_question'&&preg_match('/^redflag:(flags|infidelity):/D',$resource)===1){
+        require_once __DIR__.'/flags-fidelity-live.php';
+        try{return rfsMaterialFromCache($resource);}catch(RuntimeException $e){if($e->getMessage()!=='MATERIAL_NOT_READY')throw $e;}
+    }
     // Native family answers are always generated BEFORE wallet payment, never when opened.
     if($code==='redflag_question' && preg_match('/^redflag:family:/D',$resource)===1){
         require_once __DIR__.'/family-live.php';

@@ -197,61 +197,61 @@ export const PUBLIC_QUESTIONS = {
       "priceRub": 10,
       "aspect": "boundaries",
       "usePeriod": false,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "care-or-control",
       "title": "Заботится или будет контролировать каждый твой шаг?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "hero",
       "title": "Скромный мужчина или считает себя подарком судьбы?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "jealousy",
       "title": "Ревнует от любви или устроит допрос за каждый лайк?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "argument",
       "title": "Умеет говорить о проблемах или наказывает молчанием?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "abuse-signal",
       "title": "Какой тревожный сигнал нельзя пропустить в начале знакомства?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "support-or-cause",
       "title": "Будет твоей опорой или сам доведёт до слёз?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "apology",
       "title": "После ссоры извинится или виноватой сделает тебя?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "weak-place",
       "title": "Какая его слабость может разрушить ваши отношения?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "calm-or-swings",
       "title": "С ним спокойно или тебя ждут эмоциональные качели?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     }
   ],
   "infidelity": [
@@ -282,55 +282,55 @@ export const PUBLIC_QUESTIONS = {
       "id": "options",
       "title": "Верный или постоянно ищет запасные варианты?",
       "priceRub": 10,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "flirt",
       "title": "Флиртует по привычке или ему правда важна одна женщина?",
       "priceRub": 10,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "trust",
       "title": "Ему можно доверять или лучше снять розовые очки?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "ex",
       "title": "Если напишет бывшая — поставит точку или приоткроет дверь?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "temptation",
       "title": "Как он ведёт себя, когда появляется соблазн?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "physical-or-emotional",
       "title": "Любитель крутить тайные романы в своей голове?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "secrecy",
       "title": "Говорит о себе правду или скрывает половину своей жизни?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "return",
       "title": "Уходит навсегда или возвращается ко всем бывшим?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "after-mistake",
       "title": "Если поймаешь на измене, признается или сделает виноватой тебя?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     }
   ],
   "intimacy": [
@@ -361,55 +361,55 @@ export const PUBLIC_QUESTIONS = {
       "id": "her-pleasure",
       "title": "В близости думает о женщине или только любуется собой?",
       "priceRub": 10,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "pace",
       "title": "Страстный партнёр или быстро начинает скучать?",
       "priceRub": 10,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "desire-talk",
       "title": "Энергия желания есть или разговор про темперамент обречён?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "tenderness",
       "title": "Способен к нежности или для него важна только искра?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "boundaries",
       "title": "Умеет слышать границы или считает отказ личным оскорблением?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "closeness",
       "title": "Близость для любви или для самоутверждения?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "initiative",
       "title": "Он внимательный инициатор или ждёт, что женщина всё организует сама?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "compatibility",
       "title": "Горячий любовник или секс по праздникам?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "after",
       "title": "После секса привязывается или теряет интерес?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     }
   ],
   "family": [

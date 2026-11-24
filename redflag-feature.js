@@ -1,6 +1,6 @@
 // Red Flag deliberately needs only day and month, with no birth-year dependence.
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=verdict-dignity-20261124";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=redflag-sales-20261125";
 
 // Paid content is rendered as text; do not interpret author-controlled paragraphs as HTML.
 const escapeMarkup = value => String(value??"").replace(/[&<>"']/g,char=>({
@@ -45,7 +45,7 @@ let ownerDraftAccess=false,ownerDraftAccessChecked=false;
 const ownerDraftInScope=(question,state)=>{
   const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
   return Boolean(ownerDraftAccess&&redflagDraftSections.has(section)&&
-    (question.isComingSoon||(section==="infidelity"&&question.id==="faithful")||
+    (question.isComingSoon||section==="flags"||section==="infidelity"||
      section==="family"||section==="intimacy"||section==="verdict"||section==="love"));
 };
 async function verifyOwnerDraftAccess(){
@@ -157,11 +157,10 @@ const addRedFlagShare = (answer, report) => {
   const controls = document.createElement("section");
   controls.className = "personal-day-share redflag-share";
   controls.setAttribute("aria-label", "Сохранить и поделиться ответом");
-  const openedFromBot = Boolean(window.Telegram?.WebApp?.initData);
   controls.innerHTML = '<p class="personal-day-share-title">Не потеряй свой ответ ❤️</p>'
     + '<p class="personal-day-share-status">Чтобы не потерять разбор, сохрани его в нашем Telegram-боте. Сможешь перечитать в любой момент.</p>'
     + '<button type="button" class="personal-day-share-save">'
-    + (openedFromBot ? '❤️ Сохранить ответ в Telegram' : '❤️ Сохранить мой ответ')
+    + '❤️ Сохранить ответ в Telegram'
     + '</button>'
     + '<button type="button" class="personal-day-share-send">💌 Поделиться с подругой</button>'
     + '<div class="redflag-save-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>';
@@ -233,8 +232,8 @@ const addRedFlagShare = (answer, report) => {
         preparedBotLink = REDFLAG_BOT_URL + "?start=" + encodeURIComponent(data.ticket);
         save.textContent = "🤖 Открыть бота с ответом";
         save.disabled = false;
-        showFeedback("is-success", "❤️ Твой ответ отправлен!",
-          "Если сообщение не пришло, открой нашего Telegram-бота по кнопке выше и нажми «Начать».");
+        showFeedback("is-success", "❤️ Ссылка готова!",
+          "Открой Telegram-бота и нажми «Начать», чтобы получить ответ.");
         openRedFlagTicket(preparedBotLink);
       } catch (error) {
         save.disabled = false;
@@ -385,44 +384,24 @@ const ensureAnswerResolved = (question, state, {forceNew = false} = {}) => {
   const profile=activeProfile;
   if(!profile)return;
   state.answerErrors.delete(id);
-  // The FIRST free Red Flag question is AI-generated for ALL visitors.
-  // This is deliberately before owner-only test drafts and before paid access.
-  // Never fall back to the three old generic teaser variants.
-  if(question.isFree&&id==="say-no"&&!ownerDraftInScope(question,state)&&[...categoryStates].some(
-    ([category,entry])=>category==="flags"&&entry===state)){
-    const birthday=parseRedFlagDate(birthDateInput.value);
-    if(!birthday){
-      state.answerErrors.set(id,"Укажи дату рождения мужчины.");
-      renderCategories({type:"question",id});
-      return;
-    }
-    const dateKey=birthday.day+"-"+birthday.month;
-    const task=fetch("/api/redflag-free-ai.php",{
-      method:"POST",credentials:"same-origin",cache:"no-store",
-      headers:{"Content-Type":"application/json","Accept":"application/json"},
-      body:JSON.stringify({question_id:"say-no",day:birthday.day,month:birthday.month}),
-      signal:AbortSignal.timeout(100000)
+  const freeCategory=state===categoryStates.get("flags")?"flags":state===categoryStates.get("infidelity")?"infidelity":null;
+  if(question.isFree&&freeCategory&&!ownerDraftInScope(question,state)){
+    const birth=parseRedFlagDate(birthDateInput.value);
+    if(!birth){state.answerErrors.set(id,"Укажи дату рождения мужчины.");return;}
+    const date=birth.year+"-"+String(birth.month).padStart(2,"0")+"-"+String(birth.day).padStart(2,"0");
+    const task=fetch("/api/numi-flags-fidelity-free.php",{
+      method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({category:freeCategory,question_id:id,birth_date:date}),signal:AbortSignal.timeout(125000)
     }).then(async response=>{
-      const data=await response.json();
-      if(!response.ok||data?.ok!==true||data?.free!==true||
-        data?.ai_generated!==true||data?.question_id!=="say-no"||
-        data?.date_key!==dateKey||typeof data?.answer!=="string"||
-        data.answer.length<450||data.answer.length>1900)
-        throw new Error("FREE_AI_UNAVAILABLE");
-      const paragraphs=data.answer.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);
+      const d=await response.json();
+      if(!response.ok||d?.ok!==true||d?.free!==true||d?.ai_generated!==true||d?.category!==freeCategory||d?.question_id!==id||d?.birth_date!==date||typeof d?.answer!=="string")throw new Error("FREE_AI_UNAVAILABLE");
+      const paragraphs=d.answer.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);
       if(paragraphs.length!==2)throw new Error("INVALID_PARAGRAPHS");
-      if(profile!==activeProfile)return;
-      state.answers.set(id,{answer:data.answer,paragraphs});
-    }).catch(()=>{
-      if(profile===activeProfile)
-        state.answerErrors.set(id,redFlagLoadErrorCopy(true).text);
-    }).finally(()=>{
-      if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
-      if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
-        renderCategories({type:"question",id});
-    });
-    state.answerRequests.set(id,task);
-    return;
+      if(profile===activeProfile)state.answers.set(id,{answer:d.answer,paragraphs});
+    }).catch(()=>{if(profile===activeProfile)state.answerErrors.set(id,redFlagLoadErrorCopy(true).text);})
+      .finally(()=>{if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
+        if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)renderCategories({type:"question",id});});
+    state.answerRequests.set(id,task);return;
   }
   // Native FREE Gemini personal answer for Love Languages, including non-owners.
   // Always return before the old generic public variants or draft-preview route.
@@ -656,7 +635,7 @@ const ensureAnswerResolved = (question, state, {forceNew = false} = {}) => {
       state.answers.set(id,{answer:paragraphs.join("\n"),paragraphs});
       renderCategories({type:"question",id});
     };
-    const task=import("./wallet-client.js?v=redflag-buyer-message-20261122-v2").then(async ({showInlinePurchase,walletOwnerMaterial})=>{
+    const task=import("./wallet-client.js?v=redflag-sales-20261125").then(async ({showInlinePurchase,walletOwnerMaterial})=>{
       // Family and Love Languages owner errors must NEVER be disguised as a wallet paywall.
       // All authorization still happens in the existing authenticated REG.RU endpoints.
       if(category==="family"||category==="language"){

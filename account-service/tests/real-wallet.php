@@ -155,6 +155,10 @@ assertReal($receipt!==false && $receipt['kind']==='advance_in'
     && (int)$receipt['kopeks']===10000 && $receipt['status']==='verified',
     'verified payment creates one fiscal advance audit event');
 naRealWalletInvariant($db,$accountA);
+expectReal(fn()=>naRealWalletBuy($db,$accA,$good,$question,'missing-answer-test-123456',static fn()=>false),'REAL_MATERIAL_NOT_READY');
+assertReal(naRealWalletBalance($db,$accountA)===10000,'failed material cannot debit');
+expectReal(fn()=>naRealWalletBuy($db,$accA,$good,$question,'changed-price-test-123456',$ready,1000),'REAL_PRICE_CHANGED');
+assertReal(naRealWalletBalance($db,$accountA)===10000,'expired discount cannot silently charge more');
 $paid=naRealWalletBuy($db,$accA,$good,$question,'buy-unique-1234567890001',$ready);
 assertReal($paid['price_kopeks']===2000 && $paid['balance_kopeks']===8000,'regular price charged');
 $canonical=naCatalogResolve($question,false);

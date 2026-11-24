@@ -534,6 +534,10 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     return lvlSupportedPaidResource('redflag_question',(string)$item['resource_id'])
                         && lvlEngineInstalled();
                 }
+                if(($item['product_code']??null)==='redflag_question'&&preg_match('/^redflag:(flags|infidelity):/D',(string)($item['resource_id']??''))){
+                    require_once __DIR__.'/flags-fidelity-live.php';
+                    return rfsSupportedPaidResource('redflag_question',(string)$item['resource_id'])&&rfsEngineInstalled();
+                }
                 try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}
                 catch(Throwable $e){return false;}
             };
@@ -626,6 +630,10 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     return lvlSupportedPaidResource('redflag_question',(string)$item['resource_id'])
                         && lvlEngineInstalled();
                 }
+                if(($item['product_code']??null)==='redflag_question'&&preg_match('/^redflag:(flags|infidelity):/D',(string)($item['resource_id']??''))){
+                    require_once __DIR__.'/flags-fidelity-live.php';
+                    return rfsSupportedPaidResource('redflag_question',(string)$item['resource_id'])&&rfsEngineInstalled();
+                }
                 try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}
                 catch(Throwable $e){return false;}
             };
@@ -633,6 +641,21 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             // before any provider call; generate and cache the finished answer
             // BEFORE entering the existing atomic wallet debit transaction.
             $resolved=naCatalogResolve($input,naRealWalletHasAccess($db,$account,'club_month','club'));
+            $confirmed=$body['expected_price_kopeks']??$resolved['price_kopeks'];
+            if(!is_int($confirmed)||$confirmed<1)throw new RuntimeException('REAL_MATERIAL_NOT_READY');
+            $isRedFlag=($resolved['product_code']??null)==='redflag_question';
+            $already=$isRedFlag&&naRealWalletHasAccess($db,$account,'redflag_question',(string)$resolved['resource_id']);
+            if(!$already&&$resolved['price_kopeks']>$confirmed)throw new RuntimeException('REAL_PRICE_CHANGED');
+            if($isRedFlag&&!$already){
+                if($resolved['availability']!=='FULFILLMENT_NOT_CONNECTED'||!$ready($resolved))throw new RuntimeException('REAL_MATERIAL_NOT_READY');
+                if(naRealWalletBalance($db,$account['id'])<(int)$resolved['price_kopeks'])throw new RuntimeException('REAL_INSUFFICIENT_BALANCE');
+            }
+            try{
+            if($isRedFlag&&preg_match('/^redflag:(flags|infidelity):/D',(string)$resolved['resource_id'])&&!$already){
+                require_once __DIR__.'/flags-fidelity-live.php';
+                if(function_exists('set_time_limit'))@set_time_limit(125);
+                rfsEnsurePaidResource((string)$resolved['resource_id']);
+            }
             if(($resolved['product_code']??null)==='redflag_question'
               &&str_starts_with((string)($resolved['resource_id']??''),'redflag:family:')){
                 require_once __DIR__.'/family-live.php';
@@ -698,7 +721,21 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     }
                 }
             }
-            $result=naRealWalletBuy($db,$account,$config,$input,$key,$ready);
+            }catch(Throwable $e){error_log('NUMI_REDFLAG_GENERATION:'.get_class($e));throw new RuntimeException('REAL_MATERIAL_NOT_READY',0,$e);}
+            // Confirm the actual finished material before debit, including in the transaction.
+            $material=null;
+            if($isRedFlag){
+                try{$material=naMaterialBuild('redflag_question',(string)$resolved['resource_id']);
+                    if(empty($material['sections']))throw new RuntimeException('EMPTY_MATERIAL');
+                }catch(Throwable $e){throw new RuntimeException('REAL_MATERIAL_NOT_READY',0,$e);}
+                $ready=static function(array $item):bool{
+                    try{$doc=naMaterialBuild($item['product_code'],$item['resource_id']);return !empty($doc['sections']);}
+                    catch(Throwable $e){return false;}
+                };
+            }
+            $result=naRealWalletBuy($db,$account,$config,$input,$key,$ready,$confirmed);
+            // Only return the finished text after a successful committed debit/entitlement.
+            if($material!==null)$result['material']=$material;
             naReply(200,array_merge(['ok'=>true,'test'=>false],$result));
         }
         naReply(400,['ok'=>false,'error'=>'UNKNOWN_ACTION']);
@@ -710,7 +747,7 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             'REAL_FISCAL_ADVANCE_BUILDER_NOT_APPROVED',
             'REAL_FISCAL_CONTACT_REQUIRED','REAL_FISCAL_CONTACT_MISMATCH','REAL_PAYMENTS_DISABLED',
             'REAL_TOPUP_RECONCILIATION_REQUIRED','REAL_TOPUP_METHOD_CHANGED',
-            'REAL_ALREADY_PURCHASED','REAL_INSUFFICIENT_BALANCE',
+            'REAL_ALREADY_PURCHASED','REAL_INSUFFICIENT_BALANCE','REAL_PRICE_CHANGED',
             'REAL_MATERIAL_NOT_READY','REAL_WALLET_FROZEN',
             'REAL_RECURRING_NOT_APPROVED','REAL_SUBSCRIPTION_PENDING_REVIEW',
             'REAL_SUBSCRIPTION_RECONCILIATION_REQUIRED','REAL_SUBSCRIPTION_CONSENT_REVOKED',

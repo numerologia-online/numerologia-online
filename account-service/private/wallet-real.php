@@ -463,7 +463,7 @@ function naRealWalletAllocateReceiptSources(PDO $db,string $accountId,int $kopek
  * Manual balance purchase. Never executes an external charge; no cart.
  * Only REAL paid entitlements count as owned or grant the club discount.
  */
-function naRealWalletBuy(PDO $db,array $account,array $config,array $input,string $requestKey,callable $materialReady): array {
+function naRealWalletBuy(PDO $db,array $account,array $config,array $input,string $requestKey,callable $materialReady,?int $confirmedPrice=null): array {
     naRealWalletRequireLive($config);
     $requestKey=naWalletKey($requestKey);
     // Fiscal contact comes from the original paid top-up, not the account email.
@@ -491,6 +491,7 @@ function naRealWalletBuy(PDO $db,array $account,array $config,array $input,strin
             $materialReady);
         $item=$quote['items'][0];
         $price=(int)$item['price_kopeks'];
+        if($confirmedPrice!==null&&$price>$confirmedPrice)throw new RuntimeException('REAL_PRICE_CHANGED');
         if($item['kind']!=='subscription' && naRealWalletHasAccess($db,$account,$item['product_code'],$item['resource_id']))
             throw new RuntimeException('REAL_ALREADY_PURCHASED');
         if(!$quote['fulfillment_ready'] || $price<1
