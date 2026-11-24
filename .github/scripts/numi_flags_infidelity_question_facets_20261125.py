@@ -34,6 +34,30 @@ def lint(p,b):
  assert all(isinstance(v,str) and 0<len(v)<=160 for v in values)
 for p,b in new.items():lint(p,b)
 print('FLAGS_INFidelity_QUESTION_FACETS_OFFLINE_PASS 440_keys',flush=True)
+def function_body(source,name):
+ start=source.index('function '+name+'(')
+ end=source.index('\nfunction ',start+1)
+ return start,end,source[start:end]
+def scoped_api(live):
+ # Compare the two relevant functions byte-for-byte to the audited old/new code.
+ # Do not overwrite unrelated server changes or modify routing.
+ source=live.decode()
+ baseline=old[ap].decode()
+ desired=new[ap].decode()
+ for name in ['rfOwnerSharpFlags','rfOwnerSharpInfidelity']:
+  start,end,body=function_body(source,name)
+  _,_,before=function_body(baseline,name)
+  _,_,after=function_body(desired,name)
+  assert body in (before,after),'LIVE_FUNCTION_DRIFT_'+name
+  source=source[:start]+after+source[end:]
+ for name in ['rfOwnerSharpFlags','rfOwnerSharpInfidelity']:
+  assert function_body(source,name)[2]==function_body(desired,name)[2]
+  # The active request path must still invoke the same generator.
+  assert source.count('$answer='+name+'(')==1,'LIVE_ROUTE_DIFF_'+name
+ with tempfile.NamedTemporaryFile(suffix='.php') as f:
+  f.write(source.encode());f.flush();subprocess.run(['php','-l',f.name],check=True)
+ print('LIVE_SCOPE_VERIFIED unrelated_server_bytes_preserved=true',flush=True)
+ return source.encode()
 def status(p):
  try:
   with urllib.request.urlopen('https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'+p+'?question_facets='+str(time.time_ns()),timeout=25) as r:return r.status
@@ -55,8 +79,11 @@ saved={};changed=[]
 try:
  for p in files:
   saved[p]=read(remote(p))
-  assert saved[p] in (old[p],new[p]), 'REMOTE_CONTENT_DIFFERS_'+p
-  lint(p,new[p])
+  if p==ap:
+   new[p]=scoped_api(saved[p])
+  else:
+   assert saved[p] in (old[p],new[p]), 'REMOTE_CONTENT_DIFFERS_'+p
+   lint(p,new[p])
  protected=[private+x for x in ['core.php','wallet-real-payment.php','fulfillment.php','redflag-catalog.json','store-assets.json','verdict-practical-engine.php','verdict-owner-knowledge-v1.txt','verdict-live.php','love-practical-engine.php','love-practical-knowledge.txt','love-live.php','language-live.php','language-live-knowledge.txt','family-live.php','family-practical-engine.php','family-live-questions.json','intimacy-live.php','intimacy-practical-knowledge.txt','family-owner-knowledge-v1.txt','intimacy-practical-engine.php','intimacy-live-questions.json','love-live-questions.json']]
  hashes={p:hashlib.sha256(read(p)).digest() for p in protected}
  backup=home+'/site-safeguard-backups'
