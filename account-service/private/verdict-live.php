@@ -34,8 +34,15 @@ function nvCacheDirectory(): string {
 function nvCacheFile(string $id,string $date): string {
     if(!in_array($id,array_merge(['final'],nvMapIds()),true)||naCatalogDate($date)===null||(int)substr($date,0,4)>(int)gmdate('Y'))
         throw new InvalidArgumentException('INVALID_VERDICT_REQUEST');
-    // New generation never reads the former engine's cache.
-    return nvCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).($id==='beauty-and-flag'?'-verdict-dignity-v2.json':'-verdict-v1.json');
+    // Refresh only free answers whose selected matrix positions include energy 4.
+    // Already purchased paid answers retain their existing cache keys.
+    $suffix=$id==='beauty-and-flag'?'-verdict-dignity-v2.json':'-verdict-v1.json';
+    if($id==='final'){
+        [$y,$m,$d]=array_map('intval',explode('-',$date));
+        $matrix=ni31($d,$m,$y);
+        foreach(vpPointMap($id) as $point)if($matrix[$point]===4){$suffix='-verdict-energy4-v2.json';break;}
+    }
+    return nvCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).$suffix;
 }
 function nvCachedAnswer(string $id,string $date): ?string {
     return nvReadCachedAnswer(nvCacheFile($id,$date),$id,$date);
