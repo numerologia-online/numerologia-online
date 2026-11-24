@@ -32,14 +32,14 @@ function apSchema(PDO $db): void {
     $db->exec("CREATE TABLE IF NOT EXISTS numi_appointments (
       id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
       account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-      slot_date DATE NOT NULL, active_date DATE NULL, service VARCHAR(16) NOT NULL,
+      slot_date DATE NOT NULL, active_date DATE NULL, slot_no TINYINT UNSIGNED NOT NULL DEFAULT 1, service VARCHAR(16) NOT NULL,
       kopeks INT UNSIGNED NOT NULL, email VARCHAR(191) NOT NULL, telegram VARCHAR(33) NULL,
       vat_code TINYINT UNSIGNED NOT NULL,
       status VARCHAR(16) NOT NULL DEFAULT 'pending',
       provider_payment_id VARCHAR(191) CHARACTER SET ascii COLLATE ascii_bin NULL,
       confirmation_url TEXT NULL, notified_at DATETIME NULL,
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE KEY ap_one_slot(active_date), UNIQUE KEY ap_payment(provider_payment_id),
+      UNIQUE KEY ap_date_slot(active_date,slot_no), UNIQUE KEY ap_payment(provider_payment_id),
       KEY ap_account(account_id,status)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     $q=$db->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='numi_appointments' AND COLUMN_NAME='telegram'");
@@ -47,6 +47,30 @@ function apSchema(PDO $db): void {
         try{$db->exec("ALTER TABLE numi_appointments ADD COLUMN telegram VARCHAR(33) NULL AFTER email");}
         catch(PDOException $e){if((int)($e->errorInfo[1]??0)!==1060)throw $e;}
     }
+    $db->exec("CREATE TABLE IF NOT EXISTS numi_appointment_days (slot_date DATE PRIMARY KEY) ENGINE=InnoDB");
+    // Serialize schema upgrades, including the old unique date constraint.
+    if((int)$db->query("SELECT GET_LOCK('numi_appointment_capacity_schema_v2',10)")->fetchColumn()!==1)throw new RuntimeException('AP_SCHEMA_BUSY');
+    try{
+        $q=$db->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='numi_appointments' AND COLUMN_NAME='slot_no'");
+        if(!(int)$q->fetchColumn())$db->exec("ALTER TABLE numi_appointments ADD COLUMN slot_no TINYINT UNSIGNED NOT NULL DEFAULT 1 AFTER active_date");
+        $q=$db->query("SELECT DISTINCT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='numi_appointments'");
+        $indexes=$q->fetchAll(PDO::FETCH_COLUMN);
+        if(in_array('ap_one_slot',$indexes,true)){
+            if(in_array('ap_date_slot',$indexes,true))$db->exec("ALTER TABLE numi_appointments DROP INDEX ap_one_slot");
+            else $db->exec("ALTER TABLE numi_appointments DROP INDEX ap_one_slot, ADD UNIQUE KEY ap_date_slot(active_date,slot_no)");
+        }elseif(!in_array('ap_date_slot',$indexes,true))$db->exec("ALTER TABLE numi_appointments ADD UNIQUE KEY ap_date_slot(active_date,slot_no)");
+    }finally{$db->query("SELECT RELEASE_LOCK('numi_appointment_capacity_schema_v2')");}
+}
+function apNextSlot(array $rows,string $service): ?int {
+    if(!$rows)return 1;
+    if($service!=='year'||count($rows)>=2)return null;
+    foreach($rows as $r)if($r['service']!=='year')return null;
+    return (int)$rows[0]['slot_no']===1?2:1;
+}
+function apCalendarDay(array $rows): array {
+    $paid=[];$pending=0;
+    foreach($rows as $r){if($r['status']==='paid')$paid[]=$r['service'];else $pending++;}
+    return ['paid'=>$paid,'pending'=>$pending,'year_only'=>apNextSlot($rows,'year')!==null&&count($rows)>0];
 }
 function apRow(PDO $db,string $id): ?array {
     $q=$db->prepare('SELECT * FROM numi_appointments WHERE id=?');
@@ -132,8 +156,9 @@ function apServe(): never {
             $slots=[];$owner=false;
             if($enabled){
                 $db=naDB();apSchema($db);$owner=naTestOwner(naCurrent($db));
-                $q=$db->prepare('SELECT slot_date,service,status FROM numi_appointments WHERE active_date BETWEEN ? AND ?');$q->execute([$first,$last]);
-                foreach($q as $r)$slots[$r['slot_date']]=['status'=>$r['status'],'service'=>$r['status']==='paid'?$r['service']:null];
+                $q=$db->prepare('SELECT slot_date,slot_no,service,status FROM numi_appointments WHERE active_date BETWEEN ? AND ? ORDER BY slot_no');$q->execute([$first,$last]);
+                $groups=[];foreach($q as $r)$groups[$r['slot_date']][]=$r;
+                foreach($groups as $day=>$rows)$slots[$day]=apCalendarDay($rows);
             }
             naReply(200,['ok'=>true,'enabled'=>$enabled,'first'=>$first,'last'=>$last,'slots'=>(object)$slots,'owner'=>$owner]);
         }
@@ -173,7 +198,7 @@ function apServe(): never {
         if(!is_string($s)||!isset(apServices()[$s])||!is_string($date)||!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$date)||!checkdate((int)substr($date,5,2),(int)substr($date,8,2),(int)substr($date,0,4))||!$email||!$telegram||($b['accepted']??null)!==true)
             naReply(400,['ok'=>false,'error'=>'INVALID_BOOKING']);
         if($date<$first||$date>$last||apWeekend($date))naReply(409,['ok'=>false,'error'=>'SLOT_UNAVAILABLE']);
-        // Serialize per account and let the unique active date enforce one reservation per day.
+        // Serialize per account and per date; pending orders also occupy capacity.
         $db->beginTransaction();
         try{
             $q=$db->prepare('SELECT id FROM numi_accounts WHERE id=? FOR UPDATE');$q->execute([$account['id']]);
@@ -182,8 +207,13 @@ function apServe(): never {
                 $db->rollBack();naReply(409,['ok'=>false,'error'=>'PENDING_LIMIT']);
             }
             if(!$r){
-                $id=naUuid();$q=$db->prepare('INSERT INTO numi_appointments(id,account_id,slot_date,active_date,service,kopeks,email,telegram,vat_code) VALUES(?,?,?,?,?,?,?,?,?)');
-                $q->execute([$id,$account['id'],$date,$date,$s,apServices()[$s][1],$email,$telegram,$a['vat_code']]);$r=apRow($db,$id);
+                $db->prepare('INSERT IGNORE INTO numi_appointment_days(slot_date) VALUES(?)')->execute([$date]);
+                $q=$db->prepare('SELECT slot_date FROM numi_appointment_days WHERE slot_date=? FOR UPDATE');$q->execute([$date]);$q->fetch();
+                $q=$db->prepare('SELECT slot_no,service,status FROM numi_appointments WHERE active_date=? FOR UPDATE');$q->execute([$date]);
+                $slot=apNextSlot($q->fetchAll(),$s);
+                if($slot===null){$db->rollBack();naReply(409,['ok'=>false,'error'=>'SLOT_UNAVAILABLE']);}
+                $id=naUuid();$q=$db->prepare('INSERT INTO numi_appointments(id,account_id,slot_date,active_date,slot_no,service,kopeks,email,telegram,vat_code) VALUES(?,?,?,?,?,?,?,?,?,?)');
+                $q->execute([$id,$account['id'],$date,$date,$slot,$s,apServices()[$s][1],$email,$telegram,$a['vat_code']]);$r=apRow($db,$id);
             }
             $db->commit();
         }catch(PDOException $e){if($db->inTransaction())$db->rollBack();if($e->getCode()==='23000')naReply(409,['ok'=>false,'error'=>'SLOT_UNAVAILABLE']);throw $e;}
