@@ -221,7 +221,7 @@ function niCacheFile(string $id,string $date): string {
     if(!in_array($id,array_merge(['fire'],niMapIds()),true)||naCatalogDate($date)===null)
         throw new InvalidArgumentException('INVALID_INTIMACY_REQUEST');
     // New generation never reads the former engine's cache.
-    return niCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-practical-v2.json';
+    return niCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-practical-v3.json';
 }
 function niCachedAnswer(string $id,string $date): ?string {
     return niReadCachedAnswer(niCacheFile($id,$date),$id,$date);
@@ -282,8 +282,12 @@ function niMaterialFromCache(string $resource): array {
     // Preserve previously purchased material only if no new cache exists.
     // New purchases and editorial tests never generate from the legacy engine.
     if($answer===null){
-        $legacy=niCacheDirectory().'/'.$m[1].'-'.str_replace('-','',$m[2]).'.json';
-        $answer=niReadCachedAnswer($legacy,$m[1],$m[2]);
+        // Existing entitlements can still read any previously purchased version.
+        $stem=niCacheDirectory().'/'.$m[1].'-'.str_replace('-','',$m[2]);
+        foreach(['-practical-v2.json','-practical-v1.json','.json'] as $suffix){
+            $answer=niReadCachedAnswer($stem.$suffix,$m[1],$m[2]);
+            if($answer!==null)break;
+        }
     }
     if($answer===null)throw new RuntimeException('MATERIAL_NOT_READY');
     $title='';

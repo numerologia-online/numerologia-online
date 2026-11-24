@@ -1,4 +1,4 @@
-name: Publish owner-only intimacy bold voice without examples
+name: Publish approved Intimacy voice for buyers and owner
 on:
   push:
     branches: [main]
@@ -14,12 +14,12 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-24.04
-    timeout-minutes: 6
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Verify exact engine and publish only owner preview endpoint
+      - name: Offline checks and guarded shared Intimacy publication
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
