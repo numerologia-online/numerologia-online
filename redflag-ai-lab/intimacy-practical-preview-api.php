@@ -37,7 +37,14 @@ try {
     foreach(ipQuestions() as $q)if($q['id']===$id)$question=$q;
     if($question===null)ioReply(400,['ok'=>false,'error'=>'INTIMACY_QUESTION_NOT_FOUND']);
     if(function_exists('set_time_limit'))@set_time_limit(125);
+    // Temporary owner-only marker: attest the exact approved engine before spending a model call.
+    $engineFile=(new ReflectionFunction('ipPrompt'))->getFileName();
+    $engineBytes=is_string($engineFile)?file_get_contents($engineFile):false;
+    if(!is_string($engineBytes)||sha1('blob '.strlen($engineBytes)."\0".$engineBytes)!=='e3f9e609c59db32bf8d056cf02b003b5eb614a3b')
+        throw new RuntimeException('INTIMACY_PREVIEW_ENGINE_VERSION_MISMATCH');
     $answer=ipGenerateText($question,$day,$month,$year);
+    // Only the owner preview output is modified; the model prompt and client output stay intact.
+    $answer=explode("\n\n",$answer,2)[0]."\n\n.";
     ioReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
         'category'=>'intimacy','question_id'=>$id,'date_key'=>$day.'-'.$month,
         'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);
