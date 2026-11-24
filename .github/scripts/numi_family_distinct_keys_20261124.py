@@ -1,5 +1,5 @@
 import os,io,ssl,ftplib,pathlib,subprocess,time,urllib.request,urllib.error,hashlib,tempfile
-base='9bc6ad42e3b8c56102a7128a3ab61d17eb9c9ea3'
+base='3af05aa627c8f58c3ad401ee9d3e16dc1bebb4b9'
 files=['account-service/private/family-owner-knowledge-v1.txt']
 new={p:pathlib.Path(p).read_bytes() for p in files}
 old={p:subprocess.check_output(['git','show',base+':'+p]) for p in files}
@@ -11,7 +11,9 @@ def lint(p,b):
  vals=[v for r in rows[1:] for v in r.split('|')[1:]]
  assert len(vals)==len(set(vals))==220
  assert all(0<len(v)<=160 for v in vals) and len(b.decode())<=16000
-for p,b in new.items():lint(p,b)
+for p,b in new.items():
+ lint(p,b)
+ assert [i for i,(x,y) in enumerate(zip(old[p].decode().splitlines(),b.decode().splitlines())) if x!=y]==[15,19,22]
 fixture=r"""<?php
 require 'account-service/private/family-practical-engine.php';
 $kb=fpKnowledge();$questions=fpQuestions();
@@ -21,7 +23,7 @@ foreach($questions as $q)foreach([[31,10,1988],[4,4,1986],[9,9,1986],[15,7,1987]
  $p=json_decode(fpMessages($q,$d,$m,$y)[1]['content'],true,30,JSON_THROW_ON_ERROR);
  foreach($points as $i=>$point)if($p['четыре_значимые_позиции'][$i]['смысловой_ключ']!==$kb[$matrix[$point]][$id])throw new RuntimeException('KEY');
 }
-echo 'FAMILY_DISTINCT_KEYS_OFFLINE_PASS';
+echo 'FAMILY_ROUTINE_REFINEMENT_OFFLINE_PASS';
 """
 subprocess.run(['php'],input=fixture.encode(),check=True)
 def status(p):
@@ -55,14 +57,14 @@ try:
   if not str(e).startswith('550'):raise
  tag=str(time.time_ns())
  for p in files:
-  if saved[p]!=new[p]:write(backup+'/before-family-distinct-keys-'+tag+'-'+p.rsplit('/',1)[-1]+'.bak',saved[p])
+  if saved[p]!=new[p]:write(backup+'/before-family-routine-refinement-'+tag+'-'+p.rsplit('/',1)[-1]+'.bak',saved[p])
  for p in files:
   assert read(remote(p))==saved[p],'CONCURRENT_EDIT'
   if saved[p]!=new[p]:changed.append(p);write(remote(p),new[p])
  assert healthy(),'POST_HEALTH'
  for p in files:assert read(remote(p))==new[p],'FINAL_READBACK'
  for p,h in hashes.items():assert hashlib.sha256(read(p)).digest()==h,'PROTECTED_CHANGED'
- print('FAMILY_DISTINCT_KEYS_LIVE 22x10=true owner_preview_only=true paid_cache_preserved model_calls=0',flush=True)
+ print('FAMILY_ROUTINE_REFINEMENT_LIVE 22x10=true owner_preview_only=true paid_cache_preserved model_calls=0',flush=True)
 except BaseException:
  for p in reversed(changed):
   try:write(remote(p),saved[p]);print('ROLLBACK_OK',p,flush=True)
