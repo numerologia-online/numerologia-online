@@ -41,7 +41,8 @@ function nvCacheFile(string $id,string $date): string {
         [$y,$m,$d]=array_map('intval',explode('-',$date));
         $matrix=ni31($d,$m,$y);
         $points=array_map(static fn($point)=>$matrix[$point],vpPointMap($id));
-        if(in_array(15,$points,true))$suffix='-verdict-author-refinement-v10.json';
+        if(array_intersect($points,[12,13,14,16,17,18,19,20,21,22]))$suffix='-verdict-author-refinement-v11.json';
+        elseif(in_array(15,$points,true))$suffix='-verdict-author-refinement-v10.json';
         elseif(array_intersect($points,[12,13,14,16,17,20,21,22]))$suffix='-verdict-author-refinement-v9.json';
         elseif(array_intersect($points,[9,10,11]))$suffix='-verdict-author-refinement-v8.json';
         elseif(array_intersect($points,[5,6,8,18,19]))$suffix='-verdict-author-refinement-v7.json';
