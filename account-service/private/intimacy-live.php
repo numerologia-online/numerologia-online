@@ -221,7 +221,7 @@ function niCacheFile(string $id,string $date): string {
     if(!in_array($id,array_merge(['fire'],niMapIds()),true)||naCatalogDate($date)===null)
         throw new InvalidArgumentException('INVALID_INTIMACY_REQUEST');
     // New generation never reads the former engine's cache.
-    return niCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-practical-v1.json';
+    return niCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-practical-v2.json';
 }
 function niCachedAnswer(string $id,string $date): ?string {
     return niReadCachedAnswer(niCacheFile($id,$date),$id,$date);
