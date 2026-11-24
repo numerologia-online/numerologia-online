@@ -1,4 +1,4 @@
-name: Publish owner-only intimacy plain spoken Russian
+name: Publish owner-only intimacy bold voice without examples
 on:
   push:
     branches: [main]
