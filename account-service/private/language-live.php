@@ -39,7 +39,7 @@ function nlKnowledge(): array {
     static $all=null;
     if($all!==null)return $all;
     $raw=@file_get_contents(__DIR__.'/language-live-knowledge.txt');
-    if(!is_string($raw)||mb_strlen($raw,'UTF-8')>16000)
+    if(!is_string($raw)||mb_strlen($raw,'UTF-8')>24000)
         throw new RuntimeException('LANGUAGE_KB_UNAVAILABLE');
     $lines=preg_split('/\R/u',trim($raw));
     if(!is_array($lines)||count($lines)!==23)

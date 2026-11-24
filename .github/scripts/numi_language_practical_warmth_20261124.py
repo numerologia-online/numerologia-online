@@ -6,7 +6,7 @@ new={p:pathlib.Path(p).read_bytes() for p in files}
 subprocess.run(['php','-l',files[1]],check=True)
 fixture=r"""<?php
 require 'account-service/private/language-live.php';
-if(count(nlKnowledge())!==22||count(nlQuestions())!==10)throw new RuntimeException('KB');
+if(mb_strlen(file_get_contents('account-service/private/language-live-knowledge.txt'),'UTF-8')>24000||count(nlKnowledge())!==22||count(nlQuestions())!==10)throw new RuntimeException('KB');
 foreach(nlQuestions() as $q)foreach([[15,7,1987],[31,10,1988],[9,9,1986],[29,2,2000]] as [$d,$m,$y]){
  $p=json_decode(nlMessages($q,$d,$m,$y)[1]['content'],true,30,JSON_THROW_ON_ERROR);
  if(count($p['четыре_значимые_позиции'])!==4||count($p['два_вопроса_для_подводки'])!==2)throw new RuntimeException('PAYLOAD');
