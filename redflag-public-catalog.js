@@ -586,7 +586,7 @@ export const PUBLIC_QUESTIONS = {
     },
     {
       "id": "beauty-and-flag",
-      "title": "Красивый мужчина или Red Flag с красивыми глазами?",
+      "title": "Достойный мужчина или Red Flag, который хорошо себя преподносит?",
       "priceRub": 10,
       "status": "ready"
     },

@@ -35,7 +35,7 @@ function nvCacheFile(string $id,string $date): string {
     if(!in_array($id,array_merge(['final'],nvMapIds()),true)||naCatalogDate($date)===null||(int)substr($date,0,4)>(int)gmdate('Y'))
         throw new InvalidArgumentException('INVALID_VERDICT_REQUEST');
     // New generation never reads the former engine's cache.
-    return nvCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-verdict-v1.json';
+    return nvCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).($id==='beauty-and-flag'?'-verdict-dignity-v2.json':'-verdict-v1.json');
 }
 function nvCachedAnswer(string $id,string $date): ?string {
     return nvReadCachedAnswer(nvCacheFile($id,$date),$id,$date);
@@ -93,6 +93,7 @@ function nvMaterialFromCache(string $resource): array {
         throw new RuntimeException('MATERIAL_NOT_READY');
     preg_match('/^redflag:verdict:([a-z-]+):(\d{4}-\d\d-\d\d)$/D',$resource,$m);
     $answer=nvCachedAnswer($m[1],$m[2]);
+    if($answer===null&&$m[1]==='beauty-and-flag')$answer=nvReadCachedAnswer(nvCacheDirectory().'/'.$m[1].'-'.str_replace('-','',$m[2]).'-verdict-v1.json',$m[1],$m[2]);
     if($answer===null)throw new RuntimeException('MATERIAL_NOT_READY');
     $title='';
     foreach(nvQuestions() as $q)if($q['id']===$m[1]){$title=$q['title'];break;}
