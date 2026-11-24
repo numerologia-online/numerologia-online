@@ -1292,7 +1292,10 @@ try {
            rfPreviewReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
         $_SESSION['last_generation']=time();
         $generationStarted=true;
-        $answer=rfOwnerSharpIntimacy($question,$day,$month,$y,$catalog);
+        require_once dirname(__DIR__,3).'/private/numi-account-20261031/intimacy-practical-engine.php';
+        if(!niAdultBirthDate(sprintf('%04d-%02d-%02d',$y,$month,$day)))
+            rfPreviewReply(400,['ok'=>false,'error'=>'INTIMACY_AGE_RESTRICTED']);
+        $answer=ipGenerateText($question,$day,$month,$y);
         session_write_close();
         rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
            'category'=>'intimacy','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,

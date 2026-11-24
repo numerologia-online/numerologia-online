@@ -42,6 +42,7 @@ function ipPoints(int $day,int $month,int $year): array {
 }
 try {
  if(!naTestOwner(naCurrent(naDB())))ipReply(403,['ok'=>false,'error'=>'OWNER_ONLY']);
+ ipReply(410,['ok'=>false,'error'=>'LEGACY_INTIMACY_PREVIEW_RETIRED']);
  if(($_SERVER['REQUEST_METHOD']??'')!=='POST')ipReply(405,['ok'=>false,'error'=>'POST_ONLY']);
  if(!in_array((string)($_SERVER['HTTP_ORIGIN']??''),naAllowedOrigins(),true))
    ipReply(403,['ok'=>false,'error'=>'ORIGIN_DENIED']);
