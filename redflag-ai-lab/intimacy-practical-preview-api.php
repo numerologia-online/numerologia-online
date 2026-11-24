@@ -31,6 +31,8 @@ try {
        !is_int($day)||!is_int($month)||!is_int($year)||$year<1900||
        $year>(int)gmdate('Y')||!checkdate($month,$day,$year))
         ioReply(400,['ok'=>false,'error'=>'INVALID_INTIMACY_REQUEST']);
+    if(!niAdultBirthDate(sprintf('%04d-%02d-%02d',$year,$month,$day)))
+        ioReply(400,['ok'=>false,'error'=>'INTIMACY_AGE_RESTRICTED']);
     $question=null;
     foreach(ipQuestions() as $q)if($q['id']===$id)$question=$q;
     if($question===null)ioReply(400,['ok'=>false,'error'=>'INTIMACY_QUESTION_NOT_FOUND']);

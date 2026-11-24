@@ -95,6 +95,17 @@ const parseRedFlagDate = (value) => {
   return { day, month, year };
 };
 
+const intimacyDateAllowed = (birth) => {
+  if(!birth)return false;
+  const parts=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Moscow",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date()).map(p=>[p.type,p.value]));
+  const birthKey=birth.year*10000+birth.month*100+birth.day;
+  return birthKey<=(Number(parts.year)-18)*10000+Number(parts.month)*100+Number(parts.day);
+};
+const intimacyDateBlocked = () => {
+  const date=parseRedFlagDate(birthDateInput.value);
+  return Boolean(date&&!intimacyDateAllowed(date));
+};
+
 // This is the same button for every visitor, not an owner-only control.
 const checkManButton = form.querySelector(".redflag-submit");
 const checkManLabel = checkManButton.querySelector(".redflag-submit-label");
@@ -319,6 +330,7 @@ function redFlagLoadErrorCopy(notCharged=false) {
 // Paid questions are opened IN PLACE; never send the reader into a cart.
 // Publication state comes from the approved material catalogue, not a per-section switch.
 const ensureAnswer = (question, state, {forceNew = false} = {}) => {
+  if(state===categoryStates.get("intimacy")&&!intimacyDateAllowed(parseRedFlagDate(birthDateInput.value)))return;
   if(question.isComingSoon&&!ownerDraftInScope(question,state))return;
   const id=question.id;
   if(state.answers.has(id)||state.answerRequests.has(id))return;
@@ -1021,10 +1033,12 @@ const createCategory = (category, index) => {
   toggle.className = "redflag-category-toggle";
   toggle.type = "button";
   toggle.setAttribute("aria-expanded", String(state.expanded));
+  if(category.id==="intimacy"&&intimacyDateBlocked())toggle.disabled=true;
   const questionCount = state.questions?.length ?? category.questionCount;
   toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · ${questionCount} вопросов</small><strong>${category.title}</strong>${category.id === "intimacy" ? '<span class="redflag-age-label" aria-label="Для взрослых, 18 плюс">18+</span>' : ""}<small class="redflag-category-count">${questionCount} вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
   toggle.addEventListener("click", () => {
     const opening = !state.expanded;
+    if (opening&&category.id==="intimacy"&&intimacyDateBlocked())return;
     if (opening) collapseOtherCategories(category.id);
     state.expanded = opening;
     if (!opening) state.activeQuestionId = null;
@@ -1034,7 +1048,7 @@ const createCategory = (category, index) => {
   });
   section.append(toggle);
 
-  if (!state.expanded) return section;
+  if (!state.expanded||(category.id==="intimacy"&&intimacyDateBlocked())) return section;
 
   const content = document.createElement("div");
   content.className = "redflag-category-content";
@@ -1178,6 +1192,10 @@ birthDateInput.addEventListener("input", () => {
   birthDateInput.value = parts.join(".");
   syncCheckManButton();
   clearError();
+  if(intimacyDateBlocked()){
+    const state=categoryStates.get("intimacy");
+    state.expanded=false;state.activeQuestionId=null;
+  }
   if (activeProfile) {
     activeProfile = undefined;
     formattedDate = undefined;
@@ -1188,6 +1206,9 @@ birthDateInput.addEventListener("input", () => {
       state.answerErrors.clear();
     }
     renderCategories();
+  } else {
+    const index=REDFLAG_CATEGORIES.findIndex(c=>c.id==="intimacy");
+    if(index>=0&&categoriesRoot.children[index])categoriesRoot.children[index].replaceWith(createCategory(REDFLAG_CATEGORIES[index],index));
   }
 });
 
@@ -1219,7 +1240,7 @@ form.addEventListener("submit", async (event) => {
     const linkedCategory = requestedQuestion
       ? REDFLAG_CATEGORIES.find((category) => category.id === requestedQuestion[1])
       : null;
-    if (linkedCategory) {
+    if (linkedCategory&&!(linkedCategory.id==="intimacy"&&!intimacyDateAllowed(date))) {
       const linkedState = categoryStates.get(linkedCategory.id);
       linkedState.expanded = true;
       await ensureQuestions(linkedCategory);

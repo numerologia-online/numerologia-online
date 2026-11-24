@@ -1,6 +1,15 @@
 <?php
 declare(strict_types=1);
 
+function niAdultBirthDate(string $date,?DateTimeImmutable $today=null): bool {
+    if(!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$date))return false;
+    [$y,$m,$d]=array_map('intval',explode('-',$date));
+    if($y<1900||!checkdate($m,$d,$y))return false;
+    $today=$today??new DateTimeImmutable('today',new DateTimeZone('Europe/Moscow'));
+    $year=(int)$today->format('Y')-18;
+    return $date<=sprintf('%04d-%s',$year,$today->format('m-d'));
+}
+
 function niProviderTag(mixed $value): ?string {
     return is_string($value)&&preg_match('~\A[A-Za-z0-9_.:/-]{1,128}\z~',$value)===1
         ?$value:null;
@@ -173,6 +182,7 @@ function ni31(int $d,int $m,int $y): array {
 
 
 function niGenerateText(array $question,int $day,int $month,int $year,array $catalog): string {
+   if(!niAdultBirthDate(sprintf('%04d-%02d-%02d',$year,$month,$day)))throw new InvalidArgumentException('INTIMACY_AGE_RESTRICTED');
    $maps=[
      'fire'=>['left','top','loveHeart','center','tailFirst'],
      'her-pleasure'=>['left','loveHeart','center','top','tailFirst'],
@@ -270,7 +280,7 @@ function niMapIds(): array {
 function niSupportedPaidResource(string $code,string $resource): bool {
     if($code!=='redflag_question'||preg_match('/^redflag:intimacy:([a-z-]+):((?:19|20)\d\d-\d\d-\d\d)$/D',$resource,$m)!==1)
         return false;
-    return in_array($m[1],niMapIds(),true)&&naCatalogDate($m[2])!==null;
+    return in_array($m[1],niMapIds(),true)&&naCatalogDate($m[2])!==null&&niAdultBirthDate($m[2]);
 }
 function niEngineInstalled(): bool {
     if(!is_file(__DIR__.'/intimacy-live.php')||!is_file(__DIR__.'/intimacy-live-config.php')
@@ -287,6 +297,7 @@ function niCacheDirectory(): string {
     return $dir;
 }
 function niCacheFile(string $id,string $date): string {
+    if(!niAdultBirthDate($date))throw new InvalidArgumentException('INTIMACY_AGE_RESTRICTED');
     if(!in_array($id,array_merge(['fire'],niMapIds()),true)||naCatalogDate($date)===null)
         throw new InvalidArgumentException('INVALID_INTIMACY_REQUEST');
     // Free test date must receive the new voice; purchased, cached responses remain unchanged.
@@ -353,6 +364,7 @@ function niMaterialFromCache(string $resource): array {
         'links'=>[],'pdf_available'=>false];
 }
 function niPermitFree(string $date,?array $owner,callable $generate): string {
+    if(!niAdultBirthDate($date))throw new InvalidArgumentException('INTIMACY_AGE_RESTRICTED');
     if($owner!==null && naTestOwner($owner))return $generate();
     // One newly calculated free birth date per IP/day; cached answers do not
     // incur any provider cost. All client dates are served by the same engine.

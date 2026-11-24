@@ -131,6 +131,7 @@ function ipFollowupsForMatrix(string $id,array $matrix): array {
 function ipMessages(array $question,int $day,int $month,int $year): array {
     $id=$question['id'];
     if(!checkdate($month,$day,$year))throw new InvalidArgumentException('INTIMACY_PRACTICAL_INVALID_DATE');
+    if(!niAdultBirthDate(sprintf('%04d-%02d-%02d',$year,$month,$day)))throw new InvalidArgumentException('INTIMACY_AGE_RESTRICTED');
     $matrix=ni31($day,$month,$year);
     $titles=ipPointTitles();
     $knowledge=ipKnowledge();

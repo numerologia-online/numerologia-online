@@ -14,6 +14,7 @@ try {
     if($date===null)naReply(400,['ok'=>false,'error'=>'INVALID_BIRTH_DATE']);
     [$y,$m,$d]=array_map('intval',explode('-',$date));
     if($y>(int)gmdate('Y'))naReply(400,['ok'=>false,'error'=>'INVALID_BIRTH_DATE']);
+    if(!niAdultBirthDate($date))naReply(400,['ok'=>false,'error'=>'INTIMACY_AGE_RESTRICTED']);
     $db=naDB();$account=naCurrent($db);
     $answer=niPermitFree($date,$account,static fn():string=>niEnsureAnswer('fire',$date));
     naReply(200,['ok'=>true,'free'=>true,'ai_generated'=>true,
