@@ -5,22 +5,21 @@ ENGINE="account-service/private/language-live.php"
 KB="account-service/private/language-live-knowledge.txt"
 FREE="account-service/public/numi-language-free.php"
 OWNER="account-service/public/numi-owner-material.php"
-files=[KB,ENGINE,FREE,OWNER]
-base={ENGINE:"40b86cdd1c2cff4491ee8ed6ca0f7695564ce20f^",
-      KB:"d1ad7501e109ed97fb46da7cf8e276d9116f77bf^",
-      FREE:"fc5ba5ceb5949cf8985d69f794cf23ca229ac20a^",
-      OWNER:"051d98661ae336d83e3f96112f6e076bb64278eb^"}
-old={p:subprocess.check_output(["git","show",base[p]+":"+p]) for p in files}
+files=[KB,ENGINE]
+base_ref="3d8ebf4fe6654e0a545958ce8c39d37c706147b8"
+old={p:subprocess.check_output(["git","show",base_ref+":"+p]) for p in files}
 new={p:pathlib.Path(p).read_bytes() for p in files}
 assert all(old[p]!=new[p] for p in files)
-published_engine=subprocess.check_output(["git","show","40b86cdd1c2cff4491ee8ed6ca0f7695564ce20f:"+ENGINE])
-def without_prompt(b):
-    t=b.decode("utf-8")
-    start=t.index("function nlPrompt(): string {")
-    end=t.index("function nlMessages(",start)
-    return t[:start]+t[end:]
-assert without_prompt(published_engine)==without_prompt(new[ENGINE]), "ONLY_LANGUAGE_PROMPT_MAY_CHANGE"
-assert published_engine!=new[ENGINE]
+def unchanged_function(name,next_name):
+    def part(b):
+        t=b.decode("utf-8")
+        return t[t.index("function "+name+"("):t.index("function "+next_name+"(")]
+    assert part(old[ENGINE])==part(new[ENGINE]), "UNEXPECTED_CHANGE_"+name
+for a,b in [("nlPointMap","nlPointTitles"),("nlPointTitles","nlQuestionFocus"),("nlQuestionFocus","nlFollowups"),("nlFollowups","nlPrompt"),("nlFormatAnswer","nlGenerateText"),("nlGenerateText","nlFreshAnswer")]:
+    unchanged_function(a,b)
+assert old[ENGINE].decode().split("function nlFormatAnswer(",1)[1]==new[ENGINE].decode().split("function nlFormatAnswer(",1)[1]
+for p in [FREE,OWNER]:
+    assert pathlib.Path(p).read_bytes()==subprocess.check_output(["git","show",base_ref+":"+p])
 engine=new[ENGINE].decode("utf-8")
 assert "require_once __DIR__.'/intimacy-live.php';" in engine
 assert "family-live.php" not in engine and "nfCloudRaw(" not in engine and "nfPointTitles(" not in engine
@@ -31,15 +30,11 @@ assert "return ['left','top','right',$themes[$id]];" in engine
 assert "-language-instruction-v2.json" in engine and "-language-kb-v1.json" in engine
 assert "niValidateGeneratedText" in engine
 kb=new[KB].decode("utf-8")
-assert len(kb)<=5000 and len(kb.strip().splitlines())==22
-assert all(len(row.split("|"))==4 and row.split("|")[0]==str(i) for i,row in enumerate(kb.strip().splitlines(),1))
-assert old[FREE].decode().replace(
-    "$answer=nlPermitFree($date,$account,static fn():string=>nlEnsureAnswer('love-language',$date));",
-    "$answer=$account!==null&&naTestOwner($account)\n        ?nlFreshAnswer('love-language',$date)\n        :nlPermitFree($date,$account,static fn():string=>nlEnsureAnswer('love-language',$date));")==new[FREE].decode()
-assert old[OWNER].decode().replace(
-    "        nlEnsurePaidResource((string)$quote['resource_id']);",
-    "        $document=nlOwnerMaterial((string)$quote['resource_id']);\n        naReply(200,['ok'=>true,'owner_preview'=>true,'charged'=>false,\n            'product_code'=>$code,'material'=>$document]);")==new[OWNER].decode()
-assert new[OWNER].index(b"naTestOwner($account)")<new[OWNER].index(b"nlOwnerMaterial(")
+ids=["love-language","how-to-talk","accept-love","show-love","criticism","ask","distance","hurt","conflict-style","compliment"]
+lines=kb.strip().splitlines()
+assert len(kb)<=16000 and len(lines)==23 and lines[0]=="energy|"+"|".join(ids)
+assert all(len(row.split("|"))==11 and row.split("|")[0]==str(i) and all(0<len(v.strip())<=160 for v in row.split("|")[1:]) for i,row in enumerate(lines[1:],1))
+assert pathlib.Path(OWNER).read_bytes().index(b"naTestOwner($account)")<pathlib.Path(OWNER).read_bytes().index(b"nlOwnerMaterial(")
 for p in [ENGINE,FREE,OWNER]:
     r=subprocess.run(["php","-l",p],capture_output=True)
     if r.returncode:raise RuntimeError("PHP_LINT_FAILED "+p+" "+r.stderr.decode(errors="replace")[-400:])
@@ -51,6 +46,7 @@ function naCatalogDate($v){if(!is_string($v)||!preg_match('/^\d{4}-\d\d-\d\d$/D'
 require 'account-service/private/language-live.php';
 $qs=nlQuestions();$kb=nlKnowledge();
 if(count($qs)!==10||count($kb)!==22)throw new RuntimeException('LANGUAGE_CONTENT_INVALID');
+foreach($kb as $row)if(array_keys($row)!==nlQuestionIds())throw new RuntimeException('LANGUAGE_220_KEYS_INVALID');
 $themes=[];$follow=[];
 foreach($qs as $i=>$q){
  $id=$q['id'];$points=nlPointMap($id);
@@ -73,7 +69,7 @@ foreach($qs as $i=>$q){
    foreach($points as $j=>$key){
      $v=$p['четыре_значимые_позиции'][$j];
      $a=$kb[$matrix[$key]];
-     if($v['значение']!==$a['core']||$v['ресурс']!==$a['plus']||$v['тень']!==$a['minus'])
+     if($v['смысловой_ключ']!==$a[$id]||isset($v['ресурс'])||isset($v['тень'])||isset($v['значение']))
        throw new RuntimeException('MATRIX_TRAITS_INCORRECT');
    }
  }
@@ -111,7 +107,7 @@ wallet=pathlib.Path("account-service/private/wallet-real-payment.php").read_text
 assert "nlEnsurePaidResource(" in wallet and "nlEngineInstalled()" in wallet
 assert wallet.index("nlEnsurePaidResource(")<wallet.index("naRealWalletBuy($db,$account,$config,$input,$key,$ready)")
 assert "return nlMaterialFromCache($resource);" in pathlib.Path("account-service/private/fulfillment.php").read_text()
-print("LANGUAGE_OFFLINE_PASS questions=10 dates=7 points=4 kb_22=true exact_cross_followups_20=true paid_prices_preserved=true model_calls=0",flush=True)
+print("LANGUAGE_OFFLINE_PASS questions=10 dates=7 points=4 kb_220=true exact_cross_followups_20=true paid_prices_preserved=true model_calls=0",flush=True)
 BASE_URL="https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/"
 def status(path):
     req=urllib.request.Request(BASE_URL+path+"?language_practical="+str(time.time_ns()),headers={"Cache-Control":"no-store"})
@@ -147,7 +143,7 @@ try:
     for p in files:
         b=read(remote(p))
         print("LANGUAGE_PREIMAGE",p.rsplit("/",1)[-1],"old",b==old[p],"new",b==new[p],flush=True)
-        allowed=(published_engine,new[p]) if p==ENGINE else (new[p],)
+        allowed=(old[p],new[p])
         if b not in allowed:raise RuntimeError("REMOTE_DRIFT_NO_WRITE_"+p)
         saved[p]=b
     protected=[
@@ -157,8 +153,11 @@ try:
         private+"language-live-questions.json",private+"redflag-catalog.json",
         web+"redflag-ai-lab/style-test-api.php",web+"redflag-ai-lab/family-owner-preview-api.php",
         web+"redflag-feature.js",web+"redflag-public-catalog.js",web+"app.js",web+"index.html",
-        web+"api/numi-family-free.php",web+"api/numi-intimacy-free.php"
+        web+"api/numi-family-free.php",web+"api/numi-intimacy-free.php",
+        remote(FREE),remote(OWNER)
     ]
+    for p in [FREE,OWNER]:
+        if read(remote(p))!=pathlib.Path(p).read_bytes():raise RuntimeError('LANGUAGE_ENDPOINT_DRIFT')
     hashes={p:hashlib.sha256(read(p)).digest() for p in protected}
     live_catalog=json.loads(read(private+"redflag-catalog.json"))
     assert live_catalog["questions"]["language"]==language
@@ -183,7 +182,7 @@ try:
     tag=time.strftime("%Y%m%dT%H%M%SZ",time.gmtime())+"-"+uuid.uuid4().hex[:6]
     for p in files:
         if saved[p]!=new[p]:
-            write(backup+"/before-language-practical-"+tag+"-"+p.rsplit("/",1)[-1]+".bak",saved[p])
+            write(backup+"/before-language-220-"+tag+"-"+p.rsplit("/",1)[-1]+".bak",saved[p])
     for p in files:
         if read(remote(p))!=saved[p]:raise RuntimeError("REMOTE_CONCURRENT_EDIT")
         if saved[p]!=new[p]:
@@ -193,7 +192,7 @@ try:
         if read(remote(p))!=new[p]:raise RuntimeError("FINAL_BYTES_DIFFER")
     for p,d in hashes.items():
         if hashlib.sha256(read(p)).digest()!=d:raise RuntimeError("PROTECTED_FILE_CHANGED")
-    print("LANGUAGE_PROMPT_ONLY_PUBLISHED 10_ready=true cloudru_gemini=true family_dependency_removed=true four_positions=true 22_traits=true owner_fresh_uncached=true free=1 paid=9 historical_paid_preserved=true cross_section_followups=20 no_payment_changes=true other_sections_unchanged=true paid_ai_calls=0",flush=True)
+    print("LANGUAGE_220_KEYS_PUBLISHED 10_ready=true cloudru_gemini=true family_dependency_removed=true four_positions=true 220_question_keys=true owner_fresh_uncached=true free=1 paid=9 historical_paid_preserved=true cross_section_followups=20 no_payment_changes=true other_sections_unchanged=true paid_ai_calls=0",flush=True)
 except BaseException:
     failed=[]
     for p in reversed(modified):
