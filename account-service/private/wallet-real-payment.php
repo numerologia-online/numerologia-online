@@ -522,6 +522,12 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     return niSupportedPaidResource('redflag_question',(string)$item['resource_id'])
                         && niEngineInstalled();
                 }
+                if(($item['product_code']??null)==='redflag_question'
+                  &&str_starts_with((string)($item['resource_id']??''),'redflag:verdict:')){
+                    require_once __DIR__.'/verdict-live.php';
+                    return nvSupportedPaidResource('redflag_question',(string)$item['resource_id'])
+                        && nvEngineInstalled();
+                }
                 try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}
                 catch(Throwable $e){return false;}
             };
@@ -602,6 +608,12 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     return niSupportedPaidResource('redflag_question',(string)$item['resource_id'])
                         && niEngineInstalled();
                 }
+                if(($item['product_code']??null)==='redflag_question'
+                  &&str_starts_with((string)($item['resource_id']??''),'redflag:verdict:')){
+                    require_once __DIR__.'/verdict-live.php';
+                    return nvSupportedPaidResource('redflag_question',(string)$item['resource_id'])
+                        && nvEngineInstalled();
+                }
                 try{naMaterialBuild($item['product_code'],$item['resource_id']);return true;}
                 catch(Throwable $e){return false;}
             };
@@ -645,6 +657,19 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                     if(naRealWalletBalance($db,$account['id']) >= (int)$resolved['price_kopeks']){
                         if(function_exists('set_time_limit'))@set_time_limit(125);
                         niEnsurePaidResource((string)$resolved['resource_id']);
+                    }
+                }
+            }
+            if(($resolved['product_code']??null)==='redflag_question'
+              &&str_starts_with((string)($resolved['resource_id']??''),'redflag:verdict:')){
+                require_once __DIR__.'/verdict-live.php';
+                naRealWalletRequireLive($config);
+                if(!nvEngineInstalled()||!nvSupportedPaidResource('redflag_question',(string)$resolved['resource_id']))
+                    throw new RuntimeException('REAL_MATERIAL_NOT_READY');
+                if(!naRealWalletHasAccess($db,$account,'redflag_question',(string)$resolved['resource_id'])){
+                    if(naRealWalletBalance($db,$account['id']) >= (int)$resolved['price_kopeks']){
+                        if(function_exists('set_time_limit'))@set_time_limit(125);
+                        nvEnsurePaidResource((string)$resolved['resource_id']);
                     }
                 }
             }

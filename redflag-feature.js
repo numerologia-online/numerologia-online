@@ -485,6 +485,36 @@ const ensureAnswerResolved = (question, state, {forceNew = false} = {}) => {
     state.answerRequests.set(id,task);
     return;
   }
+  // Native free Final Verdict for every visitor.
+  if(question.isFree&&id==="final"&&!ownerDraftInScope(question,state)&&state===categoryStates.get("verdict")){
+    const birth=parseRedFlagDate(birthDateInput.value);
+    if(!birth){state.answerErrors.set(id,"Укажи дату рождения мужчины.");return;}
+    const birthday=birth.year+"-"+String(birth.month).padStart(2,"0")+"-"+String(birth.day).padStart(2,"0");
+    const task=fetch("/api/numi-verdict-free.php",{
+      method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({question_id:"final",birth_date:birthday}),
+      signal:AbortSignal.timeout(125000)
+    }).then(async response=>{
+      const data=await response.json();
+      if(!response.ok||data?.ok!==true||data?.free!==true||
+          data?.ai_generated!==true||data?.question_id!=="final"||
+          typeof data?.answer!=="string")throw new Error("VERDICT_FREE_UNAVAILABLE");
+      const paragraphs=data.answer.split(/\n\s*\n/).map(part=>part.trim()).filter(Boolean);
+      if(paragraphs.length!==2)throw new Error("VERDICT_FREE_SHAPE");
+      if(profile!==activeProfile)return;
+      state.answers.set(id,{answer:data.answer,paragraphs});
+    }).catch(()=>{
+      if(profile===activeProfile)
+        state.answerErrors.set(id,redFlagLoadErrorCopy(true).text);
+    }).finally(()=>{
+      if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
+      if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)
+        renderCategories({type:"question",id});
+    });
+    state.answerRequests.set(id,task);
+    return;
+  }
   // Native FREE Gemini answer for all site users, not an editor/test route.
   if(question.isFree&&id==="fire"&&!ownerDraftInScope(question,state)&&[...categoryStates].some(
     ([category,entry])=>category==="intimacy"&&entry===state)){
@@ -1065,7 +1095,7 @@ const ensureQuestions = async (category) => {
       ...question, isFree: index === 0,
       priceRub: index === 0 ? 0 : question.priceRub,
       // All ten intimacy questions use the native production AI and wallet.
-      isComingSoon: category.id === "intimacy" ? false : question.status !== "ready"
+      isComingSoon: ["intimacy","verdict"].includes(category.id) ? false : question.status !== "ready"
     }));
   } finally {
     state.loading = false;

@@ -577,77 +577,61 @@ export const PUBLIC_QUESTIONS = {
       "title": "Какой финальный вердикт по этому мужчине без розовых очков?",
       "priceRub": 10,
       "aspect": "commitment",
-      "variants": {
-        "steady": {
-          "verdict": "Есть потенциал для взрослого союза",
-          "answer": "Он может быть надёжным партнёром, если его слова совпадают с действиями и он не превращает ответственность в контроль."
-        },
-        "guarded": {
-          "verdict": "Потенциал раскрывается медленно",
-          "answer": "С ним нужен темп без иллюзий: дать связи раскрыться, но не отменять собственные потребности в ясности."
-        },
-        "restless": {
-          "verdict": "Нужна проверка реальностью",
-          "answer": "С ним возможна яркая история, но устойчивость нельзя назначить заранее. Её нужно увидеть в повторяющихся поступках."
-        }
-      },
-      "usePeriod": true,
-      "observation": "Выбирайте не потенциал человека, а ту реальность, которую он уже создаёт рядом с вами.",
       "status": "ready"
     },
     {
       "id": "worth-it",
       "title": "С ним вообще стоит связываться или лучше не тратить время?",
       "priceRub": 10,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "beauty-and-flag",
       "title": "Красивый мужчина или Red Flag с красивыми глазами?",
       "priceRub": 10,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "check",
       "title": "Его ещё проверять поступками или уже всё понятно?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "main-advice",
       "title": "Какой главный совет женщине рядом с ним?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "his-need",
       "title": "Что ему нужно от женщины, чтобы правда раскрыться?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "weak-point",
       "title": "Где его главный риск в отношениях?",
       "priceRub": 29,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "best-side",
       "title": "Чем он способен порадовать в любви?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "format",
       "title": "Какой формат отношений с ним будет самым здоровым?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     },
     {
       "id": "bottom-line",
       "title": "Как понять, что пора выбрать себя, а не ждать его?",
       "priceRub": 49,
-      "status": "soon"
+      "status": "ready"
     }
   ]
 };
