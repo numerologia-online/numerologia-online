@@ -251,7 +251,7 @@ function nlCacheDirectory(): string {
 function nlCacheFile(string $id,string $date): string {
     if(!in_array($id,nlQuestionIds(),true)||naCatalogDate($date)===null)
         throw new InvalidArgumentException('LANGUAGE_INVALID_REQUEST');
-    return nlCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).($id==='love-language'?'-language-practical-warmth-v4.json':'-language-practical-warmth-v3.json');
+    return nlCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).($id==='love-language'?'-language-practical-warmth-v5.json':'-language-practical-warmth-v3.json');
 }
 function nlCachedAnswer(string $id,string $date): ?string {
     return nlReadCachedAnswer(nlCacheFile($id,$date),$id,$date);

@@ -1,5 +1,5 @@
 import os,io,ssl,ftplib,pathlib,subprocess,time,urllib.request,urllib.error,hashlib
-base='cc6a325bdd1d483f81100f9d5aa4c7f472037837'
+base='b6981a53c07aed88290897b8607030a123b61b69'
 files=['account-service/private/language-live-knowledge.txt','account-service/private/language-live.php']
 old={p:subprocess.check_output(['git','show',base+':'+p]) for p in files}
 new={p:pathlib.Path(p).read_bytes() for p in files}
@@ -11,6 +11,17 @@ foreach(nlQuestions() as $q)foreach([[15,7,1987],[31,10,1988],[9,9,1986],[29,2,2
  $p=json_decode(nlMessages($q,$d,$m,$y)[1]['content'],true,30,JSON_THROW_ON_ERROR);
  if(count($p['четыре_значимые_позиции'])!==4||count($p['два_вопроса_для_подводки'])!==2)throw new RuntimeException('PAYLOAD');
 }
+$q=nlQuestions()[0];$kb=nlKnowledge();
+foreach([[15,7,1987],[15,8,1987],[15,7,1988]] as [$d,$m,$y]){
+ $matrix=ni31($d,$m,$y);
+ $positions=json_decode(nlMessages($q,$d,$m,$y)[1]['content'],true)['четыре_значимые_позиции'];
+ foreach(nlPointMap($q['id']) as $i=>$point)if($positions[$i]['смысловой_ключ']!==$kb[$matrix[$point]][$q['id']])throw new RuntimeException('POSITION_KEY_MISMATCH');
+}
+$a=json_decode(nlMessages($q,15,7,1987)[1]['content'],true)['четыре_значимые_позиции'];
+$b=json_decode(nlMessages($q,15,8,1987)[1]['content'],true)['четыре_значимые_позиции'];
+$c=json_decode(nlMessages($q,15,7,1988)[1]['content'],true)['четыре_значимые_позиции'];
+if($a[0]!==$b[0]||$a[1]===$b[1]||$a[2]===$c[2])throw new RuntimeException('DATE_DIMENSIONS_NOT_INDEPENDENT');
+echo 'DAY_MONTH_YEAR_KEYS_PASS';
 echo 'LANGUAGE_PRACTICAL_WARMTH_OFFLINE_PASS';
 """
 subprocess.run(['php'],input=fixture.encode(),check=True)
@@ -52,7 +63,7 @@ try:
  assert healthy(),'POST_HEALTH'
  for p in files:assert read(remote(p))==new[p],'FINAL_READBACK'
  for p,h in hashes.items():assert hashlib.sha256(read(p)).digest()==h,'PROTECTED_CHANGED'
- print('LANGUAGE_FREE_CHOICE_LIVE 22x10=true points_unchanged=true old_purchases_preserved=true model_calls=0',flush=True)
+ print('LANGUAGE_SOFTNESS_LIVE 22x10=true points_unchanged=true old_purchases_preserved=true model_calls=0',flush=True)
 except BaseException:
  for p in reversed(changed):
   try:write(remote(p),saved[p]);print('ROLLBACK_OK',p,flush=True)
