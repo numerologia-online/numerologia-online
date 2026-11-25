@@ -1,0 +1,59 @@
+name: Read-only YooKassa decline diagnosis
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/numi-payment-decline-readonly-20261125.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Read recent 100 RUB wallet payment statuses, no financial writes
+        env:
+          SHOP_ID: ${{ secrets.NUMI_YOOKASSA_LIVE_SHOP_ID }}
+          API_KEY: ${{ secrets.NUMI_YOOKASSA_LIVE_SECRET_KEY }}
+        run: |
+          python3 - <<'PY'
+          import os, re, base64, json, datetime, urllib.request, urllib.parse, urllib.error
+          from collections import Counter
+          shop=os.environ.get('SHOP_ID','').strip()
+          key=os.environ.get('API_KEY','').strip()
+          if not re.fullmatch(r'[0-9]+',shop) or not re.fullmatch(r'live_[A-Za-z0-9_-]{12,480}',key):
+              print('AUDIT_BLOCKED: live credentials not available in Actions; no request sent')
+              raise SystemExit(1)
+          now=datetime.datetime.now(datetime.timezone.utc)
+          start=now-datetime.timedelta(hours=6)
+          params={'created_at.gte':start.isoformat(timespec='seconds').replace('+00:00','Z'),'limit':100}
+          auth=base64.b64encode((shop+':'+key).encode()).decode()
+          safe=lambda x: x if isinstance(x,str) and re.fullmatch(r'[a-z_]{1,80}',x) else 'unknown'
+          totals=Counter()
+          matches=0
+          for page in range(4):
+              req=urllib.request.Request('https://api.yookassa.ru/v3/payments?'+urllib.parse.urlencode(params),headers={'Authorization':'Basic '+auth},method='GET')
+              try:
+                  with urllib.request.urlopen(req,timeout=20) as res: data=json.load(res)
+              except urllib.error.HTTPError as exc:
+                  print('AUDIT_HTTP_STATUS',exc.code)
+                  raise SystemExit(1)
+              except Exception:
+                  print('AUDIT_TRANSPORT_FAILED')
+                  raise SystemExit(1)
+              for p in data.get('items',[]):
+                  if p.get('amount')!={'value':'100.00','currency':'RUB'} or not p.get('metadata',{}).get('numi_real_wallet_topup'):continue
+                  matches+=1
+                  status=safe(p.get('status'))
+                  method=safe(p.get('payment_method',{}).get('type'))
+                  cancel=p.get('cancellation_details') or {}
+                  totals[(status,method,safe(cancel.get('party')),safe(cancel.get('reason')))]+=1
+              cursor=data.get('next_cursor')
+              if not cursor:break
+              params['cursor']=cursor
+          print('AUDIT_MATCH_COUNT',matches)
+          for (status,method,party,reason),n in sorted(totals.items()):
+              print('AUDIT_STATUS',status,'method',method,'party',party,'reason',reason,'count',n)
+          print('READ_ONLY_COMPLETE no IDs, customer information, keys, or payment writes')
+          PY
