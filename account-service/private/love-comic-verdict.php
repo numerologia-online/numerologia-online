@@ -30,8 +30,26 @@ function lcvValidate(string $text,string $finish='stop'): string {
     $text=trim(preg_replace('/\s+/u',' ',$text)??$text);
     $text=preg_replace('/\s*[—–―]\s*/u',', ',$text)??$text;
     $text=preg_replace('/,\s*,/u',',',$text)??$text;
+    // Length is an editorial target, not a reason to discard usable output.
     $len=mb_strlen($text,'UTF-8');
-    if($len<220||$len>700)throw new RuntimeException('LOVE_COMIC_TEXT_LENGTH_INVALID');
+    if($len>700){
+        // Keep the longest complete sentence sequence within the target range.
+        // Do not generate again or cut a punchline in the middle of a word.
+        preg_match_all('/[.!?…]+[»”"]?(?=\s|$)/u',$text,$ends,PREG_OFFSET_CAPTURE);
+        $best=null;$fallback=null;
+        foreach($ends[0]??[] as [$end,$offset]){
+            $candidate=trim(substr($text,0,$offset+strlen($end)));
+            $n=mb_strlen($candidate,'UTF-8');
+            if($n>700)break;
+            if($n>=220)$fallback=$candidate;
+            if($n>=300&&$n<=550)$best=$candidate;
+        }
+        if($best!==null||$fallback!==null)$text=$best??$fallback;
+        // If no natural boundary exists, preserve the coherent response
+        // rather than reporting a false service failure.
+        $len=mb_strlen($text,'UTF-8');
+    }
+    if($len<80||$len>1800)throw new RuntimeException('LOVE_COMIC_TEXT_LENGTH_INVALID');
     $letters=preg_match_all('/\p{L}/u',$text);$ru=preg_match_all('/[а-яё]/iu',$text);
     if(!$ru||$ru<=$letters/2)throw new RuntimeException('LOVE_COMIC_TEXT_LANGUAGE_INVALID');
     return $text;
