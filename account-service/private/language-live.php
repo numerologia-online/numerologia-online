@@ -23,7 +23,7 @@ function nlSupportedPaidResource(string $code,string $resource): bool {
     if($code!=='redflag_question'
        ||preg_match('/^redflag:language:([a-z-]+):((?:19|20)\d\d-\d\d-\d\d)$/D',$resource,$m)!==1)
         return false;
-    return $m[1]!=='love-language'&&in_array($m[1],nlQuestionIds(),true)
+    return $m[1]!=='love-language'&&in_array($m[1],array_merge(nlQuestionIds(),['comic-verdict-language']),true)
         &&naCatalogDate($m[2])!==null;
 }
 function nlEngineInstalled(): bool {
@@ -215,13 +215,18 @@ function nlGenerateText(array $question,int $day,int $month,int $year): string {
 }
 function nlFreshAnswer(string $id,string $date): string {
     if(!nlEngineInstalled())throw new RuntimeException('LANGUAGE_ENGINE_UNAVAILABLE');
-    if(!in_array($id,nlQuestionIds(),true)||naCatalogDate($date)===null)
+    if(!in_array($id,array_merge(nlQuestionIds(),['comic-verdict-language']),true)||naCatalogDate($date)===null)
         throw new InvalidArgumentException('LANGUAGE_INVALID_REQUEST');
     $question=null;
     foreach(nlQuestions() as $q)if($q['id']===$id){$question=$q;break;}
+    if($id==='comic-verdict-language')$question=['id'=>$id,'title'=>'😂 Шуточный вердикт'];
     if($question===null)throw new RuntimeException('LANGUAGE_QUESTION_NOT_FOUND');
     [$year,$month,$day]=array_map('intval',explode('-',$date));
     try {
+        if($id==='comic-verdict-language'){
+            require_once __DIR__.'/language-comic-verdict.php';
+            return wcvGenerate($day,$month,$year);
+        }
         return nlGenerateText($question,$day,$month,$year);
     }catch(Throwable $e){
         $reason=$e instanceof RuntimeException?$e->getMessage():get_class($e);
@@ -237,7 +242,7 @@ function nlOwnerMaterial(string $resource): array {
     if(!preg_match('/^redflag:language:([a-z-]+):(\d{4}-\d\d-\d\d)$/D',$resource,$m))
         throw new RuntimeException('LANGUAGE_RESOURCE_INVALID');
     $answer=nlFreshAnswer($m[1],$m[2]);
-    $title='';
+    $title=$m[1]==='comic-verdict-language'?'😂 Шуточный вердикт':'';
     foreach(nlQuestions() as $q)if($q['id']===$m[1]){$title=$q['title'];break;}
     return ['title'=>$title,'sections'=>[['title'=>$title,
         'paragraphs'=>preg_split('/\n\s*\n/u',$answer)]],'links'=>[],'pdf_available'=>false];
@@ -249,7 +254,7 @@ function nlCacheDirectory(): string {
     return $p;
 }
 function nlCacheFile(string $id,string $date): string {
-    if(!in_array($id,nlQuestionIds(),true)||naCatalogDate($date)===null)
+    if(!in_array($id,array_merge(nlQuestionIds(),['comic-verdict-language']),true)||naCatalogDate($date)===null)
         throw new InvalidArgumentException('LANGUAGE_INVALID_REQUEST');
     return nlCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).($id==='love-language'?'-language-practical-warmth-v6.json':'-language-practical-warmth-v3.json');
 }
@@ -308,7 +313,7 @@ function nlMaterialFromCache(string $resource): array {
         }
     }
     if($answer===null)throw new RuntimeException('MATERIAL_NOT_READY');
-    $title='';
+    $title=$m[1]==='comic-verdict-language'?'😂 Шуточный вердикт':'';
     foreach(nlQuestions() as $q)if($q['id']===$m[1]){$title=$q['title'];break;}
     return ['title'=>$title,'sections'=>[['title'=>$title,
         'paragraphs'=>preg_split('/\n\s*\n/u',$answer)]],
