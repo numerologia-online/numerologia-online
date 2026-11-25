@@ -1350,6 +1350,11 @@ form.addEventListener("submit", async(event)=>{
     input.focus();
     return;
   }
+  if (!window.numiDateFields?.isAdult(birth)) {
+    error.textContent="Этому человеку нет 18 лет.";
+    error.hidden=false;
+    return;
+  }
   error.hidden=true;
   closeKarmicInline();
   invalidateFullPdf();

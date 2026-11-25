@@ -31,6 +31,7 @@ try {
        !is_int($day)||!is_int($month)||!is_int($year)||$year<1900||
        $year>(int)gmdate('Y')||!checkdate($month,$day,$year))
         lvoReply(400,['ok'=>false,'error'=>'INVALID_LOVE_REQUEST']);
+    if(!naAdultBirthDate(sprintf('%04d-%02d-%02d',$year,$month,$day)))lvoReply(400,['ok'=>false,'error'=>'REDFLAG_AGE_RESTRICTED']);
     $question=null;
     foreach(lvpQuestions() as $q)if($q['id']===$id)$question=$q;
     if($id==='comic-verdict-love')$question=['id'=>$id,'title'=>'😂 Шуточный вердикт'];

@@ -31,6 +31,7 @@ try {
        !is_int($day)||!is_int($month)||!is_int($year)||$year<1900||
        $year>(int)gmdate('Y')||!checkdate($month,$day,$year))
         foReply(400,['ok'=>false,'error'=>'INVALID_FAMILY_REQUEST']);
+    if(!naAdultBirthDate(sprintf('%04d-%02d-%02d',$year,$month,$day)))foReply(400,['ok'=>false,'error'=>'REDFLAG_AGE_RESTRICTED']);
     $question=null;
     foreach(fpQuestions() as $q)if($q['id']===$id)$question=$q;
     if($id==='comic-verdict-family')$question=['id'=>$id,'title'=>'😂 Шуточный вердикт'];

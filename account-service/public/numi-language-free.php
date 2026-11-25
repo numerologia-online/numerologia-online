@@ -14,6 +14,7 @@ try {
     if($date===null)naReply(400,['ok'=>false,'error'=>'INVALID_BIRTH_DATE']);
     [$year,$month,$day]=array_map('intval',explode('-',$date));
     if($year>(int)gmdate('Y'))naReply(400,['ok'=>false,'error'=>'INVALID_BIRTH_DATE']);
+    if(!naAdultBirthDate($date))naReply(400,['ok'=>false,'error'=>'REDFLAG_AGE_RESTRICTED']);
     $db=naDB();$account=naCurrent($db);
     $answer=$account!==null&&naTestOwner($account)
         ?nlFreshAnswer('love-language',$date)

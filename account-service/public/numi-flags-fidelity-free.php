@@ -8,6 +8,7 @@ try{
     $b=naReadPost();$c=$b['category']??null;$id=$b['question_id']??null;$date=$b['birth_date']??null;
     if(!is_string($c)||!is_string($id)||$id!==rfsFreeId($c)||!is_string($date)||!rfsDate($date))
         naReply(400,['ok'=>false,'error'=>'INVALID_FREE_QUESTION']);
+    if(!naAdultBirthDate($date))naReply(400,['ok'=>false,'error'=>'REDFLAG_AGE_RESTRICTED']);
     if(function_exists('set_time_limit'))@set_time_limit(125);
     $a=rfsPermitFree($c,$id,$date,naCurrent(naDB()));
     naReply(200,['ok'=>true,'free'=>true,'ai_generated'=>true,'category'=>$c,'question_id'=>$id,'birth_date'=>$date,'answer'=>$a]);

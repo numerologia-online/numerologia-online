@@ -604,6 +604,17 @@ function naHideSaved(PDO $db,array $body): never {
  * Does not create orders, charge cards, grant rights or reveal paid content.
  * Canonical quote is server-derived; browser prices are ignored.
  */
+function naAdultBirthDate(mixed $input, ?DateTimeImmutable $today=null): bool {
+    $date=naCatalogDate($input);
+    if($date===null)return false;
+    $today=$today??new DateTimeImmutable('today',new DateTimeZone('Europe/Moscow'));
+    return $date<=sprintf('%04d-%s',(int)$today->format('Y')-18,$today->format('m-d'));
+}
+function naChildBirthDate(mixed $input, ?DateTimeImmutable $today=null): bool {
+    $date=naCatalogDate($input);
+    $today=$today??new DateTimeImmutable('today',new DateTimeZone('Europe/Moscow'));
+    return $date!==null&&$date<=$today->format('Y-m-d')&&!naAdultBirthDate($date,$today);
+}
 function naCatalogDate(mixed $input): ?string {
     if (!is_string($input) || !preg_match('/^(19|20)\d\d-\d\d-\d\d$/D',$input)) return null;
     [$year,$month,$day]=array_map('intval',explode('-',$input));
@@ -681,6 +692,7 @@ function naCatalogResolve(array $input,bool $club): array {
         $kind='report';
     } elseif ($code==='life_full') {
         if ($date===null) throw new InvalidArgumentException('INVALID_BIRTH_DATE');
+        if (!naAdultBirthDate($date)) throw new InvalidArgumentException('ADULT_AGE_REQUIRED');
         $resource='life:'.$date; $price=$club?49000:99000; $kind='report';
     } elseif ($code==='compatibility_full') {
         $second=naCatalogDate($input['partner_birth_date']??null);
@@ -689,12 +701,14 @@ function naCatalogResolve(array $input,bool $club): array {
         $price=$club?49000:99000; $kind='report';
     } elseif ($code==='child_full_v1') {
         if ($date===null) throw new InvalidArgumentException('INVALID_CHILD_DATE');
+        if (!naChildBirthDate($date)) throw new InvalidArgumentException('CHILD_AGE_REQUIRED');
         // Ownership of the specific child must be established before sale.
         $resource='child:'.$date; $price=$club?49000:99000; $kind='report';
     } elseif ($code==='redflag_question') {
         $category=$input['category']??null; $question=$input['question_id']??null;
         if (!is_string($category) || !is_string($question) || $date===null)
             throw new InvalidArgumentException('INVALID_QUESTION_SUBJECT');
+        if (!naAdultBirthDate($date)) throw new InvalidArgumentException('REDFLAG_AGE_RESTRICTED');
         $catalog=naRedFlagCatalog();
         $meta=$catalog[$category][$question]??null;
         if (!is_array($meta)

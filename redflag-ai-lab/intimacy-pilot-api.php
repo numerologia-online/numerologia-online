@@ -55,6 +55,7 @@ try {
  ||!is_int($day)||!is_int($month)||!is_int($year)
  ||$year<1900||$year>(int)date('Y')||!checkdate($month,$day,$year))
    ipReply(400,['ok'=>false,'error'=>'INVALID_DATE']);
+ if(!naAdultBirthDate(sprintf('%04d-%02d-%02d',$year,$month,$day)))ipReply(400,['ok'=>false,'error'=>'REDFLAG_AGE_RESTRICTED']);
  $kb=json_decode((string)file_get_contents(__DIR__.'/intimacy-knowledge-v1.json'),true,24,JSON_THROW_ON_ERROR);
  if(($kb['schema']??'')!=='numi-owner-intimacy-matrix-knowledge-v1'
  ||count($kb['arcana']??[])!==22||count($kb['questions']??[])!==9)

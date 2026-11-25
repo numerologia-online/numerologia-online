@@ -52,6 +52,7 @@ try {
  $d=$input['day']??null;$m=$input['month']??null;$y=$input['year']??null;
  if(!is_int($d)||!is_int($m)||!is_int($y)||$y<1900||$y>(int)gmdate('Y')
     ||!checkdate($m,$d,$y))sfReply(400,['ok'=>false,'error'=>'INVALID_DATE']);
+ if(!naAdultBirthDate(sprintf('%04d-%02d-%02d',$y,$m,$d)))sfReply(400,['ok'=>false,'error'=>'REDFLAG_AGE_RESTRICTED']);
  $kb=json_decode((string)file_get_contents(__DIR__.'/intimacy-knowledge-v1.json'),true,22,JSON_THROW_ON_ERROR);
  if(($kb['schema']??null)!=='numi-owner-intimacy-matrix-knowledge-v1'
   ||count($kb['arcana']??[])!==22)throw new RuntimeException('ARCANA_KNOWLEDGE_NOT_READY');

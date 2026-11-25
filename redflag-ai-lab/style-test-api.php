@@ -1239,6 +1239,9 @@ try {
     $day=$input['day']??null;$month=$input['month']??null;
     if(!is_int($day)||!is_int($month)||!checkdate($month,$day,2000))
         rfPreviewReply(400,['ok'=>false,'error'=>'INVALID_DATE']);
+    $ageYear=$input['year']??null;
+    if(!is_int($ageYear)||!naAdultBirthDate(sprintf('%04d-%02d-%02d',$ageYear,$month,$day)))
+        rfPreviewReply(400,['ok'=>false,'error'=>'REDFLAG_AGE_RESTRICTED']);
 
     // Existing owner Telegram Red Flag cards only. No paid customer path changes.
     if($category['id']==='flags'){

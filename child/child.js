@@ -643,6 +643,11 @@ form.addEventListener("submit", async (event) => {
     error.hidden = false;
     return;
   }
+  if (!window.numiDateFields?.isChild(entered)) {
+    error.textContent = window.numiDateFields?.isAdult(entered) ? "Этому человеку уже исполнилось 18 лет." : "Введите дату рождения ребёнка, не позднее сегодняшнего дня.";
+    error.hidden = false;
+    return;
+  }
   const submit = form.querySelector('button[type="submit"]');
   submit.disabled = true;
   try {

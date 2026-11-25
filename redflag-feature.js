@@ -112,8 +112,10 @@ const checkManButton = form.querySelector(".redflag-submit");
 const checkManLabel = checkManButton.querySelector(".redflag-submit-label");
 const checkManArrow = checkManButton.querySelector(".redflag-submit-arrow");
 const syncCheckManButton = () => {
-  const valid = Boolean(parseRedFlagDate(birthDateInput.value));
-  checkManLabel.textContent = valid ? "Проверить мужчину" : "Введите дату";
+  const date = parseRedFlagDate(birthDateInput.value);
+  const valid = intimacyDateAllowed(date);
+  checkManButton.disabled = Boolean(date && !valid);
+  checkManLabel.textContent = valid ? "Проверить мужчину" : date ? "Только с 18 лет" : "Введите дату";
   checkManArrow.hidden = !valid;
 };
 syncCheckManButton();
@@ -363,7 +365,7 @@ const ensureAnswer = (question,state,options={}) => {
   })();
 };
 const ensureAnswerResolved = (question, state, {forceNew = false} = {}) => {
-  if(state===categoryStates.get("intimacy")&&!intimacyDateAllowed(parseRedFlagDate(birthDateInput.value)))return;
+  if(!intimacyDateAllowed(parseRedFlagDate(birthDateInput.value)))return;
   if(question.isComingSoon&&!ownerDraftInScope(question,state))return;
   const id=question.id;
   if(state.answers.has(id)||state.answerRequests.has(id))return;
@@ -835,7 +837,7 @@ const addOwnerStyleTrial=(target)=>{
       const response=await fetch("/redflag-ai-lab/style-test-api.php",{
         method:"POST",credentials:"same-origin",cache:"no-store",
         headers:{"Content-Type":"application/json","Accept":"application/json"},
-        body:JSON.stringify({question_id:"say-no",day:birth.day,month:birth.month}),
+        body:JSON.stringify({category:"flags",question_id:"say-no",day:birth.day,month:birth.month,year:birth.year}),
         signal:AbortSignal.timeout(110000)
       });
       const data=await response.json();
@@ -874,6 +876,7 @@ const createQuestion = (question, state) => {
         showError("Введите дату рождения мужчины в формате ДД.ММ.ГГГГ.");
         return;
       }
+      if (!intimacyDateAllowed(date)) { showError("Этому человеку нет 18 лет."); return; }
       activeProfile = buildRelationshipProfile(date);
       formattedDate = birthDateInput.value;
       state.activeQuestionId = question.id;
@@ -1119,12 +1122,12 @@ const createCategory = (category, index) => {
   toggle.className = "redflag-category-toggle";
   toggle.type = "button";
   toggle.setAttribute("aria-expanded", String(state.expanded));
-  if(category.id==="intimacy"&&intimacyDateBlocked())toggle.disabled=true;
+  if(intimacyDateBlocked())toggle.disabled=true;
   const questionCount = state.questions?.length ?? category.questionCount;
   toggle.innerHTML = `<span><small class="redflag-category-index">Блок ${index + 1} · ${questionCount} вопросов</small><strong>${category.title}</strong>${category.id === "intimacy" ? '<span class="redflag-age-label" aria-label="Для взрослых, 18 плюс">18+</span>' : ""}<small class="redflag-category-count">${questionCount} вопросов</small><em>${category.description}</em></span><b aria-hidden="true">+</b>`;
   toggle.addEventListener("click", () => {
     const opening = !state.expanded;
-    if (opening&&category.id==="intimacy"&&intimacyDateBlocked())return;
+    if (opening&&intimacyDateBlocked())return;
     if (opening) collapseOtherCategories(category.id);
     state.expanded = opening;
     if (!opening) state.activeQuestionId = null;
@@ -1134,7 +1137,7 @@ const createCategory = (category, index) => {
   });
   section.append(toggle);
 
-  if (!state.expanded||(category.id==="intimacy"&&intimacyDateBlocked())) return section;
+  if (!state.expanded||intimacyDateBlocked()) return section;
 
   const content = document.createElement("div");
   content.className = "redflag-category-content";
@@ -1262,6 +1265,7 @@ categoriesRoot.addEventListener("click",(event)=>{
       showError("Введите дату рождения мужчины в формате ДД.ММ.ГГГГ.");
       return;
     }
+    if (!intimacyDateAllowed(date)) { showError("Этому человеку нет 18 лет."); return; }
     activeProfile=buildRelationshipProfile(date);
     formattedDate=birthDateInput.value;
   }
@@ -1279,8 +1283,8 @@ birthDateInput.addEventListener("input", () => {
   syncCheckManButton();
   clearError();
   if(intimacyDateBlocked()){
-    const state=categoryStates.get("intimacy");
-    state.expanded=false;state.activeQuestionId=null;
+    showError("Этому человеку нет 18 лет.");
+    for (const state of categoryStates.values()) { state.expanded=false;state.activeQuestionId=null; }
   }
   if (activeProfile) {
     activeProfile = undefined;
@@ -1293,8 +1297,7 @@ birthDateInput.addEventListener("input", () => {
     }
     renderCategories();
   } else {
-    const index=REDFLAG_CATEGORIES.findIndex(c=>c.id==="intimacy");
-    if(index>=0&&categoriesRoot.children[index])categoriesRoot.children[index].replaceWith(createCategory(REDFLAG_CATEGORIES[index],index));
+    renderCategories();
   }
 });
 
@@ -1309,6 +1312,7 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
+  if (!intimacyDateAllowed(date)) { showError("Этому человеку нет 18 лет."); return; }
   try {
     activeProfile = buildRelationshipProfile(date);
     formattedDate = birthDateInput.value;
@@ -1326,7 +1330,7 @@ form.addEventListener("submit", async (event) => {
     const linkedCategory = requestedQuestion
       ? REDFLAG_CATEGORIES.find((category) => category.id === requestedQuestion[1])
       : null;
-    if (linkedCategory&&!(linkedCategory.id==="intimacy"&&!intimacyDateAllowed(date))) {
+    if (linkedCategory&&intimacyDateAllowed(date)) {
       const linkedState = categoryStates.get(linkedCategory.id);
       linkedState.expanded = true;
       await ensureQuestions(linkedCategory);
@@ -1363,6 +1367,7 @@ export const openRedFlag = () => {
   const category = requestedQuestion
     ? REDFLAG_CATEGORIES.find((item) => item.id === requestedQuestion[1])
     : null;
+  if (intimacyDateBlocked()) { showError("Этому человеку нет 18 лет."); return; }
   if (category) {
     const state = categoryStates.get(category.id);
     collapseOtherCategories(category.id);
