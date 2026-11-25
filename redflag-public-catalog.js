@@ -347,7 +347,8 @@ export const PUBLIC_QUESTIONS = {
     {
       "id": "comic-verdict-infidelity",
       "title": "😂 Шуточный вердикт",
-      "status": "comic-pending"
+      "priceRub": 49,
+      "status": "ready"
     }
   ],
   "intimacy": [

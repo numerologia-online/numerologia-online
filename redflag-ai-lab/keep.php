@@ -48,6 +48,7 @@ try {
     }
     // The first Red Flag question is owner-testable without being public.
     if ($category==='flags'&&in_array($id,['say-no','comic-verdict-flags'],true))$found=true;
+    if ($category==='infidelity'&&$id==='comic-verdict-infidelity')$found=true;
     if (!$found)rfKeepReply(400,['ok'=>false,'error'=>'UNPUBLISHED_QUESTION_REQUIRED']);
     $dir=dirname(__DIR__,3).'/private/numi-redflag-owner-kept-v1';
     $key=$day.'-'.$month;

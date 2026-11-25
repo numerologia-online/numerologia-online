@@ -1234,6 +1234,7 @@ try {
         break;
     }
     if(($category['id']??null)==='flags'&&($input['question_id']??null)==='comic-verdict-flags')$question=['id'=>'comic-verdict-flags','title'=>'😂 Шуточный вердикт'];
+    if(($category['id']??null)==='infidelity'&&($input['question_id']??null)==='comic-verdict-infidelity')$question=['id'=>'comic-verdict-infidelity','title'=>'😂 Шуточный вердикт'];
     if($question===null)rfPreviewReply(400,['ok'=>false,'error'=>'QUESTION_NOT_AVAILABLE']);
     $day=$input['day']??null;$month=$input['month']??null;
     if(!is_int($day)||!is_int($month)||!checkdate($month,$day,2000))
@@ -1278,7 +1279,12 @@ try {
            rfPreviewReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
         $_SESSION['last_generation']=time();
         $generationStarted=true;
-        $answer=rfOwnerSharpInfidelity($question,$day,$month,$y,$catalog);
+        if($question['id']==='comic-verdict-infidelity'){
+            require_once dirname(__DIR__,3).'/private/numi-account-20261031/infidelity-comic-verdict.php';
+            $answer=icvGenerate($day,$month,$y);
+        }else{
+            $answer=rfOwnerSharpInfidelity($question,$day,$month,$y,$catalog);
+        }
         session_write_close();
         rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
            'category'=>'infidelity','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,
