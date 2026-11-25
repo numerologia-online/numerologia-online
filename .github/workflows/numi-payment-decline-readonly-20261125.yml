@@ -20,7 +20,7 @@ jobs:
           python3 - <<'PY'
           import os, re, base64, json, datetime, urllib.request, urllib.parse, urllib.error
           from collections import Counter
-          shop=os.environ.get('SHOP_ID','').strip()
+          shop=os.environ.get('SHOP_ID','').strip() or '1515851'
           key=os.environ.get('API_KEY','').strip()
           if not re.fullmatch(r'[0-9]+',shop) or not re.fullmatch(r'live_[A-Za-z0-9_-]{12,480}',key):
               print('AUDIT_BLOCKED: live credentials not available in Actions; no request sent')
