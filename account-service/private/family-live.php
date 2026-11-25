@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * Family safely paused for a full interpretation rebuild. Previously purchased answers remain readable.
+ * Family live: approved practical engine and isolated comic verdict. Previously purchased answers remain readable.
  * Reuses approved 31-point arithmetic and the existing family-only transport/validation.
  */
 require_once __DIR__.'/intimacy-live.php';
@@ -21,11 +21,13 @@ function nfQuestions(): array {
 function nfSupportedPaidResource(string $code,string $resource): bool {
     if($code!=='redflag_question' || preg_match('/^redflag:family:([a-z-]+):((?:19|20)\d\d-\d\d-\d\d)$/D',$resource,$m)!==1)
         return false;
-    return $m[1]!=='independent'&&in_array($m[1],nfQuestionIds(),true)&&naCatalogDate($m[2])!==null;
+    return $m[1]!=='independent'&&in_array($m[1],array_merge(nfQuestionIds(),['comic-verdict-family']),true)&&naCatalogDate($m[2])!==null;
 }
 function nfEngineInstalled(): bool {
-    // No new paid quote or generation until the user approves the rebuilt engine.
-    return false;
+    foreach(['family-practical-engine.php','family-owner-knowledge-v1.txt','family-live-questions.json','family-comic-verdict.php','family-comic-verdict.json','intimacy-live-config.php'] as $file)
+        if(!is_file(__DIR__.'/'.$file))return false;
+    $cfg=require __DIR__.'/intimacy-live-config.php';
+    return is_array($cfg)&&is_string($cfg['cloudru_key']??null)&&strlen($cfg['cloudru_key'])>12;
 }
 
 function nfCacheDirectory(): string {
@@ -35,18 +37,18 @@ function nfCacheDirectory(): string {
     return $path;
 }
 function nfCacheFile(string $id,string $date): string {
-    if(!in_array($id,nfQuestionIds(),true)||naCatalogDate($date)===null)
+    if(!in_array($id,array_merge(nfQuestionIds(),['comic-verdict-family']),true)||naCatalogDate($date)===null)
         throw new InvalidArgumentException('FAMILY_INVALID_REQUEST');
-    return nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-family-rebuilt-v9.json';
+    return nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-family-practical-live-v10.json';
 }
 function nfCachedAnswer(string $id,string $date): ?string {
     return nfReadCachedAnswer(nfCacheFile($id,$date),$id,$date);
 }
 /** Existing paid materials remain readable from both earlier cache formats. */
 function nfLegacyCachedAnswer(string $id,string $date): ?string {
-    if(!in_array($id,nfQuestionIds(),true)||naCatalogDate($date)===null)return null;
+    if(!in_array($id,array_merge(nfQuestionIds(),['comic-verdict-family']),true)||naCatalogDate($date)===null)return null;
     $prefix=nfCacheDirectory().'/'.$id.'-'.str_replace('-','',$date);
-    foreach(['-family-precise-v8.json','-family-conversational-v7.json','-family-punch-v6.json','-family-ideal-synthesis-v5.json','-family-focused-v4.json','-family-focused-v3.json','-family-kb-v2.json','-nokb-v1.json'] as $suffix){
+    foreach(['-family-rebuilt-v9.json','-family-precise-v8.json','-family-conversational-v7.json','-family-punch-v6.json','-family-ideal-synthesis-v5.json','-family-focused-v4.json','-family-focused-v3.json','-family-kb-v2.json','-nokb-v1.json'] as $suffix){
         $answer=nfReadCachedAnswer($prefix.$suffix,$id,$date);
         if($answer!==null)return $answer;
     }
@@ -62,9 +64,37 @@ function nfReadCachedAnswer(string $path,string $id,string $date): ?string {
     return is_string($answer)&&mb_strlen($answer,'UTF-8')>=450?$answer:null;
 }
 function nfEnsureAnswer(string $id,string $date): string {
+    if(!nfEngineInstalled())throw new RuntimeException('FAMILY_ENGINE_UNAVAILABLE');
+    $path=nfCacheFile($id,$date);
     $existing=nfCachedAnswer($id,$date);
     if($existing!==null)return $existing;
-    throw new RuntimeException('FAMILY_REBUILD_PENDING');
+    $lock=@fopen($path.'.lock','c');
+    if($lock===false)throw new RuntimeException('FAMILY_LOCK_UNAVAILABLE');
+    try{
+        if(!flock($lock,LOCK_EX))throw new RuntimeException('FAMILY_LOCK_UNAVAILABLE');
+        $existing=nfCachedAnswer($id,$date);
+        if($existing!==null)return $existing;
+        [$y,$m,$d]=array_map('intval',explode('-',$date));
+        if($id==='comic-verdict-family'){
+            require_once __DIR__.'/family-comic-verdict.php';
+            $text=hcvGenerate($d,$m,$y);
+        }else{
+            require_once __DIR__.'/family-practical-engine.php';
+            $question=null;
+            foreach(fpQuestions() as $q)if($q['id']===$id){$question=$q;break;}
+            if($question===null)throw new RuntimeException('FAMILY_QUESTION_NOT_FOUND');
+            $text=fpGenerateText($question,$d,$m,$y);
+        }
+        $text=niValidateGeneratedText($text,'stop');
+        if(mb_strlen($text,'UTF-8')>1800)throw new RuntimeException('FAMILY_TEXT_TOO_LONG');
+        $blob=json_encode(['version'=>1,'question'=>$id,'date'=>$date,'answer'=>$text],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
+        $tmp=$path.'.'.bin2hex(random_bytes(6)).'.tmp';
+        if(file_put_contents($tmp,$blob,LOCK_EX)!==strlen($blob)){@unlink($tmp);throw new RuntimeException('FAMILY_CACHE_WRITE_FAILED');}
+        @chmod($tmp,0600);
+        if(!rename($tmp,$path)){@unlink($tmp);throw new RuntimeException('FAMILY_CACHE_WRITE_FAILED');}
+        if(nfCachedAnswer($id,$date)!==$text)throw new RuntimeException('FAMILY_CACHE_READBACK_FAILED');
+        return $text;
+    }finally{flock($lock,LOCK_UN);fclose($lock);}
 }
 function nfEnsurePaidResource(string $resource): string {
     if(!nfSupportedPaidResource('redflag_question',$resource))
@@ -80,7 +110,7 @@ function nfMaterialFromCache(string $resource): array {
     $answer=nfCachedAnswer($m[1],$m[2]);
     if($answer===null)$answer=nfLegacyCachedAnswer($m[1],$m[2]);
     if($answer===null)throw new RuntimeException('MATERIAL_NOT_READY');
-    $title='';
+    $title=$m[1]==='comic-verdict-family'?'😂 Шуточный вердикт':'';
     foreach(nfQuestions() as $q)if($q['id']===$m[1]){$title=$q['title'];break;}
     return ['title'=>$title,'sections'=>[['title'=>$title,
         'paragraphs'=>preg_split('/\n\s*\n/u',$answer)]],
