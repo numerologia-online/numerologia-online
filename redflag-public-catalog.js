@@ -188,12 +188,6 @@ export const PUBLIC_QUESTIONS = {
       "title": "Умеет любить или только позволяет себя любить?",
       "priceRub": 49,
       "status": "ready"
-    },
-    {
-      "id": "comic-verdict-love",
-      "title": "😂 Шуточный вердикт",
-      "priceRub": 49,
-      "status": "ready"
     }
   ],
   "flags": [
@@ -256,12 +250,6 @@ export const PUBLIC_QUESTIONS = {
     {
       "id": "calm-or-swings",
       "title": "С ним спокойно или тебя ждут эмоциональные качели?",
-      "priceRub": 49,
-      "status": "ready"
-    },
-    {
-      "id": "comic-verdict-flags",
-      "title": "😂 Шуточный вердикт",
       "priceRub": 49,
       "status": "ready"
     }
@@ -343,12 +331,6 @@ export const PUBLIC_QUESTIONS = {
       "title": "Если поймаешь на измене, признается или сделает виноватой тебя?",
       "priceRub": 49,
       "status": "ready"
-    },
-    {
-      "id": "comic-verdict-infidelity",
-      "title": "😂 Шуточный вердикт",
-      "priceRub": 49,
-      "status": "ready"
     }
   ],
   "intimacy": [
@@ -426,12 +408,6 @@ export const PUBLIC_QUESTIONS = {
     {
       "id": "after",
       "title": "После секса привязывается или теряет интерес?",
-      "priceRub": 49,
-      "status": "ready"
-    },
-    {
-      "id": "comic-verdict-intimacy",
-      "title": "😂 Шуточный вердикт",
       "priceRub": 49,
       "status": "ready"
     }
@@ -513,12 +489,6 @@ export const PUBLIC_QUESTIONS = {
       "title": "Он заботится в быту или ждёт, что любовь всё сама устроит?",
       "priceRub": 49,
       "status": "ready"
-    },
-    {
-      "id": "comic-verdict-family",
-      "title": "😂 Шуточный вердикт",
-      "priceRub": 49,
-      "status": "ready"
     }
   ],
   "language": [
@@ -598,12 +568,6 @@ export const PUBLIC_QUESTIONS = {
       "title": "Какая поддержка для него правда работает?",
       "priceRub": 49,
       "status": "ready"
-    },
-    {
-      "id": "comic-verdict-language",
-      "title": "😂 Шуточный вердикт",
-      "priceRub": 49,
-      "status": "ready"
     }
   ],
   "verdict": [
@@ -665,12 +629,6 @@ export const PUBLIC_QUESTIONS = {
     {
       "id": "bottom-line",
       "title": "Как понять, что пора выбрать себя, а не ждать его?",
-      "priceRub": 49,
-      "status": "ready"
-    },
-    {
-      "id": "comic-verdict-verdict",
-      "title": "😂 Шуточный вердикт",
       "priceRub": 49,
       "status": "ready"
     }
