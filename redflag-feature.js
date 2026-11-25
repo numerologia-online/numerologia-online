@@ -124,8 +124,11 @@ const REDFLAG_SITE_URL = "https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/?view=red
 const REDFLAG_BOT_URL = "https://t.me/Numerologiaonline_bot";
 const REDFLAG_SAVE_URL = "/api/numi-save-answer.php";
 const REDFLAG_TICKET_URL = "/api/redflag-save.php";
-// The same ticket flow works both inside Telegram and in an ordinary browser.
-const REDFLAG_SAVE_VIA_TICKET = true;
+const REDFLAG_SAVE_FALLBACK_ERRORS = new Set([
+  "INIT_DATA_MISSING", "INIT_DATA_FORMAT", "SESSION_EXPIRED", "SIGNATURE_MISMATCH",
+  "USER_NOT_PRESENT", "AUTH_CHECK_UNAVAILABLE", "ORIGIN_NOT_ALLOWED", "INVALID_FORECAST",
+  "BOT_CHAT_UNAVAILABLE", "BOT_NOT_CONFIGURED", "BOT_API_AUTH_FAILED", "BOT_RATE_LIMIT"
+]);
 const formatRedFlagMessage = (question, response, dateOfBirth) => {
   const paragraphs = response.paragraphs ?? [response.answer];
   const parts = [
@@ -154,6 +157,25 @@ const openRedFlagTicket = (url) => {
   }
 };
 
+const requestRedFlagSave = async (url, payload) => {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 14000);
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      mode: "cors",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    const data = await response.json().catch(() => null);
+    return { response, data };
+  } finally {
+    window.clearTimeout(timer);
+  }
+};
+
 const addRedFlagShare = (answer, report) => {
   const controls = document.createElement("section");
   controls.className = "personal-day-share redflag-share";
@@ -171,9 +193,7 @@ const addRedFlagShare = (answer, report) => {
   const share = controls.querySelector(".personal-day-share-send");
   const feedback = controls.querySelector(".redflag-save-feedback");
 
-  // Only show an extra bot link when browser delivery is impossible.
-  // Success must follow a real {ok: true} response from the server.
-  const showFeedback = (type, title, description, withBotLink = false) => {
+  const showFeedback = (type, title, description) => {
     const heading = document.createElement("strong");
     heading.className = "redflag-save-feedback-title";
     heading.textContent = title;
@@ -181,111 +201,76 @@ const addRedFlagShare = (answer, report) => {
     detail.textContent = description;
     feedback.className = "redflag-save-feedback " + type;
     feedback.replaceChildren(heading, detail);
-    if (withBotLink) {
-      const link = document.createElement("a");
-      link.className = "redflag-save-feedback-link";
-      link.href = REDFLAG_BOT_URL;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.textContent = "Открыть Telegram-бота →";
-      feedback.append(link);
-    }
     feedback.hidden = false;
   };
 
   let preparedBotLink = null;
+  let saveViaLink = false;
   save.addEventListener("click", async () => {
+    if (save.disabled) return;
     if (preparedBotLink) {
       openRedFlagTicket(preparedBotLink);
       return;
     }
-    const signedData = window.Telegram?.WebApp?.initData;
     if (report.length > 3800) {
-      showFeedback("is-error",
-        "⚠️ Не удалось сохранить",
+      showFeedback("is-error", "⚠️ Не удалось сохранить",
         "Этот ответ слишком длинный для одного сообщения Telegram.");
       return;
     }
 
-    if (REDFLAG_SAVE_VIA_TICKET || typeof signedData !== "string" || !signedData) {
-      save.disabled = true;
-      showFeedback("is-pending", "Готовим ссылку для сохранения…", "Ответ остаётся на этой странице. Подожди немного.");
-      try {
-        const controller = new AbortController();
-        const timer = window.setTimeout(() => controller.abort(), 14000);
-        let response;
-        try {
-          response = await fetch(REDFLAG_TICKET_URL, {
-            method: "POST",
-            mode: "cors",
-            cache: "no-store",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "create", text: report }),
-            signal: controller.signal
-          });
-        } finally {
-          window.clearTimeout(timer);
-        }
-        const data = await response.json();
-        if (!response.ok || data?.ok !== true || !/^r_[A-Za-z0-9_-]{32}$/.test(data?.ticket || "")) {
-          throw new Error("TICKET_CREATE_FAILED_" + String(data?.error || response.status).replace(/[^A-Z0-9_]/g, "").slice(0,50));
-        }
-        preparedBotLink = REDFLAG_BOT_URL + "?start=" + encodeURIComponent(data.ticket);
-        save.textContent = "🤖 Открыть бота с ответом";
-        save.disabled = false;
-        showFeedback("is-success", "❤️ Ссылка готова!",
-          "Открой Telegram-бота и нажми «Начать», чтобы получить ответ.");
-        openRedFlagTicket(preparedBotLink);
-      } catch (error) {
-        save.disabled = false;
-        const code = String(error?.message || "NETWORK_ERROR").replace(/[^A-Za-z0-9_]/g, "").slice(0,65) || "NETWORK_ERROR";
-        showFeedback("is-error", "Не удалось подготовить сохранение",
-          "Ответ остаётся на странице. Код: " + code + ".");
-      }
-      return;
-    }
-
+    const signedData = window.Telegram?.WebApp?.initData;
+    const inMiniApp = typeof signedData === "string" && signedData.length > 0;
     save.disabled = true;
-    showFeedback("is-pending", "Сохраняем ответ…", "Пожалуйста, подождите.");
     try {
-      const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 14000);
-      let response;
-      try {
-        response = await fetch(REDFLAG_SAVE_URL, {
-          method: "POST",
-          mode: "cors",
-          cache: "no-store",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ init_data: signedData, text: report }),
-          signal: controller.signal
-        });
-      } finally {
-        window.clearTimeout(timer);
+      if (inMiniApp && !saveViaLink) {
+        showFeedback("is-pending", "Отправляем ответ в Telegram…", "Подожди немного.");
+        try {
+          const { response, data } = await requestRedFlagSave(REDFLAG_SAVE_URL, {
+            init_data: signedData, text: report
+          });
+          if (response.ok && data?.ok === true) {
+            preparedBotLink = REDFLAG_BOT_URL;
+            save.textContent = "🤖 Открыть чат с ответом";
+            showFeedback("is-success", "❤️ Твой ответ отправлен!", "Он уже в чате с ботом.");
+            return;
+          }
+
+          const canUseTicket = [400, 401, 403, 404, 405, 410, 413, 422, 429].includes(response.status)
+            || REDFLAG_SAVE_FALLBACK_ERRORS.has(data?.error);
+          if (!canUseTicket) throw new Error("DELIVERY_UNCONFIRMED");
+        } catch (_) {
+          // A timed-out send may still arrive. Only open the ticket on a new click.
+          saveViaLink = true;
+          save.textContent = "🤖 Получить ответ в боте";
+          showFeedback("is-error", "Проверь чат с ботом",
+            "Если ответ ещё не появился, нажми кнопку выше.");
+          return;
+        }
       }
-      const data = await response.json();
-      if (!response.ok || data?.ok !== true) throw new Error(data?.error || "DELIVERY_FAILED");
-      save.textContent = "✓ Ответ сохранён";
-      showFeedback("is-success",
-        "✅ Ответ сохранён в боте!",
-        "Ты сможешь перечитать его в любой момент ❤️");
-    } catch (error) {
-      save.disabled = false;
-      const reconnectErrors = new Set([
-        "INIT_DATA_MISSING", "INIT_DATA_FORMAT", "SESSION_EXPIRED",
-        "SIGNATURE_MISMATCH", "USER_NOT_PRESENT", "BOT_CHAT_UNAVAILABLE",
-        "ORIGIN_NOT_ALLOWED"
-      ]);
-      if (reconnectErrors.has(error?.message)) {
-        showFeedback("is-error",
-          "⚠️ Не удалось сохранить",
-          "Открой сайт через нашего Telegram-бота и попробуй снова.",
-          true);
+
+      saveViaLink = true;
+      showFeedback("is-pending", "Готовим ответ для бота…", "Подожди немного.");
+      const { response, data } = await requestRedFlagSave(REDFLAG_TICKET_URL, {
+        action: "create", text: report
+      });
+      if (!response.ok || data?.ok !== true || !/^r_[A-Za-z0-9_-]{32}$/.test(data?.ticket || "")) {
+        throw new Error("TICKET_CREATE_FAILED");
+      }
+      preparedBotLink = REDFLAG_BOT_URL + "?start=" + encodeURIComponent(data.ticket);
+      save.textContent = "🤖 Открыть бота с ответом";
+      if (inMiniApp) {
+        showFeedback("is-success", "❤️ Проверь чат с ботом",
+          "Кнопка выше откроет чат с твоим ответом.");
       } else {
-        showFeedback("is-error",
-          "⚠️ Не удалось сохранить",
-          "Попробуйте ещё раз.");
+        showFeedback("is-success", "❤️ Ответ готов к сохранению",
+          "Открой бота по кнопке выше. Если Telegram предложит «Начать», нажми эту кнопку.");
       }
+      openRedFlagTicket(preparedBotLink);
+    } catch (_) {
+      showFeedback("is-error", "Не удалось открыть ответ в боте",
+        "Ответ остаётся на странице. Попробуй нажать кнопку ещё раз.");
+    } finally {
+      save.disabled = false;
     }
   });
 
