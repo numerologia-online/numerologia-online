@@ -27,7 +27,7 @@ try {
     $input=json_decode((string)file_get_contents('php://input'),true,10,JSON_THROW_ON_ERROR);
     $id=$input['question_id']??null;
     $day=$input['day']??null;$month=$input['month']??null;$year=$input['year']??null;
-    if(($input['category']??null)!=='intimacy'||!is_string($id)||!in_array($id,ipQuestionIds(),true)||
+    if(($input['category']??null)!=='intimacy'||!is_string($id)||!in_array($id,array_merge(ipQuestionIds(),['comic-verdict-intimacy']),true)||
        !is_int($day)||!is_int($month)||!is_int($year)||$year<1900||
        $year>(int)gmdate('Y')||!checkdate($month,$day,$year))
         ioReply(400,['ok'=>false,'error'=>'INVALID_INTIMACY_REQUEST']);
@@ -35,10 +35,16 @@ try {
         ioReply(400,['ok'=>false,'error'=>'INTIMACY_AGE_RESTRICTED']);
     $question=null;
     foreach(ipQuestions() as $q)if($q['id']===$id)$question=$q;
+    if($id==='comic-verdict-intimacy')$question=['id'=>$id,'title'=>'😂 Шуточный вердикт'];
     if($question===null)ioReply(400,['ok'=>false,'error'=>'INTIMACY_QUESTION_NOT_FOUND']);
     if(function_exists('set_time_limit'))@set_time_limit(125);
     // Same approved generation as buyers, without purchase or cache.
-    $answer=ipGenerateText($question,$day,$month,$year);
+    if($id==='comic-verdict-intimacy'){
+        require_once dirname(__DIR__,3).'/private/numi-account-20261031/intimacy-comic-verdict.php';
+        $answer=scvGenerate($day,$month,$year);
+    }else{
+        $answer=ipGenerateText($question,$day,$month,$year);
+    }
     ioReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
         'category'=>'intimacy','question_id'=>$id,'date_key'=>$day.'-'.$month,
         'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);

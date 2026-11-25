@@ -195,7 +195,7 @@ function niQuestions(): array {
     return $bank['questions'];
 }
 function niMapIds(): array {
-    return ['her-pleasure','pace','desire-talk','tenderness','boundaries','closeness','initiative','compatibility','after'];
+    return ['her-pleasure','pace','desire-talk','tenderness','boundaries','closeness','initiative','compatibility','after','comic-verdict-intimacy'];
 }
 function niSupportedPaidResource(string $code,string $resource): bool {
     if($code!=='redflag_question'||preg_match('/^redflag:intimacy:([a-z-]+):((?:19|20)\d\d-\d\d-\d\d)$/D',$resource,$m)!==1)
@@ -254,8 +254,13 @@ function niEnsureAnswer(string $id,string $date): string {
             $cat['categories'][0]['questions'][]=['id'=>$q['id'],'title'=>$q['title']];
             if($q['id']===$id)$selected=['id'=>$q['id'],'title'=>$q['title']];
         }
-        if($selected===null)throw new RuntimeException('INTIMACY_QUESTION_NOT_FOUND');
-        $text=niGenerateText($selected,$d,$m,$y,$cat);
+        if($id==='comic-verdict-intimacy'){
+            require_once __DIR__.'/intimacy-comic-verdict.php';
+            $text=scvGenerate($d,$m,$y);
+        }else{
+            if($selected===null)throw new RuntimeException('INTIMACY_QUESTION_NOT_FOUND');
+            $text=niGenerateText($selected,$d,$m,$y,$cat);
+        }
         $text=niValidateGeneratedText($text,'stop');
         if(mb_strlen($text,'UTF-8')>1800)throw new RuntimeException('INTIMACY_TEXT_TOO_LONG');
         $blob=json_encode(['version'=>1,'question'=>$id,'date'=>$date,'answer'=>$text],
@@ -290,7 +295,7 @@ function niMaterialFromCache(string $resource): array {
         }
     }
     if($answer===null)throw new RuntimeException('MATERIAL_NOT_READY');
-    $title='';
+    $title=$m[1]==='comic-verdict-intimacy'?'😂 Шуточный вердикт':'';
     foreach(niQuestions() as $q)if($q['id']===$m[1]){$title=$q['title'];break;}
     return ['title'=>$title,'sections'=>[['title'=>$title,'paragraphs'=>preg_split('/\n\s*\n/u',$answer)]],
         'links'=>[],'pdf_available'=>false];
