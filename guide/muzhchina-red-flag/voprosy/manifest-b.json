@@ -1,0 +1,322 @@
+[
+  {
+    "cat": "intimacy",
+    "id": "fire",
+    "title": "Как узнать сексуальный темперамент мужчины",
+    "q": "Сексуальный огонь или пять минут — и спасибо?",
+    "url": "/guide/muzhchina-red-flag/voprosy/intimacy/fire/",
+    "icon": 15
+  },
+  {
+    "cat": "intimacy",
+    "id": "her-pleasure",
+    "title": "Как понять, внимателен ли мужчина в сексе",
+    "q": "В близости думает о женщине или только любуется собой?",
+    "url": "/guide/muzhchina-red-flag/voprosy/intimacy/her-pleasure/",
+    "icon": 15
+  },
+  {
+    "cat": "intimacy",
+    "id": "pace",
+    "title": "Как понять, не наскучит ли мужчине близость",
+    "q": "Страстный партнёр или быстро начинает скучать?",
+    "url": "/guide/muzhchina-red-flag/voprosy/intimacy/pace/",
+    "icon": 15
+  },
+  {
+    "cat": "intimacy",
+    "id": "desire-talk",
+    "title": "Как говорить с мужчиной о сексуальных желаниях",
+    "q": "Энергия желания есть или разговор про темперамент обречён?",
+    "url": "/guide/muzhchina-red-flag/voprosy/intimacy/desire-talk/",
+    "icon": 15
+  },
+  {
+    "cat": "intimacy",
+    "id": "tenderness",
+    "title": "Как понять, способен ли мужчина на нежность",
+    "q": "Способен к нежности или для него важна только искра?",
+    "url": "/guide/muzhchina-red-flag/voprosy/intimacy/tenderness/",
+    "icon": 15
+  },
+  {
+    "cat": "intimacy",
+    "id": "boundaries",
+    "title": "Как проверить, уважает ли мужчина границы в сексе",
+    "q": "Умеет слышать границы или считает отказ личным оскорблением?",
+    "url": "/guide/muzhchina-red-flag/voprosy/intimacy/boundaries/",
+    "icon": 15
+  },
+  {
+    "cat": "intimacy",
+    "id": "closeness",
+    "title": "Как понять, нужна мужчине близость или самоутверждение",
+    "q": "Близость для любви или для самоутверждения?",
+    "url": "/guide/muzhchina-red-flag/voprosy/intimacy/closeness/",
+    "icon": 15
+  },
+  {
+    "cat": "intimacy",
+    "id": "initiative",
+    "title": "Как понять, будет ли мужчина проявлять инициативу в близости",
+    "q": "Он внимательный инициатор или ждёт, что женщина всё организует сама?",
+    "url": "/guide/muzhchina-red-flag/voprosy/intimacy/initiative/",
+    "icon": 15
+  },
+  {
+    "cat": "intimacy",
+    "id": "compatibility",
+    "title": "Как узнать, совпадут ли ваши сексуальные темпераменты",
+    "q": "Горячий любовник или секс по праздникам?",
+    "url": "/guide/muzhchina-red-flag/voprosy/intimacy/compatibility/",
+    "icon": 15
+  },
+  {
+    "cat": "intimacy",
+    "id": "after",
+    "title": "Как понять, сохранит ли мужчина интерес после секса",
+    "q": "После секса привязывается или теряет интерес?",
+    "url": "/guide/muzhchina-red-flag/voprosy/intimacy/after/",
+    "icon": 15
+  },
+  {
+    "cat": "family",
+    "id": "independent",
+    "title": "Как отличить самостоятельного мужчину от маменькиного сынка",
+    "q": "Самостоятельный мужчина или мамина корзиночка?",
+    "url": "/guide/muzhchina-red-flag/voprosy/family/independent/",
+    "icon": 4
+  },
+  {
+    "cat": "family",
+    "id": "household",
+    "title": "Как понять, хозяйственный ли мужчина",
+    "q": "Хозяйственный или из серии «мама всё делала»?",
+    "url": "/guide/muzhchina-red-flag/voprosy/family/household/",
+    "icon": 4
+  },
+  {
+    "cat": "family",
+    "id": "vacation",
+    "title": "Как понять, будет ли комфортно в отпуске с мужчиной",
+    "q": "С ним в отпуск кайф или нервный квест на выживание?",
+    "url": "/guide/muzhchina-red-flag/voprosy/family/vacation/",
+    "icon": 4
+  },
+  {
+    "cat": "family",
+    "id": "plans",
+    "title": "Как отличить реальные планы мужчины от пустых обещаний",
+    "q": "Обещает и делает или просто король планов?",
+    "url": "/guide/muzhchina-red-flag/voprosy/family/plans/",
+    "icon": 4
+  },
+  {
+    "cat": "family",
+    "id": "children",
+    "title": "Как понять, готов ли мужчина стать отцом",
+    "q": "Готов ли он к ребёнку или пока сам ещё растёт?",
+    "url": "/guide/muzhchina-red-flag/voprosy/family/children/",
+    "icon": 4
+  },
+  {
+    "cat": "family",
+    "id": "roles",
+    "title": "Как узнать, будет ли мужчина партнёром или начальником",
+    "q": "Будет партнёром или начальником в семье?",
+    "url": "/guide/muzhchina-red-flag/voprosy/family/roles/",
+    "icon": 4
+  },
+  {
+    "cat": "family",
+    "id": "home",
+    "title": "Как понять, действительно ли мужчина ценит семью",
+    "q": "Семья для него главное или дома его не дождёшься?",
+    "url": "/guide/muzhchina-red-flag/voprosy/family/home/",
+    "icon": 4
+  },
+  {
+    "cat": "family",
+    "id": "conflict",
+    "title": "Как мужчина ведёт себя при семейных трудностях",
+    "q": "При первых семейных проблемах будет бороться или соберёт чемодан?",
+    "url": "/guide/muzhchina-red-flag/voprosy/family/conflict/",
+    "icon": 4
+  },
+  {
+    "cat": "family",
+    "id": "money-at-home",
+    "title": "Как проверить материальную ответственность мужчины в семье",
+    "q": "Умеет ли он создавать опору для дома, а не только говорить о будущем?",
+    "url": "/guide/muzhchina-red-flag/voprosy/family/money-at-home/",
+    "icon": 4
+  },
+  {
+    "cat": "family",
+    "id": "care",
+    "title": "Как понять, заботится ли мужчина о женщине в быту",
+    "q": "Он заботится в быту или ждёт, что любовь всё сама устроит?",
+    "url": "/guide/muzhchina-red-flag/voprosy/family/care/",
+    "icon": 4
+  },
+  {
+    "cat": "language",
+    "id": "love-language",
+    "title": "Как узнать язык любви мужчины по дате рождения",
+    "q": "На каком языке любви он вообще понимает чувства?",
+    "url": "/guide/muzhchina-red-flag/voprosy/language/love-language/",
+    "icon": 2
+  },
+  {
+    "cat": "language",
+    "id": "how-to-talk",
+    "title": "Как разговаривать с мужчиной, чтобы он услышал",
+    "q": "Как с ним говорить, чтобы не биться в стену?",
+    "url": "/guide/muzhchina-red-flag/voprosy/language/how-to-talk/",
+    "icon": 2
+  },
+  {
+    "cat": "language",
+    "id": "accept-love",
+    "title": "Как понять, какую заботу мужчина ценит",
+    "q": "Как он принимает любовь и заботу, чтобы не было мимо?",
+    "url": "/guide/muzhchina-red-flag/voprosy/language/accept-love/",
+    "icon": 2
+  },
+  {
+    "cat": "language",
+    "id": "show-love",
+    "title": "Как понять по поступкам, что мужчина проявляет любовь",
+    "q": "Язык любви - как понять по поступкам, что у него есть чувства?",
+    "url": "/guide/muzhchina-red-flag/voprosy/language/show-love/",
+    "icon": 2
+  },
+  {
+    "cat": "language",
+    "id": "criticism",
+    "title": "Как мужчина реагирует на критику",
+    "q": "Как он реагирует на критику и неудобную правду?",
+    "url": "/guide/muzhchina-red-flag/voprosy/language/criticism/",
+    "icon": 2
+  },
+  {
+    "cat": "language",
+    "id": "ask",
+    "title": "Как правильно просить мужчину о помощи",
+    "q": "Как у него лучше просить, а не ждать телепатии?",
+    "url": "/guide/muzhchina-red-flag/voprosy/language/ask/",
+    "icon": 2
+  },
+  {
+    "cat": "language",
+    "id": "distance",
+    "title": "Что делать, если мужчина отдалился",
+    "q": "Что делать, когда он отдаляется?",
+    "url": "/guide/muzhchina-red-flag/voprosy/language/distance/",
+    "icon": 2
+  },
+  {
+    "cat": "language",
+    "id": "hurt",
+    "title": "Что может ранить мужчину в отношениях",
+    "q": "Что его ранит сильнее всего в отношениях?",
+    "url": "/guide/muzhchina-red-flag/voprosy/language/hurt/",
+    "icon": 2
+  },
+  {
+    "cat": "language",
+    "id": "conflict-style",
+    "title": "Как вести себя в конфликте с мужчиной",
+    "q": "Как не промахнуться с ним в конфликте?",
+    "url": "/guide/muzhchina-red-flag/voprosy/language/conflict-style/",
+    "icon": 2
+  },
+  {
+    "cat": "language",
+    "id": "compliment",
+    "title": "Как поддержать мужчину так, чтобы он это почувствовал",
+    "q": "Какая поддержка для него правда работает?",
+    "url": "/guide/muzhchina-red-flag/voprosy/language/compliment/",
+    "icon": 2
+  },
+  {
+    "cat": "verdict",
+    "id": "final",
+    "title": "Как составить честный портрет мужчины по дате рождения",
+    "q": "Какой финальный вердикт по этому мужчине без розовых очков?",
+    "url": "/guide/muzhchina-red-flag/voprosy/verdict/final/",
+    "icon": 9
+  },
+  {
+    "cat": "verdict",
+    "id": "worth-it",
+    "title": "Как понять, стоит ли начинать отношения с мужчиной",
+    "q": "С ним вообще стоит связываться или лучше не тратить время?",
+    "url": "/guide/muzhchina-red-flag/voprosy/verdict/worth-it/",
+    "icon": 9
+  },
+  {
+    "cat": "verdict",
+    "id": "beauty-and-flag",
+    "title": "Как отличить достойного мужчину от красного флага",
+    "q": "Достойный мужчина или Red Flag, который хорошо себя преподносит?",
+    "url": "/guide/muzhchina-red-flag/voprosy/verdict/beauty-and-flag/",
+    "icon": 9
+  },
+  {
+    "cat": "verdict",
+    "id": "check",
+    "title": "Как проверить мужчину по реальным поступкам",
+    "q": "Его ещё проверять поступками или уже всё понятно?",
+    "url": "/guide/muzhchina-red-flag/voprosy/verdict/check/",
+    "icon": 9
+  },
+  {
+    "cat": "verdict",
+    "id": "main-advice",
+    "title": "Какой главный совет женщине в отношениях с мужчиной",
+    "q": "Какой главный совет женщине рядом с ним?",
+    "url": "/guide/muzhchina-red-flag/voprosy/verdict/main-advice/",
+    "icon": 9
+  },
+  {
+    "cat": "verdict",
+    "id": "his-need",
+    "title": "Что мужчине нужно от женщины в отношениях",
+    "q": "Что ему нужно от женщины, чтобы правда раскрыться?",
+    "url": "/guide/muzhchina-red-flag/voprosy/verdict/his-need/",
+    "icon": 9
+  },
+  {
+    "cat": "verdict",
+    "id": "weak-point",
+    "title": "Как узнать главный риск в характере мужчины",
+    "q": "Где его главный риск в отношениях?",
+    "url": "/guide/muzhchina-red-flag/voprosy/verdict/weak-point/",
+    "icon": 9
+  },
+  {
+    "cat": "verdict",
+    "id": "best-side",
+    "title": "Какие сильные стороны мужчины раскрываются в любви",
+    "q": "Чем он способен порадовать в любви?",
+    "url": "/guide/muzhchina-red-flag/voprosy/verdict/best-side/",
+    "icon": 9
+  },
+  {
+    "cat": "verdict",
+    "id": "format",
+    "title": "Какой формат отношений подойдёт мужчине",
+    "q": "Какой формат отношений с ним будет самым здоровым?",
+    "url": "/guide/muzhchina-red-flag/voprosy/verdict/format/",
+    "icon": 9
+  },
+  {
+    "cat": "verdict",
+    "id": "bottom-line",
+    "title": "Как понять, когда пора выбрать себя, а не ждать мужчину",
+    "q": "Как понять, что пора выбрать себя, а не ждать его?",
+    "url": "/guide/muzhchina-red-flag/voprosy/verdict/bottom-line/",
+    "icon": 9
+  }
+]

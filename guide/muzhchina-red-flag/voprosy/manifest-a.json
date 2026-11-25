@@ -1,0 +1,330 @@
+[
+  {
+    "cat": "money",
+    "id": "gift",
+    "title": "Как понять, будет ли мужчина дарить подарки",
+    "q": "Будет дарить подарки или даже цветы придётся выпрашивать?",
+    "url": "/guide/muzhchina-red-flag/voprosy/money/gift/",
+    "icon": 8
+  },
+  {
+    "cat": "money",
+    "id": "generosity",
+    "title": "Как проверить мужчину на щедрость",
+    "q": "Щедрый мужчина или считает каждую копейку?",
+    "url": "/guide/muzhchina-red-flag/voprosy/money/generosity/",
+    "icon": 8
+  },
+  {
+    "cat": "money",
+    "id": "courtship",
+    "title": "Как узнать, будет ли мужчина красиво ухаживать",
+    "q": "Будет красиво ухаживать или максимум кофе и прогулка?",
+    "url": "/guide/muzhchina-red-flag/voprosy/money/courtship/",
+    "icon": 8
+  },
+  {
+    "cat": "money",
+    "id": "provider",
+    "title": "Как понять, умеет ли мужчина зарабатывать",
+    "q": "Умеет зарабатывать или всю жизнь будет искать себя?",
+    "url": "/guide/muzhchina-red-flag/voprosy/money/provider/",
+    "icon": 8
+  },
+  {
+    "cat": "money",
+    "id": "words-or-deeds",
+    "title": "Как проверить, держит ли мужчина слово",
+    "q": "Держит слово или опять одни красивые разговоры?",
+    "url": "/guide/muzhchina-red-flag/voprosy/money/words-or-deeds/",
+    "icon": 8
+  },
+  {
+    "cat": "money",
+    "id": "family-load",
+    "title": "Как узнать, станет ли мужчина опорой семьи",
+    "q": "Будет опорой для семьи или всё снова окажется на твоих плечах?",
+    "url": "/guide/muzhchina-red-flag/voprosy/money/family-load/",
+    "icon": 8
+  },
+  {
+    "cat": "money",
+    "id": "resource",
+    "title": "Как понять, улучшится ли ваша жизнь рядом с мужчиной",
+    "q": "Рядом с ним ты будешь жить лучше или начнёшь экономить на себе?",
+    "url": "/guide/muzhchina-red-flag/voprosy/money/resource/",
+    "icon": 8
+  },
+  {
+    "cat": "money",
+    "id": "solve-or-create",
+    "title": "Как узнать денежный потенциал мужчины",
+    "q": "Есть ли у него потенциал стать богатым мужчиной?",
+    "url": "/guide/muzhchina-red-flag/voprosy/money/solve-or-create/",
+    "icon": 8
+  },
+  {
+    "cat": "money",
+    "id": "responsibility",
+    "title": "Как понять, не будет ли мужчина жить за ваш счёт",
+    "q": "Будет ли мужчина жить за твой счёт?",
+    "url": "/guide/muzhchina-red-flag/voprosy/money/responsibility/",
+    "icon": 8
+  },
+  {
+    "cat": "money",
+    "id": "celebration",
+    "title": "Как проверить финансовые риски отношений с мужчиной",
+    "q": "Он приумножит ваши деньги или может оставить тебя с долгами?",
+    "url": "/guide/muzhchina-red-flag/voprosy/money/celebration/",
+    "icon": 8
+  },
+  {
+    "cat": "money",
+    "id": "comic-verdict-money",
+    "title": "Шуточный денежный вердикт о мужчине по дате рождения",
+    "q": "😂 Шуточный вердикт",
+    "url": "/guide/muzhchina-red-flag/voprosy/money/comic-verdict-money/",
+    "icon": 8
+  },
+  {
+    "cat": "love",
+    "id": "first-step",
+    "title": "Как понять, будет ли мужчина проявлять инициативу",
+    "q": "Пишет первым или ждёт инициативы от женщины?",
+    "url": "/guide/muzhchina-red-flag/voprosy/love/first-step/",
+    "icon": 6
+  },
+  {
+    "cat": "love",
+    "id": "romance",
+    "title": "Как проверить, настоящий ли мужчина романтик",
+    "q": "Романтик в жизни или только в переписке?",
+    "url": "/guide/muzhchina-red-flag/voprosy/love/romance/",
+    "icon": 6
+  },
+  {
+    "cat": "love",
+    "id": "relationship-or-comfort",
+    "title": "Ищет ли мужчина любовь или удобную женщину",
+    "q": "Ищет любовь или просто удобную женщину?",
+    "url": "/guide/muzhchina-red-flag/voprosy/love/relationship-or-comfort/",
+    "icon": 6
+  },
+  {
+    "cat": "love",
+    "id": "adult-partner",
+    "title": "Как понять, готов ли мужчина к семейной жизни",
+    "q": "Мужчина для семьи или вечный мальчик?",
+    "url": "/guide/muzhchina-red-flag/voprosy/love/adult-partner/",
+    "icon": 6
+  },
+  {
+    "cat": "love",
+    "id": "near-him",
+    "title": "Как узнать, расцветёте ли вы рядом с мужчиной",
+    "q": "Рядом с ним женщина расцветает или гаснет?",
+    "url": "/guide/muzhchina-red-flag/voprosy/love/near-him/",
+    "icon": 6
+  },
+  {
+    "cat": "love",
+    "id": "hard-moment",
+    "title": "Как понять, поддержит ли мужчина в трудную минуту",
+    "q": "Поддержит в беде или исчезнет первым?",
+    "url": "/guide/muzhchina-red-flag/voprosy/love/hard-moment/",
+    "icon": 6
+  },
+  {
+    "cat": "love",
+    "id": "relationship-format",
+    "title": "Как проверить готовность мужчины к серьёзным отношениям",
+    "q": "Готов к серьёзным отношениям или вечно «я не готов»?",
+    "url": "/guide/muzhchina-red-flag/voprosy/love/relationship-format/",
+    "icon": 6
+  },
+  {
+    "cat": "love",
+    "id": "family-or-triangle",
+    "title": "Как понять, способен ли мужчина выбрать одну женщину",
+    "q": "Способен быть с одной женщиной или его тянет в любовные треугольники?",
+    "url": "/guide/muzhchina-red-flag/voprosy/love/family-or-triangle/",
+    "icon": 6
+  },
+  {
+    "cat": "love",
+    "id": "honest-or-disappear",
+    "title": "Почему мужчина внезапно пропадает",
+    "q": "Почему он исчезает без объяснений?",
+    "url": "/guide/muzhchina-red-flag/voprosy/love/honest-or-disappear/",
+    "icon": 6
+  },
+  {
+    "cat": "love",
+    "id": "love-or-attention",
+    "title": "Как понять, умеет ли мужчина любить",
+    "q": "Умеет любить или только позволяет себя любить?",
+    "url": "/guide/muzhchina-red-flag/voprosy/love/love-or-attention/",
+    "icon": 6
+  },
+  {
+    "cat": "flags",
+    "id": "say-no",
+    "title": "Как проверить, уважает ли мужчина женское нет",
+    "q": "Уважает женское «нет» или начинает давить?",
+    "url": "/guide/muzhchina-red-flag/voprosy/flags/say-no/",
+    "icon": 16
+  },
+  {
+    "cat": "flags",
+    "id": "care-or-control",
+    "title": "Как отличить заботу мужчины от контроля",
+    "q": "Заботится или будет контролировать каждый твой шаг?",
+    "url": "/guide/muzhchina-red-flag/voprosy/flags/care-or-control/",
+    "icon": 16
+  },
+  {
+    "cat": "flags",
+    "id": "hero",
+    "title": "Как распознать самовлюблённого мужчину",
+    "q": "Скромный мужчина или считает себя подарком судьбы?",
+    "url": "/guide/muzhchina-red-flag/voprosy/flags/hero/",
+    "icon": 16
+  },
+  {
+    "cat": "flags",
+    "id": "jealousy",
+    "title": "Как понять, насколько мужчина ревнив",
+    "q": "Ревнует от любви или устроит допрос за каждый лайк?",
+    "url": "/guide/muzhchina-red-flag/voprosy/flags/jealousy/",
+    "icon": 16
+  },
+  {
+    "cat": "flags",
+    "id": "argument",
+    "title": "Почему мужчина наказывает молчанием после ссоры",
+    "q": "Умеет говорить о проблемах или наказывает молчанием?",
+    "url": "/guide/muzhchina-red-flag/voprosy/flags/argument/",
+    "icon": 16
+  },
+  {
+    "cat": "flags",
+    "id": "abuse-signal",
+    "title": "Как заметить красные флаги в начале знакомства",
+    "q": "Какой тревожный сигнал нельзя пропустить в начале знакомства?",
+    "url": "/guide/muzhchina-red-flag/voprosy/flags/abuse-signal/",
+    "icon": 16
+  },
+  {
+    "cat": "flags",
+    "id": "support-or-cause",
+    "title": "Как понять, будет ли мужчина поддерживать или ранить",
+    "q": "Будет твоей опорой или сам доведёт до слёз?",
+    "url": "/guide/muzhchina-red-flag/voprosy/flags/support-or-cause/",
+    "icon": 16
+  },
+  {
+    "cat": "flags",
+    "id": "apology",
+    "title": "Как понять, умеет ли мужчина извиняться",
+    "q": "После ссоры извинится или виноватой сделает тебя?",
+    "url": "/guide/muzhchina-red-flag/voprosy/flags/apology/",
+    "icon": 16
+  },
+  {
+    "cat": "flags",
+    "id": "weak-place",
+    "title": "Как узнать слабые стороны мужчины в отношениях",
+    "q": "Какая его слабость может разрушить ваши отношения?",
+    "url": "/guide/muzhchina-red-flag/voprosy/flags/weak-place/",
+    "icon": 16
+  },
+  {
+    "cat": "flags",
+    "id": "calm-or-swings",
+    "title": "Как распознать эмоциональные качели с мужчиной",
+    "q": "С ним спокойно или тебя ждут эмоциональные качели?",
+    "url": "/guide/muzhchina-red-flag/voprosy/flags/calm-or-swings/",
+    "icon": 16
+  },
+  {
+    "cat": "infidelity",
+    "id": "faithful",
+    "title": "Как понять, верный ли мужчина",
+    "q": "Верный или у него каждая вторая «просто подруга»?",
+    "url": "/guide/muzhchina-red-flag/voprosy/infidelity/faithful/",
+    "icon": 18
+  },
+  {
+    "cat": "infidelity",
+    "id": "options",
+    "title": "Как понять, держит ли мужчина запасные варианты",
+    "q": "Верный или постоянно ищет запасные варианты?",
+    "url": "/guide/muzhchina-red-flag/voprosy/infidelity/options/",
+    "icon": 18
+  },
+  {
+    "cat": "infidelity",
+    "id": "flirt",
+    "title": "Как отличить привычный флирт от нарушения границ",
+    "q": "Флиртует по привычке или ему правда важна одна женщина?",
+    "url": "/guide/muzhchina-red-flag/voprosy/infidelity/flirt/",
+    "icon": 18
+  },
+  {
+    "cat": "infidelity",
+    "id": "trust",
+    "title": "Как понять, можно ли доверять мужчине",
+    "q": "Ему можно доверять или лучше снять розовые очки?",
+    "url": "/guide/muzhchina-red-flag/voprosy/infidelity/trust/",
+    "icon": 18
+  },
+  {
+    "cat": "infidelity",
+    "id": "ex",
+    "title": "Как понять, отпустил ли мужчина бывшую",
+    "q": "Если напишет бывшая — поставит точку или приоткроет дверь?",
+    "url": "/guide/muzhchina-red-flag/voprosy/infidelity/ex/",
+    "icon": 18
+  },
+  {
+    "cat": "infidelity",
+    "id": "temptation",
+    "title": "Как узнать отношение мужчины к соблазнам",
+    "q": "Как он ведёт себя, когда появляется соблазн?",
+    "url": "/guide/muzhchina-red-flag/voprosy/infidelity/temptation/",
+    "icon": 18
+  },
+  {
+    "cat": "infidelity",
+    "id": "physical-or-emotional",
+    "title": "Как понять, не ищет ли мужчина эмоциональную близость на стороне",
+    "q": "Любитель крутить тайные романы в своей голове?",
+    "url": "/guide/muzhchina-red-flag/voprosy/infidelity/physical-or-emotional/",
+    "icon": 18
+  },
+  {
+    "cat": "infidelity",
+    "id": "secrecy",
+    "title": "Как распознать скрытность мужчины",
+    "q": "Говорит о себе правду или скрывает половину своей жизни?",
+    "url": "/guide/muzhchina-red-flag/voprosy/infidelity/secrecy/",
+    "icon": 18
+  },
+  {
+    "cat": "infidelity",
+    "id": "return",
+    "title": "Почему мужчина возвращается к бывшим",
+    "q": "Уходит навсегда или возвращается ко всем бывшим?",
+    "url": "/guide/muzhchina-red-flag/voprosy/infidelity/return/",
+    "icon": 18
+  },
+  {
+    "cat": "infidelity",
+    "id": "after-mistake",
+    "title": "Как мужчина может реагировать на разговор об измене",
+    "q": "Если поймаешь на измене, признается или сделает виноватой тебя?",
+    "url": "/guide/muzhchina-red-flag/voprosy/infidelity/after-mistake/",
+    "icon": 18
+  }
+]
