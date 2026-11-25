@@ -51,10 +51,14 @@ try {
     if ($category==='infidelity'&&$id==='comic-verdict-infidelity')$found=true;
     if ($category==='intimacy'&&$id==='comic-verdict-intimacy')$found=true;
     if ($category==='verdict'&&$id==='comic-verdict-verdict')$found=true;
+    $shortLove=$category==='love'&&$id==='comic-verdict-love';
+    if($shortLove)$found=true;
     if (!$found)rfKeepReply(400,['ok'=>false,'error'=>'UNPUBLISHED_QUESTION_REQUIRED']);
     $dir=dirname(__DIR__,3).'/private/numi-redflag-owner-kept-v1';
     $key=$day.'-'.$month;
-    $file=$dir.'/'.$category.'__'.$id.'__'.$key.'.json';
+    $year=$data['year']??null;
+    if($shortLove&&(!is_int($year)||$year<1900||$year>(int)gmdate('Y')||!checkdate($month,$day,$year)))rfKeepReply(400,['ok'=>false,'error'=>'INVALID_SELECTION']);
+    $file=$dir.'/'.$category.'__'.$id.'__'.$key.($shortLove?'__'.$year.'__short-v2':'').'.json';
     if ($action==='get') {
         if (!is_file($file))
             rfKeepReply(200,['ok'=>true,'saved'=>false,'published'=>false]);
@@ -73,7 +77,10 @@ try {
     if (!is_string($answer))
         rfKeepReply(400,['ok'=>false,'error'=>'TEXT_REQUIRED']);
     $answer=trim(str_replace("\r\n","\n",$answer));
-    if (mb_strlen($answer)<300||mb_strlen($answer)>5200||
+    if($shortLove){
+        require_once dirname(__DIR__,3).'/private/numi-account-20261031/love-comic-verdict.php';
+        try{$answer=lcvValidate($answer);}catch(Throwable $e){rfKeepReply(400,['ok'=>false,'error'=>'TEXT_INVALID']);}
+    }elseif (mb_strlen($answer)<300||mb_strlen($answer)>5200||
         !preg_match('/\S+\n\s*\n\S+/us',$answer))
         rfKeepReply(400,['ok'=>false,'error'=>'TEXT_MUST_HAVE_TWO_PARAGRAPHS']);
     if (!is_dir($dir)&&!mkdir($dir,0700,true)&&!is_dir($dir))

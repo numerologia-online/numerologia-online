@@ -1,6 +1,6 @@
 // Red Flag deliberately needs only day and month, with no birth-year dependence.
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=family-sales-final-20261125";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=love-comic-short-20261125";
 
 // Paid content is rendered as text; do not interpret author-controlled paragraphs as HTML.
 const escapeMarkup = value => String(value??"").replace(/[&<>"']/g,char=>({
@@ -941,6 +941,7 @@ const createQuestion = (question, state) => {
         question_id:question.id,
         day:parseRedFlagDate(birthDateInput.value)?.day,
         month:parseRedFlagDate(birthDateInput.value)?.month,
+        year:parseRedFlagDate(birthDateInput.value)?.year,
         answer:response.answer
       });
       saveButton.addEventListener("click",async()=>{
@@ -983,7 +984,7 @@ const createQuestion = (question, state) => {
           const responseFromStore=await fetch("/redflag-ai-lab/keep.php",{
             method:"POST",credentials:"same-origin",cache:"no-store",
             headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({action:"get",category,question_id:question.id,day:birth.day,month:birth.month})
+            body:JSON.stringify({action:"get",category,question_id:question.id,day:birth.day,month:birth.month,year:birth.year})
           });
           const stored=await responseFromStore.json();
           if(!responseFromStore.ok||stored?.ok!==true)throw Error("KEEP_GET_FAILED");
@@ -1018,10 +1019,12 @@ const createQuestion = (question, state) => {
         apply.style.cssText="padding:10px;border-radius:10px;border:1px solid #cdbdc4;background:#fff;";
         apply.addEventListener("click",()=>{
           const next=area.value.trim();
-          if(next.length<300||!next.includes("\n\n")){
-            status.textContent="Нужны два абзаца текста. Проверь правку.";return;
+          const shortLove=question.id==="comic-verdict-love";
+          const normalized=shortLove?next.replace(/\s+/g," ").replace(/\s*[—–―]\s*/g,", "):next;
+          if(shortLove?(normalized.length<220||normalized.length>700):(next.length<300||!next.includes("\n\n"))){
+            status.textContent=shortLove?"Нужен один короткий абзац.":"Нужны два абзаца текста. Проверь правку.";return;
           }
-          response.answer=next;response.isSaved=false;
+          response.answer=normalized;response.isSaved=false;
           renderCategories({type:"question",id:question.id});
         });
         controls.after(area,apply);

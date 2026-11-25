@@ -35,7 +35,7 @@ function lvlCacheFile(string $id,string $date): string {
     if(!in_array($id,array_merge(['first-step'],lvlMapIds()),true)||naCatalogDate($date)===null||(int)substr($date,0,4)>(int)gmdate('Y'))
         throw new InvalidArgumentException('INVALID_LOVE_REQUEST');
     // New generation never reads the former engine's cache.
-    return lvlCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-love-v1.json';
+    return lvlCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).($id==='comic-verdict-love'?'-love-comic-short-v2.json':'-love-v1.json');
 }
 function lvlCachedAnswer(string $id,string $date): ?string {
     return lvlReadCachedAnswer(lvlCacheFile($id,$date),$id,$date);
@@ -48,6 +48,11 @@ function lvlReadCachedAnswer(string $file,string $id,string $date): ?string {
     $answer=is_array($data)&&($data['question']??null)===$id
         &&($data['date']??null)===$date &&($data['version']??null)===1
         ?($data['answer']??null):null;
+    if($id==='comic-verdict-love'&&str_ends_with($file,'-love-comic-short-v2.json')){
+        if(!is_string($answer))return null;
+        require_once __DIR__.'/love-comic-verdict.php';
+        try{return lcvValidate($answer)===$answer?$answer:null;}catch(Throwable $e){return null;}
+    }
     return is_string($answer)&&strlen($answer)>450?$answer:null;
 }
 function lvlEnsureAnswer(string $id,string $date): string {
@@ -75,7 +80,8 @@ function lvlEnsureAnswer(string $id,string $date): string {
         }else{
             $text=lvpGenerateText($selected,$d,$m,$y);
         }
-        $text=niValidateGeneratedText($text,'stop');
+        if($id==='comic-verdict-love')$text=lcvValidate($text);
+        else $text=niValidateGeneratedText($text,'stop');
         if(mb_strlen($text,'UTF-8')>1800)throw new RuntimeException('LOVE_TEXT_TOO_LONG');
         $blob=json_encode(['version'=>1,'question'=>$id,'date'=>$date,'answer'=>$text],
             JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
@@ -98,6 +104,7 @@ function lvlMaterialFromCache(string $resource): array {
         throw new RuntimeException('MATERIAL_NOT_READY');
     preg_match('/^redflag:love:([a-z-]+):(\d{4}-\d\d-\d\d)$/D',$resource,$m);
     $answer=lvlCachedAnswer($m[1],$m[2]);
+    if($answer===null&&$m[1]==='comic-verdict-love')$answer=lvlReadCachedAnswer(lvlCacheDirectory().'/'.$m[1].'-'.str_replace('-','',$m[2]).'-love-v1.json',$m[1],$m[2]);
     if($answer===null)throw new RuntimeException('MATERIAL_NOT_READY');
     $title='';
     foreach(lvlQuestions() as $q)if($q['id']===$m[1]){$title=$q['title'];break;}

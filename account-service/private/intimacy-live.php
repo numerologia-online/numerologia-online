@@ -78,7 +78,7 @@ function niValidateGeneratedText(string $text,string $finish): string {
 }
 
 
-function niCloudAnswer(mixed $body,int $status,string $model,?string $requestId=null): string {
+function niCloudAnswer(mixed $body,int $status,string $model,?string $requestId=null,?callable $validator=null): string {
     $data=is_string($body)?json_decode($body,true,32):null;
     try {
         $error=$data['error']??null;
@@ -109,14 +109,14 @@ function niCloudAnswer(mixed $body,int $status,string $model,?string $requestId=
             }
             $text=implode('',$parts);
         }
-        return niValidateGeneratedText(is_string($text)?$text:'',$finish);
+        return ($validator??'niValidateGeneratedText')(is_string($text)?$text:'',$finish);
     } catch(RuntimeException $e) {
         niCloudFailure($e->getMessage(),$model,$status,is_array($data)?$data:[],$requestId);
     }
 }
 
 
-function niCloudCall(array $messages,int $tokens,string $model='anthropic/claude-sonnet-4.6'): string {
+function niCloudCall(array $messages,int $tokens,string $model='anthropic/claude-sonnet-4.6',?callable $validator=null): string {
     $key=(static function(){ $cfg=require __DIR__.'/intimacy-live-config.php';return $cfg['cloudru_key']??null;})();
     if(!is_string($key)||$key==='')throw new RuntimeException('KEY_NOT_CONFIGURED');
     $ch=curl_init('https://foundation-models.api.cloud.ru/v1/chat/completions');
@@ -146,7 +146,7 @@ function niCloudCall(array $messages,int $tokens,string $model='anthropic/claude
     curl_close($ch);
     if($curlCode===28)niCloudFailure('PROVIDER_TIMEOUT',$model,$status,[],$requestId);
     if($curlCode!==0)niCloudFailure('PROVIDER_NETWORK_ERROR',$model,$status,[],$requestId);
-    return niCloudAnswer($body,$status,$model,$requestId);
+    return niCloudAnswer($body,$status,$model,$requestId,$validator);
 }
 
 
