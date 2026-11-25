@@ -881,11 +881,19 @@ function naRealWalletCreatePayment(
         $q->execute([$topupId,$account['id']]);
         $topup=$q->fetch();
         if (!$topup)throw new RuntimeException('REAL_TOPUP_NOT_FOUND');
-        if ($topup['status']!=='pending')throw new RuntimeException('REAL_TOPUP_NOT_PENDING');
         if ($topup['payment_method']!==null && $topup['payment_method']!==$method)
             throw new RuntimeException('REAL_TOPUP_METHOD_CHANGED');
         if ($topup['receipt_email']!==$email)
             throw new InvalidArgumentException('REAL_FISCAL_CONTACT_MISMATCH');
+        if (in_array($topup['status'],['credited','canceled','review'],true)) {
+            $db->commit();
+            return [
+                'topup_id'=>$topupId,'payment_id'=>$topup['provider_payment_id'],
+                'confirmation_url'=>null,'status'=>$topup['status'],'method'=>$method,
+                'credited'=>$topup['status']==='credited','reused'=>true,
+            ];
+        }
+        if ($topup['status']!=='pending')throw new RuntimeException('REAL_TOPUP_NOT_PENDING');
         // Check receipt before registering the intended method: bad fiscal data must fail closed.
         $payload=naRealPaymentPayload($topup,$method,$email,$reviewedServerReceipt);
         if ($topup['provider_payment_id']) {

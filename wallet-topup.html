@@ -63,7 +63,7 @@ form{display:grid;gap:14px}
 <label><input type="radio" name="method" value="sbp"> СБП</label>
 </fieldset>
 <button class="submit" type="submit" id="submit" disabled>Продолжить</button>
-<p class="notice" id="notice">Если окно оплаты зависает, отключите VPN.</p>
+<p class="notice" id="notice" hidden>Через СБП вы подтверждаете платёж в приложении банка. Оставьте VPN включённым и после оплаты вернитесь в Telegram.</p>
 <p class="status" id="status" role="status" aria-live="polite"></p>
 </form>
 </main>
@@ -86,12 +86,18 @@ document.addEventListener("keydown",event=>{
  if(event.key==="Escape" && document.activeElement instanceof HTMLElement)
   document.activeElement.blur();
 });
-let account=null,mode="live";
+let account=null,mode="live",submitting=false,checking=false;
+const lastTopupKey=()=> "numi-last-wallet-topup-"+account.id;
+const topupIdValid=id=>/^[0-9a-f-]{36}$/i.test(id||"");
+function inTelegram(){
+ const app=window.Telegram?.WebApp;
+ return Boolean(app?.initData||(app?.platform&&app.platform!=="unknown"));
+}
 const money=(kopeks)=>(Number(kopeks)/100).toLocaleString("ru-RU")+" ₽";
 function message(text){status.textContent=text;}
-async function request(action,payload={}){
+async function request(action,payload={},signal){
  const response=await fetch(api,{method:"POST",credentials:"same-origin",cache:"no-store",
-  headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...payload})});
+  headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...payload}),signal});
  let data;try{data=await response.json();}catch(_){throw new Error("Сервер временно недоступен.");}
  if(!response.ok||data.ok!==true)throw new Error(data.error||"Сервер временно недоступен.");
  return data;
@@ -114,11 +120,18 @@ async function initialize(){
   mode=wallet.test?"test":"live";
   balance.textContent=money(wallet.balance_kopeks);
   if(mode==="test"){
-   methods.hidden=true;notice.textContent="Тестовый режим — настоящих списаний нет.";
+   methods.hidden=true;notice.hidden=false;
+   notice.textContent="Тестовый режим · без настоящих списаний";
    email.required=false;email.closest(".receipt-block").hidden=true;
-  }else if(typeof wallet.receipt_email_suggestion==="string"){
-   // Server returns only the current signed-in account's previously paid receipt.
-   email.value=wallet.receipt_email_suggestion;
+  }else{
+   if(inTelegram()){
+    const card=methods.querySelector('[value="bank_card"]');
+    const sbp=methods.querySelector('[value="sbp"]');
+    card.parentElement.before(sbp.parentElement);
+    sbp.checked=true;
+    notice.hidden=false;
+   }
+   if(typeof wallet.receipt_email_suggestion==="string")email.value=wallet.receipt_email_suggestion;
   }
   submit.disabled=false;
   if(Number(wallet.pending_topups)>0)
@@ -127,24 +140,6 @@ async function initialize(){
   balance.textContent="Недоступен";
   message(error?.message||"Не удалось проверить баланс.");
  }
-}
-// Keep the provider payment in the same browsing context.
-// The normal site stays in its tab; Telegram stays in its Mini App WebView.
-const telegramExternal=()=>Boolean(
-  typeof window.TelegramWebviewProxy?.postEvent==="function" ||
-  typeof window.external?.notify==="function" ||
-  (window.Telegram?.WebApp?.platform && window.Telegram.WebApp.platform!=="unknown")
-);
-function openPaymentInThisWindow(href){ location.assign(href); }
-let prepared=null,prepareSeq=0,prepareTimer=null,pendingExternal=null,rechecking=false;
-let completedFingerprint=null;
-function selection(){
- const rub=Number(amount.value);
- const receipt=email.value.trim().toLowerCase();
- const method=form.querySelector('input[name="method"]:checked')?.value||"bank_card";
- if(!Number.isInteger(rub)||rub<1||rub>100000)return null;
- if(mode==="live"&&(!receipt||!email.checkValidity()))return null;
- return {rub,receipt,method,fingerprint:[mode,rub,method,receipt].join("|")};
 }
 function paymentUrl(raw){
  if(typeof raw!=="string")throw new Error("Платёжная ссылка пока недоступна.");
@@ -155,157 +150,112 @@ function paymentUrl(raw){
    throw new Error("Платёжная страница не подтверждена.");
  return url.href;
 }
-function intent(choice){
- const skey="numi-topup-request-"+mode+"-"+choice.method+"-"+choice.rub;
- const emailKey=skey+"-receipt";
- let key=sessionStorage.getItem(skey);
- if(!key||!/^[0-9a-f-]{36}$/i.test(key)){
+function intent(rub,method,receipt){
+ const keyName="numi-topup-request-"+mode+"-"+method+"-"+rub;
+ const emailKey=keyName+"-receipt";
+ let key=sessionStorage.getItem(keyName);
+ if(!topupIdValid(key)){
    key=crypto.randomUUID();
-   sessionStorage.setItem(skey,key);
-   if(mode==="live")sessionStorage.setItem(emailKey,choice.receipt);
+   sessionStorage.setItem(keyName,key);
+   if(mode==="live")sessionStorage.setItem(emailKey,receipt);
  }else if(mode==="live"&&sessionStorage.getItem(emailKey)&&
-   sessionStorage.getItem(emailKey)!==choice.receipt){
+   sessionStorage.getItem(emailKey)!==receipt){
    throw new Error("Для незавершённой оплаты оставьте прежний email для чека.");
  }
- const payload={amount_rub:choice.rub,request_key:key};
+ const payload={amount_rub:rub,request_key:key};
  if(mode==="live"){
-   payload.receipt_email=choice.receipt;
-   payload.payment_method=choice.method;
+   payload.receipt_email=receipt;
+   payload.payment_method=method;
  }
- return {payload,skey,emailKey};
+ return {payload,keyName};
 }
-function showReady(){
- submit.textContent="Продолжить";
- submit.disabled=false;
+function savedTopup(){
+ try{return JSON.parse(sessionStorage.getItem(lastTopupKey()));}
+ catch(_){return null;}
 }
-// Reuse one pending provider payment for the same amount, method and email.
-// The debounce avoids making a provider request for each keystroke.
-function scheduleTelegramPreparation(){
- if(!account||!telegramExternal()||mode!=="live")return;
- if(prepareTimer!==null){clearTimeout(prepareTimer);prepareTimer=null;}
- const choice=selection();
- if(!choice){
-   ++prepareSeq;
-   prepared=null;
-   submit.textContent="Продолжить";
-   submit.disabled=true;
-   return;
- }
- if(completedFingerprint===choice.fingerprint){
-   submit.textContent="Оплачено";submit.disabled=true;return;
- }
- if(prepared?.fingerprint===choice.fingerprint){showReady();return;}
- const seq=++prepareSeq;
- prepared=null;
- submit.disabled=true;
- submit.textContent="Готовим оплату…";
- prepareTimer=setTimeout(async()=>{
-   prepareTimer=null;
-   try{
-     const identity=intent(choice);
-     const result=await request("wallet_topup",identity.payload);
-     if(result.credited){
-       if(seq!==prepareSeq)return;
-       sessionStorage.removeItem(identity.skey);
-       sessionStorage.removeItem(identity.emailKey);
-       const latest=await request("wallet_status");
-       balance.textContent=money(latest.balance_kopeks);
-       completedFingerprint=choice.fingerprint;
-       prepared=null;
-       submit.textContent="Оплачено";submit.disabled=true;
-       message("Баланс пополнен.");
-       return;
-     }
-     const href=paymentUrl(result.confirmation_url);
-     if(!/^[0-9a-f-]{36}$/i.test(result.topup_id||""))
-       throw new Error("Не удалось проверить номер платежа.");
-     if(seq!==prepareSeq||selection()?.fingerprint!==choice.fingerprint)return;
-     prepared={fingerprint:choice.fingerprint,href,topupId:result.topup_id,
-       skey:identity.skey,emailKey:identity.emailKey};
-     message("");
-     showReady();
-   }catch(error){
-     if(seq!==prepareSeq)return;
-     submit.textContent="Продолжить";
-     submit.disabled=false;
-     message(error?.message||"Не удалось подготовить оплату.");
+function displayStatus(state,record){
+ message({
+   credited:"Пополнение подтверждено. Баланс обновлён.",
+   canceled:"ЮKassa отменила платёж. Можно попробовать снова или выбрать другой способ.",
+   review:"Платёж проверяется. Дождитесь результата перед новой попыткой.",
+   pending_receipt:"Оплата прошла. Ожидаем подтверждения чека.",
+   pending:"ЮKassa ещё ждёт подтверждения платежа."
+ }[state]||"Не удалось подтвердить статус оплаты.");
+ if(state==="credited")amount.value="";
+ if(state==="credited"||state==="canceled"){
+   if(sessionStorage.getItem(record.keyName)===record.requestKey){
+     sessionStorage.removeItem(record.keyName);
+     sessionStorage.removeItem(record.keyName+"-receipt");
    }
- },650);
-}
-for(const control of [amount,email,...form.querySelectorAll('input[name="method"]')]){
- control.addEventListener("input",scheduleTelegramPreparation);
- control.addEventListener("change",scheduleTelegramPreparation);
+   if(savedTopup()?.id===record.id)sessionStorage.removeItem(lastTopupKey());
+ }
 }
 async function checkReturnedPayment(){
- if(rechecking||!pendingExternal||document.hidden)return;
- rechecking=true;
+ if(!account||submitting||checking||document.hidden)return;
+ const record=savedTopup();
+ if(!topupIdValid(record?.id))return;
+ checking=true;
  try{
-   const result=await request("wallet_sync",{topup_id:pendingExternal.topupId});
-   if(result.status==="credited"){
-     balance.textContent=money(result.balance_kopeks);
-     sessionStorage.removeItem(pendingExternal.skey);
-     sessionStorage.removeItem(pendingExternal.emailKey);
-     completedFingerprint=pendingExternal.fingerprint;
-     pendingExternal=null;prepared=null;
-     submit.textContent="Оплачено";submit.disabled=true;
-     message("Оплата подтверждена. Баланс обновлён.");
-   }else{
-     message("Проверяем оплату. Повторно списывать деньги не будем.");
-   }
- }catch(_){message("Проверяем оплату. Не создавайте повторный платёж.");}
- finally{rechecking=false;}
+   const result=await request("wallet_sync",{topup_id:record.id});
+   balance.textContent=money(result.balance_kopeks);
+   displayStatus(result.status,record);
+ }catch(_){
+   message("Не удалось проверить оплату. Статус можно проверить в личном кабинете.");
+ }finally{checking=false;}
 }
+window.addEventListener("pageshow",()=>{void checkReturnedPayment();});
 window.addEventListener("focus",()=>{void checkReturnedPayment();});
-document.addEventListener("visibilitychange",()=>{
- if(!document.hidden)void checkReturnedPayment();
-});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)void checkReturnedPayment();});
 form.addEventListener("submit",async event=>{
  event.preventDefault();
- if(!account||submit.disabled)return;
- const choice=selection();
- if(!choice){
-   const rub=Number(amount.value);
-   if(!Number.isInteger(rub)||rub<1||rub>100000){
-     message("Введите сумму от 1 до 100 000 ₽.");amount.focus();
-   }else{
-     message("Введите корректный email для электронного чека.");email.focus();
-   }
-   return;
+ if(!account||submit.disabled||checking)return;
+ const rub=Number(amount.value);
+ if(!Number.isInteger(rub)||rub<1||rub>100000){
+   message("Введите сумму от 1 до 100 000 ₽.");amount.focus();return;
  }
- if(telegramExternal()&&mode==="live"){
-   // The URL is already prepared; use the same window without external handoff.
-   if(!prepared||prepared.fingerprint!==choice.fingerprint){
-     message("Ссылка на оплату готовится…");
-     scheduleTelegramPreparation();
-     return;
-   }
-   try{
-     openPaymentInThisWindow(prepared.href);
-     pendingExternal=prepared;
-     message("Открываем оплату в этом окне.");
-   }catch(_){
-     message("Не удалось открыть оплату. Попробуйте ещё раз.");
-   }
-   return;
+ const receipt=email.value.trim().toLowerCase();
+ if(mode==="live"&&(!receipt||!email.checkValidity())){
+   message("Введите корректный email для электронного чека.");email.focus();return;
  }
- // Ordinary Safari/Chrome and the isolated test checkout retain the known
- // working direct redirect. A repeated tap reuses the SAME provider request.
- submit.disabled=true;message("Проверяем и открываем безопасную оплату…");
+ const method=mode==="live"?form.querySelector('input[name="method"]:checked').value:"bank_card";
+ submitting=true;
+ submit.disabled=true;
+ amount.disabled=email.disabled=methods.disabled=true;
+ submit.textContent="Готовим оплату…";
+ message("");
+ const abort=new AbortController();
+ const timeout=setTimeout(()=>abort.abort(),28000);
  try{
-   const identity=intent(choice);
-   const result=await request("wallet_topup",identity.payload);
-   if(result.credited){
-     sessionStorage.removeItem(identity.skey);
-     sessionStorage.removeItem(identity.emailKey);
-     balance.textContent=money(result.balance_kopeks);
-     message("Баланс пополнен.");return;
+   const {payload,keyName}=intent(rub,method,receipt);
+   const result=await request("wallet_topup",payload,abort.signal);
+   if(!topupIdValid(result.topup_id))throw new Error("Не удалось проверить номер пополнения.");
+   const record={id:result.topup_id,keyName,requestKey:payload.request_key};
+   sessionStorage.setItem(lastTopupKey(),JSON.stringify(record));
+   let state=result.credited?"credited":result.status||"pending";
+   if((result.reused===true&&state==="pending")||state==="succeeded"){
+     const latest=await request("wallet_sync",{topup_id:record.id},abort.signal);
+     state=latest.status;
+     balance.textContent=money(latest.balance_kopeks);
+   }
+   if(state!=="pending"){
+     displayStatus(state,record);
+     if(state==="credited")balance.textContent=money((await request("wallet_status")).balance_kopeks);
+     return;
    }
    location.assign(paymentUrl(result.confirmation_url));
  }catch(error){
-   message(error?.message||"Не удалось открыть оплату. Проверьте предыдущую операцию.");
- }finally{submit.disabled=false;}
+   message(error?.name==="AbortError"?
+     "ЮKassa долго отвечает. Повторное нажатие проверит ту же попытку оплаты.":
+     error?.message||"Не удалось открыть оплату.");
+ }finally{
+   clearTimeout(timeout);
+   submitting=false;
+   submit.disabled=false;
+   amount.disabled=email.disabled=methods.disabled=false;
+   submit.textContent="Продолжить";
+ }
 });
-initialize().then(scheduleTelegramPreparation);
+document.addEventListener("DOMContentLoaded",()=>{void initialize().then(checkReturnedPayment);});
 })();
 </script>
 </body>

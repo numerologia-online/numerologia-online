@@ -254,6 +254,25 @@ assertReal(naRealWalletApplyVerifiedPayment($db,$savedCard,$settledCard,$good)==
 assertReal(naRealWalletApplyVerifiedPayment($db,$savedCard,$settledCard,$good)==='credited'
     && naRealWalletBalance($db,$payAccountId)===10000,
     'duplicate settlement after card payment does not double credit');
+$paidRetry=naRealWalletCreatePayment($db,$payAccount,$good,100,'card-topup-00000000001',
+    'bank_card','payment@example.test',$receipt(100),$mock);
+assertReal($paidRetry['status']==='credited' && $paidRetry['credited']
+    && $paidRetry['confirmation_url']===null && count($mockCalls)===3,
+    'reopening a credited payment reports its state without another provider request');
+
+$q->execute([$sbp['topup_id']]);$savedSbp=$q->fetch();
+$canceledSbp=naRealPaymentPayload($savedSbp,'sbp','payment@example.test',$receipt(500));
+$canceledSbp['id']=$sbp['payment_id'];
+$canceledSbp['recipient']=['account_id'=>'1234567'];
+$canceledSbp['test']=false;
+$canceledSbp['status']='canceled';
+assertReal(naRealWalletApplyVerifiedPayment($db,$savedSbp,$canceledSbp,$good)==='canceled',
+    'verified cancellation closes a pending payment');
+$canceledRetry=naRealWalletCreatePayment($db,$payAccount,$good,500,'sbp-topup-00000000002',
+    'sbp','payment@example.test',$receipt(500),$mock);
+assertReal($canceledRetry['status']==='canceled' && !$canceledRetry['credited']
+    && $canceledRetry['confirmation_url']===null && count($mockCalls)===3,
+    'reopening a canceled payment reports cancellation without generating a new link');
 naRealWalletInvariant($db,$payAccountId);
 $lost=naRealWalletTopupIntent($db,$payAccount,$good,25,'lost-response-0000000003','payment@example.test');
 $db->prepare("UPDATE numi_real_wallet_topups SET payment_method='sbp',

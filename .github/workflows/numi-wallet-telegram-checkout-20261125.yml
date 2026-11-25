@@ -1,0 +1,132 @@
+name: Publish Telegram wallet checkout for VPN use
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/numi-wallet-telegram-checkout-20261125.yml'
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  verify-and-publish:
+    if: github.event.head_commit.message == 'Keep Telegram wallet top-ups usable with VPN'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: numi_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -ptest"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify checkout and ledger with a simulated payment provider
+        env:
+          NUMI_TEST_MYSQL_DSN: 'mysql:host=127.0.0.1;port=3306;dbname=numi_test;charset=utf8mb4'
+          NUMI_TEST_MYSQL_USER: root
+          NUMI_TEST_MYSQL_PASSWORD: test
+        run: |
+          node --check account-browser.js
+          python3 - <<'PY' | node --check
+          from pathlib import Path
+          print(Path("wallet-topup.html").read_text().split("<script>\n", 1)[1].split("</script>", 1)[0])
+          PY
+          php -l account-service/private/wallet-real-payment.php
+          php -l account-service/tests/real-wallet-payment.php
+          php account-service/tests/real-wallet.php
+      - name: Publish only checkout files and verify the live site
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib, io, json, os, pathlib, ssl, subprocess, time, urllib.request
+          public = ("account-browser.js", "wallet-topup.html", "index.html")
+          backend = "account-service/private/wallet-real-payment.php"
+          files = (backend, *public)
+          original = {p: subprocess.check_output(["git", "show", "HEAD^:"+p]) for p in files}
+          desired = {p: pathlib.Path(p).read_bytes() for p in files}
+          origin = "https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
+          cache_tag = "wallet-telegram-sbp-20261125"
+
+          def https(path, body=None):
+              request = urllib.request.Request(
+                  origin + "/" + path, data=body,
+                  headers={"Content-Type":"application/json", "Origin":origin, "Cache-Control":"no-cache"})
+              with urllib.request.urlopen(request, timeout=22) as response:
+                  assert response.status == 200 and response.geturl().startswith(origin+"/")
+                  return response.read(2000000)
+
+          def guest_ok():
+              session = json.loads(https("api/numi-account.php", b'{"action":"session"}'))
+              assert session.get("ok") is True and session.get("authenticated") is False, "GUEST_SESSION"
+
+          def public_bytes(path):
+              return https(path + "?checkout_release=" + str(time.time_ns()))
+
+          guest_ok()
+          homepage = public_bytes("index.html")
+          with ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=28) as ftp:
+              ftp.connect("server172.hosting.reg.ru", 21)
+              ftp.login(os.environ["REG_FTP_USER"], os.environ["REG_FTP_PASSWORD"])
+              ftp.prot_p()
+              home = ftp.pwd().rstrip("/")
+              web = home + "/www/xn--c1adkkdfjbp1a4l.online"
+              private = home + "/private/numi-account-20261031"
+
+              def read(path):
+                  data = io.BytesIO()
+                  ftp.retrbinary("RETR " + path, data.write)
+                  return data.getvalue()
+
+              def upload(path, content):
+                  ftp.storbinary("STOR " + path, io.BytesIO(content))
+                  assert read(path) == content, "UPLOAD_VERIFICATION"
+
+              paths = {p: web+"/"+p for p in public}
+              paths[backend] = private + "/wallet-real-payment.php"
+              assert read(paths["index.html"]) == homepage, "UNVERIFIED_LIVE_SITE_ROOT"
+              before = {p: read(paths[p]) for p in files}
+              for p in files:
+                  assert before[p] in (original[p], desired[p]), "LIVE_SOURCE_CHANGED_" + p
+              for p in public:
+                  assert public_bytes(p) == before[p], "LIVE_SOURCE_MISMATCH_" + p
+
+              backup = home + "/site-safeguard-backups/wallet-telegram-" + os.environ["GITHUB_RUN_ID"] + "-" + os.environ["GITHUB_RUN_ATTEMPT"]
+              ftp.mkd(backup)
+              changed = [p for p in files if before[p] != desired[p]]
+              for p in changed:
+                  upload(backup + "/" + pathlib.Path(p).name + ".bak", before[p])
+                  upload(backup + "/" + pathlib.Path(p).name + ".ready", desired[p])
+
+              installed = []
+              try:
+                  for p in changed:
+                      assert read(paths[p]) == before[p], "CONCURRENT_EDIT_" + p
+                      ftp.rename(backup + "/" + pathlib.Path(p).name + ".ready", paths[p])
+                      installed.append(p)
+                      assert read(paths[p]) == desired[p], "INSTALLED_BYTES_" + p
+                  for p in public:
+                      assert public_bytes(p) == desired[p], "LIVE_CHECKOUT_FILE_" + p
+                  assert https("account-browser.js?v=" + cache_tag) == desired["account-browser.js"], "CACHE_TAG"
+                  assert https("?checkout_release=" + str(time.time_ns())) == desired["index.html"], "LIVE_HOMEPAGE"
+                  guest_ok()
+              except BaseException:
+                  for p in reversed(installed):
+                      ftp.rename(backup + "/" + pathlib.Path(p).name + ".bak", paths[p])
+                      assert read(paths[p]) == before[p], "ROLLBACK_" + p
+                  raise
+          print("TELEGRAM_CHECKOUT_LIVE_VERIFIED")
+          PY

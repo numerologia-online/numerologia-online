@@ -225,7 +225,6 @@
     "#numi-wallet-account-badge .numi-wallet-main{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}",
     "#numi-wallet-account-badge .numi-wallet-total{display:block;font-size:24px;font-weight:750;line-height:1.2}",
     "#numi-wallet-account-badge .numi-wallet-caption{display:block;font-size:12px;color:#69716d}",
-    "#numi-wallet-account-badge .numi-wallet-vpn-warning{display:block;box-sizing:border-box;width:fit-content;max-width:100%;margin:8px auto 3px;padding:7px 12px;border:1px solid #bed5c8;border-radius:9px;background:#e6f0ea;color:#173e30;text-align:center;white-space:normal;letter-spacing:0;font:700 15px/1.25 system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif}",
     "#numi-wallet-account-badge button.numi-wallet-main-button{border:0;border-radius:10px;background:#343b39;color:white;padding:10px 15px;font:600 13px system-ui;cursor:pointer}",
     "#numi-wallet-account-badge .numi-wallet-links{display:flex;gap:12px;align-items:center;margin-top:6px;flex-wrap:wrap}",
     "#numi-wallet-account-badge button.numi-wallet-small{border:0;padding:3px 0;background:transparent;color:#606963;text-decoration:underline;font:12px system-ui;cursor:pointer}",
@@ -246,9 +245,10 @@
   ].join("");
   dialog.append(walletStyle);
   const topupStyle=document.createElement("style");
-  topupStyle.textContent="#account-dialog .numi-wallet-topup-page[hidden]{display:none!important}\n#account-dialog .numi-wallet-topup-page{width:100%;box-sizing:border-box;padding:8px 0 28px;color:#234839;font:15px/1.5 system-ui}\n#account-dialog .numi-wallet-topup-back{border:1px solid #dcc8a0;border-radius:13px;background:#fff8eb;color:#8b672f;padding:10px 14px;min-height:46px;font:650 14px/1.3 system-ui;cursor:pointer;margin-bottom:23px}\n#account-dialog .numi-wallet-topup-page h3{margin:0 0 8px;color:#1a4937;font:normal clamp(29px,7vw,38px)/1.15 Georgia,serif}\n#account-dialog .numi-wallet-topup-intro{margin:0 0 22px;color:#607368;font-size:14px}\n#account-dialog .numi-wallet-vpn-banner{display:block;padding:17px 16px;margin:0 0 20px;border:2px solid #b68c46;border-radius:15px;background:#fff8e8;color:#593d16;text-align:center;font:750 clamp(17px,4.6vw,21px)/1.35 system-ui}\n#account-dialog .numi-wallet-topup-current{margin:0 0 24px;border:1px solid #dae2d9;background:#f0f5ee;border-radius:18px;padding:16px 18px}\n#account-dialog .numi-wallet-topup-current small{display:block;color:#697b70;font-size:12px}\n#account-dialog .numi-wallet-topup-current strong{font-size:25px;line-height:1.2;color:#204635}\n#account-dialog .numi-wallet-topup-form{display:grid;gap:20px;margin:0}\n#account-dialog .numi-wallet-topup-form>label{display:block;font-weight:650;font-size:15px;color:#274b3b}\n#account-dialog .numi-wallet-topup-form input[type=number]{display:block;width:100%;min-height:54px;box-sizing:border-box;margin-top:8px;padding:11px 14px;border:1px solid #b9c8b7;border-radius:14px;background:#fff;color:#253c32;font:18px system-ui}\n#account-dialog .numi-wallet-topup-form input[type=email]{display:block;box-sizing:border-box;width:100%;min-height:49px;margin:9px 0 0;padding:10px 12px;border:1px solid #bca274;border-radius:12px;background:#fff;color:#234839;font:16px system-ui;text-align:center}\n#account-dialog .numi-wallet-payment-methods{display:flex;gap:18px;flex-wrap:wrap;margin:0;padding:0;border:0}\n#account-dialog .numi-wallet-payment-methods label{display:flex;align-items:center;gap:7px;font-size:15px;color:#274b3b}\n#account-dialog .numi-wallet-payment-methods input{accent-color:#245c46;width:18px;height:18px}\n#account-dialog .numi-wallet-topup-form button.numi-wallet-main-button{display:block;width:100%;min-height:52px;border:0;border-radius:14px;background:#224e3c;color:white;font:700 16px system-ui;cursor:pointer}\n#account-dialog .numi-wallet-topup-form button:disabled{opacity:.6;cursor:wait}\n#account-dialog .numi-wallet-topup-feedback{margin:16px 0 0;color:#4b6256;font:14px/1.5 system-ui}\n@media(max-width:700px){#account-dialog.numi-wallet-topup-active{height:calc(100dvh - 22px)!important;max-height:calc(100dvh - 22px)!important;min-height:0!important;margin:auto!important;overflow-y:auto!important;box-sizing:border-box}}\n/* Compact mobile top-up inside the existing account dialog. */\n@media(max-width:700px){\n#account-dialog.numi-wallet-topup-active{padding:14px 17px 16px!important;}\n#account-dialog.numi-wallet-topup-active .account-header{margin-bottom:9px;gap:9px;}\n#account-dialog.numi-wallet-topup-active .account-kicker{margin-bottom:3px;font-size:9px;line-height:1.15;}\n#account-dialog.numi-wallet-topup-active .account-header h2{font-size:clamp(25px,6.6vw,29px);line-height:1.08;}\n#account-dialog.numi-wallet-topup-active .account-close{width:36px;height:36px;font-size:23px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-page{padding:0 0 8px;line-height:1.35;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-back{min-height:40px;margin:0 0 11px;padding:8px 12px;font-size:13px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-page h3{margin:0 0 4px;font-size:clamp(27px,7vw,32px);line-height:1.09;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-intro{margin:0 0 10px;font-size:13px;line-height:1.3;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-vpn-banner{margin:0 0 10px;padding:9px 11px;border-radius:12px;font-size:clamp(14px,4vw,16px);line-height:1.25;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-current{margin:0 0 11px;padding:9px 13px;border-radius:14px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-current small{font-size:12px;line-height:1.2;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-current strong{font-size:23px;line-height:1.1;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form{gap:11px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form>label{font-size:14px;line-height:1.25;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form input[type=number]{min-height:46px;margin-top:5px;padding:8px 12px;border-radius:11px;font-size:16px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form input[type=email]{min-height:44px;margin-top:5px;padding:8px 11px;border-radius:11px;font-size:16px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form>label small{margin-top:3px!important;font-size:11px!important;line-height:1.3;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-payment-methods{gap:19px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-payment-methods label{font-size:14px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form button.numi-wallet-main-button{min-height:46px;border-radius:12px;font-size:15px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-feedback{margin:8px 0 0;}\n}";
+  topupStyle.textContent="#account-dialog .numi-wallet-topup-page[hidden]{display:none!important}\n#account-dialog .numi-wallet-topup-page{width:100%;box-sizing:border-box;padding:8px 0 28px;color:#234839;font:15px/1.5 system-ui}\n#account-dialog .numi-wallet-topup-back{border:1px solid #dcc8a0;border-radius:13px;background:#fff8eb;color:#8b672f;padding:10px 14px;min-height:46px;font:650 14px/1.3 system-ui;cursor:pointer;margin-bottom:23px}\n#account-dialog .numi-wallet-topup-page h3{margin:0 0 8px;color:#1a4937;font:normal clamp(29px,7vw,38px)/1.15 Georgia,serif}\n#account-dialog .numi-wallet-topup-intro{margin:0 0 22px;color:#607368;font-size:14px}\n#account-dialog .numi-wallet-payment-hint{display:block;padding:17px 16px;margin:0 0 20px;border:2px solid #b68c46;border-radius:15px;background:#fff8e8;color:#593d16;text-align:center;font:750 clamp(17px,4.6vw,21px)/1.35 system-ui}\n#account-dialog .numi-wallet-topup-current{margin:0 0 24px;border:1px solid #dae2d9;background:#f0f5ee;border-radius:18px;padding:16px 18px}\n#account-dialog .numi-wallet-topup-current small{display:block;color:#697b70;font-size:12px}\n#account-dialog .numi-wallet-topup-current strong{font-size:25px;line-height:1.2;color:#204635}\n#account-dialog .numi-wallet-topup-form{display:grid;gap:20px;margin:0}\n#account-dialog .numi-wallet-topup-form>label{display:block;font-weight:650;font-size:15px;color:#274b3b}\n#account-dialog .numi-wallet-topup-form input[type=number]{display:block;width:100%;min-height:54px;box-sizing:border-box;margin-top:8px;padding:11px 14px;border:1px solid #b9c8b7;border-radius:14px;background:#fff;color:#253c32;font:18px system-ui}\n#account-dialog .numi-wallet-topup-form input[type=email]{display:block;box-sizing:border-box;width:100%;min-height:49px;margin:9px 0 0;padding:10px 12px;border:1px solid #bca274;border-radius:12px;background:#fff;color:#234839;font:16px system-ui;text-align:center}\n#account-dialog .numi-wallet-payment-methods{display:flex;gap:18px;flex-wrap:wrap;margin:0;padding:0;border:0}\n#account-dialog .numi-wallet-payment-methods label{display:flex;align-items:center;gap:7px;font-size:15px;color:#274b3b}\n#account-dialog .numi-wallet-payment-methods input{accent-color:#245c46;width:18px;height:18px}\n#account-dialog .numi-wallet-topup-form button.numi-wallet-main-button{display:block;width:100%;min-height:52px;border:0;border-radius:14px;background:#224e3c;color:white;font:700 16px system-ui;cursor:pointer}\n#account-dialog .numi-wallet-topup-form button:disabled{opacity:.6;cursor:wait}\n#account-dialog .numi-wallet-topup-feedback{margin:16px 0 0;color:#4b6256;font:14px/1.5 system-ui}\n@media(max-width:700px){#account-dialog.numi-wallet-topup-active{height:calc(100dvh - 22px)!important;max-height:calc(100dvh - 22px)!important;min-height:0!important;margin:auto!important;overflow-y:auto!important;box-sizing:border-box}}\n/* Compact mobile top-up inside the existing account dialog. */\n@media(max-width:700px){\n#account-dialog.numi-wallet-topup-active{padding:14px 17px 16px!important;}\n#account-dialog.numi-wallet-topup-active .account-header{margin-bottom:9px;gap:9px;}\n#account-dialog.numi-wallet-topup-active .account-kicker{margin-bottom:3px;font-size:9px;line-height:1.15;}\n#account-dialog.numi-wallet-topup-active .account-header h2{font-size:clamp(25px,6.6vw,29px);line-height:1.08;}\n#account-dialog.numi-wallet-topup-active .account-close{width:36px;height:36px;font-size:23px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-page{padding:0 0 8px;line-height:1.35;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-back{min-height:40px;margin:0 0 11px;padding:8px 12px;font-size:13px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-page h3{margin:0 0 4px;font-size:clamp(27px,7vw,32px);line-height:1.09;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-intro{margin:0 0 10px;font-size:13px;line-height:1.3;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-payment-hint{margin:0 0 10px;padding:9px 11px;border-radius:12px;font-size:clamp(14px,4vw,16px);line-height:1.25;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-current{margin:0 0 11px;padding:9px 13px;border-radius:14px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-current small{font-size:12px;line-height:1.2;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-current strong{font-size:23px;line-height:1.1;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form{gap:11px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form>label{font-size:14px;line-height:1.25;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form input[type=number]{min-height:46px;margin-top:5px;padding:8px 12px;border-radius:11px;font-size:16px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form input[type=email]{min-height:44px;margin-top:5px;padding:8px 11px;border-radius:11px;font-size:16px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form>label small{margin-top:3px!important;font-size:11px!important;line-height:1.3;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-payment-methods{gap:19px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-payment-methods label{font-size:14px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-form button.numi-wallet-main-button{min-height:46px;border-radius:12px;font-size:15px;}\n#account-dialog.numi-wallet-topup-active .numi-wallet-topup-feedback{margin:8px 0 0;}\n}";
   // Keep the dashboard hidden if Telegram identification completes after top-up opens.
   topupStyle.textContent+="\n#account-dialog.numi-wallet-topup-active #account-overview{display:none!important}";
+  topupStyle.textContent+="\n#account-dialog .numi-wallet-payment-hint[hidden]{display:none!important}";
   dialog.append(topupStyle);
   const walletMain=document.createElement("div");walletMain.className="numi-wallet-main";
   const walletText=document.createElement("div");
@@ -276,14 +276,18 @@
   receiptNote.style.cssText="display:block;margin-top:5px;color:#697b70;font-weight:400;font-size:12px";
   receiptLabel.append(receiptInput,receiptNote);
   const methodGroup=document.createElement("fieldset");methodGroup.className="numi-wallet-payment-methods";methodGroup.hidden=true;
+  const telegramCheckout=isTelegram()||
+    Boolean(window.Telegram?.WebApp?.platform && window.Telegram.WebApp.platform!=="unknown");
   const paymentMethods=[["bank_card","Картой"],["sbp","СБП"]];
+  if(telegramCheckout)paymentMethods.reverse();
   const methodRadios=paymentMethods.map(([value,label],index)=>{
     const choice=document.createElement("label"),input=document.createElement("input");
     input.type="radio";input.name="numi-wallet-payment-method";input.value=value;input.checked=index===0;
     choice.append(input,document.createTextNode(label));methodGroup.append(choice);
     return input;
   });
-  let walletMode="test";
+  let walletMode=null;
+  let topupSubmitting=false;
   const pay=document.createElement("button");pay.type="submit";pay.className="numi-wallet-main-button";pay.textContent="Продолжить";pay.disabled=true;
   walletForm.append(amountLabel,receiptLabel,methodGroup,pay);
   const walletLinks=document.createElement("div");walletLinks.className="numi-wallet-links";
@@ -292,10 +296,6 @@
   const testNote=document.createElement("small");testNote.className="numi-wallet-caption";
   testNote.textContent="Тестовый режим · без настоящих списаний";
   walletLinks.append(ledgerToggle,testNote);
-  const vpnWarning=document.createElement("strong");
-  vpnWarning.className="numi-wallet-vpn-warning";
-  vpnWarning.textContent="Зависла оплата? Отключите VPN.";
-  vpnWarning.hidden=true;
   const clubLine=document.createElement("div");clubLine.className="numi-club-status";
   const clubText=document.createElement("span");clubText.textContent="Проверяем подписку…";
   const clubJoin=document.createElement("button");clubJoin.type="button";
@@ -311,7 +311,7 @@
   clubLine.append(clubText,clubJoin);
   const ledger=document.createElement("ul");ledger.className="numi-wallet-operations";ledger.hidden=true;
   const walletFeedback=document.createElement("p");walletFeedback.className="numi-wallet-feedback";walletFeedback.hidden=true;
-  walletBadge.append(walletMain,walletLinks,vpnWarning,clubLine,ledger,walletFeedback);
+  walletBadge.append(walletMain,walletLinks,clubLine,ledger,walletFeedback);
   // Show a dedicated cabinet screen: no nested expanding top-up window.
   const topupPage=document.createElement("section");
   topupPage.className="numi-wallet-topup-page";topupPage.hidden=true;
@@ -322,31 +322,27 @@
   topupTitle.textContent="Пополнение баланса";
   const topupIntro=document.createElement("p");topupIntro.className="numi-wallet-topup-intro";
   topupIntro.textContent="Введите сумму и выберите способ оплаты.";
-  const vpnBanner=document.createElement("aside");vpnBanner.className="numi-wallet-vpn-banner";
-  vpnBanner.hidden=true;vpnBanner.textContent="Если окно оплаты зависает, отключите VPN.";
+  const paymentHint=document.createElement("aside");paymentHint.className="numi-wallet-payment-hint";
+  paymentHint.hidden=true;
+  paymentHint.textContent="Через СБП вы подтверждаете платёж в приложении банка. Оставьте VPN включённым и после оплаты вернитесь в Telegram.";
   const topupCurrent=document.createElement("div");topupCurrent.className="numi-wallet-topup-current";
   const topupCurrentLabel=document.createElement("small");topupCurrentLabel.textContent="Текущий баланс";
   const topupCurrentAmount=document.createElement("strong");topupCurrentAmount.textContent="0 ₽";
   topupCurrent.append(topupCurrentLabel,topupCurrentAmount);
   const topupFeedback=document.createElement("p");topupFeedback.className="numi-wallet-topup-feedback";
   topupFeedback.setAttribute("role","status");topupFeedback.hidden=true;
-  topupPage.append(topupBack,topupTitle,topupIntro,vpnBanner,topupCurrent,walletForm,topupFeedback);
+  topupPage.append(topupBack,topupTitle,topupIntro,paymentHint,topupCurrent,walletForm,topupFeedback);
   profile.append(topupPage);
   function showTopupPage(){
-    // Keep the authenticated main Telegram WebView: no navigation that loses
-    // its native bridge before the user taps Continue.
     overview.hidden=true;
     topupPage.hidden=false;
     dialog.classList.add("numi-wallet-topup-active");
     topupCurrentAmount.textContent=walletAmount.textContent;
-    topupFeedback.hidden=true;
-    topupFeedback.textContent="";
+    pay.disabled=topupSubmitting||walletMode===null;
+    topupMessage(walletPaymentNotice);
     dialog.scrollTop=0;
-    scheduleDirectCheckoutPreparation();
   }
   function leaveTopupPage(){
-    ++directPrepareSerial;
-    directResetTimer();
     amountInput.blur();
     topupPage.hidden=true;overview.hidden=false;
     dialog.classList.remove("numi-wallet-topup-active");
@@ -359,44 +355,80 @@
     dialog.classList.remove("numi-wallet-topup-active");
   });
   ledgerToggle.addEventListener("click",()=>{ledger.hidden=!ledger.hidden;});
-  let walletReturnHandled=false;
-  async function walletReturnedPayment(){
-    if(walletReturnHandled)return;
-    const params=new URLSearchParams(location.search);
-    const topupId=params.get("wallet_topup");
-    if(!topupId||!/^[a-f0-9-]{36}$/i.test(topupId))return;
-    walletReturnHandled=true;
+  let walletReturnBusy=false;
+  let walletPaymentNotice="";
+  const topupIdValid=id=>/^[a-f0-9-]{36}$/i.test(id||"");
+  const lastTopupKey=accountId=>"numi-last-wallet-topup-"+accountId;
+  const topupFinished=status=>["credited","canceled","review"].includes(status);
+  function topupMessage(message){
+    topupFeedback.hidden=!message;
+    topupFeedback.textContent=message;
+  }
+  function walletTopupNotice(status){
+    walletPaymentNotice={
+      credited:"Пополнение подтверждено. Баланс обновлён.",
+      canceled:"ЮKassa отменила платёж. Можно попробовать снова или выбрать другой способ.",
+      review:"Платёж проверяется. Дождитесь результата перед новой попыткой.",
+      pending_receipt:"Оплата прошла. Ожидаем подтверждения чека.",
+      pending:"ЮKassa ещё ждёт подтверждения платежа."
+    }[status]||"Не удалось подтвердить статус оплаты.";
+    if(status==="credited")amountInput.value="";
+    walletFeedback.hidden=false;
+    walletFeedback.textContent=walletPaymentNotice;
+    if(!topupPage.hidden)topupMessage(walletPaymentNotice);
+  }
+  function rememberTopup(accountId, id, intent){
+    const record={id,keyName:intent.keyName,requestKey:intent.payload.request_key};
+    sessionStorage.setItem(lastTopupKey(accountId),JSON.stringify(record));
+    return record;
+  }
+  function storedTopup(accountId){
+    try{return JSON.parse(sessionStorage.getItem(lastTopupKey(accountId)));}
+    catch(_){return null;}
+  }
+  function clearTopup(accountId, record){
+    if(!record)return;
+    if(sessionStorage.getItem(record.keyName)===record.requestKey){
+      sessionStorage.removeItem(record.keyName);
+      sessionStorage.removeItem(record.keyName+"-receipt");
+    }
+    if(storedTopup(accountId)?.id===record.id)sessionStorage.removeItem(lastTopupKey(accountId));
+  }
+  async function walletReturnedPayment(checkLast=false){
+    if(!current||walletReturnBusy||topupSubmitting||document.hidden)return;
+    const accountId=current.id;
+    const url=new URL(location.href);
+    const returned=url.searchParams.get("wallet_topup");
+    const record=storedTopup(accountId);
+    const topupId=topupIdValid(returned)?returned:checkLast?record?.id:null;
+    if(!topupIdValid(topupId))return;
+    walletReturnBusy=true;
     try{
       const result=await request("wallet_sync",{topup_id:topupId});
-      walletFeedback.hidden=false;
-      walletFeedback.textContent=result.status==="credited"?"Пополнение подтверждено. Баланс обновлён.":
-        result.status==="canceled"?"Пополнение отменено.":
-        result.status==="pending_receipt"?"Оплата прошла, ожидаем подтверждения чека.":
-        "Ожидаем подтверждения ЮKassa.";
-      if(result.status==="credited"||result.status==="canceled"){
-        for(let i=sessionStorage.length-1;i>=0;i--){
-          const key=sessionStorage.key(i);if(key?.startsWith("numi-topup-request-"))sessionStorage.removeItem(key);
+      if(current?.id!==accountId)return;
+      walletTopupNotice(result.status);
+      if(topupFinished(result.status)){
+        if(result.status!=="review"&&record?.id===topupId)clearTopup(accountId,record);
+        if(topupId===returned){
+          url.searchParams.delete("wallet_topup");
+          history.replaceState(null,"",url.pathname+url.search+url.hash);
         }
       }
-    }catch(_){walletFeedback.hidden=false;walletFeedback.textContent="Не удалось проверить пополнение. Без подтверждения ЮKassa зачисления нет.";}
-    params.delete("wallet_topup");
-    history.replaceState(null,"",location.pathname+(params.toString()?"?"+params:"")+location.hash);
+      return result.status==="credited";
+    }catch(_){
+      if(current?.id===accountId){
+        walletPaymentNotice="Не удалось проверить оплату. Статус можно проверить при повторном входе в кабинет.";
+        walletFeedback.hidden=false;
+        walletFeedback.textContent=walletPaymentNotice;
+      }
+    }finally{walletReturnBusy=false;}
   }
-  // Prepare a durable YooKassa confirmation URL before the customer's click.
-  // Payment remains in the current browser or Telegram WebView.
-  // All payments stay on the existing server wallet_topup API and reuse the same
-  // per-account idempotence key; preparation itself does not charge a card.
-  let directPrepared=null, directPrepareSerial=0, directPrepareTimer=null;
-  let directPending=null, directCompleted=null, directSyncBusy=false;
-  const directFingerprint=choice=>[walletMode,choice.amount,choice.method,choice.email].join("|");
-  function directChoice(){
-    const amount=Number(amountInput.value);
-    if(!Number.isInteger(amount)||amount<1||amount>100000)return null;
-    const method=walletMode==="live"?(methodRadios.find(input=>input.checked)?.value||"bank_card"):"bank_card";
-    const email=receiptInput.value.trim().toLowerCase();
-    if(walletMode==="live"&&(!email||!receiptInput.checkValidity()))return null;
-    return {amount,method,email};
+  async function checkWalletReturn(){
+    if(await walletReturnedPayment(true))await refreshWalletBadge();
   }
+  window.addEventListener("pageshow",()=>{void checkWalletReturn();});
+  window.addEventListener("focus",()=>{void checkWalletReturn();});
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)void checkWalletReturn();});
   function directPaymentUrl(raw){
     if(typeof raw!=="string")throw new Error("ЮKassa пока не вернула платёжную ссылку.");
     const url=new URL(raw);
@@ -405,152 +437,77 @@
       throw new Error("ЮKassa вернула недопустимый адрес оплаты.");
     return url.href;
   }
-  function directIntent(choice){
-    const keyName="numi-topup-request-"+walletMode+"-"+choice.method+"-"+choice.amount;
+  function directIntent(amount,method,email){
+    const keyName="numi-topup-request-"+walletMode+"-"+method+"-"+amount;
     const emailName=keyName+"-receipt";
     let key=sessionStorage.getItem(keyName);
-    if(!key||!/^[a-f0-9-]{36}$/i.test(key)){
+    if(!topupIdValid(key)){
       key=crypto.randomUUID();
       sessionStorage.setItem(keyName,key);
-      if(walletMode==="live")sessionStorage.setItem(emailName,choice.email);
+      if(walletMode==="live")sessionStorage.setItem(emailName,email);
     }else if(walletMode==="live"&&sessionStorage.getItem(emailName)&&
-      sessionStorage.getItem(emailName)!==choice.email){
+      sessionStorage.getItem(emailName)!==email){
       throw new Error("Для незавершённой оплаты укажите прежний email для чека.");
     }
-    const payload={amount_rub:choice.amount,request_key:key};
+    const payload={amount_rub:amount,request_key:key};
     if(walletMode==="live"){
-      payload.payment_method=choice.method;
-      payload.receipt_email=choice.email;
+      payload.payment_method=method;
+      payload.receipt_email=email;
     }
-    return {payload,keyName,emailName};
+    return {payload,keyName};
   }
-  function directMessage(value){
-    topupFeedback.hidden=!value;
-    topupFeedback.textContent=value||"";
-  }
-  function directResetTimer(){
-    if(directPrepareTimer!==null){clearTimeout(directPrepareTimer);directPrepareTimer=null;}
-  }
-  function scheduleDirectCheckoutPreparation(){
-    if(topupPage.hidden||!current)return;
-    directResetTimer();
-    const choice=directChoice();
-    if(!choice){
-      directPrepareSerial++;
-      directPrepared=null;
-      pay.textContent="Продолжить";
-      pay.disabled=true;
-      return;
-    }
-    const fingerprint=directFingerprint(choice);
-    if(directCompleted===fingerprint){
-      pay.textContent="Оплачено";pay.disabled=true;return;
-    }
-    if(directPrepared?.fingerprint===fingerprint){
-      pay.textContent="Продолжить";pay.disabled=false;return;
-    }
-    const serial=++directPrepareSerial;
-    directPrepared=null;
-    pay.textContent="Готовим оплату…";
-    pay.disabled=true;
-    directMessage("Подготавливаем защищённую оплату ЮKassa…");
-    directPrepareTimer=setTimeout(async()=>{
-      directPrepareTimer=null;
-      const abort=new AbortController();
-      const timeout=setTimeout(()=>abort.abort(),28000);
-      try{
-        const intent=directIntent(choice);
-        // A timed-out API call may still create a pending intent. The SAME
-        // stable idempotence key is retained for all retry attempts.
-        const result=await request("wallet_topup",intent.payload,abort.signal);
-        if(serial!==directPrepareSerial||topupPage.hidden||directFingerprint(directChoice()||{})!==fingerprint)return;
-        if(result.credited){
-          directCompleted=fingerprint;
-          sessionStorage.removeItem(intent.keyName);
-          sessionStorage.removeItem(intent.emailName);
-          pay.textContent="Оплачено";pay.disabled=true;
-          directMessage("Баланс уже пополнен.");
-          void refreshWalletBadge();return;
-        }
-        const href=directPaymentUrl(result.confirmation_url);
-        if(typeof result.topup_id!=="string"||!/^[a-f0-9-]{36}$/i.test(result.topup_id))
-          throw new Error("Не удалось проверить номер пополнения.");
-        directPrepared={fingerprint,href,topupId:result.topup_id,...intent};
-        pay.textContent="Продолжить";
-        pay.disabled=false;
-        directMessage("");
-      }catch(error){
-        if(serial!==directPrepareSerial||topupPage.hidden)return;
-        pay.textContent="Повторить подготовку";
-        pay.disabled=false;
-        directMessage(error?.name==="AbortError"?
-          "ЮKassa долго отвечает. Повторим проверку без создания нового платежа.":
-          error?.message||"Не удалось подготовить оплату.");
-      }finally{clearTimeout(timeout);}
-    },400);
-  }
-  for(const field of [amountInput,receiptInput,...methodRadios]){
-    field.addEventListener("input",scheduleDirectCheckoutPreparation);
-    field.addEventListener("change",scheduleDirectCheckoutPreparation);
-  }
-  function directOpenHere(url){
-    // Both Telegram Mini App and ordinary site remain in their existing tab.
-    location.assign(url);
-  }
-  async function directSyncOnReturn(){
-    if(!directPending||directSyncBusy||document.hidden)return;
-    directSyncBusy=true;
-    try{
-      const result=await request("wallet_sync",{topup_id:directPending.topupId});
-      if(result.status==="credited"){
-        directCompleted=directPending.fingerprint;
-        sessionStorage.removeItem(directPending.keyName);
-        sessionStorage.removeItem(directPending.emailName);
-        directPending=null;directPrepared=null;
-        pay.textContent="Оплачено";pay.disabled=true;
-        directMessage("Оплата подтверждена. Баланс обновлён.");
-        void refreshWalletBadge();
-      }else if(result.status==="canceled"){
-        directPending=null;
-        directMessage("Платёж отменён. Деньги не списаны.");
-        pay.disabled=false;
-      }else{
-        directMessage("Проверяем статус оплаты. Повторных списаний нет.");
-        // Reopening the same already-created provider URL is safe.
-        pay.disabled=false;
-        pay.textContent="Продолжить";
-      }
-    }catch(_){
-      directMessage("Проверяем оплату. Новый платёж не создаём.");
-      pay.disabled=false;
-    }finally{directSyncBusy=false;}
-  }
-  window.addEventListener("focus",()=>{void directSyncOnReturn();});
-  document.addEventListener("visibilitychange",()=>{
-    if(!document.hidden)void directSyncOnReturn();
-  });
-  walletForm.addEventListener("submit",event=>{
+  walletForm.addEventListener("submit",async event=>{
     event.preventDefault();
-    if(!current||pay.disabled)return;
-    const choice=directChoice();
-    if(!choice){
-      directMessage("Введите сумму и корректный email для чека.");
+    if(!current||walletMode===null||topupSubmitting)return;
+    if(walletReturnBusy){
+      topupMessage("Проверяем статус предыдущей оплаты.");
       return;
     }
-    if(!directPrepared||directPrepared.fingerprint!==directFingerprint(choice)){
-      scheduleDirectCheckoutPreparation();
-      return;
-    }
+    const amount=Number(amountInput.value);
+    if(!Number.isInteger(amount)||amount<1||amount>100000)return;
+    const email=receiptInput.value.trim().toLowerCase();
+    if(walletMode==="live"&&(!email||!receiptInput.checkValidity()))return;
+    const accountId=current.id;
+    const method=walletMode==="live"?methodRadios.find(input=>input.checked).value:"bank_card";
+    const abort=new AbortController();
+    const timeout=setTimeout(()=>abort.abort(),28000);
+    topupSubmitting=true;
+    pay.disabled=true;
+    amountInput.disabled=receiptInput.disabled=methodGroup.disabled=true;
+    pay.textContent="Готовим оплату…";
+    walletPaymentNotice="";
+    topupMessage("");
+    let refreshBalance=false;
     try{
-      directPending=directPrepared;
-      pay.disabled=true;
-      pay.textContent="Переходим к оплате…";
-      directMessage("Открываем оплату в этом окне.");
-      directOpenHere(directPrepared.href);
+      const intent=directIntent(amount,method,email);
+      const result=await request("wallet_topup",intent.payload,abort.signal);
+      if(current?.id!==accountId)return;
+      if(!topupIdValid(result.topup_id))throw new Error("Не удалось проверить номер пополнения.");
+      const record=rememberTopup(accountId,result.topup_id,intent);
+      // Verify a previously created payment before opening its saved link again.
+      let status=result.credited?"credited":result.status||"pending";
+      if((result.reused===true&&status==="pending")||status==="succeeded"){
+        status=(await request("wallet_sync",{topup_id:record.id},abort.signal)).status;
+      }
+      if(current?.id!==accountId)return;
+      if(status!=="pending"){
+        walletTopupNotice(status);
+        if(status==="credited"||status==="canceled")clearTopup(accountId,record);
+        refreshBalance=status==="credited";
+        return;
+      }
+      if(dialog.open&&!topupPage.hidden)location.assign(directPaymentUrl(result.confirmation_url));
     }catch(error){
-      pay.disabled=false;
-      directMessage(error?.message||"Не удалось открыть оплату.");
-      pay.disabled=false;
+      if(current?.id===accountId)topupMessage(error?.name==="AbortError"?
+        "ЮKassa долго отвечает. Повторное нажатие проверит ту же попытку оплаты.":
+        error?.message||"Не удалось открыть оплату.");
+    }finally{
+      clearTimeout(timeout);
+      topupSubmitting=false;
+      amountInput.disabled=receiptInput.disabled=methodGroup.disabled=false;
+      pay.disabled=walletMode===null;
+      pay.textContent="Продолжить";
+      if(refreshBalance)void refreshWalletBadge();
     }
   });
   // These controls are bound to the authenticated server account, never to
@@ -816,25 +773,21 @@
       await subscriptionReturnedPayment();
       const response=await request("wallet_status");
       if(typeof response.test!=="boolean")throw new Error("UNKNOWN_WALLET_MODE");
-      const previousWalletMode=walletMode;
       walletMode=response.test?"test":"live";
+      pay.disabled=topupSubmitting;
       methodGroup.hidden=walletMode!=="live";
       receiptLabel.hidden=walletMode!=="live";
       receiptInput.required=walletMode==="live";
       testNote.textContent=walletMode==="test"?"Тестовый режим · без настоящих списаний":"Оплата через ЮKassa · картой или СБП";
-      vpnWarning.hidden=walletMode!=="live";
-      vpnBanner.hidden=walletMode!=="live";
+      paymentHint.hidden=walletMode!=="live"||!telegramCheckout;
       walletAmount.textContent=(Number(response.balance_kopeks)/100).toLocaleString("ru-RU")+" ₽";
       topupCurrentAmount.textContent=walletAmount.textContent;
-      if(!topupPage.hidden && previousWalletMode!==walletMode) scheduleDirectCheckoutPreparation();
       if(!receiptInput.value && typeof response.receipt_email_suggestion==="string"){
         receiptInput.value=response.receipt_email_suggestion;
-        if(!topupPage.hidden) scheduleDirectCheckoutPreparation();
       }
       scheduleWalletPendingRefresh(response);
-      // Status checks are silent; only errors deserve space inside the card.
-      walletFeedback.hidden=true;
-      walletFeedback.textContent="";
+      walletFeedback.hidden=!walletPaymentNotice;
+      walletFeedback.textContent=walletPaymentNotice;
       renderSubscriptions(response);
       if(response.club_active===true){
         const expiry=typeof response.club_expires_at==="string"
