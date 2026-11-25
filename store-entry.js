@@ -59,13 +59,10 @@ export async function recognizePurchasedReport(item,region,{ownerPreview=true}={
     if(region.dataset.numiReportKey!==key)return null;
     if(ownerDoc && ownerDoc.sections?.length){
       region.hidden=false;
-      const note=document.createElement("p");
-      note.style.cssText="margin:15px 0;padding:12px;border:1px solid #c4af7b;border-radius:12px;background:#f6f1e6;color:#274735;font:700 14px/1.5 system-ui";
-      note.textContent="✓ Доступ владельца. Проверка материала без оплаты.";
       const content=document.createElement("section");
       content.style.cssText="margin:12px 0 24px;max-width:100%;overflow-wrap:anywhere";
       renderInlineMaterial(content,ownerDoc);
-      region.replaceChildren(note,content);
+      region.replaceChildren(content);
       return {owner_preview:true,entitlement_id:null,expires_at:null,material:ownerDoc};
     }
     const quote=await walletRequest("wallet_quote",{item});
