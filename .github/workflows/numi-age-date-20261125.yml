@@ -1,4 +1,4 @@
-name: Publish age boundaries and editable dates only
+name: Publish child owner matrix and age boundaries
 on:
   push:
     branches: [main]
@@ -11,15 +11,21 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.event.head_commit.message == 'Restrict new age-specific readings and preserve date cursor'
+    if: github.event.head_commit.message == 'Restore owner child matrix and retry guarded age publication'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Offline boundary and date-edit checks then guarded REG.RU publication
+      - name: Restore child owner matrix independently
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
           REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
-        run: python3 -u .github/scripts/numi_age_date_20261125.py
+        run: python3 -u .github/scripts/numi_age_date_20261125.py child
+      - name: Retry age boundaries and remaining date fields even if child step fails
+        if: success() || failure()
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: python3 -u .github/scripts/numi_age_date_20261125.py age

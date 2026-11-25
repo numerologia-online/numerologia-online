@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Only publish the age gates and date input fixes; no provider requests."""
-import ftplib, ssl, os, io, pathlib, tempfile, subprocess, time, uuid, urllib.request, urllib.error
+import ftplib, ssl, os, io, pathlib, tempfile, subprocess, time, uuid, urllib.request, urllib.error, sys, re
 BASE_REF="8836d2f804281187fefbf17d55945a7f65088d6b"
 BASE="https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/"
 FILES=[
@@ -10,6 +10,15 @@ FILES=[
  "assets/numi-date-fields.js","redflag-feature.js","app.js","child/child.js","pro/pro.js",
  "child/index.html","pro/index.html","year/index.html","moment/index.html","pro/school/index.html","index.html"
 ]
+MODE=sys.argv[1] if len(sys.argv)==2 else "age"
+CHILD_FILES={"assets/numi-date-fields.js","child/child.js","child/index.html"}
+if MODE=="child":
+    FILES=[p for p in FILES if p in CHILD_FILES]
+elif MODE=="age":
+    FILES=[p for p in FILES if p not in CHILD_FILES or p=="assets/numi-date-fields.js"]
+else:raise RuntimeError("INVALID_MODE")
+# These routes may not have been published yet. Never activate missing engines.
+OPTIONAL_ABSENT={"account-service/public/numi-money-editor-free.php","redflag-ai-lab/say-no-fresh-api.php","redflag-ai-lab/intimacy-pilot-api.php"}
 def lint(path,data):
     if path.endswith(".php"):
         with tempfile.NamedTemporaryFile(suffix=".php") as tmp:
@@ -73,7 +82,16 @@ def write(p,b):
 def merge(p,live):
     if live==new[p]:return live
     if live==old[p]:return new[p]
+    if old[p] is None and live is None:return new[p]
     if live is None or old[p] is None:raise RuntimeError("REMOTE_DRIFT_"+p)
+    # Cache tokens alone can differ after an independent guarded publication.
+    # Normalize only the exact script URLs changed by this task; preserve other live edits.
+    cache_paths={"index.html":"app.js","app.js":"redflag-feature.js","child/index.html":"child.js","pro/index.html":"pro/pro.js"}
+    if p in cache_paths:
+        pat=re.compile(re.escape(cache_paths[p].encode())+rb"\?v=[A-Za-z0-9_-]+")
+        old_matches=pat.findall(old[p]);new_matches=pat.findall(new[p]);live_matches=pat.findall(live)
+        if len(old_matches)==len(new_matches)==len(live_matches)==1 and old_matches!=new_matches:
+            live=pat.sub(old_matches[0],live,count=1)
     # Preserve disjoint live-only edits; do not overwrite conflicts or print private data.
     with tempfile.TemporaryDirectory() as d:
         a,b,c=[pathlib.Path(d)/n for n in ("live","base","new")]
@@ -84,9 +102,13 @@ def merge(p,live):
 saved={};prepared={};changed=[]
 try:
     for p in FILES:
-        saved[p]=read(remote(p),old[p] is None)
+        saved[p]=read(remote(p),old[p] is None or p in OPTIONAL_ABSENT)
+        if saved[p] is None and p in OPTIONAL_ABSENT:
+            print("NOT_INSTALLED_SKIP",p,flush=True)
+            continue
         prepared[p]=merge(p,saved[p])
         lint(p,prepared[p])
+    FILES=[p for p in FILES if p in prepared]
     # The private directory stays outside the webroot. Back up every changed existing file.
     backup=home+"/site-safeguard-backups"
     try:ftp.mkd(backup)
@@ -106,7 +128,7 @@ try:
     for p in FILES:
         if read(remote(p))!=prepared[p]:raise RuntimeError("FINAL_READBACK_"+p)
     if status("assets/numi-date-fields.js")!=200:raise RuntimeError("DATE_ASSET_MISSING")
-    print("AGE_DATE_LIVE_PASS files="+str(len(FILES))+" provider_calls=0",flush=True)
+    print("AGE_DATE_LIVE_PASS mode="+MODE+" files="+str(len(FILES))+" provider_calls=0",flush=True)
 except BaseException:
     for p in reversed(changed):
         try:

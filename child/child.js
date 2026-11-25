@@ -18,28 +18,76 @@ const matrixSections = byId("child-matrix-sections");
 const FREE_CHILD_POINT = "character";
 const childEntitlement = {status:"preview",childId:null,birthDate:null,expires:0};
 let purchasedChild=null;
+let ownerChild=null;
+let childAccessRequest=0;
+let childAccessPending=null;
 const purchasedChildRegion=document.createElement("section");
 purchasedChildRegion.hidden=true;
 purchasedChildRegion.setAttribute("aria-label","Оплаченный разбор ребёнка");
 result.prepend(purchasedChildRegion);
+const childBirthKey = date => date ? [date.year,String(date.month).padStart(2,"0"),String(date.day).padStart(2,"0")].join("-") : "";
+const hasOwnerChildAccess = () => Boolean(ownerChild && ownerChild.key===childBirthKey(birth));
 async function refreshPurchasedChild(){
   if(!birth)return;
-  const key=[birth.year,String(birth.month).padStart(2,"0"),String(birth.day).padStart(2,"0")].join("-");
-  const {recognizePurchasedReport}=await import("../store-entry.js?v=owner-access-20261116");
-  const granted=await recognizePurchasedReport(
-    {product_code:"child_full_v1",birth_date:key},purchasedChildRegion);
-  if(!birth || key!==[birth.year,String(birth.month).padStart(2,"0"),String(birth.day).padStart(2,"0")].join("-"))return;
-  purchasedChild=granted;
-  childEntitlement.status=granted?"active":"preview";
-  childEntitlement.childId=granted?.entitlement_id||null;
-  childEntitlement.birthDate=granted?key:null;
-  childEntitlement.expires=granted?.expires_at?Date.parse(granted.expires_at.replace(" ","T")+"Z"):0;
+  const key=childBirthKey(birth), request=++childAccessRequest;
+  const item={product_code:"child_full_v1",birth_date:key};
+  const current=()=>request===childAccessRequest&&key===childBirthKey(birth);
+  try{
+    const {walletOwnerMaterial}=await import("../wallet-client.js?v=owner-material-20261116");
+    if(!current())return;
+    const material=await walletOwnerMaterial(item);
+    if(!current())return;
+    if(material?.sections?.length===21 && material.sections.every(s=>Array.isArray(s.paragraphs)&&s.paragraphs.length)){
+      ownerChild={key,material};
+      purchasedChild=null;
+      purchasedChildRegion.hidden=true;
+      purchasedChildRegion.dataset.numiReportKey="";
+      purchasedChildRegion.replaceChildren();
+      closeInsight();
+      invalidateChildPdf();
+      renderMatrix(calculateMatrix(birth));
+      syncChildOwnerPdf();
+      return;
+    }
+    ownerChild=null;
+    syncChildOwnerPdf();
+    const {recognizePurchasedReport}=await import("../store-entry.js?v=owner-access-20261116");
+    if(!current())return;
+    const granted=await recognizePurchasedReport(item,purchasedChildRegion,{ownerPreview:false});
+    if(!current())return;
+    purchasedChild=granted;
+    childEntitlement.status=granted?"active":"preview";
+    childEntitlement.childId=granted?.entitlement_id||null;
+    childEntitlement.birthDate=granted?key:null;
+    childEntitlement.expires=granted?.expires_at?Date.parse(granted.expires_at.replace(" ","T")+"Z"):0;
+  }catch(_){
+    if(!current())return;
+    ownerChild=null;
+    purchasedChildRegion.hidden=true;
+    closeInsight();
+    invalidateChildPdf();
+    renderMatrix(calculateMatrix(birth));
+    syncChildOwnerPdf();
+  }
 }
-window.addEventListener("numi:wallet-updated",()=>{if(birth&&!result.hidden)void refreshPurchasedChild();});
-const hasChildPaidAccess = () => childEntitlement.status === "active" &&
+function requestChildAccess(){
+  const pending=refreshPurchasedChild();
+  childAccessPending=pending;
+  pending.finally(()=>{if(childAccessPending===pending)childAccessPending=null;});
+  return pending;
+}
+window.addEventListener("numi:wallet-updated",()=>{if(birth&&!result.hidden)void requestChildAccess();});
+window.addEventListener("numi:account-session-changed",()=>{
+  ++childAccessRequest;childAccessPending=null;ownerChild=null;purchasedChild=null;
+  childEntitlement.status="preview";childEntitlement.childId=null;childEntitlement.birthDate=null;childEntitlement.expires=0;
+  purchasedChildRegion.hidden=true;purchasedChildRegion.dataset.numiReportKey="";purchasedChildRegion.replaceChildren();
+  invalidateChildPdf();closeInsight();
+  if(birth&&!result.hidden){renderMatrix(calculateMatrix(birth));syncChildOwnerPdf();void requestChildAccess();}
+});
+const hasChildPaidAccess = () => hasOwnerChildAccess() || (childEntitlement.status === "active" &&
   Number.isFinite(childEntitlement.expires)&&childEntitlement.expires>Date.now() &&
   !!childEntitlement.childId && !!birth &&
-  childEntitlement.birthDate === [birth.year, String(birth.month).padStart(2,"0"), String(birth.day).padStart(2,"0")].join("-");
+  childEntitlement.birthDate === childBirthKey(birth));
 const childPointIsLocked = point => point.id !== FREE_CHILD_POINT && !hasChildPaidAccess();
 
 const preview = byId("child-preview");
@@ -220,10 +268,11 @@ const openPointReading = async (point, source = null) => {
   }
   // Exact purchased birth date: use the server-verified full material rather
   // than the public free-only character bank.
-  if(hasChildPaidAccess()&&purchasedChild?.material){
+  const verifiedMaterial=hasOwnerChildAccess()?ownerChild.material:purchasedChild?.material;
+  if(hasChildPaidAccess()&&verifiedMaterial){
     const ordered=matrixDefinitions(calculateMatrix(birth));
     const index=ordered.findIndex(item=>item.id===(point.id==="tail-detail"?"tail":point.id));
-    const purchasedSection=purchasedChild.material.sections?.[index];
+    const purchasedSection=verifiedMaterial.sections?.[index];
     if(purchasedSection?.paragraphs?.length){
       showChildParagraphs(body,purchasedSection.paragraphs);
       return;
@@ -652,6 +701,7 @@ form.addEventListener("submit", async (event) => {
   submit.disabled = true;
   try {
     birth = entered;
+    ++childAccessRequest;childAccessPending=null;ownerChild=null;
     purchasedChild=null;
     childEntitlement.status="preview";
     childEntitlement.childId=null;
@@ -670,7 +720,8 @@ form.addEventListener("submit", async (event) => {
     setTab("matrix");
     preview.hidden = true;
     result.hidden = false;
-    void refreshPurchasedChild();
+    syncChildOwnerPdf();
+    void requestChildAccess();
     // Show the child's birth date and both navigation prompts after calculating.
     // Starting at the result header also keeps the first topic cards in view on
     // taller mobile screens; the responsive overview below adapts shorter screens.
@@ -725,6 +776,19 @@ byId("child-day-today").addEventListener("click", () => {
 const pdfDialog = byId("child-pdf-dialog");
 const pdfOpen = byId("child-pdf-open");
 const pdfClose = byId("child-pdf-close");
+function syncChildOwnerPdf(){
+  const active=hasOwnerChildAccess();
+  const buttonText=pdfOpen.querySelector("span:last-child");
+  const icon=pdfOpen.querySelector(".child-pdf-button-icon");
+  if(buttonText)buttonText.textContent=active?"Скачать полный разбор в PDF":"Открыть полный разбор и PDF · 990 ₽";
+  if(icon)icon.textContent=active?"↓":"🔒";
+  const priceNote=pdfOpen.parentElement?.querySelector("p");
+  if(priceNote)priceNote.hidden=active;
+  const dialogIntro=pdfDialog.querySelector(".child-pdf-intro");
+  const offer=pdfDialog.querySelector(".child-pdf-offer");
+  if(dialogIntro)dialogIntro.hidden=active;
+  if(offer)offer.hidden=active;
+}
 const pdfSave = byId("child-pdf-save");
 const pdfChapters = byId("child-pdf-list");
 const pdfStatus = byId("child-pdf-status");
@@ -753,8 +817,15 @@ const prepareChildPdf=(date)=>{
   const generation=childPdfGeneration;
   const promise=(async()=>{
     const {collectChildPdf,buildChildPdfBlob,preloadChildPdfEngine}=await pdfModule();
+    const definitions=matrixDefinitions(calculateMatrix(date));
+    const ownerMaterial=hasOwnerChildAccess()?ownerChild.material:null;
+    const ownerReport=ownerMaterial?{
+      birthday:key, topics:definitions.map(({id,title})=>({id,title})),
+      chapters:definitions.map((point,i)=>({id:point.id,title:point.title,subtitle:"",lead:"",parts:[],paragraphs:ownerMaterial.sections[i].paragraphs})),
+      missing:[],total:definitions.length,ready:true
+    }:null;
     const [report]=await Promise.all([
-      collectChildPdf(date,matrixDefinitions(calculateMatrix(date)),getEnergyBank,getChildKarmicTail),
+      ownerReport||collectChildPdf(date,definitions,getEnergyBank,getChildKarmicTail),
       preloadChildPdfEngine()
     ]);
     if (!report.ready) throw new Error("Не удалось загрузить все главы. Проверьте соединение и попробуйте ещё раз.");
@@ -773,7 +844,7 @@ const prepareChildPdf=(date)=>{
 const warmChildPdf=()=>{
   // Purchased clients use the protected in-page PDF builder instead of the
   // public preview's free-only PDF data.
-  if(purchasedChild||!birth || !hasChildPaidAccess()) return;
+  if(purchasedChild||hasOwnerChildAccess()||!birth || !hasChildPaidAccess()) return;
   const date={...birth},key=childPdfKey(date);
   const warm=()=>{
     if(childPdfKey(birth)!==key || preparedChildPdf?.key===key) return;
@@ -792,10 +863,25 @@ document.addEventListener("click", (event) => {
   if (point === FREE_CHILD_POINT) return;
   event.preventDefault();
   event.stopImmediatePropagation();
+  if(childAccessPending){
+    const key=childBirthKey(birth);
+    void childAccessPending.then(()=>{
+      if(key!==childBirthKey(birth))return;
+      if(hasOwnerChildAccess()){
+        const definition=matrixDefinitions(calculateMatrix(birth)).find(d=>d.id===point || (point==="tail-detail"&&d.id==="tail"));
+        if(definition)void openPointReading(definition);
+        else void showChildPdfOffer();
+      }else void showChildPdfOffer();
+    });
+    return;
+  }
   void showChildPdfOffer();
 }, true);
 const showChildPdfOffer = async () => {
   if (!birth) return;
+  const requestedKey=childBirthKey(birth);
+  if(childAccessPending)await childAccessPending;
+  if(requestedKey!==childBirthKey(birth))return;
   if(hasChildPaidAccess()&&purchasedChild&&!purchasedChildRegion.hidden){
     purchasedChildRegion.scrollIntoView({behavior:"smooth",block:"start"});return;
   }
