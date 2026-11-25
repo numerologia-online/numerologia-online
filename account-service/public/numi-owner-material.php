@@ -43,6 +43,13 @@ try {
         if(function_exists('set_time_limit'))@set_time_limit(125);
         niEnsurePaidResource((string)$quote['resource_id']);
     }
+    if($code==='redflag_question'&&preg_match('/^redflag:money:(?!comic-verdict-money:)/D',(string)$quote['resource_id'])){
+        require_once dirname(__DIR__,3).'/private/numi-account-20261031/money-editor-live.php';
+        $p=meParse($code,(string)$quote['resource_id']);
+        if($p===null)naReply(400,['ok'=>false,'error'=>'INVALID_MONEY_QUESTION']);
+        if(function_exists('set_time_limit'))@set_time_limit(125);
+        meEnsure(...$p);
+    }
     $document=naMaterialBuild($code,(string)$quote['resource_id']);
     // Do not use genuine entitlement UUIDs or fabricated paid receipts.
     naReply(200,['ok'=>true,'owner_preview'=>true,'charged'=>false,

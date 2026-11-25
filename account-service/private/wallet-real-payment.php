@@ -500,6 +500,10 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             require_once __DIR__.'/fulfillment.php';
             $ready=static function(array $item):bool{
                 if(($item['kind']??null)==='subscription')return true;
+                if(($item['product_code']??null)==='redflag_question'&&preg_match('/^redflag:money:(?!comic-verdict-money:)/D',(string)($item['resource_id']??''))){
+                    require_once __DIR__.'/money-editor-live.php';
+                    return meReady((string)$item['resource_id']);
+                }
                 // Native family answers are generated only on wallet_buy, never on quote.
                 if(($item['product_code']??null)==='redflag_question'
                   &&str_starts_with((string)($item['resource_id']??''),'redflag:family:')){
@@ -596,6 +600,10 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
             require_once __DIR__.'/fulfillment.php';
             $ready=static function(array $item):bool{
                 if(($item['kind']??null)==='subscription')return true;
+                if(($item['product_code']??null)==='redflag_question'&&preg_match('/^redflag:money:(?!comic-verdict-money:)/D',(string)($item['resource_id']??''))){
+                    require_once __DIR__.'/money-editor-live.php';
+                    return meReady((string)$item['resource_id']);
+                }
                 // Native family answers are generated only on wallet_buy, never on quote.
                 if(($item['product_code']??null)==='redflag_question'
                   &&str_starts_with((string)($item['resource_id']??''),'redflag:family:')){
@@ -651,6 +659,13 @@ function naRealWalletServe(PDO $db,string $action,array $body,array $account,arr
                 if(naRealWalletBalance($db,$account['id'])<(int)$resolved['price_kopeks'])throw new RuntimeException('REAL_INSUFFICIENT_BALANCE');
             }
             try{
+            if($isRedFlag&&preg_match('/^redflag:money:(?!comic-verdict-money:)/D',(string)$resolved['resource_id'])&&!$already){
+                require_once __DIR__.'/money-editor-live.php';
+                $p=meParse('redflag_question',(string)$resolved['resource_id']);
+                if($p===null)throw new RuntimeException('REAL_MATERIAL_NOT_READY');
+                if(function_exists('set_time_limit'))@set_time_limit(125);
+                meEnsure(...$p);
+            }
             if($isRedFlag&&preg_match('/^redflag:(flags|infidelity):/D',(string)$resolved['resource_id'])&&!$already){
                 require_once __DIR__.'/flags-fidelity-live.php';
                 if(function_exists('set_time_limit'))@set_time_limit(125);

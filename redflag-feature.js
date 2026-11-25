@@ -370,6 +370,26 @@ const ensureAnswerResolved = (question, state, {forceNew = false} = {}) => {
   const profile=activeProfile;
   if(!profile)return;
   state.answerErrors.delete(id);
+  if(question.isFree&&id==="gift"&&state===categoryStates.get("money")){
+    const birth=parseRedFlagDate(birthDateInput.value);
+    if(!birth){state.answerErrors.set(id,"Укажи дату рождения мужчины.");return;}
+    const date=birth.year+"-"+String(birth.month).padStart(2,"0")+"-"+String(birth.day).padStart(2,"0");
+    const task=fetch("/api/numi-money-editor-free.php",{
+      method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({question_id:id,birth_date:date}),signal:AbortSignal.timeout(125000)
+    }).then(async response=>{
+      const data=await response.json();
+      if(!response.ok||data?.ok!==true||data?.free!==true||data?.question_id!==id||data?.birth_date!==date||typeof data?.answer!=="string")throw new Error("MONEY_EDITOR_UNAVAILABLE");
+      const paragraphs=data.answer.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);
+      if(paragraphs.length!==2)throw new Error("MONEY_EDITOR_FORMAT");
+      return {answer:data.answer,paragraphs};
+    }).catch(()=>question.answer(profile)).then(result=>{
+      if(profile===activeProfile)state.answers.set(id,result);
+    }).catch(()=>{if(profile===activeProfile)state.answerErrors.set(id,redFlagLoadErrorCopy(true).text);})
+      .finally(()=>{if(state.answerRequests.get(id)===task)state.answerRequests.delete(id);
+        if(profile===activeProfile&&state.expanded&&state.activeQuestionId===id)renderCategories({type:"question",id});});
+    state.answerRequests.set(id,task);return;
+  }
   const freeCategory=state===categoryStates.get("flags")?"flags":state===categoryStates.get("infidelity")?"infidelity":null;
   if(question.isFree&&freeCategory&&!ownerDraftInScope(question,state)){
     const birth=parseRedFlagDate(birthDateInput.value);
@@ -624,7 +644,7 @@ const ensureAnswerResolved = (question, state, {forceNew = false} = {}) => {
     const task=import("./wallet-client.js?v=redflag-sales-20261125").then(async ({showInlinePurchase,walletOwnerMaterial})=>{
       // Family and Love Languages owner errors must NEVER be disguised as a wallet paywall.
       // All authorization still happens in the existing authenticated REG.RU endpoints.
-      if(category==="family"||category==="language"){
+      if(category==="family"||category==="language"||(category==="money"&&id!=="comic-verdict-money")){
         try{
           const ownerDoc=await walletOwnerMaterial(item);
           if(ownerDoc){
