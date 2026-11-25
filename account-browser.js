@@ -1127,27 +1127,136 @@
     },"На почту отправлена ссылка подтверждения. После подтверждения можно входить без Telegram.");
   });
 
+  const savedTypeLabels = {
+    redflag_question: "Вопрос о мужчине",
+    yesno_question: "Ответ «Да или нет»",
+    moment_question: "Нумерология момента",
+    year_full: "Полный разбор года",
+    life_full: "Полный разбор жизни",
+    compatibility_full: "Совместимость",
+    child_full_v1: "Детский разбор",
+    money_rituals: "Денежные ритуалы",
+    club_month: "Клуб",
+    school_week: "Школа нумерологии"
+  };
+
+  let savedCatalog;
+  function loadSavedCatalog() {
+    savedCatalog ||= fetch("/store-catalog.json")
+      .then(response=>{
+        if(!response.ok)throw new Error("CATALOG_UNAVAILABLE");
+        return response.json();
+      })
+      .catch(()=>{
+        savedCatalog=null;
+        return null;
+      });
+    return savedCatalog;
+  }
+
+  function savedPurchaseTitle(purchase, catalog) {
+    const code=purchase.product_code;
+    if(purchase.is_test && /[а-яё]/i.test(code))return code;
+
+    const [kind,subject,questionId]=String(purchase.resource_id||"").split(":");
+    if(code==="redflag_question" && kind==="redflag"){
+      const match=catalog?.redflag?.find(row=>row.category===subject && row.id===questionId);
+      if(match?.title){
+        const separator=match.title.indexOf(" · ");
+        return separator<0?match.title:match.title.slice(separator+3);
+      }
+    }else if((code==="yesno_question" && kind==="yesno") ||
+      (code==="moment_question" && kind==="moment")){
+      const match=catalog?.[kind]?.find(row=>row.id===subject);
+      if(match?.title)return match.title;
+    }
+
+    if(code==="year_full" && kind==="year" && /^\d{4}$/.test(subject)){
+      return "Полный разбор на "+subject+" год";
+    }
+    const fallback=Object.hasOwn(savedTypeLabels,code)?savedTypeLabels[code]:"Сохранённый материал";
+    return catalog?.products?.find(product=>product.code===code)?.title || fallback;
+  }
+
+  function savedPurchaseDate(purchase) {
+    const parts=String(purchase.resource_id||"").split(":");
+    const dates=parts.map(displayDate).filter(Boolean);
+    if(dates.length)return dates.join(" / ");
+    return displayDate(String(purchase.created_at||"").slice(0,10));
+  }
+
   async function updatePurchases() {
-    if(!savedPanel||!current) return;
-    try {
+    if(!savedPanel||!current)return;
+    const accountId=current.id;
+    try{
       const result=await request("purchases");
-      let container=document.getElementById("numi-confirmed-purchases");
-      if(!container){
-        container=document.createElement("div");
-        container.id="numi-confirmed-purchases";
-        savedPanel.querySelector(".account-panel-intro")?.insertAdjacentElement("afterend",container);
-      }
+      if(current?.id!==accountId)return;
+      const container=savedPanel.querySelector("#numi-confirmed-purchases");
+      if(!container)return;
+      const purchases=Array.isArray(result.purchases)?result.purchases:[];
       container.replaceChildren();
-      for(const purchase of result.purchases||[]){
-        const item=document.createElement("div"); item.className="numi-purchase-entry";
-        const title=document.createElement("strong");title.textContent=purchase.product_code;
-        const detail=document.createElement("small");detail.textContent="Код материала: "+purchase.resource_id;
-        item.append(title,detail);
-        if(!purchase.is_test&&purchase.entitlement_id){const read=document.createElement("button");read.type="button";read.textContent="Открыть";read.className="account-secondary";read.onclick=async()=>{try{const {openMaterial}=await import("/store-material.js?v=2");let box=item.querySelector(".numi-purchase-content");if(!box){box=document.createElement("div");box.className="numi-purchase-content";item.append(box);}await openMaterial(box,purchase.entitlement_id);}catch(_){read.textContent="Не удалось открыть. Повторить";}};item.append(read);}
-        container.append(item);
-      }
-      savedPanel.querySelector(".account-empty-state")?.toggleAttribute("hidden",(result.purchases||[]).length>0);
-    }catch(_){ /* Never claim payments without a verified server result */ }
+      savedPanel.querySelector(".account-empty-state")?.toggleAttribute("hidden",purchases.length>0);
+      if(!purchases.length)return;
+
+      const list=document.createElement("ul");
+      list.className="numi-saved-list";
+      let openItem=null;
+      const titles=purchases.map(purchase=>{
+        const item=document.createElement("li");
+        const canOpen=!purchase.is_test && Boolean(purchase.entitlement_id);
+        const row=document.createElement(canOpen?"summary":"div");
+        row.className="numi-saved-row";
+
+        const title=document.createElement("span");
+        title.className="numi-saved-title";
+        title.textContent=savedPurchaseTitle(purchase);
+        row.append(title);
+        const date=savedPurchaseDate(purchase);
+        if(date){
+          const label=document.createElement("span");
+          label.className="numi-saved-date";
+          label.textContent=date;
+          row.append(label);
+        }
+
+        if(canOpen){
+          const disclosure=document.createElement("details");
+          const content=document.createElement("div");
+          content.className="numi-saved-material";
+          disclosure.append(row,content);
+          disclosure.addEventListener("toggle",async ()=>{
+            content.replaceChildren();
+            if(!disclosure.open || current?.id!==accountId || !list.isConnected)return;
+            if(openItem && openItem!==disclosure)openItem.open=false;
+            openItem=disclosure;
+            const view=document.createElement("div");
+            view.textContent="Открываем материал…";
+            content.append(view);
+            try{
+              const {openMaterial}=await import("/store-material.js?v=2");
+              if(!view.isConnected || current?.id!==accountId)return;
+              await openMaterial(view,purchase.entitlement_id);
+            }catch(_){
+              view.textContent="Не удалось открыть материал. Попробуй ещё раз.";
+            }
+          });
+          item.append(disclosure);
+        }else{
+          item.append(row);
+        }
+        list.append(item);
+        return title;
+      });
+      container.append(list);
+
+      // Resolve titles in the background so account sign-in does not wait for a public catalog.
+      void loadSavedCatalog().then(catalog=>{
+        if(!catalog || current?.id!==accountId || !list.isConnected)return;
+        for(const [index,title] of titles.entries()){
+          title.textContent=savedPurchaseTitle(purchases[index],catalog);
+        }
+      });
+    }catch(_){ /* Only display saved records returned by the authenticated API. */ }
   }
   // Browser birth dates persist in the account, Telegram birth dates still use the existing verified endpoint.
   document.getElementById("account-birth-save")?.addEventListener("click",async ()=>{

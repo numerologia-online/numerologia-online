@@ -520,9 +520,25 @@
       #account-dialog .numi-saved-empty h4 {margin:2px 0 5px;color:#184b38;font:normal 22px/1.15 Georgia,serif}
       #account-dialog .numi-saved-empty p {margin:0;max-width:260px;color:#718278;font-size:12px;line-height:1.4}
       #account-dialog .numi-saved-retention {margin:12px 0 0;color:#829087;font-size:11px;line-height:1.45}
-      #account-dialog .numi-saved-library #numi-confirmed-purchases {margin:0 0 8px}
-      #account-dialog .numi-saved-library .numi-saved-row {min-height:59px;padding:9px 0}
-      #account-dialog .numi-saved-library .numi-saved-row-content strong {font-size:15px}
+      #account-dialog #numi-confirmed-purchases {margin:0 0 8px}
+      #account-dialog #numi-confirmed-purchases .numi-saved-list {list-style:none;margin:0;padding:0}
+      #account-dialog #numi-confirmed-purchases .numi-saved-list > li + li {border-top:1px solid #e7e1d4}
+      #account-dialog #numi-confirmed-purchases .numi-saved-row {
+        display:block;box-sizing:border-box;min-height:36px;padding:8px 0;
+        color:#254f3d;font:inherit;font-size:14px;font-weight:500;line-height:1.35;overflow-wrap:anywhere
+      }
+      #account-dialog #numi-confirmed-purchases summary.numi-saved-row {cursor:pointer;list-style:none}
+      #account-dialog #numi-confirmed-purchases summary.numi-saved-row::-webkit-details-marker {display:none}
+      #account-dialog #numi-confirmed-purchases summary .numi-saved-title {
+        text-decoration:underline;text-decoration-color:#a4af9d;text-underline-offset:3px
+      }
+      #account-dialog #numi-confirmed-purchases summary.numi-saved-row:focus-visible {
+        outline:2px solid #5b806c;outline-offset:2px;border-radius:3px
+      }
+      #account-dialog #numi-confirmed-purchases .numi-saved-date {
+        display:inline-block;margin-inline-start:8px;white-space:nowrap;color:#5b7165;font-size:12px;font-weight:400
+      }
+      #account-dialog #numi-confirmed-purchases .numi-saved-material {padding:2px 0 14px}
     </style>
     <style id="numi-tariff-legibility-fix-20261031">
       /* Explicit labels fit even in Telegram's narrow iPhone webview. */
@@ -1287,7 +1303,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   <script src="artwork-loader.js?v=1" defer></script>
   <script src="install.js?v=4" defer></script>
   <script src="auth-profile.js?v=store2" defer></script>
-  <script src="account-browser.js?v=wallet-telegram-sbp-20261125" defer></script>
+  <script src="account-browser.js?v=saved-library-lines-20261125" defer></script>
   <script type="module" src="app.js?v=redflag-telegram-feedback-20261125"></script>
   <!-- Cookie notice: optional analytics only by explicit choice; essential storage remains available. -->
   <style>
