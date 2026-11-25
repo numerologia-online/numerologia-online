@@ -10,7 +10,7 @@ function nvQuestions(): array {
     return $bank['questions'];
 }
 function nvMapIds(): array {
-    return ['worth-it','beauty-and-flag','check','main-advice','his-need','weak-point','best-side','format','bottom-line'];
+    return ['worth-it','beauty-and-flag','check','main-advice','his-need','weak-point','best-side','format','bottom-line','comic-verdict-verdict'];
 }
 function nvSupportedPaidResource(string $code,string $resource): bool {
     if($code!=='redflag_question'||preg_match('/^redflag:verdict:([a-z-]+):((?:19|20)\d\d-\d\d-\d\d)$/D',$resource,$m)!==1)
@@ -83,8 +83,13 @@ function nvEnsureAnswer(string $id,string $date): string {
             $cat['categories'][0]['questions'][]=['id'=>$q['id'],'title'=>$q['title']];
             if($q['id']===$id)$selected=['id'=>$q['id'],'title'=>$q['title']];
         }
-        if($selected===null)throw new RuntimeException('VERDICT_QUESTION_NOT_FOUND');
-        $text=vpGenerateText($selected,$d,$m,$y);
+        if($id==='comic-verdict-verdict'){
+            require_once __DIR__.'/verdict-comic-verdict.php';
+            $text=vcvGenerate($d,$m,$y);
+        }else{
+            if($selected===null)throw new RuntimeException('VERDICT_QUESTION_NOT_FOUND');
+            $text=vpGenerateText($selected,$d,$m,$y);
+        }
         $text=niValidateGeneratedText($text,'stop');
         if(mb_strlen($text,'UTF-8')>1800)throw new RuntimeException('VERDICT_TEXT_TOO_LONG');
         $blob=json_encode(['version'=>1,'question'=>$id,'date'=>$date,'answer'=>$text],
@@ -110,7 +115,7 @@ function nvMaterialFromCache(string $resource): array {
     $answer=nvCachedAnswer($m[1],$m[2]);
     if($answer===null&&$m[1]==='beauty-and-flag')$answer=nvReadCachedAnswer(nvCacheDirectory().'/'.$m[1].'-'.str_replace('-','',$m[2]).'-verdict-v1.json',$m[1],$m[2]);
     if($answer===null)throw new RuntimeException('MATERIAL_NOT_READY');
-    $title='';
+    $title=$m[1]==='comic-verdict-verdict'?'😂 Шуточный вердикт':'';
     foreach(nvQuestions() as $q)if($q['id']===$m[1]){$title=$q['title'];break;}
     return ['title'=>$title,'sections'=>[['title'=>$title,'paragraphs'=>preg_split('/\n\s*\n/u',$answer)]],
         'links'=>[],'pdf_available'=>false];

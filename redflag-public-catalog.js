@@ -671,7 +671,8 @@ export const PUBLIC_QUESTIONS = {
     {
       "id": "comic-verdict-verdict",
       "title": "😂 Шуточный вердикт",
-      "status": "comic-pending"
+      "priceRub": 49,
+      "status": "ready"
     }
   ]
 };
