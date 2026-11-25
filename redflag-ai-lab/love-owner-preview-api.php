@@ -27,15 +27,21 @@ try {
     $input=json_decode((string)file_get_contents('php://input'),true,10,JSON_THROW_ON_ERROR);
     $id=$input['question_id']??null;
     $day=$input['day']??null;$month=$input['month']??null;$year=$input['year']??null;
-    if(($input['category']??null)!=='love'||!is_string($id)||!in_array($id,lvpQuestionIds(),true)||
+    if(($input['category']??null)!=='love'||!is_string($id)||!in_array($id,array_merge(lvpQuestionIds(),['comic-verdict-love']),true)||
        !is_int($day)||!is_int($month)||!is_int($year)||$year<1900||
        $year>(int)gmdate('Y')||!checkdate($month,$day,$year))
         lvoReply(400,['ok'=>false,'error'=>'INVALID_LOVE_REQUEST']);
     $question=null;
     foreach(lvpQuestions() as $q)if($q['id']===$id)$question=$q;
+    if($id==='comic-verdict-love')$question=['id'=>$id,'title'=>'😂 Шуточный вердикт'];
     if($question===null)lvoReply(400,['ok'=>false,'error'=>'LOVE_QUESTION_NOT_FOUND']);
     if(function_exists('set_time_limit'))@set_time_limit(125);
-    $answer=lvpGenerateText($question,$day,$month,$year);
+    if($id==='comic-verdict-love'){
+        require_once dirname(__DIR__,3).'/private/numi-account-20261031/love-comic-verdict.php';
+        $answer=lcvGenerate($day,$month,$year);
+    }else{
+        $answer=lvpGenerateText($question,$day,$month,$year);
+    }
     lvoReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
         'category'=>'love','question_id'=>$id,'date_key'=>$day.'-'.$month,
         'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);

@@ -7,10 +7,10 @@ function lvlQuestions(): array {
     $bank=json_decode((string)file_get_contents($path),true,25,JSON_THROW_ON_ERROR);
     if(($bank['id']??null)!=='love'||count($bank['questions']??[])!==10)
         throw new RuntimeException('LOVE_QUESTIONS_UNAVAILABLE');
-    return $bank['questions'];
+    return array_merge($bank['questions'],[['id'=>'comic-verdict-love','title'=>'😂 Шуточный вердикт','priceRub'=>49,'isFree'=>false]]);
 }
 function lvlMapIds(): array {
-    return ['romance','relationship-or-comfort','adult-partner','near-him','hard-moment','relationship-format','family-or-triangle','honest-or-disappear','love-or-attention'];
+    return ['romance','relationship-or-comfort','adult-partner','near-him','hard-moment','relationship-format','family-or-triangle','honest-or-disappear','love-or-attention','comic-verdict-love'];
 }
 function lvlSupportedPaidResource(string $code,string $resource): bool {
     if($code!=='redflag_question'||preg_match('/^redflag:love:([a-z-]+):((?:19|20)\d\d-\d\d-\d\d)$/D',$resource,$m)!==1)
@@ -69,7 +69,12 @@ function lvlEnsureAnswer(string $id,string $date): string {
             if($q['id']===$id)$selected=['id'=>$q['id'],'title'=>$q['title']];
         }
         if($selected===null)throw new RuntimeException('LOVE_QUESTION_NOT_FOUND');
-        $text=lvpGenerateText($selected,$d,$m,$y);
+        if($id==='comic-verdict-love'){
+            require_once __DIR__.'/love-comic-verdict.php';
+            $text=lcvGenerate($d,$m,$y);
+        }else{
+            $text=lvpGenerateText($selected,$d,$m,$y);
+        }
         $text=niValidateGeneratedText($text,'stop');
         if(mb_strlen($text,'UTF-8')>1800)throw new RuntimeException('LOVE_TEXT_TOO_LONG');
         $blob=json_encode(['version'=>1,'question'=>$id,'date'=>$date,'answer'=>$text],
