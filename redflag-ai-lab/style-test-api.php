@@ -1233,6 +1233,7 @@ try {
         foreach($item['questions'] as $q)if($q['id']===($input['question_id']??'')){$question=$q;break;}
         break;
     }
+    if(($category['id']??null)==='flags'&&($input['question_id']??null)==='comic-verdict-flags')$question=['id'=>'comic-verdict-flags','title'=>'😂 Шуточный вердикт'];
     if($question===null)rfPreviewReply(400,['ok'=>false,'error'=>'QUESTION_NOT_AVAILABLE']);
     $day=$input['day']??null;$month=$input['month']??null;
     if(!is_int($day)||!is_int($month)||!checkdate($month,$day,2000))
@@ -1251,7 +1252,12 @@ try {
            rfPreviewReply(429,['ok'=>false,'error'=>'WAIT_15_SECONDS']);
         $_SESSION['last_generation']=time();
         $generationStarted=true;
-        $answer=rfOwnerSharpFlags($question,$day,$month,$y,$catalog);
+        if($question['id']==='comic-verdict-flags'){
+            require_once dirname(__DIR__,3).'/private/numi-account-20261031/flags-comic-verdict.php';
+            $answer=fcvGenerate($day,$month,$y);
+        }else{
+            $answer=rfOwnerSharpFlags($question,$day,$month,$y,$catalog);
+        }
         session_write_close();
         rfPreviewReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
            'category'=>'flags','question_id'=>$question['id'],'date_key'=>$day.'-'.$month,

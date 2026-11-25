@@ -166,6 +166,7 @@ function rfsCatalog(): array {
     return $c;
 }
 function rfsQuestion(string $category,string $id): ?array {
+    if($category==='flags'&&$id==='comic-verdict-flags')return ['id'=>$id,'title'=>'😂 Шуточный вердикт'];
     foreach(rfsCatalog()['categories'] as $g)if($g['id']===$category)foreach($g['questions'] as $q)if($q['id']===$id)return $q;
     return null;
 }
@@ -185,6 +186,10 @@ function rfsEngineInstalled(): bool {
 function rfsMessages(string $category,string $id,string $date): array {
     $q=rfsQuestion($category,$id);if($q===null||!rfsDate($date))throw new InvalidArgumentException('REDFLAG_LIVE_REQUEST');
     [$y,$m,$d]=array_map('intval',explode('-',$date));$c=rfsCatalog();
+    if($category==='flags'&&$id==='comic-verdict-flags'){
+        require_once __DIR__.'/flags-comic-verdict.php';
+        return fcvMessages($d,$m,$y);
+    }
     return $category==='flags'?rfsFlagsMessages($q,$d,$m,$y,$c):rfsFidelityMessages($q,$d,$m,$y,$c);
 }
 function rfsCacheDir(): string {
