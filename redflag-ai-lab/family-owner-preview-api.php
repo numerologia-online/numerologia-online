@@ -27,15 +27,21 @@ try {
     $input=json_decode((string)file_get_contents('php://input'),true,10,JSON_THROW_ON_ERROR);
     $id=$input['question_id']??null;
     $day=$input['day']??null;$month=$input['month']??null;$year=$input['year']??null;
-    if(($input['category']??null)!=='family'||!is_string($id)||!in_array($id,fpQuestionIds(),true)||
+    if(($input['category']??null)!=='family'||!is_string($id)||!in_array($id,array_merge(fpQuestionIds(),['comic-verdict-family']),true)||
        !is_int($day)||!is_int($month)||!is_int($year)||$year<1900||
        $year>(int)gmdate('Y')||!checkdate($month,$day,$year))
         foReply(400,['ok'=>false,'error'=>'INVALID_FAMILY_REQUEST']);
     $question=null;
     foreach(fpQuestions() as $q)if($q['id']===$id)$question=$q;
+    if($id==='comic-verdict-family')$question=['id'=>$id,'title'=>'😂 Шуточный вердикт'];
     if($question===null)foReply(400,['ok'=>false,'error'=>'FAMILY_QUESTION_NOT_FOUND']);
     if(function_exists('set_time_limit'))@set_time_limit(125);
-    $answer=fpGenerateText($question,$day,$month,$year);
+    if($id==='comic-verdict-family'){
+        require_once dirname(__DIR__,3).'/private/numi-account-20261031/family-comic-verdict.php';
+        $answer=hcvGenerate($day,$month,$year);
+    }else{
+        $answer=fpGenerateText($question,$day,$month,$year);
+    }
     foReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
         'category'=>'family','question_id'=>$id,'date_key'=>$day.'-'.$month,
         'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);

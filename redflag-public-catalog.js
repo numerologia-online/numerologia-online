@@ -517,7 +517,8 @@ export const PUBLIC_QUESTIONS = {
     {
       "id": "comic-verdict-family",
       "title": "😂 Шуточный вердикт",
-      "status": "comic-pending"
+      "priceRub": 49,
+      "status": "in-progress"
     }
   ],
   "language": [
