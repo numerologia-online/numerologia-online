@@ -35,7 +35,7 @@ function lvlCacheFile(string $id,string $date): string {
     if(!in_array($id,array_merge(['first-step'],lvlMapIds()),true)||naCatalogDate($date)===null||(int)substr($date,0,4)>(int)gmdate('Y'))
         throw new InvalidArgumentException('INVALID_LOVE_REQUEST');
     // New generation never reads the former engine's cache.
-    return lvlCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).'-love-v1.json';
+    return lvlCacheDirectory().'/'.$id.'-'.str_replace('-','',$date).($id==='first-step'?'-love-humor-v1.json':'-love-v1.json');
 }
 function lvlCachedAnswer(string $id,string $date): ?string {
     return lvlReadCachedAnswer(lvlCacheFile($id,$date),$id,$date);
@@ -48,6 +48,7 @@ function lvlReadCachedAnswer(string $file,string $id,string $date): ?string {
     $answer=is_array($data)&&($data['question']??null)===$id
         &&($data['date']??null)===$date &&($data['version']??null)===1
         ?($data['answer']??null):null;
+    if($id==='first-step'&&(!is_string($answer)||substr_count($answer,'Шуточный вердикт:')!==1))return null;
     return is_string($answer)&&strlen($answer)>450?$answer:null;
 }
 function lvlEnsureAnswer(string $id,string $date): string {
@@ -69,7 +70,12 @@ function lvlEnsureAnswer(string $id,string $date): string {
             if($q['id']===$id)$selected=['id'=>$q['id'],'title'=>$q['title']];
         }
         if($selected===null)throw new RuntimeException('LOVE_QUESTION_NOT_FOUND');
-        $text=lvpGenerateText($selected,$d,$m,$y);
+        if($id==='first-step'){
+            require_once __DIR__.'/love-first-step-humor.php';
+            $text=lvhGenerate($selected,$d,$m,$y);
+        }else{
+            $text=lvpGenerateText($selected,$d,$m,$y);
+        }
         $text=niValidateGeneratedText($text,'stop');
         if(mb_strlen($text,'UTF-8')>1800)throw new RuntimeException('LOVE_TEXT_TOO_LONG');
         $blob=json_encode(['version'=>1,'question'=>$id,'date'=>$date,'answer'=>$text],
