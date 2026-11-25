@@ -35,7 +35,12 @@ try {
     foreach(lvpQuestions() as $q)if($q['id']===$id)$question=$q;
     if($question===null)lvoReply(400,['ok'=>false,'error'=>'LOVE_QUESTION_NOT_FOUND']);
     if(function_exists('set_time_limit'))@set_time_limit(125);
-    $answer=lvpGenerateText($question,$day,$month,$year);
+    if($id==='first-step'){
+        require_once dirname(__DIR__,3).'/private/numi-account-20261031/love-first-step-humor.php';
+        $answer=lvhGenerate($question,$day,$month,$year);
+    }else{
+        $answer=lvpGenerateText($question,$day,$month,$year);
+    }
     lvoReply(200,['ok'=>true,'owner'=>true,'draft_only'=>true,'published'=>false,
         'category'=>'love','question_id'=>$id,'date_key'=>$day.'-'.$month,
         'model'=>'google/gemini-3-flash-preview','answer'=>$answer]);
