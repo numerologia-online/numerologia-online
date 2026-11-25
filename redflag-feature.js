@@ -42,49 +42,29 @@ let formattedDate;
 // owner authorization. Neither customer paid access nor published banks change.
 const redflagDraftSections = new Set(["flags","infidelity","intimacy","family","language","verdict","love"]);
 let ownerDraftAccess=false,ownerDraftAccessChecked=false;
-let ownerDraftCheckEpoch=0,ownerDraftCheckPending=null;
 const ownerDraftInScope=(question,state)=>{
   const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
   return Boolean(ownerDraftAccess&&redflagDraftSections.has(section)&&
     (question.isComingSoon||section==="flags"||section==="infidelity"||
      section==="family"||section==="intimacy"||section==="verdict"||section==="love"));
 };
-async function verifyOwnerDraftAccess({retry=false}={}){
-  if(ownerDraftCheckPending)return ownerDraftCheckPending;
-  if(ownerDraftAccessChecked&&(!retry||ownerDraftAccess))return ownerDraftAccess;
+async function verifyOwnerDraftAccess(){
+  if(ownerDraftAccessChecked)return;
   ownerDraftAccessChecked=true;
-  const epoch=ownerDraftCheckEpoch;
-  const task=(async()=>{
-    try{
-      const response=await fetch("/redflag-ai-lab/style-test-api.php",{
-        method:"GET",credentials:"same-origin",cache:"no-store",
-        headers:{"Accept":"application/json"},signal:AbortSignal.timeout(15000)
-      });
-      if(epoch!==ownerDraftCheckEpoch)return false;
-      if(!response.ok)return false;
-      const data=await response.json();
-      if(epoch!==ownerDraftCheckEpoch||data?.ok!==true||data?.owner!==true||data?.draft_only!==true)return false;
-      const wasOwner=ownerDraftAccess;
-      ownerDraftAccess=true;
-      if(!wasOwner){
-        const love=categoryStates.get("love");
-        if(love){
-          for(const [id,response] of love.answers)
-            if(!response?.isDraft)love.answers.delete(id);
-          love.answerErrors.clear();
-        }
-      }
-      if(redFlag.classList.contains("is-active"))renderCategories();
-      return true;
-    }catch(_){return false;/* Unverified users never see draft generation. */}
-  })();
-  ownerDraftCheckPending=task;
-  try{return await task;}
-  finally{if(ownerDraftCheckPending===task)ownerDraftCheckPending=null;}
+  try{
+    const response=await fetch("/redflag-ai-lab/style-test-api.php",{
+      method:"GET",credentials:"same-origin",cache:"no-store",
+      headers:{"Accept":"application/json"}
+    });
+    if(!response.ok)return;
+    const data=await response.json();
+    if(data?.ok!==true||data?.owner!==true||data?.draft_only!==true)return;
+    ownerDraftAccess=true;
+    if(redFlag.classList.contains("is-active"))renderCategories();
+  }catch(_){/* Unverified users never see draft generation. */}
 }
 window.addEventListener("numi:account-session-changed",()=>{
   ownerDraftAccess=false;ownerDraftAccessChecked=false;
-  ownerDraftCheckEpoch++;ownerDraftCheckPending=null;
   for(const state of categoryStates.values()){
     for(const [id,response] of state.answers)
       if(response?.isDraft)state.answers.delete(id);
@@ -927,19 +907,7 @@ const createQuestion = (question, state) => {
       const text=document.createElement("p");
       text.textContent=response.answer;
       text.style.whiteSpace="pre-wrap";
-      if(question.id==="first-step"&&state===categoryStates.get("love")){
-        const match=/^(.*?)\s*\nШуточный вердикт:\s*([^\n]+)\n\s*\n([\s\S]+)$/s.exec(response.answer);
-        if(match){
-          text.textContent=match[1].trim();
-          const joke=document.createElement("p");
-          const bold=document.createElement("strong");
-          bold.textContent="Шуточный вердикт: "+match[2].trim();
-          joke.append(bold);
-          const follow=document.createElement("p");
-          follow.textContent=match[3].trim();
-          answer.append(note,text,joke,follow);
-        }else answer.append(note,text);
-      }else answer.append(note,text);
+      answer.append(note,text);
       // Editing and saving are available ONLY on authenticated owner drafts.
       // Saving writes to /private and never marks a public question as ready.
       const controls=document.createElement("div");
@@ -1079,13 +1047,7 @@ const createQuestion = (question, state) => {
     answer.innerHTML = `
     ${verdictMarkup}
     ${scalesMarkup}
-    ${paragraphs.map((paragraph,index) => {
-      if(index===0&&question.id==="first-step"&&state===categoryStates.get("love")){
-        const match=/^(.*?)\s*\nШуточный вердикт:\s*([^\n]+)$/s.exec(paragraph);
-        if(match)return `<p>${escapeMarkup(match[1].trim())}</p><p><strong>Шуточный вердикт: ${escapeMarkup(match[2].trim())}</strong></p>`;
-      }
-      return `<p>${escapeMarkup(paragraph)}</p>`;
-    }).join("")}
+    ${paragraphs.map((paragraph) => `<p>${escapeMarkup(paragraph)}</p>`).join("")}
     ${observationMarkup}`;
     addRedFlagShare(answer, formatRedFlagMessage(question, response, formattedDate));
     }
@@ -1171,10 +1133,7 @@ const createCategory = (category, index) => {
     if (!opening) state.activeQuestionId = null;
     toggle.blur();
     renderCategories({ type: "category", id: category.id });
-    if (opening) {
-      if(category.id==="love"&&!ownerDraftAccess)void verifyOwnerDraftAccess({retry:true});
-      ensureQuestions(category);
-    }
+    if (opening) ensureQuestions(category);
   });
   section.append(toggle);
 
@@ -1400,7 +1359,7 @@ export const openRedFlag = () => {
   redFlag.classList.add("is-active");
   window.scrollTo({ top: 0, behavior: "instant" });
   renderCategories();
-  void verifyOwnerDraftAccess({retry:true});
+  void verifyOwnerDraftAccess();
 
   // A broadcast deep link opens the exact named question, not just the section.
   // Date input remains optional until the question is actually requested.
