@@ -1,6 +1,6 @@
 // Red Flag deliberately needs only day and month, with no birth-year dependence.
 import { buildRelationshipProfile } from "./redflag-engine.js?v=4";
-import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=redflag-sales-20261125";
+import { REDFLAG_CATEGORIES } from "./redflag-categories.js?v=comic-questions-20261125";
 
 // Paid content is rendered as text; do not interpret author-controlled paragraphs as HTML.
 const escapeMarkup = value => String(value??"").replace(/[&<>"']/g,char=>({
@@ -43,6 +43,7 @@ let formattedDate;
 const redflagDraftSections = new Set(["flags","infidelity","intimacy","family","language","verdict","love"]);
 let ownerDraftAccess=false,ownerDraftAccessChecked=false;
 const ownerDraftInScope=(question,state)=>{
+  if(question.status==="comic-pending")return false;
   const section=[...categoryStates].find(([,entry])=>entry===state)?.[0];
   return Boolean(ownerDraftAccess&&redflagDraftSections.has(section)&&
     (question.isComingSoon||section==="flags"||section==="infidelity"||
@@ -1105,7 +1106,7 @@ const ensureQuestions = async (category) => {
       ...question, isFree: index === 0,
       priceRub: index === 0 ? 0 : question.priceRub,
       // All ten intimacy questions use the native production AI and wallet.
-      isComingSoon: ["intimacy","verdict","love"].includes(category.id) ? false : question.status !== "ready"
+      isComingSoon: question.status==="comic-pending" || (["intimacy","verdict","love"].includes(category.id) ? false : question.status !== "ready")
     }));
   } finally {
     state.loading = false;
