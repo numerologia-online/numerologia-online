@@ -731,7 +731,7 @@ function naCatalogResolve(array $input,bool $club): array {
           || !is_string($clock)||!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/D',$clock))
           throw new InvalidArgumentException('INVALID_QUESTION_SUBJECT');
         $resource='moment:'.$question.':'.$clock;
-        $price=$club?2500:5000;
+        $price=$club?4900:10000;
         $kind='question';$availability='NOT_LAUNCHED';
     } elseif ($code==='club_month') {
         $resource='club';$price=49000;$kind='subscription';

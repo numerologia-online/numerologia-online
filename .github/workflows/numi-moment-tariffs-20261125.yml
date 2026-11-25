@@ -1,0 +1,150 @@
+name: Publish 300 questions prices and mobile tariffs
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/numi-moment-tariffs-20261125.yml'
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.event.head_commit.message == 'Align 300 questions pricing and simplify tariffs'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Validate prices, sale gate and browser sources
+        run: |
+          node --check account-browser.js
+          node --check moment/moment.js
+          node --input-type=module --check < app.js
+          node --input-type=module --check < personal-day-feature.js
+          php -l account-service/private/core.php
+          php <<'PHP'
+          <?php
+          require 'account-service/private/core.php';
+          require_once 'account-service/private/store.php';
+          $subject=['product_code'=>'moment_question','question_id'=>'love-001','question_time'=>'12:30'];
+          foreach ([false,true] as $club) {
+              $expected=$club?4900:10000;
+              $quote=naCatalogResolve($subject,$club);
+              $cart=naCartResolve([$subject],$club,fn()=>false,[],fn()=>true);
+              if ($quote['price_kopeks']!==$expected || $quote['availability']!=='NOT_LAUNCHED'
+                  || $cart['total_kopeks']!==$expected || $cart['fulfillment_ready']!==false)
+                  throw new RuntimeException('MOMENT_PRICE_OR_SALE_GATE');
+          }
+          echo "MOMENT_PRICES_AND_SALE_GATE_VERIFIED\n";
+          PHP
+      - name: Back up, publish and verify the two tariffs and the 300-question catalog
+        env:
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          from concurrent.futures import ThreadPoolExecutor
+          from hashlib import sha256
+          from pathlib import Path
+          import ftplib, io, json, os, ssl, subprocess, time, urllib.request
+
+          core = 'account-service/private/core.php'
+          public = ('account-browser.js','personal-day-feature.js','app.js','store-catalog.json',
+                    'moment/moment.js','moment/index.html','prices.html','index.html')
+          paths = (core, *public)
+          source = {p: Path(p).read_bytes() for p in paths}
+          baseline = {p: subprocess.check_output(['git','show','HEAD^:'+p]) for p in paths}
+          price_before = b"$price=$club?2500:5000;\n        $kind='question';$availability='NOT_LAUNCHED';"
+          price_after = b"$price=$club?4900:10000;\n        $kind='question';$availability='NOT_LAUNCHED';"
+          assert baseline[core].count(price_before) == 1 and baseline[core].replace(price_before,price_after) == source[core]
+          observed_prices_sha = '686716ebc0a96ad6d1fd776a169b9c929a61b77206d28abfdcbc9de6ae805a81'
+          origin = 'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
+          nonce = str(time.time_ns())
+          tags = {
+              'account-browser.js':'moment-prices-20261125',
+              'personal-day-feature.js':'moment-prices-20261125',
+              'app.js':'moment-prices-20261125',
+              'moment/moment.js':'prices-20261125'
+          }
+          def fetch(path, body=None):
+              req = urllib.request.Request(origin+'/'+path, data=body, headers={
+                  'Cache-Control':'no-cache','Content-Type':'application/json','Origin':origin
+              })
+              with urllib.request.urlopen(req,timeout=25) as res:
+                  assert res.status == 200 and res.geturl().startswith(origin+'/')
+                  return res.read(2000000)
+          def public_path(path, installed=False):
+              name={'index.html':'','moment/index.html':'moment/'}.get(path,path)
+              return name+'?v='+tags[path] if installed and path in tags else name+'?verify_moment_tariffs='+nonce
+          def read_public(installed=False):
+              with ThreadPoolExecutor(max_workers=4) as pool:
+                  return dict(zip(public,pool.map(lambda p:fetch(public_path(p,installed)),public)))
+          def verify_session():
+              data=json.loads(fetch('api/numi-account.php',b'{"action":"session"}'))
+              assert data.get('ok') is True and data.get('authenticated') is False, 'ACCOUNT_SESSION_CHECK'
+
+          live = read_public()
+          verify_session()
+          with ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=28) as ftp:
+              ftp.connect('server172.hosting.reg.ru',21)
+              ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+              ftp.prot_p()
+              home=ftp.pwd().rstrip('/')
+              web=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+              remote={p:web+p for p in public}
+              remote[core]=home+'/private/numi-account-20261031/core.php'
+              backup=home+'/site-safeguard-backups/moment-tariffs-'+nonce
+
+              def read(target):
+                  buf=io.BytesIO()
+                  ftp.retrbinary('RETR '+target,buf.write)
+                  return buf.getvalue()
+
+              def write(target,data):
+                  ftp.storbinary('STOR '+target,io.BytesIO(data))
+                  assert read(target)==data,'UPLOAD_BYTES'
+
+              before={p:read(remote[p]) for p in paths}
+              for p in public:
+                  assert before[p]==live[p],'WRONG_ACTIVE_ROOT_'+p
+                  if p=='prices.html' and sha256(before[p]).hexdigest()==observed_prices_sha:
+                      continue
+                  assert before[p] in (baseline[p],source[p]),'LIVE_FILE_CHANGED_'+p
+              # Preserve independent production changes in the shared account module.
+              private=before[core]
+              if private.count(price_before)==1 and price_after not in private:
+                  source[core]=private.replace(price_before,price_after,1)
+              elif private.count(price_after)==1 and price_before not in private:
+                  source[core]=private
+              else:
+                  raise RuntimeError('LIVE_MOMENT_PRICE_BLOCK_CHANGED')
+              subprocess.run(['php','-l'],input=source[core],check=True)
+
+              ftp.mkd(backup)
+              changed=[p for p in paths if before[p]!=source[p]]
+              def staged(path,suffix):
+                  return backup+'/'+path.replace('/','__')+suffix
+              for p in changed:
+                  write(staged(p,'.bak'),before[p])
+                  write(staged(p,'.ready'),source[p])
+              installed=[]
+              try:
+                  for p in changed:
+                      assert read(remote[p])==before[p],'CONCURRENT_CHANGE_'+p
+                      ftp.rename(staged(p,'.ready'),remote[p])
+                      installed.append(p)
+                      assert read(remote[p])==source[p],'INSTALLED_BYTES_'+p
+                  for p,data in read_public(installed=True).items():
+                      assert data==source[p],'LIVE_PUBLIC_BYTES_'+p
+                  verify_session()
+              except BaseException:
+                  for p in reversed(installed):
+                      ftp.rename(staged(p,'.bak'),remote[p])
+                      assert read(remote[p])==before[p],'ROLLBACK_BYTES_'+p
+                  raise
+          print('MOMENT_300_TARIFFS_LIVE regular=100 RUB member=49 RUB')
+          PY

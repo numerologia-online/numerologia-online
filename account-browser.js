@@ -641,17 +641,11 @@
       cancel.disabled=subscriptionBusy||!(info.active===true||info.auto_renew===true||info.payment_method_attached===true);
       cancel.textContent="Отменить подписку";
     }
-    const tariffs=document.querySelector('#account-dialog [data-account-content="prices"]');
-    if(tariffs){
-      let note=tariffs.querySelector("#numi-personal-club-price-note");
-      if(!note){
-        note=document.createElement("p");note.id="numi-personal-club-price-note";
-        note.style.cssText="margin:8px 0 15px;color:#1d5b43;font-weight:700;font-size:14px";
-        tariffs.querySelector("h3")?.insertAdjacentElement("afterend",note);
-      }
-      note.textContent=response.club_active===true
-        ?"Ваш клуб активен — при покупке применяются клубные цены."
-        :"Цены клуба применяются только при действующей подписке.";
+    const clubNote=document.getElementById("numi-personal-club-price-note");
+    if(clubNote){
+      clubNote.textContent=response.club_active===true
+        ?"Подписка активна. Клубные цены уже действуют."
+        :"Клубные цены действуют при активной подписке.";
     }
     document.documentElement.classList.toggle("numi-club-active",response.club_active===true);
   }
@@ -1130,7 +1124,7 @@
   const savedTypeLabels = {
     redflag_question: "Вопрос о мужчине",
     yesno_question: "Ответ «Да или нет»",
-    moment_question: "Нумерология момента",
+    moment_question: "300 вопросов обо всём",
     year_full: "Полный разбор года",
     life_full: "Полный разбор жизни",
     compatibility_full: "Совместимость",

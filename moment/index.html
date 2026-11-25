@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#143c30">
-  <meta name="description" content="Нумерология момента — 300 вопросов о любви, работе, деньгах и жизненных решениях. Каталог и подбор вопроса.">
+  <meta name="description" content="300 вопросов обо всём: каталог вопросов о любви, работе, деньгах и жизненных решениях.">
   <title>300 вопросов обо всём — Нумерология онлайн</title>
   <link rel="stylesheet" href="./moment.css?v=love-inline-20261117">
   <script defer src="../assets/telegram-web-app-20261102.js"></script>
-  <script defer src="./moment.js?v=calculation-loading-20261117"></script>
+  <script defer src="./moment.js?v=prices-20261125"></script>
 <link rel="canonical" href="https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/">
-<script type="application/ld+json" id="numi-site-entities">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#organization","name":"Нумерология онлайн","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/"},{"@type":"WebSite","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#website","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/","name":"Нумерология онлайн","inLanguage":"ru","publisher":{"@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#organization"}},{"@type":"WebPage","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/#webpage","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/","name":"300 вопросов обо всём — Нумерология онлайн","inLanguage":"ru","isPartOf":{"@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#website"}}]}</script>
+<script type="application/ld+json" id="numi-site-entities">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#organization","name":"Нумерология онлайн","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/"},{"@type":"WebSite","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#website","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/","name":"Нумерология онлайн","inLanguage":"ru","publisher":{"@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#organization"}},{"@type":"WebPage","@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/#webpage","url":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/","name":"300 вопросов обо всём","inLanguage":"ru","isPartOf":{"@id":"https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/#website"}}]}</script>
 <style id="moment-static-catalog-style">
 #category-grid > .moment-static-catalog{grid-column:1/-1;width:100%;display:grid;gap:8px}
 .moment-static-topic{border:1px solid #d8c9a7;border-radius:14px;background:#f3f0e7;overflow:hidden;text-align:left}
@@ -28,20 +28,29 @@
 .moment-catalog-status button{border:0;border-radius:10px;background:#143d30;color:#fff;padding:11px 17px;font-weight:700}
 @media(max-width:650px){.moment-static-topic summary{grid-template-columns:27px minmax(0,1fr) 68px 17px;padding:10px 12px;gap:8px}.moment-static-topic strong{font-size:14px}.moment-static-topic small{font-size:11px}.moment-static-topic ol{padding-left:34px}.moment-static-topic li{font-size:13px}}
 </style>
-<style id="moment-coming-soon-styles">
-.explore .section-heading{display:flex;flex-direction:column;align-items:center;gap:6px}
-.moment-launch-price{font-weight:750;font-size:16px;color:#b08849;margin:0;text-align:center}
-.moment-launch-price span{font-weight:650;color:#657b6c}
-.explore .category-count{color:#967344}
-.question-entry:disabled{cursor:not-allowed;opacity:1;color:#183f31}
-.question-entry:disabled:hover .question-name{text-decoration:none}
-.question-entry .moment-question-status{font-size:12px;color:#997644;font-weight:700;margin-left:auto;white-space:nowrap}
-.question-entry .moment-question-status span{color:#708474;font-weight:600}
-.moment-static-topic li::after{content:"49 ₽ · Скоро";display:inline-block;margin-left:10px;color:#997644;font-size:12px;font-weight:750;white-space:nowrap}
-@media(max-width:650px){.question-entry{flex-wrap:wrap;column-gap:9px}.question-entry .question-name{flex-basis:calc(100% - 50px)}.question-entry .moment-question-status{width:100%;text-align:right;padding-right:3px}.moment-launch-price{font-size:14px}}
+<style id="moment-catalog-prices">
+.moment-catalog-header{padding-top:16px;text-align:center}
+.moment-catalog-header .moment-back-button{
+  display:inline-flex;align-items:center;gap:7px;min-height:40px;margin-bottom:8px;
+  font-size:13px;font-weight:650;color:#456552
+}
+.moment-catalog-header h1{
+  margin:0;font:600 clamp(30px,6.8vw,52px)/1.14 'Playfair Display',Georgia,serif;
+  letter-spacing:-.025em;color:#143d30
+}
+.moment-launch-prices{
+  max-width:380px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  margin:19px auto 7px;overflow:hidden;border:1px solid #ddd5c1;border-radius:14px;background:#fffdf8
+}
+.moment-launch-prices>div{padding:9px 7px 11px}
+.moment-launch-prices>div+div{background:#edf4ec;border-left:1px solid #d6e3d5}
+.moment-launch-prices dt{color:#526b5d;font-size:12px;font-weight:600}
+.moment-launch-prices dd{margin:2px 0 0;color:#204a37;font-size:21px;line-height:1.25;font-weight:750;white-space:nowrap}
+.moment-preview-status{margin:0 0 15px;color:#5c7164;font-size:12px;line-height:1.45}
+.explore .section-heading[hidden]{display:none}
+.explore .category-count{color:#816444}
 </style>
 <style id="moment-compact-catalog-heading-20261117">
-  /* Preserve the large "300 вопросов о жизни" title. Only compact the supporting heading. */
   .explore{padding-top:8px}
   .explore .section-heading{gap:4px;margin-bottom:14px}
   .explore .section-heading h2{font:500 clamp(20px,2.7vw,25px)/1.22 'Playfair Display',Georgia,serif;letter-spacing:-.01em;max-width:100%}
@@ -59,9 +68,14 @@
     </div>
   </header>
   <main>
-    <section class="shell" aria-label="300 вопросов о жизни" style="padding-top:clamp(14px,3vw,24px);text-align:center">
-      <a href="../" class="moment-back-button" aria-label="Назад на главную" style="display:flex;align-items:center;justify-content:center;width:60%;min-width:205px;max-width:300px;min-height:48px;padding:10px 14px;margin:0 auto 20px;border:2px solid #b98b44;border-radius:14px;background:#f3e8d3;color:#143d30;box-shadow:0 5px 15px #143d3026;font-family:'DM Sans',system-ui,sans-serif;font-weight:750;font-size:15px;line-height:1.2;text-decoration:none">← Назад</a>
-      <h1 style="font:600 clamp(32px,7.5vw,54px)/1.15 'Playfair Display',Georgia,serif;letter-spacing:-.025em;color:#143d30;margin:0">300 вопросов о жизни</h1>
+    <section class="shell moment-catalog-header" aria-labelledby="moment-title">
+      <a href="../" class="moment-back-button"><span aria-hidden="true">←</span> На главную</a>
+      <h1 id="moment-title">300 вопросов обо всём</h1>
+      <dl class="moment-launch-prices" aria-label="Цена одного ответа после запуска">
+        <div><dt>Без подписки</dt><dd id="moment-price-regular">100&nbsp;₽</dd></div>
+        <div><dt>С Клубом</dt><dd id="moment-price-member">49&nbsp;₽</dd></div>
+      </dl>
+      <p class="moment-preview-status">Цена за ответ. Покупка откроется после запуска.</p>
       <div hidden aria-hidden="true">
         <input id="question-search" type="search" value="">
         <button id="clear-search" type="button" hidden>×</button>
@@ -70,7 +84,6 @@
     <section class="explore shell" aria-label="Каталог вопросов">
       <div class="section-heading">
         <h2>Выберите, что сейчас важно</h2>
-        <p class="moment-launch-price">49 ₽ за вопрос <span>· В разработке</span></p>
       </div>
       <div id="moment-catalog-status" class="moment-catalog-status" role="status" aria-live="polite" hidden><p>Не удалось обновить каталог. Темы и названия всех 300 вопросов доступны ниже.</p><button type="button" id="moment-catalog-retry">Повторить загрузку</button></div>
       <div id="category-grid" class="category-grid" aria-label="Темы">

@@ -33,22 +33,22 @@
     .price{font-weight:800;font-size:20px;white-space:nowrap;letter-spacing:-.03em}.tier-prices{font-size:14px;line-height:1.45;white-space:normal}
     .member{font-weight:800;font-size:19px;white-space:nowrap;color:#8c5f3b}.member.tier-prices{font-size:14px;white-space:normal}
     .member small{display:block;font-size:11px;color:#65766a;font-weight:500;line-height:1.35;white-space:normal}
-    .tiers{margin:15px 0 6px;display:flex;flex-wrap:wrap;gap:9px}
-    .tier{border:1px solid #d6d5c9;background:#f8f8f4;padding:10px 13px;border-radius:12px;min-width:95px}
-    .tier b{font-size:19px;white-space:nowrap}.tier span{display:block;color:#667469;font-size:11px}
     .club{background:#edf2eb;border-color:#d5dfd2}
     .club-feature{display:flex;justify-content:space-between;gap:16px;align-items:baseline;border-bottom:1px solid #d6e0d5;padding:12px 0}
     .club-feature strong{font-size:27px;white-space:nowrap}
     .club-feature:last-of-type{border:0}
-    p{margin:10px 0 0}.note{font-size:13px;color:#57665c;line-height:1.7}
-    .notice{margin:12px 0 0;padding:13px 16px;background:#f8f6ef;border-left:3px solid var(--gold);font-size:13px;color:#536458}
+    p{margin:10px 0 0}.note{font-size:13px;color:#57665c;line-height:1.65}
     .links{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:17px;font-size:13px}
     footer{border-top:1px solid var(--line);margin-top:25px;padding-top:20px;color:#66746a;font-size:12px;line-height:1.8}
+    .amount{white-space:nowrap;font-variant-numeric:tabular-nums}
+    .price-copy{font-size:14px!important;line-height:1.3;white-space:normal}
+    .price-copy small{display:block;color:#596e60;font:500 11px/1.3 system-ui,sans-serif}
+    .featured-price{background:#f9f3e7;border-radius:12px;padding-inline:10px}
     @media(max-width:640px){
       section{padding:20px 17px;border-radius:16px}
-      .head,.item{grid-template-columns:minmax(0,1fr) 74px 90px;column-gap:8px}
+      .head,.item{grid-template-columns:minmax(0,1fr) minmax(57px,.46fr) minmax(61px,.5fr);column-gap:8px}
       .head{font-size:10px;line-height:1.3}.price,.member{font-size:16px}
-      .name{font-size:13px}.desc{font-size:11px}
+      .name{font-size:13px}.desc{font-size:11px}.price-copy,.price.tier-prices,.member.tier-prices{font-size:12px!important}
       .item{padding:14px 0}.club-feature strong{font-size:24px}
     }
    .item .name>a{color:inherit;text-decoration:underline;text-decoration-color:#b9a77c;text-underline-offset:3px} .item .name>a:hover{color:#906d35}
@@ -60,42 +60,51 @@
 <main class="shell">
   <p class="eyebrow">Нумерология онлайн · 9966</p>
   <h1>Стоимость разборов и подписки</h1>
-  <p class="lead">Здесь собраны цены наших цифровых продуктов. Вы можете выбрать разовую покупку без клуба или пользоваться клубными условиями. Каждая цена указана в рублях.</p>
+  <p class="lead">Цены на разовые покупки и для участников Клуба.</p>
   <section aria-labelledby="reports-title">
     <h2 id="reports-title">Персональные разборы</h2>
     <p class="subtitle">Стоимость одного полного цифрового разбора. PDF доступен для сохранения, если предусмотрен выбранным продуктом.</p>
-    <div class="head"><span>Продукт</span><span>Без подписки</span><span>По подписке</span></div>
-    <div class="item"><div class="name"><a href="/#year">Полный разбор года</a><span class="desc">Персональный годовой разбор и PDF</span></div><div class="price">990 ₽</div><div class="member">490 ₽</div></div>
-    <div class="item"><div class="name"><a href="/pro/">Полный разбор жизни</a><span class="desc">Большой персональный разбор по дате рождения</span></div><div class="price">990 ₽</div><div class="member">490 ₽</div></div>
-    <div class="item"><div class="name"><a href="/#compatibility">Совместимость</a><span class="desc">Разбор пары по датам рождения</span></div><div class="price">990 ₽</div><div class="member">490 ₽</div></div>
-    <div class="item"><div class="name"><a href="/child/">Детский разбор</a><span class="desc">21 глава и PDF для одного ребёнка; первая глава бесплатно</span></div><div class="price">990 ₽</div><div class="member">490 ₽</div></div>
+    <div class="head"><span>Продукт</span><span>Без подписки</span><span>С Клубом</span></div>
+    <div class="item"><div class="name"><a href="/#year">Полный разбор года</a><span class="desc">Персональный годовой разбор и PDF</span></div><div class="price"><span class="amount">990&nbsp;₽</span></div><div class="member"><span class="amount">490&nbsp;₽</span></div></div>
+    <div class="item"><div class="name"><a href="/pro/">Полный разбор жизни</a><span class="desc">Большой персональный разбор по дате рождения</span></div><div class="price"><span class="amount">990&nbsp;₽</span></div><div class="member"><span class="amount">490&nbsp;₽</span></div></div>
+    <div class="item"><div class="name"><a href="/#compatibility">Совместимость</a><span class="desc">Разбор пары по датам рождения</span></div><div class="price"><span class="amount">990&nbsp;₽</span></div><div class="member"><span class="amount">490&nbsp;₽</span></div></div>
+    <div class="item"><div class="name"><a href="/child/">Детский разбор</a><span class="desc">21 глава и PDF для одного ребёнка; первая глава бесплатно</span></div><div class="price"><span class="amount">990&nbsp;₽</span></div><div class="member"><span class="amount">490&nbsp;₽</span></div></div>
   </section>
   <section aria-labelledby="questions-title">
     <h2 id="questions-title">Ответы на вопросы</h2>
-    <p class="subtitle">Цена относится к одному выбранному вопросу, а не ко всему разделу.</p>
-    <div class="head"><span>Продукт</span><span>Без подписки</span><span>По подписке</span></div>
-    <div class="item"><div class="name"><a href="/moment/yes-no/">Вопросы «Да или нет?»</a><span class="desc">Без подписки один бесплатный ответ в день, дополнительные ответы только в Клубе</span></div><div class="price">1 в день бесплатно</div><div class="member">Все 100 без доплаты<small>С подпиской Клуба 490 ₽/мес.</small></div></div>
-    <div class="item"><div class="name"><a href="/#redflag">«Мужчина или Red Flag»</a><span class="desc">Первый ценовой вариант · один выбранный вопрос</span></div><div class="price">20 ₽</div><div class="member">10 ₽</div></div>
-    <div class="item"><div class="name"><a href="/#redflag">«Мужчина или Red Flag»</a><span class="desc">Второй ценовой вариант · один выбранный вопрос</span></div><div class="price">39 ₽</div><div class="member">19 ₽</div></div>
-    <div class="item"><div class="name"><a href="/#redflag">«Мужчина или Red Flag»</a><span class="desc">Третий ценовой вариант · один выбранный вопрос</span></div><div class="price">79 ₽</div><div class="member">39 ₽</div></div>
-    <div class="item"><div class="name"><a href="/moment/">«Нумерология момента» — 300 вопросов</a><span class="desc">49 ₽ за один вопрос. Все 300 вопросов пока в разработке, покупка недоступна.</span></div><div class="price">49 ₽<small>Скоро</small></div><div class="member">Подписка не требуется</div></div>
-    <div class="notice">В разделе «Мужчина или Red Flag» цена определяется выбранным вопросом: <strong>20 ₽, 39 ₽ или 79 ₽</strong>. По подписке соответствующие цены: <strong>10 ₽, 19 ₽ или 39 ₽</strong>. Бесплатные ознакомительные ответы сохраняются.</div>
+    <p class="subtitle">Стоимость одного ответа</p>
+    <div class="head"><span>Продукт</span><span>Без подписки</span><span>С Клубом</span></div>
+    <div class="item">
+      <div class="name"><a href="/moment/yes-no/">Вопросы «Да или нет?»</a></div>
+      <div class="price price-copy">1 в день<small>бесплатно</small></div>
+      <div class="member price-copy">Все 100<small>без доплаты</small></div>
+    </div>
+    <div class="item">
+      <div class="name"><a href="/#redflag">Мужчина или Red Flag</a><span class="desc">Есть бесплатные ознакомительные ответы</span></div>
+      <div class="price tier-prices">20 / 39 / <span class="amount">79&nbsp;₽</span></div>
+      <div class="member tier-prices">10 / 19 / <span class="amount">39&nbsp;₽</span></div>
+    </div>
+    <div class="item featured-price" data-product="moment_question">
+      <div class="name"><a href="/moment/">300 вопросов обо всём</a><span class="desc">Цены на один ответ после запуска</span></div>
+      <div class="price"><span class="amount">100&nbsp;₽</span></div>
+      <div class="member"><span class="amount">49&nbsp;₽</span></div>
+    </div>
   </section>
   <section class="club" aria-labelledby="club-title">
     <h2 id="club-title">Клуб «Нумерология Онлайн»</h2>
-    <div class="club-feature"><span>Ежемесячная подписка</span><strong>490 ₽ / мес.</strong></div>
-    <p class="note">Клуб предоставляет специальные цены на большие разборы и отдельные вопросы, доступ к предусмотренным тарифом материалам и другим преимуществам. Подписка оформляется отдельно. Разборы с клубной скидкой приобретаются за отдельную плату; стоимость самой подписки не включена в цену разбора. Подключение подписки пока готовится.</p>
+    <div class="club-feature"><span>Ежемесячная подписка</span><strong>490&nbsp;₽ / мес.</strong></div>
+    <p class="note">Клуб предоставляет специальные цены на большие разборы и отдельные вопросы, доступ к предусмотренным тарифом материалам и другим преимуществам. Подписка оформляется отдельно. Разборы с клубной скидкой приобретаются за отдельную плату; стоимость самой подписки не включена в цену разбора.</p>
   </section>
   <section aria-labelledby="school-title">
     <h2 id="school-title">Самоучитель по нумерологии</h2>
     <p class="subtitle">«Нумерология с нуля» — самоучитель с уроками и практикой.</p>
-    <div class="club-feature"><span>Подписка на самоучитель</span><strong>149 ₽ / нед.</strong></div>
+    <div class="club-feature"><span>Подписка на самоучитель</span><strong>149&nbsp;₽ / нед.</strong></div>
     <p class="note"><strong>Только по подписке.</strong> Доступ к урокам самоучителя — 149 ₽ в неделю. Подписка на самоучитель оформляется отдельно от клубной подписки.</p>
     <p class="note"><a href="/pro/schools/">Посмотреть направления самоучителя</a></p>
   </section>
   <section aria-labelledby="how-title">
     <h2 id="how-title">Как получить цифровой продукт</h2>
-    <p class="note">После запуска оплаты вы сможете выбрать продукт на сайте, проверить итоговую сумму до подтверждения платежа и получить оплаченный материал через личный кабинет. Если покупка включает PDF, файл можно скачать на своё устройство. Сейчас подключение онлайн-оплаты завершается: оплата на сайте ещё недоступна.</p>
+    <p class="note">Выберите доступный продукт и проверьте сумму перед оплатой. Купленный материал появится в личном кабинете. Если в разбор входит PDF, его можно скачать.</p>
     <div class="links"><a href="/offer.html">Публичная оферта</a><a href="/refunds.html">Возврат денежных средств</a><a href="/terms.html">Условия использования</a><a href="/privacy.html">Политика конфиденциальности</a><a href="/contacts.html">Контакты и реквизиты</a></div>
   </section>
   <footer>© 2026 ИП Чалынина Татьяна Олеговна · ИНН 633011166908 · ОГРНИП 325632700163022<br>Вопросы о продуктах и доступе: <a href="mailto:online.numerology.info@yandex.ru">online.numerology.info@yandex.ru</a></footer>

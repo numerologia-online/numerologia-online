@@ -67,7 +67,7 @@ products = [
     ("child_full_v1", "Детский разбор"),
     ("redflag_question", "Мужчина или Red Flag"),
     ("yesno_question", "Да или нет?"),
-    ("moment_question", "Нумерология момента"),
+    ("moment_question", "300 вопросов обо всём"),
     ("club_month", "Клуб"),
     ("school_week", "Школа нумерологии"),
     ("money_rituals", "Денежные ритуалы"),

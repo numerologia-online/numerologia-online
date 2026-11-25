@@ -28,7 +28,7 @@ foreach([false,true] as $club){
  check($yesno['member_included']===$club && $yesno['kind']==='club_included','yesno only included by Club');
  check($yesno['availability']===($club?'CLUB_ACTIVE':'CLUB_REQUIRED'),'yesno Club access state');
  $moment=naCatalogResolve(['product_code'=>'moment_question','question_id'=>'love-001','question_time'=>'23:59'],$club);
- check($moment['price_kopeks']===($club?2500:5000)&&$moment['availability']==='NOT_LAUNCHED','moment closed');
+ check($moment['price_kopeks']===($club?4900:10000)&&$moment['availability']==='NOT_LAUNCHED','moment closed');
 }
 invalid(fn()=>naCatalogResolve(['product_code'=>'life_full','birth_date'=>'2026-02-30'],false),'invalid date');
 invalid(fn()=>naCatalogResolve(['product_code'=>'yesno_question','question_id'=>'yn-man-999','question_time'=>'12:00'],false),'unknown question');

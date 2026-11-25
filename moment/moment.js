@@ -1,7 +1,6 @@
 "use strict";
 (() => {
   // Preview-only Moment catalog. The separate 100 Yes/No questions retain their own subscription rules.
-  // Every one of the 300 Moment questions is a 49 RUB one-time purchase AFTER launch.
   // No question is openable or payable while its content is under development.
   const $ = id => document.getElementById(id);
   const grid=$("category-grid"), list=$("question-list"), search=$("question-search"), clear=$("clear-search");
@@ -80,7 +79,7 @@
     catalog.categories.forEach(cat=>{
       const b=elem("button","category"+(active===cat.id?" active":""));
       b.type="button";b.setAttribute("aria-pressed",String(active===cat.id));
-      b.append(elem("span","category-icon",cat.icon),elem("strong","category-title",cat.title),elem("span","category-count",cat.count+" вопросов · Скоро"));
+      b.append(elem("span","category-icon",cat.icon),elem("strong","category-title",cat.title),elem("span","category-count",cat.count+" вопросов"));
       b.addEventListener("click",()=>{
         active=cat.id;visibleCount=12;
         renderCategories();
@@ -235,7 +234,7 @@
     const found=filtered(),cat=catalog.categories.find(c=>c.id===active);
     resultsTitle.textContent=cat?cat.title:"Все вопросы";
     showPairEntry();
-    resultsMsg.textContent=found.length?"49 ₽ за вопрос · В разработке · "+found.length+" вопросов":"Вопросов не найдено";
+    resultsMsg.textContent=found.length?found.length+" вопросов":"Вопросов не найдено";
     showAll.hidden=false;
     clear.hidden=!search.value;
     loveRequestVersion++;
@@ -285,7 +284,12 @@
       const heading=elem("h3","","Вопрос готовится к запуску");
       const question=elem("p","moment-question-modal-title");
       question.id="moment-question-modal-title";
-      const description=elem("p","","Ответ пока недоступен. После запуска вопрос будет стоить 49 ₽. Сейчас деньги не списываются.");
+      const regular=$("moment-price-regular")?.textContent;
+      const member=$("moment-price-member")?.textContent;
+      const price=regular && member
+        ? "После запуска ответ будет стоить "+regular+" без подписки или "+member+" с Клубом."
+        : "Покупка откроется после запуска.";
+      const description=elem("p","",price);
       const close=elem("button","moment-question-modal-close","Понятно");
       close.type="button";
       close.addEventListener("click",()=>dialog.close());
