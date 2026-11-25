@@ -1,8 +1,8 @@
 "use strict";
 (() => {
   const $ = id => document.getElementById(id);
-  const grid = $("yn-categories"), panel = $("yn-panel"), list = $("yn-questions"),
-    title = $("yn-title"), count = $("yn-count"), back = $("yn-all"), dialog = $("yn-dialog");
+  const grid = $("yn-categories"), back = $("yn-all"), dialog = $("yn-dialog");
+  const questionTitle = $("yn-dialog-title"), submit = $("yn-submit"), now = $("yn-now");
   let catalog = null, active = null, selectedQuestion = null, answerRequest = 0, answerController = null;
   const timeInput = $("yn-time-input"), timeForm = $("yn-time-form"),
     timeError = $("yn-time-error"), timeResult = $("yn-time-result");
@@ -16,14 +16,8 @@
     return digits.length > 2 ? digits.slice(0, 2) + ":" + digits.slice(2) : digits;
   };
   const validTime = value => /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
-  let questionListScroll = 0;
-  const directoryPage = document.querySelector("main");
-  function closeQuestion() {
-    answerRequest++; answerController?.abort(); timeInput.blur();
-    dialog.hidden = true; directoryPage.hidden = false;
-    document.body.classList.remove("yn-question-page");
-    window.scrollTo(0, questionListScroll);
-  }
+  let useCurrentTime = true;
+  const scrollBehavior = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   async function confirmTime(value, scrollToAnswer = false) {
     if (!validTime(value)) {
       timeError.hidden = false;
@@ -45,9 +39,11 @@
     }
     timeResult.textContent = "Подготавливаем ответ.";
     answerController = new AbortController();
-    const timer = setTimeout(() => answerController?.abort(), 12000);
+    const controller = answerController;
+    submit.disabled = true;
+    const timer = setTimeout(() => controller.abort(), 12000);
     try {
-      const response = await fetch("/api/numi-yesno-answer.php", {method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:selectedQuestion.id,time:value}),cache:"no-store", signal:answerController.signal});
+      const response = await fetch("/api/numi-yesno-answer.php", {method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:selectedQuestion.id,time:value}),cache:"no-store", signal:controller.signal});
       const data = await response.json();
       if (id !== answerRequest) return;
       if(data.error==="DAILY_LIMIT_REACHED"||data.error==="LOGIN_REQUIRED"){
@@ -82,8 +78,8 @@
       if (id === answerRequest) timeResult.textContent = "Не удалось получить ответ. Попробуйте ещё раз.";
     } finally {
       clearTimeout(timer);
-      // Scroll only after an explicit "Спросить сейчас" press and the answer
-      // (or Club invitation) is rendered. Never auto-scroll while editing time.
+      if (id === answerRequest) submit.disabled = false;
+      // Scroll only after an explicit question submission.
       if (scrollToAnswer && id === answerRequest && !dialog.hidden && !timeResult.hidden) {
         requestAnimationFrame(() => {
           if (id !== answerRequest || dialog.hidden || timeResult.hidden) return;
@@ -151,98 +147,95 @@
   };
   function renderCategories() {
     grid.replaceChildren(...catalog.categories.map(category => {
-      const a = node("button", "yn-topic");
-      a.type = "button";
-      a.setAttribute("aria-label", category.title + ", " + category.count + " вопросов. Открыть");
+      const group = node("div", "yn-topic-group");
+      const toggle = node("button", "yn-topic");
+      toggle.type = "button";
+      toggle.setAttribute("aria-expanded", "false");
+      const listId = "yn-category-" + category.id;
+      toggle.setAttribute("aria-controls", listId);
       const icon = node("span", "yn-topic-icon", category.icon);
       icon.setAttribute("aria-hidden", "true");
-      const words = node("span", "yn-topic-copy");
-      words.append(node("strong", "yn-topic-name", category.title),
-        node("span", "yn-topic-count", category.count + " вопросов"));
-      const arrow = node("span", "yn-topic-arrow", "→");
-      arrow.setAttribute("aria-hidden", "true");
-      a.append(icon, words, arrow);
-      a.addEventListener("click", () => openCategory(category.id));
-      return a;
+      const words = node("span", "yn-topic-copy", category.title);
+      const count = node("span", "yn-topic-count", String(category.count));
+      const chevron = node("span", "yn-topic-arrow", "⌄");
+      chevron.setAttribute("aria-hidden", "true");
+      toggle.append(icon, words, count, chevron);
+      const questions = node("div", "yn-questions-list");
+      questions.id = listId;
+      questions.hidden = true;
+      questions.setAttribute("role", "group");
+      questions.setAttribute("aria-label", category.title);
+      questions.replaceChildren(...catalog.questions.filter(q => q.category === category.id).map(q => {
+        const button = node("button", "yn-question", q.title);
+        button.type = "button";
+        button.setAttribute("aria-pressed", String(selectedQuestion?.id === q.id));
+        button.addEventListener("click", () => selectQuestion(q));
+        return button;
+      }));
+      toggle.addEventListener("click", () => openCategory(active === category.id ? null : category.id));
+      group.dataset.category = category.id;
+      group.append(toggle, questions);
+      return group;
     }));
   }
   function openCategory(id) {
-    if (!catalog.categories.some(c => c.id === id)) return;
+    if (id !== null && !catalog.categories.some(c => c.id === id)) return;
     active = id;
-    grid.hidden = true;
-    document.querySelector(".yn-directory > .overline").hidden = true;
-    document.querySelector(".yn-directory > h1").hidden = true;
-    document.querySelector(".yn-directory-sub").hidden = true;
-    panel.hidden = false;
-    render();
-    back.scrollIntoView({behavior: "auto", block: "start"});
+    for (const group of grid.children) {
+      const expanded = group.dataset.category === id;
+      group.querySelector(".yn-topic").setAttribute("aria-expanded", String(expanded));
+      group.querySelector(".yn-questions-list").hidden = !expanded;
+    }
   }
-  function showCategories() {
-    active = null;
-    panel.hidden = true;
-    grid.hidden = false;
-    document.querySelector(".yn-directory > .overline").hidden = false;
-    document.querySelector(".yn-directory > h1").hidden = false;
-    document.querySelector(".yn-directory-sub").hidden = false;
-    back.scrollIntoView({behavior: "auto", block: "start"});
-  }
-  function render() {
-    if (!catalog || !active) return;
-    const category = catalog.categories.find(c => c.id === active);
-    const found = catalog.questions.filter(q => q.category === active);
-    title.textContent = category.title;
-    count.textContent = found.length + " вопросов";
-    list.replaceChildren(...found.map((q, i) => {
-      const button = node("button", "yn-question");
-      button.type = "button";
-      button.append(node("span", "yn-question-number", String(i + 1).padStart(2, "0")),
-        node("span", "yn-question-text", q.title),
-        node("span", "yn-question-arrow", "→"));
-      button.addEventListener("click", () => {
-        answerRequest++; answerController?.abort(); selectedQuestion = q;
-        $("yn-dialog-title").textContent = q.title;
-        timeForm.reset();
-        timeError.hidden = true;
-        timeResult.hidden = true;
-        timeInput.removeAttribute("aria-invalid");
-        questionListScroll = window.scrollY;
-        directoryPage.hidden = true;
-        dialog.hidden = false;
-        document.body.classList.add("yn-question-page");
-        window.scrollTo(0, 0);
-        $("yn-back").focus({preventScroll:true});
-
-      });
-      return button;
-    }));
+  function selectQuestion(q) {
+    answerRequest++; answerController?.abort();
+    selectedQuestion = q;
+    questionTitle.textContent = q.title;
+    timeForm.reset();
+    useCurrentTime = true;
+    timeInput.value = currentTime();
+    timeInput.disabled = now.disabled = submit.disabled = false;
+    timeError.hidden = timeResult.hidden = true;
+    timeResult.replaceChildren();
+    timeInput.removeAttribute("aria-invalid");
+    renderCategories();
+    openCategory(null);
+    questionTitle.focus({preventScroll:true});
+    dialog.scrollIntoView({behavior:scrollBehavior(),block:"start"});
   }
   timeInput.addEventListener("input", () => {
+    useCurrentTime = false;
     answerRequest++; answerController?.abort();
+    submit.disabled = !selectedQuestion;
     const cleaned = normalizeTime(timeInput.value);
     if (timeInput.value !== cleaned) timeInput.value = cleaned;
-    if (validTime(cleaned)) {
-      confirmTime(cleaned);
-    } else {
-      timeResult.hidden = true;
-      timeError.hidden = cleaned.length !== 5;
-      if (cleaned.length === 5) timeInput.setAttribute("aria-invalid", "true");
-      else timeInput.removeAttribute("aria-invalid");
-    }
+    timeResult.hidden = true;
+    timeError.hidden = cleaned.length !== 5 || validTime(cleaned);
+    if (!timeError.hidden) timeInput.setAttribute("aria-invalid", "true");
+    else timeInput.removeAttribute("aria-invalid");
   });
   timeForm.addEventListener("submit", event => {
     event.preventDefault();
-    confirmTime(normalizeTime(timeInput.value));
+    if (!selectedQuestion || submit.disabled) return;
+    confirmTime(useCurrentTime ? currentTime() : normalizeTime(timeInput.value), true);
   });
-  $("yn-now").addEventListener("click", () => confirmTime(currentTime(), true));
-  $("yn-close").addEventListener("click", closeQuestion);
-  $("yn-back").addEventListener("click", closeQuestion);
+  now.addEventListener("click", () => {
+    if (!selectedQuestion) return;
+    answerRequest++; answerController?.abort();
+    useCurrentTime = true;
+    timeInput.value = currentTime();
+    timeInput.removeAttribute("aria-invalid");
+    timeError.hidden = timeResult.hidden = true;
+    submit.disabled = false;
+  });
   document.addEventListener("keydown", event => {
-    if (event.key === "Escape" && !dialog.hidden) closeQuestion();
+    if (event.key === "Escape" && active !== null) {
+      const group = Array.from(grid.children).find(el => el.dataset.category === active);
+      openCategory(null);
+      group?.querySelector(".yn-topic")?.focus();
+    }
   });
-  back.addEventListener("click", () => {
-    if (active) showCategories();
-    else window.location.assign("../../");
-  });
+  back.addEventListener("click", () => window.location.assign("../../"));
   (async () => {
     try {
       const response = await fetch("./questions.json?v=3", {cache:"default"});
