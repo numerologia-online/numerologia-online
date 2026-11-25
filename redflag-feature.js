@@ -808,12 +808,6 @@ const addOwnerStyleTrial=(target)=>{
   const draft=ownerStyleTrialStates.get(key)||{answer:"",loading:false,error:""};
   const panel=document.createElement("section");
   panel.style.cssText="padding:14px;margin:0 0 16px;border:1px solid #cbb6c0;border-radius:14px;background:#faf5f7;";
-  const header=document.createElement("p");
-  header.style.cssText="margin:0 0 8px;font-weight:750;color:#6b4157;";
-  header.textContent="🧪 Новый ИИ. Только для тебя, клиентам не видно.";
-  const help=document.createElement("p");
-  help.style.cssText="font-size:13px;margin:0 0 10px;color:#75606b;";
-  help.textContent="Проверяем новую инструкцию. Ниже показан прежний клиентский ответ, его пока не меняли.";
   const go=document.createElement("button");
   go.type="button";
   go.textContent=draft.answer?"↻ Другой вариант ИИ":"✨ Проверить новую инструкцию";
@@ -823,7 +817,7 @@ const addOwnerStyleTrial=(target)=>{
   output.setAttribute("role","status");
   output.style.cssText="margin:12px 0 0;white-space:pre-wrap;font-size:15px;line-height:1.6;";
   output.textContent=draft.loading?"ИИ готовит ответ…":draft.error||draft.answer;
-  panel.append(header,help,go,output);
+  panel.append(go,output);
   target.prepend(panel);
   go.addEventListener("click",async()=>{
     const current=ownerStyleTrialStates.get(key);
@@ -899,16 +893,10 @@ const createQuestion = (question, state) => {
   answer.hidden = !opened;
   if (opened && response) {
     if(response.isDraft){
-      const note=document.createElement("p");
-      note.className="redflag-owner-ai-label";
-      note.textContent=response.isSaved
-        ?"📂 Сохранённый черновик. Не новый ответ ИИ. Клиентам не видно."
-        :"✨ Новый ИИ-ответ для проверки. Только тебе, не опубликован.";
-      note.style.cssText="margin:4px 0 12px;font:750 13px/1.5 system-ui;color:#91683b";
       const text=document.createElement("p");
       text.textContent=response.answer;
       text.style.whiteSpace="pre-wrap";
-      answer.append(note,text);
+      answer.append(text);
       // Editing and saving are available ONLY on authenticated owner drafts.
       // Saving writes to /private and never marks a public question as ready.
       const controls=document.createElement("div");
