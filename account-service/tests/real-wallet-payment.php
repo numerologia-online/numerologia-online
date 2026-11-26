@@ -397,8 +397,17 @@ $wrongQuote=naRealWalletQuote($db,$licenseAccount,
     ['product_code'=>'life_full','birth_date'=>'1986-09-10'],$splitReady);
 assertReal($wrongQuote['owned']===false,
     'another birth date cannot inherit a purchased report');
+// A child report now requires a minor's date. Test both the age guard and scope.
+try {
+    naRealWalletQuote($db,$licenseAccount,
+        ['product_code'=>'child_full_v1','birth_date'=>'1986-09-09'],$splitReady);
+    throw new RuntimeException('Adult date unexpectedly accepted for child report');
+} catch(InvalidArgumentException $e) {
+    assertReal($e->getMessage()==='CHILD_AGE_REQUIRED','adult birth date rejected for child report');
+}
+$childBirth=(new DateTimeImmutable('now',new DateTimeZone('UTC')))->modify('-8 years')->format('Y-m-d');
 $wrongKind=naRealWalletQuote($db,$licenseAccount,
-    ['product_code'=>'child_full_v1','birth_date'=>'1986-09-09'],$splitReady);
+    ['product_code'=>'child_full_v1','birth_date'=>$childBirth],$splitReady);
 assertReal($wrongKind['owned']===false,
     'another report type cannot inherit a purchased report');
 $db->prepare("UPDATE numi_entitlements SET expires_at=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 SECOND)

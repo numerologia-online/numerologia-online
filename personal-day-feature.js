@@ -242,6 +242,24 @@ const monthCalendar = (_birth, date = new Date()) => {
     </div>
   </section>`;
 };
+// Use exactly the existing authored personalDay and monthMarkedDays calculations.
+const realMonthCalendar = (birth, date = new Date()) => {
+  const year=date.getFullYear(),month=date.getMonth();
+  const total=new Date(year,month+1,0).getDate();
+  const offset=(new Date(year,month,1).getDay()+6)%7;
+  const marked=monthMarkedDays(birth,date);
+  const cells=Array.from({length:offset},()=>'<span class="personal-month-teaser-empty"></span>');
+  const groups=new Map();
+  for(let day=1;day<=total;day++){
+    const info=marked.get(day)?.info;
+    const status=["good","chance","risk"].includes(info?.status)?info.status:"neutral";
+    const label=info?.label||"Без особой отметки";
+    cells.push(`<span class="personal-month-teaser-day personal-month-teaser-${status}" aria-label="${day}: ${esc(label)}" title="${esc(label)}">${day}</span>`);
+    if(info){const key=info.status+"|"+info.label;if(!groups.has(key))groups.set(key,{label:info.label,status,days:[]});groups.get(key).days.push(day);}
+  }
+  const descriptions=[...groups.values()].map(({label,status,days})=>`<div style="padding:10px 0;border-bottom:1px solid #e1e8df"><strong style="color:${status==="risk"?"#a14b40":status==="chance"?"#8b6a23":"#214b39"}">${esc(label)}</strong><p style="margin:5px 0 0">${days.join(", ")}</p></div>`).join("");
+  return `<section class="personal-month-preview personal-month-important" aria-label="Ваш персональный календарь"><div class="personal-month-teaser"><p class="personal-month-teaser-kicker">КЛУБ · ВАШ КАЛЕНДАРЬ</p><h3 class="personal-month-teaser-title">Важные числа месяца</h3><p class="personal-month-teaser-subtitle">${esc(monthTitle(date))}</p><div class="personal-month-teaser-board"><div class="personal-month-teaser-weekdays">${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map(d=>`<span>${d}</span>`).join("")}</div><div class="personal-month-teaser-grid">${cells.join("")}</div></div><div style="text-align:left;margin-top:12px">${descriptions||"<p>В этом месяце нет специально отмеченных связок.</p>"}</div></div></section>`;
+};
 const dayClubTariffCss = `
 .personal-day-result .numi-day-club-offer{
   margin-top:13px;padding:13px 12px;border:1px solid #e0d6be;border-radius:17px;background:#fffdfa;text-align:left
@@ -272,7 +290,38 @@ export const openPersonalDay = () => {
   const input = shell.querySelector("input");
   const submit = shell.querySelector("button[type=submit]");
   const result = shell.querySelector(".personal-day-result");
+  let lastCalendarBirth=null,calendarRevision=0;
+  async function refreshCalendar(){
+    const birth=lastCalendarBirth;
+    const revision=++calendarRevision;
+    if(!birth||!shell.isConnected)return;
+    const current=result.querySelector(".personal-month-important");
+    if(!current)return;
+    // Keep the locked preview available during verification; never unlock on errors.
+    try{
+      const {readClubBenefit}=await import("/club-benefits.js?v=club-benefits-20261127");
+      const data=await readClubBenefit("calendar");
+      if(revision!==calendarRevision||!shell.isConnected||birth!==lastCalendarBirth)return;
+      if(data.allowed===true){
+        if(!current.isConnected)return;
+        current.replaceWith(document.createRange().createContextualFragment(realMonthCalendar(birth)));
+      }else if(!current.querySelector(".personal-month-open")){
+        current.replaceWith(document.createRange().createContextualFragment(monthCalendar(birth)));
+        bindCalendarOffer();
+      }
+    }catch(_){
+      if(revision!==calendarRevision||!shell.isConnected||birth!==lastCalendarBirth)return;
+      if(current.isConnected&&!current.querySelector(".personal-month-open")){
+        current.replaceWith(document.createRange().createContextualFragment(monthCalendar(birth)));
+        bindCalendarOffer();
+      }
+    }
+  }
+  const calendarEvents=["numi:club-activated","numi:wallet-updated","numi:account-session-changed","focus"];
+  for(const event of calendarEvents)window.addEventListener(event,refreshCalendar);
   const returnToHome = () => {
+    calendarRevision++;
+    for(const event of calendarEvents)window.removeEventListener(event,refreshCalendar);
     shell.remove();
     document.body.classList.remove("personal-day-reading");
     const home = document.querySelector("#home");
@@ -314,6 +363,21 @@ export const openPersonalDay = () => {
     result.innerHTML = `<section class="personal-day-main"><p class="personal-day-label">ВАШ ДЕНЬ</p>${paragraphs([item.text])}${item.todayNeed?.length ? `<section class="personal-day-advice personal-day-need"><h4><span class="personal-day-advice-icon">✓</span> Сегодня нужно</h4><ul>${bullets(item.todayNeed)}</ul></section>` : ""}${item.todayAvoid?.length ? `<section class="personal-day-advice personal-day-avoid"><h4><span class="personal-day-advice-icon">×</span> Сегодня нельзя</h4><ul>${bullets(item.todayAvoid)}</ul></section>` : ""}</section>`;
     if (!item.loadError) addDayShareButtons(result, formatDayMessage(input.value, item));
     result.insertAdjacentHTML("beforeend", monthCalendar(birth));
+    lastCalendarBirth=birth;
+    bindCalendarOffer();
+    void refreshCalendar();
+    requestAnimationFrame(() => {
+      if (nativePageScroll) {
+        const top = result.getBoundingClientRect().top + window.scrollY - 16;
+        window.scrollTo(0, Math.max(0, top));
+      } else {
+        animateScroll(card, Math.max(0, result.offsetTop - 16));
+      }
+    });
+    submit.textContent = "Рассчитать личный день";
+    submit.disabled = false;
+  };
+  function bindCalendarOffer(){
     const importantButton = result.querySelector(".personal-month-open");
     const subscriptionInfo = result.querySelector(".personal-month-subscription");
     importantButton?.addEventListener("click", () => {
@@ -337,16 +401,5 @@ export const openPersonalDay = () => {
         });
       }
     });
-    requestAnimationFrame(() => {
-      if (nativePageScroll) {
-        // Единственный переход после расчёта; дальнейшую прокрутку ведёт браузер.
-        const top = result.getBoundingClientRect().top + window.scrollY - 16;
-        window.scrollTo(0, Math.max(0, top));
-      } else {
-        animateScroll(card, Math.max(0, result.offsetTop - 16));
-      }
-    });
-    submit.textContent = "Рассчитать личный день";
-    submit.disabled = false;
-  };
+  }
 };

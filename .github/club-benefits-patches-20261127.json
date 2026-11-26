@@ -1,0 +1,52 @@
+{
+  "personal-day-feature.js": [
+    [
+      "const dayClubTariffCss = `",
+      "// Use exactly the existing authored personalDay and monthMarkedDays calculations.\nconst realMonthCalendar = (birth, date = new Date()) => {\n  const year=date.getFullYear(),month=date.getMonth();\n  const total=new Date(year,month+1,0).getDate();\n  const offset=(new Date(year,month,1).getDay()+6)%7;\n  const marked=monthMarkedDays(birth,date);\n  const cells=Array.from({length:offset},()=>'<span class=\"personal-month-teaser-empty\"></span>');\n  const groups=new Map();\n  for(let day=1;day<=total;day++){\n    const info=marked.get(day)?.info;\n    const status=[\"good\",\"chance\",\"risk\"].includes(info?.status)?info.status:\"neutral\";\n    const label=info?.label||\"Без особой отметки\";\n    cells.push(`<span class=\"personal-month-teaser-day personal-month-teaser-${status}\" aria-label=\"${day}: ${esc(label)}\" title=\"${esc(label)}\">${day}</span>`);\n    if(info){const key=info.status+\"|\"+info.label;if(!groups.has(key))groups.set(key,{label:info.label,status,days:[]});groups.get(key).days.push(day);}\n  }\n  const descriptions=[...groups.values()].map(({label,status,days})=>`<div style=\"padding:10px 0;border-bottom:1px solid #e1e8df\"><strong style=\"color:${status===\"risk\"?\"#a14b40\":status===\"chance\"?\"#8b6a23\":\"#214b39\"}\">${esc(label)}</strong><p style=\"margin:5px 0 0\">${days.join(\", \")}</p></div>`).join(\"\");\n  return `<section class=\"personal-month-preview personal-month-important\" aria-label=\"Ваш персональный календарь\"><div class=\"personal-month-teaser\"><p class=\"personal-month-teaser-kicker\">КЛУБ · ВАШ КАЛЕНДАРЬ</p><h3 class=\"personal-month-teaser-title\">Важные числа месяца</h3><p class=\"personal-month-teaser-subtitle\">${esc(monthTitle(date))}</p><div class=\"personal-month-teaser-board\"><div class=\"personal-month-teaser-weekdays\">${[\"Пн\",\"Вт\",\"Ср\",\"Чт\",\"Пт\",\"Сб\",\"Вс\"].map(d=>`<span>${d}</span>`).join(\"\")}</div><div class=\"personal-month-teaser-grid\">${cells.join(\"\")}</div></div><div style=\"text-align:left;margin-top:12px\">${descriptions||\"<p>В этом месяце нет специально отмеченных связок.</p>\"}</div></div></section>`;\n};\nconst dayClubTariffCss = `"
+    ],
+    [
+      "  const returnToHome = () => {\n    shell.remove();",
+      "  let lastCalendarBirth=null,calendarRevision=0;\n  async function refreshCalendar(){\n    const birth=lastCalendarBirth;\n    const revision=++calendarRevision;\n    if(!birth||!shell.isConnected)return;\n    const current=result.querySelector(\".personal-month-important\");\n    if(!current)return;\n    // Keep the locked preview available during verification; never unlock on errors.\n    try{\n      const {readClubBenefit}=await import(\"/club-benefits.js?v=club-benefits-20261127\");\n      const data=await readClubBenefit(\"calendar\");\n      if(revision!==calendarRevision||!shell.isConnected||birth!==lastCalendarBirth)return;\n      if(data.allowed===true){\n        if(!current.isConnected)return;\n        current.replaceWith(document.createRange().createContextualFragment(realMonthCalendar(birth)));\n      }else if(!current.querySelector(\".personal-month-open\")){\n        current.replaceWith(document.createRange().createContextualFragment(monthCalendar(birth)));\n        bindCalendarOffer();\n      }\n    }catch(_){\n      if(revision!==calendarRevision||!shell.isConnected||birth!==lastCalendarBirth)return;\n      if(current.isConnected&&!current.querySelector(\".personal-month-open\")){\n        current.replaceWith(document.createRange().createContextualFragment(monthCalendar(birth)));\n        bindCalendarOffer();\n      }\n    }\n  }\n  const calendarEvents=[\"numi:club-activated\",\"numi:wallet-updated\",\"numi:account-session-changed\",\"focus\"];\n  for(const event of calendarEvents)window.addEventListener(event,refreshCalendar);\n  const returnToHome = () => {\n    calendarRevision++;\n    for(const event of calendarEvents)window.removeEventListener(event,refreshCalendar);\n    shell.remove();"
+    ],
+    [
+      "    result.insertAdjacentHTML(\"beforeend\", monthCalendar(birth));\n    const importantButton",
+      "    result.insertAdjacentHTML(\"beforeend\", monthCalendar(birth));\n    lastCalendarBirth=birth;\n    bindCalendarOffer();\n    void refreshCalendar();\n    requestAnimationFrame(() => {\n      if (nativePageScroll) {\n        const top = result.getBoundingClientRect().top + window.scrollY - 16;\n        window.scrollTo(0, Math.max(0, top));\n      } else {\n        animateScroll(card, Math.max(0, result.offsetTop - 16));\n      }\n    });\n    submit.textContent = \"Рассчитать личный день\";\n    submit.disabled = false;\n  };\n  function bindCalendarOffer(){\n    const importantButton"
+    ],
+    [
+      "    requestAnimationFrame(() => {\n      if (nativePageScroll) {\n        // Единственный переход после расчёта; дальнейшую прокрутку ведёт браузер.\n        const top = result.getBoundingClientRect().top + window.scrollY - 16;\n        window.scrollTo(0, Math.max(0, top));\n      } else {\n        animateScroll(card, Math.max(0, result.offsetTop - 16));\n      }\n    });\n    submit.textContent = \"Рассчитать личный день\";\n    submit.disabled = false;\n  };",
+      "  }"
+    ]
+  ],
+  "destiny-code-feature.js": [
+    [
+      "const openMoneyRituals = (code) => {\n  section.classList.remove(\"is-active\");\n  ritualsSection.classList.add(\"is-active\");\n  ritualsCode.textContent = \"Ваш код денег \" + code;\n",
+      "let activeRitualCode=null, ritualRevision=0;\nfunction renderMemberRituals(rituals,code){\n  const fragment=document.createDocumentFragment();\n  const node=(tag,value)=>{const n=document.createElement(tag);if(value!==undefined)n.textContent=String(value).replaceAll(\"{code}\",code);return n;};\n  for(const [index,ritual] of rituals.entries()){\n    const details=node(\"details\");details.className=\"destiny-code-disclosure\";\n    const summary=node(\"summary\"),title=node(\"span\");\n    title.append(node(\"p\",\"Ритуал \"+(index+1)),node(\"h3\",ritual.title));\n    summary.append(title,node(\"b\",\"+\"));\n    const content=node(\"div\");content.className=\"destiny-code-disclosure-body\";\n    for(const [label,value] of [[\"Когда\",ritual.when],[\"Что понадобится\",ritual.needs]]){\n      content.append(node(\"strong\",label),node(\"p\",value));\n    }\n    content.append(node(\"p\",ritual.intro),node(\"strong\",\"Как выполнить\"));\n    const steps=node(\"ol\");for(const step of ritual.steps)steps.append(node(\"li\",step));content.append(steps);\n    const phrase=node(\"div\");phrase.className=\"destiny-code-ritual\";phrase.append(node(\"strong\",\"Слова ритуала\"),node(\"p\",ritual.phrase));content.append(phrase);\n    details.append(summary,content);fragment.append(details);\n  }\n  ritualsList.replaceChildren(fragment);\n  const heading=ritualsSection.querySelector(\".money-rituals-heading span\");if(heading)heading.textContent=\"10 ритуалов · Клуб\";\n}\nsingleOpenDisclosure(ritualsList,\"details.destiny-code-disclosure\");\nasync function refreshRituals(code){\n  const revision=++ritualRevision;\n  renderLockedRituals(code);\n  try{\n    const {readClubBenefit}=await import(\"/club-benefits.js?v=club-benefits-20261127\");\n    const data=await readClubBenefit(\"rituals\");\n    if(revision!==ritualRevision||activeRitualCode!==code||!ritualsSection.classList.contains(\"is-active\"))return;\n    if(data.allowed===true)renderMemberRituals(data.rituals,code);\n  }catch(_){\n    if(revision!==ritualRevision||activeRitualCode!==code)return;\n    const retry=document.createElement(\"button\");retry.type=\"button\";retry.className=\"money-ritual-locked\";retry.textContent=\"Не удалось проверить доступ. Повторить\";\n    retry.addEventListener(\"click\",()=>void refreshRituals(code));ritualsList.prepend(retry);\n  }\n}\nfunction refreshActiveRituals(){if(activeRitualCode&&ritualsSection.classList.contains(\"is-active\"))void refreshRituals(activeRitualCode);}\nfor(const event of [\"numi:club-activated\",\"numi:wallet-updated\",\"numi:account-session-changed\",\"focus\"])window.addEventListener(event,refreshActiveRituals);\nconst openMoneyRituals = (code) => {\n  section.classList.remove(\"is-active\");\n  ritualsSection.classList.add(\"is-active\");\n  ritualsCode.textContent = \"Ваш код денег \" + code;\n  activeRitualCode=code;\n  void refreshRituals(code);\n  window.scrollTo({top:0,behavior:\"instant\"});\n};\nconst renderLockedRituals = (code) => {\n  const heading=ritualsSection.querySelector(\".money-rituals-heading span\");if(heading)heading.textContent=\"10 ритуалов · 🔒\";\n"
+    ],
+    [
+      "document.querySelector(\"#back-money-rituals\").addEventListener(\"click\", () => {\n  ritualsSection.classList.remove(\"is-active\");",
+      "document.querySelector(\"#back-money-rituals\").addEventListener(\"click\", () => {\n  activeRitualCode=null;ritualRevision++;ritualsList.replaceChildren();\n  ritualsSection.classList.remove(\"is-active\");"
+    ]
+  ],
+  "app.js": [
+    [
+      "./personal-day-feature.js?v=club-balance-20261126",
+      "./personal-day-feature.js?v=club-benefits-20261127"
+    ],
+    [
+      "./destiny-code-feature.js?v=wallet-direct1",
+      "./destiny-code-feature.js?v=club-benefits-20261127"
+    ]
+  ],
+  "day.html": [
+    [
+      "./personal-day-feature.js?v=club-balance-20261126",
+      "./personal-day-feature.js?v=club-benefits-20261127"
+    ]
+  ],
+  "index.html": [
+    [
+      "app.js?v=club-balance-20261126",
+      "app.js?v=club-benefits-20261127"
+    ]
+  ]
+}

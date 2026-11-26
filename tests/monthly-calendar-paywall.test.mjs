@@ -1,27 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-
-const feature = readFileSync(new URL("../personal-day-feature.js", import.meta.url), "utf8");
-const dayPage = readFileSync(new URL("../day.html", import.meta.url), "utf8");
-const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
-
-test("Daily authored reading remains free and unchanged", () => {
-  assert.match(feature, /const item = await loadPersonalDay\(birth\)/);
-  assert.match(feature, /item\.todayNeed/);
-  assert.match(feature, /item\.todayAvoid/);
-});
-test("Important dates show a subscriber preview, not actual dates", () => {
-  assert.match(feature, /Важные числа месяца/);
-  assert.match(feature, /ТВОЙ КАЛЕНДАРЬ · ПО ПОДПИСКЕ/);
-  assert.match(feature, /Месячная подписка ещё готовится/);
-  assert.match(feature, /const subscriptionInfo = result\.querySelector\("\.personal-month-subscription"\)/);
-  assert.doesNotMatch(feature, /class="personal-month-content"/);
-  assert.doesNotMatch(feature, /class="personal-month-day personal-month-/);
-  assert.doesNotMatch(feature, /\$\{cells\.join\("…"\)\}/);
-  assert.doesNotMatch(feature, /monthMarkedDays\(birth, date\)/);
-});
-test("All public entries load the same updated day module", () => {
-  assert.match(dayPage, /personal-day-feature\.js\?v=58/);
-  assert.match(app, /personal-day-feature\.js\?v=58/);
-});
+import {readFileSync} from "node:fs";
+const read=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
+const feature=read("personal-day-feature.js"), money=read("destiny-code-feature.js"), api=read("account-service/public/numi-club-benefits.php");
+const {readClubBenefit}=await import("data:text/javascript;base64,"+Buffer.from(read("club-benefits.js")).toString("base64"));
+const mock=(data,ok=true)=>async(url,request)=>{assert.equal(url,"/api/numi-club-benefits.php");assert.equal(request.credentials,"same-origin");assert.equal(request.method,"POST");return {ok,json:async()=>data};};
+test("Daily authored reading remains free",()=>{assert.match(feature,/const item = await loadPersonalDay\(birth\)/);assert.match(feature,/item\.todayNeed/);assert.match(feature,/item\.todayAvoid/);});
+test("Calendar uses existing calculation only after verified access",()=>{assert.match(feature,/const marked=monthMarkedDays\(birth,date\)/);assert.match(feature,/if\(data\.allowed===true\)\{[\s\S]*?realMonthCalendar\(birth\)/);assert.match(feature,/Пример оформления/);});
+test("Free visitor never obtains ritual material",async()=>{assert.deepEqual(await readClubBenefit("rituals",mock({ok:true,allowed:false,rituals:["must not return"]})),{allowed:false});assert.match(api,/if\(!\$allowed\)naReply\(200,\['ok'=>true,'allowed'=>false\]\)/);assert.match(api,/naTestOwner\(\$account\)\|\|naCatalogHasAccess\(\$db,\$account,'club_month','club'\)/);});
+test("Verified member receives ten original rituals",async()=>{const rituals=JSON.parse(read("data/money-rituals.json"));assert.equal(rituals.length,10);assert.ok(rituals.every(r=>r.title&&r.steps.length&&r.phrase));assert.equal((await readClubBenefit("rituals",mock({ok:true,allowed:true,rituals}))).rituals.length,10);assert.match(money,/if\(data\.allowed===true\)renderMemberRituals\(data\.rituals,code\)/);});
+test("Failed or malformed access checks fail closed",async()=>{for(const data of [{ok:false},{ok:true,allowed:"true"},{ok:true,allowed:true,rituals:[]}])await assert.rejects(readClubBenefit("rituals",mock(data)));await assert.rejects(readClubBenefit("calendar",mock({ok:true,allowed:true},false)));});
+test("Both day entry points use updated module",()=>{for(const p of ["app.js","day.html"])assert.match(read(p),/personal-day-feature\.js\?v=club-benefits-20261127/);});

@@ -176,10 +176,54 @@ clubDialog?.addEventListener("click", (event) => {
 });
 document.querySelector("#money-club-join")?.addEventListener("click", showClubOffer);
 
+let activeRitualCode=null, ritualRevision=0;
+function renderMemberRituals(rituals,code){
+  const fragment=document.createDocumentFragment();
+  const node=(tag,value)=>{const n=document.createElement(tag);if(value!==undefined)n.textContent=String(value).replaceAll("{code}",code);return n;};
+  for(const [index,ritual] of rituals.entries()){
+    const details=node("details");details.className="destiny-code-disclosure";
+    const summary=node("summary"),title=node("span");
+    title.append(node("p","Ритуал "+(index+1)),node("h3",ritual.title));
+    summary.append(title,node("b","+"));
+    const content=node("div");content.className="destiny-code-disclosure-body";
+    for(const [label,value] of [["Когда",ritual.when],["Что понадобится",ritual.needs]]){
+      content.append(node("strong",label),node("p",value));
+    }
+    content.append(node("p",ritual.intro),node("strong","Как выполнить"));
+    const steps=node("ol");for(const step of ritual.steps)steps.append(node("li",step));content.append(steps);
+    const phrase=node("div");phrase.className="destiny-code-ritual";phrase.append(node("strong","Слова ритуала"),node("p",ritual.phrase));content.append(phrase);
+    details.append(summary,content);fragment.append(details);
+  }
+  ritualsList.replaceChildren(fragment);
+  const heading=ritualsSection.querySelector(".money-rituals-heading span");if(heading)heading.textContent="10 ритуалов · Клуб";
+}
+singleOpenDisclosure(ritualsList,"details.destiny-code-disclosure");
+async function refreshRituals(code){
+  const revision=++ritualRevision;
+  renderLockedRituals(code);
+  try{
+    const {readClubBenefit}=await import("/club-benefits.js?v=club-benefits-20261127");
+    const data=await readClubBenefit("rituals");
+    if(revision!==ritualRevision||activeRitualCode!==code||!ritualsSection.classList.contains("is-active"))return;
+    if(data.allowed===true)renderMemberRituals(data.rituals,code);
+  }catch(_){
+    if(revision!==ritualRevision||activeRitualCode!==code)return;
+    const retry=document.createElement("button");retry.type="button";retry.className="money-ritual-locked";retry.textContent="Не удалось проверить доступ. Повторить";
+    retry.addEventListener("click",()=>void refreshRituals(code));ritualsList.prepend(retry);
+  }
+}
+function refreshActiveRituals(){if(activeRitualCode&&ritualsSection.classList.contains("is-active"))void refreshRituals(activeRitualCode);}
+for(const event of ["numi:club-activated","numi:wallet-updated","numi:account-session-changed","focus"])window.addEventListener(event,refreshActiveRituals);
 const openMoneyRituals = (code) => {
   section.classList.remove("is-active");
   ritualsSection.classList.add("is-active");
   ritualsCode.textContent = "Ваш код денег " + code;
+  activeRitualCode=code;
+  void refreshRituals(code);
+  window.scrollTo({top:0,behavior:"instant"});
+};
+const renderLockedRituals = (code) => {
+  const heading=ritualsSection.querySelector(".money-rituals-heading span");if(heading)heading.textContent="10 ритуалов · 🔒";
   const list = document.createDocumentFragment();
   RITUAL_TITLES.forEach((name, index) => {
     const button = document.createElement("button");
@@ -252,6 +296,7 @@ document.querySelector("#back-destiny-code-home").addEventListener("click", () =
 });
 
 document.querySelector("#back-money-rituals").addEventListener("click", () => {
+  activeRitualCode=null;ritualRevision++;ritualsList.replaceChildren();
   ritualsSection.classList.remove("is-active");
   section.classList.add("is-active");
   window.scrollTo({ top: 0, behavior: "instant" });
