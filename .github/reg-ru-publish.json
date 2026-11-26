@@ -2,8 +2,7 @@
   "mode": "publish",
   "files": [
     "moment/yes-no/yes-no.css",
-    "moment/yes-no/yes-no.js",
     "moment/yes-no/index.html"
   ],
-  "note": "Owner-approved light compact oracle refinement: visible answer panel and direct question action. Only three existing presentation files."
+  "note": "Owner-approved Yes/No answer window: move above question form, pure white background and roomier empty state; no logic changes."
 }

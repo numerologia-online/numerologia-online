@@ -7,7 +7,7 @@
   <meta name="description" content="100 вопросов «Да или нет» о любви, работе, деньгах и решениях. Один ответ в день бесплатно, остальные по подписке Клуба.">
   <title>100 вопросов «Да или нет» — Нумерология момента</title>
   <link rel="stylesheet" href="../moment.css?v=1">
-  <link rel="stylesheet" href="./yes-no.css?v=light-oracle-20261126b">
+  <link rel="stylesheet" href="./yes-no.css?v=white-answer-20261126c">
   <script defer src="../../assets/telegram-web-app-20261102.js"></script>
   <script defer src="./yes-no.js?v=light-oracle-20261126b"></script>
 </head>
@@ -58,6 +58,10 @@
         </div>
         <h1>ДА <span>/</span> НЕТ</h1>
       </header>
+      <section class="yn-answer-box" aria-labelledby="yn-answer-label">
+        <h2 id="yn-answer-label">Ответ</h2>
+        <div id="yn-time-result" class="yn-time-result" role="status" aria-live="polite" data-empty="true">Здесь появится ответ</div>
+      </section>
       <section id="yn-dialog" aria-labelledby="yn-dialog-title">
         <div class="dialog-content">
           
@@ -72,10 +76,6 @@
             <p id="yn-time-error" class="yn-time-error" role="alert" hidden>Введите время от 00:00 до 23:59.</p>
           </form>
         </div>
-      </section>
-      <section class="yn-answer-box" aria-labelledby="yn-answer-label">
-        <h2 id="yn-answer-label">Ответ</h2>
-        <div id="yn-time-result" class="yn-time-result" role="status" aria-live="polite" data-empty="true">Здесь появится ответ</div>
       </section>
       <div class="yn-catalog-heading"><h2>Выберите тему</h2></div>
       <div id="yn-categories" class="yn-category-list" aria-label="Темы вопросов"></div>
