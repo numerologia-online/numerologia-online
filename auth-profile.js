@@ -29,6 +29,10 @@
   const app = window.Telegram && window.Telegram.WebApp;
   if (!dialog || !accountButton || !loginView || !profileView || !status) return;
 
+  const launchParams = new URLSearchParams(location.search);
+  const openCabinetOnLaunch = launchParams.get("account") === "1";
+  let openClubOnLaunch = openCabinetOnLaunch && launchParams.get("club_offer") === "1";
+
   let user = null;
   let loading = false;
   let mini = false;
@@ -158,7 +162,9 @@
     if (verifiedIcon) verifiedIcon.hidden = false;
     if (browserNote) browserNote.hidden = true;
     if (identityLabel) identityLabel.textContent = "Вы вошли как";
-    showAccountPanel(null);
+    if (!dialog.classList.contains("numi-wallet-topup-active")) {
+      showAccountPanel(dialog.open && openClubOnLaunch ? "prices" : null);
+    }
     birthInput.value = birthForDisplay(localStorage.getItem(BIRTH_PREFIX + user.id));
     birthInput.removeAttribute("aria-invalid");
     birthNote.textContent = birthNoteText;
@@ -200,6 +206,31 @@
     birthInput.removeAttribute("aria-invalid");
     showAccountPanel(null);
     setAccountButton("Личный кабинет");
+  }
+
+  const clubTariff = dialog.querySelector('[data-account-content="prices"] .numi-pricing-plan');
+  if (clubTariff) {
+    const join = document.createElement("button");
+    join.type = "button";
+    join.className = "account-primary";
+    join.textContent = "Подключить Клуб";
+    const feedback = document.createElement("p");
+    feedback.setAttribute("role", "status");
+    feedback.hidden = true;
+    clubTariff.after(join, feedback);
+    join.addEventListener("click", async () => {
+      join.disabled = true;
+      feedback.hidden = true;
+      try {
+        const { openStore } = await import("./store-entry.js?v=subscription-controls-20261108");
+        await openStore({ product_code: "club_month" }, "club");
+      } catch (_) {
+        feedback.textContent = "Не удалось открыть оплату Клуба. Попробуйте ещё раз.";
+        feedback.hidden = false;
+      } finally {
+        join.disabled = false;
+      }
+    });
   }
 
   document.querySelector("#account-show-offer")?.addEventListener("click", async () => {
@@ -302,6 +333,7 @@
         name: String(data.user.name || "Пользователь").slice(0, 80)
       };
       showProfile();
+      openClubOnLaunch = false;
       void loadBirthFromServer(user.id);
       // No modal on success. The site welcomes the user and keeps the
       // current Mini App page open. The cabinet opens only on request.
@@ -432,6 +464,7 @@
       app?.expand();
       if (typeof app?.disableVerticalSwipes === "function") app.disableVerticalSwipes();
     } catch (_) {}
+    if (openCabinetOnLaunch) dialog.showModal();
     identify();
   } else {
     setAccountButton("Личный кабинет");

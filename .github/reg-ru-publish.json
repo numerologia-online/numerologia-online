@@ -1,9 +1,24 @@
 {
   "mode": "publish",
   "files": [
-    "moment/moment.css",
-    "moment/moment.js",
+    "auth-profile.js",
+    "index.html",
     "moment/index.html"
   ],
-  "note": "Owner-approved 300-question book redesign: light compact accordion, 25 questions per topic, full-height readable answer card; preserve prices, owner preview and backend gates. Only Moment page files."
+  "patches": {
+    "index.html": {
+      "before": "  <script src=\"auth-profile.js?v=store2\" defer></script>",
+      "after": "  <script src=\"auth-profile.js?v=cabinet-checkout-20261126\" defer></script>",
+      "expected_sha256": "da0cd56558cec48d5beec9bb62ff5c39bc2d98742b8ea78f19a20b2913b3bda4"
+    },
+    "moment/index.html": {
+      "before": "<div><dt>С Клубом</dt><dd id=\"moment-price-member\">49&nbsp;₽</dd></div>",
+      "after": "<div><dt><a href=\"/?account=1&amp;club_offer=1\">С Клубом</a></dt><dd id=\"moment-price-member\">49&nbsp;₽</dd></div>",
+      "expected_sha256": "15ee14e98e0d4bc91ee49d00dc467d9282fba4ee90e985864cc7812c3e6a36b0"
+    }
+  },
+  "expected_sha256": {
+    "auth-profile.js": "5c2e583f010f854cf8f173f51f5d6d1d5d76b6689c8cbd49bc017fc11e53d574"
+  },
+  "note": "Fix Telegram cabinet and wallet deep links, add direct Club checkout from cabinet tariffs and the 300 questions catalogue."
 }
