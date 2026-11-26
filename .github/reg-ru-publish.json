@@ -4,5 +4,5 @@
     "moment/yes-no/yes-no.css",
     "moment/yes-no/index.html"
   ],
-  "note": "Owner-approved Yes/No answer window: move above question form, pure white background and roomier empty state; no logic changes."
+  "note": "Owner-approved Yes/No refinement: narrower taller white answer window, upright placeholder typography and clear time-selection instruction. Only two presentation files."
 }
