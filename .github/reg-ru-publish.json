@@ -4,5 +4,5 @@
     "moment/yes-no/yes-no.css",
     "moment/yes-no/index.html"
   ],
-  "note": "Owner-approved Yes/No refinement: narrower taller white answer window, upright placeholder typography and clear time-selection instruction. Only two presentation files."
+  "note": "Owner-approved answer placeholder: one centered larger gold system-font label, no separate heading; preserve white window dimensions."
 }

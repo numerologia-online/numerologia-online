@@ -54,9 +54,11 @@ try {
     $id=(string)$account['id'];
     ynCreateQuotaTable($db);
     $member=ynClubMember($db,$id);
+    // Owner preview uses the same verified server-side session as other owner features.
+    $unlimited=naTestOwner($account) || $member;
     if ($method==='GET') {
-        $used=$member ? null : ynUsed($db,$id,$day);
-        ynReply(200,['ok'=>true,'authenticated'=>true,'subscribed'=>$member,'remaining'=>$member ? null : ($used ? 0 : 1)]);
+        $used=$unlimited ? null : ynUsed($db,$id,$day);
+        ynReply(200,['ok'=>true,'authenticated'=>true,'subscribed'=>$member,'remaining'=>$unlimited ? null : ($used ? 0 : 1)]);
     }
     $origin=(string)($_SERVER['HTTP_ORIGIN']??'');
     $fetchSite=(string)($_SERVER['HTTP_SEC_FETCH_SITE']??'');
@@ -84,7 +86,7 @@ try {
         ynReply(503,['ok'=>false,'error'=>'ANSWER_UNAVAILABLE']);
     // One free answer per Moscow day outside the Club. Separate purchases
     // no longer exist and cannot bypass this atomic server-side limit.
-    if (!$member) {
+    if (!$unlimited) {
         $stmt=$db->prepare('INSERT IGNORE INTO numi_yesno_daily_uses(account_id,use_day,question_id,question_time) VALUES(?,?,?,?)');
         $stmt->execute([$id,$day,$q,$clock]);
         if ($stmt->rowCount()!==1) {
@@ -95,7 +97,7 @@ try {
         }
     }
     ynReply(200,['ok'=>true,'question_id'=>$q,'answer'=>$data['answers'][(string)$sum],
-        'subscribed'=>$member,'remaining'=>$member ? null : 0]);
+        'subscribed'=>$member,'remaining'=>$unlimited ? null : 0]);
 } catch (Throwable $error) {
     error_log('NUMI_YESNO_ACCESS:'.get_class($error));
     ynReply(503,['ok'=>false,'error'=>'ACCESS_UNAVAILABLE']);
