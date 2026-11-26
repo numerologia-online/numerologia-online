@@ -7,7 +7,8 @@
   const resultsTitle=$("results-title"), resultsMsg=$("results-message");
   const showMore=$("show-more"), showAll=$("show-all");
   const catalogStatus=$("moment-catalog-status"), catalogRetry=$("moment-catalog-retry");
-  let catalog=null, active=null, visibleCount=12, ownerMode=false;
+  let catalog=null, active=null, visibleCount=25, ownerMode=false;
+  const panel=$("questions-panel"), explore=grid.parentElement;
   // The 25 "Любовь и чувства" answers expand inside the catalogue for the verified owner.
   // The public purchase gate and all other questions remain unchanged.
   let openLoveId=null, loveRequestVersion=0;
@@ -75,22 +76,42 @@
     return el;
   };
   function renderCategories(){
+    // Keep one panel and its original date inputs when switching topics.
+    explore.append(panel);
     grid.replaceChildren();
     catalog.categories.forEach(cat=>{
-      const b=elem("button","category"+(active===cat.id?" active":""));
-      b.type="button";b.setAttribute("aria-pressed",String(active===cat.id));
-      b.append(elem("span","category-icon",cat.icon),elem("strong","category-title",cat.title),elem("span","category-count",cat.count+" вопросов"));
-      b.addEventListener("click",()=>{
-        active=cat.id;visibleCount=12;
-        renderCategories();
-        grid.hidden=true;
-        document.querySelector(".explore .section-heading").hidden=true;
-        $("questions-panel").hidden=false;
-        renderQuestions();
-        $("questions-panel").scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});
-      });
-      grid.append(b);
+      const expanded=active===cat.id;
+      const group=elem("div","moment-topic-group"+(expanded?" is-open":""));
+      const button=elem("button","category"+(expanded?" active":""));
+      button.type="button";
+      group.dataset.category=cat.id;
+      button.setAttribute("aria-expanded",String(expanded));
+      button.setAttribute("aria-label",cat.title+", "+cat.count+" вопросов");
+      if(expanded)button.setAttribute("aria-controls",panel.id);
+      button.append(elem("span","category-icon",cat.icon),elem("strong","category-title",cat.title),elem("span","category-count",String(cat.count)));
+      button.addEventListener("click",()=>selectTopic(expanded?null:cat.id,true));
+      group.append(button);
+      if(expanded)group.append(panel);
+      grid.append(group);
     });
+    panel.hidden=!active;
+  }
+  function selectTopic(id,fromClick=false){
+    if(id!==null&&!catalog.categories.some(cat=>cat.id===id))return;
+    const previous=active;
+    active=id;
+    visibleCount=25;
+    loveRequestVersion++;
+    openLoveId=null;
+    renderCategories();
+    if(active)renderQuestions();
+    if(fromClick){
+      const target=Array.from(grid.children).find(group=>group.dataset.category===(id||previous));
+      if(target){
+        target.firstElementChild.focus({preventScroll:true});
+        if(id)target.firstElementChild.scrollIntoView({behavior:"auto",block:"nearest"});
+      }
+    }
   }
   function filtered(){
     const query=norm(search.value),words=query.split(" ").filter(Boolean);
@@ -121,12 +142,12 @@
       '\nДата рождения мужчины: '+other+'\n\n'+answer+
       '\n\n✨ Нумерология онлайн\n🌐 '+siteLink+'\n🤖 '+botLink;
     const controls=elem('div','moment-answer-actions');
-    const heading=elem('strong','moment-answer-actions-heading','Не потеряй свой ответ ❤️');
-    const save=elem('button','moment-answer-action moment-answer-save','❤️ Сохранить в бот');
-    const share=elem('button','moment-answer-action moment-answer-share','💌 Переслать подруге');
+    const save=elem('button','moment-answer-action moment-answer-save','❤️ Сохранить в Telegram');
+    const share=elem('button','moment-answer-action moment-answer-share','💌 Поделиться');
+    save.type=share.type='button';
     const notice=elem('p','moment-answer-action-feedback');
     notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');notice.hidden=true;
-    controls.append(heading,save,share,notice);
+    controls.append(save,share,notice);
     container.append(controls);
     let ticketLink=null;
     save.addEventListener('click',async()=>{
@@ -235,7 +256,7 @@
     resultsTitle.textContent=cat?cat.title:"Все вопросы";
     showPairEntry();
     resultsMsg.textContent=found.length?found.length+" вопросов":"Вопросов не найдено";
-    showAll.hidden=false;
+    showAll.hidden=true;
     clear.hidden=!search.value;
     loveRequestVersion++;
     openLoveId=null;
@@ -307,27 +328,20 @@
       const result=await response.json();
       if(result?.ok===true&&result?.owner===true&&result?.question_count===300){
         ownerMode=true;
-        if(catalog&&!$("questions-panel").hidden)renderQuestions();
+        if(catalog&&active&&!panel.hidden)renderQuestions();
       }
     }catch(_){
       // The public catalogue remains viewable; never grant owner access on errors.
     }
   }
   function backToTopics(){
-    active=null;visibleCount=12;search.value="";
-    $("questions-panel").hidden=true;
-    grid.hidden=false;
-    document.querySelector(".explore .section-heading").hidden=false;
-    renderCategories();
-    grid.scrollIntoView({behavior:"auto",block:"start"});
+    search.value="";
+    if(catalog)selectTopic(null);
   }
   showAll.addEventListener("click",backToTopics);
-  document.querySelector(".moment-back-button").addEventListener("click",event=>{
-    if(active){event.preventDefault();backToTopics();}
-  });
-  showMore.addEventListener("click",()=>{visibleCount+=12;renderQuestions();});
-  search.addEventListener("input",()=>{if(catalog){visibleCount=12;renderQuestions();}});
-  clear.addEventListener("click",()=>{search.value="";visibleCount=12;if(catalog)renderQuestions();search.focus();});
+  showMore.addEventListener("click",()=>{if(active){visibleCount+=25;renderQuestions();}});
+  search.addEventListener("input",()=>{if(catalog&&active){visibleCount=25;renderQuestions();}});
+  clear.addEventListener("click",()=>{search.value="";visibleCount=25;if(catalog&&active)renderQuestions();search.focus();});
   async function start(){
     try{
       const response=await fetch("./questions.json?v=1",{cache:"no-store"});
@@ -345,10 +359,7 @@
       if(catalogStatus)catalogStatus.hidden=true;
       const topic=new URLSearchParams(location.search).get("category");
       if(topic&&data.categories.some(c=>c.id===topic)){
-        active=topic;renderCategories();grid.hidden=true;
-        document.querySelector(".explore .section-heading").hidden=true;
-        $("questions-panel").hidden=false;
-        renderQuestions();
+        selectTopic(topic);
       }
     }catch(error){
       // The static 300-question catalog stays accessible even if JS/JSON fails.

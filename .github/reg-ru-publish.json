@@ -1,8 +1,9 @@
 {
   "mode": "publish",
   "files": [
-    "moment/yes-no/yes-no.css",
-    "moment/yes-no/index.html"
+    "moment/moment.css",
+    "moment/moment.js",
+    "moment/index.html"
   ],
-  "note": "Owner-approved answer placeholder: one centered larger gold system-font label, no separate heading; preserve white window dimensions."
+  "note": "Owner-approved 300-question book redesign: light compact accordion, 25 questions per topic, full-height readable answer card; preserve prices, owner preview and backend gates. Only Moment page files."
 }

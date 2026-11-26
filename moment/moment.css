@@ -378,3 +378,55 @@
   .explore .moment-inline-answer{padding:15px 14px 17px}
   .moment-answer-text{font-size:14.5px;line-height:1.6}
 }
+
+/* 300 questions: scoped book design; does not affect the standalone Yes/No page. */
+body.moment-book-page{background:#edf2e9;color:#173e31}
+.moment-book-page main{min-height:100svh;background:linear-gradient(180deg,#f6f7ee 0,#e8efe5 440px,#edf2e9 100%);padding-bottom:24px}
+.moment-book-page .site-header,.moment-book-page .site-footer{display:none}
+.moment-book-page .shell{width:min(calc(100% - 28px),720px)}
+.moment-book-page .moment-catalog-header{padding:6px 0 0}
+.moment-book-page .moment-catalog-header .moment-back-button{display:flex;width:max-content;margin:0 0 2px;min-height:36px;padding:0 2px;font:600 12px/1.3 system-ui,sans-serif;color:#526f60}
+.moment-book-page .moment-book-seal{display:block;width:180px;height:auto;margin:0 auto 5px}
+.moment-book-page .moment-catalog-header h1{font:400 clamp(29px,7vw,46px)/1.12 'Playfair Display',Georgia,serif;letter-spacing:-.025em;color:#173e31;margin:0}
+.moment-book-page .moment-catalog-header h1 span{white-space:nowrap}
+.moment-book-page .moment-launch-prices{max-width:340px;margin:12px auto 4px;border-color:#d8cdb3;border-radius:10px;background:#fff}
+.moment-book-page .moment-launch-prices>div{padding:6px 5px 7px}
+.moment-book-page .moment-launch-prices>div+div{background:#f2f6ef;border-color:#d6e1d3}
+.moment-book-page .moment-launch-prices dt{font-size:11px;font-weight:500}
+.moment-book-page .moment-launch-prices dd{font-size:19px;font-weight:650;margin:1px 0 0}
+.moment-book-page .moment-preview-status{font-size:11px;line-height:1.4;margin:0 0 12px}
+.moment-book-page .explore{padding:0 0 18px}
+.moment-book-page .explore .category-grid,.moment-book-page #category-grid>.moment-static-catalog{display:grid;grid-template-columns:minmax(0,1fr);gap:5px;width:100%;max-width:none;margin:0}
+.moment-book-page .moment-topic-group,.moment-book-page .explore .moment-static-topic{min-width:0;border:1px solid #cbd7c9;border-radius:8px;background:#fbfcf7;box-shadow:none;overflow:hidden}
+.moment-book-page .explore button.category,.moment-book-page .explore .moment-static-topic summary{display:grid;grid-template-columns:23px minmax(0,1fr) auto 14px;grid-template-rows:auto;align-items:center;gap:9px;min-height:46px;width:100%;padding:8px 11px;border:0;border-radius:0;background:transparent;text-align:left;box-shadow:none;transform:none;color:#173e31}
+.moment-book-page .explore button.category:hover,.moment-book-page .explore button.category:focus-visible,.moment-book-page .explore .moment-static-topic summary:hover{background:#eef3eb;box-shadow:none;transform:none}
+.moment-book-page .explore button.category.active,.moment-book-page .explore .moment-static-topic[open] summary{background:#e0e9dc}
+.moment-book-page .explore button.category .category-icon,.moment-book-page .explore .moment-static-topic .moment-static-icon{display:block;grid-column:1;grid-row:1;width:auto;height:auto;margin:0;padding:0;border:0;border-radius:0;background:transparent;text-align:center;font:22px/1 Georgia,serif;color:#a68148}
+.moment-book-page .explore button.category .category-title,.moment-book-page .explore .moment-static-topic strong{grid-column:2;grid-row:1;align-self:center;margin:0;max-width:none;font:600 15px/1.28 system-ui,sans-serif;letter-spacing:0;color:#173e31;overflow-wrap:anywhere}
+.moment-book-page .explore button.category .category-count,.moment-book-page .explore .moment-static-topic small{grid-column:3;grid-row:1;align-self:center;margin:0;padding:0;color:#526f60;font:500 12px/1 system-ui,sans-serif}
+.moment-book-page .explore button.category::after,.moment-book-page .explore .moment-static-topic .moment-static-arrow{content:"⌄";display:block;grid-column:4;grid-row:1;justify-self:center;align-self:center;width:auto;height:auto;padding:0;border-radius:0;background:transparent;color:#9a7742;font:19px/1 Georgia,serif}
+.moment-book-page .explore button.category.active::after,.moment-book-page .explore .moment-static-topic[open] .moment-static-arrow{transform:rotate(180deg)}
+.moment-book-page .explore .questions-panel{padding:9px 11px 12px;border:0;border-top:1px solid #d6e0d2;border-radius:0;background:#fff;box-shadow:none;min-width:0}
+.moment-book-page .explore .questions-top,.moment-book-page .explore .results-message{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;margin:0;padding:0}
+.moment-book-page .explore .question-list{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
+.moment-book-page .explore .question-entry.moment-soon-question{grid-template-columns:24px minmax(0,1fr) 13px;gap:8px;min-height:44px;padding:9px 2px;border:0;border-bottom:1px solid #e4e9df;border-radius:0;background:#fff;box-shadow:none;transform:none}
+.moment-book-page .explore .question-entry.moment-soon-question:hover,.moment-book-page .explore .question-entry.moment-soon-question:focus-visible{background:#f1f5ef;box-shadow:none;transform:none}
+.moment-book-page .explore .question-entry.moment-soon-question .question-name{font:500 15px/1.4 system-ui,sans-serif;color:#173e31}
+.moment-book-page .explore .question-entry.moment-soon-question .question-index{font:400 14px/1.3 Georgia,serif;color:#9a7742}
+.moment-book-page .explore .question-entry.moment-soon-question .moment-question-chevron{font:400 21px/1 Georgia,serif}
+.moment-book-page .moment-pair-dates{margin:3px 0 10px;padding:13px;border-radius:10px;border-color:#d5dfd1;background:#f5f7f1}
+.moment-book-page .moment-pair-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.moment-book-page .moment-pair-grid label{min-width:0;font-size:12px;line-height:1.3}
+.moment-book-page .moment-pair-grid input{min-height:44px;padding:8px;font-size:16px}
+.moment-book-page .moment-pair-intro strong{font:400 21px/1.2 Georgia,serif}
+.moment-book-page .explore .moment-inline-item.is-open>.question-entry{border:0;border-radius:0;border-bottom:1px solid #d5dfd1;background:#f1f5ef}
+.moment-book-page .explore .moment-inline-item.is-open .question-name{font:400 20px/1.25 'Playfair Display',Georgia,serif}
+.moment-book-page .explore .moment-inline-answer{margin:7px 0 12px;padding:18px 14px;border:1px solid #c6b58d;border-radius:12px;background:#fff;box-shadow:none;max-height:none;overflow:visible}
+.moment-book-page .moment-answer-text{white-space:pre-wrap;font:400 16px/1.7 system-ui,sans-serif;color:#173e31;text-align:left;overflow-wrap:anywhere}
+.moment-book-page .moment-answer-actions{margin-top:18px;padding-top:13px;gap:7px}
+.moment-book-page .moment-answer-action{border-radius:8px;min-height:44px;font:650 14px/1.3 system-ui,sans-serif}
+.moment-book-page .moment-answer-save{background:#214b39;border-color:#214b39;color:white}
+.moment-book-page .moment-answer-share{background:#fffefa;border-color:#cbd7c9;color:#173e31}
+.moment-book-page .explore .moment-static-topic ol{margin:0;padding:4px 12px 8px 32px;background:#fff}
+.moment-book-page .explore .moment-static-topic li{font:500 15px/1.4 system-ui,sans-serif;color:#173e31;border-color:#e4e9df}
+@media(max-width:350px){.moment-book-page .shell{width:calc(100% - 22px)}.moment-book-page .explore button.category .category-title{font-size:14px}.moment-book-page .moment-pair-grid{grid-template-columns:1fr}}
