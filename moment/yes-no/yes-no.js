@@ -63,7 +63,7 @@
         const mustLogin=data.error==="LOGIN_REQUIRED";
         timeResult.textContent=mustLogin
           ? "Войдите в личный кабинет, чтобы использовать бесплатный вопрос дня."
-          : "Бесплатный ответ на сегодня уже использован. Остальные ответы доступны участникам Клуба без доплаты.";
+          : "Вы уже использовали бесплатный ответ на сегодня. С подпиской на Клуб можно задавать вопросы в «Да / Нет» каждый день без лимита и доплаты.";
         const link=document.createElement("a");
         link.href=mustLogin?"/?account=1":"/?account=1&club_offer=1";
         link.className="yn-subscription-link";
