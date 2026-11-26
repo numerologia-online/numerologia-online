@@ -1,0 +1,94 @@
+name: Verify and sync retired Red Flag entries only
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/numi-redflag-catalog-sync-20261127.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    concurrency:
+      group: reg-ru-manual-publication
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check both prices for every question and reject retired questions
+        run: |
+          php -l account-service/tests/store.php
+          php account-service/tests/store.php
+      - name: Verify the exact seven deletions and publish only private metadata
+        env:
+          REG_FTP_HOST: ${{ secrets.REG_FTP_HOST }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import json,os,ssl,ftplib,socket,re,io,pathlib
+          src=pathlib.Path('account-service/private/redflag-catalog.json')
+          expected=json.loads(src.read_bytes())
+          retired=['love','flags','infidelity','intimacy','family','language','verdict']
+          def verify(data):
+              assert data['version']==1 and set(data['questions'])==set(expected['questions'])
+              for category,items in data['questions'].items():
+                  assert set(items)==set(expected['questions'][category]),'Unexpected question IDs: '+category
+                  for key,meta in items.items():
+                      target=expected['questions'][category][key]
+                      assert meta['tier']==target['tier'] and meta['free']==target['free']
+                      assert type(meta['ready']) is bool
+              assert sum(map(len,data['questions'].values()))==81
+              assert sum(q['free'] for items in data['questions'].values() for q in items.values())==8
+          verify(expected)
+          host=os.environ['REG_FTP_HOST'].strip()
+          socket.inet_aton(host)
+          ptr=socket.gethostbyaddr(host)[0].rstrip('.').lower()
+          assert re.fullmatch(r'[a-z0-9.-]+\.hosting\.reg\.ru',ptr)
+          assert host in {x[4][0] for x in socket.getaddrinfo(ptr,21,type=socket.SOCK_STREAM)}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          ftp.connect(ptr,21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          path=home+'/private/numi-account-20261031/redflag-catalog.json'
+          def read(p):
+              b=io.BytesIO()
+              ftp.retrbinary('RETR '+p,b.write)
+              return b.getvalue()
+          def put(p,data):
+              ftp.storbinary('STOR '+p,io.BytesIO(data))
+              assert read(p)==data,'Verification failed'
+          try:
+              assert b'function naRedFlagCatalog(' in read(home+'/private/numi-account-20261031/core.php')
+              old=read(path)
+              data=json.loads(old)
+              deleted=[]
+              for cat in retired:
+                  key='comic-verdict-'+cat
+                  meta=data['questions'][cat].get(key)
+                  if meta is not None:
+                      assert meta['free'] is False
+                      del data['questions'][cat][key]
+                      deleted.append(cat)
+              verify(data)
+              # Do not change any live readiness flags or other metadata.
+              print('Verified 81 IDs, 8 free questions and unchanged live prices; retired entries present:',len(deleted))
+              if deleted:
+                  new=(json.dumps(data,ensure_ascii=False,separators=(',',':'))+'\n').encode()
+                  backup=home+'/site-safeguard-backups'
+                  try:ftp.mkd(backup)
+                  except ftplib.error_perm:pass
+                  put(backup+'/redflag-retired-'+os.environ['GITHUB_RUN_ID']+'.json',old)
+                  assert read(path)==old,'Concurrent change'
+                  try:
+                      put(path,new)
+                      verify(json.loads(read(path)))
+                  except BaseException:
+                      put(path,old)
+                      raise
+              print('SUCCESS: private catalog verified; no payment code or content changed')
+          finally:ftp.quit()
+          PY

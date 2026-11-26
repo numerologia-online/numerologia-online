@@ -126,6 +126,12 @@ foreach($groups as $category=>$bank){
     }
 }
 check($seen===81,'80 core questions plus one bonus must be registered');
+foreach(['love','flags','infidelity','intimacy','family','language','verdict'] as $retired){
+    foreach([false,true] as $club) invalid(fn()=>naCatalogResolve(['product_code'=>'redflag_question',
+        'category'=>$retired,'question_id'=>'comic-verdict-'.$retired,'birth_date'=>'1986-09-09'],$club),
+        'retired question cannot be charged: '.$retired);
+}
+
 invalid(fn()=>naCatalogResolve(['product_code'=>'redflag_question',
     'category'=>'money','question_id'=>'invented','birth_date'=>'1986-09-09'],false),
     'unregistered question cannot be charged');
