@@ -45,7 +45,7 @@ jobs:
           assert menu.get('type')=='web_app' and u.scheme=='https' and u.hostname in ('xn----8sbhhqijddjgdebdz2c2o.xn--p1ai','нумерология-онлайн.рф')
           PY
   browser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 7
     steps:
       - name: Install temporary mobile browser
