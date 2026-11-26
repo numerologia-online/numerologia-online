@@ -63,11 +63,23 @@
         const mustLogin=data.error==="LOGIN_REQUIRED";
         timeResult.textContent=mustLogin
           ? "Войдите в личный кабинет, чтобы использовать бесплатный вопрос дня."
-          : "Вы уже использовали бесплатный ответ на сегодня. С подпиской на Клуб можно задавать вопросы в «Да / Нет» каждый день без лимита и доплаты.";
+          : "";
+        if (!mustLogin) {
+          const heading=document.createElement("h2");
+          heading.textContent="Остались вопросы?";
+          heading.style.cssText="font:500 24px/1.2 Georgia,serif;color:#173e31;margin:0 0 10px";
+          const intro=document.createElement("p");
+          intro.textContent="Сегодня вы уже получили свой бесплатный ответ.";
+          intro.style.cssText="margin:0 0 10px";
+          const invite=document.createElement("p");
+          invite.textContent="Станьте членом Клуба и получайте ответы на любые вопросы «Да / Нет» каждый день без ограничений.";
+          invite.style.cssText="margin:0";
+          timeResult.replaceChildren(heading,intro,invite);
+        }
         const link=document.createElement("a");
         link.href=mustLogin?"/?account=1":"/?account=1&club_offer=1";
         link.className="yn-subscription-link";
-        link.textContent=mustLogin?"Войти в личный кабинет":"Подключить Клуб · 490 ₽ в месяц";
+        link.textContent=mustLogin?"Войти в личный кабинет":"Вступить в Клуб · 490 ₽ в месяц";
         timeResult.append(link);
         return;
       }
