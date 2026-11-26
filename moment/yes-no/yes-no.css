@@ -5,7 +5,7 @@ body,main{color:var(--yn-ink);background:#edf2e9}
 main{min-height:100svh;background:linear-gradient(180deg,#f6f7ee 0,#e8efe5 440px,#edf2e9 100%)}
 body .site-header,body .site-footer{display:none}
 .yn-directory.shell{width:min(calc(100% - 28px),560px);margin:0 auto;padding:6px 0 24px}
-.yn-back-top{display:inline-flex;align-items:center;min-height:36px;padding:0 2px;border:0;background:transparent;color:var(--yn-muted);font-size:12px;font-weight:600}
+.yn-back-top{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;border:0;background:transparent;color:var(--yn-muted);font-size:16px;font-weight:650}
 .yn-hero{text-align:center;margin:0 0 12px}
 .yn-seal{width:min(100%,208px);margin:0 auto 0}
 .yn-emblem{display:block;width:100%;height:auto}
