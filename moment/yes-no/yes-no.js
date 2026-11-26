@@ -17,11 +17,21 @@
   };
   const validTime = value => /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
   let useCurrentTime = true;
+  let pending = false;
+  function resetAnswer() {
+    timeResult.hidden = false;
+    timeResult.dataset.empty = "true";
+    timeResult.textContent = "Здесь появится ответ";
+  }
+  function cancelPending() {
+    answerRequest++; answerController?.abort(); pending = false; submit.disabled = false;
+    submit.textContent = "Задать вопрос";
+  }
   const scrollBehavior = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   async function confirmTime(value, scrollToAnswer = false) {
     if (!validTime(value)) {
       timeError.hidden = false;
-      timeResult.hidden = true;
+      resetAnswer();
       timeInput.setAttribute("aria-invalid", "true");
       timeInput.focus();
       return;
@@ -33,6 +43,7 @@
     const id = ++answerRequest;
     answerController?.abort();
     timeResult.hidden = false;
+    delete timeResult.dataset.empty;
     if (!selectedQuestion) {
       timeResult.textContent = "Ответ на этот вопрос ещё готовится.";
       return;
@@ -40,7 +51,9 @@
     timeResult.textContent = "Подготавливаем ответ.";
     answerController = new AbortController();
     const controller = answerController;
+    pending = true;
     submit.disabled = true;
+    submit.textContent = "Получаем ответ…";
     const timer = setTimeout(() => controller.abort(), 12000);
     try {
       const response = await fetch("/api/numi-yesno-answer.php", {method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:selectedQuestion.id,time:value}),cache:"no-store", signal:controller.signal});
@@ -78,7 +91,7 @@
       if (id === answerRequest) timeResult.textContent = "Не удалось получить ответ. Попробуйте ещё раз.";
     } finally {
       clearTimeout(timer);
-      if (id === answerRequest) submit.disabled = false;
+      if (id === answerRequest) { pending = false; submit.disabled = false; submit.textContent = "Задать вопрос"; }
       // Scroll only after an explicit question submission.
       if (scrollToAnswer && id === answerRequest && !dialog.hidden && !timeResult.hidden) {
         requestAnimationFrame(() => {
@@ -188,15 +201,16 @@
     }
   }
   function selectQuestion(q) {
-    answerRequest++; answerController?.abort();
+    cancelPending();
     selectedQuestion = q;
     questionTitle.textContent = q.title;
-    timeForm.reset();
-    useCurrentTime = true;
-    timeInput.value = currentTime();
+    if (useCurrentTime || !validTime(timeInput.value)) {
+      useCurrentTime = true;
+      timeInput.value = currentTime();
+    }
     timeInput.disabled = now.disabled = submit.disabled = false;
-    timeError.hidden = timeResult.hidden = true;
-    timeResult.replaceChildren();
+    timeError.hidden = true;
+    resetAnswer();
     timeInput.removeAttribute("aria-invalid");
     renderCategories();
     openCategory(null);
@@ -205,29 +219,35 @@
   }
   timeInput.addEventListener("input", () => {
     useCurrentTime = false;
-    answerRequest++; answerController?.abort();
-    submit.disabled = !selectedQuestion;
+    cancelPending();
     const cleaned = normalizeTime(timeInput.value);
     if (timeInput.value !== cleaned) timeInput.value = cleaned;
-    timeResult.hidden = true;
+    resetAnswer();
     timeError.hidden = cleaned.length !== 5 || validTime(cleaned);
     if (!timeError.hidden) timeInput.setAttribute("aria-invalid", "true");
     else timeInput.removeAttribute("aria-invalid");
   });
-  timeForm.addEventListener("submit", event => {
+  function askQuestion(event) {
     event.preventDefault();
-    if (!selectedQuestion || submit.disabled) return;
+    if (pending) return;
+    if (!selectedQuestion) {
+      grid.scrollIntoView({behavior:scrollBehavior(),block:"start"});
+      grid.querySelector(".yn-topic")?.focus({preventScroll:true});
+      return;
+    }
     confirmTime(useCurrentTime ? currentTime() : normalizeTime(timeInput.value), true);
-  });
+  }
+  submit.addEventListener("click", askQuestion);
+  timeForm.addEventListener("submit", askQuestion);
   now.addEventListener("click", () => {
-    if (!selectedQuestion) return;
-    answerRequest++; answerController?.abort();
+    cancelPending();
     useCurrentTime = true;
     timeInput.value = currentTime();
     timeInput.removeAttribute("aria-invalid");
-    timeError.hidden = timeResult.hidden = true;
-    submit.disabled = false;
+    timeError.hidden = true;
+    resetAnswer();
   });
+  timeInput.value = currentTime();
   document.addEventListener("keydown", event => {
     if (event.key === "Escape" && active !== null) {
       const group = Array.from(grid.children).find(el => el.dataset.category === active);

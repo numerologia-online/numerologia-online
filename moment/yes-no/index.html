@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#10251e">
+  <meta name="theme-color" content="#f1f4ec">
   <meta name="description" content="100 вопросов «Да или нет» о любви, работе, деньгах и решениях. Один ответ в день бесплатно, остальные по подписке Клуба.">
   <title>100 вопросов «Да или нет» — Нумерология момента</title>
   <link rel="stylesheet" href="../moment.css?v=1">
-  <link rel="stylesheet" href="./yes-no.css?v=oracle-20261126">
+  <link rel="stylesheet" href="./yes-no.css?v=light-oracle-20261126b">
   <script defer src="../../assets/telegram-web-app-20261102.js"></script>
-  <script defer src="./yes-no.js?v=single-screen-20261126"></script>
+  <script defer src="./yes-no.js?v=light-oracle-20261126b"></script>
 </head>
 <body>
   <header class="site-header"><div class="header-inner">
@@ -24,10 +24,10 @@
           <svg class="yn-emblem" viewBox="0 0 320 112" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="yn-metal" x1="113" y1="4" x2="206" y2="108" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#f1dfb5"/><stop offset=".52" stop-color="#b49560"/><stop offset="1" stop-color="#e5c78c"/>
+                <stop stop-color="#9a7742"/><stop offset=".52" stop-color="#b49560"/><stop offset="1" stop-color="#b08b50"/>
               </linearGradient>
             </defs>
-            <g stroke="#b69c6b" stroke-width=".65" opacity=".55">
+            <g stroke="#a18a5e" stroke-width=".65" opacity=".55">
               <path d="M4 56h93m126 0h93M78 45l11 11-11 11m164-22-11 11 11 11"/>
               <circle cx="35" cy="56" r="2"/><circle cx="285" cy="56" r="2"/>
               <ellipse cx="160" cy="56" rx="73" ry="24" transform="rotate(-23 160 56)"/>
@@ -44,39 +44,40 @@
               <path d="M160 47v9l6 4" stroke-width="1.5"/>
               <path d="M160 0v4m0 104v4" stroke-width="1"/>
             </g>
-            <g fill="#e1c38a">
+            <g fill="#ab854c">
               <path d="M98 52l4 4-4 4-4-4 4-4Zm124 0 4 4-4 4-4-4 4-4Z"/>
               <circle cx="160" cy="56" r="1.8"/>
               <circle cx="160" cy="12" r="1.5"/><circle cx="160" cy="100" r="1.5"/>
             </g>
-            <g stroke="#dcc08a" stroke-width="1" stroke-linecap="round">
+            <g stroke="#a58047" stroke-width="1" stroke-linecap="round">
               <circle cx="58" cy="56" r="8"/>
               <path d="M58 43v3m0 20v3m-13-13h3m20 0h3m-22-9 2 2m14 14 2 2m0-18-2 2M51 63l-2 2"/>
-              <path d="M267 48a9 9 0 1 0 0 16 10 10 0 0 1 0-16Z" fill="#d5b77e" stroke="none"/>
+              <path d="M267 48a9 9 0 1 0 0 16 10 10 0 0 1 0-16Z" fill="#b18a4f" stroke="none"/>
             </g>
           </svg>
         </div>
-        <p class="overline">НУМЕРОЛОГИЯ МОМЕНТА</p>
         <h1>ДА <span>/</span> НЕТ</h1>
-        <p class="yn-directory-sub">У каждого вопроса есть свой момент.</p>
       </header>
       <section id="yn-dialog" aria-labelledby="yn-dialog-title">
         <div class="dialog-content">
-          <p class="yn-selection-label"><span aria-hidden="true">◇</span> ВАШ ВОПРОС <span aria-hidden="true">◇</span></p>
+          
           <h2 id="yn-dialog-title" tabindex="-1">Выберите вопрос ниже</h2>
           <form id="yn-time-form" class="yn-time-form" novalidate>
             <div class="yn-time-row">
               <label for="yn-time-input">Здесь и сейчас</label>
-              <input id="yn-time-input" name="question-time" type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="--:--" aria-describedby="yn-time-error" spellcheck="false" disabled>
-              <button type="button" id="yn-now" class="yn-now-button" disabled>Сейчас</button>
+              <input id="yn-time-input" name="question-time" type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="--:--" aria-describedby="yn-time-error" spellcheck="false">
+              <button type="button" id="yn-now" class="yn-now-button">Сейчас</button>
             </div>
-            <button type="submit" id="yn-submit" class="yn-confirm-time" disabled><span aria-hidden="true">✧</span> Задать вопрос</button>
+            <button type="submit" id="yn-submit" class="yn-confirm-time">Задать вопрос</button>
             <p id="yn-time-error" class="yn-time-error" role="alert" hidden>Введите время от 00:00 до 23:59.</p>
           </form>
-          <div id="yn-time-result" class="yn-time-result" role="status" aria-live="polite" hidden></div>
         </div>
       </section>
-      <div class="yn-catalog-heading"><h2>Выберите тему</h2><span>7 направлений</span></div>
+      <section class="yn-answer-box" aria-labelledby="yn-answer-label">
+        <h2 id="yn-answer-label">Ответ</h2>
+        <div id="yn-time-result" class="yn-time-result" role="status" aria-live="polite" data-empty="true">Здесь появится ответ</div>
+      </section>
+      <div class="yn-catalog-heading"><h2>Выберите тему</h2></div>
       <div id="yn-categories" class="yn-category-list" aria-label="Темы вопросов"></div>
       <p class="yn-repeat-note">Если вопрос возник раньше, укажите время его первого появления. Не повторяйте один и тот же вопрос чаще раза в сутки.</p>
       <p class="yn-club-access-note"><strong>Один бесплатный ответ в день.</strong> Все 100 вопросов без доплаты с <a href="../../?account=1&amp;club_offer=1">Клубом · 490 ₽/мес.</a></p>
