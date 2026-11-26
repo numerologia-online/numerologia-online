@@ -348,6 +348,22 @@
     dialog.classList.remove("numi-wallet-topup-active");
     dialog.scrollTop=0;
   }
+  // The shared Club checkout has already verified the account and calculated the shortfall.
+  // Reuse this exact existing top-up form on the main page; no payment is started here.
+  window.addEventListener("numi:club-topup-open",event=>{
+    const detail=event.detail;
+    if(!current||String(current.id)!==String(detail?.accountId)||profile.hidden||walletMode===null||topupSubmitting)return;
+    const required=Number(detail.amountRub);
+    if(!Number.isSafeInteger(required)||required<1||required>100000)return;
+    try{
+      if(!dialog.open)dialog.showModal();
+      for(const pane of dialog.querySelectorAll("[data-account-content]"))pane.hidden=true;
+      amountInput.value=String(required);
+      showTopupPage();
+      event.preventDefault();
+      void refreshWalletBadge();
+    }catch(_){}
+  });
   topupToggle.addEventListener("click",showTopupPage);
   topupBack.addEventListener("click",leaveTopupPage);
   dialog.addEventListener("close",()=>{
@@ -1312,12 +1328,10 @@
   }else{
     void refresh();
   }
-  if(new URLSearchParams(location.search).get("account")==="1"){
+  if(params.get("club_offer")==="1"){
+    // The shared checkout opens the balance directly, without the legacy cabinet launch.
+  }else if(params.get("account")==="1"){
     ownerButton.click();
-    // A club offer may open the existing tariff panel directly, without creating a new checkout.
-    if(params.get("club_offer")==="1"){
-      overview.querySelector('[data-account-panel="prices"]')?.click();
-    }
   }else if(resetToken) {
     choose("password");
     ownerButton.click();

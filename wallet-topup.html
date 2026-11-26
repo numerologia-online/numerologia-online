@@ -115,6 +115,22 @@ async function initialize(){
   if(!session.authenticated||!session.account?.id)
    throw new Error("Для пополнения войдите через личный кабинет.");
   account=session.account;
+  // Only restore the shortfall and return destination for the same verified account.
+  if(new URLSearchParams(location.search).get("club")==="1"){
+   try{
+    const key="numi-club-topup-return-v1";
+    const context=JSON.parse(sessionStorage.getItem(key)||"null");
+    sessionStorage.removeItem(key);
+    if(context&&String(context.accountId)===String(account.id)&&Number(context.expires)>Date.now()){
+     const path=String(context.path||"");
+     if(/^\/(?!\/)[a-zA-Z0-9_/.\-]*$/.test(path)&&!path.includes("..")&&path!=="/wallet-topup.html"){
+      document.getElementById("back").href=path+"?club_offer=1";
+      document.getElementById("back").textContent="← Вернуться к Клубу";
+     }
+     if(Number.isSafeInteger(context.amountRub)&&context.amountRub>=1&&context.amountRub<=100000)amount.value=String(context.amountRub);
+    }
+   }catch(_){}
+  }
   const wallet=await request("wallet_status");
   if(typeof wallet.test!=="boolean")throw new Error("Не удалось проверить режим оплаты.");
   mode=wallet.test?"test":"live";

@@ -9,6 +9,10 @@ export function storeDate(value){
 export async function openStore(item,plan="once"){
   const target=plan==="club"?{product_code:"club_month"}:item;
   if(!target?.product_code)throw new Error("INVALID_ITEM");
+  if(target.product_code==="club_month"){
+    const {openClubCheckout}=await import("/club-checkout.js?v=club-balance-20261126");
+    return openClubCheckout();
+  }
   let offer=document.querySelector("#shared-paywall-dialog[open],#pro-paywall-dialog[open]");
   let host=offer?.querySelector("#numi-direct-offer");
   if(offer&&!host){

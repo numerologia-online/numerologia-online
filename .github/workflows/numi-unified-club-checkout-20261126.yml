@@ -1,0 +1,107 @@
+name: Test and publish unified Club balance checkout
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/numi-unified-club-checkout-20261126.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify the new checkout without real accounts or charges
+        run: |
+          node --test tests/club-checkout.test.mjs
+          for f in club-checkout.js store-entry.js wallet-client.js auth-profile.js account-browser.js personal-day-feature.js app.js; do
+            node --input-type=module --check < "$f"
+          done
+      - name: Validate targeted live patches, back up, publish and read back
+        env:
+          REG_FTP_HOST: ${{ secrets.REG_FTP_HOST }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import json,os,ssl,ftplib,socket,re,io,subprocess,pathlib
+          patches=json.loads(pathlib.Path('.github/club-checkout-js-patches-20261126.json').read_text())
+          pages=json.loads(pathlib.Path('.github/club-checkout-page-patches-20261126.json').read_text())
+          for path,changes in pages['literal'].items():patches.setdefault(path,[]).extend(changes)
+          for path in pages['versions']:patches.setdefault(path,[])
+          host=os.environ['REG_FTP_HOST'].strip()
+          socket.inet_aton(host)
+          ptr=socket.gethostbyaddr(host)[0].rstrip('.').lower()
+          assert re.fullmatch(r'[a-z0-9.-]+\.hosting\.reg\.ru',ptr)
+          assert host in {x[4][0] for x in socket.getaddrinfo(ptr,21,type=socket.SOCK_STREAM)}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          ftp.connect(ptr,21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          def read(path):
+              b=io.BytesIO()
+              ftp.retrbinary('RETR '+path,b.write)
+              return b.getvalue()
+          def put(path,data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              assert read(path)==data,'Verification failed'
+          def syntax(path,data):
+              if path.endswith('.js'):
+                  subprocess.run(['node','--input-type=module','--check'],input=data,check=True)
+              elif path=='wallet-topup.html':
+                  scripts=re.findall(rb'<script>(.*?)</script>',data,re.S)
+                  for script in scripts:subprocess.run(['node','--check'],input=script,check=True)
+          try:
+              assert b'account-browser.js' in read(root+'index.html')
+              old={};new={}
+              for path,changes in patches.items():
+                  old[path]=read(root+path)
+                  current=old[path].decode('utf-8')
+                  for before,after in changes:
+                      if before!=after and current.count(after)==1:continue
+                      assert current.count(before)==1, 'Live copy differs; no files modified: '+path
+                      current=current.replace(before,after,1)
+                  for name in pages['versions'].get(path,[]):
+                      pattern=re.escape(name)+r"\?v=[^\"'\s<>]+"
+                      current,n=re.subn(pattern,lambda _:name+'?v='+pages['version'],current)
+                      assert n==1,'Asset version mismatch; no files modified: '+path
+                  new[path]=current.encode('utf-8')
+                  syntax(path,new[path])
+                  print('VALIDATED',path)
+              module='club-checkout.js'
+              module_bytes=pathlib.Path(module).read_bytes()
+              syntax(module,module_bytes)
+              try:
+                  old[module]=read(root+module)
+                  assert old[module]==module_bytes,'Unexpected existing checkout module'
+              except ftplib.error_perm as e:
+                  if not str(e).startswith('550'):raise
+                  old[module]=None
+              new={module:module_bytes,**new}
+              backup=home+'/site-safeguard-backups'
+              try:ftp.mkd(backup)
+              except ftplib.error_perm:pass
+              for path,data in old.items():
+                  if data is not None and data!=new[path]:
+                      put(backup+'/club-balance-'+os.environ['GITHUB_RUN_ID']+'-'+path.replace('/','__'),data)
+              uploaded=[]
+              try:
+                  for path,data in new.items():
+                      if old[path]==data:continue
+                      uploaded.append(path)
+                      put(root+path,data)
+                      print('PUBLISHED AND VERIFIED',path)
+              except BaseException:
+                  for path in reversed(uploaded):
+                      if old[path] is None:ftp.delete(root+path)
+                      else:put(root+path,old[path])
+                  raise
+              print('SUCCESS: unified Club checkout; server payment code untouched')
+          finally:ftp.quit()
+          PY

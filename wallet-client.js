@@ -107,8 +107,8 @@ function clubOffer(container,quote,item,onMaterial,onLoadError){
   const join=action(container,yesNoIncluded?"Подключить Клуб":"Вступить в клуб",async()=>{
     join.disabled=true;
     try{
-      const {openStore}=await import("/store-entry.js?v=subscription-controls-20261108");
-      await openStore({product_code:"club_month"});
+      const {openClubCheckout}=await import("/club-checkout.js?v=club-balance-20261126");
+      await openClubCheckout();
     }catch(_){
       hint.textContent="Не удалось открыть подписку. Попробуйте ещё раз.";
     }finally{join.disabled=false;}
@@ -138,7 +138,7 @@ export async function showInlinePurchase(item,container,onMaterial,onLoadError){
   // Compatibility guard for cached clients: Yes/No has NO individual sales.
   if(item?.product_code==="yesno_question"){
     note(container,"Один ответ в день бесплатно. Все остальные доступны только в Клубе, без доплаты.");
-    action(container,"Подключить Клуб · 490 ₽/мес.",()=>location.assign("/?account=1&club_offer=1"));
+    action(container,"Подключить Клуб · 490 ₽/мес.",()=>import("/club-checkout.js?v=club-balance-20261126").then(m=>m.openClubCheckout()));
     return;
   }
   note(container,"Проверяем доступ и баланс…");

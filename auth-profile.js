@@ -30,7 +30,7 @@
   if (!dialog || !accountButton || !loginView || !profileView || !status) return;
 
   const launchParams = new URLSearchParams(location.search);
-  const openCabinetOnLaunch = launchParams.get("account") === "1";
+  const openCabinetOnLaunch = launchParams.get("account") === "1" && launchParams.get("club_offer") !== "1";
   let openClubOnLaunch = openCabinetOnLaunch && launchParams.get("club_offer") === "1";
 
   let user = null;
@@ -222,8 +222,8 @@
       join.disabled = true;
       feedback.hidden = true;
       try {
-        const { openStore } = await import("./store-entry.js?v=subscription-controls-20261108");
-        await openStore({ product_code: "club_month" }, "club");
+        const { openClubCheckout } = await import("/club-checkout.js?v=club-balance-20261126");
+        await openClubCheckout();
       } catch (_) {
         feedback.textContent = "Не удалось открыть оплату Клуба. Попробуйте ещё раз.";
         feedback.hidden = false;

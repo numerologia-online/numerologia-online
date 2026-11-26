@@ -212,6 +212,7 @@ const monthCalendar = (_birth, date = new Date()) => {
             </div>
             <p class="numi-pricing-plan-cost"><strong>490&nbsp;₽</strong><span>в месяц</span></p>
           </div>
+      <button type="button" data-numi-club-checkout class="account-primary" style="width:100%;margin:12px 0;min-height:44px;background:#214b39;color:#fff;border:0;border-radius:12px;font:650 15px/1.3 system-ui">Вступить в Клуб</button>
       <div class="numi-pricing-frame">
             <table class="numi-pricing-table" aria-label="Цены без подписки и с Клубом">
               <colgroup><col class="numi-pricing-product"><col><col></colgroup>
