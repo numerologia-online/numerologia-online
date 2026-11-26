@@ -1,16 +1,9 @@
 {
   "mode": "publish",
   "files": [
-    "pro/pro-pdf-content.js",
-    "pro/full-report-pdf-secure.js",
-    "pro/pro.js",
-    "pro/index.html"
+    "moment/yes-no/yes-no.css",
+    "moment/yes-no/yes-no.js",
+    "moment/yes-no/index.html"
   ],
-  "expected_sha256": {
-    "pro/pro-pdf-content.js": "e12a97b29e00b300de434c304f4802b4024a6ade77e889a5b88171a59f2dc773",
-    "pro/full-report-pdf-secure.js": "b8ab22afbb399d69b75b03e15173a1637adf57ee6cb66d29c8cef94f914cdd4d",
-    "pro/pro.js": "9218e202894244bcd2e921fe096a1aadee4d4f0ae4399aee5af93a6d8142d363",
-    "pro/index.html": "7e60597c8d33772a98759cee21ea2bea6ba433f5eed45eff879f646bc46b7ec7"
-  },
-  "note": "Full Life PDF: apply the original report typography to purpose and karmic chapters, with headings kept with their body text."
+  "note": "Owner requested immediate publication of the approved single-screen oracle design. Only these three existing public presentation files."
 }
