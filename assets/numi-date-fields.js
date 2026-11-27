@@ -56,7 +56,7 @@
     if(!field(el)||!/^\d$/.test(value)||!/^\d{2}\.\d{2}\.\d{4}$/.test(el.value))return false;
     let a=el.selectionStart,b=el.selectionEnd;
     if(a===null||b===null||a>=el.value.length)return false;
-    if(a===b&&el.value[a]===".")a++;
+    if(a===b&&el.value[a]==="."){a++;b++;}
     if(a>=el.value.length||!/^\d$/.test(el.value[a]))return false;
     if(a!==b&&b-a!==1)return false;
     el.setRangeText(value,a,a+1,"end");
