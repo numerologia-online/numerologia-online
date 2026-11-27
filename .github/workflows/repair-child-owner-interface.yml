@@ -29,9 +29,9 @@ jobs:
           const end=s.indexOf('function requestChildAccess()',start);
           assert(start>=0&&end>start);
           const fragment=s.slice(start,end)
-             .replace('await import("../wallet-client.js?v=owner-material-20261116")','{walletOwnerMaterial}')
-             .replace('await import("../store-entry.js?v=owner-access-20261116")','{recognizePurchasedReport}');
-          const fn=new Function('walletOwnerMaterial','recognizePurchasedReport',`
+             .replace('await import("../wallet-client.js?v=owner-material-20261116")','{walletOwnerMaterial: mockOwner}')
+             .replace('await import("../store-entry.js?v=owner-access-20261116")','{recognizePurchasedReport: mockPurchase}');
+          const fn=new Function('mockOwner','mockPurchase',`
             let birth={year:2020,month:1,day:2},childAccessRequest=0,ownerChild=null,purchasedChild=null;
             let childEntitlement={},renders=0,pdf=0;
             const childBirthKey=d=>d.year+'-'+String(d.month).padStart(2,'0')+'-'+String(d.day).padStart(2,'0');
