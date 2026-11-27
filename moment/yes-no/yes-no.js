@@ -28,7 +28,7 @@
     submit.textContent = "Получить ответ";
   }
   const scrollBehavior = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-  async function confirmTime(value, scrollToAnswer = false) {
+  async function confirmTime(value, scrollToAnswer = false, uncensoredMode = false) {
     if (!validTime(value)) {
       timeError.hidden = false;
       resetAnswer();
@@ -56,9 +56,17 @@
     submit.textContent = "Получаем ответ…";
     const timer = setTimeout(() => controller.abort(), 12000);
     try {
-      const response = await fetch("/api/numi-yesno-answer.php", {method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:selectedQuestion.id,time:value}),cache:"no-store", signal:controller.signal});
+      const response = await fetch(uncensoredMode ? "/api/numi-yesno-uncensored.php" : "/api/numi-yesno-answer.php", {method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:selectedQuestion.id,time:value}),cache:"no-store", signal:controller.signal});
       const data = await response.json();
       if (id !== answerRequest) return;
+      if (uncensoredMode && data.error === "UNCENSORED_OWNER_ONLY") {
+        timeResult.textContent = "Режим без цензуры 18+ пока закрыт. Готовим ответы для участников Клуба.";
+        return;
+      }
+      if (uncensoredMode && data.error === "UNCENSORED_NOT_READY") {
+        timeResult.textContent = "Ответ без цензуры для этого вопроса и времени ещё не написан.";
+        return;
+      }
       if(data.error==="DAILY_LIMIT_REACHED"||data.error==="LOGIN_REQUIRED"){
         const mustLogin=data.error==="LOGIN_REQUIRED";
         timeResult.textContent=mustLogin
@@ -252,40 +260,14 @@
   submit.addEventListener("click", askQuestion);
   timeForm.addEventListener("submit", askQuestion);
   const uncensored = $("yn-uncensored");
-  uncensored?.addEventListener("click", async () => {
-    if (pending || uncensored.disabled) return;
+  uncensored?.addEventListener("click", () => {
+    if (pending) return;
     if (!selectedQuestion) {
       grid.scrollIntoView({behavior:scrollBehavior(),block:"start"});
       grid.querySelector(".yn-topic")?.focus({preventScroll:true});
       return;
     }
-    const id = answerRequest;
-    uncensored.disabled = true;
-    try {
-      const response = await fetch("/api/numi-yesno-answer.php?status=1", {credentials:"same-origin",cache:"no-store"});
-      const data = await response.json();
-      if (id !== answerRequest) return;
-      if (!response.ok || data.ok !== true) throw Error("access unavailable");
-      delete timeResult.dataset.empty;
-      if (data.authenticated && (data.subscribed || data.remaining === null)) {
-        timeResult.textContent = "Ответы без цензуры 18+ готовятся. Скоро здесь появится новый режим Клуба.";
-      } else {
-        timeResult.textContent = data.authenticated
-          ? "Ответы без цензуры 18+ будут доступны только участникам Клуба."
-          : "Войдите в личный кабинет, чтобы пользоваться режимом 18+ для участников Клуба.";
-        const link = document.createElement("a");
-        link.href = data.authenticated ? "/?account=1&club_offer=1" : "/?account=1";
-        link.className = "yn-subscription-link";
-        link.textContent = data.authenticated ? "Вступить в Клуб · 490 ₽ в месяц" : "Войти в личный кабинет";
-        timeResult.append(link);
-      }
-      timeResult.scrollIntoView({behavior:scrollBehavior(),block:"center"});
-    } catch {
-      if (id === answerRequest) {
-        delete timeResult.dataset.empty;
-        timeResult.textContent = "Не удалось проверить доступ. Попробуйте ещё раз.";
-      }
-    } finally { uncensored.disabled = false; }
+    confirmTime(useCurrentTime ? currentTime() : normalizeTime(timeInput.value), true, true);
   });
   now.addEventListener("click", () => {
     cancelPending();
