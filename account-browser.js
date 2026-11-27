@@ -1047,7 +1047,7 @@
     if(!email||!password){alertMessage("Введите email и пароль.");return;}
     if(selected==="register" && password!==String(fields.get("password_confirm")||"")){alertMessage("Пароли не совпадают. Проверьте повтор пароля.");return;}
     await perform(selected==="register"?"register":"login",{email,password},selected==="register"?
-      "Проверьте почту: мы отправили ссылку подтверждения.":null);
+      "Письмо отправлено. Доставка может занять несколько минут. Не забудьте проверить папку «Спам».":null);
   });
   resetForm.addEventListener("submit",async event=>{
     event.preventDefault();
