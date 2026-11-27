@@ -1,0 +1,114 @@
+name: Publish Yes/No uncensored preview button only
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/numi-yesno-uncensored-preview-20261127.yml']
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch only uncensored preview markup, CSS and handler
+        env:
+          REG_FTP_HOST: ${{ secrets.REG_FTP_HOST }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import json,os,ssl,ftplib,socket,re,io,time,tempfile,subprocess,pathlib
+          html_path='moment/yes-no/index.html'
+          css_path='moment/yes-no/yes-no.css'
+          js_path='moment/yes-no/yes-no.js'
+          version='uncensored-preview-20261127'
+          source={p:pathlib.Path(p).read_text(encoding='utf-8') for p in (html_path,css_path,js_path)}
+          button=next(l for l in source[html_path].splitlines() if 'id="yn-uncensored"' in l)
+          html_anchor='            <button type="submit" id="yn-submit" class="yn-confirm-time">Задать вопрос</button>'
+          css_anchor=next(l for l in source[css_path].splitlines() if l.startswith('.yn-confirm-time{'))
+          css_add='\n'.join(l for l in source[css_path].splitlines() if l.startswith('.yn-uncensored'))
+          js_anchor='  timeForm.addEventListener("submit", askQuestion);'
+          js_start=source[js_path].index('  const uncensored = $("yn-uncensored");')
+          js_end=source[js_path].index('  now.addEventListener("click",',js_start)
+          js_add=source[js_path][js_start:js_end].rstrip('\n')
+          assert '18+' in button and len(css_add.splitlines())==3 and '?status=1' in js_add
+          def insert_once(current,anchor,addition):
+              assert current.count(anchor)==1,'Unexpected live anchor'
+              if addition in current:return current
+              return current.replace(anchor,anchor+'\n'+addition,1)
+          host=os.environ['REG_FTP_HOST'].strip()
+          socket.inet_aton(host)
+          ptr=socket.gethostbyaddr(host)[0].rstrip('.').lower()
+          assert re.fullmatch(r'[a-z0-9.-]+\.hosting\.reg\.ru',ptr)
+          assert host in {x[4][0] for x in socket.getaddrinfo(ptr,21,type=socket.SOCK_STREAM)}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          ftp.connect(ptr,21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          def read(path):
+              b=io.BytesIO()
+              ftp.retrbinary('RETR '+path,b.write)
+              return b.getvalue()
+          def put(path,data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              assert read(path)==data,'Verification failed'
+          try:
+              assert b'account-browser.js' in read(root+'index.html')
+              old={};new={}
+              for path in (css_path,js_path,html_path):
+                  old[path]=read(root+path)
+                  current=old[path].decode('utf-8')
+                  if path==css_path:
+                      current=insert_once(current,css_anchor,css_add)
+                  elif path==js_path:
+                      current=insert_once(current,js_anchor,js_add)
+                  else:
+                      current=insert_once(current,html_anchor,button)
+                      for ext in ('css','js'):
+                          current,n=re.subn(r'\./yes-no\.'+ext+r'\?v=[a-zA-Z0-9_-]+','./yes-no.'+ext+'?v='+version,current)
+                          assert n==1,'Unexpected asset link '+ext
+                  new[path]=current.encode('utf-8')
+              assert button.encode() in new[html_path] and css_add.encode() in new[css_path] and js_add.encode() in new[js_path]
+              with tempfile.TemporaryDirectory() as tmp:
+                  jscheck=pathlib.Path(tmp)/'yes-no.js'
+                  jscheck.write_bytes(new[js_path])
+                  subprocess.run(['node','--check',str(jscheck)],check=True)
+              backup=home+'/site-safeguard-backups'
+              try:ftp.mkd(backup)
+              except ftplib.error_perm:pass
+              for path,data in old.items():
+                  put(backup+'/uncensored-preview-'+os.environ['GITHUB_RUN_ID']+'-'+path.rsplit('/',1)[1],data)
+              uploaded=[]
+              try:
+                  for path,data in new.items():
+                      uploaded.append(path)
+                      put(root+path,data)
+                      print('PUBLISHED AND VERIFIED',path)
+              except BaseException:
+                  for path in reversed(uploaded):put(root+path,old[path])
+                  raise
+              print('SUCCESS: uncensored preview button only')
+          finally:ftp.quit()
+          import urllib.request
+          origin='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/yes-no/'
+          def public(url):
+              req=urllib.request.Request(url,headers={'Cache-Control':'no-cache','User-Agent':'Mozilla/5.0'})
+              with urllib.request.urlopen(req,timeout=20) as response:return response.read().decode('utf-8')
+          for attempt in range(3):
+              try:
+                  live=public(origin+'?verify='+os.environ['GITHUB_RUN_ID']+'-'+str(attempt))
+                  style=public(origin+'yes-no.css?v='+version)
+                  script=public(origin+'yes-no.js?v='+version)
+                  assert button in live and version in live and css_add in style and js_add in script
+                  print('PUBLIC HTTP VERIFIED: uncensored preview button')
+                  break
+              except Exception:
+                  if attempt==2:raise
+                  time.sleep(3)
+          PY
