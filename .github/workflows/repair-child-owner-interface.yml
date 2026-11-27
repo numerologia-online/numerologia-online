@@ -1,0 +1,169 @@
+name: Repair only child owner matrix on REG.RU
+on:
+  push:
+    branches: [child-owner-interface-repair-20261127]
+    paths: ['.github/workflows/repair-child-owner-interface.yml']
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test date rules and exact owner view
+        run: |
+          node --input-type=module --check < child/child.js
+          node tests/numi-date-fields-20261125.cjs
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const s=fs.readFileSync('child/child.js','utf8');
+          const start=s.indexOf('async function refreshPurchasedChild()');
+          const end=s.indexOf('function requestChildAccess()',start);
+          assert(start>=0&&end>start);
+          const fragment=s.slice(start,end)
+             .replace('await import("../wallet-client.js?v=owner-material-20261116")','{walletOwnerMaterial}')
+             .replace('await import("../store-entry.js?v=owner-access-20261116")','{recognizePurchasedReport}');
+          const fn=new Function('walletOwnerMaterial','recognizePurchasedReport',`
+            let birth={year:2020,month:1,day:2},childAccessRequest=0,ownerChild=null,purchasedChild=null;
+            let childEntitlement={},renders=0,pdf=0;
+            const childBirthKey=d=>d.year+'-'+String(d.month).padStart(2,'0')+'-'+String(d.day).padStart(2,'0');
+            const purchasedChildRegion={hidden:true,dataset:{},replaceChildren(){this.cleared=true}};
+            const closeInsight=()=>{},invalidateChildPdf=()=>{},calculateMatrix=d=>d;
+            const renderMatrix=()=>renders++,syncChildOwnerPdf=()=>pdf++;
+            ${fragment}
+            return async()=>{await refreshPurchasedChild();return {ownerChild,purchasedChild,purchasedChildRegion,renders,pdf,childEntitlement}};
+          `);
+          const material={sections:Array.from({length:21},(_,i)=>({paragraphs:['chapter '+i]}))};
+          const owner=await fn(async()=>material,async()=>{throw Error('Owner must not call purchased report')})();
+          assert.equal(owner.ownerChild.material,material);assert(owner.purchasedChildRegion.hidden);assert(owner.purchasedChildRegion.cleared);assert.equal(owner.renders,1);assert.equal(owner.pdf,1);
+          let purchaseChecked=false;
+          const guest=await fn(async()=>null,async(item,region,options)=>{assert.equal(options.ownerPreview,false);purchaseChecked=true;return null;})();
+          assert(purchaseChecked);assert.equal(guest.ownerChild,null);assert(guest.purchasedChildRegion.hidden);
+          assert(s.includes('const verifiedMaterial=hasOwnerChildAccess()?ownerChild.material:purchasedChild?.material;'));
+          assert(s.includes('const ownerReport=ownerMaterial?'));
+          console.log('OWNER_MATRIX_NOT_FULL_TEXT_AND_GUEST_LOCK_TEST_PASS');
+          JS
+      - name: Publish only child interface, preserve live differences and roll back if checks fail
+        env:
+          REG_FTP_HOST: ${{ secrets.REG_FTP_HOST }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,ssl,socket,os,re,io,pathlib,subprocess,tempfile,time,urllib.request,urllib.error
+          h=os.environ['REG_FTP_HOST'].strip()
+          socket.inet_aton(h)
+          ptr=socket.gethostbyaddr(h)[0].rstrip('.').lower()
+          assert re.fullmatch(r'[a-z0-9.-]+\.hosting\.reg\.ru',ptr)
+          assert h in {x[4][0] for x in socket.getaddrinfo(ptr,21,type=socket.SOCK_STREAM)}
+          origin='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          def get(path):
+              error=None
+              for i in range(3):
+                  try:
+                      req=urllib.request.Request(origin+path+('?' if '?' not in path else '&')+'verify='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
+                      with urllib.request.urlopen(req,timeout=18) as r:
+                          assert r.status==200
+                          return r.read(2200001)
+                  except Exception as e:
+                      error=e
+                      time.sleep(2)
+              raise error
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=30)
+          ftp.connect(ptr,21);ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p();ftp.set_pasv(True)
+          def read(p,optional=False):
+              b=io.BytesIO()
+              try:ftp.retrbinary('RETR '+p,b.write)
+              except ftplib.error_perm as e:
+                  if optional and str(e).startswith('550'):return None
+                  raise
+              return b.getvalue()
+          def put(p,d):
+              ftp.storbinary('STOR '+p,io.BytesIO(d))
+              assert read(p)==d
+          def git(ref,p):return subprocess.check_output(['git','show',ref+':'+p])
+          def lint(d):subprocess.run(['node','--input-type=module','--check'],input=d,check=True)
+          try:
+              home=ftp.pwd().rstrip('/')
+              root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+              js='child/child.js';html='child/index.html';asset='assets/numi-date-fields.js'
+              before={p:read(root+p) for p in (js,html)}
+              assert get(js)==before[js] and get(html)==before[html],'WRONG_PUBLIC_ROOT_OR_CONCURRENT_CHANGE'
+              desired=pathlib.Path(js).read_bytes()
+              old=git('d3d3555eccd4453f06d82c9a3e3e2b6935ae21cd',js)
+              # Preserve any unrelated live edits, refusing conflicts.
+              if before[js] in (old,git('e355bea1fe6368afbcc254fd9824ed2adb27287c',js),desired):
+                  updated=desired
+              else:
+                  with tempfile.TemporaryDirectory() as d:
+                      a,b,c=[pathlib.Path(d)/x for x in ('live','base','new')]
+                      a.write_bytes(before[js]);b.write_bytes(old);c.write_bytes(desired)
+                      r=subprocess.run(['git','merge-file','-p',str(a),str(b),str(c)],capture_output=True)
+                      assert r.returncode==0,'LIVE_CHILD_CONFLICT_NO_WRITE'
+                      updated=r.stdout
+              assert b'ownerChild={key,material}' in updated and b'ownerPreview:false' in updated
+              assert b'window.numiDateFields?.isChild(entered)' in updated
+              lint(updated)
+              livehtml=before[html]
+              tag=b'child-owner-matrix-fixed-20261127'
+              newhtml,n=re.subn(rb'(src="\./child\.js\?v=)[^"]+(")',lambda m:m[1]+tag+m[2],livehtml)
+              assert n==1
+              # Keep shared date helper unchanged if present; if absent, add only a child-specific copy.
+              date=pathlib.Path(asset).read_bytes();lint(date)
+              liveasset=read(root+asset,optional=True)
+              extra=None
+              if liveasset is not None and b'window.numiDateFields=Object.freeze({isAdult,isChild})' in liveasset:
+                  datepath=b'../assets/numi-date-fields.js?v=age-date-edit-20261125'
+              else:
+                  extra='child/numi-date-fields-owner-20261127.js'
+                  datepath=b'./numi-date-fields-owner-20261127.js?v=1'
+                  assert read(root+extra,optional=True) in (None,date)
+              pattern=rb'<script defer src="(?:\.\./assets/numi-date-fields\.js|\./numi-date-fields-owner-20261127\.js)\?v=[^"]+"></script>'
+              if re.search(pattern,newhtml):
+                  newhtml,n=re.subn(pattern,b'<script defer src="'+datepath+b'"></script>',newhtml)
+                  assert n==1
+              else:
+                  assert newhtml.count(b'</head>')==1
+                  newhtml=newhtml.replace(b'</head>',b'  <script defer src="'+datepath+b'"></script>\n</head>',1)
+              backup=home+'/site-safeguard-backups/child-owner-interface-'+os.environ['GITHUB_RUN_ID']
+              ftp.mkd(backup)
+              for p,d in before.items():put(backup+'/'+p.rsplit('/',1)[1]+'.bak',d)
+              print('CHILD_OWNER_BACKUPS_VERIFIED')
+              touched=[]
+              try:
+                  if extra and read(root+extra,optional=True) is None:
+                      put(root+extra,date);touched.append((extra,None))
+                  if extra:assert get(extra)==date
+                  else:assert get(asset)==liveasset
+                  for p,new in ((js,updated),(html,newhtml)):
+                      assert read(root+p)==before[p],'CONCURRENT_CHANGE'
+                      if before[p]!=new:
+                          tmp=backup+'/'+p.rsplit('/',1)[1]+'.ready'
+                          put(tmp,new)
+                          ftp.rename(tmp,root+p)
+                          touched.append((p,before[p]))
+                          assert read(root+p)==new
+                  assert get(js+'?v='+tag.decode())==updated
+                  assert get(html)==newhtml
+                  assert get('child/')==newhtml
+                  print('LIVE_CHILD_OWNER_MATRIX_BYTES_VERIFIED')
+                  print('ONLY_CHILD_INTERFACE_CHANGED_NO_PAYMENT_BOT_DATABASE_OR_MAILING_CHANGE')
+              except BaseException:
+                  for p,oldbytes in reversed(touched):
+                      if oldbytes is None:ftp.delete(root+p)
+                      else:
+                          tmp=backup+'/'+p.rsplit('/',1)[1]+'.restore'
+                          put(tmp,oldbytes);ftp.rename(tmp,root+p)
+                          assert read(root+p)==oldbytes
+                      print('CHILD_ROLLBACK_OK',p)
+                  raise
+          finally:ftp.quit()
+          PY
