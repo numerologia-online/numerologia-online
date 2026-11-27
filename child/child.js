@@ -934,16 +934,12 @@ pdfSave.addEventListener("click", async () => {
   pdfSave.textContent=preparedChildPdf?.key===childPdfKey(date) ? "Открываю PDF…" : "Готовлю PDF…";
   try {
     const {blob,filename}=await prepareChildPdf(date);
-    const url=URL.createObjectURL(blob);
-    const link=document.createElement("a");
-    link.href=url;
-    link.download=filename;
-    link.target="_blank";
-    link.rel="noopener";
-    document.body.append(link);
-    link.click();
-    link.remove();
-    window.setTimeout(()=>URL.revokeObjectURL(url),120000);
+    const {openChildPdfPanel}=await import("./child-pdf-preview-20261127.js?v=1");
+    if(!hasChildPaidAccess()||childPdfKey(birth)!==childPdfKey(date))throw new Error("Расчёт изменился. Откройте PDF ещё раз.");
+    const file=new File([blob],filename,{type:"application/pdf"});
+    const url=URL.createObjectURL(file);
+    try{openChildPdfPanel({file,url,filename});}
+    catch(error){URL.revokeObjectURL(url);throw error;}
     pdfStatus.textContent="PDF готов. Повторное скачивание не потребует новой сборки.";
   } catch (error) {
     pdfStatus.textContent=error?.message || "Не удалось создать PDF. Попробуйте ещё раз.";
