@@ -1,0 +1,137 @@
+name: Repair date caret on live calculation pages only
+on:
+  push:
+    branches: [child-owner-live-repair-20261127]
+    paths: ['.github/workflows/repair-date-caret-live.yml']
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify age rules unchanged and test the date field in real WebKit
+        run: |
+          node --check assets/numi-date-fields.js
+          node tests/numi-date-fields-20261125.cjs
+          npm install --no-save --no-package-lock playwright
+          npx playwright install --with-deps webkit
+          node --input-type=module <<'JS'
+          import {webkit} from 'playwright';
+          import assert from 'node:assert/strict';
+          const browser=await webkit.launch();
+          try{
+            const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+            await page.setContent('<input id="date" type="text" inputmode="numeric" maxlength="10" placeholder="ДД.ММ.ГГГГ" value="09.09.1986">');
+            await page.addScriptTag({path:'assets/numi-date-fields.js'});
+            const field=page.locator('#date');
+            await field.evaluate(el=>el.addEventListener('input',()=>{el.value=el.value.replace(/\D/g,'').replace(/^(\d{2})(\d{2})(\d{4})$/,'$1.$2.$3');el.setSelectionRange(el.value.length,el.value.length);}));
+            await field.focus();
+            await field.evaluate(el=>el.setSelectionRange(4,4));
+            await page.keyboard.press('8');
+            assert.equal(await field.inputValue(),'09.08.1986');
+            await field.evaluate(el=>el.setSelectionRange(7,7));
+            await page.keyboard.insertText('2');
+            assert.equal(await field.inputValue(),'09.08.1286');
+            await field.evaluate(el=>el.setSelectionRange(8,9));
+            await page.keyboard.press('9');
+            assert.equal(await field.inputValue(),'09.08.1296');
+            await field.evaluate(el=>el.setSelectionRange(0,0));
+            await page.keyboard.insertText('1');
+            assert.equal(await field.inputValue(),'19.08.1296');
+            console.log('WEBKIT_SINGLE_DIGIT_REPLACEMENT_PASS');
+          }finally{await browser.close();}
+          JS
+      - name: Install only shared date editor and versioned script links on verified live pages
+        env:
+          REG_FTP_HOST: ${{ secrets.REG_FTP_HOST }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,ssl,socket,os,re,io,pathlib,time,urllib.request,urllib.error
+          h=os.environ['REG_FTP_HOST'].strip()
+          socket.inet_aton(h)
+          ptr=socket.gethostbyaddr(h)[0].rstrip('.').lower()
+          assert re.fullmatch(r'[a-z0-9.-]+\.hosting\.reg\.ru',ptr)
+          assert h in {x[4][0] for x in socket.getaddrinfo(ptr,21,type=socket.SOCK_STREAM)}
+          origin='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/'
+          pages=('index.html','year/index.html','pro/index.html','child/index.html','moment/index.html','day.html')
+          optional=('pro/school/index.html','pro/schools/classic/index.html')
+          asset='assets/numi-date-fields-caret-20261127.js'
+          script=b'<script defer src="/assets/numi-date-fields-caret-20261127.js?v=1"></script>'
+          pattern=rb'<script\b[^>]*\bsrc=["\x27][^"\x27]*(?:numi-date-fields(?:-owner-20261127|-caret-20261127)?\.js)(?:\?[^"\x27]*)?["\x27][^>]*>\s*</script>'
+          code=pathlib.Path('assets/numi-date-fields.js').read_bytes()
+          def get(path):
+              req=urllib.request.Request(origin+path+('?' if '?' not in path else '&')+'verify='+str(time.time_ns()),headers={'Cache-Control':'no-cache'})
+              with urllib.request.urlopen(req,timeout=20) as r:
+                  assert r.status==200
+                  return r.read(2200001)
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          ftp.connect(ptr,21);ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p();ftp.set_pasv(True)
+          def read(p,optional=False):
+              b=io.BytesIO()
+              try:ftp.retrbinary('RETR '+p,b.write)
+              except ftplib.error_perm as e:
+                  if optional and str(e).startswith('550'):return None
+                  raise
+              return b.getvalue()
+          def put(p,d):
+              ftp.storbinary('STOR '+p,io.BytesIO(d))
+              assert read(p)==d
+          try:
+              home=ftp.pwd().rstrip('/')
+              root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+              before={};after={}
+              for p in pages+optional:
+                  old=read(root+p,optional=True)
+                  try:matches=old is not None and get(p)==old
+                  except Exception:matches=False
+                  if not matches and p in optional:
+                      print('PROTECTED_OR_DIFFERENT_PAGE_SKIPPED',p)
+                      continue
+                  assert matches,'LIVE_ROOT_MISMATCH '+p
+                  new,n=re.subn(pattern,lambda m:script,old)
+                  assert n<=1,'MULTIPLE_DATE_HELPERS '+p
+                  if not n:
+                      assert old.count(b'</head>')==1
+                      new=old.replace(b'</head>',script+b'\n</head>',1)
+                  assert new.count(script)==1
+                  before[p]=old;after[p]=new
+              assert set(pages)<=set(before)
+              previous=read(root+asset,optional=True)
+              assert previous in (None,code),'ASSET_ALREADY_EXISTS_DIFFERENT'
+              backup=home+'/site-safeguard-backups/date-caret-'+os.environ['GITHUB_RUN_ID']
+              ftp.mkd(backup)
+              for i,p in enumerate(before):
+                  put(backup+'/'+str(i)+'.bak',before[p])
+              print('DATE_PAGE_BACKUPS_VERIFIED',len(before))
+              touched=[];added=False
+              try:
+                  if previous is None:
+                      put(root+asset,code);added=True
+                  assert get(asset)==code
+                  for i,p in enumerate(before):
+                      assert read(root+p)==before[p],'CONCURRENT_EDIT '+p
+                      if before[p]!=after[p]:
+                          tmp=backup+'/'+str(i)+'.ready'
+                          put(tmp,after[p]);ftp.rename(tmp,root+p);touched.append((i,p))
+                      assert read(root+p)==after[p] and get(p)==after[p],p
+                      print('LIVE_DATE_EDITOR_VERIFIED',p)
+                  print('DATE_EDITOR_PUBLISHED_NO_CALCULATIONS_PAYMENT_BOT_OR_MAILING_CHANGED')
+              except BaseException:
+                  for i,p in reversed(touched):
+                      tmp=backup+'/'+str(i)+'.restore'
+                      put(tmp,before[p]);ftp.rename(tmp,root+p)
+                      assert read(root+p)==before[p]
+                  if added:ftp.delete(root+asset)
+                  print('DATE_EDITOR_ROLLBACK_VERIFIED')
+                  raise
+          finally:ftp.quit()
+          PY
