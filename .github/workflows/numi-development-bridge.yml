@@ -1,0 +1,137 @@
+name: Publish reviewed development files using existing REG.RU connection
+on:
+  push:
+    branches: [main]
+    paths: ['.github/numi-development-release.json']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Fetch only explicitly approved development assets, never execute repository scripts
+        run: |
+          python3 -u - <<'PY'
+          import json,re,pathlib,urllib.request,hashlib,subprocess
+          m=json.loads(pathlib.Path('.github/numi-development-release.json').read_text())
+          allowed=set(["moment/index.html","moment/moment.css","moment/moment.js","moment/questions.json","pro/school/index.html","pro/school/school.css","pro/school/school.js","pro/school/lesson/index.html","pro/school/lesson/lesson.css","pro/school/lesson/lesson.js","pro/school/lessons-manifest.json","pro/school/arcana.json","pro/school/learning.css","pro/school/learning.js","pro/school/client-pdf.css","pro/school/client-pdf.js"])
+          assert m['mode'] in ('check','publish')
+          assert re.fullmatch('[0-9a-f]{40}',m['revision'])
+          files=m['files']
+          assert isinstance(files,list) and 1<=len(files)<=len(allowed)
+          assert len(files)==len(set(files)) and set(files)<=allowed
+          if m['mode']=='publish':
+              assert all(not(p.startswith('pro/school/') and p.endswith('.json')) for p in files),'Protected JSON requires its existing private content release'
+              for field in ('expected_live_sha256','approved_source_sha256'):
+                  assert set(m[field])==set(files)
+                  assert all(re.fullmatch('[0-9a-f]{64}',v) for v in m[field].values())
+          for p in files:
+              url='https://raw.githubusercontent.com/numerologia-online/numerologia-development/'+m['revision']+'/'+p
+              with urllib.request.urlopen(url,timeout=20) as response:
+                  data=response.read(1000001)
+              assert 0<len(data)<=1000000 and b'\x00' not in data
+              if m['mode']=='publish':
+                  assert hashlib.sha256(data).hexdigest()==m['approved_source_sha256'][p],'Unreviewed source'
+              if p.endswith('.js'):
+                  subprocess.run(['node','--input-type=module','--check'],input=data,check=True)
+              elif p.endswith('.json'):
+                  json.loads(data)
+              path=pathlib.Path('.development-approved')/p
+              path.parent.mkdir(parents=True,exist_ok=True)
+              path.write_bytes(data)
+          print('Pinned development assets verified:',len(files))
+          PY
+      - name: Verify connection, compare live versions, or publish only selected assets
+        env:
+          REG_FTP_HOST: ${{ secrets.REG_FTP_HOST }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import json,re,pathlib,ftplib,ssl,socket,os,io,hashlib,urllib.request,urllib.error
+          m=json.loads(pathlib.Path('.github/numi-development-release.json').read_text())
+          allowed=set(["moment/index.html","moment/moment.css","moment/moment.js","moment/questions.json","pro/school/index.html","pro/school/school.css","pro/school/school.js","pro/school/lesson/index.html","pro/school/lesson/lesson.css","pro/school/lesson/lesson.js","pro/school/lessons-manifest.json","pro/school/arcana.json","pro/school/learning.css","pro/school/learning.js","pro/school/client-pdf.css","pro/school/client-pdf.js"])
+          assert set(m['files'])<=allowed
+          sha=lambda data:hashlib.sha256(data).hexdigest()
+          host=os.environ['REG_FTP_HOST'].strip()
+          socket.inet_aton(host)
+          ptr=socket.gethostbyaddr(host)[0].rstrip('.').lower()
+          assert re.fullmatch(r'[a-z0-9.-]+\.hosting\.reg\.ru',ptr)
+          assert host in {x[4][0] for x in socket.getaddrinfo(ptr,21,type=socket.SOCK_STREAM)}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          ftp.connect(ptr,21);ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          school=home+'/private/numi-school-owner-20261103/'
+          def read(path,optional=False):
+              b=io.BytesIO()
+              try:ftp.retrbinary('RETR '+path,b.write)
+              except ftplib.error_perm as e:
+                  if optional and str(e).startswith('550'):return None
+                  raise
+              return b.getvalue()
+          def put(path,data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              assert read(path)==data,'Verification failed'
+          def target(p):
+              if p.startswith('pro/school/'):
+                  assert p in school_allowlist,'School asset not authorized'
+                  return school+'sources/'+sha(p.encode())
+              return root+p
+          def verify_public():
+              origin='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai'
+              for path in ['/','/moment/','/pro/school/']:
+                  with urllib.request.urlopen(urllib.request.Request(origin+path,headers={'Cache-Control':'no-cache'}),timeout=15) as response:
+                      assert response.status==200
+              # No anonymous source access may be enabled by this release.
+              try:
+                  urllib.request.urlopen(origin+'/api/numi-school.php?file=pro%2Fschool%2Fschool.js',timeout=15)
+                  raise RuntimeError('Anonymous school source accessible')
+              except urllib.error.HTTPError as error:
+                  assert error.code in (401,403,404)
+          try:
+              assert b'account-browser.js' in read(root+'index.html')
+              school_allowlist=json.loads(read(school+'allowlist.json'))
+              old={};new={};targets={}
+              for p in m['files']:
+                  targets[p]=target(p)
+                  old[p]=read(targets[p],optional=True)
+                  new[p]=(pathlib.Path('.development-approved')/p).read_bytes()
+                  print('BASELINE',p,'source='+sha(new[p]),'live='+('missing' if old[p] is None else sha(old[p])),'match='+str(old[p]==new[p]))
+              verify_public()
+              if m['mode']=='check':
+                  print('READ-ONLY CHECK OK: both sections, existing FTPS connection, no uploads or deletions')
+              else:
+                  for p in old:
+                      assert old[p] is not None and sha(old[p])==m['expected_live_sha256'][p],'Live version changed: '+p
+                      assert sha(new[p])==m['approved_source_sha256'][p]
+                      assert not(p.startswith('pro/school/') and p.endswith('.json'))
+                  backup=home+'/site-safeguard-backups'
+                  try:ftp.mkd(backup)
+                  except ftplib.error_perm:pass
+                  touched=[]
+                  try:
+                      for p in old:
+                          if old[p]==new[p]:continue
+                          put(backup+'/dev-'+os.environ['GITHUB_RUN_ID']+'-'+p.replace('/','__'),old[p])
+                          assert read(targets[p])==old[p]
+                          touched.append(p)
+                          put(targets[p],new[p])
+                          if p.startswith('pro/school/'):ftp.sendcmd('SITE CHMOD 600 '+targets[p])
+                      verify_public()
+                  except BaseException:
+                      for p in reversed(touched):put(targets[p],old[p])
+                      raise
+                  print('PUBLISHED AND VERIFIED',len(touched),'approved files only')
+          finally:ftp.quit()
+          PY

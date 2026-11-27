@@ -1,0 +1,22 @@
+{
+  "mode": "check",
+  "revision": "5a38d17db533ff39d629d7945f6e95fb11cafb9c",
+  "files": [
+    "moment/index.html",
+    "moment/moment.css",
+    "moment/moment.js",
+    "moment/questions.json",
+    "pro/school/index.html",
+    "pro/school/school.css",
+    "pro/school/school.js",
+    "pro/school/lesson/index.html",
+    "pro/school/lesson/lesson.css",
+    "pro/school/lesson/lesson.js",
+    "pro/school/lessons-manifest.json",
+    "pro/school/arcana.json",
+    "pro/school/learning.css",
+    "pro/school/learning.js",
+    "pro/school/client-pdf.css",
+    "pro/school/client-pdf.js"
+  ]
+}
