@@ -1,0 +1,112 @@
+name: Publish Yes/No answer close and stable empty panel only
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/numi-yesno-answer-close-20261127.yml']
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch only answer close control and initial panel size
+        env:
+          REG_FTP_HOST: ${{ secrets.REG_FTP_HOST }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import json,os,ssl,ftplib,socket,re,io,time,tempfile,subprocess,pathlib
+          html_path='moment/yes-no/index.html'
+          css_path='moment/yes-no/yes-no.css'
+          js_path='moment/yes-no/yes-no.js'
+          version='answer-close-20261127'
+          old_block=".yn-answer-box{box-sizing:border-box;width:84%;max-width:400px;border:1px solid #c6b58d;border-radius:12px;background:#ffffff;padding:18px 12px 20px;margin:0 auto 10px;text-align:center;scroll-margin-top:8px}\n.yn-time-result{color:var(--yn-ink);font-size:16px;line-height:1.5;overflow-wrap:anywhere;scroll-margin-top:10px}\n.yn-time-result[data-empty=true]{display:grid;place-items:center;min-height:98px;font:600 clamp(16px,4.5vw,21px)/1.35 system-ui,sans-serif;letter-spacing:.035em;color:#826334}"
+          new_block=".yn-answer-box{position:relative;box-sizing:border-box;width:84%;max-width:400px;border:1px solid #c6b58d;border-radius:12px;background:#ffffff;padding:18px 12px 20px;margin:0 auto 10px;text-align:center;scroll-margin-top:8px}\n.yn-time-result{min-height:154px;color:var(--yn-ink);font-size:16px;line-height:1.5;overflow-wrap:anywhere;scroll-margin-top:10px}\n.yn-time-result[data-empty=true]{display:grid;place-items:center;min-height:154px;font:600 clamp(16px,4.5vw,21px)/1.35 system-ui,sans-serif;letter-spacing:.035em;color:#826334}\n.yn-answer-close{position:absolute;top:7px;right:7px;display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid #d1dbcc;border-radius:50%;background:#fffefa;color:var(--yn-ink);cursor:pointer;box-sizing:border-box}\n.yn-answer-close svg{display:block;width:20px;height:20px}\n.yn-time-result[data-empty=true]+.yn-answer-close{display:none}\n.yn-answer-close:focus-visible{outline:2px solid #a78850;outline-offset:2px}\n.yn-time-result:not([data-empty=true]){padding-top:18px}"
+          html_anchor="        <div id=\"yn-time-result\" class=\"yn-time-result\" role=\"status\" aria-live=\"polite\" data-empty=\"true\">Здесь появится ответ</div>"
+          html_add="        <button id=\"yn-answer-close\" class=\"yn-answer-close\" type=\"button\" aria-label=\"Закрыть ответ\" title=\"Закрыть ответ\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M6 6l12 12M18 6L6 18\"/></svg></button>"
+          js_anchor="  back.addEventListener(\"click\", () => window.location.assign(\"../../\"));"
+          js_add="  $(\"yn-answer-close\")?.addEventListener(\"click\", () => {\n    cancelPending();\n    selectedQuestion = null;\n    useCurrentTime = true;\n    timeInput.value = currentTime();\n    timeInput.removeAttribute(\"aria-invalid\");\n    timeError.hidden = true;\n    questionTitle.textContent = \"Выберите вопрос ниже\";\n    resetAnswer();\n    if (catalog) { renderCategories(); openCategory(null); }\n    window.scrollTo({top:0,behavior:scrollBehavior()});\n  });"
+          assert new_block in pathlib.Path(css_path).read_text(encoding='utf-8')
+          assert html_add in pathlib.Path(html_path).read_text(encoding='utf-8')
+          assert js_add in pathlib.Path(js_path).read_text(encoding='utf-8')
+          def patch(current,before,after):
+              if current.count(after)==1:return current
+              assert current.count(before)==1,'Unexpected live source'
+              return current.replace(before,after,1)
+          host=os.environ['REG_FTP_HOST'].strip()
+          socket.inet_aton(host)
+          ptr=socket.gethostbyaddr(host)[0].rstrip('.').lower()
+          assert re.fullmatch(r'[a-z0-9.-]+\.hosting\.reg\.ru',ptr)
+          assert host in {x[4][0] for x in socket.getaddrinfo(ptr,21,type=socket.SOCK_STREAM)}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          ftp.connect(ptr,21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          def read(path):
+              b=io.BytesIO()
+              ftp.retrbinary('RETR '+path,b.write)
+              return b.getvalue()
+          def put(path,data):
+              ftp.storbinary('STOR '+path,io.BytesIO(data))
+              assert read(path)==data,'Verification failed'
+          try:
+              assert b'account-browser.js' in read(root+'index.html')
+              old={};new={}
+              for path in (css_path,js_path,html_path):
+                  old[path]=read(root+path)
+                  current=old[path].decode('utf-8')
+                  if path==css_path:
+                      current=patch(current,old_block,new_block)
+                  elif path==js_path:
+                      current=patch(current,js_anchor,js_anchor+'\n'+js_add)
+                  else:
+                      current=patch(current,html_anchor,html_anchor+'\n'+html_add)
+                      for ext in ('css','js'):
+                          current,n=re.subn(r'\./yes-no\.'+ext+r'\?v=[a-zA-Z0-9_-]+','./yes-no.'+ext+'?v='+version,current)
+                          assert n==1,'Unexpected asset link '+ext
+                  new[path]=current.encode('utf-8')
+              with tempfile.TemporaryDirectory() as tmp:
+                  jscheck=pathlib.Path(tmp)/'yes-no.js'
+                  jscheck.write_bytes(new[js_path])
+                  subprocess.run(['node','--check',str(jscheck)],check=True)
+              backup=home+'/site-safeguard-backups'
+              try:ftp.mkd(backup)
+              except ftplib.error_perm:pass
+              for path,data in old.items():
+                  put(backup+'/answer-close-'+os.environ['GITHUB_RUN_ID']+'-'+path.rsplit('/',1)[1],data)
+              uploaded=[]
+              try:
+                  for path,data in new.items():
+                      uploaded.append(path)
+                      put(root+path,data)
+                      print('PUBLISHED AND VERIFIED',path)
+              except BaseException:
+                  for path in reversed(uploaded):put(root+path,old[path])
+                  raise
+              print('SUCCESS: answer close and empty panel only')
+          finally:ftp.quit()
+          import urllib.request
+          origin='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/yes-no/'
+          def public(url):
+              req=urllib.request.Request(url,headers={'Cache-Control':'no-cache','User-Agent':'Mozilla/5.0'})
+              with urllib.request.urlopen(req,timeout=20) as response:return response.read().decode('utf-8')
+          for attempt in range(3):
+              try:
+                  live=public(origin+'?verify='+os.environ['GITHUB_RUN_ID']+'-'+str(attempt))
+                  style=public(origin+'yes-no.css?v='+version)
+                  script=public(origin+'yes-no.js?v='+version)
+                  assert html_add in live and new_block in style and js_add in script and version in live
+                  print('PUBLIC HTTP VERIFIED: answer close and empty panel')
+                  break
+              except Exception:
+                  if attempt==2:raise
+                  time.sleep(3)
+          PY
