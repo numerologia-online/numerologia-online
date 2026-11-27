@@ -1,0 +1,51 @@
+name: Preserve exact published day banks in isolated branch
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/numi-pages-runtime-snapshot.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pages-runtime
+      - name: Save and verify exact live public forecast bank bytes
+        run: |
+          python3 -u - <<'PY'
+          import urllib.request,pathlib,concurrent.futures,json
+          root=pathlib.Path('.')
+          paths=['data/day/'+kind+'/'+kind+'-day-'+str(n).zfill(2)+'.json' for kind in ('general','practical') for n in range(1,23)]+['data/day/general/index.json']
+          expected=set(paths)|{'.nojekyll'}
+          actual={str(p.relative_to(root)) for p in root.rglob('*') if p.is_file() and '.git' not in p.parts}
+          assert actual==expected,'Unexpected files in isolated branch'
+          def download(p):
+              req=urllib.request.Request('https://numerologia-online.github.io/numerologia-online/'+p,headers={'Cache-Control':'no-cache'})
+              with urllib.request.urlopen(req,timeout=20) as r:
+                  data=r.read(3000001)
+              assert 0<len(data)<=3000000
+              json.loads(data)
+              return p,data
+          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+              result=list(pool.map(download,paths))
+          changed=[]
+          for p,data in result:
+              f=root/p
+              if f.read_bytes()!=data:
+                  f.write_bytes(data)
+                  changed.append(p)
+              assert f.read_bytes()==data
+          print('PRESERVED_EXACT_PUBLIC_BANKS',len(paths),'updated',changed)
+          PY
+          if ! git diff --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add -- data/day
+            git commit -m 'Preserve exact currently published day forecast data'
+            git push origin HEAD:pages-runtime
+          fi
+          echo 'Only the isolated branch was updated; Pages settings and REG.RU unchanged.'
