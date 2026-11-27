@@ -141,10 +141,6 @@ async function initialize(){
    email.required=false;email.closest(".receipt-block").hidden=true;
   }else{
    if(inTelegram()){
-    const card=methods.querySelector('[value="bank_card"]');
-    const sbp=methods.querySelector('[value="sbp"]');
-    card.parentElement.before(sbp.parentElement);
-    sbp.checked=true;
     notice.hidden=false;
    }
    if(typeof wallet.receipt_email_suggestion==="string")email.value=wallet.receipt_email_suggestion;

@@ -279,7 +279,6 @@
   const telegramCheckout=isTelegram()||
     Boolean(window.Telegram?.WebApp?.platform && window.Telegram.WebApp.platform!=="unknown");
   const paymentMethods=[["bank_card","Картой"],["sbp","СБП"]];
-  if(telegramCheckout)paymentMethods.reverse();
   const methodRadios=paymentMethods.map(([value,label],index)=>{
     const choice=document.createElement("label"),input=document.createElement("input");
     input.type="radio";input.name="numi-wallet-payment-method";input.value=value;input.checked=index===0;
