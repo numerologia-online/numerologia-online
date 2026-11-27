@@ -35,11 +35,8 @@ body .site-header,body .site-footer{display:none}
 .yn-time-result[data-empty=true]{display:grid;place-items:center;min-height:98px;font:600 clamp(16px,4.5vw,21px)/1.35 system-ui,sans-serif;letter-spacing:.035em;color:#826334}
 .yn-answer-verdict{display:block;font:500 clamp(33px,9vw,45px)/1.13 'Playfair Display',Georgia,serif;color:var(--yn-ink);margin:3px 0 7px}
 .yn-answer-explanation{margin:0;font-size:18px;line-height:1.5;color:var(--yn-ink)}
-.yn-catalog-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 2px 7px}
-.yn-catalog-heading h2{font:400 22px/1.2 'Playfair Display',Georgia,serif;color:var(--yn-ink);margin:0}
-.yn-catalog-heading h2 span{color:#a61919}
-.yn-catalog-arrow{display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:50%;background:#f8e8e4;color:#a61919;margin-right:8px}
-.yn-catalog-arrow svg{width:21px;height:21px;display:block}
+.yn-catalog-heading{margin:0 2px 7px;text-align:center}
+.yn-catalog-heading h2{font:400 22px/1.2 'Playfair Display',Georgia,serif;color:#a61919;margin:0}
 .yn-category-list{display:grid;gap:5px;scroll-margin-top:8px}
 .yn-topic-group{background:#fbfcf7;border:1px solid #cbd7c9;border-radius:8px;overflow:hidden}
 .yn-topic{display:grid;grid-template-columns:21px minmax(0,1fr) auto 12px;gap:8px;align-items:center;width:100%;min-height:44px;padding:6px 10px;background:transparent;border:0;text-align:left;color:var(--yn-ink)}
