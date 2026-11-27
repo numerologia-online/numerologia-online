@@ -22,7 +22,13 @@ jobs:
         run: |
           python3 -u - <<'PY'
           import json,os,ssl,ftplib,socket,re,io,time,tempfile,subprocess,pathlib
-          patches=json.loads("{\"moment/yes-no/yes-no.css\":[[\".yn-back-top{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;border:0;background:transparent;color:var(--yn-muted);font-size:16px;font-weight:650}\",\".yn-back-top{display:grid;place-items:center;width:44px;height:44px;margin:0 0 0 auto;padding:0;border:1px solid #c9d4c4;border-radius:50%;background:#fffefa;color:var(--yn-ink);font:400 29px/1 system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}\"]],\"moment/yes-no/index.html\":[[\"./yes-no.css?v=close-right-20261126\",\"./yes-no.css?v=close-right-20261126\"],[\"<button id=\\\"yn-all\\\" type=\\\"button\\\" class=\\\"yn-back-top\\\">← На главную</button>\",\"<button id=\\\"yn-all\\\" type=\\\"button\\\" class=\\\"yn-back-top\\\" aria-label=\\\"На главную\\\" title=\\\"На главную\\\">×</button>\"]]}")
+          html_path='moment/yes-no/index.html'
+          css_path='moment/yes-no/yes-no.css'
+          button_old='<button id="yn-all" type="button" class="yn-back-top">← На главную</button>'
+          button_new='<button id="yn-all" type="button" class="yn-back-top" aria-label="На главную" title="На главную">×</button>'
+          css_new=next(l for l in pathlib.Path(css_path).read_text().splitlines() if l.startswith('.yn-back-top{'))
+          assert 'place-items:center' in css_new and 'margin:0 0 0 auto' in css_new
+          version='./yes-no.css?v=close-right-20261127'
           host=os.environ['REG_FTP_HOST'].strip()
           socket.inet_aton(host)
           ptr=socket.gethostbyaddr(host)[0].rstrip('.').lower()
@@ -44,13 +50,21 @@ jobs:
           try:
               assert b'account-browser.js' in read(root+'index.html')
               old={};new={}
-              for path,changes in patches.items():
+              for path in (css_path,html_path):
                   old[path]=read(root+path)
                   current=old[path].decode('utf-8')
-                  for before,after in changes:
-                      assert current.count(before)==1, 'Live copy differs; no files modified: '+path
-                      current=current.replace(before,after,1)
+                  if path==css_path:
+                      pattern=r'(?m)^\.yn-back-top\{[^{}\n]+\}'
+                      matches=re.findall(pattern,current)
+                      assert len(matches)==1 and ('display:inline-flex' in matches[0] or matches[0]==css_new), 'Unexpected live button CSS'
+                      current=re.sub(pattern,lambda _:css_new,current,count=1)
+                  else:
+                      assert current.count(button_old)+current.count(button_new)==1, 'Unexpected live button markup'
+                      current=current.replace(button_old,button_new,1)
+                      current,n=re.subn(r'\./yes-no\.css\?v=[a-zA-Z0-9_-]+',version,current)
+                      assert n==1, 'Unexpected CSS version link'
                   new[path]=current.encode('utf-8')
+              assert button_new.encode() in new[html_path] and css_new.encode() in new[css_path]
               backup=home+'/site-safeguard-backups'
               try:ftp.mkd(backup)
               except ftplib.error_perm:pass
@@ -67,4 +81,19 @@ jobs:
                   raise
               print('SUCCESS: right-side close button only')
           finally:ftp.quit()
+          import urllib.request
+          origin='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/moment/yes-no/'
+          def public(url):
+              req=urllib.request.Request(url,headers={'Cache-Control':'no-cache','User-Agent':'Mozilla/5.0'})
+              with urllib.request.urlopen(req,timeout=20) as response:return response.read().decode('utf-8')
+          for attempt in range(3):
+              try:
+                  live=public(origin+'?verify='+os.environ['GITHUB_RUN_ID']+'-'+str(attempt))
+                  style=public(origin+'yes-no.css?v=close-right-20261127')
+                  assert button_new in live and version in live and css_new in style
+                  print('PUBLIC HTTP VERIFIED: right-side close button')
+                  break
+              except Exception:
+                  if attempt==2:raise
+                  time.sleep(3)
           PY
