@@ -25,7 +25,7 @@
   }
   function cancelPending() {
     answerRequest++; answerController?.abort(); pending = false; submit.disabled = false;
-    submit.textContent = "Задать вопрос";
+    submit.textContent = "Получить ответ";
   }
   const scrollBehavior = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   async function confirmTime(value, scrollToAnswer = false) {
@@ -103,7 +103,7 @@
       if (id === answerRequest) timeResult.textContent = "Не удалось получить ответ. Попробуйте ещё раз.";
     } finally {
       clearTimeout(timer);
-      if (id === answerRequest) { pending = false; submit.disabled = false; submit.textContent = "Задать вопрос"; }
+      if (id === answerRequest) { pending = false; submit.disabled = false; submit.textContent = "Получить ответ"; }
       // Scroll only after an explicit question submission.
       if (scrollToAnswer && id === answerRequest && !dialog.hidden && !timeResult.hidden) {
         requestAnimationFrame(() => {
