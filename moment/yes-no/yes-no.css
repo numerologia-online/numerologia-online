@@ -5,7 +5,7 @@ body,main{color:var(--yn-ink);background:#edf2e9}
 main{min-height:100svh;background:linear-gradient(180deg,#f6f7ee 0,#e8efe5 440px,#edf2e9 100%)}
 body .site-header,body .site-footer{display:none}
 .yn-directory.shell{width:min(calc(100% - 28px),560px);margin:0 auto;padding:6px 0 24px}
-.yn-back-top{display:grid;place-items:center;width:44px;height:44px;margin:0 0 0 auto;padding:0;border:1px solid #c9d4c4;border-radius:50%;background:#fffefa;color:var(--yn-ink);font:400 29px/1 system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.yn-back-top{display:grid;place-items:center;position:relative;top:8px;width:52px;height:52px;margin:0 8px -8px auto;padding:0;border:1px solid #c9d4c4;border-radius:50%;background:#fffefa;color:var(--yn-ink);font:400 32px/1 system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .yn-hero{text-align:center;margin:0 0 12px}
 .yn-seal{width:min(100%,208px);margin:0 auto 0}
 .yn-emblem{display:block;width:100%;height:auto}
