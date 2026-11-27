@@ -251,6 +251,42 @@
   }
   submit.addEventListener("click", askQuestion);
   timeForm.addEventListener("submit", askQuestion);
+  const uncensored = $("yn-uncensored");
+  uncensored?.addEventListener("click", async () => {
+    if (pending || uncensored.disabled) return;
+    if (!selectedQuestion) {
+      grid.scrollIntoView({behavior:scrollBehavior(),block:"start"});
+      grid.querySelector(".yn-topic")?.focus({preventScroll:true});
+      return;
+    }
+    const id = answerRequest;
+    uncensored.disabled = true;
+    try {
+      const response = await fetch("/api/numi-yesno-answer.php?status=1", {credentials:"same-origin",cache:"no-store"});
+      const data = await response.json();
+      if (id !== answerRequest) return;
+      if (!response.ok || data.ok !== true) throw Error("access unavailable");
+      delete timeResult.dataset.empty;
+      if (data.authenticated && (data.subscribed || data.remaining === null)) {
+        timeResult.textContent = "Ответы без цензуры 18+ готовятся. Скоро здесь появится новый режим Клуба.";
+      } else {
+        timeResult.textContent = data.authenticated
+          ? "Ответы без цензуры 18+ будут доступны только участникам Клуба."
+          : "Войдите в личный кабинет, чтобы пользоваться режимом 18+ для участников Клуба.";
+        const link = document.createElement("a");
+        link.href = data.authenticated ? "/?account=1&club_offer=1" : "/?account=1";
+        link.className = "yn-subscription-link";
+        link.textContent = data.authenticated ? "Вступить в Клуб · 490 ₽ в месяц" : "Войти в личный кабинет";
+        timeResult.append(link);
+      }
+      timeResult.scrollIntoView({behavior:scrollBehavior(),block:"center"});
+    } catch {
+      if (id === answerRequest) {
+        delete timeResult.dataset.empty;
+        timeResult.textContent = "Не удалось проверить доступ. Попробуйте ещё раз.";
+      }
+    } finally { uncensored.disabled = false; }
+  });
   now.addEventListener("click", () => {
     cancelPending();
     useCurrentTime = true;
