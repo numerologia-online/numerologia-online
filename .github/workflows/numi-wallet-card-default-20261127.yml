@@ -28,7 +28,7 @@ jobs:
           import ftplib, io, json, os, pathlib, ssl, subprocess, time, urllib.request
           public = ("account-browser.js", "wallet-topup.html", "index.html")
           files = public
-          original = {p: subprocess.check_output(["git", "show", "HEAD^:"+p]) for p in files}
+          original = {p: subprocess.check_output(["git", "show", "223cb89678f9867684c7b39e97e3aeca3a16cd1f:"+p]) for p in files}
           desired = {p: pathlib.Path(p).read_bytes() for p in files}
           origin = "https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai"
           cache_tag = "wallet-card-default-20261127"
@@ -69,6 +69,15 @@ jobs:
               paths = {p: web+"/"+p for p in public}
               assert read(paths["index.html"]) == homepage, "UNVERIFIED_LIVE_SITE_ROOT"
               before = {p: read(paths[p]) for p in files}
+              # Preserve homepage edits published independently of this checkout.
+              old_script = b'account-browser.js?v=club-balance-20261126"'
+              new_script = b'account-browser.js?v=wallet-card-default-20261127"'
+              original["index.html"] = before["index.html"]
+              if new_script in homepage:
+                  desired["index.html"] = homepage
+              else:
+                  assert homepage.count(old_script) == 1, "HOMEPAGE_CHECKOUT_SCRIPT"
+                  desired["index.html"] = homepage.replace(old_script, new_script)
               for p in files:
                   assert before[p] in (original[p], desired[p]), "LIVE_SOURCE_CHANGED_" + p
               for p in public:
