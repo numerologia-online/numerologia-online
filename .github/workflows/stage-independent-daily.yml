@@ -1,0 +1,69 @@
+name: Stage independent daily forecast source without touching live files
+on:
+  push:
+    branches: [daily-runtime-independent-20261127]
+    paths: ['.github/workflows/stage-independent-daily.yml']
+permissions:
+  contents: read
+jobs:
+  stage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Upload previously verified public forecasts to a new isolated REG.RU directory
+        env:
+          REG_FTP_HOST: ${{ secrets.REG_FTP_HOST }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import pathlib,json,ftplib,ssl,socket,os,re,io,hashlib,urllib.request,concurrent.futures
+          expected={f'data/day/{kind}/{kind}-day-{i:02}.json' for kind in ('general','practical') for i in range(1,23)}
+          expected.add('data/day/general/index.json')
+          files={p:pathlib.Path(p).read_bytes() for p in sorted(expected)}
+          assert set(str(p) for p in pathlib.Path('data/day').rglob('*.json'))==expected
+          for p,data in files.items():
+              json.loads(data)
+              assert 0<len(data)<1000000
+          h=os.environ['REG_FTP_HOST'].strip()
+          socket.inet_aton(h)
+          ptr=socket.gethostbyaddr(h)[0].rstrip('.').lower()
+          assert re.fullmatch(r'[a-z0-9.-]+\.hosting\.reg\.ru',ptr)
+          assert h in {x[4][0] for x in socket.getaddrinfo(ptr,21,type=socket.SOCK_STREAM)}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          ftp.connect(ptr,21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p();ftp.set_pasv(True)
+          try:
+              home=ftp.pwd().rstrip('/')
+              root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+              b=io.BytesIO()
+              ftp.retrbinary('RETR '+root+'index.html',b.write)
+              assert b'account-browser.js' in b.getvalue()
+              target=root+'daily-runtime-20261127-independent'
+              # A new directory is mandatory. Never overwrite an existing directory or file.
+              ftp.mkd(target)
+              for d in ('data','data/day','data/day/general','data/day/practical'):
+                  ftp.mkd(target+'/'+d)
+              for p,data in files.items():
+                  ftp.storbinary('STOR '+target+'/'+p,io.BytesIO(data))
+                  b=io.BytesIO()
+                  ftp.retrbinary('RETR '+target+'/'+p,b.write)
+                  assert b.getvalue()==data,p
+              print('NEW_ISOLATED_FILES_FTPS_VERIFIED',len(files))
+          finally:ftp.quit()
+          origin='https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/daily-runtime-20261127-independent/'
+          def check(item):
+              p,data=item
+              req=urllib.request.Request(origin+p,headers={'Cache-Control':'no-cache'})
+              with urllib.request.urlopen(req,timeout=20) as r:
+                  assert r.status==200 and r.read(1000001)==data,p
+              return p
+          with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
+              done=list(pool.map(check,files.items()))
+          print('NEW_INDEPENDENT_HTTPS_FORECASTS_VERIFIED',len(done))
+          print('NO_EXISTING_FILES_CRON_DATABASE_WEBHOOK_OR_SUBSCRIBERS_CHANGED')
+          PY
