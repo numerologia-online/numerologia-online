@@ -36,7 +36,7 @@
     return s.length;
   }
   const field=t=>t instanceof HTMLInputElement&&t.type==="text"&&
-    (t.placeholder==="ДД.ММ.ГГГГ"||t.autocomplete==="bday");
+    (/^ДД[.\s]ММ[.\s]ГГГГ$/i.test(t.placeholder||"")||t.autocomplete==="bday");
   const pending=new WeakMap();
   document.addEventListener("input",event=>{
     const el=event.target;
@@ -50,21 +50,35 @@
       try{el.setSelectionRange(position(el.value,a,start===raw.length),position(el.value,b,end===raw.length),direction);}catch(_){}
     });
   },true);
-  // On a complete date, typing at a single caret overwrites the next digit.
-  // Selecting one digit and replacing it continues to use native input.
-  document.addEventListener("beforeinput",event=>{
-    const el=event.target;
-    if(!field(el)||!event.cancelable||event.isComposing||event.inputType!=="insertText"||
-       !/^\d$/.test(event.data||"")||!/^\d{2}\.\d{2}\.\d{4}$/.test(el.value)||
-       el.selectionStart!==el.selectionEnd)return;
-    let p=el.selectionStart;
-    if(p===null||p>=el.value.length)return;
-    if(el.value[p]===".")p++;
-    if(p>=el.value.length)return;
-    event.preventDefault();
-    el.setRangeText(event.data,p,p+1,"end");
-    if(el.value[el.selectionStart]===".")el.setSelectionRange(el.selectionStart+1,el.selectionStart+1);
+  // A full date is a fixed-width field. Replace a single digit in place,
+  // instead of inserting a ninth digit that maxlength silently rejects.
+  function overwrite(el, value) {
+    if(!field(el)||!/^\d$/.test(value)||!/^\d{2}\.\d{2}\.\d{4}$/.test(el.value))return false;
+    let a=el.selectionStart,b=el.selectionEnd;
+    if(a===null||b===null||a>=el.value.length)return false;
+    if(a===b&&el.value[a]===".")a++;
+    if(a>=el.value.length||!/^\d$/.test(el.value[a]))return false;
+    if(a!==b&&b-a!==1)return false;
+    el.setRangeText(value,a,a+1,"end");
+    let next=a+1;
+    if(el.value[next]===".")next++;
+    const expected=el.value;
+    el.setSelectionRange(next,next);
     el.dispatchEvent(new Event("input",{bubbles:true}));
+    if(el.value===expected)el.setSelectionRange(next,next);
+    requestAnimationFrame(()=>{
+      if(document.activeElement===el&&el.value===expected)el.setSelectionRange(next,next);
+    });
+    return true;
+  }
+  document.addEventListener("beforeinput",event=>{
+    if(!event.cancelable||event.isComposing||!["insertText","insertReplacementText"].includes(event.inputType))return;
+    if(overwrite(event.target,event.data||""))event.preventDefault();
+  },true);
+  // Desktop hardware keyboards can block beforeinput on a maxlength field.
+  document.addEventListener("keydown",event=>{
+    if(event.defaultPrevented||event.isComposing||event.ctrlKey||event.metaKey||event.altKey||!event.cancelable)return;
+    if(overwrite(event.target,event.key||""))event.preventDefault();
   },true);
   window.numiDateFields=Object.freeze({isAdult,isChild});
 })();
