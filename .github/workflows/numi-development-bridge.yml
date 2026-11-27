@@ -23,7 +23,7 @@ jobs:
           python3 -u - <<'PY'
           import json,re,pathlib,urllib.request,hashlib,subprocess
           m=json.loads(pathlib.Path('.github/numi-development-release.json').read_text())
-          allowed=set(["moment/index.html","moment/moment.css","moment/moment.js","moment/questions.json","pro/school/index.html","pro/school/school.css","pro/school/school.js","pro/school/lesson/index.html","pro/school/lesson/lesson.css","pro/school/lesson/lesson.js","pro/school/lessons-manifest.json","pro/school/arcana.json","pro/school/learning.css","pro/school/learning.js","pro/school/client-pdf.css","pro/school/client-pdf.js"])
+          allowed=set(["moment/index.html","moment/moment.css","moment/moment.js","moment/questions.json","pro/school/index.html","pro/school/school.css","pro/school/school.js","pro/school/lesson/index.html","pro/school/lesson/lesson.css","pro/school/lesson/lesson.js","pro/school/lessons-manifest.json","pro/school/arcana.json","pro/school/learning.css","pro/school/learning.js","pro/school/client-pdf.css","pro/school/client-pdf.js","assets/numi-school-access-20261103.css","pro/schools/classic/classic-core.js","pro/schools/classic/classic.css","pro/schools/classic/classic.js","pro/schools/classic/index.html","pro/schools/classic/lesson/index.html","pro/schools/classic/lesson/lesson.js","pro/schools/classic/manifest.json","pro/schools/index.html","pro/schools/schools.css"])
           assert m['mode'] in ('check','publish')
           assert re.fullmatch('[0-9a-f]{40}',m['revision'])
           files=m['files']
@@ -59,7 +59,7 @@ jobs:
           python3 -u - <<'PY'
           import json,re,pathlib,ftplib,ssl,socket,os,io,hashlib,urllib.request,urllib.error
           m=json.loads(pathlib.Path('.github/numi-development-release.json').read_text())
-          allowed=set(["moment/index.html","moment/moment.css","moment/moment.js","moment/questions.json","pro/school/index.html","pro/school/school.css","pro/school/school.js","pro/school/lesson/index.html","pro/school/lesson/lesson.css","pro/school/lesson/lesson.js","pro/school/lessons-manifest.json","pro/school/arcana.json","pro/school/learning.css","pro/school/learning.js","pro/school/client-pdf.css","pro/school/client-pdf.js"])
+          allowed=set(["moment/index.html","moment/moment.css","moment/moment.js","moment/questions.json","pro/school/index.html","pro/school/school.css","pro/school/school.js","pro/school/lesson/index.html","pro/school/lesson/lesson.css","pro/school/lesson/lesson.js","pro/school/lessons-manifest.json","pro/school/arcana.json","pro/school/learning.css","pro/school/learning.js","pro/school/client-pdf.css","pro/school/client-pdf.js","assets/numi-school-access-20261103.css","pro/schools/classic/classic-core.js","pro/schools/classic/classic.css","pro/schools/classic/classic.js","pro/schools/classic/index.html","pro/schools/classic/lesson/index.html","pro/schools/classic/lesson/lesson.js","pro/schools/classic/manifest.json","pro/schools/index.html","pro/schools/schools.css"])
           assert set(m['files'])<=allowed
           sha=lambda data:hashlib.sha256(data).hexdigest()
           host=os.environ['REG_FTP_HOST'].strip()
