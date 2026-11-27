@@ -304,6 +304,18 @@
     }
   });
   back.addEventListener("click", () => window.location.assign("../../"));
+  $("yn-answer-close")?.addEventListener("click", () => {
+    cancelPending();
+    selectedQuestion = null;
+    useCurrentTime = true;
+    timeInput.value = currentTime();
+    timeInput.removeAttribute("aria-invalid");
+    timeError.hidden = true;
+    questionTitle.textContent = "Выберите вопрос ниже";
+    resetAnswer();
+    if (catalog) { renderCategories(); openCategory(null); }
+    window.scrollTo({top:0,behavior:scrollBehavior()});
+  });
   (async () => {
     try {
       const response = await fetch("./questions.json?v=3", {cache:"default"});
