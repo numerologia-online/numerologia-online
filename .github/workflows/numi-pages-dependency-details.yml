@@ -1,0 +1,63 @@
+name: Identify remaining legacy public GitHub URLs (read only)
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/numi-pages-dependency-details.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Read existing URL references and verify published day banks
+        env:
+          REG_FTP_HOST: ${{ secrets.REG_FTP_HOST }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import ftplib,ssl,socket,os,re,io,urllib.request,urllib.error,hashlib,concurrent.futures
+          h=os.environ['REG_FTP_HOST'].strip()
+          socket.inet_aton(h)
+          ptr=socket.gethostbyaddr(h)[0].rstrip('.').lower()
+          assert re.fullmatch(r'[a-z0-9.-]+\.hosting\.reg\.ru',ptr)
+          assert h in {x[4][0] for x in socket.getaddrinfo(ptr,21,type=socket.SOCK_STREAM)}
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          ftp.connect(ptr,21);ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD']);ftp.prot_p();ftp.set_pasv(True)
+          home=ftp.pwd().rstrip('/')
+          root=home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          private=home+'/private/numi-content-reg-20261031/'
+          files=['personal-day-feature.js','api/profile.php','api/redflag-content.php','api/owner-mailing.php','api/redflag-save.php','api/telegram.php','api/numerologia-once-15min-16-10-2026.php','api/test-github.php','api/telegram-reg-stage-15-10-2026.php']
+          p=re.compile(r'https?://(?:numerologia-online\.github\.io|(?:raw\.githubusercontent|api\.github|github)\.com)(?:/[A-Za-z0-9._/-]*)?',re.I)
+          try:
+              for label,filename in [(x,root+x) for x in files]+[('private-content/core.php',private+'core.php')]:
+                  b=io.BytesIO()
+                  ftp.retrbinary('RETR '+filename,b.write)
+                  s=b.getvalue().decode('utf-8','replace')
+                  fn='global'
+                  for i,line in enumerate(s.splitlines(),1):
+                      f=re.search(r'\bfunction\s+([A-Za-z0-9_]+)',line)
+                      if f:fn=f.group(1)
+                      urls=sorted(set(p.findall(line)))
+                      for url in urls:
+                          print('GITHUB_URL',label,i,fn,url)
+                      if re.search(r'github',line,re.I) and not urls and label=='private-content/core.php':
+                          print('GITHUB_IDENTIFIER',label,i,fn)
+              print('LIVE_URL_SCAN_DONE')
+          finally:ftp.quit()
+          def get(url):
+              with urllib.request.urlopen(url,timeout=20) as r:
+                  return hashlib.sha256(r.read(3000000)).hexdigest()
+          def verify(p):
+              a=get('https://numerologia-online.github.io/numerologia-online/'+p)
+              b=get('https://raw.githubusercontent.com/numerologia-online/numerologia-online/pages-runtime/'+p)
+              return p,a==b
+          paths=['data/day/'+kind+'/'+kind+'-day-'+str(n).zfill(2)+'.json' for kind in ('general','practical') for n in range(1,23)]+['data/day/general/index.json']
+          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+              result=list(pool.map(verify,paths))
+          for path,match in result:
+              if not match:print('BANK_DIFFERENCE',path)
+          print('PAGES_BANKS_IDENTICAL',sum(match for _,match in result),'of',len(paths))
+          PY
