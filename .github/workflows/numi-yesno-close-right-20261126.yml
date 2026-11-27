@@ -28,7 +28,7 @@ jobs:
           button_new='<button id="yn-all" type="button" class="yn-back-top" aria-label="На главную" title="На главную">×</button>'
           css_new=next(l for l in pathlib.Path(css_path).read_text().splitlines() if l.startswith('.yn-back-top{'))
           assert 'place-items:center' in css_new and 'width:52px;height:52px' in css_new and 'top:8px' in css_new
-          version='./yes-no.css?v=close-size-20261127'
+          version='./yes-no.css?v=close-center-20261127'
           host=os.environ['REG_FTP_HOST'].strip()
           socket.inet_aton(host)
           ptr=socket.gethostbyaddr(host)[0].rstrip('.').lower()
@@ -56,7 +56,7 @@ jobs:
                   if path==css_path:
                       pattern=r'(?m)^\.yn-back-top\{[^{}\n]+\}'
                       matches=re.findall(pattern,current)
-                      assert len(matches)==1 and (matches[0]==".yn-back-top{display:grid;place-items:center;width:44px;height:44px;margin:0 0 0 auto;padding:0;border:1px solid #c9d4c4;border-radius:50%;background:#fffefa;color:var(--yn-ink);font:400 29px/1 system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}" or matches[0]==css_new), 'Unexpected live button CSS'
+                      assert len(matches)==1 and (matches[0]==".yn-back-top{display:grid;place-items:center;position:relative;top:8px;width:52px;height:52px;margin:0 8px -8px auto;padding:0;border:1px solid #c9d4c4;border-radius:50%;background:#fffefa;color:var(--yn-ink);font:400 32px/1 system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}" or matches[0]==css_new), 'Unexpected live button CSS'
                       current=re.sub(pattern,lambda _:css_new,current,count=1)
                   else:
                       assert current.count(button_old)+current.count(button_new)==1, 'Unexpected live button markup'
@@ -89,7 +89,7 @@ jobs:
           for attempt in range(3):
               try:
                   live=public(origin+'?verify='+os.environ['GITHUB_RUN_ID']+'-'+str(attempt))
-                  style=public(origin+'yes-no.css?v=close-size-20261127')
+                  style=public(origin+'yes-no.css?v=close-center-20261127')
                   assert button_new in live and version in live and css_new in style
                   print('PUBLIC HTTP VERIFIED: right-side close button')
                   break
