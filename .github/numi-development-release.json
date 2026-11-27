@@ -1,32 +1,16 @@
 {
-  "mode": "check",
+  "mode": "publish",
   "revision": "303e1ee48f0fc36706c4da87869c6e6398bf3965",
   "files": [
-    "moment/index.html",
     "moment/moment.css",
-    "moment/moment.js",
-    "moment/questions.json",
-    "pro/school/index.html",
-    "pro/school/school.css",
-    "pro/school/school.js",
-    "pro/school/lesson/index.html",
-    "pro/school/lesson/lesson.css",
-    "pro/school/lesson/lesson.js",
-    "pro/school/lessons-manifest.json",
-    "pro/school/arcana.json",
-    "pro/school/learning.css",
-    "pro/school/learning.js",
-    "pro/school/client-pdf.css",
-    "pro/school/client-pdf.js",
-    "pro/schools/index.html",
-    "pro/schools/schools.css",
-    "pro/schools/classic/index.html",
-    "pro/schools/classic/classic.css",
-    "pro/schools/classic/classic.js",
-    "pro/schools/classic/lesson/index.html",
-    "pro/schools/classic/lesson/lesson.js",
-    "assets/numi-school-access-20261103.css",
-    "pro/schools/classic/classic-core.js",
-    "pro/schools/classic/manifest.json"
-  ]
+    "pro/school/school.css"
+  ],
+  "expected_live_sha256": {
+    "moment/moment.css": "09ce8c74e24677eca3c6d40f8bef7520b09b115bcbb62f467ce0d44359e01a5b",
+    "pro/school/school.css": "acaf545d60fd5cbee5b984553d8a99de21d251dcd360d035dd2d68fc04245d1c"
+  },
+  "approved_source_sha256": {
+    "moment/moment.css": "09ce8c74e24677eca3c6d40f8bef7520b09b115bcbb62f467ce0d44359e01a5b",
+    "pro/school/school.css": "acaf545d60fd5cbee5b984553d8a99de21d251dcd360d035dd2d68fc04245d1c"
+  }
 }
