@@ -111,7 +111,12 @@ function niReport(PDO $db,string $from,string $to): array {
     ksort($dayMap);
     return ['ok'=>true,'version'=>NI_VERSION,'from'=>$from,'to'=>$to,'timezone'=>'Europe/Samara','rows'=>array_values($rows),'sources'=>array_values($sources),'days'=>array_values($dayMap),
       'totals'=>['sessions'=>$sessions,'orders'=>count($orders),'subscriptions'=>$clubTotal,'revenue'=>$revenue,'attributed'=>$attributed,'unattributed'=>count($orders)-$attributed],
-      'payment_status'=>'waiting_for_provider','attribution'=>'aggregate_product_only','generated_at'=>gmdate('c')];
+      'payment_status'=>'waiting_for_provider','attribution'=>'aggregate_product_only','referrals'=>niReferralPreview($db,$start,$end),'generated_at'=>gmdate('c')];
+}
+function niReferralPreview(PDO $db,string $start,string $end): ?array {
+    if(!function_exists('nrEnabled')||!nrEnabled())return null;
+    try{return nrOwnerReport($db,$start,$end);}
+    catch(Throwable $e){error_log('NUMI_INSIGHTS_REFERRAL:'.get_class($e));return ['unavailable'=>true];}
 }
 function niMain(): never {
     header('Cache-Control: no-store, private, max-age=0');header('X-Content-Type-Options: nosniff');header('X-Frame-Options: DENY');header('Referrer-Policy: no-referrer');

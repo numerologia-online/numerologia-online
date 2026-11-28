@@ -48,7 +48,7 @@ function nrMerge(PDO $db,string $from,string $to): void {
     $db->exec("UPDATE numi_referral_bindings SET state='review' WHERE invitee_id=inviter_id AND state='active'");
 }
 /** Order PK is idempotency key. Only real paid orders and eligible products.
- * First paid subscription only; proposed pilot attribution 30 days.
+ * Persistent attribution; every eligible real paid subscription, including renewals.
  * No writes to the order, wallet, entitlement or fiscal tables. */
 function nrAccrue(PDO $db,?string $inviter=null): int {
     $filter=$inviter===null?'':' AND b.inviter_id=?';
@@ -61,13 +61,8 @@ function nrAccrue(PDO $db,?string $inviter=null): int {
         AND o.status='paid' AND o.verified_at IS NOT NULL AND o.currency='RUB'
         AND o.provider IN ('real_wallet','real_subscription')
         AND o.created_at>=b.bound_at AND o.verified_at>=b.bound_at
-        AND o.verified_at<DATE_ADD(b.bound_at,INTERVAL 30 DAY)
         AND NOT EXISTS (SELECT 1 FROM numi_referral_rewards r WHERE r.order_id=o.id)
-        AND ((o.product_code='club_month' AND o.amount_kopeks=49000 AND NOT EXISTS (
-            SELECT 1 FROM numi_orders p WHERE p.account_id=o.account_id AND p.product_code='club_month'
-              AND p.provider IN ('real_wallet','real_subscription') AND p.currency='RUB'
-              AND p.status IN ('paid','refunded') AND p.verified_at IS NOT NULL
-              AND (p.verified_at<o.verified_at OR (p.verified_at=o.verified_at AND p.id<o.id))))
+        AND ((o.product_code='club_month' AND o.amount_kopeks=49000)
           OR (o.product_code IN ('year_full','life_full','compatibility_full','child_full_v1')
               AND o.amount_kopeks IN (49000,99000)))".$filter."
       ORDER BY o.verified_at,o.id LIMIT 200";
@@ -95,4 +90,28 @@ function nrWorkerPreview(PDO $db): array {
     if(!nrEnabled())return ['enabled'=>false];
     try{return ['enabled'=>true,'estimated'=>nrAccrue($db)];}
     catch(Throwable $e){error_log('NUMI_REFERRAL_PREVIEW:'.get_class($e));return ['enabled'=>true,'review'=>true];}
+}
+
+/** Owner-only aggregate; dates are UTC, same range as existing Insights.
+ * No individual invitees or account identifiers. No writes. */
+function nrOwnerReport(PDO $db,string $start,string $end): array {
+    $q=$db->prepare("SELECT COUNT(*) FROM numi_referral_bindings
+        WHERE state='active' AND inviter_id<>invitee_id AND bound_at>=? AND bound_at<?");
+    $q->execute([$start,$end]);$invited=(int)$q->fetchColumn();
+    $q=$db->prepare("SELECT COUNT(*) orders,COUNT(DISTINCT b.invitee_id) buyers,
+        COALESCE(SUM(o.amount_kopeks),0) cash_order_kopeks,
+        COALESCE(SUM(r.reward_kopeks),0) reward_kopeks,
+        COALESCE(SUM(CASE WHEN r.release_at>UTC_TIMESTAMP() THEN r.reward_kopeks ELSE 0 END),0) pending_kopeks
+        FROM numi_referral_rewards r
+        JOIN numi_referral_bindings b ON b.invitee_id=r.invitee_id
+        JOIN numi_orders o ON o.id=r.order_id AND o.account_id=r.invitee_id
+        WHERE b.state='active' AND b.inviter_id<>b.invitee_id
+          AND o.status='paid' AND o.verified_at>=? AND o.verified_at<?
+          AND o.currency='RUB' AND o.provider IN ('real_wallet','real_subscription')
+          AND o.amount_kopeks=r.amount_kopeks");
+    $q->execute([$start,$end]);$row=$q->fetch(PDO::FETCH_ASSOC);
+    return ['preview'=>true,'invited'=>$invited,'buyers'=>(int)$row['buyers'],
+        'orders'=>(int)$row['orders'],'cash_order_kopeks'=>(int)$row['cash_order_kopeks'],
+        'reward_kopeks'=>(int)$row['reward_kopeks'],'pending_kopeks'=>(int)$row['pending_kopeks'],
+        'spent_kopeks'=>null,'bonus_only_orders'=>null,'mixed_orders'=>null];
 }

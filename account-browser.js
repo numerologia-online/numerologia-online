@@ -1009,8 +1009,9 @@
   const refInput=document.createElement("input");refInput.readOnly=true;refInput.setAttribute("aria-label","Персональная ссылка");refInput.style.width="100%";
   const refCopy=document.createElement("button");refCopy.type="button";refCopy.className="account-primary";refCopy.textContent="Копировать ссылку";
   const refReload=document.createElement("button");refReload.type="button";refReload.className="account-secondary";refReload.textContent="Обновить";
-  const refNote=document.createElement("p");refNote.className="account-muted";refNote.textContent="Предварительный расчёт. Бонусы пока нельзя тратить или выводить.";
-  referralPanel.append(refTitle,refSummary,refInput,refCopy,refReload,refNote);
+  const refNote=document.createElement("p");refNote.className="account-muted";refNote.textContent="Предварительный расчёт. Бонусные рубли пока нельзя тратить или выводить.";
+  const refTerms=document.createElement("p");refTerms.className="account-muted";refTerms.textContent="За каждый оплаченный деньгами месяц клуба — 10% (49 бонусных рублей). За большой разбор за 990 ₽ — 100 бонусных рублей, за 490 ₽ — 50 бонусных рублей. Начисления по приглашённым действуют без ограничения по сроку, пока действует программа.";
+  referralPanel.append(refTitle,refTerms,refSummary,refInput,refCopy,refReload,refNote);
   overview.append(referralPanel);
   refCopy.addEventListener("click",async()=>{
     try{await navigator.clipboard.writeText(refInput.value);refCopy.textContent="Ссылка скопирована";}
@@ -1028,7 +1029,7 @@
       if(!/^[a-f0-9]{24}$/.test(data.code))return;
       refInput.value=location.origin+"/?ref="+data.code+"&account=1";
       const rub=n=>(Number(n)/100).toLocaleString("ru-RU",{maximumFractionDigits:2});
-      refSummary.textContent="Приглашено: "+data.invited+" · Купили: "+data.buyers+" · Ожидают: "+rub(data.pending_kopeks)+" · Рассчитано: "+rub(data.calculated_kopeks)+" бонусов";
+      refSummary.textContent="Приглашено: "+data.invited+" · Купили: "+data.buyers+" · Ожидают: "+rub(data.pending_kopeks)+" · Рассчитано: "+rub(data.calculated_kopeks)+" бонусных рублей";
       refCopy.textContent="Копировать ссылку";referralPanel.hidden=false;
     }catch(_){if(generation===refGeneration)referralLoaded=null;}
   }

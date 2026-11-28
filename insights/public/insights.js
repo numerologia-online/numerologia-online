@@ -113,11 +113,24 @@
     $('empty').hidden=rows.length>0;$('analytics-table').hidden=!rows.length;$('show-more').hidden=rows.length<=visible;
     $('empty').querySelector('h3').textContent=report.rows.length?'По этим условиям пока нет строк':'Здесь появятся первые цифры';
   }
+  function renderReferralOwner(r){
+    const panel=$('referral-owner-panel');if(!panel)return;
+    panel.hidden=!r;if(!r)return;
+    $('referral-owner-note').textContent=r.unavailable?'Реферальные данные временно недоступны.':'Предварительный расчёт по подтверждённым заказам за выбранный период.';
+    const asMoney=v=>v==null?'—':money.format(v/100);
+    $('ref-invited').textContent=r.invited==null?'—':number.format(r.invited);
+    $('ref-buyers').textContent=r.buyers==null?'—':number.format(r.buyers);
+    $('ref-cash').textContent=asMoney(r.cash_order_kopeks);
+    $('ref-earned').textContent=asMoney(r.reward_kopeks);
+    $('ref-pending').textContent=asMoney(r.pending_kopeks);
+    $('ref-spent').textContent=asMoney(r.spent_kopeks);
+  }
   async function refresh(){
     const id=++requestId;controller?.abort();controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),15000);$('refresh').disabled=true;setStatus('Обновляем показатели…');
     try{const data=await api('/api/numi-insights.php?from='+encodeURIComponent($('date-from').value)+'&to='+encodeURIComponent($('date-to').value),{signal:controller.signal});if(id!==requestId)return;report=data;dashboardVisible();
       $('total-sessions').textContent=number.format(data.totals.sessions);$('total-clicks').textContent=number.format(data.rows.reduce((n,r)=>n+r.clicks,0));$('total-orders').textContent=number.format(data.totals.orders);$('total-club').textContent='из них подписок — '+number.format(data.totals.subscriptions);$('total-revenue').textContent=money.format(data.totals.revenue);
       $('updated').textContent='Обновлено '+new Date(data.generated_at).toLocaleString('ru-RU',{timeZone:'Europe/Samara'})+' · Самара · Оплат без связи с вопросом: '+data.totals.unattributed+'.';
+      renderReferralOwner(data.referrals);
       setStatus('');render();void refreshGifts();
     }catch(e){if(id!==requestId)return;if(e.code==='OWNER_LOGIN_REQUIRED')loginVisible();setStatus(e.name==='AbortError'?'Сервер не ответил за 15 секунд. Можно повторить кнопкой «Обновить».':e.message,true);}
     finally{clearTimeout(timeout);if(id===requestId)$('refresh').disabled=false;}

@@ -19,7 +19,7 @@ $a='00000000-0000-4000-8000-000000000101';$b='00000000-0000-4000-8000-0000000001
 foreach([$a,$b,$c] as $id)$db->prepare('INSERT INTO numi_accounts(id) VALUES(?)')->execute([$id]);
 $code=nrIssue($db,$a);rfAssert(nrIssue($db,$a)===$code,'stable link');
 $db->beginTransaction();nrBindNew($db,$a,$code);nrBindNew($db,$b,$code);nrBindNew($db,$b,str_repeat('f',24));$db->commit();
-$db->exec("UPDATE numi_referral_bindings SET bound_at=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 20 DAY)");
+$db->exec("UPDATE numi_referral_bindings SET bound_at=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 60 DAY)");
 function rfOrder(PDO $db,string $account,int $i,string $product,int $price,string $provider='real_wallet',string $status='paid',int $days=15): string {
     $id=sprintf('00000000-0000-4000-8000-%012d',$i);
     $q=$db->prepare("INSERT INTO numi_orders(id,account_id,product_code,resource_id,amount_kopeks,provider,status,verified_at,created_at)
@@ -34,10 +34,13 @@ rfOrder($db,$b,5,'redflag_question',49000);
 rfOrder($db,$b,6,'life_full',99000,'sandbox');
 rfOrder($db,$b,7,'life_full',99000,'real_wallet','pending');
 rfOrder($db,$c,8,'life_full',99000);
-rfAssert(nrAccrue($db)===3,'three eligible orders');
+rfAssert(nrAccrue($db)===4,'four eligible orders including renewal after 30 days');
 rfAssert(nrAccrue($db)===0,'repeat idempotency');
 $m=nrMine($db,$a);rfAssert($m['invited']===1&&$m['buyers']===1,'counts');
-rfAssert($m['calculated_kopeks']===14900&&$m['pending_kopeks']===5000&&$m['spendable_kopeks']===0,'held estimates');
+rfAssert($m['calculated_kopeks']===14900&&$m['pending_kopeks']===9900&&$m['spendable_kopeks']===0,'held estimates');
+$stats=nrOwnerReport($db,'2000-01-01 00:00:00','2099-01-01 00:00:00');
+rfAssert($stats['orders']===4&&$stats['cash_order_kopeks']===246000&&$stats['reward_kopeks']===24800,'owner cash and bonus estimates separate');
+rfAssert($stats['spent_kopeks']===null,'unimplemented spending must not be reported as zero');
 $db->prepare("UPDATE numi_orders SET status='refunded' WHERE id=?")->execute([$report]);
 rfAssert(nrMine($db,$a)['calculated_kopeks']===4900,'refund removed');
 $db->beginTransaction();nrMerge($db,$b,$c);$db->commit();
