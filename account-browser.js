@@ -1010,7 +1010,7 @@
   const refCopy=document.createElement("button");refCopy.type="button";refCopy.className="account-primary";refCopy.textContent="Копировать ссылку";
   const refReload=document.createElement("button");refReload.type="button";refReload.className="account-secondary";refReload.textContent="Обновить";
   const refNote=document.createElement("p");refNote.className="account-muted";refNote.textContent="Предварительный расчёт. Бонусные рубли пока нельзя тратить или выводить.";
-  const refTerms=document.createElement("p");refTerms.className="account-muted";refTerms.textContent="За каждый оплаченный деньгами месяц клуба — 10% (49 бонусных рублей). За большой разбор за 990 ₽ — 100 бонусных рублей, за 490 ₽ — 50 бонусных рублей. Начисления по приглашённым действуют без ограничения по сроку, пока действует программа.";
+  const refTerms=document.createElement("p");refTerms.className="account-muted";refTerms.textContent="Персональная ссылка доступна после первой подтверждённой оплаты клуба деньгами. Продлевать клуб для начислений необязательно. При возврате единственной оплаченной подписки ссылка приостанавливается. За каждый оплаченный деньгами месяц клуба — 10% (49 бонусных рублей). За большой разбор за 990 ₽ — 100 бонусных рублей, за 490 ₽ — 50 бонусных рублей. Начисления по приглашённым действуют без ограничения по сроку, пока действует программа. Бонусные рубли начисляются через 14 календарных дней после подтверждения оплаты.";
   referralPanel.append(refTitle,refTerms,refSummary,refInput,refCopy,refReload,refNote);
   overview.append(referralPanel);
   refCopy.addEventListener("click",async()=>{
@@ -1026,7 +1026,13 @@
     try{
       const data=await request("referral_status");
       if(generation!==refGeneration||current?.id!==id||!data.enabled)return;
+      if(!data.eligible){
+        refInput.value="";refInput.hidden=true;refCopy.hidden=true;
+        refSummary.textContent="Чтобы получить персональную ссылку, оплатите подписку клуба обычными рублями.";
+        referralPanel.hidden=false;return;
+      }
       if(!/^[a-f0-9]{24}$/.test(data.code))return;
+      refInput.hidden=false;refCopy.hidden=false;
       refInput.value=location.origin+"/?ref="+data.code+"&account=1";
       const rub=n=>(Number(n)/100).toLocaleString("ru-RU",{maximumFractionDigits:2});
       refSummary.textContent="Приглашено: "+data.invited+" · Купили: "+data.buyers+" · Ожидают: "+rub(data.pending_kopeks)+" · Рассчитано: "+rub(data.calculated_kopeks)+" бонусных рублей";

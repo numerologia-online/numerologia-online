@@ -12,12 +12,30 @@ function nrReward(string $code,int $kopeks): int {
     if(!in_array($code,['year_full','life_full','compatibility_full','child_full_v1'],true))return 0;
     return match($kopeks){99000=>10000,49000=>5000,default=>0};
 }
-function nrIssue(PDO $db,string $owner): string {
+/** Entitlement expiry is deliberately irrelevant. A confirmed, non-refunded
+ * club order paid entirely with real money unlocks participation.
+ * Future bonus/split checkout must store actual cash separately and must
+ * never use these legacy providers for a bonus-only purchase. */
+function nrQualificationSql(string $accountExpression): string {
+    if(!in_array($accountExpression,['?','b.inviter_id'],true))throw new InvalidArgumentException('REF_BAD_QUALIFICATION');
+    return "EXISTS (SELECT 1 FROM numi_orders club_order
+        WHERE club_order.account_id=".$accountExpression."
+          AND club_order.product_code='club_month'
+          AND club_order.amount_kopeks=49000 AND club_order.currency='RUB'
+          AND club_order.status='paid' AND club_order.verified_at IS NOT NULL
+          AND club_order.provider IN ('real_wallet','real_subscription'))";
+}
+function nrQualified(PDO $db,string $owner): bool {
+    $q=$db->prepare('SELECT '.nrQualificationSql('?'));
+    $q->execute([$owner]);return (bool)$q->fetchColumn();
+}
+function nrIssue(PDO $db,string $owner): ?string {
     $db->beginTransaction();
     try {
         $q=$db->prepare('SELECT id FROM numi_accounts WHERE id=? FOR UPDATE');
         $q->execute([$owner]);
         if(!$q->fetchColumn())throw new RuntimeException('REF_ACCOUNT_MISSING');
+        if(!nrQualified($db,$owner)){$db->commit();return null;}
         $q=$db->prepare('SELECT code FROM numi_referral_codes WHERE owner_id=? ORDER BY created_at,code LIMIT 1');
         $q->execute([$owner]);$code=$q->fetchColumn();
         if($code===false){
@@ -33,7 +51,7 @@ function nrBindNew(PDO $db,string $invitee,mixed $code): void {
     if(!$db->inTransaction())throw new RuntimeException('REF_REGISTRATION_TRANSACTION_REQUIRED');
     $q=$db->prepare('SELECT owner_id FROM numi_referral_codes WHERE code=? FOR UPDATE');
     $q->execute([$code]);$inviter=$q->fetchColumn();
-    if(!$inviter||$inviter===$invitee)return;
+    if(!$inviter||$inviter===$invitee||!nrQualified($db,(string)$inviter))return;
     $q=$db->prepare("INSERT INTO numi_referral_bindings(invitee_id,inviter_id,bound_at) VALUES(?,?,UTC_TIMESTAMP())
         ON DUPLICATE KEY UPDATE invitee_id=invitee_id");
     $q->execute([$invitee,$inviter]);
@@ -52,6 +70,7 @@ function nrMerge(PDO $db,string $from,string $to): void {
  * No writes to the order, wallet, entitlement or fiscal tables. */
 function nrAccrue(PDO $db,?string $inviter=null): int {
     $filter=$inviter===null?'':' AND b.inviter_id=?';
+    $qualified=nrQualificationSql('b.inviter_id');
     $sql="INSERT IGNORE INTO numi_referral_rewards(order_id,invitee_id,amount_kopeks,reward_kopeks,created_at,release_at)
       SELECT o.id,b.invitee_id,o.amount_kopeks,
         CASE WHEN o.product_code='club_month' THEN 4900 WHEN o.amount_kopeks=99000 THEN 10000 ELSE 5000 END,
@@ -60,6 +79,7 @@ function nrAccrue(PDO $db,?string $inviter=null): int {
       WHERE b.state='active' AND b.inviter_id<>b.invitee_id
         AND o.status='paid' AND o.verified_at IS NOT NULL AND o.currency='RUB'
         AND o.provider IN ('real_wallet','real_subscription')
+        AND ".$qualified."
         AND o.created_at>=b.bound_at AND o.verified_at>=b.bound_at
         AND NOT EXISTS (SELECT 1 FROM numi_referral_rewards r WHERE r.order_id=o.id)
         AND ((o.product_code='club_month' AND o.amount_kopeks=49000)
@@ -69,7 +89,9 @@ function nrAccrue(PDO $db,?string $inviter=null): int {
     $q=$db->prepare($sql);$q->execute($inviter===null?[]:[$inviter]);return $q->rowCount();
 }
 function nrMine(PDO $db,string $owner): array {
-    $code=nrIssue($db,$owner);nrAccrue($db,$owner);
+    $code=nrIssue($db,$owner);
+    if($code===null)return ['enabled'=>true,'preview'=>true,'eligible'=>false,'code'=>null,'spendable_kopeks'=>0];
+    nrAccrue($db,$owner);
     $q=$db->prepare("SELECT COUNT(*) FROM numi_referral_bindings WHERE inviter_id=? AND state='active'");
     $q->execute([$owner]);$invited=(int)$q->fetchColumn();
     $q=$db->prepare("SELECT
@@ -82,7 +104,7 @@ function nrMine(PDO $db,string $owner): array {
         AND o.status='paid' AND o.verified_at IS NOT NULL AND o.currency='RUB'
         AND o.provider IN ('real_wallet','real_subscription') AND o.amount_kopeks=r.amount_kopeks");
     $q->execute([$owner]);$row=$q->fetch(PDO::FETCH_ASSOC);
-    return ['enabled'=>true,'preview'=>true,'code'=>$code,'invited'=>$invited,
+    return ['enabled'=>true,'preview'=>true,'eligible'=>true,'code'=>$code,'invited'=>$invited,
         'buyers'=>(int)$row['buyers'],'pending_kopeks'=>(int)$row['pending'],
         'calculated_kopeks'=>(int)$row['calculated'],'spendable_kopeks'=>0];
 }
@@ -95,8 +117,9 @@ function nrWorkerPreview(PDO $db): array {
 /** Owner-only aggregate; dates are UTC, same range as existing Insights.
  * No individual invitees or account identifiers. No writes. */
 function nrOwnerReport(PDO $db,string $start,string $end): array {
-    $q=$db->prepare("SELECT COUNT(*) FROM numi_referral_bindings
-        WHERE state='active' AND inviter_id<>invitee_id AND bound_at>=? AND bound_at<?");
+    $qualified=nrQualificationSql('b.inviter_id');
+    $q=$db->prepare("SELECT COUNT(*) FROM numi_referral_bindings b
+        WHERE state='active' AND inviter_id<>invitee_id AND bound_at>=? AND bound_at<? AND ".$qualified);
     $q->execute([$start,$end]);$invited=(int)$q->fetchColumn();
     $q=$db->prepare("SELECT COUNT(*) orders,COUNT(DISTINCT b.invitee_id) buyers,
         COALESCE(SUM(o.amount_kopeks),0) cash_order_kopeks,
@@ -106,6 +129,7 @@ function nrOwnerReport(PDO $db,string $start,string $end): array {
         JOIN numi_referral_bindings b ON b.invitee_id=r.invitee_id
         JOIN numi_orders o ON o.id=r.order_id AND o.account_id=r.invitee_id
         WHERE b.state='active' AND b.inviter_id<>b.invitee_id
+          AND ".$qualified."
           AND o.status='paid' AND o.verified_at>=? AND o.verified_at<?
           AND o.currency='RUB' AND o.provider IN ('real_wallet','real_subscription')
           AND o.amount_kopeks=r.amount_kopeks");
