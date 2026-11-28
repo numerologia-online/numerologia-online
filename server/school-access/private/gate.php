@@ -37,11 +37,8 @@ function nsAccountOwner(string $ownerId): bool {
     } catch (Throwable $error) { return false; }
 }
 function nsSchoolMember(): bool {
-    try {
-        require_once dirname(__DIR__).'/numi-account-20261031/core.php';
-        $db=naDB();$account=naCurrent($db);
-        return naCatalogHasAccess($db,$account,'school_week','school');
-    }catch(Throwable $e){return false;}
+    // School is not launched. Only the verified owner can access materials.
+    return false;
 }
 function nsOwner(array $config, string $key, string $signed = '', ?callable $accountCheck = null): bool {
     $owner = (string)$config['owner_id'];
