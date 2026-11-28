@@ -1,0 +1,103 @@
+name: Publish approved question twenty-six in owner-only preview
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/numi-yesno-uncensored-approved026-20261128.yml']
+permissions:
+  contents: read
+concurrency:
+  group: reg-ru-manual-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch question twenty-six only and verify owner gate
+        env:
+          REG_FTP_HOST: ${{ secrets.REG_FTP_HOST }}
+          REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
+          REG_FTP_PASSWORD: ${{ secrets.REG_FTP_PASSWORD }}
+        run: |
+          python3 -u - <<'PY'
+          import json, os, ssl, ftplib, socket, re, io, pathlib, hashlib, subprocess
+          import urllib.request, urllib.error
+          source = pathlib.Path('moment/yes-no/uncensored/answer-bank.json').read_bytes()
+          assert hashlib.sha1(('blob '+str(len(source))+'\0').encode()+source).hexdigest() == '695accc55e26b932853531eeb2db71e3b1b7efb5'
+          approved = json.loads(source)
+          q = 'yn-love-006'
+          assert approved['mode'] == 'uncensored' and len(approved['questions']) == 100
+          expected = approved['questions'][q]
+          assert expected['question'] == 'Взаимны ли мои чувства?'
+          assert set(expected['answers']) == set(map(str,range(10)))
+          assert all(isinstance(v,str) and v.strip() and not any(d in v for d in ('—','–')) for v in expected['answers'].values())
+          assert len(set(expected['answers'].values())) == 10
+          api = pathlib.Path('yesno-service/public/numi-yesno-uncensored.php')
+          assert 'if (!naTestOwner($account))' in api.read_text(encoding='utf-8')
+          subprocess.run(['php','-l',str(api)],check=True)
+          endpoint = 'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai/api/numi-yesno-uncensored.php'
+          def check_gate():
+              request = urllib.request.Request(endpoint,data=b'{"question":"yn-love-006","time":"12:30"}',headers={'Content-Type':'application/json','User-Agent':'Mozilla/5.0'},method='POST')
+              try:
+                  urllib.request.urlopen(request,timeout=20)
+                  raise RuntimeError('Anonymous owner API unexpectedly allowed')
+              except urllib.error.HTTPError as error:
+                  assert error.code == 403 and json.load(error).get('error') == 'UNCENSORED_OWNER_ONLY'
+          check_gate()
+          host = os.environ['REG_FTP_HOST'].strip()
+          socket.inet_aton(host)
+          ptr = socket.gethostbyaddr(host)[0].rstrip('.').lower()
+          assert re.fullmatch(r'[a-z0-9.-]+\.hosting\.reg\.ru',ptr)
+          assert host in {x[4][0] for x in socket.getaddrinfo(ptr,21,type=socket.SOCK_STREAM)}
+          ftp = ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=20)
+          ftp.connect(ptr,21)
+          ftp.login(os.environ['REG_FTP_USER'],os.environ['REG_FTP_PASSWORD'])
+          ftp.prot_p(); ftp.set_pasv(True)
+          home = ftp.pwd().rstrip('/')
+          root = home+'/www/xn--c1adkkdfjbp1a4l.online/'
+          path = home+'/private/numi-yesno-v1/uncensored/answer-bank.json'
+          tmp = path+'.tmp-'+os.environ['GITHUB_RUN_ID']
+          def read(p):
+              b = io.BytesIO(); ftp.retrbinary('RETR '+p,b.write); return b.getvalue()
+          def put(p,data):
+              ftp.storbinary('STOR '+p,io.BytesIO(data)); assert read(p)==data
+          try:
+              assert read(root+'api/numi-yesno-uncensored.php') == api.read_bytes(), 'Owner-only API differs; stop'
+              old = read(path)
+              live = json.loads(old)
+              assert live['mode']==approved['mode'] and live['calculation_version']==approved['calculation_version']
+              assert set(live['questions'])==set(approved['questions'])
+              previous = live['questions'][q]
+              assert {k:v for k,v in previous.items() if k!='answers'} == {k:v for k,v in expected.items() if k!='answers'}
+              assert set(previous['answers'])==set(expected['answers'])
+              assert previous['answers']==expected['answers'] or all(v=='' for v in previous['answers'].values()), 'Question twenty-six already contains different answers; stop'
+              live['questions'][q]['answers'] = expected['answers']
+              original = json.loads(old)
+              original['questions'][q]['answers'] = expected['answers']
+              assert original==live
+              if json.loads(old)!=live:
+                  new = (json.dumps(live,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
+                  backup = home+'/site-safeguard-backups'
+                  try: ftp.mkd(backup)
+                  except ftplib.error_perm: pass
+                  backup_path = backup+'/uncensored-approved026-'+os.environ['GITHUB_RUN_ID']+'.bak'
+                  put(backup_path,old); ftp.sendcmd('SITE CHMOD 600 '+backup_path)
+                  put(tmp,new); ftp.sendcmd('SITE CHMOD 600 '+tmp)
+                  assert read(path)==old, 'Live bank changed concurrently; stop'
+                  ftp.rename(tmp,path)
+                  try:
+                      assert read(path)==new
+                      check_gate()
+                  except BaseException:
+                      put(tmp,old); ftp.sendcmd('SITE CHMOD 600 '+tmp); ftp.rename(tmp,path); assert read(path)==old
+                      raise
+              assert json.loads(read(path)) == live
+              print('Verified: ten approved answers for question twenty-six; all other questions unchanged')
+          finally:
+              try: ftp.delete(tmp)
+              except ftplib.error_perm: pass
+              ftp.quit()
+          check_gate()
+          print('Public HTTP verified: anonymous access denied')
+          PY
