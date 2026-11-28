@@ -1,0 +1,40 @@
+name: Referral preview isolated tests (NO deployment)
+on:
+  push:
+    branches:
+      - feature/referral-bonuses-20261128
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: numi_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ptest"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      NUMI_TEST_MYSQL_DSN: "mysql:host=127.0.0.1;port=3306;dbname=numi_test;charset=utf8mb4"
+      NUMI_TEST_MYSQL_USER: root
+      NUMI_TEST_MYSQL_PASSWORD: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and feature isolation
+        run: |
+          php -l account-service/private/referrals.php
+          php -l account-service/private/core.php
+          php -l account-service/private/wallet-real-worker.php
+          php -l account-service/tests/referrals.php
+          node --check account-browser.js
+          test ! -f account-service/private/referrals-preview.enabled
+      - name: Referral MySQL fixtures only
+        run: php account-service/tests/referrals.php
