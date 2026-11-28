@@ -983,11 +983,17 @@ document.addEventListener("DOMContentLoaded",()=>{
                 <button type="button" class="account-secondary" id="numi-club-subscription-cancel">Отключить автопродление</button>
               </div>
             </section>
-            <section aria-label="Школа нумерологии" >
-              <strong>Самоучитель — 149 рублей в неделю</strong>
-              <p class="account-muted" id="numi-school-subscription-status" role="status">Проверяем подписку…</p>
+            <section aria-label="Школа нумерологии">
+              <strong>Школа нумерологии</strong>
+              <p class="account-muted">В разработке</p>
+              <a class="account-secondary" href="./pro/schools/">Каталог школы</a>
+              <p class="account-muted" id="numi-school-subscription-status" role="status"></p>
+              <div hidden>
+                <div class="account-actions">
+                  <button type="button" id="numi-school-subscription-renew">Продлить</button>
+                </div>
+              </div>
               <div class="account-actions">
-                <button type="button" class="account-primary" id="numi-school-subscription-renew">Продлить</button>
                 <button type="button" class="account-secondary" id="numi-school-subscription-cancel">Отключить автопродление</button>
               </div>
             </section>

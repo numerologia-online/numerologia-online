@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-      - name: Verify owner-only school access and development labels
+      - name: Verify owner access, catalog and development labels
         run: php tests/school-access.php
       - name: Publish school files and verify production responses
         env:

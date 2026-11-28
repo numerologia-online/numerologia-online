@@ -18,6 +18,9 @@ SOURCES = {
     'www/xn--c1adkkdfjbp1a4l.online/assets/numi-school-access-20261103.js': 'assets/numi-school-access-20261103.js',
     'www/xn--c1adkkdfjbp1a4l.online/pro/schools/index.html': 'pro/schools/index.html',
 }
+CABINET_BEFORE = '            <section aria-label="Школа нумерологии" >\n              <strong>Самоучитель — 149 рублей в неделю</strong>\n              <p class="account-muted" id="numi-school-subscription-status" role="status">Проверяем подписку…</p>\n              <div class="account-actions">\n                <button type="button" class="account-primary" id="numi-school-subscription-renew">Продлить</button>\n                <button type="button" class="account-secondary" id="numi-school-subscription-cancel">Отключить автопродление</button>\n              </div>\n            </section>'
+CABINET_AFTER = '            <section aria-label="Школа нумерологии">\n              <strong>Школа нумерологии</strong>\n              <p class="account-muted">В разработке</p>\n              <a class="account-secondary" href="./pro/schools/">Каталог школы</a>\n              <p class="account-muted" id="numi-school-subscription-status" role="status"></p>\n              <div hidden>\n                <div class="account-actions">\n                  <button type="button" id="numi-school-subscription-renew">Продлить</button>\n                </div>\n              </div>\n              <div class="account-actions">\n                <button type="button" class="account-secondary" id="numi-school-subscription-cancel">Отключить автопродление</button>\n              </div>\n            </section>'
+CABINET_PATH = "www/xn--c1adkkdfjbp1a4l.online/index.html"
 BILLING = {
     'store.php': [
         ("$quote['sale_ready']=$published && $quote['product_code']!=='moment_question'",
@@ -38,7 +41,7 @@ BILLING = {
 }
 
 def http(path, payload=None):
-    headers = {'Cache-Control': 'no-cache'}
+    headers = {'Cache-Control': 'no-cache', 'Origin': PUBLIC.rstrip('/')}
     if payload is not None:
         headers['Content-Type'] = 'application/json'
     request = Request(PUBLIC + path, data=None if payload is None else json.dumps(payload).encode(), headers=headers)
@@ -62,6 +65,14 @@ def verify():
     assert status == 200 and session['owner'] is False and session['access'] is False
     assert http('api/numi-school.php', {'action': 'content', 'path': 'pro/school/lessons/start.json'})[0] == 403
     assert http('pro/school/lessons/start.json')[0] in (403, 404)
+    home_status, home = http('?school_cabinet_release=20261128')
+    assert home_status == 200 and CABINET_AFTER.encode() in home
+    products = [{'product_code': code} for code in ('school_week', 'club_month')]
+    quote_status, quote = http('api/numi-account.php', {'action': 'cart_quote', 'items': products})
+    assert quote_status == 200
+    items = {item['product_code']: item for item in json.loads(quote)['items']}
+    assert items['school_week']['sale_ready'] is False
+    assert items['club_month']['sale_ready'] is True
     print('Verified production catalog, direct lesson pages, static lesson data, and anonymous API responses.')
 
 def main():
@@ -94,19 +105,26 @@ def main():
                     raise RuntimeError(f'Billing source requires review: {filename}')
                 data = data.replace(before, after, 1)
             updates[path] = data.encode()
+        cabinet = read(home + '/' + CABINET_PATH)
+        if cabinet.count(CABINET_AFTER.encode()) == 1:
+            updates[CABINET_PATH] = cabinet
+        elif cabinet.count(CABINET_BEFORE.encode()) == 1:
+            updates[CABINET_PATH] = cabinet.replace(CABINET_BEFORE.encode(), CABINET_AFTER.encode(), 1)
+        else:
+            raise RuntimeError('School subscription block in the live cabinet requires review.')
         originals = {path: read(home + '/' + path) for path in updates}
         ftp.mkd(backup)
         for path, data in updates.items():
             if path.endswith('.php'):
                 subprocess.run(['php', '-l'], input=data, check=True)
-            upload(backup + '/' + Path(path).name, originals[path])
+            upload(backup + '/' + path.replace('/', '__'), originals[path])
             target = home + '/' + path
             stage = target + '.new-' + stamp
             upload(stage, data)
             if path.startswith('private/'):
                 ftp.sendcmd('SITE CHMOD 600 ' + stage)
         # Install billing guards before updating the customer-facing catalog.
-        for path in [p for p in updates if 'numi-account-' in p] + list(SOURCES):
+        for path in [p for p in updates if 'numi-account-' in p] + list(SOURCES) + [CABINET_PATH]:
             target = home + '/' + path
             ftp.rename(target + '.new-' + stamp, target)
             if read(target) != updates[path]:
