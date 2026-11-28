@@ -15,7 +15,8 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-      - run: php tests/school-access.php
+      - name: Verify owner-only school access and development labels
+        run: php tests/school-access.php
       - name: Publish school files and verify production responses
         env:
           REG_FTP_USER: ${{ secrets.REG_FTP_USER }}
