@@ -7,6 +7,7 @@ declare(strict_types=1);
  * No schema migration, config writes or changes to sandbox wallets.
  */
 require_once __DIR__.'/wallet-real-payment.php';
+require_once __DIR__.'/referrals.php';
 
 /** YooKassa GET with live Basic Auth; GET is intrinsically idempotent. */
 function naRealWorkerFetch(array $config,string $endpoint,?callable $mock=null): array {
@@ -260,5 +261,6 @@ function naRealWalletWorkerTick(PDO $db,array $config): array {
         'receipts'=>naRealWorkerOffsetTick($db,$config),
         'refunds'=>naRealWorkerRefundTick($db,$config),
         'subscriptions'=>naLiveSubscriptionTick($db,$config),
+        'referrals'=>nrWorkerPreview($db),
     ];
 }

@@ -96,6 +96,19 @@
   let selected = "login";
   let initialized = false;
   const params = new URLSearchParams(location.search);
+  // First valid referral, stored only on explicit referral navigation.
+  const refKey="numi_referral_invite_v1";
+  let referralCode="";
+  try {
+    let saved=JSON.parse(localStorage.getItem(refKey)||"null");
+    if(!saved||!(/^[a-f0-9]{24}$/.test(saved.code))||Date.now()>=saved.until)saved=null;
+    const incoming=params.get("ref");
+    if(!saved&&incoming&&/^[a-f0-9]{24}$/.test(incoming)){
+      saved={code:incoming,until:Date.now()+30*86400000};
+      localStorage.setItem(refKey,JSON.stringify(saved));
+    }
+    referralCode=saved?.code||"";
+  }catch(_){const incoming=params.get("ref");if(incoming&&/^[a-f0-9]{24}$/.test(incoming))referralCode=incoming;}
   let walletDeepLinkOpened=false;
   function openRequestedWalletTopup(){
     if(params.get("wallet_add")!=="1"||walletDeepLinkOpened||!current)return;
@@ -116,6 +129,7 @@
   }
 
   async function request(action, payload={}, signal=null) {
+    if(referralCode&&(action==='register'||action==='telegram'))payload={...payload,referral_code:referralCode};
     const res = await fetch(API, {
       method: "POST", credentials: "same-origin", cache: "no-store",
       headers: {"Content-Type": "application/json"},
@@ -986,7 +1000,41 @@
       current=null;walletBadge.hidden=true;render();window.dispatchEvent(new Event("numi:account-session-changed"));return null;
     }
   }
+  const referralPanel=document.createElement("section");
+  referralPanel.hidden=true;
+  referralPanel.className="account-birth-section";
+  referralPanel.setAttribute("aria-label","Пригласи подругу");
+  const refTitle=document.createElement("h3");refTitle.textContent="Пригласи подругу";
+  const refSummary=document.createElement("p");refSummary.className="account-muted";
+  const refInput=document.createElement("input");refInput.readOnly=true;refInput.setAttribute("aria-label","Персональная ссылка");refInput.style.width="100%";
+  const refCopy=document.createElement("button");refCopy.type="button";refCopy.className="account-primary";refCopy.textContent="Копировать ссылку";
+  const refReload=document.createElement("button");refReload.type="button";refReload.className="account-secondary";refReload.textContent="Обновить";
+  const refNote=document.createElement("p");refNote.className="account-muted";refNote.textContent="Предварительный расчёт. Бонусы пока нельзя тратить или выводить.";
+  referralPanel.append(refTitle,refSummary,refInput,refCopy,refReload,refNote);
+  overview.append(referralPanel);
+  refCopy.addEventListener("click",async()=>{
+    try{await navigator.clipboard.writeText(refInput.value);refCopy.textContent="Ссылка скопирована";}
+    catch(_){refInput.focus();refInput.select();refCopy.textContent="Выделено — скопируйте ссылку";}
+  });
+  let referralLoaded=null,refGeneration=0;
+  async function refreshReferral(force=false){
+    const id=current?.id;
+    if(!id){refGeneration++;referralLoaded=null;referralPanel.hidden=true;refInput.value="";return;}
+    if(!force&&referralLoaded===id)return;
+    referralLoaded=id;const generation=++refGeneration;referralPanel.hidden=true;
+    try{
+      const data=await request("referral_status");
+      if(generation!==refGeneration||current?.id!==id||!data.enabled)return;
+      if(!/^[a-f0-9]{24}$/.test(data.code))return;
+      refInput.value=location.origin+"/?ref="+data.code+"&account=1";
+      const rub=n=>(Number(n)/100).toLocaleString("ru-RU",{maximumFractionDigits:2});
+      refSummary.textContent="Приглашено: "+data.invited+" · Купили: "+data.buyers+" · Ожидают: "+rub(data.pending_kopeks)+" · Рассчитано: "+rub(data.calculated_kopeks)+" бонусов";
+      refCopy.textContent="Копировать ссылку";referralPanel.hidden=false;
+    }catch(_){if(generation===refGeneration)referralLoaded=null;}
+  }
+  refReload.addEventListener("click",()=>void refreshReferral(true));
   function render() {
+    void refreshReferral();
     const tg=isTelegram();
     guest.hidden=!resetToken && (tg||!!current);
     signed.hidden=true;

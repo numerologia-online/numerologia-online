@@ -6,6 +6,8 @@ declare(strict_types=1);
  * No password secrets, session bearer values or personal records in source control.
  * Payments are never accepted or marked paid from this endpoint.
  */
+require_once __DIR__.'/referrals.php';
+
 const NUMI_ACCOUNT_COOKIE = '__Host-numi_session';
 const NUMI_ACCOUNT_ORIGIN = 'https://xn----8sbhhqijddjgdebdz2c2o.xn--p1ai';
 
@@ -260,6 +262,7 @@ function naTelegram(PDO $db,array $body,bool $link=false): never {
                 ->execute([$accountId,substr((string)$telegram['name'],0,80)]);
             $db->prepare('INSERT INTO numi_identities(provider,provider_user_id,account_id) VALUES(?,?,?)')
                 ->execute(['telegram',$id,$accountId]);
+            if(nrEnabled())nrBindNew($db,$accountId,$body['referral_code']??null);
             $db->commit();
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
@@ -281,11 +284,15 @@ function naRegister(PDO $db,array $body): never {
     $stmt->execute([$email]);
     if ($stmt->fetch()) naReply(409,['ok'=>false,'error'=>'EMAIL_ALREADY_REGISTERED']);
     $id=naUuid();
+    $db->beginTransaction();
     try {
         $stmt=$db->prepare('INSERT INTO numi_accounts(id,email,password_hash,display_name) VALUES(?,?,?,?)');
         $stmt->execute([$id,$email,password_hash($password,PASSWORD_DEFAULT),'Пользователь']);
-    } catch (PDOException $e) {
-        if ((string)$e->getCode()==='23000') naReply(409,['ok'=>false,'error'=>'EMAIL_ALREADY_REGISTERED']);
+        if(nrEnabled())nrBindNew($db,$id,$body['referral_code']??null);
+        $db->commit();
+    } catch (Throwable $e) {
+        if($db->inTransaction())$db->rollBack();
+        if ($e instanceof PDOException && (string)$e->getCode()==='23000') naReply(409,['ok'=>false,'error'=>'EMAIL_ALREADY_REGISTERED']);
         throw $e;
     }
     if (!naSendVerify($db,$id,$email)) naReply(503,['ok'=>false,'error'=>'EMAIL_DELIVERY_UNAVAILABLE']);
@@ -444,6 +451,7 @@ function naMergeTelegramEmail(PDO $db,array $body): never {
             naSubscriptionMergeAccounts($db,$fromId,$targetId);
             if(naLiveWalletModeSelected())naRealWalletMergeAccounts($db,$fromId,$targetId);
             naWalletMergeAccounts($db,$fromId,$targetId);
+            if(nrEnabled())nrMerge($db,$fromId,$targetId);
             $db->prepare('UPDATE numi_identities SET account_id=? WHERE provider=? AND provider_user_id=? AND account_id=?')
                 ->execute([$targetId,'telegram',$tgId,$fromId]);
             $db->prepare('UPDATE numi_accounts SET birth_date=COALESCE(birth_date,?) WHERE id=?')
@@ -829,6 +837,12 @@ function naServe(): never {
         if ($action==='session') {
             $current=naCurrent($db);
             naReply(200,['ok'=>true,'authenticated'=>(bool)$current,'account'=>$current?array_merge(naPublicAccount($current),['telegram_linked'=>naHasLinkedTelegram($db,(string)$current['id'])]):null]);
+        }
+        if ($action==='referral_status') {
+            $account=naCurrent($db);
+            if(!$account)naReply(401,['ok'=>false,'error'=>'LOGIN_REQUIRED']);
+            if(!nrEnabled())naReply(200,['ok'=>true,'enabled'=>false]);
+            naReply(200,array_merge(['ok'=>true],nrMine($db,(string)$account['id'])));
         }
         if ($action==='register') naRegister($db,$body);
         if ($action==='login') naLogin($db,$body);
