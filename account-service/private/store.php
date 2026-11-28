@@ -29,7 +29,7 @@ function naCartResolve(array $inputs,bool $club,callable $owns,array $ready=[],?
         // catalogue. Even if a bank file exists, a draft may not be charged.
         $published=$quote['product_code']!=='redflag_question'
             || $quote['availability']==='FULFILLMENT_NOT_CONNECTED';
-        $quote['sale_ready']=$published && $quote['product_code']!=='moment_question'
+        $quote['sale_ready']=$published && $quote['product_code']!=='moment_question' && $quote['product_code']!=='school_week'
             && is_int($quote['price_kopeks']) && $quote['price_kopeks']>0
             && ($readyCheck ? $readyCheck($quote) : (in_array($quote['product_code'],$ready,true) && $quote['availability']==='FULFILLMENT_NOT_CONNECTED'));
         if (($quote['access_active'] && $quote['kind']!=='subscription') || !$quote['sale_ready']) $blocked=true;

@@ -34,5 +34,6 @@ for (const link of document.querySelectorAll('a[data-school-entry]')) {
 }
 owner.then(allowed=>{
   if (!allowed) return;
-  for (const label of document.querySelectorAll('[data-school-lock]')) label.textContent='Открыть уроки →';
+  for (const label of document.querySelectorAll('[data-school-lock]')) label.hidden=true;
+  for (const link of document.querySelectorAll('[data-school-owner-link]')) link.hidden=false;
 });

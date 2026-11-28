@@ -94,7 +94,7 @@ function naSubscriptionTick(PDO $db,array $config): array {
     $list=$db->query('SELECT account_id,product_code,payment_method_id,source_order_id FROM numi_subscription_settings WHERE auto_renew=1 AND payment_method_id IS NOT NULL')->fetchAll();
     foreach($list as$preference){
         $account=naUser($db,$preference['account_id']);if(!$account||(!naTestOwner($account)&&!in_array($account['id'],$config['store_test_account_ids']??[],true)))continue;
-        $code=$preference['product_code'];if(!naSubscriptionCode($code)||!$preference['source_order_id'])continue;
+        $code=$preference['product_code'];if($code==='school_week'||!naSubscriptionCode($code)||!$preference['source_order_id'])continue;
         $period=$db->prepare("SELECT MAX(e.expires_at) FROM numi_entitlements e JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id WHERE e.account_id=? AND e.product_code=? AND e.status='active' AND o.status='paid' AND o.verified_at IS NOT NULL");$period->execute([$account['id'],$code]);$until=$period->fetchColumn();
         if(!$until){naSubscriptionCancel($db,$account,$code);continue;}if(naSubscriptionState($until)==='active')continue;
         require_once __DIR__.'/fulfillment.php';
@@ -188,6 +188,7 @@ function naLiveSubscriptionStart(
     ?callable $testTransport=null
 ): array {
     if(!naLiveRecurringAllowed($config))throw new RuntimeException('REAL_RECURRING_NOT_APPROVED');
+    if($code==='school_week')throw new RuntimeException('SUBSCRIPTION_PRODUCT_UNAVAILABLE');
     $item=naLiveSubscriptionItem($code);
     $email=naRealWalletReceiptEmail($email);
     $key=naWalletKey($requestKey);
@@ -267,6 +268,7 @@ function naLiveSubscriptionCreatePayment(
         $checkout=naLiveSubscriptionCheckoutData($db,$checkoutId,$accountId);
         $order=['provider'=>$checkout['provider'],'amount_kopeks'=>$checkout['order_amount']];
         $code=$checkout['product_code'];
+        if($code==='school_week')throw new RuntimeException('SUBSCRIPTION_PRODUCT_UNAVAILABLE');
         if($checkout['order_status']!=='pending')
             throw new RuntimeException('REAL_SUBSCRIPTION_NOT_PENDING');
         if($checkout['provider_payment_id']!==null){
@@ -456,7 +458,7 @@ function naLiveSubscriptionSync(PDO $db,array $config,string $checkoutId,string 
 
 /** A durable renewal intent keyed to the last successfully settled order. */
 function naLiveSubscriptionRenewIntent(PDO $db,array $config,string $accountId,string $code): ?array {
-    if(!naLiveRecurringAllowed($config))return null;
+    if($code==='school_week'||!naLiveRecurringAllowed($config))return null;
     $item=naLiveSubscriptionItem($code);
     $db->beginTransaction();
     try{
@@ -553,7 +555,7 @@ function naLiveSubscriptionTick(PDO $db,array $config,?callable $testTransport=n
             JOIN numi_orders o ON o.id=e.order_id AND o.account_id=e.account_id
             WHERE e.status='active' AND o.status='paid' AND o.verified_at IS NOT NULL
               AND o.provider IN ('real_wallet','real_subscription')
-              AND e.product_code IN ('club_month','school_week')
+              AND e.product_code='club_month'
             GROUP BY e.account_id,e.product_code
         ) period ON period.account_id=s.account_id AND period.product_code=s.product_code
         WHERE s.auto_renew=1 AND s.cancelled_at IS NULL
